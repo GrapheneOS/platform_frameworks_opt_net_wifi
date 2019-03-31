@@ -76,7 +76,7 @@ static jbyteArray android_net_wifi_readKernelLogNative(JNIEnv *env, jclass cls) 
 /*
  * JNI registration.
  */
-static JNINativeMethod gWifiMethods[] = {
+static const JNINativeMethod gWifiMethods[] = {
     NATIVE_METHOD(android_net_wifi, readKernelLogNative, "()[B"),
 };
 
