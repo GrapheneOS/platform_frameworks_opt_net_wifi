@@ -160,18 +160,6 @@ public class WificondControl implements IBinder.DeathRecipient {
             Log.d(TAG, "Pno Scan failed event");
             mWifiInjector.getWifiMetrics().incrementPnoScanFailedCount();
         }
-
-        @Override
-        public void OnPnoScanOverOffloadStarted() {
-            Log.d(TAG, "Pno scan over offload started");
-            mWifiInjector.getWifiMetrics().incrementPnoScanStartedOverOffloadCount();
-        }
-
-        @Override
-        public void OnPnoScanOverOffloadFailed(int reason) {
-            Log.d(TAG, "Pno scan over offload failed");
-            mWifiInjector.getWifiMetrics().incrementPnoScanFailedOverOffloadCount();
-        }
     }
 
     /**

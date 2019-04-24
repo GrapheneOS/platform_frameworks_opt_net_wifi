@@ -382,8 +382,6 @@ public class WifiMetricsTest {
     private static final int NUM_PARTIAL_SCAN_RESULTS = 73;
     private static final int NUM_PNO_SCAN_ATTEMPTS = 20;
     private static final int NUM_PNO_SCAN_FAILED = 5;
-    private static final int NUM_PNO_SCAN_STARTED_OVER_OFFLOAD = 17;
-    private static final int NUM_PNO_SCAN_FAILED_OVER_OFFLOAD = 8;
     private static final int NUM_PNO_FOUND_NETWORK_EVENTS = 10;
     private static final int NUM_WPS_ATTEMPTS = 17;
     private static final int NUM_WPS_SUCCESS = 21;
@@ -800,12 +798,6 @@ public class WifiMetricsTest {
         for (int i = 0; i < NUM_PNO_SCAN_FAILED; i++) {
             mWifiMetrics.incrementPnoScanFailedCount();
         }
-        for (int i = 0; i < NUM_PNO_SCAN_STARTED_OVER_OFFLOAD; i++) {
-            mWifiMetrics.incrementPnoScanStartedOverOffloadCount();
-        }
-        for (int i = 0; i < NUM_PNO_SCAN_FAILED_OVER_OFFLOAD; i++) {
-            mWifiMetrics.incrementPnoScanFailedOverOffloadCount();
-        }
         for (int i = 0; i < NUM_PNO_FOUND_NETWORK_EVENTS; i++) {
             mWifiMetrics.incrementPnoFoundNetworkEventCount();
         }
@@ -1157,8 +1149,6 @@ public class WifiMetricsTest {
         assertNotNull(pno_metrics);
         assertEquals(NUM_PNO_SCAN_ATTEMPTS, pno_metrics.numPnoScanAttempts);
         assertEquals(NUM_PNO_SCAN_FAILED, pno_metrics.numPnoScanFailed);
-        assertEquals(NUM_PNO_SCAN_STARTED_OVER_OFFLOAD, pno_metrics.numPnoScanStartedOverOffload);
-        assertEquals(NUM_PNO_SCAN_FAILED_OVER_OFFLOAD, pno_metrics.numPnoScanFailedOverOffload);
         assertEquals(NUM_PNO_FOUND_NETWORK_EVENTS, pno_metrics.numPnoFoundNetworkEvents);
 
         for (ConnectToNetworkNotificationAndActionCount notificationCount
