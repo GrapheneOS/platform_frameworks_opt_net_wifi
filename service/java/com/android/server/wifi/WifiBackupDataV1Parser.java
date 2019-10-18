@@ -24,6 +24,7 @@ import android.net.NetworkUtils;
 import android.net.ProxyInfo;
 import android.net.RouteInfo;
 import android.net.StaticIpConfiguration;
+import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.util.Log;
 import android.util.Pair;
@@ -556,7 +557,8 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                     throw new XmlPullParserException("ProxyPac was missing in"
                             + " IpConfiguration section");
                 }
-                ipConfiguration.setHttpProxy(new ProxyInfo(proxyPacFile));
+                ipConfiguration.setHttpProxy(
+                        ProxyInfo.buildPacProxy(Uri.parse(proxyPacFile)));
                 break;
             case NONE:
             case UNASSIGNED:
