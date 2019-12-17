@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import android.net.IpConfiguration;
+import android.net.util.MacAddressUtils;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -233,7 +234,7 @@ public class XmlUtilTest {
         configuration.lastUpdateUid = configuration.lastConnectUid = configuration.creatorUid;
         configuration.creatorName = configuration.lastUpdateName = TEST_PACKAGE_NAME;
         configuration.creationTime = "04-04-2016";
-        configuration.getOrCreateRandomizedMacAddress();
+        configuration.setRandomizedMacAddress(MacAddressUtils.createRandomUnicastAddress());
         configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
 
         serializeDeserializeWifiConfigurationForConfigStore(configuration);
