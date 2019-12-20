@@ -425,9 +425,14 @@ public class WifiConfigManager {
      */
     public boolean shouldUseAggressiveRandomization(WifiConfiguration config) {
         if (!isMacRandomizationSupported()
-                || config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+                || config.macRandomizationSetting < WifiConfiguration.RANDOMIZATION_PERSISTENT) {
             return false;
         }
+
+        if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ALWAYS) {
+            return true;
+        }
+
         if (mFrameworkFacade.getIntegerSetting(mContext,
                 ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG, 0) == 1) {
             return true;
@@ -546,7 +551,9 @@ public class WifiConfigManager {
      */
     private MacAddress updateRandomizedMacIfNeeded(WifiConfiguration config) {
         boolean shouldUpdateMac = config.randomizedMacExpirationTimeMs
-                < mClock.getWallClockMillis();
+                < mClock.getWallClockMillis() ||
+                config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ALWAYS;
+
         if (!shouldUpdateMac) {
             return config.getRandomizedMacAddress();
         }
@@ -1579,7 +1586,7 @@ public class WifiConfigManager {
     public boolean isInFlakyRandomizationSsidHotlist(int networkId) {
         WifiConfiguration config = getConfiguredNetwork(networkId);
         return config != null
-                && config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT
+                && config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_NONE
                 && mDeviceConfigFacade.getRandomizationFlakySsidHotlist().contains(config.SSID);
     }
 
