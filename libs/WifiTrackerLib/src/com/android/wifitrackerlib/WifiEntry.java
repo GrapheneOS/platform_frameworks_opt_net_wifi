@@ -148,6 +148,7 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     public static final int PRIVACY_DEVICE_MAC = 0;
     public static final int PRIVACY_RANDOMIZED_MAC = 1;
     public static final int PRIVACY_UNKNOWN = 2;
+    public static final int PRIVACY_FULLY_RANDOMIZED_MAC = 100;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {
