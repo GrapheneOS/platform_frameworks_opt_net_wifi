@@ -545,6 +545,15 @@ public class WifiConfigManager {
     }
 
     /**
+     * Obtains an ephemeral MAC address that forgets on device reset or network disconnection.
+     * Unlike the persistent option, this MAC address does not persist to device storage.
+     */
+    private MacAddress getEphemeralMacAddress(WifiConfiguration config) {
+        MacAddress ephemeralMac = config.getOrCreateRandomizedMacAddress();
+        return ephemeralMac;
+    }
+
+    /**
      * Enable/disable verbose logging in WifiConfigManager & its helper classes.
      */
     public void enableVerboseLogging(int verbose) {
@@ -1129,7 +1138,16 @@ public class WifiConfigManager {
                 packageName != null ? packageName : mContext.getPackageManager().getNameForUid(uid);
         newInternalConfig.creationTime = newInternalConfig.updateTime =
                 createDebugTimeStampString(mClock.getWallClockMillis());
-        MacAddress randomizedMac = getPersistentMacAddress(newInternalConfig);
+
+        // Copy over mac randomization config
+        newInternalConfig.macRandomizationSetting = externalConfig.macRandomizationSetting;
+
+        MacAddress randomizedMac;
+        if (externalConfig.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ALWAYS) {
+            randomizedMac = getEphemeralMacAddress(newInternalConfig);
+        } else {
+            randomizedMac = getPersistentMacAddress(newInternalConfig);
+        }
         if (randomizedMac != null) {
             newInternalConfig.setRandomizedMacAddress(randomizedMac);
         }
