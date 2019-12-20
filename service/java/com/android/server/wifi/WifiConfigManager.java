@@ -1064,14 +1064,18 @@ public class WifiConfigManager {
         // Update randomized MAC address according to stored map
         final String key = config.getSsidAndSecurityTypeString();
         // If the key is not found in the current store, then it means this network has never been
-        // seen before. So add it to store.
-        if (!mRandomizedMacAddressMapping.containsKey(key)) {
+        // seen before. 
+        // Or if RANDOMIZATION_ALWAYS is toggled
+        // So add it to store.
+        if (!mRandomizedMacAddressMapping.containsKey(key) ||
+               config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ALWAYS) {
             mRandomizedMacAddressMapping.put(key,
                     config.getOrCreateRandomizedMacAddress().toString());
-        } else { // Otherwise read from the store and set the WifiConfiguration
+        } else {
             try {
-                config.setRandomizedMacAddress(
-                        MacAddress.fromString(mRandomizedMacAddressMapping.get(key)));
+                // read from the store and set the WifiConfiguration
+                    config.setRandomizedMacAddress(
+                            MacAddress.fromString(mRandomizedMacAddressMapping.get(key)));
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "Error creating randomized MAC address from stored value.");
                 mRandomizedMacAddressMapping.put(key,
