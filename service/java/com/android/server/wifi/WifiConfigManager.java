@@ -1129,7 +1129,13 @@ public class WifiConfigManager {
                 packageName != null ? packageName : mContext.getPackageManager().getNameForUid(uid);
         newInternalConfig.creationTime = newInternalConfig.updateTime =
                 createDebugTimeStampString(mClock.getWallClockMillis());
-        MacAddress randomizedMac = getPersistentMacAddress(newInternalConfig);
+
+        MacAddress randomizedMac;
+        if (externalConfig.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+            randomizedMac = getPersistentMacAddress(newInternalConfig);
+        } else {
+            randomizedMac = MacAddress.createRandomUnicastAddress();
+        }
         if (randomizedMac != null) {
             newInternalConfig.setRandomizedMacAddress(randomizedMac);
         }
@@ -1549,7 +1555,7 @@ public class WifiConfigManager {
     public boolean isInFlakyRandomizationSsidHotlist(int networkId) {
         WifiConfiguration config = getConfiguredNetwork(networkId);
         return config != null
-                && config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT
+                && config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_NONE
                 && mRandomizationFlakySsidHotlist.contains(config.SSID);
     }
 
