@@ -4299,7 +4299,7 @@ public class ClientModeImpl extends StateMachine {
                     reportConnectionAttemptStart(config, mTargetRoamBSSID,
                             WifiMetricsProto.ConnectionEvent.ROAM_UNRELATED);
                     if (config.macRandomizationSetting
-                            == WifiConfiguration.RANDOMIZATION_PERSISTENT
+                            != WifiConfiguration.RANDOMIZATION_NONE
                             && mConnectedMacRandomzationSupported) {
                         configureRandomizedMacAddress(config);
                     } else {
