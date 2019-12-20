@@ -324,7 +324,7 @@ public class StandardWifiEntry extends WifiEntry {
                 return wifiInfoMac;
             }
         }
-        if (mWifiConfig == null || getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
+        if (mWifiConfig == null || getPrivacy() == PRIVACY_DEVICE_MAC) {
             final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
             if (factoryMacs.length > 0) {
                 return factoryMacs[0];
@@ -578,11 +578,19 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     @Privacy
     public int getPrivacy() {
-        if (mWifiConfig != null
-                && mWifiConfig.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_NONE) {
-            return PRIVACY_DEVICE_MAC;
+        if (mWifiConfig != null) {
+            switch(mWifiConfig.macRandomizationSetting) {
+                case WifiConfiguration.RANDOMIZATION_NONE:
+                    return PRIVACY_DEVICE_MAC;
+                case WifiConfiguration.RANDOMIZATION_PERSISTENT:
+                    return PRIVACY_RANDOMIZED_MAC;
+                case WifiConfiguration.RANDOMIZATION_ALWAYS:
+                    return PRIVACY_FULLY_RANDOMIZED_MAC;
+                default:
+                    return PRIVACY_FULLY_RANDOMIZED_MAC;
+            }
         } else {
-            return PRIVACY_RANDOMIZED_MAC;
+            return PRIVACY_FULLY_RANDOMIZED_MAC;
         }
     }
 
@@ -591,9 +599,7 @@ public class StandardWifiEntry extends WifiEntry {
         if (!canSetPrivacy()) {
             return;
         }
-
-        mWifiConfig.macRandomizationSetting = privacy == PRIVACY_RANDOMIZED_MAC
-                ? WifiConfiguration.RANDOMIZATION_PERSISTENT : WifiConfiguration.RANDOMIZATION_NONE;
+        mWifiConfig.macRandomizationSetting = translatePrivacyToWifiConfigurationValues(privacy);
         mWifiManager.save(mWifiConfig, null /* listener */);
     }
 
@@ -928,5 +934,17 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     String getNetworkSelectionDescription() {
         return Utils.getNetworkSelectionDescription(getWifiConfiguration());
+    }
+
+    private static int translatePrivacyToWifiConfigurationValues(int privacy_value) {
+        switch(privacy_value) {
+            case PRIVACY_FULLY_RANDOMIZED_MAC:
+                return WifiConfiguration.RANDOMIZATION_ALWAYS;
+            case PRIVACY_RANDOMIZED_MAC:
+                return WifiConfiguration.RANDOMIZATION_PERSISTENT;
+            case PRIVACY_DEVICE_MAC:
+                return WifiConfiguration.RANDOMIZATION_NONE;
+        }
+        return WifiConfiguration.RANDOMIZATION_ALWAYS;
     }
 }
