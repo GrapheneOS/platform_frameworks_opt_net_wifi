@@ -43,7 +43,6 @@ import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.Network;
 import android.net.NetworkAgent;
-import android.net.NetworkAgentConfig;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkSpecifier;
@@ -2377,7 +2376,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         registerAsyncChannel((x) -> {
             mNetworkAgentAsyncChannel = x;
@@ -2474,7 +2473,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         ArrayList<Integer> thresholdsArray = new ArrayList<>();
         thresholdsArray.add(RSSI_THRESHOLD_MAX);
@@ -2933,7 +2932,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         Message message = new Message();
         message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
@@ -3141,7 +3140,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         WifiConfiguration currentNetwork = new WifiConfiguration();
         currentNetwork.networkId = FRAMEWORK_NETWORK_ID;
@@ -3175,7 +3174,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         WifiConfiguration currentNetwork = new WifiConfiguration();
         currentNetwork.networkId = FRAMEWORK_NETWORK_ID;
@@ -3210,7 +3209,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         WifiConfiguration currentNetwork = new WifiConfiguration();
         currentNetwork.networkId = FRAMEWORK_NETWORK_ID;
@@ -3243,7 +3242,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), any(NetworkAgentConfig.class), anyInt());
+                anyInt(), eq(null) /* config */, anyInt());
 
         when(mWifiConfigManager.getLastSelectedNetwork()).thenReturn(FRAMEWORK_NETWORK_ID + 1);
 
@@ -3275,7 +3274,7 @@ public class ClientModeImplTest {
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
         verify(mConnectivityManager).registerNetworkAgent(any(Messenger.class),
                 any(NetworkInfo.class), any(LinkProperties.class),
-                networkCapabilitiesCaptor.capture(), anyInt(), any(NetworkAgentConfig.class),
+                networkCapabilitiesCaptor.capture(), anyInt(), eq(null) /* config */,
                 anyInt());
 
         NetworkCapabilities networkCapabilities = networkCapabilitiesCaptor.getValue();
@@ -3308,7 +3307,7 @@ public class ClientModeImplTest {
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
         verify(mConnectivityManager).registerNetworkAgent(any(Messenger.class),
                 any(NetworkInfo.class), any(LinkProperties.class),
-                networkCapabilitiesCaptor.capture(), anyInt(), any(NetworkAgentConfig.class),
+                networkCapabilitiesCaptor.capture(), anyInt(), eq(null) /* config */,
                 anyInt());
 
         NetworkCapabilities networkCapabilities = networkCapabilitiesCaptor.getValue();
