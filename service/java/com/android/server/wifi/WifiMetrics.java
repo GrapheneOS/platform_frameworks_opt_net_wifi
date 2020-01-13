@@ -20,7 +20,6 @@ import static java.lang.StrictMath.toIntExact;
 
 import android.content.Context;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
-import android.net.NetworkAgent;
 import android.net.wifi.EAPConstants;
 import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.ScanResult;
@@ -130,7 +129,7 @@ public class WifiMetrics {
     /** Maximum time period between ScanResult and RSSI poll to generate rssi delta datapoint */
     public static final long TIMEOUT_RSSI_DELTA_MILLIS =  3000;
     private static final int MIN_WIFI_SCORE = 0;
-    private static final int MAX_WIFI_SCORE = NetworkAgent.WIFI_BASE_SCORE;
+    private static final int MAX_WIFI_SCORE = ConnectedScore.WIFI_MAX_SCORE;
     private static final int MIN_WIFI_USABILITY_SCORE = 0; // inclusive
     private static final int MAX_WIFI_USABILITY_SCORE = 100; // inclusive
     @VisibleForTesting

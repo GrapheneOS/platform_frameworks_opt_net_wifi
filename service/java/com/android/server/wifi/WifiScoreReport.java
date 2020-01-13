@@ -43,7 +43,7 @@ public class WifiScoreReport {
     private long mLastDownwardBreachTimeMillis = 0;
 
     // Cache of the last score
-    private int mScore = NetworkAgent.WIFI_BASE_SCORE;
+    private int mScore = ConnectedScore.WIFI_MAX_SCORE;
 
     private final ScoringParams mScoringParams;
     private final Clock mClock;
@@ -64,7 +64,7 @@ public class WifiScoreReport {
      */
     public void reset() {
         mSessionNumber++;
-        mScore = NetworkAgent.WIFI_BASE_SCORE;
+        mScore = ConnectedScore.WIFI_MAX_SCORE;
         mLastKnownNudCheckScore = ConnectedScore.WIFI_TRANSITION_SCORE;
         mAggressiveConnectedScore.reset();
         mVelocityBasedConnectedScore.reset();
@@ -149,8 +149,8 @@ public class WifiScoreReport {
         }
 
         //sanitize boundaries
-        if (score > NetworkAgent.WIFI_BASE_SCORE) {
-            score = NetworkAgent.WIFI_BASE_SCORE;
+        if (score > ConnectedScore.WIFI_MAX_SCORE) {
+            score = ConnectedScore.WIFI_MAX_SCORE;
         }
         if (score < 0) {
             score = 0;
