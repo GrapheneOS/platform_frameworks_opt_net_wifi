@@ -351,7 +351,9 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.TKIP)) {
             saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.TKIP);
         }
+        saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_128);
         saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_128);
         saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
     }
 }

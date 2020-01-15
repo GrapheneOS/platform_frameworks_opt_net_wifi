@@ -112,9 +112,9 @@ public class WifiBackupRestoreTest extends WifiBaseTest {
                     // Valid Value: 01
                     + "<byte-array name=\"AllowedAuthAlgos\" num=\"1\">11</byte-array>\n"
                     // Valid Value: 0f
-                    + "<byte-array name=\"AllowedGroupCiphers\" num=\"1\">8f</byte-array>\n"
+                    + "<byte-array name=\"AllowedGroupCiphers\" num=\"2\">0f01</byte-array>\n"
                     // Valid Value: 06
-                    + "<byte-array name=\"AllowedPairwiseCiphers\" num=\"1\">26</byte-array>\n"
+                    + "<byte-array name=\"AllowedPairwiseCiphers\" num=\"1\">86</byte-array>\n"
                     + "<boolean name=\"Shared\" value=\"true\" />\n"
                     + "<null name=\"SimSlot\" />\n"
                     + "</WifiConfiguration>\n"
