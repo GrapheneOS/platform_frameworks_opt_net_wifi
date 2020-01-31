@@ -432,7 +432,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mDataTelephonyManager);
         when(mWifiNetworkFactory.getSpecificNetworkRequestUidAndPackageName(any()))
                 .thenReturn(Pair.create(Process.INVALID_UID, ""));
-        when(mWifiNative.initialize()).thenReturn(true);
         when(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(
                 TEST_GLOBAL_MAC_ADDRESS);
         when(mWifiNative.getMacAddress(WIFI_IFACE_NAME))
@@ -587,7 +586,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertNotNull(mConfigUpdateListenerCaptor.getValue());
 
         mCmi.enableVerboseLogging(1);
-        mCmi.initialize();
         mLooper.dispatchAll();
     }
 

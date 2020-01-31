@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_LOCAL_ONLY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SCAN_ONLY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_LOCAL_ONLY;
@@ -23,8 +24,10 @@ import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_TETHERED;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
@@ -177,12 +180,14 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             }
         }).when(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
                 any(WifiManager.SoftApCallback.class), any());
+        when(mWifiNative.initialize()).thenReturn(true);
 
         mActiveModeWarden = createActiveModeWarden();
         mActiveModeWarden.start();
         mLooper.dispatchAll();
 
         verify(mWifiNative).registerStatusListener(mStatusListenerCaptor.capture());
+        verify(mWifiNative).initialize();
         mWifiNativeStatusListener = mStatusListenerCaptor.getValue();
 
         verify(mWifiNative).registerClientInterfaceAvailabilityListener(
@@ -246,6 +251,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         if (fromState.equals(DISABLED_STATE_STRING)) {
             verify(mBatteryStats).reportWifiOn();
         }
+        assertEquals(mClientModeManager, mActiveModeWarden.getPrimaryClientModeManager());
     }
 
     /**
@@ -271,6 +277,29 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             verify(mBatteryStats).reportWifiOn();
         }
         verify(mBatteryStats).reportWifiState(BatteryStatsManager.WIFI_STATE_OFF_SCANNING, null);
+        assertEquals(mClientModeManager, mActiveModeWarden.getScanOnlyClientModeManager());
+    }
+
+    /**
+     * Helper method to enter the EnabledState and set ClientModeManager in ConnectMode.
+     */
+    private void enterLocalClientModeActiveState() throws Exception {
+        String fromState = mActiveModeWarden.getCurrentMode();
+        when(mClientModeManager.getRole()).thenReturn(ROLE_CLIENT_PRIMARY);
+        when(mSettingsStore.isWifiToggleEnabled()).thenReturn(true);
+        mActiveModeWarden.wifiToggled();
+        mLooper.dispatchAll();
+        mClientListener.onStarted();
+        mLooper.dispatchAll();
+
+        assertInEnabledState();
+        verify(mClientModeManager).start();
+        verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mScanRequestProxy).enableScanning(true, true);
+        if (fromState.equals(DISABLED_STATE_STRING)) {
+            verify(mBatteryStats).reportWifiOn();
+        }
+        assertEquals(mClientModeManager, mActiveModeWarden.getPrimaryClientModeManager());
     }
 
     private void enterSoftApActiveMode() throws Exception {
@@ -300,6 +329,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mSoftApManager).setRole(softApRole);
         if (fromState.equals(DISABLED_STATE_STRING)) {
             verify(mBatteryStats).reportWifiOn();
+        }
+        if (softApRole == ROLE_SOFTAP_TETHERED) {
+            assertEquals(mSoftApManager, mActiveModeWarden.getTetheredSoftApManager());
+            assertNull(mActiveModeWarden.getLocalOnlySoftApManager());
+        } else {
+            assertEquals(mSoftApManager, mActiveModeWarden.getLocalOnlySoftApManager());
+            assertNull(mActiveModeWarden.getTetheredSoftApManager());
         }
     }
 
@@ -2174,5 +2210,80 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         when(mWifiNative.isStaApConcurrencySupported()).thenReturn(true);
         assertTrue(mActiveModeWarden.isStaApConcurrencySupported());
+    }
+
+    @Test
+    public void requestRemoveLocalOnlyClientModeManager() throws Exception {
+        enterClientModeActiveState();
+
+        // Ensure that we can create more client ifaces.
+        mClientIfaceAvailableListener.getValue().onAvailabilityChanged(true);
+        mLooper.dispatchAll();
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers());
+
+        ClientModeManager localOnlyClientModeManager = mock(ClientModeManager.class);
+        GeneralUtil.Mutable<ActiveModeManager.Listener> localOnlyClientListener =
+                new GeneralUtil.Mutable<>();
+        doAnswer((invocation) -> {
+            Object[] args = invocation.getArguments();
+            localOnlyClientListener.value = (ActiveModeManager.Listener) args[0];
+            return localOnlyClientModeManager;
+        }).when(mWifiInjector).makeClientModeManager(any(ActiveModeManager.Listener.class));
+        when(localOnlyClientModeManager.getRole()).thenReturn(ROLE_CLIENT_LOCAL_ONLY);
+
+        ActiveModeWarden.ExternalClientModeManagerRequestListener externalRequestListener = mock(
+                ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
+        mActiveModeWarden.requestLocalOnlyClientModeManager(externalRequestListener);
+        mLooper.dispatchAll();
+        verify(localOnlyClientModeManager).start();
+        verify(localOnlyClientModeManager).setRole(ROLE_CLIENT_LOCAL_ONLY);
+        localOnlyClientListener.value.onStarted();
+        mLooper.dispatchAll();
+        // Returns the new local only client mode manager.
+        ArgumentCaptor<ClientModeManager> requestedClientModeManager =
+                ArgumentCaptor.forClass(ClientModeManager.class);
+        verify(externalRequestListener).onAnswer(requestedClientModeManager.capture());
+        assertEquals(localOnlyClientModeManager, requestedClientModeManager.getValue());
+
+        mActiveModeWarden.removeLocalOnlyClientModeManager(requestedClientModeManager.getValue());
+        mLooper.dispatchAll();
+        verify(localOnlyClientModeManager).stop();
+        localOnlyClientListener.value.onStopped();
+        mLooper.dispatchAll();
+    }
+
+    @Test
+    public void requestRemoveLocalOnlyClientModeManagerWhenNotAllowed() throws Exception {
+        enterClientModeActiveState();
+
+        // Ensure that we cannot create more client ifaces.
+        mClientIfaceAvailableListener.getValue().onAvailabilityChanged(false);
+        mLooper.dispatchAll();
+        assertFalse(mActiveModeWarden.canRequestMoreClientModeManagers());
+
+        ClientModeManager localOnlyClientModeManager = mock(ClientModeManager.class);
+        GeneralUtil.Mutable<ActiveModeManager.Listener> localOnlyClientListener =
+                new GeneralUtil.Mutable<>();
+        doAnswer((invocation) -> {
+            Object[] args = invocation.getArguments();
+            localOnlyClientListener.value = (ActiveModeManager.Listener) args[0];
+            return localOnlyClientModeManager;
+        }).when(mWifiInjector).makeClientModeManager(any(ActiveModeManager.Listener.class));
+        when(localOnlyClientModeManager.getRole()).thenReturn(ROLE_CLIENT_LOCAL_ONLY);
+
+        ActiveModeWarden.ExternalClientModeManagerRequestListener externalRequestListener = mock(
+                ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
+        mActiveModeWarden.requestLocalOnlyClientModeManager(externalRequestListener);
+        mLooper.dispatchAll();
+        verifyNoMoreInteractions(localOnlyClientModeManager);
+        // Returns the existing primary client mode manager.
+        ArgumentCaptor<ClientModeManager> requestedClientModeManager =
+                ArgumentCaptor.forClass(ClientModeManager.class);
+        verify(externalRequestListener).onAnswer(requestedClientModeManager.capture());
+        assertEquals(mClientModeManager, requestedClientModeManager.getValue());
+
+        mActiveModeWarden.removeLocalOnlyClientModeManager(requestedClientModeManager.getValue());
+        mLooper.dispatchAll();
+        verifyNoMoreInteractions(localOnlyClientModeManager);
     }
 }
