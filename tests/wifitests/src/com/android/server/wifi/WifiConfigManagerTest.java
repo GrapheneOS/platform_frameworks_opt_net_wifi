@@ -63,7 +63,6 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
-import org.mockito.quality.Strictness;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -112,8 +111,6 @@ public class WifiConfigManagerTest {
     private static final int TEST_FREQUENCY_1 = 2412;
     private static final int TEST_FREQUENCY_2 = 5180;
     private static final int TEST_FREQUENCY_3 = 5240;
-    private static final MacAddress TEST_RANDOMIZED_MAC =
-            MacAddress.fromString("d2:11:19:34:a5:20");
 
     @Mock private Context mContext;
     @Mock private Clock mClock;
@@ -231,13 +228,9 @@ public class WifiConfigManagerTest {
         // static mocking
         mSession = ExtendedMockito.mockitoSession()
                 .mockStatic(WifiConfigStore.class, withSettings().lenient())
-                .spyStatic(WifiConfigurationUtil.class)
-                .strictness(Strictness.LENIENT)
                 .startMocking();
         when(WifiConfigStore.createUserFiles(anyInt())).thenReturn(mock(List.class));
         when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mDataTelephonyManager);
-        when(WifiConfigurationUtil.calculatePersistentMacForConfiguration(any(), any()))
-                .thenReturn(TEST_RANDOMIZED_MAC);
     }
 
     /**
@@ -246,9 +239,7 @@ public class WifiConfigManagerTest {
     @After
     public void cleanup() {
         validateMockitoUsage();
-        if (mSession != null) {
-            mSession.finishMocking();
-        }
+        mSession.finishMocking();
     }
 
     /**
@@ -377,7 +368,6 @@ public class WifiConfigManagerTest {
      */
     @Test
     public void testAddingNetworkWithMatchingMacAddressOverridesField() {
-        int prevMappingSize = mWifiConfigManager.getRandomizedMacAddressMappingSize();
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         Map<String, String> randomizedMacAddressMapping = new HashMap<>();
         final String randMac = "12:23:34:45:56:67";
@@ -392,9 +382,6 @@ public class WifiConfigManagerTest {
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         assertEquals(randMac, retrievedNetworks.get(0).getRandomizedMacAddress().toString());
-        // Verify that for networks that we already have randomizedMacAddressMapping saved
-        // we are still correctly writing into the WifiConfigStore.
-        assertEquals(prevMappingSize + 1, mWifiConfigManager.getRandomizedMacAddressMappingSize());
     }
 
     /**
@@ -404,7 +391,6 @@ public class WifiConfigManagerTest {
      */
     @Test
     public void testRandomizedMacAddressIsPersistedOverForgetNetwork() {
-        int prevMappingSize = mWifiConfigManager.getRandomizedMacAddressMappingSize();
         // Create and add an open network
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         verifyAddNetworkToWifiConfigManager(openNetwork);
@@ -424,8 +410,6 @@ public class WifiConfigManagerTest {
         verifyAddNetworkToWifiConfigManager(openNetwork);
         retrievedNetworks = mWifiConfigManager.getConfiguredNetworksWithPasswords();
         assertEquals(randMac, retrievedNetworks.get(0).getRandomizedMacAddress().toString());
-        // Verify that we are no longer persisting the randomized MAC address with WifiConfigStore.
-        assertEquals(prevMappingSize, mWifiConfigManager.getRandomizedMacAddressMappingSize());
     }
 
     /**
