@@ -346,26 +346,18 @@ public class PasspointWifiEntry extends WifiEntry {
             throws IllegalArgumentException {
         mWifiConfig = wifiConfig;
         mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
-
-        if (homeScanResults == null) {
-            homeScanResults = new ArrayList<>();
-        }
-        if (roamingScanResults == null) {
-            roamingScanResults = new ArrayList<>();
-        }
-
-        ScanResult bestScanResult;
-        if (homeScanResults.isEmpty() && !roamingScanResults.isEmpty()) {
+        mIsRoaming = false;
+        ScanResult bestScanResult = null;
+        if (homeScanResults != null && !homeScanResults.isEmpty()) {
+            bestScanResult = getBestScanResultByLevel(homeScanResults);
+        } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
             mIsRoaming = true;
             bestScanResult = getBestScanResultByLevel(roamingScanResults);
-        } else {
-            mIsRoaming = false;
-            bestScanResult = getBestScanResultByLevel(homeScanResults);
         }
-
         if (bestScanResult == null) {
             mLevel = WIFI_LEVEL_UNREACHABLE;
         } else {
+            mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
             mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
         }
 
