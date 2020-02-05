@@ -51,6 +51,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -217,11 +219,13 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     private void updatePasspointWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
 
+        Set<String> seenKeys = new TreeSet<>();
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> matchingWifiConfigs =
                 mWifiManager.getAllMatchingWifiConfigs(scanResults);
         for (Pair<WifiConfiguration, Map<Integer, List<ScanResult>>> pair : matchingWifiConfigs) {
             final WifiConfiguration wifiConfig = pair.first;
             final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
+            seenKeys.add(key);
             // Skip in case we don't have a PasspointWifiEntry for the returned unique identifier.
             if (!mPasspointWifiEntryCache.containsKey(key)) {
                 continue;
@@ -230,6 +234,15 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             mPasspointWifiEntryCache.get(key).updateScanResultInfo(wifiConfig,
                     pair.second.get(WifiManager.PASSPOINT_HOME_NETWORK),
                     pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK));
+        }
+
+        for (PasspointWifiEntry entry : mPasspointWifiEntryCache.values()) {
+            if (!seenKeys.contains(entry.getKey())) {
+                // No AP in range; set scan results and connection config to null.
+                entry.updateScanResultInfo(null /* wifiConfig */,
+                        null /* homeScanResults */,
+                        null /* roamingScanResults */);
+            }
         }
     }
 
