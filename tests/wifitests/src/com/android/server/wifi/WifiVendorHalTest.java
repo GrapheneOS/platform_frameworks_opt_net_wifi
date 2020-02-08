@@ -3181,6 +3181,38 @@ public class WifiVendorHalTest extends WifiBaseTest {
         verifyNoMoreInteractions(mVendorHalRadioModeChangeHandler);
     }
 
+    @Test
+    public void testStaInterfaceAvailableForRequestListeners() throws Exception {
+        WifiNative.InterfaceAvailableForRequestListener staListener =
+                mock(WifiNative.InterfaceAvailableForRequestListener.class);
+
+        when(mHalDeviceManager.isStarted()).thenReturn(false);
+        mWifiVendorHal.registerStaIfaceAvailabilityListener(staListener);
+        verify(mHalDeviceManager, never()).registerInterfaceAvailableForRequestListener(
+                eq(IfaceType.STA), any(), any());
+
+        when(mHalDeviceManager.isStarted()).thenReturn(true);
+        mHalDeviceManagerStatusCallbacks.onStatusChanged();
+        verify(mHalDeviceManager).registerInterfaceAvailableForRequestListener(
+                eq(IfaceType.STA), any(), any());
+    }
+
+    @Test
+    public void testApInterfaceAvailableForRequestListeners() throws Exception {
+        WifiNative.InterfaceAvailableForRequestListener apListener =
+                mock(WifiNative.InterfaceAvailableForRequestListener.class);
+
+        when(mHalDeviceManager.isStarted()).thenReturn(false);
+        mWifiVendorHal.registerApIfaceAvailabilityListener(apListener);
+        verify(mHalDeviceManager, never()).registerInterfaceAvailableForRequestListener(
+                eq(IfaceType.AP), any(), any());
+
+        when(mHalDeviceManager.isStarted()).thenReturn(true);
+        mHalDeviceManagerStatusCallbacks.onStatusChanged();
+        verify(mHalDeviceManager).registerInterfaceAvailableForRequestListener(
+                eq(IfaceType.AP), any(), any());
+    }
+
     private void startHalInStaModeAndRegisterRadioModeChangeCallback() {
         // Expose the 1.2 IWifiChip.
         mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);

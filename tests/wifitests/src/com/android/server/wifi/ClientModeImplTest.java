@@ -3446,15 +3446,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // should have internet capability.
         assertTrue(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET));
-
-        NetworkSpecifier networkSpecifier = networkCapabilities.getNetworkSpecifier();
-        assertTrue(networkSpecifier instanceof WifiNetworkAgentSpecifier);
-        WifiNetworkAgentSpecifier wifiNetworkAgentSpecifier =
-                (WifiNetworkAgentSpecifier) networkSpecifier;
-        WifiNetworkAgentSpecifier expectedWifiNetworkAgentSpecifier =
-                new WifiNetworkAgentSpecifier(mCmi.getCurrentWifiConfiguration(),
-                        Process.INVALID_UID, "");
-        assertEquals(expectedWifiNetworkAgentSpecifier, wifiNetworkAgentSpecifier);
+        assertNull(networkCapabilities.getNetworkSpecifier());
     }
 
     /**
@@ -3485,9 +3477,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiNetworkAgentSpecifier wifiNetworkAgentSpecifier =
                 (WifiNetworkAgentSpecifier) networkSpecifier;
         WifiNetworkAgentSpecifier expectedWifiNetworkAgentSpecifier =
-                new WifiNetworkAgentSpecifier(mCmi.getCurrentWifiConfiguration(), TEST_UID,
-                        OP_PACKAGE_NAME);
+                new WifiNetworkAgentSpecifier(mCmi.getCurrentWifiConfiguration());
         assertEquals(expectedWifiNetworkAgentSpecifier, wifiNetworkAgentSpecifier);
+        assertEquals(TEST_UID, networkCapabilities.getRequestorUid());
+        assertEquals(OP_PACKAGE_NAME, networkCapabilities.getRequestorPackageName());
     }
 
     /**

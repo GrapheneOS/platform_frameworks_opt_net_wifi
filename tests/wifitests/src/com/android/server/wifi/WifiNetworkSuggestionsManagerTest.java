@@ -2965,7 +2965,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .getNetworkSuggestionsForWifiConfiguration(configuration,
                         TEST_BSSID);
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
-            assertFalse(ewns.isAutoJoinEnabled);
+            assertFalse(ewns.isAutojoinEnabled);
         }
     }
 
@@ -3013,7 +3013,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         Set<ExtendedWifiNetworkSuggestion> matchedSuggestions = mWifiNetworkSuggestionsManager
                 .getNetworkSuggestionsForWifiConfiguration(config, TEST_BSSID);
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
-            assertFalse(ewns.isAutoJoinEnabled);
+            assertFalse(ewns.isAutojoinEnabled);
         }
     }
 
@@ -3170,7 +3170,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
         validateImsiProtectionNotification(TEST_CARRIER_NAME);
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
-            assertFalse(ewns.isAutoJoinEnabled);
+            assertFalse(ewns.isAutojoinEnabled);
         }
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
                 TEST_CARRIER_NAME, TEST_CARRIER_ID);
@@ -3185,7 +3185,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID));
 
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
-            assertTrue(ewns.isAutoJoinEnabled);
+            assertTrue(ewns.isAutojoinEnabled);
         }
     }
 
@@ -3215,7 +3215,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
         validateImsiProtectionNotification(TEST_CARRIER_NAME);
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
-            assertFalse(ewns.isAutoJoinEnabled);
+            assertFalse(ewns.isAutojoinEnabled);
         }
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION,
                 TEST_CARRIER_NAME, TEST_CARRIER_ID);
@@ -3230,7 +3230,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID));
 
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
-            assertFalse(ewns.isAutoJoinEnabled);
+            assertFalse(ewns.isAutojoinEnabled);
         }
     }
 
@@ -3265,7 +3265,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Should be no more notification and suggestion restore to the initial auto join configure.
         verifyNoMoreInteractions(mNotificationManger);
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
-            assertTrue(ewns.isAutoJoinEnabled);
+            assertTrue(ewns.isAutojoinEnabled);
         }
     }
 

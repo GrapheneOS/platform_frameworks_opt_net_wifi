@@ -26,6 +26,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
+import android.telephony.AccessNetworkConstants;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -120,11 +121,17 @@ public class ClientModeManager implements ActiveModeManager {
                 new RegistrationManager.RegistrationCallback() {
                     @Override
                     public void onRegistered(int imsRadioTech) {
-                        if (mIsDeferring) continueToStopWifi();
+                        Log.d(TAG, "on IMS registered on type " + imsRadioTech);
+                        if (!mIsDeferring) return;
+
+                        if (imsRadioTech != AccessNetworkConstants.TRANSPORT_TYPE_WLAN) {
+                            continueToStopWifi();
+                        }
                     }
 
                     @Override
                     public void onUnregistered(ImsReasonInfo imsReasonInfo) {
+                        Log.d(TAG, "on IMS unregistered");
                         if (mIsDeferring) continueToStopWifi();
                     }
                 };

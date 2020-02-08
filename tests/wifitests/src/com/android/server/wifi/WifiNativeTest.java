@@ -55,7 +55,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -204,7 +203,7 @@ public class WifiNativeTest extends WifiBaseTest {
     private static final int TEST_FREQUENCY = 2456;
     private static final int TEST_SIGNAL_MBM = -4500;
     private static final long TEST_TSF = 34455441;
-    private static final BitSet TEST_CAPABILITY = capabilityIntToBitset(0b0000_0000_0010_0100);
+    private static final int TEST_CAPABILITY = 0b0000_0000_0010_0100;
     private static final boolean TEST_ASSOCIATED = true;
     private static final NativeScanResult MOCK_NATIVE_SCAN_RESULT = createMockNativeScanResult();
     private static NativeScanResult createMockNativeScanResult() {
@@ -245,7 +244,6 @@ public class WifiNativeTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(mWificondControl.initialize(any())).thenReturn(true);
 
         when(mWifiVendorHal.initialize(any())).thenReturn(true);
         when(mWifiVendorHal.isVendorHalSupported()).thenReturn(true);
@@ -1033,18 +1031,4 @@ public class WifiNativeTest extends WifiBaseTest {
         verify(mSendMgmtFrameCallback).onFailure(WifiCondManager.SEND_MGMT_FRAME_ERROR_UNKNOWN);
         verify(mWificondControl, never()).sendMgmtFrame(any(), any(), anyInt(), any(), any());
     }
-
-    private static final int CAPABILITY_SIZE = 16;
-
-    private static BitSet capabilityIntToBitset(int capabilityInt) {
-        BitSet capabilityBitSet = new BitSet(CAPABILITY_SIZE);
-        for (int i = 0; i < CAPABILITY_SIZE; i++) {
-            if ((capabilityInt & (1 << i)) != 0) {
-                capabilityBitSet.set(i);
-            }
-        }
-        return capabilityBitSet;
-    }
-
-
 }

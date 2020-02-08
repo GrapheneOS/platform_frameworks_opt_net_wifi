@@ -848,10 +848,11 @@ public class WifiServiceImpl extends BaseWifiService {
         }
 
         if (wifiConfig != null) {
+            SoftApConfiguration softApConfig = ApConfigUtil.fromWifiConfiguration(wifiConfig);
+            if (softApConfig == null) return false;
             return startSoftApInternal(new SoftApModeConfiguration(
                     WifiManager.IFACE_IP_MODE_TETHERED,
-                    ApConfigUtil.fromWifiConfiguration(wifiConfig),
-                    mTetheredSoftApTracker.getSoftApCapability()));
+                    softApConfig, mTetheredSoftApTracker.getSoftApCapability()));
         } else {
             return startSoftApInternal(new SoftApModeConfiguration(
                     WifiManager.IFACE_IP_MODE_TETHERED, null,
@@ -1845,10 +1846,11 @@ public class WifiServiceImpl extends BaseWifiService {
         mLog.info("setWifiApConfiguration uid=%").c(uid).flush();
         if (wifiConfig == null)
             return false;
+        SoftApConfiguration softApConfig = ApConfigUtil.fromWifiConfiguration(wifiConfig);
+        if (softApConfig == null) return false;
         if (WifiApConfigStore.validateApWifiConfiguration(
-                ApConfigUtil.fromWifiConfiguration(wifiConfig))) {
-            mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(
-                    ApConfigUtil.fromWifiConfiguration(wifiConfig)));
+                softApConfig)) {
+            mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
         } else {
             Log.e(TAG, "Invalid WifiConfiguration");
@@ -3096,7 +3098,7 @@ public class WifiServiceImpl extends BaseWifiService {
     public int handleShellCommand(@NonNull ParcelFileDescriptor in,
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new WifiShellCommand(mWifiInjector, this).exec(
+        return new WifiShellCommand(mWifiInjector, this, mContext).exec(
                 this, in.getFileDescriptor(), out.getFileDescriptor(), err.getFileDescriptor(),
                 args);
     }

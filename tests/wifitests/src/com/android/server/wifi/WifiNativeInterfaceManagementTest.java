@@ -125,8 +125,6 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         when(mWifiVendorHal.removeStaIface(any())).thenReturn(true);
         when(mWifiVendorHal.removeApIface(any())).thenReturn(true);
 
-        when(mWificondControl.initialize(mWificondDeathHandlerCaptor.capture()))
-            .thenReturn(true);
         when(mWificondControl.setupInterfaceForClientMode(any(), any(), any(), any())).thenReturn(
                 true);
         when(mWificondControl.setupInterfaceForSoftApMode(any())).thenReturn(true);
@@ -168,7 +166,9 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         mWifiNative.registerStatusListener(mStatusListener);
 
         mInOrder.verify(mWifiVendorHal).initialize(any());
-        mInOrder.verify(mWificondControl).initialize(any());
+        mInOrder.verify(mWificondControl).setOnServiceDeadCallback(
+                mWificondDeathHandlerCaptor.capture());
+        mInOrder.verify(mWificondControl).tearDownInterfaces();
         mInOrder.verify(mWifiVendorHal).registerRadioModeChangeHandler(any());
     }
 
@@ -396,7 +396,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         verify(mHostapdHal).terminate();
 
         // Verify we stopped HAL & wificond
-        verify(mWificondControl).tearDownInterfaces();
+        verify(mWificondControl, times(2)).tearDownInterfaces(); // first time at initialize
         verify(mWifiVendorHal).stopVendorHal();
         verify(mIfaceCallback0).onDestroyed(IFACE_NAME_0);
 

@@ -16,6 +16,8 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
@@ -49,6 +51,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
+import com.android.internal.annotations.VisibleForTesting;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -62,7 +66,8 @@ import java.util.stream.Collectors;
  *
  * This type of WifiEntry can represent both open and saved networks.
  */
-class StandardWifiEntry extends WifiEntry {
+@VisibleForTesting
+public class StandardWifiEntry extends WifiEntry {
     static final String KEY_PREFIX = "StandardWifiEntry:";
 
     @Retention(RetentionPolicy.SOURCE)
@@ -281,10 +286,13 @@ class StandardWifiEntry extends WifiEntry {
     private String getDisconnectedStateDescription() {
         if (isSaved() && mWifiConfig.hasNoInternetAccess()) {
             final int messageID =
-                    mWifiConfig.getNetworkSelectionStatus().isNetworkPermanentlyDisabled()
+                    mWifiConfig.getNetworkSelectionStatus().getNetworkSelectionStatus()
+                            == NETWORK_SELECTION_PERMANENTLY_DISABLED
                     ? R.string.wifi_no_internet_no_reconnect : R.string.wifi_no_internet;
             return mContext.getString(messageID);
-        } else if (isSaved() && !mWifiConfig.getNetworkSelectionStatus().isNetworkEnabled()) {
+        } else if (isSaved()
+                && (mWifiConfig.getNetworkSelectionStatus().getNetworkSelectionStatus()
+                        != NETWORK_SELECTION_ENABLED)) {
             final WifiConfiguration.NetworkSelectionStatus networkStatus =
                     mWifiConfig.getNetworkSelectionStatus();
             switch (networkStatus.getNetworkSelectionDisableReason()) {

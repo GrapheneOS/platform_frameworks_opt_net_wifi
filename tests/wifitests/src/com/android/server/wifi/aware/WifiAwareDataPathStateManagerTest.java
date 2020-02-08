@@ -1154,9 +1154,9 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 ns.pmk,
                 ns.passphrase,
                 0,
-                0,
-                ns.requestorUid);
+                0);
         nr.networkCapabilities.setNetworkSpecifier(ns);
+        nr.networkCapabilities.setRequestorUid(0);
 
         Message reqNetworkMsg = Message.obtain();
         reqNetworkMsg.what = NetworkProvider.CMD_REQUEST_NETWORK;
@@ -1213,9 +1213,9 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 ns.pmk,
                 ns.passphrase,
                 0,
-                0,
-                ns.requestorUid + 1); // corruption hack
+                0);
         nr.networkCapabilities.setNetworkSpecifier(ns);
+        nr.networkCapabilities.setRequestorUid(0 + 1); // corruption hack
 
         // (3) request network
         Message reqNetworkMsg = Message.obtain();
@@ -1622,6 +1622,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         nc.setLinkUpstreamBandwidthKbps(1);
         nc.setLinkDownstreamBandwidthKbps(1);
         nc.setSignalStrength(1);
+        nc.setRequestorUid(Process.myUid());
 
         return new NetworkRequest(nc, 0, requestId, NetworkRequest.Type.REQUEST);
     }
@@ -1672,6 +1673,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         nc.setLinkUpstreamBandwidthKbps(1);
         nc.setLinkDownstreamBandwidthKbps(1);
         nc.setSignalStrength(1);
+        nc.setRequestorUid(Process.myUid());
 
         return new NetworkRequest(nc, 0, requestId, NetworkRequest.Type.REQUEST);
     }
@@ -1806,8 +1808,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 pmk,
                 passphrase,
                 port,
-                transportProtocol,
-                Process.myUid());
+                transportProtocol);
     }
 
     /**
@@ -1827,8 +1828,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 pmk,
                 passphrase,
                 port,
-                transportProtocol,
-                Process.myUid());
+                transportProtocol);
     }
 
     private static class DataPathEndPointInfo {

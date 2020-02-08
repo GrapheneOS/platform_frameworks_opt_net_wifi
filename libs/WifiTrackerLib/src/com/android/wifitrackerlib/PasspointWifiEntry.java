@@ -38,13 +38,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
+import com.android.internal.annotations.VisibleForTesting;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * WifiEntry representation of a subscribed Passpoint network, uniquely identified by FQDN.
  */
-class PasspointWifiEntry extends WifiEntry {
+@VisibleForTesting
+public class PasspointWifiEntry extends WifiEntry {
     static final String KEY_PREFIX = "PasspointWifiEntry:";
 
     private final List<ScanResult> mCurrentHomeScanResults = new ArrayList<>();
@@ -298,19 +301,17 @@ class PasspointWifiEntry extends WifiEntry {
 
     @Override
     public boolean isAutoJoinEnabled() {
-        // TODO(b/70983952): Fill this method in
-        return false;
+        return mPasspointConfig.isAutojoinEnabled();
     }
 
     @Override
     public boolean canSetAutoJoinEnabled() {
-        // TODO(b/70983952): Fill this method in
-        return false;
+        return true;
     }
 
     @Override
     public void setAutoJoinEnabled(boolean enabled) {
-        // TODO(b/70983952): Fill this method in
+        mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);
     }
 
     @Override

@@ -246,7 +246,7 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         XmlUtil.writeNextValue(out, XML_TAG_IS_INITIALIZED_AUTO_JOIN,
                 suggestion.isInitialAutoJoinEnabled);
         XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN,
-                extSuggestion.isAutoJoinEnabled);
+                extSuggestion.isAutojoinEnabled);
         XmlUtil.writeNextValue(out, XML_TAG_IS_NETWORK_UNTRUSTED, suggestion.isNetworkUntrusted);
         XmlUtil.writeNextSectionEnd(out, XML_TAG_SECTION_HEADER_NETWORK_SUGGESTION);
     }

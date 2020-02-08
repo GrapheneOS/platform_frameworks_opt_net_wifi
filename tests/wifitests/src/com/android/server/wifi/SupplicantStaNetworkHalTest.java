@@ -50,6 +50,7 @@ import com.android.server.wifi.util.NativeUtil;
 import com.android.wifi.resources.R;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -261,6 +262,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     /**
      * Tests the saving/loading of WifiConfiguration to wpa_supplicant.
      */
+    @Ignore("b/148963201: flaky test")
     @Test
     public void testWepNetworkWifiConfigurationSaveLoad() throws Exception {
         WifiConfiguration config = WifiConfigurationTestUtil.createWepHiddenNetwork();

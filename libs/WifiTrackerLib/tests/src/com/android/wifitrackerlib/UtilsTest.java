@@ -22,13 +22,19 @@ import static com.android.wifitrackerlib.TestUtils.buildScanResult;
 import static com.android.wifitrackerlib.Utils.getAppLabelForSavedNetwork;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
+import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
+import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
+import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
+import static com.android.wifitrackerlib.Utils.isSimPresent;
 import static com.android.wifitrackerlib.Utils.mapScanResultsToKey;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_NONE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
 
 import static com.google.common.truth.Truth.assertThat;
 
+
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +49,12 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.os.PersistableBundle;
 import android.os.test.TestLooper;
+import android.telephony.CarrierConfigManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -57,7 +68,6 @@ import java.util.List;
 import java.util.Map;
 
 public class UtilsTest {
-
     private static final String LABEL_AUTO_CONNECTION_DISABLED = "Auto-Connection disabled";
     private static final String LABEL_METERED = "Metered";
     private static final String LABEL_UNMETERED = "Unmetered";
@@ -65,10 +75,18 @@ public class UtilsTest {
     private static final String SYSTEM_UID_APP_NAME = "systemUidAppName";
     private static final String APP_LABEL = "appLabel";
     private static final String SETTINGS_APP_NAME = "com.android.settings";
+    private static final int TEST_CARRIER_ID = 1191;
+    private static final int TEST_SUB_ID = 1111;
+
+    private static final String TEST_CARRIER_NAME = "carrierName";
 
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
     @Mock private NetworkScoreManager mMockNetworkScoreManager;
+    @Mock private SubscriptionManager mSubscriptionManager;
+    @Mock private TelephonyManager mTelephonyManager;
+    @Mock private CarrierConfigManager mCarrierConfigManager;
+    @Mock private TelephonyManager mSpecifiedTm;
 
     private Handler mTestHandler;
 
@@ -81,6 +99,13 @@ public class UtilsTest {
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
                 .thenReturn(mMockNetworkScoreManager);
+        when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
+                .thenReturn(mCarrierConfigManager);
+        when(mMockContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
+                .thenReturn(mSubscriptionManager);
+        when(mMockContext.getSystemService(Context.TELEPHONY_SERVICE))
+                .thenReturn(mTelephonyManager);
+        when(mTelephonyManager.createForSubscriptionId(TEST_CARRIER_ID)).thenReturn(mSpecifiedTm);
     }
 
     @Test
@@ -268,6 +293,74 @@ public class UtilsTest {
 
         assertThat(meteredDescription).isEqualTo(LABEL_UNMETERED);
     }
+
+    @Test
+    public void testCheckSimPresentWithNoSubscription() {
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(new ArrayList<>());
+        assertFalse(isSimPresent(mMockContext, TEST_CARRIER_ID));
+    }
+
+    @Test
+    public void testCheckSimPresentWithNoMatchingSubscription() {
+        List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
+        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
+        when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID + 1);
+        subscriptionInfoList.add(subscriptionInfo);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
+        assertFalse(isSimPresent(mMockContext, TEST_CARRIER_ID));
+    }
+
+    @Test
+    public void testCheckSimPresentWithMatchingSubscription() {
+        List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
+        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
+        when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID);
+        subscriptionInfoList.add(subscriptionInfo);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
+        assertTrue(isSimPresent(mMockContext, TEST_CARRIER_ID));
+    }
+
+    @Test
+    public void testGetCarrierName() {
+        when(mSpecifiedTm.getSimCarrierIdName()).thenReturn(TEST_CARRIER_NAME);
+        assertEquals(TEST_CARRIER_NAME, getCarrierNameForSubId(mMockContext, TEST_CARRIER_ID));
+    }
+
+    @Test
+    public void testCheckRequireImsiPrivacyProtectionWithNoCarrierConfig() {
+        assertFalse(isImsiPrivacyProtectionProvided(mMockContext, TEST_SUB_ID));
+    }
+
+    @Test
+    public void testCheckRequireImsiPrivacyProtectionWithCarrierConfigKeyAvailable() {
+        PersistableBundle bundle = new PersistableBundle();
+        bundle.putInt(CarrierConfigManager.IMSI_KEY_AVAILABILITY_INT,
+                TelephonyManager.KEY_TYPE_WLAN);
+        when(mCarrierConfigManager.getConfigForSubId(TEST_SUB_ID)).thenReturn(bundle);
+        assertTrue(isImsiPrivacyProtectionProvided(mMockContext, TEST_SUB_ID));
+    }
+
+    @Test
+    public void testGetSubIdForWifiConfigurationWithNoSubscription() {
+        WifiConfiguration config = new WifiConfiguration();
+        config.carrierId = TEST_CARRIER_ID;
+        assertEquals(SubscriptionManager.INVALID_SUBSCRIPTION_ID,
+                getSubIdForConfig(mMockContext, config));
+    }
+
+    @Test
+    public void testGetSubIdForWifiConfigurationWithMatchingSubscription() {
+        WifiConfiguration config = new WifiConfiguration();
+        config.carrierId = TEST_CARRIER_ID;
+        List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
+        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
+        when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(TEST_SUB_ID);
+        subscriptionInfoList.add(subscriptionInfo);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
+        assertEquals(TEST_SUB_ID, getSubIdForConfig(mMockContext, config));
+    }
+
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
         final WifiManager mockWifiManager = mock(WifiManager.class);

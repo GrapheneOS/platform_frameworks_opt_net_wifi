@@ -97,7 +97,7 @@ final class CompatibilityScorer implements WifiCandidates.CandidateScorer {
         }
 
         // To simulate the old strict priority rule, subtract a penalty based on
-        // which evaluator added the candidate.
+        // which nominator added the candidate.
         score -= 1000 * candidate.getNominatorId();
 
         // The old method breaks ties on the basis of RSSI, which we can

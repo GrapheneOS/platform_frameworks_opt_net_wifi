@@ -879,9 +879,9 @@ public class InformationElementUtil {
      * by wpa_supplicant.
      */
     public static class Capabilities {
-        private static final int CAP_ESS_BIT_OFFSET = 0;
-        private static final int CAP_IBSS_BIT_OFFSET = 1;
-        private static final int CAP_PRIVACY_BIT_OFFSET = 4;
+        private static final int CAP_ESS_BITMASK = 0x1 << 0;
+        private static final int CAP_IBSS_BITMASK = 0x1 << 1;
+        private static final int CAP_PRIVACY_BITMASK = 0x1 << 4;
 
         private static final int WPA_VENDOR_OUI_TYPE_ONE = 0x01f25000;
         private static final int WPS_VENDOR_OUI_TYPE = 0x04f25000;
@@ -1159,18 +1159,18 @@ public class InformationElementUtil {
          * @param isOweSupported -- Boolean flag to indicate if OWE is supported by the device
          */
 
-        public void from(InformationElement[] ies, BitSet beaconCap, boolean isOweSupported) {
+        public void from(InformationElement[] ies, int beaconCap, boolean isOweSupported) {
             protocol = new ArrayList<>();
             keyManagement = new ArrayList<>();
             groupCipher = new ArrayList<>();
             pairwiseCipher = new ArrayList<>();
 
-            if (ies == null || beaconCap == null) {
+            if (ies == null) {
                 return;
             }
-            isESS = beaconCap.get(CAP_ESS_BIT_OFFSET);
-            isIBSS = beaconCap.get(CAP_IBSS_BIT_OFFSET);
-            isPrivacy = beaconCap.get(CAP_PRIVACY_BIT_OFFSET);
+            isESS = (beaconCap & CAP_ESS_BITMASK) != 0;
+            isIBSS = (beaconCap & CAP_IBSS_BITMASK) != 0;
+            isPrivacy = (beaconCap & CAP_PRIVACY_BITMASK) != 0;
             for (InformationElement ie : ies) {
                 WifiCondManager.OemSecurityType oemSecurityType =
                         WifiCondManager.parseOemSecurityTypeElement(

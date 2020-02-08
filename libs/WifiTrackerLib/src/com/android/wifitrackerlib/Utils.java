@@ -35,8 +35,13 @@ import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.os.PersistableBundle;
 import android.os.RemoteException;
 import android.os.UserHandle;
+import android.telephony.CarrierConfigManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -374,5 +379,93 @@ class Utils {
         }
 
         return sj.toString();
+    }
+
+    /**
+     * Check if the SIM is present for target carrier Id.
+     */
+    static boolean isSimPresent(@NonNull Context context, int carrierId) {
+        SubscriptionManager subscriptionManager =
+                (SubscriptionManager) context.getSystemService(
+                        Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        if (subscriptionManager == null) return false;
+        List<SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();
+        if (subInfoList == null || subInfoList.isEmpty()) {
+            return false;
+        }
+        return subInfoList.stream()
+                .anyMatch(info -> info.getCarrierId() == carrierId);
+    }
+
+    /**
+     * Get the SIM carrier name for target subscription Id.
+     */
+    static @Nullable String getCarrierNameForSubId(@NonNull Context context, int subId) {
+        TelephonyManager telephonyManager =
+                (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (telephonyManager == null) return null;
+        TelephonyManager specifiedTm = telephonyManager.createForSubscriptionId(subId);
+        if (specifiedTm == null) {
+            return null;
+        }
+        CharSequence name = specifiedTm.getSimCarrierIdName();
+        if (name == null) {
+            return null;
+        }
+        return name.toString();
+    }
+
+    static boolean isSimCredential(@NonNull WifiConfiguration config) {
+        return config.enterpriseConfig != null
+                && config.enterpriseConfig.isAuthenticationSimBased();
+    }
+
+    /**
+     * Get the best match subscription Id for target WifiConfiguration.
+     */
+    static int getSubIdForConfig(@NonNull Context context, @NonNull WifiConfiguration config) {
+        int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
+        if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            return dataSubId;
+        }
+        SubscriptionManager subscriptionManager =
+                (SubscriptionManager) context.getSystemService(
+                        Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        if (subscriptionManager == null) {
+            return SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+        }
+        List<SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();
+        if (subInfoList == null || subInfoList.isEmpty()) {
+            return SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+        }
+
+        int matchSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+        for (SubscriptionInfo subInfo : subInfoList) {
+            if (subInfo.getCarrierId() == config.carrierId) {
+                matchSubId = subInfo.getSubscriptionId();
+                if (matchSubId == dataSubId) {
+                    // Priority of Data sub is higher than non data sub.
+                    break;
+                }
+            }
+        }
+        return matchSubId;
+    }
+
+    /**
+     * Check if target subscription Id requires IMSI privacy protection.
+     */
+    static boolean isImsiPrivacyProtectionProvided(@NonNull Context context, int subId) {
+        CarrierConfigManager carrierConfigManager =
+                (CarrierConfigManager) context.getSystemService(Context.CARRIER_CONFIG_SERVICE);
+        if (carrierConfigManager == null) {
+            return false;
+        }
+        PersistableBundle bundle = carrierConfigManager.getConfigForSubId(subId);
+        if (bundle == null) {
+            return false;
+        }
+        return (bundle.getInt(CarrierConfigManager.IMSI_KEY_AVAILABILITY_INT)
+                & TelephonyManager.KEY_TYPE_WLAN) != 0;
     }
 }

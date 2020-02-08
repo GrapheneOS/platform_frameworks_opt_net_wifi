@@ -15,7 +15,7 @@
 // A test version of wifi apex.
 // It has a version code that should beat a "real" APEX and enables end-to-end
 // installation testing on devices with the latests real data.
-apex {
+apex_test {
     name: "test_com.android.wifi",
     visibility: [
         "//system/apex/tests",

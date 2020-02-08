@@ -320,6 +320,7 @@ public class WifiInjector {
         mMboOceController = new MboOceController(makeTelephonyManager(), mWifiNative);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);
+        mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
         mClientModeImpl = new ClientModeImpl(mContext, mFrameworkFacade,
                 wifiLooper, mUserManager,
                 this, mBackupManagerProxy, mCountryCode, mWifiNative,

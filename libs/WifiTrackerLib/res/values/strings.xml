@@ -19,7 +19,7 @@
 
     <!-- Strings for labeling Wi-Fi Auto-Connection is disabled. Wi-Fi Auto-Connection is a feature
          for users to specify if a Wi-Fi network will be auto connected when it's reachable. [CHAR LIMIT=60] -->
-    <string name="auto_connect_disable">Auto-connection disabled</string>
+    <string name="auto_connect_disable">Auto-connect is off</string>
 
     <!-- Package name for Settings app-->
     <string name="settings_package" translatable="false">com.android.settings</string>

@@ -18,6 +18,7 @@ package com.android.wifitrackerlib;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
+import static com.android.wifitrackerlib.OsuWifiEntry.osuProviderToOsuWifiEntryKey;
 import static com.android.wifitrackerlib.PasspointWifiEntry.fqdnToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.wifiConfigToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.Utils.mapScanResultsToKey;
@@ -39,6 +40,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.util.Log;
@@ -93,6 +95,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
     private final Map<String, PasspointConfiguration> mPasspointConfigCache = new HashMap<>();
     // Cache containing visible PasspointWifiEntries. Must be accessed only by the worker thread.
     private final Map<String, PasspointWifiEntry> mPasspointWifiEntryCache = new HashMap<>();
+    // Cache containing visible OsuWifiEntries. Must be accessed only by the worker thread.
+    private final Map<String, OsuWifiEntry> mOsuWifiEntryCache = new HashMap<>();
 
     /**
      * Constructor for WifiPickerTracker.
@@ -254,6 +258,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             mWifiEntries.addAll(mPasspointWifiEntryCache.values().stream().filter(entry ->
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
+            mWifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             mConnectedWifiEntry = mStandardWifiEntryCache.values().stream().filter(entry -> {
                 final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
                 return connectedState == CONNECTED_STATE_CONNECTED
@@ -347,6 +353,26 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
     }
 
+    @WorkerThread
+    private void updateOsuWifiEntryScans(@NonNull List<ScanResult> scanResults) {
+        checkNotNull(scanResults, "Scan Result list should not be null!");
+
+        Map<OsuProvider, List<ScanResult>> osuProviderToScans =
+                mWifiManager.getMatchingOsuProviders(scanResults);
+        for (OsuProvider osuProvider : osuProviderToScans.keySet()) {
+            final String key = osuProviderToOsuWifiEntryKey(osuProvider);
+            if (!mOsuWifiEntryCache.containsKey(key)) {
+                mOsuWifiEntryCache.put(key, new OsuWifiEntry(mContext,
+                        mMainHandler, osuProvider, mWifiManager));
+            }
+            mOsuWifiEntryCache.get(key).updateScanResultInfo(osuProviderToScans.get(osuProvider));
+        }
+
+        // Remove entries that are now unreachable
+        mOsuWifiEntryCache.entrySet()
+                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
+    }
+
     /**
      * Conditionally updates the WifiEntry scan results based on the current wifi state and
      * whether the last scan succeeded or not.
@@ -356,6 +382,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             updateStandardWifiEntryScans(Collections.emptyList());
             updatePasspointWifiEntryScans(Collections.emptyList());
+            updateOsuWifiEntryScans(Collections.emptyList());
             return;
         }
 
@@ -369,8 +396,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
             scanAgeWindow += mScanIntervalMillis;
         }
 
-        updateStandardWifiEntryScans(mScanResultUpdater.getScanResults(scanAgeWindow));
-        updatePasspointWifiEntryScans(mScanResultUpdater.getScanResults(scanAgeWindow));
+        List<ScanResult> scanResults = mScanResultUpdater.getScanResults(scanAgeWindow);
+        updateStandardWifiEntryScans(scanResults);
+        updatePasspointWifiEntryScans(scanResults);
+        updateOsuWifiEntryScans(scanResults);
     }
 
     /**

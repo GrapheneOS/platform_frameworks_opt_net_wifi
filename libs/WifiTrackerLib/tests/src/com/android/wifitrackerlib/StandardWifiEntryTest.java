@@ -33,6 +33,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -408,10 +409,13 @@ public class StandardWifiEntryTest {
         config.SSID = "\"ssid\"";
         config.networkId = 1;
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
-        config.setRandomizedMacAddress(MacAddress.fromString(randomizedMac));
+        WifiConfiguration spyConfig = spy(config);
+        when(spyConfig.getRandomizedMacAddress())
+                .thenReturn(MacAddress.fromString(randomizedMac));
+
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_EAP),
-                config, mMockWifiManager);
+                spyConfig, mMockWifiManager);
 
         final String macAddress = entry.getMacAddress();
 
@@ -556,8 +560,7 @@ public class StandardWifiEntryTest {
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mockConnectivityManager);
 
-        final WifiInfo wifiInfo = new WifiInfo();
-        wifiInfo.setNetworkId(networkId);
+        final WifiInfo wifiInfo = new WifiInfo.Builder().setNetworkId(networkId).build();
         final NetworkInfo networkInfo =
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");

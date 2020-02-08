@@ -150,7 +150,7 @@ public class PasspointXmlUtils {
                     config.getServiceFriendlyNames());
         }
         XmlUtil.writeNextValue(out, XML_TAG_CARRIER_ID, config.getCarrierId());
-        XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN, config.isAutoJoinEnabled());
+        XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN, config.isAutojoinEnabled());
         XmlUtil.writeNextValue(out, XML_TAG_IS_MAC_RANDOMIZATION_ENABLED,
                 config.isMacRandomizationEnabled());
         XmlUtil.writeNextValue(out, XML_TAG_METERED_OVERRIDE, config.getMeteredOverride());
@@ -211,7 +211,7 @@ public class PasspointXmlUtils {
                         config.setCarrierId((int) value);
                         break;
                     case XML_TAG_IS_AUTO_JOIN:
-                        config.setAutoJoinEnabled((boolean) value);
+                        config.setAutojoinEnabled((boolean) value);
                         break;
                     case XML_TAG_IS_MAC_RANDOMIZATION_ENABLED:
                         config.setMacRandomizationEnabled((boolean) value);

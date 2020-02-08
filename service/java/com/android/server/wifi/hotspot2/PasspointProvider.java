@@ -213,12 +213,12 @@ public class PasspointProvider {
     /**
      * Enable/disable the auto-join configuration of the corresponding passpoint configuration.
      */
-    public void setAutoJoinEnabled(boolean autoJoinEnabled) {
-        mConfig.setAutoJoinEnabled(autoJoinEnabled);
+    public void setAutojoinEnabled(boolean autoJoinEnabled) {
+        mConfig.setAutojoinEnabled(autoJoinEnabled);
     }
 
-    public boolean isAutoJoinEnabled() {
-        return mConfig.isAutoJoinEnabled();
+    public boolean isAutojoinEnabled() {
+        return mConfig.isAutojoinEnabled();
     }
 
     /**

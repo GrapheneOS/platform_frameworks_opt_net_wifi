@@ -491,7 +491,7 @@ public class PasspointManager {
             Log.e(TAG, "Config doesn't exist");
             return false;
         }
-        provider.setAutoJoinEnabled(enableAutojoin);
+        provider.setAutojoinEnabled(enableAutojoin);
         mWifiConfigManager.saveToStore(true);
         return true;
     }

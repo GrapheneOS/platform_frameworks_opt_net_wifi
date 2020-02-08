@@ -115,7 +115,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
             Set<ExtendedWifiNetworkSuggestion> autoJoinEnabledExtSuggestions =
                     matchingPasspointExtSuggestions.stream()
-                            .filter(ewns -> ewns.isAutoJoinEnabled)
+                            .filter(ewns -> ewns.isAutojoinEnabled)
                             .collect(Collectors.toSet());
             if (autoJoinEnabledExtSuggestions.isEmpty()) {
                 continue;
@@ -139,7 +139,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
             Set<ExtendedWifiNetworkSuggestion> autojoinEnableSuggestions = new HashSet<>();
             for (ExtendedWifiNetworkSuggestion ewns : matchingExtNetworkSuggestions) {
-                if (ewns.isAutoJoinEnabled
+                if (ewns.isAutojoinEnabled
                         && isSimBasedNetworkAvailableToAutoConnect(ewns.wns.wifiConfiguration)) {
                     autojoinEnableSuggestions.add(ewns);
                 } else {

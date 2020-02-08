@@ -224,14 +224,14 @@ public class WifiNetworkSuggestionsManager {
         public final WifiNetworkSuggestion wns;
         // Store the pointer to the corresponding app's meta data.
         public final PerAppInfo perAppInfo;
-        public boolean isAutoJoinEnabled;
+        public boolean isAutojoinEnabled;
 
         public ExtendedWifiNetworkSuggestion(@NonNull WifiNetworkSuggestion wns,
                                              @NonNull PerAppInfo perAppInfo,
                                              boolean isAutoJoinEnabled) {
             this.wns = wns;
             this.perAppInfo = perAppInfo;
-            this.isAutoJoinEnabled = isAutoJoinEnabled;
+            this.isAutojoinEnabled = isAutoJoinEnabled;
         }
 
         @Override
@@ -256,7 +256,7 @@ public class WifiNetworkSuggestionsManager {
         @Override
         public String toString() {
             return new StringBuilder(wns.toString())
-                    .append(", isAutoJoinEnabled=").append(isAutoJoinEnabled)
+                    .append(", isAutoJoinEnabled=").append(isAutojoinEnabled)
                     .toString();
         }
 
@@ -793,7 +793,7 @@ public class WifiNetworkSuggestionsManager {
                 if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
                     ewns.wns.passpointConfiguration.setCarrierId(carrierId);
                 }
-                ewns.wns.passpointConfiguration.setAutoJoinEnabled(ewns.isAutoJoinEnabled);
+                ewns.wns.passpointConfiguration.setAutojoinEnabled(ewns.isAutojoinEnabled);
                 // Install Passpoint config, if failure, ignore that suggestion
                 if (!mWifiInjector.getPasspointManager().addOrUpdateProvider(
                         ewns.wns.passpointConfiguration, uid,
@@ -810,7 +810,7 @@ public class WifiNetworkSuggestionsManager {
                 if (!(mTelephonyUtil.requiresImsiEncryption(subId)
                         || hasUserApprovedImsiPrivacyExemptionForCarrier(
                                 getCarrierIdFromSuggestion(ewns)))) {
-                    ewns.isAutoJoinEnabled = false;
+                    ewns.isAutojoinEnabled = false;
                 }
             }
             perAppInfo.extNetworkSuggestions.remove(ewns);
@@ -1082,7 +1082,7 @@ public class WifiNetworkSuggestionsManager {
             for (ExtendedWifiNetworkSuggestion ewns : appInfo.extNetworkSuggestions) {
                 if (isSimBasedSuggestion(ewns)
                         && getCarrierIdFromSuggestion(ewns) == carrierId) {
-                    ewns.isAutoJoinEnabled |= ewns.wns.isInitialAutoJoinEnabled;
+                    ewns.isAutojoinEnabled |= ewns.wns.isInitialAutoJoinEnabled;
                 }
             }
         }
@@ -1819,7 +1819,7 @@ public class WifiNetworkSuggestionsManager {
             }
         }
         for (ExtendedWifiNetworkSuggestion ewns : matchingExtendedWifiNetworkSuggestions) {
-            ewns.isAutoJoinEnabled = choice;
+            ewns.isAutojoinEnabled = choice;
         }
         saveToStore();
         return true;

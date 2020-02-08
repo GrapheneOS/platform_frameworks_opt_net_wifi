@@ -424,8 +424,7 @@ public class HostapdHal {
                 ifaceParams.channelParams.enableAcs = false;
                 ifaceParams.channelParams.channel = mForcedApChannel;
                 band = mForcedApBand;
-            } else if (mContext.getResources().getBoolean(
-                    R.bool.config_wifi_softap_acs_supported)) {
+            } else if (ApConfigUtil.isAcsSupported(mContext)) {
                 ifaceParams.channelParams.enableAcs = true;
                 ifaceParams.channelParams.acsShouldExcludeDfs = true;
                 band = config.getBand();
@@ -569,7 +568,7 @@ public class HostapdHal {
      *
      * @param ifaceName Name of the interface.
      * @param client Mac Address of the client.
-     * @param reasonCode One of disconnect reason code which defined in {@link ApConfigUtil}.
+     * @param reasonCode One of disconnect reason code which defined in {@link WifiManager}.
      * @return true on success, false otherwise.
      */
     public boolean forceClientDisconnect(@NonNull String ifaceName,

@@ -62,6 +62,7 @@ import android.util.MutableLong;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.HexDump;
+import com.android.internal.util.Preconditions;
 import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
 import com.android.server.wifi.WifiLinkLayerStats.ChannelStats;
 import com.android.server.wifi.util.ArrayUtils;
@@ -237,6 +238,10 @@ public class WifiVendorHal {
     private IWifiChip mIWifiChip;
     private HashMap<String, IWifiStaIface> mIWifiStaIfaces = new HashMap<>();
     private HashMap<String, IWifiApIface> mIWifiApIfaces = new HashMap<>();
+    private HalDeviceManager.InterfaceAvailableForRequestListener
+            mStaIfaceAvailableForRequestListener;
+    private HalDeviceManager.InterfaceAvailableForRequestListener
+            mApIfaceAvailableForRequestListener;
     private final HalDeviceManager mHalDeviceManager;
     private final HalDeviceManagerStatusListener mHalDeviceManagerStatusCallbacks;
     private final IWifiStaIfaceEventCallback mIWifiStaIfaceEventCallback;
@@ -369,9 +374,14 @@ public class WifiVendorHal {
     public void registerStaIfaceAvailabilityListener(
             @NonNull WifiNative.InterfaceAvailableForRequestListener listener) {
         synchronized (sLock) {
-            mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                    IfaceType.STA, (isAvailable) -> listener.onAvailabilityChanged(isAvailable),
-                    mHalEventHandler);
+            Preconditions.checkState(mStaIfaceAvailableForRequestListener == null);
+            mStaIfaceAvailableForRequestListener =
+                    (isAvailable) -> listener.onAvailabilityChanged(isAvailable);
+            if (mHalDeviceManager.isStarted()) {
+                mHalDeviceManager.registerInterfaceAvailableForRequestListener(
+                        IfaceType.STA, mStaIfaceAvailableForRequestListener,
+                        mHalEventHandler);
+            }
         }
     }
 
@@ -379,13 +389,19 @@ public class WifiVendorHal {
      * Register a AP iface availability listener listed with {@link HalDeviceManager}.
      *
      * @param listener Instance of {@link WifiNative.InterfaceAvailableForRequestListener}.
+     *
      */
     public void registerApIfaceAvailabilityListener(
             @NonNull WifiNative.InterfaceAvailableForRequestListener listener) {
         synchronized (sLock) {
-            mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                    IfaceType.AP, (isAvailable) -> listener.onAvailabilityChanged(isAvailable),
-                    mHalEventHandler);
+            Preconditions.checkState(mApIfaceAvailableForRequestListener == null);
+            mApIfaceAvailableForRequestListener =
+                    (isAvailable) -> listener.onAvailabilityChanged(isAvailable);
+            if (mHalDeviceManager.isStarted()) {
+                mHalDeviceManager.registerInterfaceAvailableForRequestListener(
+                        IfaceType.AP, mApIfaceAvailableForRequestListener,
+                        mHalEventHandler);
+            }
         }
     }
 
@@ -3070,6 +3086,20 @@ public class WifiVendorHal {
                 }
                 if (handler != null) {
                     handler.onDeath();
+                }
+            }
+            if (isStarted) {
+                synchronized (sLock) {
+                    if (mStaIfaceAvailableForRequestListener != null) {
+                        mHalDeviceManager.registerInterfaceAvailableForRequestListener(
+                                IfaceType.STA, mStaIfaceAvailableForRequestListener,
+                                mHalEventHandler);
+                    }
+                    if (mApIfaceAvailableForRequestListener != null) {
+                        mHalDeviceManager.registerInterfaceAvailableForRequestListener(
+                                IfaceType.AP, mApIfaceAvailableForRequestListener,
+                                mHalEventHandler);
+                    }
                 }
             }
         }

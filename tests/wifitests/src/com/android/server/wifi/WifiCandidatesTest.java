@@ -195,17 +195,18 @@ public class WifiCandidatesTest extends WifiBaseTest {
         mWifiCandidates.add(mScanDetail1, mConfig1, 2, 14, 0.0, false, 100);
         assertEquals(1, mWifiCandidates.size());
 
-        // Same evaluator, same score. Should not add.
+        // Same nominator
+        // , same score. Should not add.
         assertFalse(mWifiCandidates.add(mScanDetail1, mConfig1, 2, 14, 0.0, false, 100));
         assertEquals(0, mWifiCandidates.getFaultCount()); // But not considered a fault
-        // Same evaluator, lower score. Should not add.
+        // Same nominator, lower score. Should not add.
         assertFalse(mWifiCandidates.add(mScanDetail1, mConfig1, 2, 13, 0.0, false, 100));
         assertEquals(0, mWifiCandidates.getFaultCount()); // Also not a fault
-        // Later evaluator. Should not add (regardless of score).
+        // Later nominator. Should not add (regardless of score).
         assertFalse(mWifiCandidates.add(mScanDetail1, mConfig1, 5, 13, 0.0, false, 100));
         assertFalse(mWifiCandidates.add(mScanDetail1, mConfig1, 5, 15, 0.0, false, 100));
         assertEquals(0, mWifiCandidates.getFaultCount()); // Still no faults
-        // Evaluator out of order. Should not add (regardless of score).
+        // Nominator out of order. Should not add (regardless of score).
         assertFalse(mWifiCandidates.add(mScanDetail1, mConfig1, 1, 12, 0.0, false, 100));
         assertNotNull(mWifiCandidates.getLastFault()); // This one is considered a caller error
         assertFalse(mWifiCandidates.add(mScanDetail1, mConfig1, 1, 15, 0.0, false, 100));
@@ -285,7 +286,7 @@ public class WifiCandidatesTest extends WifiBaseTest {
         assertEquals(1, mWifiCandidates.size());
         // And no faults
         assertEquals(0, mWifiCandidates.getFaultCount());
-        // Make sure we kept the one with a higher evaluatorScore
+        // Make sure we kept the one with a higher nominator score
         WifiCandidates.Candidate c;
         c = mWifiCandidates.getGroupedCandidates().iterator().next().iterator().next();
         assertEquals(90, c.getPredictedThroughputMbps());

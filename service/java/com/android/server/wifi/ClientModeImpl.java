@@ -4131,12 +4131,10 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private WifiNetworkAgentSpecifier createNetworkAgentSpecifier(
-            @NonNull WifiConfiguration currentWifiConfiguration, @Nullable String currentBssid,
-            int specificRequestUid, @NonNull String specificRequestPackageName) {
+            @NonNull WifiConfiguration currentWifiConfiguration, @Nullable String currentBssid) {
         currentWifiConfiguration.BSSID = currentBssid;
         WifiNetworkAgentSpecifier wns =
-                new WifiNetworkAgentSpecifier(currentWifiConfiguration, specificRequestUid,
-                        specificRequestPackageName);
+                new WifiNetworkAgentSpecifier(currentWifiConfiguration);
         return wns;
     }
 
@@ -4183,13 +4181,13 @@ public class ClientModeImpl extends StateMachine {
         if (specificRequestUidAndPackageName.first != Process.INVALID_UID) {
             // Remove internet capability.
             result.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            // Fill up the uid/packageName for this connection.
+            result.setRequestorUid(specificRequestUidAndPackageName.first);
+            result.setRequestorPackageName(specificRequestUidAndPackageName.second);
+            // Fill up the network agent specifier for this connection.
+            result.setNetworkSpecifier(createNetworkAgentSpecifier(
+                    currentWifiConfiguration, getCurrentBSSID()));
         }
-        // Fill up the network agent specifier for this connection.
-        result.setNetworkSpecifier(
-                createNetworkAgentSpecifier(
-                        currentWifiConfiguration, getCurrentBSSID(),
-                        specificRequestUidAndPackageName.first,
-                        specificRequestUidAndPackageName.second));
         return result;
     }
 

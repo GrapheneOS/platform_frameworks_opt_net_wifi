@@ -327,8 +327,11 @@ public class HalDeviceManager {
     /**
      * Register a listener to be called when an interface of the specified type could be requested.
      * No guarantees are provided (some other entity could request it first). The listener is
-     * active from registration until unregistration - using
-     * unregisterInterfaceAvailableForRequestListener().
+     * active from registration until either
+     * <li>unregistration (using
+     * {@link #unregisterInterfaceAvailableForRequestListener(int,
+     * InterfaceAvailableForRequestListener)})</li>
+     * <li>HAL stop (using {@link #stop()}.</li>
      *
      * Only a single instance of a listener will be registered (even if the specified looper is
      * different).

@@ -84,6 +84,8 @@ import com.android.server.wifi.p2p.WifiP2pMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorFailureStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.HistogramBucketInt32;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.Int32Count;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats;
@@ -147,6 +149,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     @Mock WifiNetworkSelector mWns;
     @Mock WifiPowerMetrics mWifiPowerMetrics;
     @Mock WifiDataStall mWifiDataStall;
+    @Mock WifiHealthMonitor mWifiHealthMonitor;
     @Mock IBinder mAppBinder;
     @Mock IOnWifiUsabilityStatsListener mOnWifiUsabilityStatsListener;
     @Mock ExternalCallbackTracker<IOnWifiUsabilityStatsListener> mListenerTracker;
@@ -170,6 +173,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.setScoringParams(mScoringParams);
         mWifiMetrics.setWifiNetworkSelector(mWns);
         mWifiMetrics.setWifiDataStall(mWifiDataStall);
+        mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
     }
 
     /**
@@ -409,6 +413,9 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_ADD_OR_UPDATE_NETWORK_CALLS = 5;
     private static final int NUM_ENABLE_NETWORK_CALLS = 6;
     private static final long NUM_IP_RENEWAL_FAILURE = 7;
+    private static final int NUM_NETWORK_ABNORMAL_ASSOC_REJECTION = 2;
+    private static final int NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY = 4;
+    private static final int NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS = 5;
 
     /** Number of notifications per "Connect to Network" notification type. */
     private static final int[] NUM_CONNECT_TO_NETWORK_NOTIFICATIONS = {0, 10, 20, 30, 40};
@@ -878,6 +885,8 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         addWifiPowerMetrics();
 
+        addWifiHealthMetrics();
+
         mResources.setBoolean(R.bool.config_wifiIsUnusableEventMetricsEnabled,
                 WIFI_IS_UNUSABLE_EVENT_LOGGING_SETTING);
         mResources.setBoolean(R.bool.config_wifiLinkSpeedMetricsEnabled,
@@ -893,6 +902,17 @@ public class WifiMetricsTest extends WifiBaseTest {
         wifiRadioUsage.loggingDurationMs = WIFI_POWER_METRICS_LOGGING_DURATION;
         wifiRadioUsage.scanTimeMs = WIFI_POWER_METRICS_SCAN_TIME;
         when(mWifiPowerMetrics.buildWifiRadioUsageProto()).thenReturn(wifiRadioUsage);
+    }
+
+    private void addWifiHealthMetrics() {
+        HealthMonitorMetrics metrics = new HealthMonitorMetrics();
+        metrics.failureStatsIncrease = new HealthMonitorFailureStats();
+        metrics.failureStatsDecrease = new HealthMonitorFailureStats();
+        metrics.failureStatsHigh = new HealthMonitorFailureStats();
+        metrics.failureStatsIncrease.cntAssocRejection = NUM_NETWORK_ABNORMAL_ASSOC_REJECTION;
+        metrics.numNetworkSufficientRecentStatsOnly = NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY;
+        metrics.numNetworkSufficientRecentPrevStats = NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS;
+        when(mWifiHealthMonitor.buildProto()).thenReturn(metrics);
     }
 
     private void addSoftApEventsToMetrics() {
@@ -1217,6 +1237,14 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(NUM_ADD_OR_UPDATE_NETWORK_CALLS, mDecodedProto.numAddOrUpdateNetworkCalls);
         assertEquals(NUM_ENABLE_NETWORK_CALLS, mDecodedProto.numEnableNetworkCalls);
         assertEquals(NUM_IP_RENEWAL_FAILURE, mDecodedProto.numIpRenewalFailure);
+        assertEquals(NUM_NETWORK_ABNORMAL_ASSOC_REJECTION,
+                mDecodedProto.healthMonitorMetrics.failureStatsIncrease.cntAssocRejection);
+        assertEquals(0,
+                mDecodedProto.healthMonitorMetrics.failureStatsIncrease.cntAssocTimeout);
+        assertEquals(NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY,
+                mDecodedProto.healthMonitorMetrics.numNetworkSufficientRecentStatsOnly);
+        assertEquals(NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS,
+                mDecodedProto.healthMonitorMetrics.numNetworkSufficientRecentPrevStats);
     }
 
     /**

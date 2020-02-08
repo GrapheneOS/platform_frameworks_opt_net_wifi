@@ -79,7 +79,7 @@
     <integer translatable="false" name="config_wifiFrameworkThroughputBonusDenominator">433</integer>
 
     <!-- Maximum contribution (in score points) due to the estimated throughput. -->
-    <integer translatable="false" name="config_wifiFrameworkThroughputBonusLimit">200</integer>
+    <integer translatable="false" name="config_wifiFrameworkThroughputBonusLimit">320</integer>
 
     <!-- The default values chosen here establish four non-overlapping categories:
              saved, unmetered

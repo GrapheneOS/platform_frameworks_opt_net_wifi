@@ -41,6 +41,8 @@ import com.android.server.wifi.WifiScoreCard.MemoryStoreAccessBase;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.proto.WifiScoreCardProto.SoftwareBuildInfo;
 import com.android.server.wifi.proto.WifiScoreCardProto.SystemInfoStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorFailureStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
 import com.android.server.wifi.util.ScanResultUtil;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -80,7 +82,7 @@ public class WifiHealthMonitor {
     private static final int DAILY_DETECTION_ALARM_TYPE = 1;
     // The time interval between two daily detections
     private static final int DAILY_DETECTION_INTERVAL_MS = 24 * 3600_000;
-    private static final int DAILY_DETECTION_HOUR = 24;
+    private static final int DAILY_DETECTION_HOUR = 23;
     // Max interval between pre-boot scan and post-boot scan to qualify post-boot scan detection
     private static final long MAX_INTERVAL_BETWEEN_TWO_SCAN_MS = 60_000;
     // The minimum number of BSSIDs that should be found during a normal scan to trigger detection
@@ -120,6 +122,9 @@ public class WifiHealthMonitor {
     private FailureStats mFailureStatsDecrease = new FailureStats();
     // Detected high failure stats from daily data without historical data
     private FailureStats mFailureStatsHigh = new FailureStats();
+    private int mNumNetworkSufficientRecentStatsOnly = 0;
+    private int mNumNetworkSufficientRecentPrevStats = 0;
+    private boolean mHasNewDataForWifiMetrics = false;
 
     WifiHealthMonitor(Context context, WifiInjector wifiInjector, Clock clock,
             WifiConfigManager wifiConfigManager, WifiScoreCard wifiScoreCard, Handler handler,
@@ -278,17 +283,18 @@ public class WifiHealthMonitor {
                 mPostBootDetectionListener, mHandler);
     }
 
-    private void dailyDetectionHandler() {
+    private synchronized void dailyDetectionHandler() {
         logd("Run daily detection");
         // Clear daily detection result
         mFailureStatsDecrease.clear();
         mFailureStatsIncrease.clear();
         mFailureStatsHigh.clear();
+        mNumNetworkSufficientRecentStatsOnly = 0;
+        mNumNetworkSufficientRecentPrevStats = 0;
+        mHasNewDataForWifiMetrics = true;
         int connectionDurationSec = 0;
         // Set the alarm for the next day
         setDailyDetectionAlarm();
-        int numNetworkSufficientRecentStatsOnly = 0;
-        int numNetworkSufficientRecentPrevStats = 0;
         List<WifiConfiguration> configuredNetworks = mWifiConfigManager.getConfiguredNetworks();
         for (WifiConfiguration network : configuredNetworks) {
             if (isInValidConfiguredNetwork(network)) {
@@ -299,12 +305,12 @@ public class WifiHealthMonitor {
             logd("before daily update: " + perNetwork.toString());
 
             int detectionFlag = perNetwork.dailyDetection(mFailureStatsDecrease,
-                    mFailureStatsIncrease,  mFailureStatsHigh);
+                    mFailureStatsIncrease, mFailureStatsHigh);
             if (detectionFlag == WifiScoreCard.SUFFICIENT_RECENT_STATS_ONLY) {
-                numNetworkSufficientRecentStatsOnly++;
+                mNumNetworkSufficientRecentStatsOnly++;
             }
             if (detectionFlag == WifiScoreCard.SUFFICIENT_RECENT_PREV_STATS) {
-                numNetworkSufficientRecentPrevStats++;
+                mNumNetworkSufficientRecentPrevStats++;
             }
             connectionDurationSec += perNetwork.getRecentStats().getCount(
                     WifiScoreCard.CNT_CONNECTION_DURATION_SEC);
@@ -313,12 +319,44 @@ public class WifiHealthMonitor {
             logd("after daily update: " + perNetwork.toString());
         }
         logd("total connection duration: " + connectionDurationSec);
-        logd("#networks w/ sufficient recent stats: " + numNetworkSufficientRecentStatsOnly);
-        logd("#networks w/ sufficient recent/prev stats: " + numNetworkSufficientRecentPrevStats);
+        logd("#networks w/ sufficient recent stats: " + mNumNetworkSufficientRecentStatsOnly);
+        logd("#networks w/ sufficient recent and prev stats: "
+                + mNumNetworkSufficientRecentPrevStats);
         // TODO: Report numNetworkSufficientRecentStatsOnly, numNetworkSufficientRecentPrevStats
         //  mFailureStatsDecrease, mFailureStatsIncrease and mFailureStatsHigh to metrics
         doWrites();
         mWifiScoreCard.doWrites();
+    }
+
+    /**
+     * Build HealthMonitor proto for WifiMetrics
+     * @return counts of networks with significant connection failure stats if there is a new
+     * detection, or a empty proto with default values if there is no new detection
+     */
+    public synchronized HealthMonitorMetrics buildProto() {
+        if (!mHasNewDataForWifiMetrics) return null;
+        HealthMonitorMetrics metrics = new HealthMonitorMetrics();
+        metrics.failureStatsIncrease = failureStatsToProto(mFailureStatsIncrease);
+        metrics.failureStatsDecrease = failureStatsToProto(mFailureStatsDecrease);
+        metrics.failureStatsHigh = failureStatsToProto(mFailureStatsHigh);
+
+        metrics.numNetworkSufficientRecentStatsOnly = mNumNetworkSufficientRecentStatsOnly;
+        metrics.numNetworkSufficientRecentPrevStats = mNumNetworkSufficientRecentPrevStats;
+        mHasNewDataForWifiMetrics = false;
+        return metrics;
+    }
+
+    private HealthMonitorFailureStats failureStatsToProto(FailureStats failureStats) {
+        HealthMonitorFailureStats stats = new HealthMonitorFailureStats();
+        stats.cntAssocRejection = failureStats.getCount(REASON_ASSOC_REJECTION);
+        stats.cntAssocTimeout = failureStats.getCount(REASON_ASSOC_TIMEOUT);
+        stats.cntAuthFailure = failureStats.getCount(REASON_AUTH_FAILURE);
+        stats.cntConnectionFailure = failureStats.getCount(REASON_CONNECTION_FAILURE);
+        stats.cntDisconnectionNonlocal =
+                failureStats.getCount(REASON_DISCONNECTION_NONLOCAL);
+        stats.cntShortConnectionNonlocal =
+                failureStats.getCount(REASON_SHORT_CONNECTION_NONLOCAL);
+        return stats;
     }
 
     private boolean isInValidConfiguredNetwork(WifiConfiguration config) {

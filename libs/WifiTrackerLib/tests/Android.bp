@@ -28,6 +28,5 @@ android_test {
         "android.test.mock",
     ],
 
-    defaults: ["framework-wifi-test-defaults"],
-    certificate: "platform", // need platform certificate to access @hide APIs
+    platform_apis: true,
 }

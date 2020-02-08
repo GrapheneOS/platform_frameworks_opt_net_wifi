@@ -66,15 +66,6 @@ public class WifiNetworkSelector {
     public static final int MINIMUM_NETWORK_SELECTION_INTERVAL_MS = 10 * 1000;
 
     /**
-     * For this duration after user selected it, consider the current network as sufficient.
-     *
-     * This delays network selection during the time that connectivity service may be posting
-     * a dialog about a no-internet network.
-     */
-    @VisibleForTesting
-    public static final int LAST_USER_SELECTION_SUFFICIENT_MS = 30_000;
-
-    /**
      * Time that it takes for the boost given to the most recently user-selected
      * network to decay to zero.
      *
@@ -217,70 +208,73 @@ public class WifiNetworkSelector {
     /**
      * Check if current network has sufficient RSSI
      * @param wifiInfo info of currently connected network
-     * @param scoringParams scoring parameter set including RSSI sufficiency check threshold
      * @return true if current link quality is sufficient, false otherwise.
      */
-    public static boolean hasSufficientLinkQuality(WifiInfo wifiInfo, ScoringParams scoringParams) {
+    private boolean hasSufficientLinkQuality(WifiInfo wifiInfo) {
         int currentRssi = wifiInfo.getRssi();
-        return  currentRssi >= scoringParams.getSufficientRssi(wifiInfo.getFrequency());
+        return  currentRssi >= mScoringParams.getSufficientRssi(wifiInfo.getFrequency());
     }
 
     /**
      * Check if current network has active Tx or Rx traffic
      * @param wifiInfo info of currently connected network
-     * @param scoringParams scoring parameter set including active traffic check threshold
      * @return true if it has active Tx or Rx traffic, false otherwise.
      */
-    public static boolean hasActiveStream(WifiInfo wifiInfo, ScoringParams scoringParams) {
-        return (wifiInfo.getSuccessfulTxPacketsPerSecond()
-                        > scoringParams.getActiveTrafficPacketsPerSecond())
-                || (wifiInfo.getSuccessfulRxPacketsPerSecond()
-                        > scoringParams.getActiveTrafficPacketsPerSecond());
+    public boolean hasActiveStream(WifiInfo wifiInfo) {
+        return wifiInfo.getSuccessfulTxPacketsPerSecond()
+                        > mScoringParams.getActiveTrafficPacketsPerSecond()
+                || wifiInfo.getSuccessfulRxPacketsPerSecond()
+                        > mScoringParams.getActiveTrafficPacketsPerSecond();
     }
 
     /**
      * Check if one of following conditions is met to avoid a new network selection
      * 1) current network is in OSU process
      * 2) current network has internet access, sufficient link quality and active traffic
+     * @param wifiInfo info of currently connected network
+     * @return true if the network is sufficient
      */
-    private boolean isCurrentNetworkSufficient(WifiInfo wifiInfo) {
+    public boolean isNetworkSufficient(WifiInfo wifiInfo) {
         // Currently connected?
         if (wifiInfo.getSupplicantState() != SupplicantState.COMPLETED) {
-            localLog("No current connected network.");
             return false;
-        } else {
-            localLog("Current connected network: " + wifiInfo.getSSID()
-                    + " , ID: " + wifiInfo.getNetworkId());
         }
+
+        localLog("Current connected network: " + wifiInfo.getNetworkId());
 
         WifiConfiguration network =
                 mWifiConfigManager.getConfiguredNetwork(wifiInfo.getNetworkId());
 
         if (network == null) {
-            localLog("Current network was removed.");
+            localLog("Current network was removed");
             return false;
         }
 
         // Set OSU (Online Sign Up) network for Passpoint Release 2 to sufficient
         // so that network select selection is skipped and OSU process can complete.
         if (network.osu) {
+            localLog("Current connection is OSU");
             return true;
         }
 
-        // Network with no internet access reports is not sufficient
-        if (network.numNoInternetAccessReports > 0 && !network.noInternetAccessExpected) {
+        // Network without internet access is not sufficient, unless expected
+        if (network.hasNoInternetAccess() && !network.isNoInternetAccessExpected()) {
             localLog("Current network has [" + network.numNoInternetAccessReports
-                    + "] no-internet access reports.");
+                    + "] no-internet access reports");
             return false;
         }
 
-        if ((hasSufficientLinkQuality(wifiInfo, mScoringParams))
-                && hasActiveStream(wifiInfo, mScoringParams)) {
-            localLog("Stay on current network due to sufficient link quality and ongoing traffic");
-            return true;
+        if (!hasSufficientLinkQuality(wifiInfo)) {
+            localLog("Current network link quality is not sufficient");
+            return false;
         }
 
-        return false;
+        if (!hasActiveStream(wifiInfo)) {
+            localLog("Current network has low ongoing traffic");
+            return false;
+        }
+
+        return true;
     }
 
     private boolean isNetworkSelectionNeeded(List<ScanDetail> scanDetails, WifiInfo wifiInfo,
@@ -312,7 +306,7 @@ public class WifiNetworkSelector {
             // Please note other scans (e.g., location scan or app scan) may also trigger network
             // selection and these scans may or may not run sufficiency check.
             // So it is better to run sufficiency check here before network selection.
-            if (isCurrentNetworkSufficient(wifiInfo)) {
+            if (isNetworkSufficient(wifiInfo)) {
                 localLog("Current connected network already sufficient. Skip network selection.");
                 return false;
             } else {
@@ -741,31 +735,18 @@ public class WifiNetworkSelector {
             localLog("Connectable: " + mConnectableNetworks.size()
                     + " Candidates: " + wifiCandidates.size());
         }
-
+        final WifiCandidates.CandidateScorer activeScorer = getActiveCandidateScorer();
         // Update the NetworkSelectionStatus in the configs for the current candidates
         // This is needed for the legacy user connect choice, at least
         Collection<Collection<WifiCandidates.Candidate>> groupedCandidates =
                 wifiCandidates.getGroupedCandidates();
         for (Collection<WifiCandidates.Candidate> group: groupedCandidates) {
-            WifiCandidates.Candidate best = null;
-            for (WifiCandidates.Candidate candidate: group) {
-                // Of all the candidates with the same networkId, choose the
-                // one with the smallest nominatorId, and break ties by
-                // picking the one with the highest score.
-                if (best == null
-                        || candidate.getNominatorId() < best.getNominatorId()
-                        || (candidate.getNominatorId() == best.getNominatorId()
-                            && candidate.getNominatorScore() > best.getNominatorScore())) {
-                    best = candidate;
-                }
+            WifiCandidates.ScoredCandidate choice = activeScorer.scoreCandidates(group);
+            if (choice == null || choice.scanDetail == null) {
+                continue;
             }
-            if (best != null) {
-                ScanDetail scanDetail = best.getScanDetail();
-                if (scanDetail != null) {
-                    mWifiConfigManager.setNetworkCandidateScanResult(best.getNetworkConfigId(),
-                            scanDetail.getScanResult(), best.getNominatorScore());
-                }
-            }
+            mWifiConfigManager.setNetworkCandidateScanResult(choice.candidateKey.networkId,
+                    choice.scanDetail.getScanResult(), 0);
         }
 
         ArrayMap<Integer, Integer> experimentNetworkSelections = new ArrayMap<>(); // for metrics
@@ -774,7 +755,6 @@ public class WifiNetworkSelector {
 
         // Run all the CandidateScorers
         boolean legacyOverrideWanted = true;
-        final WifiCandidates.CandidateScorer activeScorer = getActiveCandidateScorer();
         for (WifiCandidates.CandidateScorer candidateScorer : mCandidateScorers.values()) {
             WifiCandidates.ScoredCandidate choice;
             try {

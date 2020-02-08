@@ -35,8 +35,8 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     private boolean mIsEphemeral;
     private boolean mIsTrusted;
     private boolean mIsMetered;
-    private int mEvaluatorId = -1;
-    private int mEvaluatorScore = Integer.MIN_VALUE;
+    private int mNominatorId = -1;
+    private int mNominatorScore = Integer.MIN_VALUE;
     private double mLastSelectionWeight;
     private int mScanRssi = -127;
     private int mFrequency = -1;
@@ -59,8 +59,8 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
         mIsEphemeral = candidate.isEphemeral();
         mIsTrusted = candidate.isTrusted();
         mIsMetered = candidate.isMetered();
-        mEvaluatorId = candidate.getNominatorId();
-        mEvaluatorScore = candidate.getNominatorScore();
+        mNominatorId = candidate.getNominatorId();
+        mNominatorScore = candidate.getNominatorScore();
         mLastSelectionWeight = candidate.getLastSelectionWeight();
         mScanRssi = candidate.getScanRssi();
         mFrequency = candidate.getFrequency();
@@ -153,24 +153,24 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
         return mIsMetered;
     }
 
-    public ConcreteCandidate setEvaluatorId(int evaluatorId) {
-        mEvaluatorId = evaluatorId;
+    public ConcreteCandidate setNominatorId(int nominatorId) {
+        mNominatorId = nominatorId;
         return this;
     }
 
     @Override
     public int getNominatorId() {
-        return mEvaluatorId;
+        return mNominatorId;
     }
 
-    public ConcreteCandidate setEvaluatorScore(int evaluatorScore) {
-        mEvaluatorScore = evaluatorScore;
+    public ConcreteCandidate setNominatorScore(int nominatorScore) {
+        mNominatorScore = nominatorScore;
         return this;
     }
 
     @Override
     public int getNominatorScore() {
-        return mEvaluatorScore;
+        return mNominatorScore;
     }
 
     public ConcreteCandidate setLastSelectionWeight(double lastSelectionWeight) {

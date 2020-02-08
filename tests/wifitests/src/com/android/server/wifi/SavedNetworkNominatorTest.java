@@ -52,7 +52,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         mLocalLog = new LocalLog(512);
-        mSavedNetworkEvaluator = new SavedNetworkNominator(mWifiConfigManager,
+        mSavedNetworkNominator = new SavedNetworkNominator(mWifiConfigManager,
                 mPasspointNetworkNominateHelper, mLocalLog, mTelephonyUtil);
 
     }
@@ -69,7 +69,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
     private static final int TEST_CARRIER_ID = 100;
     private static final int RSSI_LEVEL = -50;
 
-    private SavedNetworkNominator mSavedNetworkEvaluator;
+    private SavedNetworkNominator mSavedNetworkNominator;
     @Mock private WifiConfigManager mWifiConfigManager;
     @Mock private Clock mClock;
     @Mock private OnConnectableListener mOnConnectableListener;
@@ -98,7 +98,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
             wifiConfiguration.useExternalScores = true;
         }
 
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails,
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
@@ -125,7 +125,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
                 .thenReturn(INVALID_SUBID);
         when(mTelephonyUtil.isSimPresent(eq(INVALID_SUBID))).thenReturn(false);
 
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails,
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
@@ -152,7 +152,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
             wifiConfiguration.ephemeral = true;
         }
 
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails,
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
@@ -177,13 +177,13 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
 
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails,
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
 
         verify(mOnConnectableListener, times(2)).onConnectable(any(), any());
         reset(mOnConnectableListener);
         savedConfigs[1].allowAutojoin = false;
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails,
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(),
                 mWifiConfigurationArgumentCaptor.capture());
@@ -211,7 +211,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         for (WifiConfiguration wifiConfiguration : savedConfigs) {
             wifiConfiguration.allowAutojoin = false;
         }
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails,
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -229,7 +229,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         passpointCandidates.add(Pair.create(scanDetail, configuration));
         when(mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false))
                 .thenReturn(passpointCandidates);
-        mSavedNetworkEvaluator.nominateNetworks(scanDetails, null, null,
+        mSavedNetworkNominator.nominateNetworks(scanDetails, null, null,
                 false, false, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(scanDetail, configuration);
     }

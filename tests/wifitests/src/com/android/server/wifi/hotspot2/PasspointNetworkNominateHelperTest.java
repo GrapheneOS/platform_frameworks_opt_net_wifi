@@ -118,7 +118,7 @@ public class PasspointNetworkNominateHelperTest {
         when(provider.getConfig()).thenReturn(passpointConfig);
         when(provider.getWifiConfig()).thenReturn(config);
         when(provider.isFromSuggestion()).thenReturn(false);
-        when(provider.isAutoJoinEnabled()).thenReturn(true);
+        when(provider.isAutojoinEnabled()).thenReturn(true);
         return provider;
     }
 
@@ -325,7 +325,7 @@ public class PasspointNetworkNominateHelperTest {
                 generateScanDetail(TEST_SSID2, TEST_BSSID2));
 
         // Setup matching providers for ScanDetail with TEST_SSID1.
-        when(sTestProvider1.isAutoJoinEnabled()).thenReturn(false); // disable auto-join on provider
+        when(sTestProvider1.isAutojoinEnabled()).thenReturn(false); // disable auto-join on provider
         List<Pair<PasspointProvider, PasspointMatch>> homeProvider = new ArrayList<>();
         homeProvider.add(Pair.create(sTestProvider1, PasspointMatch.HomeProvider));
         List<Pair<PasspointProvider, PasspointMatch>> roamingProvider = new ArrayList<>();
@@ -358,8 +358,8 @@ public class PasspointNetworkNominateHelperTest {
                 generateScanDetail(TEST_SSID2, TEST_BSSID2));
 
         // Setup matching providers for ScanDetail with TEST_SSID1.
-        when(sTestProvider1.isAutoJoinEnabled()).thenReturn(false); // disable auto-join on provider
-        when(sTestProvider2.isAutoJoinEnabled()).thenReturn(false); // disable auto-join on provider
+        when(sTestProvider1.isAutojoinEnabled()).thenReturn(false); // disable auto-join on provider
+        when(sTestProvider2.isAutojoinEnabled()).thenReturn(false); // disable auto-join on provider
         List<Pair<PasspointProvider, PasspointMatch>> homeProvider = new ArrayList<>();
         homeProvider.add(Pair.create(sTestProvider1, PasspointMatch.HomeProvider));
         List<Pair<PasspointProvider, PasspointMatch>> roamingProvider = new ArrayList<>();

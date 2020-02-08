@@ -58,6 +58,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ExperimentValues;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.ExperimentProbeCounts;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.LinkProbeFailureReasonCount;
@@ -201,6 +202,7 @@ public class WifiMetrics {
     private FrameworkFacade mFacade;
     private WifiDataStall mWifiDataStall;
     private WifiLinkLayerStats mLastLinkLayerStats;
+    private WifiHealthMonitor mWifiHealthMonitor;
     private String mLastBssid;
     private int mLastFrequency = -1;
     private int mSeqNumInsideFramework = 0;
@@ -808,6 +810,11 @@ public class WifiMetrics {
     /** Sets internal BssidBlocklistMonitor member */
     public void setBssidBlocklistMonitor(BssidBlocklistMonitor bssidBlocklistMonitor) {
         mBssidBlocklistMonitor = bssidBlocklistMonitor;
+    }
+
+    /** Sets internal WifiHealthMonitor member */
+    public void setWifiHealthMonitor(WifiHealthMonitor wifiHealthMonitor) {
+        mWifiHealthMonitor = wifiHealthMonitor;
     }
 
     /**
@@ -3386,6 +3393,10 @@ public class WifiMetrics {
             mWifiLogProto.rxLinkSpeedCount5GLow = mRxLinkSpeedCount5gLow.toProto();
             mWifiLogProto.rxLinkSpeedCount5GMid = mRxLinkSpeedCount5gMid.toProto();
             mWifiLogProto.rxLinkSpeedCount5GHigh = mRxLinkSpeedCount5gHigh.toProto();
+            HealthMonitorMetrics healthMonitorMetrics = mWifiHealthMonitor.buildProto();
+            if (healthMonitorMetrics != null) {
+                mWifiLogProto.healthMonitorMetrics = healthMonitorMetrics;
+            }
         }
     }
 

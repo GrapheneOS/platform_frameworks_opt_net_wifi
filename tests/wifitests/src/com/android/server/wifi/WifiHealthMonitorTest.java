@@ -50,6 +50,7 @@ import com.android.server.wifi.WifiHealthMonitor.WifiSoftwareBuildInfo;
 import com.android.server.wifi.WifiHealthMonitor.WifiSystemInfoStats;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.proto.WifiScoreCardProto.SystemInfoStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -160,6 +161,32 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         when(mWifiInjector.getWifiScanner()).thenReturn(mWifiScanner);
         when(mWifiNative.getDriverVersion()).thenReturn(mDriverVersion);
         when(mWifiNative.getFirmwareVersion()).thenReturn(mFirmwareVersion);
+        when(mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_RSSI_THR_DBM);
+        when(mDeviceConfigFacade.getConnectionFailureHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getConnectionFailureLowThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getAssocRejectionHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getAssocRejectionLowThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getAssocTimeoutHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ASSOC_TIMEOUT_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getAssocTimeoutLowThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ASSOC_TIMEOUT_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getAuthFailureHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_AUTH_FAILURE_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getAuthFailureLowThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_AUTH_FAILURE_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getShortConnectionNonlocalHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_SHORT_CONNECTION_NONLOCAL_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getShortConnectionNonlocalLowThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_SHORT_CONNECTION_NONLOCAL_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getDisconnectionNonlocalHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getDisconnectionNonlocalLowThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_LOW_THR_PERCENT);
         when(mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_RSSI_THR_DBM);
 
@@ -379,6 +406,39 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         assertEquals(MIN_NUM_CONNECTION_ATTEMPT * 2,
                 perNetwork.getStatsCurrBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
+    }
+
+    /**
+     * Check proto after one daily detection with high non-local disconnection rate
+     */
+    @Test
+    public void testBuildProto() throws Exception {
+        mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
+        makeRecentStatsWithSufficientConnectionAttempt();
+        mAlarmManager.dispatch(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG);
+        mLooper.dispatchAll();
+
+        // First call of buildProto
+        HealthMonitorMetrics healthMetrics = mWifiHealthMonitor.buildProto();
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntAssocRejection);
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntAssocTimeout);
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntAuthFailure);
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntConnectionFailure);
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntDisconnectionNonlocal);
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntShortConnectionNonlocal);
+        assertEquals(0, healthMetrics.failureStatsHigh.cntAssocRejection);
+        assertEquals(0, healthMetrics.failureStatsHigh.cntAssocTimeout);
+        assertEquals(0, healthMetrics.failureStatsHigh.cntAuthFailure);
+        assertEquals(0, healthMetrics.failureStatsHigh.cntConnectionFailure);
+        assertEquals(1, healthMetrics.failureStatsHigh.cntDisconnectionNonlocal);
+        assertEquals(1, healthMetrics.failureStatsHigh.cntShortConnectionNonlocal);
+        assertEquals(1, healthMetrics.numNetworkSufficientRecentStatsOnly);
+        assertEquals(0, healthMetrics.numNetworkSufficientRecentPrevStats);
+
+        // Second call of buildProto
+        healthMetrics = mWifiHealthMonitor.buildProto();
+        // Second call should result in an empty proto
+        assertEquals(null, healthMetrics);
     }
 
     /**

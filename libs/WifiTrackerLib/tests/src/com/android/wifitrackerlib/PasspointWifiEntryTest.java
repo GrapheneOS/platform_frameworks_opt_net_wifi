@@ -16,9 +16,9 @@
 
 package com.android.wifitrackerlib;
 
-
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -54,9 +54,8 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testGetSummary_expiredTimeNotAvailable_notShowExpired() {
-        long notSpecifiedExpiredTimeMilli = -1;
+        // default SubscriptionExpirationTimeInMillis is unset
         PasspointConfiguration passpointConfiguration = getPasspointConfiguration();
-        passpointConfiguration.setSubscriptionExpirationTimeInMillis(notSpecifiedExpiredTimeMilli);
         String expired = "Expired";
         when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
 
@@ -68,16 +67,15 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testGetSummary_expired_showExpired() {
-        long expiredTimeMilli = 100;
         PasspointConfiguration passpointConfiguration = getPasspointConfiguration();
-        passpointConfiguration.setSubscriptionExpirationTimeInMillis(expiredTimeMilli);
         String expired = "Expired";
         when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
-
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
                 passpointConfiguration, mMockWifiManager);
+        PasspointWifiEntry spyEntry = spy(passpointWifiEntry);
+        when(spyEntry.isExpired()).thenReturn(true);
 
-        assertThat(passpointWifiEntry.getSummary()).isEqualTo(expired);
+        assertThat(spyEntry.getSummary()).isEqualTo(expired);
     }
 
     private PasspointConfiguration getPasspointConfiguration() {

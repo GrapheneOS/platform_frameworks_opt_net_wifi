@@ -43,6 +43,7 @@ import android.content.Intent;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
 import android.os.test.TestLooper;
+import android.telephony.AccessNetworkConstants;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -89,6 +90,10 @@ public class ClientModeManagerTest extends WifiBaseTest {
     @Mock PersistableBundle mCarrierConfigBundle;
     @Mock ImsMmTelManager mImsMmTelManager;
     private RegistrationManager.RegistrationCallback mImsMmTelManagerRegistrationCallback = null;
+    private @RegistrationManager.ImsRegistrationState int mCurrentImsRegistrationState =
+            RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
+    private @AccessNetworkConstants.TransportType int mCurrentImsConnectionType =
+            AccessNetworkConstants.TRANSPORT_TYPE_INVALID;
 
     private MockitoSession mStaticMockSession = null;
 
@@ -124,9 +129,21 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 .thenReturn(mImsMmTelManager);
         lenient().when(SubscriptionManager.getDefaultVoiceSubscriptionId())
                 .thenReturn(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID);
+        lenient().when(SubscriptionManager.isValidSubscriptionId(anyInt()))
+                .thenReturn(true);
         doAnswer(new AnswerWithArguments() {
             public void answer(Executor executor, RegistrationManager.RegistrationCallback c) {
                 mImsMmTelManagerRegistrationCallback = c;
+                // When the callback is registered, it will initiate the callback c to
+                // be called with the current registration state.
+                switch (mCurrentImsRegistrationState) {
+                    case RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED:
+                        c.onUnregistered(null);
+                        break;
+                    case RegistrationManager.REGISTRATION_STATE_REGISTERED:
+                        c.onRegistered(mCurrentImsConnectionType);
+                        break;
+                }
             }
         }).when(mImsMmTelManager).registerImsRegistrationCallback(
                 any(Executor.class),
@@ -527,6 +544,12 @@ public class ClientModeManagerTest extends WifiBaseTest {
             boolean isWifiCallingAvailable,
             int voiceNetworkType,
             int wifiOffDeferringTimeMs) {
+        mCurrentImsRegistrationState = (isWifiCallingAvailable)
+            ? RegistrationManager.REGISTRATION_STATE_REGISTERED
+            : RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
+        mCurrentImsConnectionType = (isWifiCallingAvailable)
+            ? AccessNetworkConstants.TRANSPORT_TYPE_WLAN
+            : AccessNetworkConstants.TRANSPORT_TYPE_WWAN;
         when(mImsMmTelManager.isAvailable(anyInt(), anyInt())).thenReturn(isWifiCallingAvailable);
         when(mTelephonyManager.getVoiceNetworkType())
                 .thenReturn(voiceNetworkType);
@@ -555,6 +578,36 @@ public class ClientModeManagerTest extends WifiBaseTest {
 
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+
+        // on an explicit stop, we should not trigger the callback
+        verifyNoMoreInteractions(mListener);
+    }
+
+    /**
+     * ClientMode stop properly with IMS deferring time and IMS is registered on WWAN.
+     */
+    @Test
+    public void clientModeStopWithWifiOffDeferringTimeAndImsOnWwan() throws Exception {
+        setUpVoWifiTest(true,
+                TelephonyManager.NETWORK_TYPE_UNKNOWN,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+        mCurrentImsConnectionType = AccessNetworkConstants.TRANSPORT_TYPE_WWAN;
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        mClientModeManager.stop();
+        mLooper.dispatchAll();
+        verify(mListener).onStopped();
+
+        verify(mImsMmTelManager).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager).unregisterImsRegistrationCallback(
+                any(RegistrationManager.RegistrationCallback.class));
+        assertNull(mImsMmTelManagerRegistrationCallback);
+
+        verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
         // on an explicit stop, we should not trigger the callback
         verifyNoMoreInteractions(mListener);
@@ -779,6 +832,35 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+    }
+
+    /**
+     * Switch to scan mode properly with IMS deferring time and IMS is registered on WWAN.
+     */
+    @Test
+    public void switchToScanOnlyModeWithWifiOffDeferringTimeAndImsOnWwan() throws Exception {
+        setUpVoWifiTest(true,
+                TelephonyManager.NETWORK_TYPE_UNKNOWN,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+        mCurrentImsConnectionType = AccessNetworkConstants.TRANSPORT_TYPE_WWAN;
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+                .thenReturn(true);
+
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+
+        verify(mImsMmTelManager).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager).unregisterImsRegistrationCallback(
+                any(RegistrationManager.RegistrationCallback.class));
+        assertNull(mImsMmTelManagerRegistrationCallback);
     }
 
     /**

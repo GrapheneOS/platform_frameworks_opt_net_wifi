@@ -576,6 +576,9 @@ message WifiLog {
 
   // Count of IP renewal failures.
   optional int32 num_ip_renewal_failure = 157;
+
+  // Metrics collected by health monitor
+  optional HealthMonitorMetrics health_monitor_metrics = 158;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -2738,4 +2741,39 @@ message PasspointProvisionStats {
     // Number of failure for the failure_code.
     optional int32 count = 2;
   }
+}
+
+// Number of networks with a large change of connection/disconnection
+// failure rate or high failure rate at high RSSI
+message HealthMonitorFailureStats {
+  // Number of networks with a large change of (or high) association rejection rate
+  optional int32 cnt_assoc_rejection = 1;
+  // Number of networks with a large change of (or high) association timeout rate
+  optional int32 cnt_assoc_timeout = 2;
+  // Number of networks with a large change of (or high) auth failure rate
+  optional int32 cnt_auth_failure = 3;
+  // Number of networks with a large change of (or high) connection failure rate
+  optional int32 cnt_connection_failure = 4;
+  // Number of networks with a large change of (or high) nonlocal disconnection rate
+  optional int32 cnt_disconnection_nonlocal = 5;
+  // Number of networks with a large change of (or high) short disconnection rate
+  optional int32 cnt_short_connection_nonlocal = 6;
+}
+
+// Metrics collected by health monitor
+message HealthMonitorMetrics {
+  // Number of networks with a large increase (compared to stats of previous build) of
+  // connection/disconnection failure rate
+  optional HealthMonitorFailureStats failure_stats_increase = 1;
+  // Number of networks with a large decrease (compared to stats of previous build) of
+  // connection/disconnection failure rate
+  optional HealthMonitorFailureStats failure_stats_decrease = 2;
+  // Number of networks with high connection/disconnection failure rate for
+  // current build but without sufficient connection attempts for previous build
+  optional HealthMonitorFailureStats failure_stats_high = 3;
+  // Number of networks with sufficient connection attempts for current build
+  // but without suffcient connection attempts for previous build
+  optional int32 num_network_sufficient_recent_stats_only = 4;
+  // Number of networks with sufficient connection attempts for both current and previous builds
+  optional int32 num_network_sufficient_recent_prev_stats = 5;
 }

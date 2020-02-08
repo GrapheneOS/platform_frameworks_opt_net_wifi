@@ -18,6 +18,7 @@ package com.android.server.wifi.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -460,5 +461,14 @@ public class ApConfigUtilTest extends WifiBaseTest {
                 .thenReturn(true);
         assertEquals(ApConfigUtil.updateCapabilityFromResource(mContext),
                 capability);
+    }
+
+    @Test
+    public void testConvertInvalidWifiConfigurationToSoftApConfiguration() throws Exception {
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.SSID = "AndroidAP";
+        wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA2_PSK);
+        wifiConfig.preSharedKey = "1233443";
+        assertNull(ApConfigUtil.fromWifiConfiguration(wifiConfig));
     }
 }

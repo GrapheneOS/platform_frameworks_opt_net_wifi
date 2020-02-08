@@ -302,7 +302,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         lenient().when(provider.getWifiConfig()).thenReturn(wifiConfig);
         lenient().when(provider.getCreatorUid()).thenReturn(TEST_CREATOR_UID);
         lenient().when(provider.isFromSuggestion()).thenReturn(isSuggestion);
-        lenient().when(provider.isAutoJoinEnabled()).thenReturn(true);
+        lenient().when(provider.isAutojoinEnabled()).thenReturn(true);
         return provider;
     }
 
@@ -672,9 +672,9 @@ public class PasspointManagerTest extends WifiBaseTest {
      */
     private void verifyEnableAutojoin(PasspointProvider provider) {
         assertTrue(mManager.enableAutojoin(provider.getConfig().getHomeSp().getFqdn(), false));
-        verify(provider).setAutoJoinEnabled(false);
+        verify(provider).setAutojoinEnabled(false);
         assertTrue(mManager.enableAutojoin(provider.getConfig().getHomeSp().getFqdn(), true));
-        verify(provider).setAutoJoinEnabled(true);
+        verify(provider).setAutojoinEnabled(true);
         assertFalse(mManager.enableAutojoin(provider.getConfig().getHomeSp().getFqdn()
                 + "-XXXX", true));
     }

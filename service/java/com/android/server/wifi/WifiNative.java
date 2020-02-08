@@ -895,10 +895,8 @@ public class WifiNative {
                 Log.e(TAG, "Failed to initialize vendor HAL");
                 return false;
             }
-            if (!mWifiCondManager.initialize(new WificondDeathHandlerInternal())) {
-                Log.e(TAG, "Failed to initialize wificond");
-                return false;
-            }
+            mWifiCondManager.setOnServiceDeadCallback(new WificondDeathHandlerInternal());
+            mWifiCondManager.tearDownInterfaces();
             mWifiVendorHal.registerRadioModeChangeHandler(
                     new VendorHalRadioModeChangeHandlerInternal());
             mNetdWrapper = mWifiInjector.makeNetdWrapper();

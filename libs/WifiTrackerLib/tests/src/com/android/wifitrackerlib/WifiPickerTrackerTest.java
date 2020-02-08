@@ -557,4 +557,22 @@ public class WifiPickerTrackerTest {
         verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo(friendlyName);
     }
+
+    /**
+     * Tests that SCAN_RESULTS_AVAILABLE_ACTION calls WifiManager#getMatchingOsuProviders()
+     */
+    @Test
+    public void testScanResultsAvailableAction_callsGetMatchingOsuProviders() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
+        verify(mMockWifiManager, atLeastOnce()).getMatchingOsuProviders(any());
+    }
 }
