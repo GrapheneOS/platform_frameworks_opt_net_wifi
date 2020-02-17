@@ -57,6 +57,7 @@ import android.net.TcpKeepalivePacketData;
 import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientManager;
+import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
 import android.net.wifi.INetworkRequestMatchCallback;
@@ -2901,7 +2902,7 @@ public class ClientModeImpl extends StateMachine {
             mWifiInfo.setBSSID(null);
             mWifiInfo.setSSID(null);
         }
-        updateL2KeyAndGroupHint();
+        updateLayer2Information();
         // SSID might have been updated, so call updateCapabilities
         updateCapabilities();
 
@@ -2936,13 +2937,16 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Tells IpClient what L2Key and GroupHint to use for IpMemoryStore.
+     * Tells IpClient what BSSID, L2Key and GroupHint to use for IpMemoryStore.
      */
-    private void updateL2KeyAndGroupHint() {
+    private void updateLayer2Information() {
         if (mIpClient != null) {
             Pair<String, String> p = mWifiScoreCard.getL2KeyAndGroupHint(mWifiInfo);
             if (!p.equals(mLastL2KeyAndGroupHint)) {
-                if (mIpClient.setL2KeyAndGroupHint(p.first, p.second)) {
+                final Layer2Information l2Information = new Layer2Information(
+                        p.first, p.second,
+                        mLastBssid != null ? MacAddress.fromString(mLastBssid) : null);
+                if (mIpClient.updateLayer2Information(l2Information)) {
                     mLastL2KeyAndGroupHint = p;
                 } else {
                     mLastL2KeyAndGroupHint = null;
@@ -3000,7 +3004,7 @@ public class ClientModeImpl extends StateMachine {
         registerDisconnected();
         mLastNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
         mWifiScoreCard.resetConnectionState();
-        updateL2KeyAndGroupHint();
+        updateLayer2Information();
     }
 
     void handlePreDhcpSetup() {
@@ -5369,7 +5373,8 @@ public class ClientModeImpl extends StateMachine {
                             new ScanResultInfo.InformationElement(ie.getId(), ie.getBytes());
                     ies.add(scanResultInfoIe);
                 }
-                scanResultInfo = new ProvisioningConfiguration.ScanResultInfo(scanResult.SSID, ies);
+                scanResultInfo = new ProvisioningConfiguration.ScanResultInfo(scanResult.SSID,
+                        scanResult.BSSID, ies);
             }
 
             if (!isUsingStaticIp) {
