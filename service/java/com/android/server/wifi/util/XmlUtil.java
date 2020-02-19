@@ -998,7 +998,7 @@ public class XmlUtil {
     }
 
     /**
-     * Utility class to serialize and deseriaize {@link NetworkSelectionStatus} object to XML &
+     * Utility class to serialize and deserialize {@link NetworkSelectionStatus} object to XML &
      * vice versa. This is used by {@link com.android.server.wifi.WifiConfigStore} module.
      */
     public static class NetworkSelectionStatusXmlUtil {
@@ -1087,6 +1087,10 @@ public class XmlUtil {
             }
             selectionStatus.setNetworkSelectionStatus(status);
             selectionStatus.setNetworkSelectionDisableReason(disableReason);
+            if (status == NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED) {
+                // Make the counter non-zero so that logging code works properly
+                selectionStatus.setDisableReasonCounter(disableReason, 1);
+            }
             return selectionStatus;
         }
     }
