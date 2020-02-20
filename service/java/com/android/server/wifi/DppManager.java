@@ -26,17 +26,22 @@ import android.hardware.wifi.supplicant.V1_3.DppProgressCode;
 import android.hardware.wifi.supplicant.V1_3.DppSuccessCode;
 import android.net.wifi.EasyConnectStatusCallback;
 import android.net.wifi.IDppCallback;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.WakeupMessage;
 import com.android.server.wifi.WifiNative.DppEventCallback;
+import com.android.server.wifi.util.ApConfigUtil;
 
+import java.util.ArrayList;
+import java.util.List;
 /**
  * DPP Manager class
  * Implements the DPP Initiator APIs and callbacks
@@ -57,6 +62,7 @@ public class DppManager {
     private static final String DPP_TIMEOUT_TAG = TAG + " Request Timeout";
     private static final int DPP_TIMEOUT_MS = 40_000; // 40 seconds
     private final DppMetrics mDppMetrics;
+    private final ScanRequestProxy mScanRequestProxy;
 
     private final DppEventCallback mDppEventCallback = new DppEventCallback() {
         @Override
@@ -89,7 +95,7 @@ public class DppManager {
     };
 
     DppManager(Handler handler, WifiNative wifiNative, WifiConfigManager wifiConfigManager,
-            Context context, DppMetrics dppMetrics) {
+            Context context, DppMetrics dppMetrics, ScanRequestProxy scanRequestProxy) {
         mHandler = handler;
         mWifiNative = wifiNative;
         mWifiConfigManager = wifiConfigManager;
@@ -97,6 +103,7 @@ public class DppManager {
         mContext = context;
         mClock = new Clock();
         mDppMetrics = dppMetrics;
+        mScanRequestProxy = scanRequestProxy;
 
         // Setup timer
         mDppTimeoutMessage = new WakeupMessage(mContext, mHandler,
@@ -558,6 +565,88 @@ public class DppManager {
         onFailure(dppStatusCode, null, null, null);
     }
 
+    /**
+     *
+     * This function performs the Enrollee compatibility check with the network.
+     * Compatibilty check is done based on the channel match.
+     * The logic looks into the scan cache and checks if network's
+     * operating channel match with one of the channel in enrollee's scanned channel list.
+     *
+     * @param ssid Network name.
+     * @param channelList contains the list of operating class/channels enrollee used to search for
+     *                    the network.
+     *                    Reference: DPP spec section: DPP Connection Status Object section.
+     *                    (eg for channelList: "81/1,2,3,4,5,6,7,8,9,10,11,117/40,115/48")
+     * @return True On compatibility check failures due to error conditions or
+     *              when AP is not seen in scan cache or when AP is seen in scan cache and
+     *              operating channel is included in enrollee's scanned channel list.
+     *         False when network's operating channel is not included in Enrollee's
+     *              scanned channel list.
+     *
+     */
+    private boolean isEnrolleeCompatibleWithNetwork(String ssid, String channelList) {
+        if (ssid == null || channelList == null) {
+            return true;
+        }
+        SparseArray<int[]> dppChannelList = WifiManager.parseDppChannelList(channelList);
+
+        if (dppChannelList.size() == 0) {
+            Log.d(TAG, "No channels found after parsing channel list string");
+            return true;
+        }
+
+        List<Integer> freqList = new ArrayList<Integer>();
+
+        /* Convert the received operatingClass/channels to list of frequencies */
+        for (int i = 0; i < dppChannelList.size(); i++) {
+            /* Derive the band corresponding to operating class */
+            int operatingClass = dppChannelList.keyAt(i);
+            int[] channels = dppChannelList.get(operatingClass);
+            int band = ApConfigUtil.getBandFromOperatingClass(operatingClass);
+            if (band < 0) {
+                Log.e(TAG, "Band corresponding to the operating class: " + operatingClass
+                        + " not found in the table");
+                continue;
+            }
+            /* Derive frequency list from channel and band */
+            for (int j = 0; j < channels.length; j++) {
+                int freq = ApConfigUtil.convertChannelToFrequency(channels[j], band);
+                if (freq < 0) {
+                    Log.e(TAG, "Invalid frequency after converting channel: " + channels[j]
+                            + " band: " + band);
+                    continue;
+                }
+                freqList.add(freq);
+            }
+        }
+
+        if (freqList.size() == 0) {
+            Log.d(TAG, "frequency list is empty");
+            return true;
+        }
+
+        /* Check the scan cache for the network enrollee tried to find */
+        boolean isNetworkInScanCache = false;
+        boolean channelMatch = false;
+        for (ScanResult scanResult : mScanRequestProxy.getScanResults()) {
+            if (!ssid.equals(scanResult.SSID)) {
+                continue;
+            }
+            isNetworkInScanCache = true;
+            if (freqList.contains(scanResult.frequency)) {
+                channelMatch = true;
+                break;
+            }
+        }
+
+        if (isNetworkInScanCache & !channelMatch) {
+            Log.d(TAG, "Update the error code to NOT_COMPATIBLE"
+                    + " as enrollee didn't scan network's operating channel");
+            return false;
+        }
+        return true;
+    }
+
     private void onFailure(int dppStatusCode, String ssid, String channelList, int[] bandList) {
         try {
             if (mDppRequestInfo == null) {
@@ -610,8 +699,15 @@ public class DppManager {
                 case DppFailureCode.CANNOT_FIND_NETWORK:
                     // This is the only case where channel list is populated, according to the
                     // DPP spec section 6.3.5.2 DPP Connection Status Object
-                    dppFailureCode = EasyConnectStatusCallback
-                            .EASY_CONNECT_EVENT_FAILURE_CANNOT_FIND_NETWORK;
+                    if (isEnrolleeCompatibleWithNetwork(ssid, channelList)) {
+                        dppFailureCode =
+                                EasyConnectStatusCallback
+                                .EASY_CONNECT_EVENT_FAILURE_CANNOT_FIND_NETWORK;
+                    } else {
+                        dppFailureCode =
+                                EasyConnectStatusCallback
+                                .EASY_CONNECT_EVENT_FAILURE_NOT_COMPATIBLE;
+                    }
                     break;
 
                 case DppFailureCode.ENROLLEE_AUTHENTICATION:

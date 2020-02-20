@@ -27,6 +27,7 @@ import android.net.wifi.SoftApConfiguration.BandType;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiScanner;
 import android.util.Log;
+import android.util.SparseArray;
 
 import com.android.server.wifi.WifiNative;
 import com.android.wifi.resources.R;
@@ -53,6 +54,39 @@ public class ApConfigUtil {
 
     /* Random number generator used for AP channel selection. */
     private static final Random sRandom = new Random();
+
+    /**
+     * Valid Global Operating classes in each wifi band
+     * Reference: Table E-4 in IEEE Std 802.11-2016.
+     */
+    private static final SparseArray<int[]> sBandToOperatingClass = new SparseArray<>();
+    static {
+        sBandToOperatingClass.append(SoftApConfiguration.BAND_2GHZ, new int[]{81, 82, 83, 84});
+        sBandToOperatingClass.append(SoftApConfiguration.BAND_5GHZ, new int[]{115, 116, 117, 118,
+                119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130});
+        sBandToOperatingClass.append(SoftApConfiguration.BAND_6GHZ, new int[]{131, 132, 133, 134});
+    }
+
+    /**
+     * Helper function to get the band corresponding to the operating class.
+     *
+     * @param operatingClass Global operating class.
+     * @return band, -1 if no match.
+     *
+     */
+    public static int getBandFromOperatingClass(int operatingClass) {
+        for (int i = 0; i < sBandToOperatingClass.size(); i++) {
+            int band = sBandToOperatingClass.keyAt(i);
+            int[] operatingClasses = sBandToOperatingClass.get(band);
+
+            for (int j = 0; j < operatingClasses.length; j++) {
+                if (operatingClasses[j] == operatingClass) {
+                    return band;
+                }
+            }
+        }
+        return -1;
+    }
 
     /**
      * Convert channel/band to frequency.

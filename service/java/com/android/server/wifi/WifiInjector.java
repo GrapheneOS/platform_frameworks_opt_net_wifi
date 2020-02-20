@@ -353,7 +353,7 @@ public class WifiInjector {
         mWifiMulticastLockManager = new WifiMulticastLockManager(
                 mClientModeImpl.getMcastLockManagerFilterController(), mBatteryStats);
         mDppManager = new DppManager(wifiHandler, mWifiNative,
-                mWifiConfigManager, mContext, mDppMetrics);
+                mWifiConfigManager, mContext, mDppMetrics, mScanRequestProxy);
 
         // Register the various network Nominators with the network selector.
         mWifiNetworkSelector.registerNetworkNominator(mSavedNetworkNominator);
