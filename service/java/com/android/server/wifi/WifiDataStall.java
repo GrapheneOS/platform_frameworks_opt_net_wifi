@@ -39,6 +39,10 @@ import com.android.wifi.resources.R;
 public class WifiDataStall {
     private static final String TAG = "WifiDataStall";
     private boolean mVerboseLoggingEnabled = false;
+    public static final int INVALID_THROUGHPUT = -1;
+    // At low traffic, link speed values below the following threshold
+    // are ignored because it could be due to low rate management frames
+    public static final int LINK_SPEED_LOW_THRESHOLD_MBPS = 9;
     // Maximum time gap between two WifiLinkLayerStats to trigger a data stall
     public static final int MAX_MS_DELTA_FOR_DATA_STALL = 60 * 1000; // 1 minute
     // Maximum time that a data stall start time stays valid.
@@ -59,6 +63,8 @@ public class WifiDataStall {
     private final Context mContext;
     private final WifiChannelUtilization mWifiChannelUtilization;
     private TelephonyManager mTelephonyManager;
+    private final ThroughputPredictor mThroughputPredictor;
+    private WifiNative.ConnectionCapabilities mConnectionCapabilities;
 
     private int mLastFrequency = -1;
     private String mLastBssid;
@@ -72,10 +78,12 @@ public class WifiDataStall {
     private boolean mIsCellularDataAvailable = false;
     private final PhoneStateListener mPhoneStateListener;
     private boolean mPhoneStateListenerEnabled = false;
+    private int mTxTputKbps = INVALID_THROUGHPUT;
+    private int mRxTputKbps = INVALID_THROUGHPUT;
 
     public WifiDataStall(FrameworkFacade facade, WifiMetrics wifiMetrics, Context context,
             DeviceConfigFacade deviceConfigFacade, WifiChannelUtilization wifiChannelUtilization,
-            Clock clock, Handler handler) {
+            Clock clock, Handler handler, ThroughputPredictor throughputPredictor) {
         mFacade = facade;
         mDeviceConfigFacade = deviceConfigFacade;
         mWifiMetrics = wifiMetrics;
@@ -84,6 +92,7 @@ public class WifiDataStall {
         mWifiChannelUtilization = wifiChannelUtilization;
         mWifiChannelUtilization.init(null);
         mWifiChannelUtilization.setCacheUpdateIntervalMs(LLSTATS_CACHE_UPDATE_INTERVAL_MIN_MS);
+        mThroughputPredictor = throughputPredictor;
         mPhoneStateListener = new PhoneStateListener(new HandlerExecutor(handler)) {
             @Override
             public void onDataConnectionStateChanged(int state, int networkType) {
@@ -100,6 +109,12 @@ public class WifiDataStall {
         };
     }
 
+    /**
+     * Set ConnectionCapabilities after each association and roaming
+     */
+    public void setConnectionCapabilities(WifiNative.ConnectionCapabilities capabilities) {
+        mConnectionCapabilities = capabilities;
+    }
     /**
      * Enable phone state listener
      */
@@ -159,6 +174,26 @@ public class WifiDataStall {
     }
 
     /**
+     * Get the latest Tx throughput based on Tx link speed, PER and channel utilization
+     * @return the latest estimated Tx throughput in Kbps if it is available
+     *  or INVALID_THROUGHPUT if it is not available
+     */
+    public int getTxThroughputKbps() {
+        logd("tx tput in kbps: " + mTxTputKbps);
+        return mTxTputKbps;
+    }
+
+    /**
+     * Get the latest Rx throughput based on Rx link speed and channel utilization
+     * @return the latest estimated Rx throughput in Kbps if it is available
+     *  or INVALID_THROUGHPUT if it is not available
+     */
+    public int getRxThroughputKbps() {
+        logd("rx tput in kbps: " + mRxTputKbps);
+        return mRxTputKbps;
+    }
+
+    /**
      * Update data stall detection, check throughput sufficiency and report wifi health stat
      * with the latest link layer stats
      * @param oldStats second most recent WifiLinkLayerStats
@@ -170,10 +205,19 @@ public class WifiDataStall {
             WifiLinkLayerStats newStats, WifiInfo wifiInfo) {
         int currFrequency = wifiInfo.getFrequency();
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(newStats, currFrequency);
+        int ccaLevel = mWifiChannelUtilization.getUtilizationRatio(currFrequency);
 
         if (oldStats == null || newStats == null) {
-            mWifiMetrics.resetWifiIsUnusableLinkLayerStats();
+            // First poll after new association
+            // Update throughput with prediction
+            if (wifiInfo.getRssi() != WifiInfo.INVALID_RSSI && mConnectionCapabilities != null) {
+                mTxTputKbps = mThroughputPredictor.predictTxThroughput(mConnectionCapabilities,
+                        wifiInfo.getRssi(), currFrequency, ccaLevel) * 1000;
+                mRxTputKbps = mThroughputPredictor.predictRxThroughput(mConnectionCapabilities,
+                        wifiInfo.getRssi(), currFrequency, ccaLevel) * 1000;
+            }
             mIsThroughputSufficient = true;
+            mWifiMetrics.resetWifiIsUnusableLinkLayerStats();
             return WifiIsUnusableEvent.TYPE_UNKNOWN;
         }
 
@@ -205,8 +249,8 @@ public class WifiDataStall {
                 || txRetriesDelta < 0
                 || txBadDelta < 0
                 || rxSuccessDelta < 0) {
-            // There was a reset in WifiLinkLayerStats
             mIsThroughputSufficient = true;
+            // There was a reset in WifiLinkLayerStats
             mWifiMetrics.resetWifiIsUnusableLinkLayerStats();
             return WifiIsUnusableEvent.TYPE_UNKNOWN;
         }
@@ -222,7 +266,6 @@ public class WifiDataStall {
         mLastFrequency = currFrequency;
         mLastBssid = wifiInfo.getBSSID();
 
-        int ccaLevel = mWifiChannelUtilization.getUtilizationRatio(currFrequency);
         if (ccaLevel == BssLoad.INVALID) {
             ccaLevel = wifiInfo.is24GHz() ? DEFAULT_CCA_LEVEL_2G : DEFAULT_CCA_LEVEL_ABOVE_2G;
             logd(" use default cca Level");
@@ -233,23 +276,26 @@ public class WifiDataStall {
 
         boolean isTxTputLow = false;
         boolean isRxTputLow = false;
-        int txTputKbps = 0;
 
         if (txLinkSpeedMbps > 0) {
-            long temp = (long) txLinkSpeedMbps * (1000 * (100 - txPer) / 100)
-                    * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE;
-            txTputKbps = (int) temp;
-            isTxTputLow =  txTputKbps < mDeviceConfigFacade.getDataStallTxTputThrKbps();
-        }
-        int rxTputKbps = 0;
-        if (rxLinkSpeedMbps > 0) {
-            long temp = (long) rxLinkSpeedMbps * 1000 * (CHANNEL_UTILIZATION_SCALE  - ccaLevel)
-                    / CHANNEL_UTILIZATION_SCALE;
-            rxTputKbps = (int) temp;
-            isRxTputLow = rxTputKbps < mDeviceConfigFacade.getDataStallRxTputThrKbps();
+            // Exclude update with low rate management frames
+            if (isTxTrafficHigh || txLinkSpeedMbps > LINK_SPEED_LOW_THRESHOLD_MBPS) {
+                mTxTputKbps = (int) ((long) txLinkSpeedMbps * 1000 * (100 - txPer) / 100
+                        * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE);
+            }
+            isTxTputLow =  mTxTputKbps < mDeviceConfigFacade.getDataStallTxTputThrKbps();
         }
 
-        mIsThroughputSufficient = isThroughputSufficientInternal(txTputKbps, rxTputKbps,
+        if (rxLinkSpeedMbps > 0) {
+            // Exclude update with low rate management frames
+            if (isRxTrafficHigh || rxLinkSpeedMbps > LINK_SPEED_LOW_THRESHOLD_MBPS) {
+                mRxTputKbps = (int) ((long) rxLinkSpeedMbps * 1000
+                        * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE);
+            }
+            isRxTputLow = mRxTputKbps < mDeviceConfigFacade.getDataStallRxTputThrKbps();
+        }
+
+        mIsThroughputSufficient = isThroughputSufficientInternal(mTxTputKbps, mRxTputKbps,
                 isTxTrafficHigh, isRxTrafficHigh, timeDeltaLastTwoPollsMs);
 
         int maxTimeDeltaMs = mContext.getResources().getInteger(
@@ -386,8 +432,10 @@ public class WifiDataStall {
      * 1) L3 tput is low and L2 tput is above its low threshold
      * 2) L3 tput is not low and L2 tput over L3 tput ratio is above sufficientRatioThr
      * 3) L3 tput is not low and L2 tput is above its high threshold
+     * 4) L2 tput is invalid
      */
     private boolean isL2ThroughputSufficient(int l2TputKbps, int l3TputKbps) {
+        if (l2TputKbps == INVALID_THROUGHPUT) return true;
         boolean isL3TputLow = (l3TputKbps * mDeviceConfigFacade.getTputSufficientRatioThrDen())
                 < (mDeviceConfigFacade.getTputSufficientLowThrKbps()
                 * mDeviceConfigFacade.getTputSufficientRatioThrNum());
