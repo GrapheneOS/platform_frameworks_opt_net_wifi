@@ -103,7 +103,7 @@ public class WifiBackupRestoreTest extends WifiBaseTest {
                     + "<boolean name=\"HiddenSSID\" value=\"false\" />"
                     + "<boolean name=\"RequirePMF\" value=\"false\" />"
                     // Valid Value: 01
-                    + "<byte-array name=\"AllowedKeyMgmt\" num=\"2\">0180</byte-array>"
+                    + "<byte-array name=\"AllowedKeyMgmt\" num=\"3\">010002</byte-array>"
                     // Valid Value: 03
                     + "<byte-array name=\"AllowedProtocols\" num=\"1\">13</byte-array>"
                     // Valid Value: 01
