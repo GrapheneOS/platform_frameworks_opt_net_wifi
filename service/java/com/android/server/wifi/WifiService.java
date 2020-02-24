@@ -19,7 +19,6 @@ package com.android.server.wifi;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.os.UserHandle;
 import android.util.Log;
 
 import com.android.server.SystemService;
@@ -65,17 +64,17 @@ public final class WifiService extends SystemService {
     }
 
     @Override
-    public void onSwitchUser(TargetUser from, TargetUser to) {
+    public void onUserSwitching(TargetUser from, TargetUser to) {
         mImpl.handleUserSwitch(to.getUserHandle().getIdentifier());
     }
 
     @Override
-    public void onUnlockUser(TargetUser user) {
+    public void onUserUnlocking(TargetUser user) {
         mImpl.handleUserUnlock(user.getUserHandle().getIdentifier());
     }
 
     @Override
-    public void onStopUser(TargetUser user) {
+    public void onUserStopping(TargetUser user) {
         mImpl.handleUserStop(user.getUserHandle().getIdentifier());
     }
 
