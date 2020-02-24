@@ -1224,17 +1224,17 @@ public class WifiPermissionsUtilTest extends WifiBaseTest {
         doThrow(new RuntimeException()).when(mLocationManager).isLocationEnabledForUser(any());
 
         when(mMockFrameworkFacade.getIntegerSetting(
-                any(), eq(Settings.Secure.LOCATION_MODE), anyInt()))
+                any(Context.class), eq(Settings.Secure.LOCATION_MODE), anyInt()))
                 .thenReturn(Settings.Secure.LOCATION_MODE_OFF);
         assertFalse(codeUnderTest.isLocationModeEnabled());
 
         when(mMockFrameworkFacade.getIntegerSetting(
-                any(), eq(Settings.Secure.LOCATION_MODE), anyInt()))
+                any(Context.class), eq(Settings.Secure.LOCATION_MODE), anyInt()))
                 .thenReturn(Settings.Secure.LOCATION_MODE_ON);
         assertTrue(codeUnderTest.isLocationModeEnabled());
 
         verify(mMockFrameworkFacade, times(2)).getIntegerSetting(
-                any(), eq(Settings.Secure.LOCATION_MODE), anyInt());
+                any(Context.class), eq(Settings.Secure.LOCATION_MODE), anyInt());
     }
 
     private Answer<Integer> createPermissionAnswer() {

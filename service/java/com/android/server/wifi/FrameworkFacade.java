@@ -69,6 +69,20 @@ public class FrameworkFacade {
         return mActivityManager;
     }
 
+    /**
+     * Mockable setter for Settings.Global
+     */
+    public boolean setIntegerSetting(ContentResolver contentResolver, String name, int value) {
+        return Settings.Global.putInt(contentResolver, name, value);
+    }
+
+    /**
+     * Mockable getter for Settings.Global
+     */
+    public int getIntegerSetting(ContentResolver contentResolver, String name, int def) {
+        return Settings.Global.getInt(contentResolver, name, def);
+    }
+
     public boolean setIntegerSetting(Context context, String name, int def) {
         return Settings.Global.putInt(getContentResolver(context), name, def);
     }

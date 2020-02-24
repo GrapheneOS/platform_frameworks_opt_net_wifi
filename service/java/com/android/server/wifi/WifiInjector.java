@@ -159,6 +159,8 @@ public class WifiInjector {
     private final WifiHealthMonitor mWifiHealthMonitor;
     private final WifiOemConfigStoreMigrationDataHolder mOemConfigStoreMigrationDataHolder;
     private final WifiSettingsConfigStore mSettingsConfigStore;
+    private final WifiScanAlwaysAvailableSettingsCompatibility
+            mWifiScanAlwaysAvailableSettingsCompatibility;
 
     public WifiInjector(Context context) {
         if (context == null) {
@@ -339,6 +341,9 @@ public class WifiInjector {
         mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
                 mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
                 mContext, mClientModeImpl, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil);
+        mWifiScanAlwaysAvailableSettingsCompatibility =
+                new WifiScanAlwaysAvailableSettingsCompatibility(mContext, wifiHandler,
+                        mSettingsStore, mActiveModeWarden, mFrameworkFacade);
         mWifiApConfigStore = new WifiApConfigStore(
                 mContext, this, wifiHandler, mBackupManagerProxy,
                 mWifiConfigStore, mWifiConfigManager, mActiveModeWarden);
@@ -819,5 +824,10 @@ public class WifiInjector {
 
     public WifiSettingsConfigStore getSettingsConfigStore() {
         return mSettingsConfigStore;
+    }
+
+    public WifiScanAlwaysAvailableSettingsCompatibility
+            getWifiScanAlwaysAvailableSettingsCompatibility() {
+        return mWifiScanAlwaysAvailableSettingsCompatibility;
     }
 }
