@@ -122,7 +122,7 @@ public class WifiApConfigStore {
             WifiConfigManager wifiConfigManager, ActiveModeWarden activeModeWarden) {
         this(context, wifiInjector, handler, backupManagerProxy, wifiConfigStore,
                 wifiConfigManager, activeModeWarden,
-                new File(Environment.getWifiSharedFolder(), LEGACY_AP_CONFIG_FILE));
+                new File(Environment.getLegacyWifiSharedDirectory(), LEGACY_AP_CONFIG_FILE));
     }
 
     WifiApConfigStore(Context context,
