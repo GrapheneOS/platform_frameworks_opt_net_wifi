@@ -307,6 +307,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock IOnWifiActivityEnergyInfoListener mOnWifiActivityEnergyInfoListener;
     @Mock IWifiConnectedNetworkScorer mWifiConnectedNetworkScorer;
     @Mock WifiSettingsConfigStore mWifiSettingsConfigStore;
+    @Mock WifiScanAlwaysAvailableSettingsCompatibility mScanAlwaysAvailableSettingsCompatibility;
 
     WifiLog mLog = new LogcatLog(TAG);
 
@@ -380,6 +381,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiThreadRunner())
                 .thenReturn(new WifiThreadRunner(new Handler(mLooper.getLooper())));
         when(mWifiInjector.getSettingsConfigStore()).thenReturn(mWifiSettingsConfigStore);
+        when(mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility())
+                .thenReturn(mScanAlwaysAvailableSettingsCompatibility);
         when(mClientModeImpl.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class), any())).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
