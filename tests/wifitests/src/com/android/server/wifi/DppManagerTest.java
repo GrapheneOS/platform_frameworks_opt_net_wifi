@@ -66,7 +66,9 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.net.wifi.EasyConnectStatusCallback;
 import android.net.wifi.IDppCallback;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiSsid;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.test.TestLooper;
@@ -80,6 +82,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Unit tests for {@link DppManager}.
  */
@@ -89,10 +94,12 @@ public class DppManagerTest extends WifiBaseTest {
     private static final String TEST_INTERFACE_NAME = "testif0";
     private static final int TEST_PEER_ID = 1;
     private static final String TEST_SSID = "\"Test_SSID\"";
+    private static final String TEST_SSID_NO_QUOTE = TEST_SSID.replace("\"", "");
     private static final String TEST_SSID_ENCODED = "546573745f53534944";
     private static final String TEST_PASSWORD = "\"secretPassword\"";
     private static final String TEST_PASSWORD_ENCODED = "73656372657450617373776f7264";
     private static final int TEST_NETWORK_ID = 1;
+    private static final String TEST_BSSID = "01:02:03:04:05:06";
 
     TestLooper mLooper;
 
@@ -116,6 +123,8 @@ public class DppManagerTest extends WifiBaseTest {
     WakeupMessage mWakeupMessage;
     @Mock
     DppMetrics mDppMetrics;
+    @Mock
+    ScanRequestProxy mScanRequestProxy;
 
     String mUri =
             "DPP:C:81/1;I:DPP_TESTER;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADebGHMJoCcE7OZP/aek5muaJo"
@@ -148,7 +157,7 @@ public class DppManagerTest extends WifiBaseTest {
 
     private DppManager createDppManager() {
         DppManager dppManger = new DppManager(new Handler(mLooper.getLooper()), mWifiNative,
-                mWifiConfigManager, mContext, mDppMetrics);
+                mWifiConfigManager, mContext, mDppMetrics, mScanRequestProxy);
         dppManger.mDppTimeoutMessage = mWakeupMessage;
         dppManger.enableVerboseLogging(1);
         return dppManger;
@@ -741,10 +750,59 @@ public class DppManagerTest extends WifiBaseTest {
         testOnFailureCallback(FAILURE, EASY_CONNECT_EVENT_FAILURE_GENERIC);
     }
 
+    /**
+     * Helper function for setting up a scan result.
+     *
+     * @param frequency Network's operating channel in Mhz.
+     *
+     */
+    private void addTestNetworkInScanResult(int frequency) {
+        String caps = "[WPA2-FT/SAE+SAE][ESS][WPS]";
+        ScanResult scanResult = new ScanResult(WifiSsid.createFromAsciiEncoded(TEST_SSID_NO_QUOTE),
+                TEST_SSID_NO_QUOTE, TEST_BSSID, 1245, 0, caps, -78, frequency,
+                1025, 22, 33, 20, 0, 0, true);
+        List<ScanResult> scanResults = new ArrayList<>();
+        scanResults.add(scanResult);
+        when(mScanRequestProxy.getScanResults()).thenReturn(scanResults);
+    }
+
+    @Test
+    public void testOnFailureCallbackCannotFindNetworkNoErrCodeChangeOnChannelMatch()
+            throws Exception {
+        int[] bandList = new int[]{81, 83, 84, 115};
+        addTestNetworkInScanResult(2437); //channel number 6
+        // Include Network channel(6) in Enrollee scanned channels.
+        testOnFailureCallback(CANNOT_FIND_NETWORK, TEST_SSID_NO_QUOTE,
+                "81/1,2,3,4,5,6,7,8,9,10,11,115/48",
+                bandList, EASY_CONNECT_EVENT_FAILURE_CANNOT_FIND_NETWORK);
+    }
+
+    @Test
+    public void testOnFailureCallbackCannotFindNetworkErrCodeIsUpdatedOnChannelMismatch()
+            throws Exception {
+        int[] bandList = new int[]{81, 83, 84, 115};
+        addTestNetworkInScanResult(5180); //channel number 36
+        // Don't include Network channel(36) in Enrollee scanned channels.
+        testOnFailureCallback(CANNOT_FIND_NETWORK, TEST_SSID_NO_QUOTE,
+                "81/1,2,3,4,5,6,7,8,9,10,11,115/48",
+                bandList, EASY_CONNECT_EVENT_FAILURE_NOT_COMPATIBLE);
+    }
+
+    @Test
+    public void testOnFailureCallbackCannotFindNetworkNoErrCodeChangeOnInvalidScannedChannelList()
+            throws Exception {
+        int[] bandList = new int[]{81, 83, 84};
+        addTestNetworkInScanResult(5180); //channel number 36
+        // Send Invalid operating class/channel list
+        testOnFailureCallback(CANNOT_FIND_NETWORK, TEST_SSID_NO_QUOTE,
+                "1035/1,2,3,4,5,6,7,8,9,10,11,25/45",
+                bandList, EASY_CONNECT_EVENT_FAILURE_CANNOT_FIND_NETWORK);
+    }
+
     @Test
     public void testOnFailureCallbackCannotFindNetwork() throws Exception {
         int[] bandList = new int[]{1, 6, 11};
-        testOnFailureCallback(CANNOT_FIND_NETWORK, "SSID", "1, 3, 6, 8, 11",
+        testOnFailureCallback(CANNOT_FIND_NETWORK, TEST_SSID_NO_QUOTE, "1, 3, 6, 8, 11",
                 bandList, EASY_CONNECT_EVENT_FAILURE_CANNOT_FIND_NETWORK);
     }
 
@@ -757,7 +815,7 @@ public class DppManagerTest extends WifiBaseTest {
     @Test
     public void testOnFailureCallbackEnrolleeAuthentication() throws Exception {
         int[] bandList = new int[]{1, 6, 11};
-        testOnFailureCallback(ENROLLEE_AUTHENTICATION, new String("SSID"), null,
+        testOnFailureCallback(ENROLLEE_AUTHENTICATION, new String(TEST_SSID_NO_QUOTE), null,
                 bandList, EASY_CONNECT_EVENT_FAILURE_ENROLLEE_AUTHENTICATION);
     }
 
