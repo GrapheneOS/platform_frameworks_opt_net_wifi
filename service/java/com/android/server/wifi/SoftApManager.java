@@ -394,7 +394,7 @@ public class SoftApManager implements ActiveModeManager {
         // Make a copy of configuration for updating AP band and channel.
         SoftApConfiguration.Builder localConfigBuilder = new SoftApConfiguration.Builder(config);
 
-        boolean acsEnabled = mCurrentSoftApCapability.isFeatureSupported(
+        boolean acsEnabled = mCurrentSoftApCapability.areFeaturesSupported(
                 SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD);
 
         result = ApConfigUtil.updateApChannelConfig(
@@ -437,7 +437,7 @@ public class SoftApManager implements ActiveModeManager {
     }
 
     private boolean checkSoftApClient(SoftApConfiguration config, WifiClient newClient) {
-        if (!mCurrentSoftApCapability.isFeatureSupported(
+        if (!mCurrentSoftApCapability.areFeaturesSupported(
                 SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT)) {
             return true;
         }
@@ -621,7 +621,7 @@ public class SoftApManager implements ActiveModeManager {
              * configuration.
              */
             private void updateClientConnection() {
-                if (!mCurrentSoftApCapability.isFeatureSupported(
+                if (!mCurrentSoftApCapability.areFeaturesSupported(
                         SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT)) {
                     return;
                 }
