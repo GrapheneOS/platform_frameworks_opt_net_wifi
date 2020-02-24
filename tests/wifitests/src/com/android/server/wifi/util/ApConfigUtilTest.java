@@ -341,6 +341,27 @@ public class ApConfigUtilTest extends WifiBaseTest {
     }
 
     /**
+     * Verify chooseApChannel will select high band channel.
+     */
+    @Test
+    public void chooseApChannelWillHighBandPrefer() throws Exception {
+        when(mResources.getString(R.string.config_wifiSoftap2gChannelList))
+                .thenReturn("1, 6, 11");
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_24_GHZ))
+                .thenReturn(ALLOWED_2G_FREQS); // ch#11
+        when(mResources.getString(R.string.config_wifiSoftap5gChannelList))
+                .thenReturn("149, 153");
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ))
+                .thenReturn(ALLOWED_5G_FREQS); //ch# 149, 153
+
+        int freq = ApConfigUtil.chooseApChannel(
+                SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ,
+                mWifiNative, mResources);
+        assertTrue(ArrayUtils.contains(ALLOWED_5G_FREQS, freq));
+    }
+
+
+    /**
      * Verify default band and channel is used when HAL support is
      * not available.
      */
