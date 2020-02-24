@@ -52,7 +52,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.net.NetworkAgent;
 import android.net.wifi.EAPConstants;
 import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.ScanResult;
@@ -1090,18 +1089,20 @@ public class WifiMetricsTest {
         assertTrue(sb_wifi_score.toString(), (mDecodedProto.wifiScoreCount.length
                 <= (WIFI_SCORE_RANGE_MAX - WIFI_SCORE_RANGE_MIN + 1)));
         StringBuilder sb_wifi_limits = new StringBuilder();
-        sb_wifi_limits.append("Wifi Score limit is " +  NetworkAgent.WIFI_BASE_SCORE
+        sb_wifi_limits.append("Wifi Score limit is " +  ConnectedScore.WIFI_MAX_SCORE
                 + ">= " + WIFI_SCORE_RANGE_MAX);
-        assertTrue(sb_wifi_limits.toString(), NetworkAgent.WIFI_BASE_SCORE <= WIFI_SCORE_RANGE_MAX);
+        assertTrue(sb_wifi_limits.toString(),
+                ConnectedScore.WIFI_MAX_SCORE <= WIFI_SCORE_RANGE_MAX);
         StringBuilder sb_wifi_usability_score = new StringBuilder();
         sb_wifi_usability_score.append("Number of wifi_usability_scores = "
                 + mDecodedProto.wifiUsabilityScoreCount.length);
         assertTrue(sb_wifi_usability_score.toString(), (mDecodedProto.wifiUsabilityScoreCount.length
                 <= (WIFI_SCORE_RANGE_MAX - WIFI_SCORE_RANGE_MIN + 1)));
         StringBuilder sb_wifi_usablity_limits = new StringBuilder();
-        sb_wifi_limits.append("Wifi Usability Score limit is " +  NetworkAgent.WIFI_BASE_SCORE
+        sb_wifi_limits.append("Wifi Usability Score limit is " +  ConnectedScore.WIFI_MAX_SCORE
                 + ">= " + WIFI_SCORE_RANGE_MAX);
-        assertTrue(sb_wifi_limits.toString(), NetworkAgent.WIFI_BASE_SCORE <= WIFI_SCORE_RANGE_MAX);
+        assertTrue(sb_wifi_limits.toString(),
+                ConnectedScore.WIFI_MAX_SCORE <= WIFI_SCORE_RANGE_MAX);
         assertEquals(MAX_NUM_SOFTAP_RETURN_CODES, mDecodedProto.softApReturnCode.length);
         assertEquals(WifiMetricsProto.SoftApReturnCodeCount.SOFT_AP_STARTED_SUCCESSFULLY,
                      mDecodedProto.softApReturnCode[0].startResult);
