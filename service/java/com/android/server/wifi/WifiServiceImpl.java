@@ -348,6 +348,7 @@ public class WifiServiceImpl extends BaseWifiService {
             Log.i(TAG,
                     "WifiService starting up with Wi-Fi " + (wifiEnabled ? "enabled" : "disabled"));
 
+            mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility().initialize();
             mContext.registerReceiver(
                     new BroadcastReceiver() {
                         @Override
@@ -1893,6 +1894,8 @@ public class WifiServiceImpl extends BaseWifiService {
         enforceNetworkSettingsPermission();
         mLog.info("setScanAlwaysAvailable uid=%").c(Binder.getCallingUid()).flush();
         mSettingsStore.handleWifiScanAlwaysAvailableToggled(isAvailable);
+        mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility()
+                .handleWifiScanAlwaysAvailableToggled(isAvailable);
         mActiveModeWarden.scanAlwaysModeChanged();
     }
 
