@@ -1067,15 +1067,17 @@ public class WifiConfigManager {
         // seen before. 
         // Or if RANDOMIZATION_ALWAYS is toggled
         // So add it to store.
-        if (!mRandomizedMacAddressMapping.containsKey(key) ||
-               config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ALWAYS) {
+        if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ALWAYS ||
+             !mRandomizedMacAddressMapping.containsKey(key)) {
             mRandomizedMacAddressMapping.put(key,
                     config.getOrCreateRandomizedMacAddress().toString());
+            config.setRandomizedMacAddress(
+                    MacAddress.fromString(mRandomizedMacAddressMapping.get(key)));
         } else {
             try {
                 // read from the store and set the WifiConfiguration
-                    config.setRandomizedMacAddress(
-                            MacAddress.fromString(mRandomizedMacAddressMapping.get(key)));
+                config.setRandomizedMacAddress(
+                        MacAddress.fromString(mRandomizedMacAddressMapping.get(key)));
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "Error creating randomized MAC address from stored value.");
                 mRandomizedMacAddressMapping.put(key,
