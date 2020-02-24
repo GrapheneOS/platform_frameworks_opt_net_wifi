@@ -552,14 +552,14 @@ public class ApConfigUtil {
      */
     public static boolean checkSupportAllConfiguration(SoftApConfiguration config,
             SoftApCapability capability) {
-        if (!capability.isFeatureSupported(
+        if (!capability.areFeaturesSupported(
                 SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT)
                 && (config.getMaxNumberOfClients() != 0 || config.isClientControlByUserEnabled())) {
             Log.d(TAG, "Error, Client control requires HAL support");
             return false;
         }
 
-        if (!capability.isFeatureSupported(SoftApCapability.SOFTAP_FEATURE_WPA3_SAE)
+        if (!capability.areFeaturesSupported(SoftApCapability.SOFTAP_FEATURE_WPA3_SAE)
                 && (config.getSecurityType()
                 == SoftApConfiguration.SECURITY_TYPE_WPA3_SAE_TRANSITION
                 || config.getSecurityType() == SoftApConfiguration.SECURITY_TYPE_WPA3_SAE)) {
