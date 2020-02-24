@@ -61,6 +61,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -217,8 +219,11 @@ public class WifiPickerTracker extends BaseWifiTracker {
             updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
         }
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
-        updateStandardWifiEntryScans(mScanResultUpdater.getScanResults());
-        updatePasspointWifiEntryScans(mScanResultUpdater.getScanResults());
+        // Update scans since config changes may result in different entries being shown.
+        final List<ScanResult> scanResults = mScanResultUpdater.getScanResults();
+        updateStandardWifiEntryScans(scanResults);
+        updatePasspointWifiEntryScans(scanResults);
+        updateOsuWifiEntryScans(scanResults);
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
@@ -267,6 +272,13 @@ public class WifiPickerTracker extends BaseWifiTracker {
             }).findAny().orElse(null /* other */);
             if (mConnectedWifiEntry == null) {
                 mConnectedWifiEntry = mPasspointWifiEntryCache.values().stream().filter(entry -> {
+                    final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
+                    return connectedState == CONNECTED_STATE_CONNECTED
+                            || connectedState == CONNECTED_STATE_CONNECTING;
+                }).findAny().orElse(null /* other */);
+            }
+            if (mConnectedWifiEntry == null) {
+                mConnectedWifiEntry = mOsuWifiEntryCache.values().stream().filter(entry -> {
                     final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
                     return connectedState == CONNECTED_STATE_CONNECTED
                             || connectedState == CONNECTED_STATE_CONNECTING;
@@ -325,6 +337,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     private void updatePasspointWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
 
+        Set<String> seenKeys = new TreeSet<>();
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> matchingWifiConfigs =
                 mWifiManager.getAllMatchingWifiConfigs(scanResults);
         for (Pair<WifiConfiguration, Map<Integer, List<ScanResult>>> pair : matchingWifiConfigs) {
@@ -334,6 +347,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             final List<ScanResult> roamingScans =
                     pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK);
             final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
+            seenKeys.add(key);
             // Skip in case we don't have a Passpoint configuration for the returned unique key
             if (!mPasspointConfigCache.containsKey(key)) {
                 continue;
@@ -351,7 +365,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         // Remove entries that are now unreachable
         mPasspointWifiEntryCache.entrySet()
-                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
+                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE
+                        || !seenKeys.contains(entry.getKey()));
     }
 
     @WorkerThread
@@ -360,18 +375,26 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         Map<OsuProvider, List<ScanResult>> osuProviderToScans =
                 mWifiManager.getMatchingOsuProviders(scanResults);
-        for (OsuProvider osuProvider : osuProviderToScans.keySet()) {
-            final String key = osuProviderToOsuWifiEntryKey(osuProvider);
-            if (!mOsuWifiEntryCache.containsKey(key)) {
-                mOsuWifiEntryCache.put(key, new OsuWifiEntry(mContext,
-                        mMainHandler, osuProvider, mWifiManager, false /* forSavedNetworksPage */));
-            }
-            mOsuWifiEntryCache.get(key).updateScanResultInfo(osuProviderToScans.get(osuProvider));
+        Set<OsuProvider> alreadyProvisioned =
+                mWifiManager.getMatchingPasspointConfigsForOsuProviders(osuProviderToScans.keySet())
+                        .keySet();
+        // Update each OsuWifiEntry with new scans (or empty scans).
+        for (OsuWifiEntry entry : mOsuWifiEntryCache.values()) {
+            entry.updateScanResultInfo(osuProviderToScans.remove(entry.getOsuProvider()));
         }
 
-        // Remove entries that are now unreachable
+        // Create a new entry for each OsuProvider not already matched to an OsuWifiEntry
+        for (OsuProvider provider : osuProviderToScans.keySet()) {
+            OsuWifiEntry newEntry = new OsuWifiEntry(mContext, mMainHandler, provider, mWifiManager,
+                    false /* forSavedNetworksPage */);
+            newEntry.updateScanResultInfo(osuProviderToScans.get(provider));
+            mOsuWifiEntryCache.put(osuProviderToOsuWifiEntryKey(provider), newEntry);
+        }
+
+        // Remove entries that are now unreachable or already provisioned
         mOsuWifiEntryCache.entrySet()
-                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
+                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE
+                        || alreadyProvisioned.contains(entry.getValue().getOsuProvider()));
     }
 
     /**
@@ -485,6 +508,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
             entry.updateConnectionInfo(wifiInfo, networkInfo);
         }
         for (WifiEntry entry : mPasspointWifiEntryCache.values()) {
+            entry.updateConnectionInfo(wifiInfo, networkInfo);
+        }
+        for (WifiEntry entry : mOsuWifiEntryCache.values()) {
             entry.updateConnectionInfo(wifiInfo, networkInfo);
         }
     }

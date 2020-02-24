@@ -340,33 +340,37 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @WorkerThread
-    void updateScanResultInfo(@NonNull WifiConfiguration wifiConfig,
+    void updateScanResultInfo(@Nullable WifiConfiguration wifiConfig,
             @Nullable List<ScanResult> homeScanResults,
             @Nullable List<ScanResult> roamingScanResults)
             throws IllegalArgumentException {
+        mIsRoaming = false;
         mWifiConfig = wifiConfig;
-        mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
-
-        if (homeScanResults == null) {
-            homeScanResults = new ArrayList<>();
+        mCurrentHomeScanResults.clear();
+        mCurrentRoamingScanResults.clear();
+        if (homeScanResults != null) {
+            mCurrentHomeScanResults.addAll(homeScanResults);
         }
-        if (roamingScanResults == null) {
-            roamingScanResults = new ArrayList<>();
+        if (roamingScanResults != null) {
+            mCurrentRoamingScanResults.addAll(roamingScanResults);
         }
-
-        ScanResult bestScanResult;
-        if (homeScanResults.isEmpty() && !roamingScanResults.isEmpty()) {
-            mIsRoaming = true;
-            bestScanResult = getBestScanResultByLevel(roamingScanResults);
+        if (mWifiConfig != null) {
+            mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
+            ScanResult bestScanResult = null;
+            if (homeScanResults != null && !homeScanResults.isEmpty()) {
+                bestScanResult = getBestScanResultByLevel(homeScanResults);
+            } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
+                mIsRoaming = true;
+                bestScanResult = getBestScanResultByLevel(roamingScanResults);
+            }
+            if (bestScanResult == null) {
+                mLevel = WIFI_LEVEL_UNREACHABLE;
+            } else {
+                mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
+                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+            }
         } else {
-            mIsRoaming = false;
-            bestScanResult = getBestScanResultByLevel(homeScanResults);
-        }
-
-        if (bestScanResult == null) {
             mLevel = WIFI_LEVEL_UNREACHABLE;
-        } else {
-            mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
         }
 
         notifyOnUpdated();
