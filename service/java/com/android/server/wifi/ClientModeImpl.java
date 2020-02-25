@@ -359,7 +359,7 @@ public class ClientModeImpl extends StateMachine {
 
     // This is the BSSID we are trying to associate to, it can be set to SUPPLICANT_BSSID_ANY
     // if we havent selected a BSSID for joining.
-    private String mTargetRoamBSSID = SUPPLICANT_BSSID_ANY;
+    private String mTargetBssid = SUPPLICANT_BSSID_ANY;
     // This one is used to track the current target network ID. This is used for error
     // handling during connection setup since many error message from supplicant does not report
     // SSID Once connected, it will be set to invalid
@@ -381,7 +381,7 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Method to clear {@link #mTargetRoamBSSID} and reset the the current connected network's
+     * Method to clear {@link #mTargetBssid} and reset the current connected network's
      * bssid in wpa_supplicant after a roam/connect attempt.
      */
     public boolean clearTargetBssid(String dbg) {
@@ -399,12 +399,12 @@ public class ClientModeImpl extends StateMachine {
         if (mVerboseLoggingEnabled) {
             logd(dbg + " clearTargetBssid " + bssid + " key=" + config.getKey());
         }
-        mTargetRoamBSSID = bssid;
+        mTargetBssid = bssid;
         return mWifiNative.setConfiguredNetworkBSSID(mInterfaceName, bssid);
     }
 
     /**
-     * Set Config's default BSSID (for association purpose) and {@link #mTargetRoamBSSID}
+     * Set Config's default BSSID (for association purpose) and {@link #mTargetBssid}
      * @param config config need set BSSID
      * @param bssid  default BSSID to assocaite with when connect to this network
      * @return false -- does not change the current default BSSID of the configure
@@ -423,7 +423,7 @@ public class ClientModeImpl extends StateMachine {
         if (mVerboseLoggingEnabled) {
             Log.d(TAG, "setTargetBssid set to " + bssid + " key=" + config.getKey());
         }
-        mTargetRoamBSSID = bssid;
+        mTargetBssid = bssid;
         config.getNetworkSelectionStatus().setNetworkSelectionBSSID(bssid);
         return true;
     }
@@ -1956,8 +1956,8 @@ public class ClientModeImpl extends StateMachine {
                 if (msg.obj != null) {
                     sb.append(" BSSID=").append((String) msg.obj);
                 }
-                if (mTargetRoamBSSID != null) {
-                    sb.append(" Target=").append(mTargetRoamBSSID);
+                if (mTargetBssid != null) {
+                    sb.append(" Target=").append(mTargetBssid);
                 }
                 sb.append(" roam=").append(Boolean.toString(mIsAutoRoaming));
                 break;
@@ -2013,15 +2013,16 @@ public class ClientModeImpl extends StateMachine {
                 sb.append(Integer.toString(msg.arg2));
                 config = mWifiConfigManager.getConfiguredNetwork(msg.arg1);
                 if (config != null) {
-                    sb.append(" ").append(config.getKey());
+                    sb.append(" targetConfigKey=").append(config.getKey());
+                    sb.append(" BSSID=" + config.BSSID);
                 }
-                if (mTargetRoamBSSID != null) {
-                    sb.append(" ").append(mTargetRoamBSSID);
+                if (mTargetBssid != null) {
+                    sb.append(" targetBssid=").append(mTargetBssid);
                 }
                 sb.append(" roam=").append(Boolean.toString(mIsAutoRoaming));
                 config = getCurrentWifiConfiguration();
                 if (config != null) {
-                    sb.append(config.getKey());
+                    sb.append(" currentConfigKey=").append(config.getKey());
                 }
                 break;
             case CMD_START_ROAM:
@@ -2042,8 +2043,8 @@ public class ClientModeImpl extends StateMachine {
                         sb.append(" !seen=").append(result.seen);
                     }
                 }
-                if (mTargetRoamBSSID != null) {
-                    sb.append(" ").append(mTargetRoamBSSID);
+                if (mTargetBssid != null) {
+                    sb.append(" ").append(mTargetBssid);
                 }
                 sb.append(" roam=").append(Boolean.toString(mIsAutoRoaming));
                 sb.append(" fail count=").append(Integer.toString(mRoamFailCount));
@@ -2872,7 +2873,7 @@ public class ClientModeImpl extends StateMachine {
             int blocklistReason = convertToBssidBlocklistMonitorFailureReason(
                     level2FailureCode, level2FailureReason);
 
-            String bssid = mLastBssid == null ? mTargetRoamBSSID : mLastBssid;
+            String bssid = mLastBssid == null ? mTargetBssid : mLastBssid;
             String ssid = mWifiInfo.getSSID();
             if (WifiManager.UNKNOWN_SSID.equals(ssid)) {
                 ssid = getTargetSsid();
@@ -3611,7 +3612,7 @@ public class ClientModeImpl extends StateMachine {
         }
         String bssid = mWifiInfo.getBSSID();
         if (bssid == null) {
-            bssid = mTargetRoamBSSID;
+            bssid = mTargetBssid;
         }
         ScanDetailCache scanDetailCache =
                 mWifiConfigManager.getScanDetailCacheForNetwork(config.networkId);
@@ -3726,7 +3727,12 @@ public class ClientModeImpl extends StateMachine {
                             + reasonCode + " timedOut=" + Boolean.toString(timedOut));
                     if (bssid == null || TextUtils.isEmpty(bssid)) {
                         // If BSSID is null, use the target roam BSSID
-                        bssid = mTargetRoamBSSID;
+                        bssid = mTargetBssid;
+                    } else if (mTargetBssid == SUPPLICANT_BSSID_ANY) {
+                        // This is needed by BssidBlocklistMonitor to block continuously
+                        // failing BSSIDs. Need to set here because mTargetBssid is currently
+                        // not being set until association success.
+                        mTargetBssid = bssid;
                     }
                     mWifiConfigManager.updateNetworkSelectionStatus(mTargetNetworkId,
                             WifiConfiguration.NetworkSelectionStatus
@@ -3817,7 +3823,7 @@ public class ClientModeImpl extends StateMachine {
                         mWifiInjector.getWifiLastResortWatchdog()
                                 .noteConnectionFailureAndTriggerIfNeeded(
                                         getTargetSsid(),
-                                        (mLastBssid == null) ? mTargetRoamBSSID : mLastBssid,
+                                        (mLastBssid == null) ? mTargetBssid : mLastBssid,
                                         WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
                     }
                     break;
@@ -3963,8 +3969,7 @@ public class ClientModeImpl extends StateMachine {
                     mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(config.SSID);
 
                     updateWifiConfigOnStartConnection(config, bssid);
-
-                    reportConnectionAttemptStart(config, mTargetRoamBSSID,
+                    reportConnectionAttemptStart(config, mTargetBssid,
                             WifiMetricsProto.ConnectionEvent.ROAM_UNRELATED);
 
                     String currentMacAddress = mWifiNative.getMacAddress(mInterfaceName);
@@ -4150,7 +4155,7 @@ public class ClientModeImpl extends StateMachine {
                 case WifiMonitor.TARGET_BSSID_EVENT:
                     // Trying to associate to this BSSID
                     if (message.obj != null) {
-                        mTargetRoamBSSID = (String) message.obj;
+                        mTargetBssid = (String) message.obj;
                     }
                     break;
                 case CMD_GET_LINK_LAYER_STATS:
@@ -4640,7 +4645,7 @@ public class ClientModeImpl extends StateMachine {
                     mWifiInjector.getWifiLastResortWatchdog()
                             .noteConnectionFailureAndTriggerIfNeeded(
                                     getTargetSsid(),
-                                    (mLastBssid == null) ? mTargetRoamBSSID : mLastBssid,
+                                    (mLastBssid == null) ? mTargetBssid : mLastBssid,
                                     WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     break;
                 }
@@ -4671,7 +4676,7 @@ public class ClientModeImpl extends StateMachine {
                     mWifiInjector.getWifiLastResortWatchdog()
                             .noteConnectionFailureAndTriggerIfNeeded(
                                     getTargetSsid(),
-                                    (mLastBssid == null) ? mTargetRoamBSSID : mLastBssid,
+                                    (mLastBssid == null) ? mTargetBssid : mLastBssid,
                                     WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     transitionTo(mDisconnectingState);
                     break;
@@ -4959,7 +4964,7 @@ public class ClientModeImpl extends StateMachine {
                             .noteConnectionFailureAndTriggerIfNeeded(
                                     getTargetSsid(),
                                     (message.obj == null)
-                                    ? mTargetRoamBSSID : (String) message.obj,
+                                    ? mTargetBssid : (String) message.obj,
                                     WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     handleStatus = NOT_HANDLED;
                     break;
@@ -5053,7 +5058,7 @@ public class ClientModeImpl extends StateMachine {
                                     + stateChangeResult.toString());
                         }
                         if (stateChangeResult.BSSID != null
-                                && stateChangeResult.BSSID.equals(mTargetRoamBSSID)) {
+                                && stateChangeResult.BSSID.equals(mTargetBssid)) {
                             handleNetworkDisconnect();
                             transitionTo(mDisconnectedState);
                         }
@@ -5062,7 +5067,7 @@ public class ClientModeImpl extends StateMachine {
                         // We completed the layer2 roaming part
                         mAssociated = true;
                         if (stateChangeResult.BSSID != null) {
-                            mTargetRoamBSSID = stateChangeResult.BSSID;
+                            mTargetBssid = stateChangeResult.BSSID;
                         }
                     }
                     break;
@@ -5125,12 +5130,12 @@ public class ClientModeImpl extends StateMachine {
                     String bssid = (String) message.obj;
                     if (true) {
                         String target = "";
-                        if (mTargetRoamBSSID != null) target = mTargetRoamBSSID;
+                        if (mTargetBssid != null) target = mTargetBssid;
                         log("NETWORK_DISCONNECTION_EVENT in roaming state"
                                 + " BSSID=" + bssid
                                 + " target=" + target);
                     }
-                    if (bssid != null && bssid.equals(mTargetRoamBSSID)) {
+                    if (bssid != null && bssid.equals(mTargetBssid)) {
                         handleNetworkDisconnect();
                         transitionTo(mDisconnectedState);
                     }
@@ -5332,9 +5337,9 @@ public class ClientModeImpl extends StateMachine {
                             + " my state " + getCurrentState().getName()
                             + " nid=" + Integer.toString(netId)
                             + " config " + config.getKey()
-                            + " targetRoamBSSID " + mTargetRoamBSSID);
+                            + " targetRoamBSSID " + mTargetBssid);
 
-                    reportConnectionAttemptStart(config, mTargetRoamBSSID,
+                    reportConnectionAttemptStart(config, mTargetBssid,
                             WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
                     if (mWifiNative.roamToNetwork(mInterfaceName, config)) {
                         mLastConnectAttemptTimestamp = mClock.getWallClockMillis();
@@ -5481,7 +5486,7 @@ public class ClientModeImpl extends StateMachine {
                     stopIpClient();
                     if (message.arg2 == 15 /* FOURWAY_HANDSHAKE_TIMEOUT */) {
                         String bssid = (message.obj == null)
-                                ? mTargetRoamBSSID : (String) message.obj;
+                                ? mTargetBssid : (String) message.obj;
                         mWifiInjector.getWifiLastResortWatchdog()
                                 .noteConnectionFailureAndTriggerIfNeeded(
                                         getTargetSsid(), bssid,
