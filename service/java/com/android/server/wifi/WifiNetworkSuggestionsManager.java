@@ -268,6 +268,18 @@ public class WifiNetworkSuggestionsManager {
                 @NonNull PerAppInfo perAppInfo, boolean isAutoJoinEnabled) {
             return new ExtendedWifiNetworkSuggestion(wns, perAppInfo, isAutoJoinEnabled);
         }
+
+        /**
+         * Create a {@link WifiConfiguration} from suggestion for framework internal use.
+         */
+        public WifiConfiguration createInternalWifiConfiguration() {
+            WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
+            config.ephemeral = true;
+            config.fromWifiNetworkSuggestion = true;
+            config.allowAutojoin = isAutojoinEnabled;
+            config.trusted = !wns.isNetworkUntrusted;
+            return config;
+        }
     }
 
     /**
