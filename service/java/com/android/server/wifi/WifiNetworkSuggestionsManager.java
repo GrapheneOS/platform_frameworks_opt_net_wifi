@@ -1114,6 +1114,34 @@ public class WifiNetworkSuggestionsManager {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Get all user approved, non-passpoint networks from suggestion.
+     */
+    public List<WifiConfiguration> getAllPnoAvailableSuggestionNetworks() {
+        List<WifiConfiguration> networks = new ArrayList<>();
+        for (PerAppInfo info : mActiveNetworkSuggestionsPerApp.values()) {
+            if (!info.hasUserApproved && info.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+                continue;
+            }
+            for (ExtendedWifiNetworkSuggestion ewns : info.extNetworkSuggestions) {
+                if (ewns.wns.getPasspointConfiguration() != null) {
+                    continue;
+                }
+                WifiConfiguration network = mWifiConfigManager
+                        .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getKey());
+                if (network == null) {
+                    network = new WifiConfiguration(ewns.wns.getWifiConfiguration());
+                    network.ephemeral = true;
+                    network.fromWifiNetworkSuggestion = true;
+                    network.allowAutojoin = ewns.isAutojoinEnabled;
+                    network.trusted = !ewns.wns.isNetworkUntrusted;
+                }
+                networks.add(network);
+            }
+        }
+        return networks;
+    }
+
     private List<Integer> getAllMaxSizes() {
         return mActiveNetworkSuggestionsPerApp.values()
                 .stream()

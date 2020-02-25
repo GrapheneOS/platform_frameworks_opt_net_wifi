@@ -3317,6 +3317,38 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify getAllPnoAvailableSuggestionNetworks will only return user approved,
+     * non-passpoint network.
+     */
+    @Test
+    public void testGetPnoAvailableSuggestions() {
+        WifiConfiguration network1 = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiConfiguration network2 = WifiConfigurationTestUtil.createOpenNetwork();
+        PasspointConfiguration passpointConfiguration =
+                createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
+        WifiConfiguration dummyConfig = new WifiConfiguration();
+        dummyConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion =
+                new WifiNetworkSuggestion(network1, null, false, false, true, true, false);
+        WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(dummyConfig,
+                passpointConfiguration, false, false, true, true, false);
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion);
+                    add(passpointSuggestion);
+                }};
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager
+                        .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
+        assertTrue(mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks().isEmpty());
+        mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
+        List<WifiConfiguration> pnoNetwork =
+                mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks();
+        assertEquals(1, pnoNetwork.size());
+        assertEquals(network1.SSID, pnoNetwork.get(0).SSID);
+    }
+
+    /**
      * Helper function for creating a test configuration with user credential.
      *
      * @return {@link PasspointConfiguration}

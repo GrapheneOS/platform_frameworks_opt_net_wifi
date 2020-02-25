@@ -45,6 +45,10 @@ import com.android.wifi.resources.R;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1087,7 +1091,7 @@ public class WifiConnectivityManager {
     private void startDisconnectedPnoScan() {
         // Initialize PNO settings
         PnoSettings pnoSettings = new PnoSettings();
-        List<PnoSettings.PnoNetwork> pnoNetworkList = mConfigManager.retrievePnoNetworkList();
+        List<PnoSettings.PnoNetwork> pnoNetworkList = retrievePnoNetworkList();
         int listSize = pnoNetworkList.size();
 
         if (listSize == 0) {
@@ -1115,6 +1119,68 @@ public class WifiConnectivityManager {
                 scanSettings, pnoSettings, new HandlerExecutor(mEventHandler), mPnoScanListener);
         mPnoScanStarted = true;
         mWifiMetrics.logPnoScanStart();
+    }
+
+    /**
+     * Retrieve the PnoNetworks from Saved and suggestion non-passpoint network.
+     */
+    @VisibleForTesting
+    public List<PnoSettings.PnoNetwork> retrievePnoNetworkList() {
+        List<WifiConfiguration> networks = mConfigManager.getSavedNetworks(-1);
+        networks.addAll(mWifiInjector.getWifiNetworkSuggestionsManager()
+                        .getAllPnoAvailableSuggestionNetworks());
+        // remove all auto-join disabled or network selection disabled network.
+        networks.removeIf(config -> !config.allowAutojoin
+                || !config.getNetworkSelectionStatus().isNetworkEnabled());
+        if (networks.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
+        Collections.sort(networks, WifiConfigManager.sScanListComparator);
+        if (mContext.getResources().getBoolean(R.bool.config_wifiPnoRecencySortingEnabled)) {
+            // Find the most recently connected network and move it to the front of the list.
+            putMostRecentlyConnectedNetworkAtTop(networks);
+        }
+        WifiScoreCard scoreCard = null;
+        if (mContext.getResources().getBoolean(R.bool.config_wifiPnoFrequencyCullingEnabled)) {
+            scoreCard = mWifiInjector.getWifiScoreCard();
+        }
+
+        List<PnoSettings.PnoNetwork> pnoList = new ArrayList<>();
+        Set<WifiScanner.PnoSettings.PnoNetwork> pnoSet = new HashSet<>();
+        for (WifiConfiguration config : networks) {
+            WifiScanner.PnoSettings.PnoNetwork pnoNetwork =
+                    WifiConfigurationUtil.createPnoNetwork(config);
+            if (pnoSet.contains(pnoNetwork)) {
+                continue;
+            }
+            pnoList.add(pnoNetwork);
+            pnoSet.add(pnoNetwork);
+            if (scoreCard == null) {
+                continue;
+            }
+            WifiScoreCard.PerNetwork network = scoreCard.lookupNetwork(config.SSID);
+            List<Integer> channelList = network.getFrequencies();
+            pnoNetwork.frequencies = channelList.stream().mapToInt(Integer::intValue).toArray();
+            localLog("retrievePnoNetworkList " + pnoNetwork.ssid + ":"
+                    + Arrays.toString(pnoNetwork.frequencies));
+        }
+        return pnoList;
+    }
+
+    /**
+     * Find the most recently connected network from a list of networks, and place it at top
+     */
+    private void putMostRecentlyConnectedNetworkAtTop(List<WifiConfiguration> networks) {
+        WifiConfiguration lastConnectedNetwork =
+                networks.stream()
+                        .max(Comparator.comparing(
+                                (WifiConfiguration config) -> config.lastConnected))
+                        .get();
+        if (lastConnectedNetwork.lastConnected != 0) {
+            int lastConnectedNetworkIdx = networks.indexOf(lastConnectedNetwork);
+            networks.remove(lastConnectedNetworkIdx);
+            networks.add(0, lastConnectedNetwork);
+        }
     }
 
     // Stop PNO scan.
