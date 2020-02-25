@@ -2980,7 +2980,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testNotifiesBssidBlocklistMonitorLowRssi() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
-        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, FRAMEWORK_NETWORK_ID, 0, sBSSID);
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, FRAMEWORK_NETWORK_ID, 0,
+                ClientModeImpl.SUPPLICANT_BSSID_ANY);
         mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT, 1, 0, sBSSID);
         when(mWifiConfigManager.findScanRssi(eq(FRAMEWORK_NETWORK_ID), anyInt())).thenReturn(-80);
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
