@@ -34,7 +34,7 @@ public class WifiConfigStoreMigrationDataHolder {
     private ConfigStoreMigrationData mData;
     private boolean mLoaded = false;
 
-    private void loadOemMigrationData() {
+    private void loadMigrationData() {
         if (!mLoaded) {
             mData = WifiMigration.loadFromConfigStore();
             mLoaded = true;
@@ -46,7 +46,7 @@ public class WifiConfigStoreMigrationDataHolder {
      */
     @Nullable
     public List<WifiConfiguration> getUserSavedNetworks() {
-        loadOemMigrationData();
+        loadMigrationData();
         if (mData == null) return null;
         return mData.getUserSavedNetworkConfigurations();
     }
@@ -56,9 +56,18 @@ public class WifiConfigStoreMigrationDataHolder {
      */
     @Nullable
     public SoftApConfiguration getUserSoftApConfiguration() {
-        loadOemMigrationData();
+        loadMigrationData();
         if (mData == null) return null;
         return mData.getUserSoftApConfiguration();
     }
 
+    /**
+     * Check if there was any data to be migrated. If yes, then go ahead and invoke the API
+     * to remove the stores now.
+     */
+    public void removeStoreIfPresent() {
+        if (mLoaded && mData != null) {
+            WifiMigration.removeConfigStore();
+        }
+    }
 }

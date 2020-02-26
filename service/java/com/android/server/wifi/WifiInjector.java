@@ -248,13 +248,14 @@ public class WifiInjector {
         mKeyStore = keyStore;
         mWifiKeyStore = new WifiKeyStore(mKeyStore);
         // New config store
+        mOemConfigStoreMigrationDataHolder = new WifiConfigStoreMigrationDataHolder();
         mWifiConfigStore = new WifiConfigStore(mContext, wifiHandler, mClock, mWifiMetrics,
+                mOemConfigStoreMigrationDataHolder,
                 WifiConfigStore.createSharedFiles(mFrameworkFacade.isNiapModeOn(mContext)));
         SubscriptionManager subscriptionManager =
                 mContext.getSystemService(SubscriptionManager.class);
         mTelephonyUtil = new TelephonyUtil(makeTelephonyManager(), subscriptionManager,
                 mFrameworkFacade, mContext, wifiHandler);
-        mOemConfigStoreMigrationDataHolder = new WifiConfigStoreMigrationDataHolder();
         String l2KeySeed = Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID);
         mWifiScoreCard = new WifiScoreCard(mClock, l2KeySeed, mDeviceConfigFacade);
         // Config Manager
@@ -262,8 +263,8 @@ public class WifiInjector {
                 mUserManager, mTelephonyUtil,
                 mWifiKeyStore, mWifiConfigStore, mWifiPermissionsUtil,
                 mWifiPermissionsWrapper, this,
-                new NetworkListSharedStoreData(mContext, mOemConfigStoreMigrationDataHolder),
-                new NetworkListUserStoreData(mContext, mOemConfigStoreMigrationDataHolder),
+                new NetworkListSharedStoreData(mContext),
+                new NetworkListUserStoreData(mContext),
                 new RandomizedMacStoreData(), mFrameworkFacade, wifiHandler, mDeviceConfigFacade,
                 mWifiScoreCard);
         mSettingsConfigStore = new WifiSettingsConfigStore(context, wifiHandler, mWifiConfigManager,
@@ -680,7 +681,7 @@ public class WifiInjector {
      */
     public SoftApStoreData makeSoftApStoreData(
             SoftApStoreData.DataSource dataSource) {
-        return new SoftApStoreData(mContext, dataSource, mOemConfigStoreMigrationDataHolder);
+        return new SoftApStoreData(mContext, dataSource);
     }
 
     public WifiPermissionsUtil getWifiPermissionsUtil() {
