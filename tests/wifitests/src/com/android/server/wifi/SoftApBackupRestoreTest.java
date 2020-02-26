@@ -25,7 +25,7 @@ import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiOemMigrationHook;
+import android.net.wifi.WifiMigration;
 import android.util.BackupUtils;
 
 import androidx.test.filters.SmallTest;
@@ -55,7 +55,7 @@ import java.util.List;
 public class SoftApBackupRestoreTest extends WifiBaseTest {
 
     @Mock private Context mContext;
-    @Mock private WifiOemMigrationHook.SettingsMigrationData mOemMigrationData;
+    @Mock private WifiMigration.SettingsMigrationData mOemMigrationData;
     private SoftApBackupRestore mSoftApBackupRestore;
     private final ArrayList<MacAddress> mTestBlockedList = new ArrayList<>();
     private final ArrayList<MacAddress> mTestAllowedList = new ArrayList<>();
@@ -101,10 +101,10 @@ public class SoftApBackupRestoreTest extends WifiBaseTest {
         MockitoAnnotations.initMocks(this);
 
         mSession = ExtendedMockito.mockitoSession()
-                .mockStatic(WifiOemMigrationHook.class, withSettings().lenient())
+                .mockStatic(WifiMigration.class, withSettings().lenient())
                 .strictness(Strictness.LENIENT)
                 .startMocking();
-        when(WifiOemMigrationHook.loadFromSettings(any(Context.class)))
+        when(WifiMigration.loadFromSettings(any(Context.class)))
                 .thenReturn(mOemMigrationData);
         when(mOemMigrationData.isSoftApTimeoutEnabled()).thenReturn(true);
 
@@ -263,7 +263,7 @@ public class SoftApBackupRestoreTest extends WifiBaseTest {
 
     /**
      * Verifies that the restore of version 5 backup data will read the auto shutdown enable/disable
-     * tag from {@link WifiOemMigrationHook#loadFromSettings(Context)}
+     * tag from {@link WifiMigration#loadFromSettings(Context)}
      */
     @Test
     public void testSoftApConfigRestoreFromVersion5() throws Exception {

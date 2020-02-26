@@ -59,7 +59,7 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
             "WifiEnterpriseConfiguration";
 
     private final Context mContext;
-    private final WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
+    private final WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
 
     /**
      * List of saved shared networks visible to all the users to be stored in the store file.
@@ -67,9 +67,9 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
     private List<WifiConfiguration> mConfigurations;
 
     NetworkListStoreData(Context context,
-            WifiOemConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
+            WifiConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
         mContext = context;
-        mWifiOemConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
+        mWifiConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
     }
 
     @Override
@@ -86,7 +86,7 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
             throws XmlPullParserException, IOException {
         // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
         List<WifiConfiguration> oemMigratedConfigurations =
-                mWifiOemConfigStoreMigrationDataHolder.getUserSavedNetworks();
+                mWifiConfigStoreMigrationDataHolder.getUserSavedNetworks();
         if (oemMigratedConfigurations != null) {
             Log.i(TAG, "Loading data from OEM migration hook");
             mConfigurations = oemMigratedConfigurations;
