@@ -103,7 +103,7 @@ public class PasspointProviderTest extends WifiBaseTest {
             new String[] {"trusted.fqdn.com", "another.fqdn.com"};
     // User credential data
     private static final String TEST_USERNAME = "username";
-    private static final String TEST_PASSWORD = "password";
+    private static final String TEST_PASSWORD = "password3";
     // SIM credential data
     private static final int TEST_EAP_TYPE = WifiEnterpriseConfig.Eap.SIM;
     private static final int TEST_SIM_CREDENTIAL_TYPE = EAPConstants.EAP_SIM;
@@ -328,9 +328,14 @@ public class PasspointProviderTest extends WifiBaseTest {
         }
 
         if (credential.getUserCredential() != null) {
+            String decodedPassword;
             Credential.UserCredential userCredential = credential.getUserCredential();
-            byte[] pwOctets = Base64.decode(userCredential.getPassword(), Base64.DEFAULT);
-            String decodedPassword = new String(pwOctets, StandardCharsets.UTF_8);
+            try {
+                byte[] pwOctets = Base64.decode(userCredential.getPassword(), Base64.DEFAULT);
+                decodedPassword = new String(pwOctets, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                decodedPassword = userCredential.getPassword();
+            }
 
             assertEquals("anonymous@" + credential.getRealm(),
                     wifiEnterpriseConfig.getAnonymousIdentity());
@@ -351,6 +356,7 @@ public class PasspointProviderTest extends WifiBaseTest {
             }
             assertEquals(userCredential.getUsername(), wifiEnterpriseConfig.getIdentity());
             assertEquals(decodedPassword, wifiEnterpriseConfig.getPassword());
+            assertEquals(decodedPassword, TEST_PASSWORD);
             assertEquals(WifiConfiguration.METERED_OVERRIDE_NONE,
                     wifiConfig.meteredOverride);
 
@@ -1383,5 +1389,42 @@ public class PasspointProviderTest extends WifiBaseTest {
         assertFalse(mProvider.getHasEverConnected());
         mProvider.setHasEverConnected(true);
         assertTrue(mProvider.getHasEverConnected());
+    }
+
+    /**
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
+     * with a user credential.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void getWifiConfigWithUserCredentialAndNonBase64Password() throws Exception {
+        // Create provider for R2.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+
+        // Update the password to non-Base64
+        Credential credential = config.getCredential();
+        Credential.UserCredential userCredential = credential.getUserCredential();
+        userCredential.setPassword(TEST_PASSWORD);
+        credential.setUserCredential(userCredential);
+        config.setCredential(credential);
+
+        mProvider = createProvider(config);
+
+        // Install certificate.
+        when(mKeyStore.putCaCertInKeyStore(CA_CERTIFICATE_ALIAS, FakeKeys.CA_CERT0))
+                .thenReturn(true);
+        assertTrue(mProvider.installCertsAndKeys());
+
+        // Retrieve the WifiConfiguration associated with the provider, and verify the content of
+        // the configuration.
+        verifyWifiConfigWithTestData(config, mProvider.getWifiConfig());
+
+        // Verify that AAA server trusted names are provisioned.
+        config.setAaaServerTrustedNames(TEST_TRUSTED_NAME);
+        mProvider = createProvider(config);
+        verifyWifiConfigWithTestData(config,
+                createProvider(config).getWifiConfig());
     }
 }
