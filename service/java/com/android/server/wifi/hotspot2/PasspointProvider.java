@@ -751,11 +751,17 @@ public class PasspointProvider {
      */
     private void buildEnterpriseConfigForUserCredential(WifiEnterpriseConfig config,
             Credential.UserCredential credential) {
-        byte[] pwOctets = Base64.decode(credential.getPassword(), Base64.DEFAULT);
-        String decodedPassword = new String(pwOctets, StandardCharsets.UTF_8);
+        String password;
+        try {
+            byte[] pwOctets = Base64.decode(credential.getPassword(), Base64.DEFAULT);
+            password = new String(pwOctets, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Failed to decode password");
+            password = credential.getPassword();
+        }
         config.setEapMethod(WifiEnterpriseConfig.Eap.TTLS);
         config.setIdentity(credential.getUsername());
-        config.setPassword(decodedPassword);
+        config.setPassword(password);
         if (!ArrayUtils.isEmpty(mCaCertificateAliases)) {
             config.setCaCertificateAliases(mCaCertificateAliases.toArray(new String[0]));
         } else {
