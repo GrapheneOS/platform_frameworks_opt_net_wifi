@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +72,8 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mImsiPrivacyProtectionExemptionStoreData.deserializeData(in, in.getDepth(),
-                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
+                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null,
+                mock(WifiConfigStoreMigrationDataHolder.class));
     }
 
     /**

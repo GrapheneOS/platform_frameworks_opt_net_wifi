@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.net.MacAddress;
@@ -59,7 +60,6 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
 
     private final Context mContext;
     private final DataSource mDataSource;
-    private final WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
 
     /**
      * Interface define the data source for the notifier store data.
@@ -95,12 +95,9 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
      *
      * @param dataSource The DataSource that implements the update and retrieval of the SSID set.
      */
-    SoftApStoreData(Context context,
-            DataSource dataSource,
-            WifiConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
+    SoftApStoreData(Context context, DataSource dataSource) {
         mContext = context;
         mDataSource = dataSource;
-        mWifiConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
     }
 
     @Override
@@ -142,11 +139,12 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
+            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
             throws XmlPullParserException, IOException {
         // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
         SoftApConfiguration oemMigratedConfiguration =
-                mWifiConfigStoreMigrationDataHolder.getUserSoftApConfiguration();
+                storeMigrationDataHolder.getUserSoftApConfiguration();
         if (oemMigratedConfiguration != null) {
             Log.i(TAG, "Loading data from OEM migration hook");
             mDataSource.fromDeserialized(oemMigratedConfiguration);
