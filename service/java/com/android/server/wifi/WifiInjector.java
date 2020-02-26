@@ -157,7 +157,7 @@ public class WifiInjector {
     private final ThroughputPredictor mThroughputPredictor;
     private NetdWrapper mNetdWrapper;
     private final WifiHealthMonitor mWifiHealthMonitor;
-    private final WifiOemConfigStoreMigrationDataHolder mOemConfigStoreMigrationDataHolder;
+    private final WifiConfigStoreMigrationDataHolder mOemConfigStoreMigrationDataHolder;
     private final WifiSettingsConfigStore mSettingsConfigStore;
     private final WifiScanAlwaysAvailableSettingsCompatibility
             mWifiScanAlwaysAvailableSettingsCompatibility;
@@ -254,7 +254,7 @@ public class WifiInjector {
                 mContext.getSystemService(SubscriptionManager.class);
         mTelephonyUtil = new TelephonyUtil(makeTelephonyManager(), subscriptionManager,
                 mFrameworkFacade, mContext, wifiHandler);
-        mOemConfigStoreMigrationDataHolder = new WifiOemConfigStoreMigrationDataHolder();
+        mOemConfigStoreMigrationDataHolder = new WifiConfigStoreMigrationDataHolder();
         String l2KeySeed = Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID);
         mWifiScoreCard = new WifiScoreCard(mClock, l2KeySeed, mDeviceConfigFacade);
         // Config Manager

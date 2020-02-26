@@ -24,7 +24,7 @@ import android.content.Context;
 public class NetworkListSharedStoreData extends NetworkListStoreData {
 
     public NetworkListSharedStoreData(Context context,
-            WifiOemConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
+            WifiConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
         super(context, wifiOemConfigStoreMigrationDataHolder);
     }
 

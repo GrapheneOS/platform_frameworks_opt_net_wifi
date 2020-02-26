@@ -20,7 +20,7 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.StringDef;
 import android.content.Context;
-import android.net.wifi.WifiOemMigrationHook;
+import android.net.wifi.WifiMigration;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
@@ -175,8 +175,8 @@ public class WifiSettingsConfigStore {
     private void migrateFromSettingsIfNeeded() {
         if (!mSettings.isEmpty()) return; // already migrated.
 
-        WifiOemMigrationHook.SettingsMigrationData dataToMigrate =
-                WifiOemMigrationHook.loadFromSettings(mContext);
+        WifiMigration.SettingsMigrationData dataToMigrate =
+                WifiMigration.loadFromSettings(mContext);
         if (dataToMigrate == null) {
             Log.e(TAG, "Not settings data to migrate");
             return;

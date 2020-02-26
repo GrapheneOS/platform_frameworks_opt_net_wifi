@@ -20,7 +20,7 @@ import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiOemMigrationHook;
+import android.net.wifi.WifiMigration;
 import android.util.BackupUtils;
 import android.util.Log;
 
@@ -157,8 +157,8 @@ public class SoftApBackupRestore {
                 configBuilder.setAutoShutdownEnabled(in.readBoolean());
             } else {
                 // Migrate data out of settings.
-                WifiOemMigrationHook.SettingsMigrationData migrationData =
-                        WifiOemMigrationHook.loadFromSettings(mContext);
+                WifiMigration.SettingsMigrationData migrationData =
+                        WifiMigration.loadFromSettings(mContext);
                 if (migrationData == null) {
                     Log.e(TAG, "No migration data present");
                 } else {
