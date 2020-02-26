@@ -116,7 +116,8 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
         XmlPullParser in = createSettingsTestXmlForParsing(WIFI_VERBOSE_LOGGING_ENABLED, true);
 
         storeDataCaptor.getValue().resetData();
-        storeDataCaptor.getValue().deserializeData(in, in.getDepth(), -1, null);
+        storeDataCaptor.getValue().deserializeData(in, in.getDepth(), -1, null,
+                mock(WifiConfigStoreMigrationDataHolder.class));
 
         assertTrue(mWifiSettingsConfigStore.getBoolean(WIFI_VERBOSE_LOGGING_ENABLED, false));
     }

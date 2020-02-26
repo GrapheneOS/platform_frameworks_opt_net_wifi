@@ -156,8 +156,7 @@ public class SoftApStoreDataTest extends WifiBaseTest {
                 .thenReturn(mOemMigrationData);
         when(mOemMigrationData.isSoftApTimeoutEnabled()).thenReturn(true);
 
-        mSoftApStoreData =
-                new SoftApStoreData(mContext, mDataSource, mWifiConfigStoreMigrationDataHolder);
+        mSoftApStoreData = new SoftApStoreData(mContext, mDataSource);
         TEST_BLOCKEDLIST.add(MacAddress.fromString(TEST_BLOCKED_CLIENT));
         TEST_ALLOWEDLIST.add(MacAddress.fromString(TEST_ALLOWED_CLIENT));
     }
@@ -214,7 +213,8 @@ public class SoftApStoreDataTest extends WifiBaseTest {
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mSoftApStoreData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class));
+                mock(WifiConfigStoreEncryptionUtil.class),
+                mWifiConfigStoreMigrationDataHolder);
     }
 
     /**
