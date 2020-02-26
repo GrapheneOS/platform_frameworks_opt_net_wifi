@@ -1208,6 +1208,18 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mActiveModeWarden, never()).wifiToggled();
     }
 
+    @Test
+    public void testWifiVerboseLoggingInitialization() {
+        when(mSettingsStore.isWifiToggleEnabled()).thenReturn(false);
+        when(mWifiSettingsConfigStore.getBoolean(eq(WIFI_VERBOSE_LOGGING_ENABLED), anyBoolean()))
+                .thenReturn(true);
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).loadFromStore();
+        verify(mClientModeImpl).enableVerboseLogging(1);
+        verify(mActiveModeWarden).start();
+    }
+
     /**
      * Make sure we do start WifiController (wifi enabled) if the device is already decrypted.
      */
