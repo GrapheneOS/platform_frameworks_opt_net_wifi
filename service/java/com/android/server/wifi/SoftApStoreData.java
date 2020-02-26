@@ -20,7 +20,7 @@ import android.annotation.Nullable;
 import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
-import android.net.wifi.WifiOemMigrationHook;
+import android.net.wifi.WifiMigration;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -59,7 +59,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
 
     private final Context mContext;
     private final DataSource mDataSource;
-    private final WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
+    private final WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
 
     /**
      * Interface define the data source for the notifier store data.
@@ -97,10 +97,10 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
      */
     SoftApStoreData(Context context,
             DataSource dataSource,
-            WifiOemConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
+            WifiConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
         mContext = context;
         mDataSource = dataSource;
-        mWifiOemConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
+        mWifiConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
     }
 
     @Override
@@ -146,7 +146,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
             throws XmlPullParserException, IOException {
         // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
         SoftApConfiguration oemMigratedConfiguration =
-                mWifiOemConfigStoreMigrationDataHolder.getUserSoftApConfiguration();
+                mWifiConfigStoreMigrationDataHolder.getUserSoftApConfiguration();
         if (oemMigratedConfiguration != null) {
             Log.i(TAG, "Loading data from OEM migration hook");
             mDataSource.fromDeserialized(oemMigratedConfiguration);
@@ -262,8 +262,8 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
             }
             if (!autoShutdownEnabledTagPresent) {
                 // Migrate data out of settings.
-                WifiOemMigrationHook.SettingsMigrationData migrationData =
-                        WifiOemMigrationHook.loadFromSettings(mContext);
+                WifiMigration.SettingsMigrationData migrationData =
+                        WifiMigration.loadFromSettings(mContext);
                 if (migrationData == null) {
                     Log.e(TAG, "No migration data present");
                 } else {
