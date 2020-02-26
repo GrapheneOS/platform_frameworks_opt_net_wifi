@@ -260,8 +260,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mPackageManager.getNameForUid(anyInt())).thenReturn(TEST_CREATOR_NAME);
         when(mWifiConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
-        mNetworkListSharedStoreData =
-                new NetworkListSharedStoreData(mContext, mWifiConfigStoreMigrationDataHolder);
+        mNetworkListSharedStoreData = new NetworkListSharedStoreData(mContext);
     }
 
     /**
@@ -292,7 +291,8 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mNetworkListSharedStoreData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class));
+                mock(WifiConfigStoreEncryptionUtil.class),
+                mWifiConfigStoreMigrationDataHolder);
         return mNetworkListSharedStoreData.getConfigurations();
     }
 
@@ -397,8 +397,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         assertEquals(WifiConfigStore.STORE_FILE_SHARED_GENERAL,
                 mNetworkListSharedStoreData.getStoreFileId());
         assertEquals(WifiConfigStore.STORE_FILE_USER_GENERAL,
-                new NetworkListUserStoreData(mContext, mWifiConfigStoreMigrationDataHolder)
-                        .getStoreFileId());
+                new NetworkListUserStoreData(mContext).getStoreFileId());
     }
 
     /**
