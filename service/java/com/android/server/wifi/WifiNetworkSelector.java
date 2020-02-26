@@ -609,7 +609,7 @@ public class WifiNetworkSelector {
                     if (count > 0) {
                         sbuf.append("reason=")
                                 .append(WifiConfiguration.NetworkSelectionStatus
-                                        .getNetworkDisableReasonString(index))
+                                        .getNetworkSelectionDisableReasonString(index))
                                 .append(", count=").append(count).append("; ");
                     }
                 }
