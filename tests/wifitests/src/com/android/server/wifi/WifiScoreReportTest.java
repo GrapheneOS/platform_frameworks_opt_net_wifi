@@ -660,26 +660,24 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiScoreReport.startConnectedNetworkScorer(anyInt());
 
         // Invalid session ID
-        final NetworkScore ns1 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(-1, ns1);
+        scorerImpl.mScoreChangeCallback.onScoreChange(-1, 49);
         assertEquals(mWifiScoreReport.getScore(), ConnectedScore.WIFI_MAX_SCORE);
 
         // Incorrect session ID
-        final NetworkScore ns2 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId + 10, ns2);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId + 10, 49);
         assertEquals(mWifiScoreReport.getScore(), ConnectedScore.WIFI_MAX_SCORE);
 
-        final NetworkScore ns3 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns3);
+        final NetworkScore ns3 = new NetworkScore.Builder().setLegacyScore(49).build();
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(eq(ns3));
         assertEquals(mWifiScoreReport.getScore(), 49);
 
-        final NetworkScore ns4 = new NetworkScore.Builder().setExiting(false).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns4);
+        final NetworkScore ns4 = new NetworkScore.Builder().setLegacyScore(59).build();
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 59);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(eq(ns4));
-        assertEquals(mWifiScoreReport.getScore(), 51);
+        assertEquals(mWifiScoreReport.getScore(), 59);
     }
 
     /**
@@ -711,27 +709,25 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 5001;
-        final NetworkScore ns1 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns1);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         assertTrue(mWifiScoreReport.shouldCheckIpLayer());
         mWifiScoreReport.noteIpCheck();
 
         mClock.mWallClockMillis = 10000;
-        final NetworkScore ns2 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns2);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         assertFalse(mWifiScoreReport.shouldCheckIpLayer());
 
         mClock.mWallClockMillis = 10001;
-        final NetworkScore ns3 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns3);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         assertTrue(mWifiScoreReport.shouldCheckIpLayer());
     }
 
     /**
-     * Verify BSSID blocklist doesnot happen when exiting is set for less than the minimum duration
+     * Verify BSSID blocklist doesnot happen when score stays below threshold for less than the
+     * minimum duration
      */
     @Test
     public void bssidBlockListDoesnotHappenWhenExitingIsLessThanMinDuration() throws Exception {
@@ -742,12 +738,10 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
-        final NetworkScore ns1 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns1);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 29009;
-        final NetworkScore ns2 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns2);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
@@ -755,7 +749,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
     }
 
     /**
-     * Verify BSSID blocklist happens when exiting is set for longer than the minimum duration
+     * Verify BSSID blocklist happens when score stays below threshold for longer than the
+     * minimum duration
      */
     @Test
     public void bssidBlockListHappensWhenExitingIsLongerThanMinDuration() throws Exception {
@@ -766,12 +761,10 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
-        final NetworkScore ns1 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns1);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 29011;
-        final NetworkScore ns2 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns2);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
@@ -779,7 +772,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
     }
 
     /**
-     * Verify BSSID blocklist doesnot happen exiting is reset
+     * Verify BSSID blocklist doesnot happen when there is score flip flop
      */
     @Test
     public void bssidBlockListDoesnotHappenWhenExitingIsReset() throws Exception {
@@ -790,16 +783,13 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
-        final NetworkScore ns1 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns1);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 15000;
-        final NetworkScore ns2 = new NetworkScore.Builder().setExiting(false).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns2);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 51);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 29011;
-        final NetworkScore ns3 = new NetworkScore.Builder().setExiting(true).build();
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, ns3);
+        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
