@@ -32,7 +32,7 @@ import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiOemMigrationHook;
+import android.net.wifi.WifiMigration;
 import android.util.Xml;
 
 import androidx.test.filters.SmallTest;
@@ -140,8 +140,8 @@ public class SoftApStoreDataTest extends WifiBaseTest {
 
     @Mock private Context mContext;
     @Mock SoftApStoreData.DataSource mDataSource;
-    @Mock WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
-    @Mock private WifiOemMigrationHook.SettingsMigrationData mOemMigrationData;
+    @Mock WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
+    @Mock private WifiMigration.SettingsMigrationData mOemMigrationData;
     MockitoSession mSession;
     SoftApStoreData mSoftApStoreData;
 
@@ -149,15 +149,15 @@ public class SoftApStoreDataTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         mSession = ExtendedMockito.mockitoSession()
-                .mockStatic(WifiOemMigrationHook.class, withSettings().lenient())
+                .mockStatic(WifiMigration.class, withSettings().lenient())
                 .strictness(Strictness.LENIENT)
                 .startMocking();
-        when(WifiOemMigrationHook.loadFromSettings(any(Context.class)))
+        when(WifiMigration.loadFromSettings(any(Context.class)))
                 .thenReturn(mOemMigrationData);
         when(mOemMigrationData.isSoftApTimeoutEnabled()).thenReturn(true);
 
         mSoftApStoreData =
-                new SoftApStoreData(mContext, mDataSource, mWifiOemConfigStoreMigrationDataHolder);
+                new SoftApStoreData(mContext, mDataSource, mWifiConfigStoreMigrationDataHolder);
         TEST_BLOCKEDLIST.add(MacAddress.fromString(TEST_BLOCKED_CLIENT));
         TEST_ALLOWEDLIST.add(MacAddress.fromString(TEST_ALLOWED_CLIENT));
     }
@@ -443,7 +443,7 @@ public class SoftApStoreDataTest extends WifiBaseTest {
     @Test
     public void deserializeSoftApFromOemConfigStoreMigration() throws Exception {
         SoftApConfiguration oemSoftApConfig = createDefaultTestSoftApConfiguration();
-        when(mWifiOemConfigStoreMigrationDataHolder.getUserSoftApConfiguration())
+        when(mWifiConfigStoreMigrationDataHolder.getUserSoftApConfiguration())
                 .thenReturn(oemSoftApConfig);
 
         // File contents are ignored.
@@ -469,7 +469,7 @@ public class SoftApStoreDataTest extends WifiBaseTest {
     /**
      * Verify that the store data is deserialized correctly using the predefined test XML data
      * when the auto shutdown tag is retrieved from
-     * {@link WifiOemMigrationHook.loadFromSettings(Context)}.
+     * {@link WifiMigration.loadFromSettings(Context)}.
      *
      * @throws Exception
      */

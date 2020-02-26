@@ -157,7 +157,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     @Mock private Clock mClock;
     @Mock private WifiMetrics mWifiMetrics;
     @Mock private WifiConfigStoreEncryptionUtil mEncryptionUtil;
-    @Mock WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
+    @Mock WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
     private MockStoreFile mSharedStore;
     private MockStoreFile mUserStore;
     private MockStoreFile mUserNetworkSuggestionsStore;
@@ -185,7 +185,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                 .thenReturn(new EncryptedData(new byte[0], new byte[0]));
         when(mEncryptionUtil.decrypt(any(EncryptedData.class)))
                 .thenReturn(new byte[0]);
-        when(mWifiOemConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
+        when(mWifiConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
         mSharedStore = new MockStoreFile(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         mUserStore = new MockStoreFile(WifiConfigStore.STORE_FILE_USER_GENERAL);
         mUserNetworkSuggestionsStore =
@@ -507,7 +507,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     public void testReadWifiConfigStoreData() throws Exception {
         // Setup network list.
         NetworkListStoreData networkList =
-                new NetworkListUserStoreData(mContext, mWifiOemConfigStoreMigrationDataHolder);
+                new NetworkListUserStoreData(mContext, mWifiConfigStoreMigrationDataHolder);
         mWifiConfigStore.registerStoreData(networkList);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         openNetwork.creatorName = TEST_CREATOR_NAME;
@@ -544,7 +544,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         // Setup network list store data.
         NetworkListStoreData networkList =
-                new NetworkListUserStoreData(mContext, mWifiOemConfigStoreMigrationDataHolder);
+                new NetworkListUserStoreData(mContext, mWifiConfigStoreMigrationDataHolder);
         mWifiConfigStore.registerStoreData(networkList);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         openNetwork.creatorName = TEST_CREATOR_NAME;

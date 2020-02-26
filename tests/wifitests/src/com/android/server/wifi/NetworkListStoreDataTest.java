@@ -252,16 +252,16 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
     private NetworkListSharedStoreData mNetworkListSharedStoreData;
     @Mock private Context mContext;
     @Mock private PackageManager mPackageManager;
-    @Mock WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
+    @Mock WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mPackageManager.getNameForUid(anyInt())).thenReturn(TEST_CREATOR_NAME);
-        when(mWifiOemConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
+        when(mWifiConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
         mNetworkListSharedStoreData =
-                new NetworkListSharedStoreData(mContext, mWifiOemConfigStoreMigrationDataHolder);
+                new NetworkListSharedStoreData(mContext, mWifiConfigStoreMigrationDataHolder);
     }
 
     /**
@@ -397,7 +397,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         assertEquals(WifiConfigStore.STORE_FILE_SHARED_GENERAL,
                 mNetworkListSharedStoreData.getStoreFileId());
         assertEquals(WifiConfigStore.STORE_FILE_USER_GENERAL,
-                new NetworkListUserStoreData(mContext, mWifiOemConfigStoreMigrationDataHolder)
+                new NetworkListUserStoreData(mContext, mWifiConfigStoreMigrationDataHolder)
                         .getStoreFileId());
     }
 
@@ -693,7 +693,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
     @Test
     public void deserializeSharedConfigurationsFromOemConfigStoreMigration() throws Exception {
         List<WifiConfiguration> oemUserSavedNetworks = getTestNetworksConfig(true /* shared */);
-        when(mWifiOemConfigStoreMigrationDataHolder.getUserSavedNetworks())
+        when(mWifiConfigStoreMigrationDataHolder.getUserSavedNetworks())
                 .thenReturn(oemUserSavedNetworks);
 
         // File contents are ignored.
