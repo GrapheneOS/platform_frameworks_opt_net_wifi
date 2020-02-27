@@ -258,7 +258,9 @@ public class WifiScoreReport {
         mScore = ConnectedScore.WIFI_MAX_SCORE;
         mLastKnownNudCheckScore = ConnectedScore.WIFI_TRANSITION_SCORE;
         mAggressiveConnectedScore.reset();
-        mVelocityBasedConnectedScore.reset();
+        if (mVelocityBasedConnectedScore != null) {
+            mVelocityBasedConnectedScore.reset();
+        }
         mLastDownwardBreachTimeMillis = 0;
         mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
         if (mVerboseLoggingEnabled) Log.d(TAG, "reset");
