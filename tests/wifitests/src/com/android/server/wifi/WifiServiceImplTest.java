@@ -4105,6 +4105,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 isNull());
         verify(mPasspointManager).clearAnqpRequestsAndFlushCache();
         verify(mWifiConfigManager).clearDeletedEphemeralNetworks();
+        verify(mWifiConfigManager).removeAllEphemeralOrPasspointConfiguredNetworks();
         verify(mClientModeImpl).clearNetworkRequestUserApprovedAccessPoints();
         verify(mWifiNetworkSuggestionsManager).clear();
         verify(mWifiScoreCard).clear();
