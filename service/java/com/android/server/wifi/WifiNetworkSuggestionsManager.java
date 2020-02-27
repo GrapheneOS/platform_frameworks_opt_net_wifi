@@ -1136,7 +1136,7 @@ public class WifiNetworkSuggestionsManager {
                 continue;
             }
             for (ExtendedWifiNetworkSuggestion ewns : info.extNetworkSuggestions) {
-                if (ewns.wns.getPasspointConfiguration() != null) {
+                if (ewns.wns.getPasspointConfig() != null) {
                     continue;
                 }
                 WifiConfiguration network = mWifiConfigManager
