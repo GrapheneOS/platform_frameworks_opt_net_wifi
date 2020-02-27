@@ -18,7 +18,6 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.annotation.StringDef;
 import android.content.Context;
 import android.net.wifi.WifiMigration;
 import android.os.Handler;
@@ -29,61 +28,57 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.IOException;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Store data for storing wifi settings. These are key (string) / value pairs that are stored in
  * WifiConfigStore.xml file in a separate section.
- * TODO(b/149738301): Rework this class.
  */
 public class WifiSettingsConfigStore {
     private static final String TAG = "WifiSettingsConfigStore";
 
+    // List of all allowed keys.
+    private static final ArrayList<Key> sKeys = new ArrayList<>();
+
     /******** Wifi shared pref keys ***************/
-    @StringDef({
-            WIFI_P2P_DEVICE_NAME,
-            WIFI_P2P_PENDING_FACTORY_RESET,
-            WIFI_SCAN_ALWAYS_AVAILABLE,
-            WIFI_SCAN_THROTTLE_ENABLED,
-            WIFI_VERBOSE_LOGGING_ENABLED
-    })
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface WifiSettingsKey {}
-
-    /**
-     * The Wi-Fi peer-to-peer device name
-     */
-    public static final String WIFI_P2P_DEVICE_NAME = "wifi_p2p_device_name";
-
     /**
      * Indicate whether factory reset request is pending.
      */
-    public static final String WIFI_P2P_PENDING_FACTORY_RESET = "wifi_p2p_pending_factory_reset";
+    public static final Key<Boolean> WIFI_P2P_PENDING_FACTORY_RESET =
+            new Key<>("wifi_p2p_pending_factory_reset", false);
 
     /**
      * Allow scans to be enabled even wifi is turned off.
      */
-    public static final String WIFI_SCAN_ALWAYS_AVAILABLE = "wifi_scan_always_enabled";
+    public static final Key<Boolean> WIFI_SCAN_ALWAYS_AVAILABLE =
+            new Key<>("wifi_scan_always_enabled", false);
 
     /**
      * Whether wifi scan throttle is enabled or not.
      */
-    public static final String WIFI_SCAN_THROTTLE_ENABLED = "wifi_scan_throttle_enabled";
+    public static final Key<Boolean> WIFI_SCAN_THROTTLE_ENABLED =
+            new Key<>("wifi_scan_throttle_enabled", true);
 
     /**
      * Setting to enable verbose logging in Wi-Fi; disabled by default, and setting to 1
      * will enable it. In the future, additional values may be supported.
      */
-    public static final String WIFI_VERBOSE_LOGGING_ENABLED = "wifi_verbose_logging_enabled";
+    public static final Key<Boolean> WIFI_VERBOSE_LOGGING_ENABLED =
+            new Key<>("wifi_verbose_logging_enabled", false);
+
+    /**
+     * The Wi-Fi peer-to-peer device name
+     */
+    public static final Key<String> WIFI_P2P_DEVICE_NAME =
+            new Key<>("wifi_p2p_device_name", null);
+
     /******** Wifi shared pref keys ***************/
 
     private final Context mContext;
@@ -101,15 +96,16 @@ public class WifiSettingsConfigStore {
 
     /**
      * Interface for a settings change listener.
+     * @param <T> Type of the value.
      */
-    public interface OnSettingsChangedListener {
+    public interface OnSettingsChangedListener<T> {
         /**
          * Invoked when a particular key settings changes.
          *
          * @param key Key that was changed.
          * @param newValue New value that was assigned to the key.
          */
-        void onSettingsChanged(@NonNull @WifiSettingsKey String key, @NonNull Object newValue);
+        void onSettingsChanged(@NonNull Key<T> key, @Nullable T newValue);
     }
 
     public WifiSettingsConfigStore(@NonNull Context context, @NonNull Handler handler,
@@ -125,21 +121,23 @@ public class WifiSettingsConfigStore {
 
     private void invokeAllListeners() {
         synchronized (mLock) {
-            for (String key : mSettings.keySet()) {
+            for (Key key : sKeys) {
                 invokeListeners(key);
             }
         }
     }
 
-    private void invokeListeners(@NonNull @WifiSettingsKey String key) {
+    private <T> void invokeListeners(@NonNull Key<T> key) {
         synchronized (mLock) {
-            Object newValue = mSettings.get(key);
-            Map<OnSettingsChangedListener, Handler> listeners = mListeners.get(key);
+            if (!mSettings.containsKey(key.key)) return;
+            Object newValue = mSettings.get(key.key);
+            Map<OnSettingsChangedListener, Handler> listeners = mListeners.get(key.key);
             if (listeners == null || listeners.isEmpty()) return;
             for (Map.Entry<OnSettingsChangedListener, Handler> listener
                     : listeners.entrySet()) {
                 // Trigger the callback in the appropriate handler.
-                listener.getValue().post(() -> listener.getKey().onSettingsChanged(key, newValue));
+                listener.getValue().post(() ->
+                        listener.getKey().onSettingsChanged(key, newValue));
             }
         }
     }
@@ -159,7 +157,7 @@ public class WifiSettingsConfigStore {
     /**
      * Trigger config store writes and invoke listeners in the main wifi service looper's handler.
      */
-    private void triggerSaveToStoreAndInvokeListeners(@NonNull @WifiSettingsKey String key) {
+    private <T> void triggerSaveToStoreAndInvokeListeners(@NonNull Key<T> key) {
         mHandler.post(() -> {
             mHasNewDataToSerialize = true;
             mWifiConfigManager.saveToStore(true);
@@ -178,94 +176,46 @@ public class WifiSettingsConfigStore {
         WifiMigration.SettingsMigrationData dataToMigrate =
                 WifiMigration.loadFromSettings(mContext);
         if (dataToMigrate == null) {
-            Log.e(TAG, "Not settings data to migrate");
+            Log.e(TAG, "No settings data to migrate");
             return;
         }
         Log.i(TAG, "Migrating data out of settings to shared preferences");
 
-        mSettings.put(WIFI_P2P_DEVICE_NAME, dataToMigrate.getP2pDeviceName());
-        mSettings.put(WIFI_P2P_PENDING_FACTORY_RESET, dataToMigrate.isP2pFactoryResetPending());
-        mSettings.put(WIFI_SCAN_THROTTLE_ENABLED, dataToMigrate.isScanThrottleEnabled());
-        mSettings.put(WIFI_VERBOSE_LOGGING_ENABLED, dataToMigrate.isVerboseLoggingEnabled());
+        mSettings.put(WIFI_P2P_DEVICE_NAME.key,
+                dataToMigrate.getP2pDeviceName());
+        mSettings.put(WIFI_P2P_PENDING_FACTORY_RESET.key,
+                dataToMigrate.isP2pFactoryResetPending());
+        mSettings.put(WIFI_SCAN_ALWAYS_AVAILABLE.key,
+                dataToMigrate.isScanAlwaysAvailable());
+        mSettings.put(WIFI_SCAN_THROTTLE_ENABLED.key,
+                dataToMigrate.isScanThrottleEnabled());
+        mSettings.put(WIFI_VERBOSE_LOGGING_ENABLED.key,
+                dataToMigrate.isVerboseLoggingEnabled());
         triggerSaveToStoreAndInvokeAllListeners();
     }
 
     /**
-     * Store an int value to the stored settings.
+     * Store a value to the stored settings.
      *
      * @param key One of the settings keys.
      * @param value Value to be stored.
      */
-    public void putInt(@NonNull @WifiSettingsKey String key, int value) {
+    public <T> void put(@NonNull Key<T> key, @Nullable T value) {
         synchronized (mLock) {
-            mSettings.put(key, value);
+            mSettings.put(key.key, value);
         }
         triggerSaveToStoreAndInvokeListeners(key);
     }
 
     /**
-     * Store a boolean value to the stored settings.
+     * Retrieve a value from the stored settings.
      *
      * @param key One of the settings keys.
-     * @param value Value to be stored.
-     */
-    public void putBoolean(@NonNull @WifiSettingsKey String key, boolean value) {
-        synchronized (mLock) {
-            mSettings.put(key, value);
-        }
-        triggerSaveToStoreAndInvokeListeners(key);
-    }
-
-    /**
-     * Store a String value to the stored settings.
-     *
-     * @param key One of the settings keys.
-     * @param value Value to be stored.
-     */
-    public void putString(@NonNull @WifiSettingsKey String key, @NonNull String value) {
-        synchronized (mLock) {
-            mSettings.put(key, value);
-        }
-        triggerSaveToStoreAndInvokeListeners(key);
-    }
-
-    /**
-     * Retrieve an int value from the stored settings.
-     *
-     * @param key One of the settings keys.
-     * @param defValue Default value to be returned if the key does not exist.
      * @return value stored in settings, defValue if the key does not exist.
      */
-    public int getInt(@NonNull @WifiSettingsKey String key, int defValue) {
+    public @Nullable <T> T get(@NonNull Key<T> key) {
         synchronized (mLock) {
-            return (int) mSettings.getOrDefault(key, defValue);
-        }
-    }
-
-    /**
-     * Retrieve a boolean value from the stored settings.
-     *
-     * @param key One of the settings keys.
-     * @param defValue Default value to be returned if the key does not exist.
-     * @return value stored in settings, defValue if the key does not exist.
-     */
-    public boolean getBoolean(@NonNull @WifiSettingsKey String key, boolean defValue) {
-        synchronized (mLock) {
-            return (boolean) mSettings.getOrDefault(key, defValue);
-        }
-    }
-
-    /**
-     * Retrieve a string value from the stored settings.
-     *
-     * @param key One of the settings keys.
-     * @param defValue Default value to be returned if the key does not exist.
-     * @return value stored in settings, defValue if the key does not exist.
-     */
-    public @Nullable String getString(@NonNull @WifiSettingsKey String key,
-            @Nullable String defValue) {
-        synchronized (mLock) {
-            return (String) mSettings.getOrDefault(key, defValue);
+            return (T) mSettings.getOrDefault(key.key, key.defaultValue);
         }
     }
 
@@ -276,10 +226,11 @@ public class WifiSettingsConfigStore {
      * @param listener Listener to be registered.
      * @param handler Handler to post the listener
      */
-    public void registerChangeListener(@NonNull @WifiSettingsKey String key,
-            @NonNull OnSettingsChangedListener listener, @NonNull Handler handler) {
+    public <T> void registerChangeListener(@NonNull Key<T> key,
+            @NonNull OnSettingsChangedListener<T> listener, @NonNull Handler handler) {
         synchronized (mLock) {
-            mListeners.computeIfAbsent(key, ignore -> new HashMap<>()).put(listener, handler);
+            mListeners.computeIfAbsent(
+                    key.key, ignore -> new HashMap<>()).put(listener, handler);
         }
     }
 
@@ -289,10 +240,10 @@ public class WifiSettingsConfigStore {
      * @param key One of the settings keys.
      * @param listener Listener to be unregistered.
      */
-    public void unregisterChangeListener(@NonNull @WifiSettingsKey String key,
-            @NonNull OnSettingsChangedListener listener) {
+    public <T> void unregisterChangeListener(@NonNull Key<T> key,
+            @NonNull OnSettingsChangedListener<T> listener) {
         synchronized (mLock) {
-            Map<OnSettingsChangedListener, Handler> listeners = mListeners.get(key);
+            Map<OnSettingsChangedListener, Handler> listeners = mListeners.get(key.key);
             if (listeners == null || listeners.isEmpty()) {
                 Log.e(TAG, "No listeners for " + key);
                 return;
@@ -300,6 +251,26 @@ public class WifiSettingsConfigStore {
             if (listeners.remove(listener) == null) {
                 Log.e(TAG, "Unknown listener for " + key);
             }
+        }
+    }
+
+    /**
+     * Base class to store string key and its default value.
+     * @param <T> Type of the value.
+     */
+    public static class Key<T> {
+        public final String key;
+        public final T defaultValue;
+
+        private Key(@NonNull String key, T defaultValue) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+            sKeys.add(this);
+        }
+
+        @Override
+        public String toString() {
+            return "[Key " + key + ", DefaultValue: " + defaultValue + "]";
         }
     }
 

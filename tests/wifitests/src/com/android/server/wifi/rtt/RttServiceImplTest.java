@@ -17,6 +17,7 @@
 
 package com.android.server.wifi.rtt;
 
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 import static com.android.server.wifi.rtt.RttTestUtils.compareListContentsNoOrdering;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -211,6 +212,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         when(mockNative.isReady()).thenReturn(true);
         when(mockNative.rangeRequest(anyInt(), any(RangingRequest.class), anyBoolean())).thenReturn(
                 true);
+        when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
 
         mMockPowerManager = new PowerManager(mockContext, mock(IPowerManager.class),
                 mock(IThermalService.class), new Handler(mMockLooper.getLooper()));
