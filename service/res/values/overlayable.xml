@@ -117,6 +117,9 @@
           <item type="bool" name="config_wifiPnoFrequencyCullingEnabled" />
           <item type="bool" name="config_wifiPnoRecencySortingEnabled" />
           <item type="bool" name="config_wifiSuspendOptimizationsEnabled" />
+          <item type="bool" name="config_wifiHighMovementNetworkSelectionOptimizationEnabled" />
+          <item type="integer" name="config_wifiHighMovementNetworkSelectionOptimizationScanDelayMs" />
+          <item type="integer" name="config_wifiHighMovementNetworkSelectionOptimizationRssiDelta" />
           <item type="integer" name="config_wifiRttBackgroundExecGapMs" />
           <item type="integer" name="config_wifiPollRssiIntervalMilliseconds" />
           <item type="bool" name="config_wifiSaeUpgradeEnabled" />
