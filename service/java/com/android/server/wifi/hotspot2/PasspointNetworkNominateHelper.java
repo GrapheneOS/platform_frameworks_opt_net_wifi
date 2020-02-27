@@ -187,6 +187,10 @@ public class PasspointNetworkNominateHelper {
         WifiConfiguration config = candidate.mProvider.getWifiConfig();
         config.SSID = ScanResultUtil.createQuotedSSID(candidate.mScanDetail.getSSID());
         config.isHomeProviderNetwork = candidate.mMatchStatus == PasspointMatch.HomeProvider;
+        if (candidate.mScanDetail.getNetworkDetail().getAnt()
+                == NetworkDetail.Ant.ChargeablePublic) {
+            config.meteredHint = true;
+        }
         WifiConfiguration existingNetwork = mWifiConfigManager.getConfiguredNetwork(
                 config.getKey());
         if (existingNetwork != null) {
