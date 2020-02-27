@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.net.wifi.WifiManager;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pGroup;
@@ -37,7 +38,6 @@ import android.net.wifi.p2p.WifiP2pGroupList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.net.wifi.p2p.nsd.WifiP2pServiceInfo;
-import android.net.wifi.wificond.WifiCondManager;
 import android.os.Handler;
 
 import androidx.test.filters.SmallTest;
@@ -84,7 +84,7 @@ public class WifiP2pNativeTest extends WifiBaseTest {
     private static final String TEST_CLIENT_LIST = "aa:bb:cc:dd:ee:ff 11:22:33:44:55:66";
 
     @Mock private WifiInjector mWifiInjector;
-    @Mock private WifiCondManager mWifiCondManager;
+    @Mock private WifiNl80211Manager mWifiCondManager;
     @Mock private WifiNative mWifiNative;
     @Mock private WifiVendorHal mWifiVendorHalMock;
     @Mock private SupplicantP2pIfaceHal mSupplicantP2pIfaceHalMock;

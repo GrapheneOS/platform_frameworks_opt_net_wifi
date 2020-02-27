@@ -53,6 +53,7 @@ import com.android.server.wifi.hotspot2.soap.UpdateResponseMessage;
 import com.android.server.wifi.hotspot2.soap.command.BrowserUri;
 import com.android.server.wifi.hotspot2.soap.command.PpsMoData;
 import com.android.server.wifi.hotspot2.soap.command.SppCommand;
+import com.android.wifi.resources.R;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -75,9 +76,6 @@ public class PasspointProvisioner {
 
     // TLS version to be used for HTTPS connection with OSU server
     private static final String TLS_VERSION = "TLSv1";
-
-    // TODO(143967693): create an overlay for this instead of hardcoding
-    private static final String OSU_APP_PACKAGE = "com.android.hotspot2";
 
     private final Context mContext;
     private final ProvisioningStateMachine mProvisioningStateMachine;
@@ -783,7 +781,8 @@ public class PasspointProvisioner {
             }
 
             Intent intent = new Intent(WifiManager.ACTION_PASSPOINT_LAUNCH_OSU_VIEW);
-            intent.setPackage(OSU_APP_PACKAGE);
+            intent.setPackage(mContext.getResources()
+                    .getString(R.string.config_wifiOsuLoginPackage));
             intent.putExtra(WifiManager.EXTRA_OSU_NETWORK, mNetwork);
             intent.putExtra(WifiManager.EXTRA_URL, mWebUrl);
 
@@ -799,7 +798,6 @@ public class PasspointProvisioner {
             } else {
                 Log.e(TAG, "can't resolve the activity for the intent");
                 resetStateMachineForFailure(ProvisioningCallback.OSU_FAILURE_NO_OSU_ACTIVITY_FOUND);
-                return;
             }
         }
 

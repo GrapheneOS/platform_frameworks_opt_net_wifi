@@ -949,6 +949,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 new ExtendedWifiNetworkSuggestion[configs.length];
         for (int i = 0; i < configs.length; i++) {
             configs[i].priority = priorities[i];
+            configs[i].creatorUid = uids[i];
             configs[i].meteredOverride = meteredness[i]
                     ? WifiConfiguration.METERED_OVERRIDE_METERED
                     : WifiConfiguration.METERED_OVERRIDE_NONE;

@@ -186,6 +186,21 @@ public class WakeupController {
     }
 
     /**
+     * Enable/Disable the feature.
+     */
+    public void setEnabled(boolean enable) {
+        mFrameworkFacade.setIntegerSetting(
+                mContext, Settings.Global.WIFI_WAKEUP_ENABLED, enable ? 1 : 0);
+    }
+
+    /**
+     * Whether the feature is currently enabled.
+     */
+    public boolean isEnabled() {
+        return mWifiWakeupEnabled;
+    }
+
+    /**
      * Saves the SSID of the last Wifi network that was disconnected. Should only be called before
      * WakeupController is active.
      */
@@ -238,7 +253,7 @@ public class WakeupController {
         setActive(true);
 
         // ensure feature is enabled and store data has been read before performing work
-        if (isEnabled()) {
+        if (isEnabledAndReady()) {
             mWakeupOnboarding.maybeShowNotification();
 
             List<ScanResult> scanResults =
@@ -298,9 +313,14 @@ public class WakeupController {
 
     /** Returns a list of ScanResults with DFS channels removed. */
     private List<ScanResult> filterDfsScanResults(Collection<ScanResult> scanResults) {
-        final Set<Integer> dfsChannelSet = new HashSet<>(
-                mWifiInjector.getWifiNative().getChannelsForBand(
-                        WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY));
+        int[] dfsChannels = mWifiInjector.getWifiNative()
+                .getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY);
+        if (dfsChannels == null) {
+            dfsChannels = new int[0];
+        }
+
+        final Set<Integer> dfsChannelSet = Arrays.stream(dfsChannels).boxed()
+                .collect(Collectors.toSet());
 
         return scanResults.stream()
                 .filter(scanResult -> !dfsChannelSet.contains(scanResult.frequency))
@@ -354,12 +374,12 @@ public class WakeupController {
      * @param scanResults The scan results with which to update the controller
      */
     private void handleScanResults(Collection<ScanResult> scanResults) {
-        if (!isEnabled()) {
+        if (!isEnabledAndReady()) {
             Log.d(TAG, "Attempted to handleScanResults while not enabled");
             return;
         }
 
-        // only count scan as handled if isEnabled
+        // only count scan as handled if isEnabledAndReady
         mNumScansHandled++;
         if (mVerboseLoggingEnabled) {
             Log.d(TAG, "Incoming scan #" + mNumScansHandled);
@@ -418,7 +438,7 @@ public class WakeupController {
      * read.
      */
     @VisibleForTesting
-    boolean isEnabled() {
+    boolean isEnabledAndReady() {
         return mWifiWakeupEnabled && mWakeupConfigStoreData.hasBeenRead();
     }
 

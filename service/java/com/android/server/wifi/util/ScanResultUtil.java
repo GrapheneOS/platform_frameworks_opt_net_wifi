@@ -127,6 +127,22 @@ public class ScanResultUtil {
     }
 
     /**
+     * Helper method to check if the provided |scanResult| corresponds to FILS SHA256 network.
+     * This checks if the provided capabilities string contains FILS-SHA256 or not.
+     */
+    public static boolean isScanResultForFilsSha256Network(ScanResult scanResult) {
+        return scanResult.capabilities.contains("FILS-SHA256");
+    }
+
+    /**
+     * Helper method to check if the provided |scanResult| corresponds to FILS SHA384 network.
+     * This checks if the provided capabilities string contains FILS-SHA384 or not.
+     */
+    public static boolean isScanResultForFilsSha384Network(ScanResult scanResult) {
+        return scanResult.capabilities.contains("FILS-SHA384");
+    }
+
+    /**
      * Helper method to check if the provided |scanResult| corresponds to an open network or not.
      * This checks if the provided capabilities string does not contain either of WEP, PSK, SAE
      * or EAP encryption types or not.
@@ -167,6 +183,10 @@ public class ScanResultUtil {
             WifiConfiguration config) {
         if (isScanResultForSaeNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+        } else if (isScanResultForWapiPskNetwork(scanResult)) {
+            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_PSK);
+        } else if (isScanResultForWapiCertNetwork(scanResult)) {
+            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_CERT);
         } else if (isScanResultForPskNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         } else if (isScanResultForEapSuiteBNetwork(scanResult)) {
@@ -177,10 +197,6 @@ public class ScanResultUtil {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_WEP);
         } else if (isScanResultForOweNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
-        } else if (isScanResultForWapiPskNetwork(scanResult)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_PSK);
-        } else if (isScanResultForWapiCertNetwork(scanResult)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_CERT);
         } else {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         }

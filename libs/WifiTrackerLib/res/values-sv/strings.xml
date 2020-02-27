@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="8750623020267885175">"Automatisk anslutning har inaktiverats"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"Automatisk anslutning har inaktiverats"</string>
     <string name="saved_network" msgid="6241977554502802914">"Sparades av <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"Det går inte att ansluta automatiskt"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"Ingen internetåtkomst"</string>
@@ -35,8 +35,7 @@
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Automatiskt ansluten via leverantör av nätverksbetyg"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Begränsad anslutning"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Det går inte att komma åt den privata DNS-servern."</string>
-    <!-- no translation found for wifi_connected_no_internet (7273909077465731259) -->
-    <skip />
+    <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Inget internet"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Ingen"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Har upphört att gälla"</string>
 </resources>

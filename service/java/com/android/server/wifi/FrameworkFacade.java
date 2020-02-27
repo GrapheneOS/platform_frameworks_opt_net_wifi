@@ -31,7 +31,6 @@ import android.net.Uri;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
 import android.provider.Settings;
-import android.sysprop.WifiProperties;
 import android.telephony.CarrierConfigManager;
 import android.widget.Toast;
 
@@ -68,6 +67,20 @@ public class FrameworkFacade {
                 (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         }
         return mActivityManager;
+    }
+
+    /**
+     * Mockable setter for Settings.Global
+     */
+    public boolean setIntegerSetting(ContentResolver contentResolver, String name, int value) {
+        return Settings.Global.putInt(contentResolver, name, value);
+    }
+
+    /**
+     * Mockable getter for Settings.Global
+     */
+    public int getIntegerSetting(ContentResolver contentResolver, String name, int def) {
+        return Settings.Global.getInt(contentResolver, name, def);
     }
 
     public boolean setIntegerSetting(Context context, String name, int def) {
@@ -210,14 +223,14 @@ public class FrameworkFacade {
      * Starts supplicant
      */
     public void startSupplicant() {
-        WifiProperties.start_supplicant(true);
+        SupplicantManager.start();
     }
 
     /**
      * Stops supplicant
      */
     public void stopSupplicant() {
-        WifiProperties.stop_supplicant(true);
+        SupplicantManager.stop();
     }
 
     /**

@@ -321,7 +321,7 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                     configuration.hiddenSSID = (boolean) value;
                     break;
                 case WifiConfigurationXmlUtil.XML_TAG_REQUIRE_PMF:
-                    configuration.requirePMF = (boolean) value;
+                    configuration.requirePmf = (boolean) value;
                     break;
                 case WifiConfigurationXmlUtil.XML_TAG_ALLOWED_KEY_MGMT:
                     byte[] allowedKeyMgmt = (byte[]) value;

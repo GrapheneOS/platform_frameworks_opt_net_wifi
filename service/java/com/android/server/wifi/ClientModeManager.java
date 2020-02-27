@@ -69,6 +69,7 @@ public class ClientModeManager implements ActiveModeManager {
     private boolean mIfaceIsUp = false;
     private @Role int mRole = ROLE_UNSPECIFIED;
     private DeferStopHandler mDeferStopHandler;
+    private int mTargetRole = ROLE_UNSPECIFIED;
 
     ClientModeManager(Context context, @NonNull Looper looper, WifiNative wifiNative,
             Listener listener, WifiMetrics wifiMetrics, SarManager sarManager,
@@ -89,6 +90,7 @@ public class ClientModeManager implements ActiveModeManager {
      */
     @Override
     public void start() {
+        mTargetRole = ROLE_CLIENT_SCAN_ONLY;
         mStateMachine.sendMessage(ClientModeStateMachine.CMD_START);
     }
 
@@ -98,6 +100,7 @@ public class ClientModeManager implements ActiveModeManager {
     @Override
     public void stop() {
         Log.d(TAG, " currentstate: " + getCurrentStateName());
+        mTargetRole = ROLE_UNSPECIFIED;
         if (mIfaceIsUp) {
             updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
                     WifiManager.WIFI_STATE_ENABLED);
@@ -105,16 +108,13 @@ public class ClientModeManager implements ActiveModeManager {
             updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
                     WifiManager.WIFI_STATE_ENABLING);
         }
-        mDeferStopHandler.start(
-                getWifiOffDeferringTimeMs(),
-                () -> mStateMachine.quitNow());
+        mDeferStopHandler.start(getWifiOffDeferringTimeMs());
     }
 
     private class DeferStopHandler extends WifiHandler {
         private boolean mIsDeferring = false;
         private ImsMmTelManager mImsMmTelManager = null;
         private Looper mLooper = null;
-        private Runnable mStopRunnable = null;
         private final Runnable mRunnable = () -> continueToStopWifi();
 
         private RegistrationManager.RegistrationCallback mImsRegistrationCallback =
@@ -141,14 +141,8 @@ public class ClientModeManager implements ActiveModeManager {
             mLooper = looper;
         }
 
-        public void start(int delayMs, @NonNull Runnable stopRunnable) {
+        public void start(int delayMs) {
             if (mIsDeferring) return;
-
-            if (stopRunnable == null) {
-                Log.w(TAG, "Invalid stop runnable.");
-                return;
-            }
-            mStopRunnable = stopRunnable;
 
             // Most cases don't need delay, check it first to avoid unnecessary work.
             if (delayMs == 0) {
@@ -178,9 +172,21 @@ public class ClientModeManager implements ActiveModeManager {
         }
 
         private void continueToStopWifi() {
-            Log.d(TAG, "Continue to stop wifi");
-            if (mStopRunnable != null) {
-                mStopRunnable.run();
+            Log.d(TAG, "The target role " + mTargetRole);
+
+            if (mTargetRole == ROLE_UNSPECIFIED) {
+                Log.d(TAG, "Continue to stop wifi");
+                mStateMachine.quitNow();
+            } else if (mTargetRole == ROLE_CLIENT_SCAN_ONLY) {
+                if (!mWifiNative.switchClientInterfaceToScanMode(mClientInterfaceName)) {
+                    mModeListener.onStartFailure();
+                } else {
+                    mStateMachine.sendMessage(
+                            ClientModeStateMachine.CMD_SWITCH_TO_SCAN_ONLY_MODE_CONTINUE);
+                }
+            } else {
+                updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
+                        WifiManager.WIFI_STATE_DISABLING);
             }
 
             if (!mIsDeferring) return;
@@ -242,9 +248,11 @@ public class ClientModeManager implements ActiveModeManager {
     public void setRole(@Role int role) {
         Preconditions.checkState(CLIENT_ROLES.contains(role));
         if (role == ROLE_CLIENT_SCAN_ONLY) {
+            mTargetRole = role;
             // Switch client mode manager to scan only mode.
             mStateMachine.sendMessage(ClientModeStateMachine.CMD_SWITCH_TO_SCAN_ONLY_MODE);
         } else if (CLIENT_CONNECTIVITY_ROLES.contains(role)) {
+            mTargetRole = role;
             // Switch client mode manager to connect mode.
             mStateMachine.sendMessage(ClientModeStateMachine.CMD_SWITCH_TO_CONNECT_MODE, role);
         }
@@ -259,6 +267,7 @@ public class ClientModeManager implements ActiveModeManager {
 
         pw.println("current StateMachine mode: " + getCurrentStateName());
         pw.println("mRole: " + mRole);
+        pw.println("mTargetRole: " + mTargetRole);
         pw.println("mClientInterfaceName: " + mClientInterfaceName);
         pw.println("mIfaceIsUp: " + mIfaceIsUp);
         mStateMachine.dump(fd, pw, args);
@@ -306,6 +315,7 @@ public class ClientModeManager implements ActiveModeManager {
         public static final int CMD_INTERFACE_STATUS_CHANGED = 3;
         public static final int CMD_INTERFACE_DESTROYED = 4;
         public static final int CMD_INTERFACE_DOWN = 5;
+        public static final int CMD_SWITCH_TO_SCAN_ONLY_MODE_CONTINUE = 6;
         private final State mIdleState = new IdleState();
         private final State mStartedState = new StartedState();
         private final State mScanOnlyModeState = new ScanOnlyModeState();
@@ -431,16 +441,10 @@ public class ClientModeManager implements ActiveModeManager {
                     case CMD_SWITCH_TO_SCAN_ONLY_MODE:
                         updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
                                 WifiManager.WIFI_STATE_ENABLED);
-                        mDeferStopHandler.start(
-                                getWifiOffDeferringTimeMs(),
-                                () -> {
-                                    if (!mWifiNative.switchClientInterfaceToScanMode(
-                                                mClientInterfaceName)) {
-                                        mModeListener.onStartFailure();
-                                        return;
-                                    }
-                                    transitionTo(mScanOnlyModeState);
-                                });
+                        mDeferStopHandler.start(getWifiOffDeferringTimeMs());
+                        break;
+                    case CMD_SWITCH_TO_SCAN_ONLY_MODE_CONTINUE:
+                        transitionTo(mScanOnlyModeState);
                         break;
                     case CMD_INTERFACE_DOWN:
                         Log.e(TAG, "Detected an interface down, reporting failure to "

@@ -19,24 +19,24 @@ package com.android.server.wifi;
 import android.annotation.Nullable;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiOemConfigStoreMigrationHook;
-import android.net.wifi.WifiOemConfigStoreMigrationHook.MigrationData;
+import android.net.wifi.WifiMigration;
+import android.net.wifi.WifiMigration.ConfigStoreMigrationData;
 
 import java.util.List;
 
 /**
  * Caches the data migrated out of OEM config store. This class helps to avoid invoking the
- * {@link WifiOemConfigStoreMigrationHook#load()} multiple times from different instances of
+ * {@link WifiMigration#loadFromConfigStore()} multiple times from different instances of
  * {@link WifiConfigStore.StoreData}.
  *
  */
-public class WifiOemConfigStoreMigrationDataHolder {
-    private MigrationData mData;
+public class WifiConfigStoreMigrationDataHolder {
+    private ConfigStoreMigrationData mData;
     private boolean mLoaded = false;
 
-    private void loadOemMigrationData() {
+    private void loadMigrationData() {
         if (!mLoaded) {
-            mData = WifiOemConfigStoreMigrationHook.load();
+            mData = WifiMigration.loadFromConfigStore();
             mLoaded = true;
         }
     }
@@ -46,7 +46,7 @@ public class WifiOemConfigStoreMigrationDataHolder {
      */
     @Nullable
     public List<WifiConfiguration> getUserSavedNetworks() {
-        loadOemMigrationData();
+        loadMigrationData();
         if (mData == null) return null;
         return mData.getUserSavedNetworkConfigurations();
     }
@@ -56,9 +56,18 @@ public class WifiOemConfigStoreMigrationDataHolder {
      */
     @Nullable
     public SoftApConfiguration getUserSoftApConfiguration() {
-        loadOemMigrationData();
+        loadMigrationData();
         if (mData == null) return null;
         return mData.getUserSoftApConfiguration();
     }
 
+    /**
+     * Check if there was any data to be migrated. If yes, then go ahead and invoke the API
+     * to remove the stores now.
+     */
+    public void removeStoreIfPresent() {
+        if (mLoaded && mData != null) {
+            WifiMigration.removeConfigStore();
+        }
+    }
 }

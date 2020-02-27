@@ -154,6 +154,9 @@
     <!-- Boolean indicating associated network selection is allowed -->
     <bool translatable="false" name="config_wifi_framework_enable_associated_network_selection">true</bool>
 
+    <!-- Integer duration after connection that a user-selected network is considered sufficient (milliseconds) -->
+    <integer translatable="false" name="config_wifiSufficientDurationAfterUserSelectionMilliseconds">60000</integer>
+
     <!-- Boolean indicating performing a partial initial scan is enabled -->
     <bool translatable="false" name="config_wifiEnablePartialInitialScan">false</bool>
 
@@ -317,17 +320,25 @@
 
     <!-- Base duration to block a BSSID after consecutive failures happen. (default = 5 mins)
     The blocklist duration is increased exponentially for a BSSID that consecutively gets added to the blocklist.
-    ie. 5/10/20/40/... up to the upper limit defined by config_wifiBssidBlocklistMonitorMaxBlockDurationMs -->
+    ie. 5/10/20/40/80/160/320/640 minutes - capped at 640 minutes because the default for
+    config_wifiBssidBlocklistMonitorFailureStreakCap is set to 7-->
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorBaseBlockDurationMs"> 300000 </integer>
+
+    <!-- Base block duration for a failure at low RSSI (less than the sufficient RSSI) used for
+    ASSOCIATION_TIMEOUT, ABNORMAL_DISCONNECT, and NETWORK_VALIDATION failures. The block duration
+    for a BSSID that keeps failing will grow exponentially to the this base duration.
+    ie. 0.5/1/2/4/8/16/32/64 minutes - capped at 64 minutes because the default for
+    config_wifiBssidBlocklistMonitorFailureStreakCap is set to 7.
+    This value should be configured to be less than config_wifiBssidBlocklistMonitorBaseBlockDurationMs -->
+    <integer translatable="false" name="config_wifiBssidBlocklistMonitorBaseLowRssiBlockDurationMs"> 30000 </integer>
 
     <!-- The failure streak is the number of times a BSSID consecutively gets blocked without ever
     successfully connecting in between, and is used to calculate the exponentially growing blocklist time.
-    Any BSSID with failure streak greater than the failure streak cap will be blocked for
-    config_wifiBssidBlocklistMonitorMaxBlockDurationMs. -->
+    The config_wifiBssidBlocklistMonitorFailureStreakCap controls how many times the block duration
+    could exponentially grow when a BSSID keeps failing.
+    ie. A value of 0 means BSSIDs are always blocked for the flat base duration defined by
+    config_wifiBssidBlocklistMonitorBaseBlockDurationMs and config_wifiBssidBlocklistMonitorBaseLowRssiBlockDurationMs. -->
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorFailureStreakCap"> 7 </integer>
-
-    <!-- The maximum duration to block a BSSID (default = 18 hours) -->
-    <integer translatable="false" name="config_wifiBssidBlocklistMonitorMaxBlockDurationMs"> 64800000 </integer>
 
     <!-- If a non-locally generated disconnect happens within this time window after association,
     then count it as a failure with reason code REASON_ABNORMAL_DISCONNECT (default = 30 seconds) -->
@@ -370,4 +381,7 @@
 
     <!-- Enable WPA2 to WPA3 auto-upgrade offload to capable Driver/Firmware -->
     <bool translatable="false" name="config_wifiSaeUpgradeOffloadEnabled">false</bool>
+
+    <!-- Package name for the OSU Login APK -->
+    <string translatable="false" name="config_wifiOsuLoginPackage">com.android.hotspot2.osulogin</string>
 </resources>

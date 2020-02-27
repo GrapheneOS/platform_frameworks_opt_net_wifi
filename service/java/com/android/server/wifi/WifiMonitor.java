@@ -100,6 +100,9 @@ public class WifiMonitor {
     /* MBO/OCE events */
     public static final int MBO_OCE_BSS_TM_HANDLING_DONE         = BASE + 71;
 
+    /* Fils network connection completed */
+    public static final int FILS_NETWORK_CONNECTION_EVENT        = BASE + 62;
+
     /* WPS config errrors */
     private static final int CONFIG_MULTIPLE_PBC_DETECTED = 12;
     private static final int CONFIG_AUTH_FAILURE = 18;
@@ -501,6 +504,17 @@ public class WifiMonitor {
      */
     public void broadcastNetworkConnectionEvent(String iface, int networkId, String bssid) {
         sendMessage(iface, NETWORK_CONNECTION_EVENT, networkId, 0, bssid);
+    }
+
+    /**
+     * Broadcast the fils network connection event to all the handlers registered for this event.
+     *
+     * @param iface Name of iface on which this occurred.
+     * @param networkId ID of the network in wpa_supplicant.
+     * @param bssid BSSID of the access point.
+     */
+    public void broadcastFilsNetworkConnectionEvent(String iface, int networkId, String bssid) {
+        sendMessage(iface, FILS_NETWORK_CONNECTION_EVENT, networkId, 0, bssid);
     }
 
     /**

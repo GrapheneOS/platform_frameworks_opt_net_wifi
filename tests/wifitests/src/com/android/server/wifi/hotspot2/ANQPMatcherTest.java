@@ -16,7 +16,6 @@
 
 package com.android.server.wifi.hotspot2;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -82,10 +81,10 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void matchDomainNameUsingIMSI() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        String simImsi = "123457890";
+        IMSIParameter imsiParam = new IMSIParameter("123456", true);
+        String simImsi = "123456789012345";
         // 3GPP network domain with MCC=123 and MNC=456.
-        String[] domains = new String[] {"wlan.mnc457.mcc123.3gppnetwork.org"};
+        String[] domains = new String[] {"wlan.mnc456.mcc123.3gppnetwork.org"};
         DomainNameElement element = new DomainNameElement(Arrays.asList(domains));
         assertTrue(ANQPMatcher.matchDomainName(element, null, imsiParam, simImsi));
     }
@@ -116,18 +115,18 @@ public class ANQPMatcherTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an indeterminate match will be returned when matching a null NAI Realm
+     * Verify that no match will be returned when matching a null NAI Realm
      * ANQP element.
      *
      * @throws Exception
      */
     @Test
     public void matchNAIRealmWithNullElement() throws Exception {
-        assertEquals(AuthMatch.INDETERMINATE, ANQPMatcher.matchNAIRealm(null, "test.com"));
+        assertFalse(ANQPMatcher.matchNAIRealm(null, "test.com"));
     }
 
     /**
-     * Verify that an indeterminate match will be returned when matching a NAI Realm
+     * Verify that no match will be returned when matching a NAI Realm
      * ANQP element contained no NAI realm data.
      *
      * @throws Exception
@@ -135,7 +134,7 @@ public class ANQPMatcherTest extends WifiBaseTest {
     @Test
     public void matchNAIRealmWithEmtpyRealmData() throws Exception {
         NAIRealmElement element = new NAIRealmElement(new ArrayList<NAIRealmData>());
-        assertEquals(AuthMatch.INDETERMINATE, ANQPMatcher.matchNAIRealm(element, "test.com"));
+        assertFalse(ANQPMatcher.matchNAIRealm(element, "test.com"));
     }
 
     /**
@@ -151,35 +150,11 @@ public class ANQPMatcherTest extends WifiBaseTest {
                 Arrays.asList(new String[] {realm}), new ArrayList<EAPMethod>());
         NAIRealmElement element = new NAIRealmElement(
                 Arrays.asList(new NAIRealmData[] {realmData}));
-        assertEquals(AuthMatch.REALM, ANQPMatcher.matchNAIRealm(element, realm));
+        assertTrue(ANQPMatcher.matchNAIRealm(element, realm));
     }
 
     /**
-     * Verify that method match will be returned when the specified EAP
-     * method only matches a eap method in the NAI Realm ANQP element if the element does not have
-     * auth params.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void matchNAIRealmWithMethodMatch() throws Exception {
-        // Test data.
-        String providerRealm = "test.com";
-        String anqpRealm = "test2.com";
-        int eapMethodID = EAPConstants.EAP_TLS;
-
-        // Setup NAI Realm element that has EAP method and no auth params.
-        EAPMethod method = new EAPMethod(eapMethodID, new HashMap<Integer, Set<AuthParam>>());
-        NAIRealmData realmData = new NAIRealmData(
-                Arrays.asList(new String[]{anqpRealm}), Arrays.asList(new EAPMethod[]{method}));
-        NAIRealmElement element = new NAIRealmElement(
-                Arrays.asList(new NAIRealmData[]{realmData}));
-
-        assertEquals(AuthMatch.NONE, ANQPMatcher.matchNAIRealm(element, providerRealm));
-    }
-
-    /**
-     * Verify that a realm and method match will be returned when the specified realm and EAP
+     * Verify that a realm match will be returned when the specified realm and EAP
      * method matches a realm in the NAI Realm ANQP element.
      *
      * @throws Exception
@@ -197,11 +172,11 @@ public class ANQPMatcherTest extends WifiBaseTest {
         NAIRealmElement element = new NAIRealmElement(
                 Arrays.asList(new NAIRealmData[] {realmData}));
 
-        assertEquals(AuthMatch.REALM, ANQPMatcher.matchNAIRealm(element, realm));
+        assertTrue(ANQPMatcher.matchNAIRealm(element, realm));
     }
 
     /**
-     * Verify that an exact match will be returned when the specified realm, EAP
+     * Verify that a realm match will be returned when the specified realm, EAP
      * method, and the authentication parameter matches a realm with the associated EAP method and
      * authentication parameter in the NAI Realm ANQP element.
      *
@@ -225,11 +200,11 @@ public class ANQPMatcherTest extends WifiBaseTest {
         NAIRealmElement element = new NAIRealmElement(
                 Arrays.asList(new NAIRealmData[] {realmData}));
 
-        assertEquals(AuthMatch.REALM, ANQPMatcher.matchNAIRealm(element, realm));
+        assertTrue(ANQPMatcher.matchNAIRealm(element, realm));
     }
 
     /**
-     * Verify that a REALM match will be returned when the specified EAP method
+     * Verify that a realm match will be returned when the specified EAP method
      * doesn't match with the corresponding EAP method in the NAI Realm ANQP element.
      *
      * @throws Exception
@@ -252,11 +227,11 @@ public class ANQPMatcherTest extends WifiBaseTest {
         NAIRealmElement element = new NAIRealmElement(
                 Arrays.asList(new NAIRealmData[] {realmData}));
 
-        assertEquals(AuthMatch.REALM, ANQPMatcher.matchNAIRealm(element, realm));
+        assertTrue(ANQPMatcher.matchNAIRealm(element, realm));
     }
 
     /**
-     * Verify that a REALM match will be returned when the specified authentication
+     * Verify that a realm match will be returned when the specified authentication
      * parameter doesn't match with the corresponding authentication parameter in the NAI Realm
      * ANQP element.
      *
@@ -280,8 +255,8 @@ public class ANQPMatcherTest extends WifiBaseTest {
         NAIRealmElement element = new NAIRealmElement(
                 Arrays.asList(new NAIRealmData[] {realmData}));
 
-        // Mismatch in authentication type.
-        assertEquals(AuthMatch.REALM, ANQPMatcher.matchNAIRealm(element, realm));
+        // Mismatch in authentication type which we ignore.
+        assertTrue(ANQPMatcher.matchNAIRealm(element, realm));
     }
 
     /**
@@ -291,8 +266,8 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void matchThreeGPPNetworkWithNullElement() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        String simImsi = "123456789";
+        IMSIParameter imsiParam = new IMSIParameter("12345", true);
+        String simImsi = "123456789012345";
         assertFalse(ANQPMatcher.matchThreeGPPNetwork(null, imsiParam, simImsi));
     }
 
@@ -304,10 +279,29 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void matchThreeGPPNetwork() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        String simImsi = "123456789";
+        IMSIParameter imsiParam = new IMSIParameter("123456", true);
+        String simImsi = "123456789012345";
 
         CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123456"}));
+        ThreeGPPNetworkElement element =
+                new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
+        // The MCC-MNC provided in 3GPP Network ANQP element matches both IMSI parameter
+        // and an IMSI from the installed SIM card.
+        assertTrue(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsi));
+    }
+
+    /**
+     * Verify that 3GPP network will succeed when the given 3GPP Network ANQP element contained
+     * a MCC-MNC that matches the both IMSI parameter and a SIM IMSI contains 5 digits mccmnc.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchThreeGPPNetworkWith5DigitsMccMnc() throws Exception {
+        IMSIParameter imsiParam = new IMSIParameter("12345", true);
+        String simImsi = "123456789012345";
+
+        CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"12345"}));
         ThreeGPPNetworkElement element =
                 new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
         // The MCC-MNC provided in 3GPP Network ANQP element matches both IMSI parameter
@@ -323,10 +317,10 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void matchThreeGPPNetworkWithoutSimImsiMatch() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        String simImsi = "123457890";
+        IMSIParameter imsiParam = new IMSIParameter("123457", true);
+        String simImsi = "123456789012345";
 
-        CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123456"}));
+        CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123457"}));
         ThreeGPPNetworkElement element =
                 new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
         // The MCC-MNC provided in 3GPP Network ANQP element doesn't match any of the IMSIs
@@ -342,8 +336,8 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void matchThreeGPPNetworkWithImsiParamMismatch() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        String simImsi = "123457890";
+        IMSIParameter imsiParam = new IMSIParameter("12345", true);
+        String simImsi = "123456789012345";
 
         CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123356"}));
         ThreeGPPNetworkElement element =
@@ -359,10 +353,10 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void verifyInvalidDomain() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        String simImsi = "123457890";
+        IMSIParameter imsiParam = new IMSIParameter("123456", true);
+        String simImsi = "123456789012345";
         // 3GPP network domain with MCC=123 and MNC=456.
-        String[] domains = new String[] {"wlan.mnc457.mccI23.3gppnetwork.org"};
+        String[] domains = new String[] {"wlan.mnc456.mccI23.3gppnetwork.org"};
         DomainNameElement element = new DomainNameElement(Arrays.asList(domains));
         assertFalse(ANQPMatcher.matchDomainName(element, null, imsiParam, simImsi));
     }

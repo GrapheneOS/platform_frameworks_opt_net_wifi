@@ -16,9 +16,12 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
+import android.net.wifi.WifiMigration;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -49,13 +52,14 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
     private static final String XML_TAG_AP_BAND = "ApBand";
     private static final String XML_TAG_PASSPHRASE = "Passphrase";
     private static final String XML_TAG_MAX_NUMBER_OF_CLIENTS = "MaxNumberOfClients";
+    private static final String XML_TAG_AUTO_SHUTDOWN_ENABLED = "AutoShutdownEnabled";
     private static final String XML_TAG_SHUTDOWN_TIMEOUT_MILLIS = "ShutdownTimeoutMillis";
     private static final String XML_TAG_CLIENT_CONTROL_BY_USER = "ClientControlByUser";
     private static final String XML_TAG_BLOCKED_CLIENT_LIST = "BlockedClientList";
     private static final String XML_TAG_ALLOWED_CLIENT_LIST = "AllowedClientList";
 
+    private final Context mContext;
     private final DataSource mDataSource;
-    private final WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
 
     /**
      * Interface define the data source for the notifier store data.
@@ -91,10 +95,9 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
      *
      * @param dataSource The DataSource that implements the update and retrieval of the SSID set.
      */
-    SoftApStoreData(DataSource dataSource,
-            WifiOemConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
+    SoftApStoreData(Context context, DataSource dataSource) {
+        mContext = context;
         mDataSource = dataSource;
-        mWifiOemConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
     }
 
     @Override
@@ -117,6 +120,8 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
                     softApConfig.getMaxNumberOfClients());
             XmlUtil.writeNextValue(out, XML_TAG_CLIENT_CONTROL_BY_USER,
                     softApConfig.isClientControlByUserEnabled());
+            XmlUtil.writeNextValue(out, XML_TAG_AUTO_SHUTDOWN_ENABLED,
+                    softApConfig.isAutoShutdownEnabled());
             XmlUtil.writeNextValue(out, XML_TAG_SHUTDOWN_TIMEOUT_MILLIS,
                     softApConfig.getShutdownTimeoutMillis());
             XmlUtil.writeNextSectionStart(out, XML_TAG_BLOCKED_CLIENT_LIST);
@@ -134,11 +139,12 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
+            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
             throws XmlPullParserException, IOException {
         // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
         SoftApConfiguration oemMigratedConfiguration =
-                mWifiOemConfigStoreMigrationDataHolder.getUserSoftApConfiguration();
+                storeMigrationDataHolder.getUserSoftApConfiguration();
         if (oemMigratedConfiguration != null) {
             Log.i(TAG, "Loading data from OEM migration hook");
             mDataSource.fromDeserialized(oemMigratedConfiguration);
@@ -160,6 +166,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
         int apBand = -1;
         List<MacAddress> blockedList = new ArrayList<>();
         List<MacAddress> allowedList = new ArrayList<>();
+        boolean autoShutdownEnabledTagPresent = false;
         try {
             while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
                 if (in.getAttributeValue(null, "name") != null) {
@@ -195,6 +202,10 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
                             break;
                         case XML_TAG_MAX_NUMBER_OF_CLIENTS:
                             softApConfigBuilder.setMaxNumberOfClients((int) value);
+                            break;
+                        case XML_TAG_AUTO_SHUTDOWN_ENABLED:
+                            softApConfigBuilder.setAutoShutdownEnabled((boolean) value);
+                            autoShutdownEnabledTagPresent = true;
                             break;
                         case XML_TAG_SHUTDOWN_TIMEOUT_MILLIS:
                             softApConfigBuilder.setShutdownTimeoutMillis((int) value);
@@ -246,6 +257,17 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
             }
             if (securityType != SoftApConfiguration.SECURITY_TYPE_OPEN) {
                 softApConfigBuilder.setPassphrase(passphrase, securityType);
+            }
+            if (!autoShutdownEnabledTagPresent) {
+                // Migrate data out of settings.
+                WifiMigration.SettingsMigrationData migrationData =
+                        WifiMigration.loadFromSettings(mContext);
+                if (migrationData == null) {
+                    Log.e(TAG, "No migration data present");
+                } else {
+                    softApConfigBuilder.setAutoShutdownEnabled(
+                            migrationData.isSoftApTimeoutEnabled());
+                }
             }
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "Failed to parse configuration" + e);

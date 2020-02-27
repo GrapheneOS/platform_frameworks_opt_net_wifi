@@ -285,13 +285,26 @@ public class TelephonyUtil {
      * @return true if the subId is active, otherwise false.
      */
     public boolean isSimPresent(int subId) {
+        if (!SubscriptionManager.isValidSubscriptionId(subId)) {
+            return false;
+        }
         List<SubscriptionInfo> subInfoList = mSubscriptionManager.getActiveSubscriptionInfoList();
         if (subInfoList == null || subInfoList.isEmpty()) {
             return false;
         }
         return subInfoList.stream()
-                .anyMatch(info -> info.getSubscriptionId() == subId);
+                .anyMatch(info -> info.getSubscriptionId() == subId
+                        && isSimStateReady(info));
     }
+
+    /**
+     * Check if SIM card for SubscriptionInfo is ready.
+     */
+    private boolean isSimStateReady(SubscriptionInfo info) {
+        int simSlotIndex = info.getSimSlotIndex();
+        return mTelephonyManager.getSimState(simSlotIndex) == TelephonyManager.SIM_STATE_READY;
+    }
+
     /**
      * Get the identity for the current SIM or null if the SIM is not available
      *

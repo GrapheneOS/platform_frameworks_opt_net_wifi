@@ -54,7 +54,10 @@ public class ANQPRequestManagerTest extends WifiBaseTest {
             Constants.ANQPElementType.ANQPIPAddrAvailability,
             Constants.ANQPElementType.ANQPNAIRealm,
             Constants.ANQPElementType.ANQP3GPPNetwork,
-            Constants.ANQPElementType.ANQPDomName);
+            Constants.ANQPElementType.ANQPDomName,
+            Constants.ANQPElementType.HSFriendlyName,
+            Constants.ANQPElementType.HSWANMetrics,
+            Constants.ANQPElementType.HSConnCapability);
 
     private static final List<Constants.ANQPElementType> R1_ANQP_WITH_RC = Arrays.asList(
             Constants.ANQPElementType.ANQPVenueName,
@@ -62,6 +65,9 @@ public class ANQPRequestManagerTest extends WifiBaseTest {
             Constants.ANQPElementType.ANQPNAIRealm,
             Constants.ANQPElementType.ANQP3GPPNetwork,
             Constants.ANQPElementType.ANQPDomName,
+            Constants.ANQPElementType.HSFriendlyName,
+            Constants.ANQPElementType.HSWANMetrics,
+            Constants.ANQPElementType.HSConnCapability,
             Constants.ANQPElementType.ANQPRoamingConsortium);
 
     private static final List<Constants.ANQPElementType> R1R2_ANQP_WITHOUT_RC = Arrays.asList(
@@ -81,10 +87,10 @@ public class ANQPRequestManagerTest extends WifiBaseTest {
             Constants.ANQPElementType.ANQPNAIRealm,
             Constants.ANQPElementType.ANQP3GPPNetwork,
             Constants.ANQPElementType.ANQPDomName,
-            Constants.ANQPElementType.ANQPRoamingConsortium,
             Constants.ANQPElementType.HSFriendlyName,
             Constants.ANQPElementType.HSWANMetrics,
             Constants.ANQPElementType.HSConnCapability,
+            Constants.ANQPElementType.ANQPRoamingConsortium,
             Constants.ANQPElementType.HSOSUProviders);
 
     @Mock

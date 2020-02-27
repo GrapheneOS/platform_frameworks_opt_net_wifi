@@ -602,4 +602,23 @@ public class WifiMonitorTest extends WifiBaseTest {
         assertEquals(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, messageCaptor.getValue().what);
     }
 
+    /**
+     * Broadcast fils network connection test.
+     */
+    @Test
+    public void testBroadcastFilsNetworkConnectionEvent() {
+        mWifiMonitor.registerHandler(
+                WLAN_IFACE_NAME, WifiMonitor.FILS_NETWORK_CONNECTION_EVENT, mHandlerSpy);
+        int networkId = NETWORK_ID;
+        String bssid = BSSID;
+        mWifiMonitor.broadcastFilsNetworkConnectionEvent(WLAN_IFACE_NAME, networkId, bssid);
+        mLooper.dispatchAll();
+
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(mHandlerSpy).handleMessage(messageCaptor.capture());
+        assertEquals(WifiMonitor.FILS_NETWORK_CONNECTION_EVENT, messageCaptor.getValue().what);
+        assertEquals(networkId, messageCaptor.getValue().arg1);
+        assertEquals(bssid, (String) messageCaptor.getValue().obj);
+    }
+
 }

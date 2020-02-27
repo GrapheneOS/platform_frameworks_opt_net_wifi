@@ -56,15 +56,14 @@ echo "Building for coverage report"
 bash <<END_OF_BUILD_SCRIPT || { exit 1; }
   cd $ANDROID_BUILD_TOP
   source build/make/envsetup.sh
-  tapas FrameworksWifiTests jacoco-cli
-  export OUT_DIR=$BUILD_OUT_DIR
-  export TARGET_PRODUCT=$TARGET_PRODUCT
+  lunch ${TARGET_PRODUCT}-${TARGET_BUILD_VARIANT}
+  export OUT_DIR=${BUILD_OUT_DIR}
   export EMMA_INSTRUMENT=true
   export EMMA_INSTRUMENT_FRAMEWORK=false
   export EMMA_INSTRUMENT_STATIC=true
   export ANDROID_COMPILE_WITH_JACK=false
   export SKIP_BOOT_JARS_CHECK=true
-  m
+  m FrameworksWifiTests jacoco-cli
 END_OF_BUILD_SCRIPT
 
 APK_NAME="$(find $BUILD_OUT_DIR/target -name FrameworksWifiTests.apk)"

@@ -107,16 +107,14 @@ public class StandardWifiEntry extends WifiEntry {
     private @EapType int mEapType = EAP_UNKNOWN;
     private @PskType int mPskType = PSK_UNKNOWN;
     @Nullable private WifiConfiguration mWifiConfig;
-    @Nullable private ConnectCallback mConnectCallback;
-    @Nullable private DisconnectCallback mDisconnectCallback;
-    @Nullable private ForgetCallback mForgetCallback;
     @Nullable private String mRecommendationServiceLabel;
 
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull String key,
             @NonNull List<ScanResult> scanResults,
-            @NonNull WifiManager wifiManager) throws IllegalArgumentException {
-        this(context, callbackHandler, key, wifiManager, false /* forSavedNetworksPage */);
+            @NonNull WifiManager wifiManager,
+            boolean forSavedNetworksPage) throws IllegalArgumentException {
+        this(context, callbackHandler, key, wifiManager, forSavedNetworksPage);
 
         checkNotNull(scanResults, "Cannot construct with null ScanResult list!");
         if (scanResults.isEmpty()) {
@@ -128,8 +126,9 @@ public class StandardWifiEntry extends WifiEntry {
 
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull String key, @NonNull WifiConfiguration config,
-            @NonNull WifiManager wifiManager) throws IllegalArgumentException {
-        this(context, callbackHandler, key, wifiManager, false /* forSavedNetworksPage */);
+            @NonNull WifiManager wifiManager,
+            boolean forSavedNetworksPage) throws IllegalArgumentException {
+        this(context, callbackHandler, key, wifiManager, forSavedNetworksPage);
 
         checkNotNull(config, "Cannot construct with null config!");
         checkNotNull(config.SSID, "Supplied config must have an SSID!");
@@ -395,7 +394,7 @@ public class StandardWifiEntry extends WifiEntry {
                 if (mSecurity == SECURITY_OWE) {
                     // Use OWE if possible
                     connectConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.OWE);
-                    connectConfig.requirePMF = true;
+                    connectConfig.requirePmf = true;
                 } else {
                     connectConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
                 }

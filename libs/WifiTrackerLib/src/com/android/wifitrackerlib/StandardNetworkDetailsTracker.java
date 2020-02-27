@@ -66,7 +66,8 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             String key) {
         super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
-        mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, key, mWifiManager, false);
+        mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, key, mWifiManager,
+                false /* forSavedNetworksPage */);
         cacheNewScanResults();
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();

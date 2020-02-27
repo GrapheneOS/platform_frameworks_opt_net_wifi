@@ -16,12 +16,14 @@
 
 package com.android.server.wifi.hotspot2;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.server.wifi.WifiConfigStore;
+import com.android.server.wifi.WifiConfigStoreMigrationDataHolder;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
@@ -116,7 +118,8 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
+            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
             throws XmlPullParserException, IOException {
         // Ignore empty reads.
         if (in == null) {
@@ -316,6 +319,7 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
                         break;
                     case XML_TAG_IS_TRUSTED:
                         isTrusted = (boolean) value;
+                        break;
                     default:
                         Log.w(TAG, "Ignoring unknown value name found " + name[0]);
                         break;
@@ -351,7 +355,9 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
                 providerId, creatorUid, packageName, isFromSuggestion, caCertificateAliases,
                 clientPrivateKeyAndCertificateAlias, remediationCaCertificateAlias,
                 hasEverConnected, shared);
-        provider.setTrusted(isTrusted);
+        if (isFromSuggestion) {
+            provider.setTrusted(isTrusted);
+        }
         return provider;
     }
 }

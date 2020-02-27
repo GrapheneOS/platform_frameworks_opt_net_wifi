@@ -36,7 +36,6 @@ import android.util.ArraySet;
 import com.android.server.wifi.WifiNative;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,46 +44,59 @@ import java.util.stream.Collectors;
  * This allows more fine operations on channels than if band channels are not known.
  */
 public class KnownBandsChannelHelper extends ChannelHelper {
-    private static final int BAND_24_GHZ_START_FREQ = 2400;
-    private static final int BAND_24_GHZ_END_FREQ = 2500;
-    private static final int BAND_5_GHZ_START_FREQ = 5100;
-    private static final int BAND_5_GHZ_END_FREQ = 6000;
-    private static final int BAND_6_GHZ_START_FREQ = 5925;
-    private static final int BAND_6_GHZ_END_FREQ = 7125;
+    public static final int BAND_24_GHZ_START_FREQ = 2400;
+    public static final int BAND_24_GHZ_END_FREQ = 2500;
+    public static final int BAND_5_GHZ_START_FREQ = 4900;
+    public static final int BAND_5_GHZ_END_FREQ = 5875;
+    public static final int BAND_6_GHZ_START_FREQ = 5925;
+    public static final int BAND_6_GHZ_END_FREQ = 7125;
+
+    // 5G low includes U-NII-1 and Japan 4.9G band
+    public static final int BAND_5_GHZ_LOW_END_FREQ = 5240;
+    // 5G middle includes U-NII-2A and U-NII-2C
+    public static final int BAND_5_GHZ_MID_END_FREQ = 5710;
+    // 5G high includes U-NII-3
+    public static final int BAND_5_GHZ_HIGH_END_FREQ = BAND_5_GHZ_END_FREQ;
+    // 6G low includes UNII-5
+    public static final int BAND_6_GHZ_LOW_END_FREQ = 6425;
+    // 6G middle includes UNII-6 and UNII-7
+    public static final int BAND_6_GHZ_MID_END_FREQ = 6875;
+    // 6G high includes UNII-8
+    public static final int BAND_6_GHZ_HIGH_END_FREQ = BAND_6_GHZ_END_FREQ;
 
     private WifiScanner.ChannelSpec[][] mBandsToChannels;
 
-    protected void setBandChannels(List<Integer> channels2G, List<Integer> channels5G,
-            List<Integer> channelsDfs, List<Integer> channels6G) {
+    protected void setBandChannels(int[] channels2G, int[] channels5G, int[] channelsDfs,
+            int[] channels6G) {
         mBandsToChannels = new WifiScanner.ChannelSpec[WIFI_BAND_COUNT][];
 
-        if (!channels2G.isEmpty()) {
+        if (channels2G.length != 0) {
             mBandsToChannels[WIFI_BAND_INDEX_24_GHZ] =
-                    new WifiScanner.ChannelSpec[channels2G.size()];
+                    new WifiScanner.ChannelSpec[channels2G.length];
             copyChannels(mBandsToChannels[WIFI_BAND_INDEX_24_GHZ], channels2G);
         } else {
             mBandsToChannels[WIFI_BAND_INDEX_24_GHZ] = NO_CHANNELS;
         }
 
-        if (!channels5G.isEmpty()) {
+        if (channels5G.length != 0) {
             mBandsToChannels[WIFI_BAND_INDEX_5_GHZ] =
-                    new WifiScanner.ChannelSpec[channels5G.size()];
+                    new WifiScanner.ChannelSpec[channels5G.length];
             copyChannels(mBandsToChannels[WIFI_BAND_INDEX_5_GHZ], channels5G);
         } else {
             mBandsToChannels[WIFI_BAND_INDEX_5_GHZ] = NO_CHANNELS;
         }
 
-        if (!channelsDfs.isEmpty()) {
+        if (channelsDfs.length != 0) {
             mBandsToChannels[WIFI_BAND_INDEX_5_GHZ_DFS_ONLY] =
-                    new WifiScanner.ChannelSpec[channelsDfs.size()];
+                    new WifiScanner.ChannelSpec[channelsDfs.length];
             copyChannels(mBandsToChannels[WIFI_BAND_INDEX_5_GHZ_DFS_ONLY], channelsDfs);
         } else {
             mBandsToChannels[WIFI_BAND_INDEX_5_GHZ_DFS_ONLY] = NO_CHANNELS;
         }
 
-        if (!channels6G.isEmpty()) {
+        if (channels6G.length != 0) {
             mBandsToChannels[WIFI_BAND_INDEX_6_GHZ] =
-                    new WifiScanner.ChannelSpec[channels6G.size()];
+                    new WifiScanner.ChannelSpec[channels6G.length];
             copyChannels(mBandsToChannels[WIFI_BAND_INDEX_6_GHZ], channels6G);
         } else {
             mBandsToChannels[WIFI_BAND_INDEX_6_GHZ] = NO_CHANNELS;
@@ -92,9 +104,9 @@ public class KnownBandsChannelHelper extends ChannelHelper {
     }
 
     private static void copyChannels(
-            WifiScanner.ChannelSpec[] channelSpec, List<Integer> channels) {
-        for (int i = 0; i < channels.size(); i++) {
-            channelSpec[i] = new WifiScanner.ChannelSpec(channels.get(i));
+            WifiScanner.ChannelSpec[] channelSpec, int[] channels) {
+        for (int i = 0; i < channels.length; i++) {
+            channelSpec[i] = new WifiScanner.ChannelSpec(channels[i]);
         }
     }
 

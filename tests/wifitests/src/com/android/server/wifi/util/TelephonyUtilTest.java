@@ -136,6 +136,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(mDataTelephonyManager);
         when(mTelephonyManager.createForSubscriptionId(eq(NON_DATA_SUBID)))
                 .thenReturn(mNonDataTelephonyManager);
+        when(mTelephonyManager.getSimState(anyInt())).thenReturn(TelephonyManager.SIM_STATE_READY);
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(mSubInfoList);
         mMockingSession = ExtendedMockito.mockitoSession().strictness(Strictness.LENIENT)
                 .mockStatic(SubscriptionManager.class).startMocking();
@@ -863,7 +864,6 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(subInfo2.getSubscriptionId()).thenReturn(NON_DATA_SUBID);
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Arrays.asList(subInfo1, subInfo2));
-
         assertTrue(mTelephonyUtil.isSimPresent(DATA_SUBID));
     }
 
@@ -881,7 +881,22 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(subInfo.getSubscriptionId()).thenReturn(NON_DATA_SUBID);
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Arrays.asList(subInfo));
+        assertFalse(mTelephonyUtil.isSimPresent(DATA_SUBID));
+    }
 
+    /**
+     * Verity SIM is consider not present when SIM state is not ready
+     */
+    @Test
+    public void isSimPresentWithValidSubscriptionIdListWithSimStateNotReady() {
+        SubscriptionInfo subInfo1 = mock(SubscriptionInfo.class);
+        when(subInfo1.getSubscriptionId()).thenReturn(DATA_SUBID);
+        SubscriptionInfo subInfo2 = mock(SubscriptionInfo.class);
+        when(subInfo2.getSubscriptionId()).thenReturn(NON_DATA_SUBID);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList())
+                .thenReturn(Arrays.asList(subInfo1, subInfo2));
+        when(mTelephonyManager.getSimState(anyInt()))
+                .thenReturn(TelephonyManager.SIM_STATE_NETWORK_LOCKED);
         assertFalse(mTelephonyUtil.isSimPresent(DATA_SUBID));
     }
 

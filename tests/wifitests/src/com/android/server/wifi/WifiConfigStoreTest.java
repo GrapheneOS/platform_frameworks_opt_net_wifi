@@ -157,7 +157,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     @Mock private Clock mClock;
     @Mock private WifiMetrics mWifiMetrics;
     @Mock private WifiConfigStoreEncryptionUtil mEncryptionUtil;
-    @Mock WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
+    @Mock WifiConfigStoreMigrationDataHolder mWifiConfigStoreMigrationDataHolder;
     private MockStoreFile mSharedStore;
     private MockStoreFile mUserStore;
     private MockStoreFile mUserNetworkSuggestionsStore;
@@ -185,7 +185,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                 .thenReturn(new EncryptedData(new byte[0], new byte[0]));
         when(mEncryptionUtil.decrypt(any(EncryptedData.class)))
                 .thenReturn(new byte[0]);
-        when(mWifiOemConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
+        when(mWifiConfigStoreMigrationDataHolder.getUserSavedNetworks()).thenReturn(null);
         mSharedStore = new MockStoreFile(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         mUserStore = new MockStoreFile(WifiConfigStore.STORE_FILE_USER_GENERAL);
         mUserNetworkSuggestionsStore =
@@ -205,7 +205,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         setupMocks();
 
         mWifiConfigStore = new WifiConfigStore(mContext, new Handler(mLooper.getLooper()), mClock,
-                mWifiMetrics, Arrays.asList(mSharedStore));
+                mWifiMetrics, mWifiConfigStoreMigrationDataHolder, Arrays.asList(mSharedStore));
         // Enable verbose logging before tests.
         mWifiConfigStore.enableVerboseLogging(true);
     }
@@ -323,6 +323,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mWifiConfigStore.read();
         assertEquals(TEST_USER_DATA, mUserStoreData.getData());
         assertEquals(TEST_SHARE_DATA, mSharedStoreData.getData());
+        verify(mWifiConfigStoreMigrationDataHolder).removeStoreIfPresent();
     }
 
     /**
@@ -360,6 +361,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mWifiConfigStore.read();
         assertEquals("abcds", mSharedStoreData.getData());
         assertEquals("asdfa", mUserStoreData.getData());
+        verify(mWifiConfigStoreMigrationDataHolder).removeStoreIfPresent();
     }
 
 
@@ -389,6 +391,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mWifiConfigStore.read();
         assertEquals(TEST_USER_DATA, mUserStoreData.getData());
         assertEquals(TEST_SHARE_DATA, mSharedStoreData.getData());
+        verify(mWifiConfigStoreMigrationDataHolder).removeStoreIfPresent();
 
         verify(mWifiMetrics, times(2)).noteWifiConfigStoreReadDuration(anyInt());
         verify(mWifiMetrics).noteWifiConfigStoreWriteDuration(anyInt());
@@ -417,9 +420,9 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         // Ensure that we got the call to deserialize empty shared data, but no user data.
         verify(sharedStoreData).resetData();
-        verify(sharedStoreData).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(sharedStoreData).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
         verify(userStoreData, never()).resetData();
-        verify(userStoreData, never()).deserializeData(any(), anyInt(), anyInt(), any());
+        verify(userStoreData, never()).deserializeData(any(), anyInt(), anyInt(), any(), any());
     }
 
     /**
@@ -446,9 +449,9 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         // Ensure that we got the call to deserialize empty shared & user data.
         verify(userStoreData).resetData();
-        verify(userStoreData).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(userStoreData).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
         verify(sharedStoreData).resetData();
-        verify(sharedStoreData).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(sharedStoreData).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
     }
 
     /**
@@ -506,8 +509,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     @Test
     public void testReadWifiConfigStoreData() throws Exception {
         // Setup network list.
-        NetworkListStoreData networkList =
-                new NetworkListUserStoreData(mContext, mWifiOemConfigStoreMigrationDataHolder);
+        NetworkListStoreData networkList = new NetworkListUserStoreData(mContext);
         mWifiConfigStore.registerStoreData(networkList);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         openNetwork.creatorName = TEST_CREATOR_NAME;
@@ -543,8 +545,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mWifiConfigStore.switchUserStoresAndRead(mUserStores);
 
         // Setup network list store data.
-        NetworkListStoreData networkList =
-                new NetworkListUserStoreData(mContext, mWifiOemConfigStoreMigrationDataHolder);
+        NetworkListStoreData networkList = new NetworkListUserStoreData(mContext);
         mWifiConfigStore.registerStoreData(networkList);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         openNetwork.creatorName = TEST_CREATOR_NAME;
@@ -607,9 +608,9 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(null);
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any());
-        verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any(), any());
+        verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
+        verify(storeData2).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
         reset(storeData1, storeData2);
 
         // Scenario 2: StoreData2 in user store file.
@@ -623,9 +624,9 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(fileContentsXmlStringWithOnlyStoreData2.getBytes());
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any());
-        verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(storeData1).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
+        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any(), any());
+        verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
         reset(storeData1, storeData2);
 
         // Scenario 3: StoreData1 in shared store file & StoreData2 in user store file.
@@ -639,10 +640,10 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(fileContentsXmlStringWithOnlyStoreData2.getBytes());
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any());
-        verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any());
-        verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any(), any());
+        verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
+        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any(), any());
+        verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
         reset(storeData1, storeData2);
 
         // Scenario 4: StoreData1 & StoreData2 in shared store file.
@@ -657,10 +658,10 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(null);
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any());
-        verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any());
-        verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
+        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any(), any());
+        verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
+        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any(), any());
+        verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any(), any());
         reset(storeData1, storeData2);
     }
 
@@ -779,10 +780,10 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mWifiConfigStore.read();
         verify(sharedStoreData, times(1)).deserializeData(
                 any(XmlPullParser.class), anyInt(),
-                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any());
+                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any(), any());
         verify(userStoreData, times(1)).deserializeData(
                 any(XmlPullParser.class), anyInt(),
-                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any());
+                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any(), any());
     }
 
     /**
@@ -830,10 +831,10 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mWifiConfigStore.read();
         verify(sharedStoreData, times(1))
                 .deserializeData(any(XmlPullParser.class), anyInt(),
-                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any());
+                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any(), any());
         verify(userStoreData, times(1))
                 .deserializeData(any(XmlPullParser.class), anyInt(),
-                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any());
+                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any(), any());
     }
 
     /**
@@ -898,7 +899,8 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         @Override
         public void deserializeData(XmlPullParser in, int outerTagDepth, int version,
-                WifiConfigStoreEncryptionUtil encryptionUtil)
+                WifiConfigStoreEncryptionUtil encryptionUtil,
+                WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
                 throws XmlPullParserException, IOException {
             if (in == null) {
                 return;

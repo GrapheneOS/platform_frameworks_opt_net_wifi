@@ -80,10 +80,7 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
                 ? 0
                 : mScoringParams.getUnmeteredNetworkBonus();
 
-        int savedNetworkAward = (candidate.getNominatorId()
-                    == WifiNetworkSelector.NetworkNominator.NOMINATOR_ID_SAVED)
-                ? mScoringParams.getSavedNetworkBonus()
-                : 0;
+        int savedNetworkAward = candidate.isEphemeral() ? 0 : mScoringParams.getSavedNetworkBonus();
 
         int score = rssiBaseScore + throughputBonusScore + lastSelectionBonusScore
                 + currentNetworkBoost + securityAward + unmeteredAward + savedNetworkAward;

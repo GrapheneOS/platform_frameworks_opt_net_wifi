@@ -812,6 +812,58 @@ public class ClientModeManagerTest extends WifiBaseTest {
     }
 
     /**
+     * ClientMode does not stop with IMS deferring time and Wifi calling, but no LTE
+     * when the target role is not ROLE_UNSPECIFIED.
+     *
+     * Simulate a user toggle wifi multiple times before doing wifi stop and stay at
+     * ON position.
+     */
+    @Test
+    public void clientModeNotStopWithWifiOffDeferringTimeAndWifiCallingNoLteTimedOut()
+            throws Exception {
+        setUpVoWifiTest(true,
+                TelephonyManager.NETWORK_TYPE_UNKNOWN,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        mClientModeManager.stop();
+        mLooper.dispatchAll();
+        verify(mImsMmTelManager).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mListener, never()).onStopped();
+
+        mClientModeManager.start();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+        mClientModeManager.stop();
+        mLooper.dispatchAll();
+        mClientModeManager.start();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+        // should not register another listener.
+        verify(mImsMmTelManager, times(1)).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mListener, never()).onStopped();
+
+        // Exceeding the timeout, wifi should NOT be stopped.
+        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
+        mLooper.dispatchAll();
+        verify(mImsMmTelManager).unregisterImsRegistrationCallback(
+                any(RegistrationManager.RegistrationCallback.class));
+        assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mListener, never()).onStopped();
+
+        // on an explicit stop, we should not trigger the callback
+        verifyNoMoreInteractions(mListener);
+    }
+
+    /**
      * Switch to scan mode properly with IMS deferring time without WifiCalling.
      */
     @Test
@@ -1036,7 +1088,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
 
-        mClientModeManager.stop();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY);
         mLooper.dispatchAll();
         // should not register another listener.
         verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
@@ -1049,6 +1101,57 @@ public class ClientModeManagerTest extends WifiBaseTest {
         mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mImsMmTelManager).unregisterImsRegistrationCallback(
+                any(RegistrationManager.RegistrationCallback.class));
+        assertNull(mImsMmTelManagerRegistrationCallback);
+    }
+
+    /**
+     * Stay at connected mode with IMS deferring time and Wifi calling, but no LTE
+     * when the target state is not ROLE_CLIENT_SCAN_ONLY.
+     *
+     * Simulate a user toggle wifi multiple times before doing wifi stop and stay at
+     * ON position.
+     */
+    @Test
+    public void
+            stayAtConnectedModeWithWifiOffDeferringTimeAndWifiCallingNoLteTimedOutMultipleSwitch()
+            throws Exception {
+        setUpVoWifiTest(true,
+                TelephonyManager.NETWORK_TYPE_UNKNOWN,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+                .thenReturn(true);
+
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY);
+        mLooper.dispatchAll();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY);
+        mLooper.dispatchAll();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+
+        verify(mImsMmTelManager).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+
+        // should not register another listener.
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mImsMmTelManager, times(1)).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+
+        // Exceeding the timeout, wifi should be stopped.
+        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
+        mLooper.dispatchAll();
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);

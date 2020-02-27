@@ -39,17 +39,14 @@ public class WifiSettingsStore {
     /* Tracks current airplane mode state */
     private boolean mAirplaneModeOn = false;
 
-    /* Tracks the setting of scan being available even when wi-fi is turned off
-     */
-    private boolean mScanAlwaysAvailable;
-
     private final Context mContext;
+    private final WifiSettingsConfigStore mSettingsConfigStore;
 
-    WifiSettingsStore(Context context) {
+    WifiSettingsStore(Context context, WifiSettingsConfigStore sharedPreferences) {
         mContext = context;
+        mSettingsConfigStore = sharedPreferences;
         mAirplaneModeOn = getPersistedAirplaneModeOn();
         mPersistWifiState = getPersistedWifiState();
-        mScanAlwaysAvailable = getPersistedScanAlwaysAvailable();
     }
 
     public synchronized boolean isWifiToggleEnabled() {
@@ -65,11 +62,11 @@ public class WifiSettingsStore {
      * @return {@code true} if airplane mode is on.
      */
     public synchronized boolean isAirplaneModeOn() {
-       return mAirplaneModeOn;
+        return mAirplaneModeOn;
     }
 
     public synchronized boolean isScanAlwaysAvailable() {
-        return !mAirplaneModeOn && mScanAlwaysAvailable;
+        return !mAirplaneModeOn && getPersistedScanAlwaysAvailable();
     }
 
     public synchronized boolean handleWifiToggled(boolean wifiEnabled) {
@@ -116,8 +113,8 @@ public class WifiSettingsStore {
         return true;
     }
 
-    synchronized void handleWifiScanAlwaysAvailableToggled() {
-        mScanAlwaysAvailable = getPersistedScanAlwaysAvailable();
+    synchronized void handleWifiScanAlwaysAvailableToggled(boolean isAvailable) {
+        persistScanAlwaysAvailableState(isAvailable);
     }
 
     void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
@@ -129,6 +126,11 @@ public class WifiSettingsStore {
         final ContentResolver cr = mContext.getContentResolver();
         mPersistWifiState = state;
         Settings.Global.putInt(cr, Settings.Global.WIFI_ON, state);
+    }
+
+    private void persistScanAlwaysAvailableState(boolean isAvailable) {
+        mSettingsConfigStore.putBoolean(
+                WifiSettingsConfigStore.WIFI_SCAN_ALWAYS_AVAILABLE, isAvailable);
     }
 
     /* Does Wi-Fi need to be disabled when airplane mode is on ? */
@@ -163,8 +165,7 @@ public class WifiSettingsStore {
     }
 
     private boolean getPersistedScanAlwaysAvailable() {
-        return Settings.Global.getInt(mContext.getContentResolver(),
-                Settings.Global.WIFI_SCAN_ALWAYS_AVAILABLE,
-                0) == 1;
+        return mSettingsConfigStore.getBoolean(
+                WifiSettingsConfigStore.WIFI_SCAN_ALWAYS_AVAILABLE, false);
     }
 }

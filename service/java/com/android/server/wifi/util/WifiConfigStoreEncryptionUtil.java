@@ -31,6 +31,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.ProviderException;
 import java.security.UnrecoverableEntryException;
 
 import javax.crypto.BadPaddingException;
@@ -177,6 +178,8 @@ public class WifiConfigStoreEncryptionUtil {
             reportException(e, "getOrCreateSecretKey cannot find crypto provider");
         } catch (UnrecoverableEntryException e) {
             reportException(e, "getOrCreateSecretKey had an unrecoverable entry exception.");
+        } catch (ProviderException e) {
+            reportException(e, "getOrCreateSecretKey had a provider exception.");
         }
         return secretKey;
     }

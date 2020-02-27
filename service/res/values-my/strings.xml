@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> သည် ကွန်ရက်များကို အကြံပြုထားသည်။ စက်သည် အလိုအလျောက် ချိတ်ဆက်နိုင်သည်။"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ခွင့်ပြုရန်"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"မလိုပါ"</string>
-    <!-- no translation found for wifi_suggestion_imsi_privacy_title (5072368033308094465) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_imsi_privacy_content (5050532382656368119) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_carrier (5500037364868978935) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier (7020127735591720299) -->
-    <skip />
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI အကာအကွယ်အတွက် ကိုယ်ရေးလုံခြုံမှု သတိပေးချက်"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"သင့်ဆင်းမ်ကတ်အချက်အလက်ကို သုံး၍ အကြံပြုသော ကွန်ရက် <xliff:g id="CARRIERNAME">%s</xliff:g> တွင် ကိုယ်ရေးလုံခြုံမှု အကာအကွယ် မပါရှိဘဲ ကွန်ရက်ကို အလိုအလျောက် ချိတ်ဆက်ရန် ခွင့်ပြုမလား။"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"ခွင့်ပြုရန်"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"ခွင့်မပြုရန်"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi ကို အလိုအလျောက်​ ပြန်ဖွင့်ပေးလိမ့်ပါမည်"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"သိမ်းဆည်းထားသည့် အရည်အသွေးမြင့်ကွန်ရက်များအနီးသို့ ရောက်ရှိသည့်အခါ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"ပြန်မဖွင့်ပါနှင့်"</string>
@@ -80,4 +76,8 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"မိုဘိုင်းဟော့စပေါ့ ပိတ်ထားသည်"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"မိုဘိုင်းဟော့စပေါ့ကို ပိတ်လိုက်ပါပြီ"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"အသုံးမပြုသဖြင့် အချိန်ကုန်သွားခြင်းကြောင့် မိုဘိုင်းဟော့စပေါ့ကို ပိတ်လိုက်ပါပြီ။"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

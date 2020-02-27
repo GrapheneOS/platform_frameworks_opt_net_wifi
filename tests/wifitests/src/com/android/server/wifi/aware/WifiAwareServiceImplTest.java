@@ -19,11 +19,9 @@ package com.android.server.wifi.aware;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -51,8 +49,8 @@ import android.util.SparseIntArray;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.FrameworkFacade;
 import com.android.server.wifi.WifiBaseTest;
+import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -103,7 +101,7 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
     @Mock private WifiPermissionsUtil mWifiPermissionsUtil;
     @Mock private WifiPermissionsWrapper mPermissionsWrapperMock;
     @Mock
-    FrameworkFacade mFrameworkFacade;
+    WifiSettingsConfigStore mWifiSettingsConfigStore;
 
     /**
      * Using instead of spy to avoid native crash failures - possibly due to
@@ -135,8 +133,6 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         mMockLooper = new TestLooper();
 
         when(mHandlerThreadMock.getLooper()).thenReturn(mMockLooper.getLooper());
-        doNothing().when(mFrameworkFacade).registerContentObserver(eq(mContextMock), any(),
-                anyBoolean(), any());
 
         AppOpsManager appOpsMock = mock(AppOpsManager.class);
         when(mContextMock.getSystemService(Context.APP_OPS_SERVICE)).thenReturn(appOpsMock);
@@ -152,7 +148,8 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         mDut = new WifiAwareServiceImplSpy(mContextMock);
         mDut.fakeUid = mDefaultUid;
         mDut.start(mHandlerThreadMock, mAwareStateManagerMock, mWifiAwareShellCommandMock,
-                mAwareMetricsMock, mWifiPermissionsUtil, mPermissionsWrapperMock, mFrameworkFacade,
+                mAwareMetricsMock, mWifiPermissionsUtil, mPermissionsWrapperMock,
+                mWifiSettingsConfigStore,
                 mock(WifiAwareNativeManager.class), mock(WifiAwareNativeApi.class),
                 mock(WifiAwareNativeCallback.class), mock(NetdWrapper.class));
         mMockLooper.dispatchAll();

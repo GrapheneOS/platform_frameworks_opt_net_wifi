@@ -54,9 +54,7 @@ import android.app.test.TestAlarmManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.net.MacAddress;
-import android.net.Uri;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
@@ -64,7 +62,7 @@ import android.net.wifi.SoftApInfo;
 import android.net.wifi.WifiClient;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
-import android.net.wifi.wificond.NativeWifiClient;
+import android.net.wifi.nl80211.NativeWifiClient;
 import android.os.UserHandle;
 import android.os.test.TestLooper;
 import android.provider.Settings;
@@ -83,7 +81,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -103,18 +100,17 @@ public class SoftApManagerTest extends WifiBaseTest {
     private static final MacAddress TEST_MAC_ADDRESS_2 = MacAddress.fromString("aa:bb:cc:dd:ee:ff");
     private static final WifiClient TEST_CONNECTED_CLIENT = new WifiClient(TEST_MAC_ADDRESS);
     private static final NativeWifiClient TEST_NATIVE_CLIENT = new NativeWifiClient(
-            TEST_MAC_ADDRESS.toByteArray());
+            TEST_MAC_ADDRESS);
     private static final WifiClient TEST_CONNECTED_CLIENT_2 = new WifiClient(TEST_MAC_ADDRESS_2);
     private static final NativeWifiClient TEST_NATIVE_CLIENT_2 = new NativeWifiClient(
-            TEST_MAC_ADDRESS_2.toByteArray());
+            TEST_MAC_ADDRESS_2);
     private static final int TEST_AP_FREQUENCY = 2412;
     private static final int TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK =
             SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
     private static final int TEST_AP_BANDWIDTH_IN_SOFTAPINFO = SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
-    private static final List<Integer> EMPTY_CHANNEL_ARRAY = Collections.emptyList();
-    private final SoftApConfiguration mDefaultApConfig = createDefaultApConfig();
+    private static final int[] EMPTY_CHANNEL_ARRAY = {};
+    private SoftApConfiguration mDefaultApConfig = createDefaultApConfig();
 
-    private ContentObserver mContentObserver;
     private TestLooper mLooper;
     private TestAlarmManager mAlarmManager;
     private SoftApInfo mTestSoftApInfo;
@@ -169,7 +165,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         mTestSoftApInfo.setFrequency(TEST_AP_FREQUENCY);
         mTestSoftApInfo.setBandwidth(TEST_AP_BANDWIDTH_IN_SOFTAPINFO);
         // Default set up all features support.
-        int testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT
+        long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD
                 | SoftApCapability.SOFTAP_FEATURE_WPA3_SAE;
         mTestSoftApCapability = new SoftApCapability(testSoftApFeature);
@@ -1474,9 +1470,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
 
-        when(mFrameworkFacade.getIntegerSetting(
-                mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(0);
-        mContentObserver.onChange(false);
+        SoftApConfiguration newConfig = new SoftApConfiguration.Builder(mDefaultApConfig)
+                .setAutoShutdownEnabled(false)
+                .build();
+        mSoftApManager.updateConfiguration(newConfig);
         mLooper.dispatchAll();
 
         // Verify timer is canceled
@@ -1486,16 +1483,18 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void schedulesTimeoutTimerOnTimeoutToggleChangeWhenNoClients() throws Exception {
         // start with timeout toggle disabled
-        when(mFrameworkFacade.getIntegerSetting(
-                mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(0);
+        mDefaultApConfig = new SoftApConfiguration.Builder(mDefaultApConfig)
+                .setAutoShutdownEnabled(false)
+                .build();
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
 
-        when(mFrameworkFacade.getIntegerSetting(
-                mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(1);
-        mContentObserver.onChange(false);
+        SoftApConfiguration newConfig = new SoftApConfiguration.Builder(mDefaultApConfig)
+                .setAutoShutdownEnabled(true)
+                .build();
+        mSoftApManager.updateConfiguration(newConfig);
         mLooper.dispatchAll();
 
         // Verify timer is scheduled
@@ -1506,8 +1505,9 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void doesNotScheduleTimeoutTimerOnStartWhenTimeoutIsDisabled() throws Exception {
         // start with timeout toggle disabled
-        when(mFrameworkFacade.getIntegerSetting(
-                mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(0);
+        mDefaultApConfig = new SoftApConfiguration.Builder(mDefaultApConfig)
+                .setAutoShutdownEnabled(false)
+                .build();
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
@@ -1522,8 +1522,9 @@ public class SoftApManagerTest extends WifiBaseTest {
     public void doesNotScheduleTimeoutTimerWhenAllClientsDisconnectButTimeoutIsDisabled()
             throws Exception {
         // start with timeout toggle disabled
-        when(mFrameworkFacade.getIntegerSetting(
-                mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(0);
+        mDefaultApConfig = new SoftApConfiguration.Builder(mDefaultApConfig)
+                .setAutoShutdownEnabled(false)
+                .build();
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
@@ -1539,18 +1540,6 @@ public class SoftApManagerTest extends WifiBaseTest {
         // Verify timer is not scheduled
         verify(mAlarmManager.getAlarmManager(), never()).setExact(anyInt(), anyLong(),
                 eq(mSoftApManager.SOFT_AP_SEND_MESSAGE_TIMEOUT_TAG), any(), any());
-    }
-
-    @Test
-    public void unregistersSettingsObserverOnStop() throws Exception {
-        SoftApModeConfiguration apConfig =
-                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
-                mTestSoftApCapability);
-        startSoftApAndVerifyEnabled(apConfig);
-        mSoftApManager.stop();
-        mLooper.dispatchAll();
-
-        verify(mFrameworkFacade).unregisterContentObserver(eq(mContext), eq(mContentObserver));
     }
 
     @Test
@@ -1752,8 +1741,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 .build();
         }
 
-        ArgumentCaptor<ContentObserver> observerCaptor = ArgumentCaptor.forClass(
-                ContentObserver.class);
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
 
         when(mWifiNative.setupInterfaceForSoftApMode(any()))
@@ -1788,9 +1775,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 softApConfig.getTargetMode());
         verify(mListener).onStarted();
         verify(mWifiMetrics).addSoftApUpChangedEvent(true, softApConfig.getTargetMode());
-        verify(mFrameworkFacade).registerContentObserver(eq(mContext), any(Uri.class), eq(true),
-                observerCaptor.capture());
-        mContentObserver = observerCaptor.getValue();
     }
 
     private void checkApStateChangedBroadcast(Intent intent, int expectedCurrentState,
@@ -1810,7 +1794,7 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     @Test
     public void testForceClientDisconnectNotInvokeWhenNotSupport() throws Exception {
-        int testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_WPA3_SAE
+        long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_WPA3_SAE
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD;
         SoftApCapability noClientControlCapability = new SoftApCapability(testSoftApFeature);
         noClientControlCapability.setMaxSupportedClients(1);
@@ -1849,7 +1833,7 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     @Test
     public void testSoftApEnableFailureBecauseSetMaxClientWhenNotSupport() throws Exception {
-        int testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_WPA3_SAE
+        long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_WPA3_SAE
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD;
         when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
         SoftApCapability noClientControlCapability = new SoftApCapability(testSoftApFeature);
@@ -1884,7 +1868,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void testSoftApEnableFailureBecauseSecurityTypeSaeSetupButSaeNotSupport()
             throws Exception {
-        int testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT
+        long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD;
         when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
         SoftApCapability noSaeCapability = new SoftApCapability(testSoftApFeature);

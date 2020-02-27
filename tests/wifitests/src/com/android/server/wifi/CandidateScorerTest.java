@@ -106,9 +106,9 @@ public class CandidateScorerTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         mScoringParams.update("");
-        mCandidate1 = new ConcreteCandidate().setNominatorId(0).setNominatorScore(66)
+        mCandidate1 = new ConcreteCandidate().setNominatorId(0)
                 .setScanRssi(-50).setFrequency(5180);
-        mCandidate2 = new ConcreteCandidate().setNominatorId(0).setNominatorScore(99)
+        mCandidate2 = new ConcreteCandidate().setNominatorId(0)
                 .setScanRssi(-50).setFrequency(5180);
     }
 

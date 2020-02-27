@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import android.net.MacAddress;
 import android.util.ArrayMap;
 
 import com.android.server.wifi.proto.WifiScoreCardProto;
@@ -24,9 +23,7 @@ import com.android.server.wifi.proto.WifiScoreCardProto;
 import java.util.Map;
 
 public final class ConcreteCandidate implements WifiCandidates.Candidate {
-    private WifiCandidates.Key mKey = new WifiCandidates.Key(new ScanResultMatchInfo(),
-            MacAddress.fromString("14:59:c0:51:0e:1b"), 0);
-    private ScanDetail mScanDetail;
+    private WifiCandidates.Key mKey;
     private int mNetworkConfigId = -1;
     private boolean mIsOpenNetwork;
     private boolean mIsCurrentNetwork;
@@ -36,7 +33,6 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     private boolean mIsTrusted;
     private boolean mIsMetered;
     private int mNominatorId = -1;
-    private int mNominatorScore = Integer.MIN_VALUE;
     private double mLastSelectionWeight;
     private int mScanRssi = -127;
     private int mFrequency = -1;
@@ -50,7 +46,6 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
 
     public ConcreteCandidate(WifiCandidates.Candidate candidate) {
         mKey = candidate.getKey();
-        mScanDetail = candidate.getScanDetail();
         mNetworkConfigId = candidate.getNetworkConfigId();
         mIsOpenNetwork = candidate.isOpenNetwork();
         mIsCurrentNetwork = candidate.isCurrentNetwork();
@@ -60,7 +55,6 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
         mIsTrusted = candidate.isTrusted();
         mIsMetered = candidate.isMetered();
         mNominatorId = candidate.getNominatorId();
-        mNominatorScore = candidate.getNominatorScore();
         mLastSelectionWeight = candidate.getLastSelectionWeight();
         mScanRssi = candidate.getScanRssi();
         mFrequency = candidate.getFrequency();
@@ -81,16 +75,6 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     @Override
     public WifiCandidates.Key getKey() {
         return mKey;
-    }
-
-    public ConcreteCandidate setScanDetail(ScanDetail scanDetail) {
-        mScanDetail = scanDetail;
-        return this;
-    }
-
-    @Override
-    public ScanDetail getScanDetail() {
-        return mScanDetail;
     }
 
     public ConcreteCandidate setNetworkConfigId(int networkConfigId) {
@@ -161,16 +145,6 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     @Override
     public int getNominatorId() {
         return mNominatorId;
-    }
-
-    public ConcreteCandidate setNominatorScore(int nominatorScore) {
-        mNominatorScore = nominatorScore;
-        return this;
-    }
-
-    @Override
-    public int getNominatorScore() {
-        return mNominatorScore;
     }
 
     public ConcreteCandidate setLastSelectionWeight(double lastSelectionWeight) {

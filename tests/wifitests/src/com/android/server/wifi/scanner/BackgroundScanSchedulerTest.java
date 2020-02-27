@@ -43,7 +43,6 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -65,10 +64,10 @@ public class BackgroundScanSchedulerTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         mChannelHelper = new PresetKnownBandsChannelHelper(
-                Arrays.asList(2400, 2450),
-                Arrays.asList(5150, 5175),
-                Arrays.asList(5600, 5650, 5660),
-                Arrays.asList(5945, 5985));
+                new int[]{2400, 2450},
+                new int[]{5150, 5175},
+                new int[]{5600, 5650, 5660},
+                new int[]{5945, 5985});
         mScheduler = new BackgroundScanScheduler(mChannelHelper);
         mScheduler.setMaxBuckets(DEFAULT_MAX_BUCKETS);
         mScheduler.setMaxChannelsPerBucket(DEFAULT_MAX_CHANNELS_PER_BUCKET);

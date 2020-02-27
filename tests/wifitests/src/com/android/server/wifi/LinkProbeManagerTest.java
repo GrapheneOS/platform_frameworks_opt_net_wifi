@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.net.wifi.WifiInfo;
-import android.net.wifi.wificond.WifiCondManager;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.test.TestLooper;
 
@@ -122,8 +122,8 @@ public class LinkProbeManagerTest extends WifiBaseTest {
         mTimeMs += timeDelta;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(mTimeMs);
         mLinkProbeManager.updateConnectionStats(mWifiInfo, TEST_IFACE_NAME);
-        ArgumentCaptor<WifiCondManager.SendMgmtFrameCallback> callbackCaptor =
-                ArgumentCaptor.forClass(WifiCondManager.SendMgmtFrameCallback.class);
+        ArgumentCaptor<WifiNl80211Manager.SendMgmtFrameCallback> callbackCaptor =
+                ArgumentCaptor.forClass(WifiNl80211Manager.SendMgmtFrameCallback.class);
         verify(mWifiNative).probeLink(eq(TEST_IFACE_NAME), any(), callbackCaptor.capture(),
                 anyInt());
         ArgumentCaptor<String> experimentIdCaptor = ArgumentCaptor.forClass(String.class);
@@ -165,14 +165,14 @@ public class LinkProbeManagerTest extends WifiBaseTest {
         mTimeMs += timeDelta;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(mTimeMs);
         mLinkProbeManager.updateConnectionStats(mWifiInfo, TEST_IFACE_NAME);
-        ArgumentCaptor<WifiCondManager.SendMgmtFrameCallback> callbackCaptor =
-                ArgumentCaptor.forClass(WifiCondManager.SendMgmtFrameCallback.class);
+        ArgumentCaptor<WifiNl80211Manager.SendMgmtFrameCallback> callbackCaptor =
+                ArgumentCaptor.forClass(WifiNl80211Manager.SendMgmtFrameCallback.class);
         verify(mWifiNative).probeLink(eq(TEST_IFACE_NAME), any(), callbackCaptor.capture(),
                 anyInt());
 
-        callbackCaptor.getValue().onFailure(WifiCondManager.SEND_MGMT_FRAME_ERROR_NO_ACK);
+        callbackCaptor.getValue().onFailure(WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK);
         verify(mWifiMetrics).logLinkProbeFailure(timeDelta, rssi, linkSpeed,
-                WifiCondManager.SEND_MGMT_FRAME_ERROR_NO_ACK);
+                WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK);
     }
 
     /**

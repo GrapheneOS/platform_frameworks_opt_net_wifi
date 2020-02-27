@@ -27,6 +27,8 @@ import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLED;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLING;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_FAILED;
 
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
+
 import android.annotation.CheckResult;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -41,7 +43,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ParceledListSlice;
 import android.content.pm.ResolveInfo;
-import android.database.ContentObserver;
 import android.net.DhcpInfo;
 import android.net.DhcpResultsParcelable;
 import android.net.InetAddresses;
@@ -339,12 +340,15 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     public void checkAndStartWifi() {
         mWifiThreadRunner.post(() -> {
+            if (!mWifiConfigManager.loadFromStore()) {
+                Log.e(TAG, "Failed to load from config store");
+            }
             // Check if wi-fi needs to be enabled
             boolean wifiEnabled = mSettingsStore.isWifiToggleEnabled();
             Log.i(TAG,
                     "WifiService starting up with Wi-Fi " + (wifiEnabled ? "enabled" : "disabled"));
 
-            registerForScanModeChange();
+            mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility().initialize();
             mContext.registerReceiver(
                     new BroadcastReceiver() {
                         @Override
@@ -360,6 +364,10 @@ public class WifiServiceImpl extends BaseWifiService {
                     new BroadcastReceiver() {
                         @Override
                         public void onReceive(Context context, Intent intent) {
+                            if (intent.getBooleanExtra(
+                                    Intent.EXTRA_REBROADCAST_ON_UNLOCK, false)) {
+                                return;
+                            }
                             String state = intent.getStringExtra(Intent.EXTRA_SIM_STATE);
                             if (Intent.SIM_STATE_ABSENT.equals(state)) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
@@ -403,9 +411,6 @@ public class WifiServiceImpl extends BaseWifiService {
             }
             mContext.registerReceiver(mReceiver, intentFilter);
             mMemoryStoreImpl.start();
-            if (!mWifiConfigManager.loadFromStore()) {
-                Log.e(TAG, "Failed to load from config store");
-            }
             mPasspointManager.initializeProvisioner(
                     mWifiInjector.getPasspointProvisionerHandlerThread().getLooper());
             mClientModeImpl.handleBootCompleted();
@@ -1882,6 +1887,19 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * see {@link android.net.wifi.WifiManager#setScanAlwaysAvailable(boolean)}
+     */
+    @Override
+    public void setScanAlwaysAvailable(boolean isAvailable) {
+        enforceNetworkSettingsPermission();
+        mLog.info("setScanAlwaysAvailable uid=%").c(Binder.getCallingUid()).flush();
+        mSettingsStore.handleWifiScanAlwaysAvailableToggled(isAvailable);
+        mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility()
+                .handleWifiScanAlwaysAvailableToggled(isAvailable);
+        mActiveModeWarden.scanAlwaysModeChanged();
+    }
+
+    /**
      * see {@link android.net.wifi.WifiManager#isScanAlwaysAvailable()}
      */
     @Override
@@ -2127,10 +2145,8 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
-     * Returns the list of FQDN (Fully Qualified Domain Name) to installed Passpoint configurations.
-     *
-     * Return the map of all matching configurations with corresponding scanResults (or an empty map
-     * if none).
+     * Return a map of all matching configurations keys with corresponding scanResults (or an empty
+     * map if none).
      *
      * @param scanResults The list of scan results
      * @return Map that consists of FQDN (Fully Qualified Domain Name) and corresponding
@@ -2138,8 +2154,8 @@ public class WifiServiceImpl extends BaseWifiService {
      * WifiManager#PASSPOINT_ROAMING_NETWORK}).
      */
     @Override
-    public Map<String, Map<Integer, List<ScanResult>>> getAllMatchingFqdnsForScanResults(
-            List<ScanResult> scanResults) {
+    public Map<String, Map<Integer, List<ScanResult>>>
+            getAllMatchingPasspointProfilesForScanResults(List<ScanResult> scanResults) {
         if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
@@ -2147,7 +2163,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("getMatchingPasspointConfigurations uid=%").c(Binder.getCallingUid()).flush();
         }
         return mWifiThreadRunner.call(
-            () -> mPasspointManager.getAllMatchingFqdnsForScanResults(scanResults),
+            () -> mPasspointManager.getAllMatchingPasspointProfilesForScanResults(scanResults),
                 Collections.emptyMap());
     }
 
@@ -2512,7 +2528,7 @@ public class WifiServiceImpl extends BaseWifiService {
         int callingUid = Binder.getCallingUid();
         mLog.info("allowAutojoinPasspoint=% uid=%").c(enableAutojoin).c(callingUid).flush();
         mWifiThreadRunner.post(
-                () -> mPasspointManager.enableAutojoin(fqdn, enableAutojoin));
+                () -> mPasspointManager.enableAutojoin(null, fqdn, enableAutojoin));
     }
 
     /**
@@ -2590,6 +2606,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 result.setNetworkId(WifiConfiguration.INVALID_NETWORK_ID);
                 result.setFQDN(null);
                 result.setProviderFriendlyName(null);
+                result.setPasspointUniqueId(null);
             }
 
             if (mVerboseLoggingEnabled
@@ -2706,16 +2723,29 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public boolean removePasspointConfiguration(String fqdn, String packageName) {
+        return removePasspointConfigurationInternal(fqdn, null);
+    }
+
+    /**
+     * Remove a Passpoint profile based on either FQDN (multiple matching profiles) or a unique
+     * identifier (one matching profile).
+     *
+     * @param fqdn The FQDN of the Passpoint configuration to be removed
+     * @param uniqueId The unique identifier of the Passpoint configuration to be removed
+     * @return true on success or false on failure
+     */
+    private boolean removePasspointConfigurationInternal(String fqdn, String uniqueId) {
         final int uid = Binder.getCallingUid();
         boolean privileged = false;
         if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
                 || mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)) {
             privileged = true;
         }
-        mLog.info("removePasspointConfiguration uid=%").c(Binder.getCallingUid()).flush();
+        mLog.info("removePasspointConfigurationInternal uid=%").c(Binder.getCallingUid()).flush();
         final boolean privilegedFinal = privileged;
         return mWifiThreadRunner.call(
-                () -> mPasspointManager.removeProvider(uid, privilegedFinal, fqdn), false);
+                () -> mPasspointManager.removeProvider(uid, privilegedFinal, uniqueId, fqdn),
+                false);
     }
 
     /**
@@ -3018,23 +3048,6 @@ public class WifiServiceImpl extends BaseWifiService {
         }
     };
 
-    /**
-     * Observes settings changes to scan always mode.
-     */
-    private void registerForScanModeChange() {
-        ContentObserver contentObserver = new ContentObserver(null) {
-            @Override
-            public void onChange(boolean selfChange) {
-                mSettingsStore.handleWifiScanAlwaysAvailableToggled();
-                mActiveModeWarden.scanAlwaysModeChanged();
-            }
-        };
-        mFrameworkFacade.registerContentObserver(mContext,
-                Settings.Global.getUriFor(Settings.Global.WIFI_SCAN_ALWAYS_AVAILABLE),
-                false, contentObserver);
-
-    }
-
     private void registerForBroadcasts() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_PACKAGE_FULLY_REMOVED);
@@ -3274,8 +3287,8 @@ public class WifiServiceImpl extends BaseWifiService {
         mLog.info("enableVerboseLogging uid=% verbose=%")
                 .c(Binder.getCallingUid())
                 .c(verbose).flush();
-        mFacade.setIntegerSetting(
-                mContext, Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, verbose);
+        mWifiInjector.getSettingsConfigStore().putBoolean(
+                WIFI_VERBOSE_LOGGING_ENABLED, verbose > 0);
         enableVerboseLoggingInternal(verbose);
     }
 
@@ -3292,8 +3305,8 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getVerboseLoggingLevel uid=%").c(Binder.getCallingUid()).flush();
         }
-        return mFacade.getIntegerSetting(
-                mContext, Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0);
+        return mWifiInjector.getSettingsConfigStore().getBoolean(
+                WIFI_VERBOSE_LOGGING_ENABLED, false) ? 1 : 0;
     }
 
     @Override
@@ -3332,9 +3345,10 @@ public class WifiServiceImpl extends BaseWifiService {
                 () -> mPasspointManager.getProviderConfigs(Process.WIFI_UID /* ignored */, true),
                 Collections.emptyList());
         for (PasspointConfiguration config : configs) {
-            removePasspointConfiguration(config.getHomeSp().getFqdn(), packageName);
+            removePasspointConfigurationInternal(null, config.getUniqueId());
         }
         mWifiThreadRunner.post(() -> {
+            mPasspointManager.clearAnqpRequestsAndFlushCache();
             mWifiConfigManager.clearDeletedEphemeralNetworks();
             mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
             mWifiNetworkSuggestionsManager.clear();
@@ -4179,5 +4193,53 @@ public class WifiServiceImpl extends BaseWifiService {
         WifiScoreReport wifiScoreReport = mClientModeImpl.getWifiScoreReport();
         mWifiThreadRunner.post(() ->
                 wifiScoreReport.clearWifiConnectedNetworkScorer());
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#setScanThrottleEnabled(boolean)}
+     */
+    @Override
+    public void setScanThrottleEnabled(boolean enable) {
+        enforceNetworkSettingsPermission();
+        mLog.info("setScanThrottleEnabled uid=% verbose=%")
+                .c(Binder.getCallingUid())
+                .c(enable).flush();
+        mWifiThreadRunner.post(()-> mScanRequestProxy.setScanThrottleEnabled(enable));
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#isScanThrottleEnabled()}
+     */
+    @Override
+    public boolean isScanThrottleEnabled() {
+        enforceAccessPermission();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("isScanThrottleEnabled uid=%").c(Binder.getCallingUid()).flush();
+        }
+        return mWifiThreadRunner.call(()-> mScanRequestProxy.isScanThrottleEnabled(), true);
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#setAutoWakeupEnabled(boolean)}
+     */
+    @Override
+    public void setAutoWakeupEnabled(boolean enable) {
+        enforceNetworkSettingsPermission();
+        mLog.info("setWalkeupEnabled uid=% verbose=%")
+                .c(Binder.getCallingUid())
+                .c(enable).flush();
+        mWifiThreadRunner.post(()-> mWifiInjector.getWakeupController().setEnabled(enable));
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#isAutoWakeupEnabled()}
+     */
+    @Override
+    public boolean isAutoWakeupEnabled() {
+        enforceAccessPermission();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("isAutoWakeupEnabled uid=%").c(Binder.getCallingUid()).flush();
+        }
+        return mWifiThreadRunner.call(()-> mWifiInjector.getWakeupController().isEnabled(), false);
     }
 }

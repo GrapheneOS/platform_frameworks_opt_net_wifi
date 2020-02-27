@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g>এ পৰামর্শ হিচাপে দিয়া নেটৱর্কবোৰ। ডিভাইচটো স্বয়ংক্ৰিয়ভাৱে সংযোগ হ\'ব পাৰে।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"অনুমতি দিয়ক"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"নালাগে, ধন্যবাদ"</string>
-    <!-- no translation found for wifi_suggestion_imsi_privacy_title (5072368033308094465) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_imsi_privacy_content (5050532382656368119) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_carrier (5500037364868978935) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier (7020127735591720299) -->
-    <skip />
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI সুৰক্ষাৰ বাবে গোপনীয়তা সম্পৰ্কীয় সকীয়নি"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g>এ এনেকুৱা নেটৱৰ্কৰ পৰামৰ্শ দিছে যিয়ে গোপনীয়তাৰ সুৰক্ষা অবিহনে আপোনাৰ ছিম কাৰ্ডৰ তথ্য ব্যৱহাৰ কৰি আছে, নেটৱৰ্কক স্বয়ংক্ৰিয়ভাৱে সংযুক্ত হোৱাৰ অনুমতি দিবনে?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"অনুমতি দিয়ক"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"অনুমতি বাতিল কৰক"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"ৱাই-ফাই স্বয়ংক্ৰিয়ভাৱে অন হ\'ব"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"যেতিয়া আপুনি ছেভ কৰি থোৱা উচ্চ মানৰ নেটৱৰ্কৰ কাষত থাকে"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"পুনৰাই অন নকৰিব"</string>
@@ -80,4 +76,8 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"ম\'বাইল হ\'টস্প\'ট অক্ষম হৈ আছে"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"ম\'বাইল হ\'টস্প\'ট অক্ষম কৰা হৈছে"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"নিষ্ক্ৰিয় হৈ থকাৰ সময়সীমাৰ ম্যাদ উকলাৰ বাবে ম\'বাইল হ\'টস্প\'ট অক্ষম কৰা হৈছে।"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
 import android.os.test.TestLooper;
@@ -60,7 +61,7 @@ public class PasspointWifiEntryTest {
         when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
 
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager);
+                passpointConfiguration, mMockWifiManager, false /* forSavedNetworksPage */);
 
         assertThat(passpointWifiEntry.getSummary()).isNotEqualTo(expired);
     }
@@ -71,7 +72,7 @@ public class PasspointWifiEntryTest {
         String expired = "Expired";
         when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager);
+                passpointConfiguration, mMockWifiManager, false /* forSavedNetworksPage */);
         PasspointWifiEntry spyEntry = spy(passpointWifiEntry);
         when(spyEntry.isExpired()).thenReturn(true);
 
@@ -83,13 +84,14 @@ public class PasspointWifiEntryTest {
         HomeSp homeSp = new HomeSp();
         homeSp.setFqdn("fqdn");
         passpointConfiguration.setHomeSp(homeSp);
+        passpointConfiguration.setCredential(new Credential());
         return passpointConfiguration;
     }
 
     @Test
     public void testGetMeteredChoice_afterSetMeteredChoice_getCorrectValue() {
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                getPasspointConfiguration(), mMockWifiManager);
+                getPasspointConfiguration(), mMockWifiManager, false /* forSavedNetworksPage */);
 
         entry.setMeteredChoice(WifiEntry.METERED_CHOICE_UNMETERED);
 

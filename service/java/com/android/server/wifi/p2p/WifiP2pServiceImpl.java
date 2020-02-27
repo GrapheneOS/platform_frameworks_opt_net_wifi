@@ -16,6 +16,10 @@
 
 package com.android.server.wifi.p2p;
 
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_P2P_DEVICE_NAME;
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_P2P_PENDING_FACTORY_RESET;
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
+
 import android.annotation.Nullable;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -27,7 +31,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.DhcpResultsParcelable;
@@ -87,6 +90,7 @@ import com.android.internal.util.StateMachine;
 import com.android.server.wifi.FrameworkFacade;
 import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiLog;
+import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.P2pConnectionEvent;
 import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.WifiAsyncChannel;
@@ -134,6 +138,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     private WifiInjector mWifiInjector;
     private WifiPermissionsUtil mWifiPermissionsUtil;
     private FrameworkFacade mFrameworkFacade;
+    private WifiSettingsConfigStore mSettingsConfigStore;
     private WifiP2pMetrics mWifiP2pMetrics;
 
     private static final Boolean JOIN_GROUP = true;
@@ -458,6 +463,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         mWifiInjector = wifiInjector;
         mWifiPermissionsUtil = mWifiInjector.getWifiPermissionsUtil();
         mFrameworkFacade = mWifiInjector.getFrameworkFacade();
+        mSettingsConfigStore = mWifiInjector.getSettingsConfigStore();
         mWifiP2pMetrics = mWifiInjector.getWifiP2pMetrics();
 
         mDetailedState = NetworkInfo.DetailedState.IDLE;
@@ -858,25 +864,20 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                     checkAndSendP2pStateChangedBroadcast();
                 }, getHandler());
 
-                mFrameworkFacade.registerContentObserver(mContext,
-                        Settings.Global.getUriFor(Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED),
-                        true, new ContentObserver(new Handler(looper)) {
-                            @Override
-                            public void onChange(boolean selfChange) {
-                                enableVerboseLogging(mFrameworkFacade.getIntegerSetting(mContext,
-                                        Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0));
-                            }
-                        });
+                mSettingsConfigStore.registerChangeListener(
+                        WIFI_VERBOSE_LOGGING_ENABLED,
+                        (key, newValue) -> enableVerboseLogging((boolean) newValue),
+                        getHandler());
             }
         }
 
         /**
          * Enable verbose logging for all sub modules.
          */
-        private void enableVerboseLogging(int verbose) {
-            mVerboseLoggingEnabled = verbose > 0;
-            mWifiNative.enableVerboseLogging(verbose);
-            mWifiMonitor.enableVerboseLogging(verbose);
+        private void enableVerboseLogging(boolean verbose) {
+            mVerboseLoggingEnabled = verbose;
+            mWifiNative.enableVerboseLogging(verbose ? 1 : 0);
+            mWifiMonitor.enableVerboseLogging(verbose ? 1 : 0);
         }
 
         public void registerForWifiMonitorEvents() {
@@ -963,17 +964,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         // always reset this - we went to a state that doesn't support discovery so
                         // it would have stopped regardless
                         mDiscoveryPostponed = false;
-                        if (mDiscoveryBlocked) {
-                            if (message.obj == null) {
-                                Log.e(TAG, "Illegal argument(s)");
-                                break;
-                            }
-                            StateMachine m = (StateMachine) message.obj;
-                            try {
-                                m.sendMessage(message.arg2);
-                            } catch (Exception e) {
-                                loge("unable to send BLOCK_DISCOVERY response: " + e);
-                            }
+                        if (mDiscoveryBlocked && mWifiChannel != null) {
+                            mWifiChannel.replyToMessage(message, message.arg2);
                         }
                         break;
                     case WifiP2pManager.DISCOVER_PEERS:
@@ -1525,17 +1517,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                             mDiscoveryPostponed = false;
                             mWifiNative.p2pFind(DISCOVER_TIMEOUT_S);
                         }
-                        if (blocked) {
-                            if (message.obj == null) {
-                                Log.e(TAG, "Illegal argument(s)");
-                                break;
-                            }
-                            StateMachine m = (StateMachine) message.obj;
-                            try {
-                                m.sendMessage(message.arg2);
-                            } catch (Exception e) {
-                                loge("unable to send BLOCK_DISCOVERY response: " + e);
-                            }
+                        if (blocked && mWifiChannel != null) {
+                            mWifiChannel.replyToMessage(message, message.arg2);
                         }
                         break;
                     case WifiP2pManager.DISCOVER_PEERS:
@@ -3632,8 +3615,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         }
 
         private String getPersistedDeviceName() {
-            String deviceName = mFrameworkFacade.getStringSetting(mContext,
-                    Settings.Global.WIFI_P2P_DEVICE_NAME);
+            String deviceName = mSettingsConfigStore.getString(WIFI_P2P_DEVICE_NAME, null);
             if (deviceName == null) {
                 // We use the 4 digits of the ANDROID_ID to have a friendly
                 // default that has low likelihood of collision with a peer
@@ -3655,8 +3637,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             mThisDevice.deviceName = devName;
             mWifiNative.setP2pSsidPostfix("-" + mThisDevice.deviceName);
 
-            mFrameworkFacade.setStringSetting(mContext,
-                    Settings.Global.WIFI_P2P_DEVICE_NAME, devName);
+            mSettingsConfigStore.putString(WIFI_P2P_DEVICE_NAME, devName);
             sendThisDeviceChangedBroadcast();
             return true;
         }
@@ -3664,7 +3645,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         private boolean setWfdInfo(WifiP2pWfdInfo wfdInfo) {
             boolean success;
 
-            if (!wfdInfo.isWfdEnabled()) {
+            if (!wfdInfo.isEnabled()) {
                 success = mWifiNative.setWfdEnable(false);
             } else {
                 success =
@@ -3704,8 +3685,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             mServiceDiscReqId = null;
 
             updatePersistentNetworks(RELOAD);
-            enableVerboseLogging(mFrameworkFacade.getIntegerSetting(mContext,
-                    Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0));
+            enableVerboseLogging(mSettingsConfigStore.getBoolean(
+                    WIFI_VERBOSE_LOGGING_ENABLED, false));
         }
 
         private void updateThisDevice(int status) {
@@ -4118,16 +4099,11 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         }
 
         private void setPendingFactoryReset(boolean pending) {
-            mFrameworkFacade.setIntegerSetting(mContext,
-                    Settings.Global.WIFI_P2P_PENDING_FACTORY_RESET,
-                    pending ? 1 : 0);
+            mSettingsConfigStore.putBoolean(WIFI_P2P_PENDING_FACTORY_RESET, pending);
         }
 
         private boolean isPendingFactoryReset() {
-            int val = mFrameworkFacade.getIntegerSetting(mContext,
-                    Settings.Global.WIFI_P2P_PENDING_FACTORY_RESET,
-                    0);
-            return (val != 0);
+            return mSettingsConfigStore.getBoolean(WIFI_P2P_PENDING_FACTORY_RESET, false);
         }
 
         /**

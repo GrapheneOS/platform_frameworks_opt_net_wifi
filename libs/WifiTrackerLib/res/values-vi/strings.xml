@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="8750623020267885175">"Đã tắt tính năng tự động kết nối mạng"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"Tính năng tự động kết nối đang tắt"</string>
     <string name="saved_network" msgid="6241977554502802914">"Do <xliff:g id="NAME">%1$s</xliff:g> lưu"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"Sẽ không tự động kết nối"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"Không có kết nối Internet"</string>
@@ -35,8 +35,7 @@
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Tự động được kết nối qua nhà cung cấp dịch vụ xếp hạng mạng"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Kết nối giới hạn"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Không thể truy cập máy chủ DNS riêng tư"</string>
-    <!-- no translation found for wifi_connected_no_internet (7273909077465731259) -->
-    <skip />
+    <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Không có Internet"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Không"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Đã hết hạn"</string>
 </resources>

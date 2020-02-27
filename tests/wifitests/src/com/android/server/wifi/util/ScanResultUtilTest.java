@@ -115,6 +115,16 @@ public class ScanResultUtilTest extends WifiBaseTest {
         assertEquals(config.SSID, ScanResultUtil.createQuotedSSID(ssid));
         assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP));
         assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X));
+
+        scanResult.capabilities = "WAPI-PSK";
+        config = ScanResultUtil.createNetworkFromScanResult(scanResult);
+        assertEquals(config.SSID, ScanResultUtil.createQuotedSSID(ssid));
+        assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK));
+
+        scanResult.capabilities = "WAPI-CERT";
+        config = ScanResultUtil.createNetworkFromScanResult(scanResult);
+        assertEquals(config.SSID, ScanResultUtil.createQuotedSSID(ssid));
+        assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_CERT));
     }
 
     /**
@@ -191,6 +201,46 @@ public class ScanResultUtilTest extends WifiBaseTest {
         };
 
         assertFalse(ScanResultUtil.isScanResultForPskSaeTransitionNetwork(input));
+    }
+
+    /**
+     * Test that provided network supports FILS SHA256 AKM.
+     */
+    @Test
+    public void testFilsSha256AkmSupportedNetwork() {
+        final String ssid = "FILS-AP";
+        String caps = "[WPA2-EAP+EAP-SHA256+FILS-SHA256-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+FILS-SHA256-CCMP][ESS]";
+
+        ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
+                "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
+                0, true);
+
+        input.informationElements = new InformationElement[] {
+                createIE(InformationElement.EID_SSID, ssid.getBytes(StandardCharsets.UTF_8))
+        };
+
+        assertTrue(ScanResultUtil.isScanResultForFilsSha256Network(input));
+    }
+
+    /**
+     * Test that provided network supports FILS SHA384 AKM.
+     */
+    @Test
+    public void testFilsSha384AkmSupportedNetwork() {
+        final String ssid = "FILS-AP";
+        String caps = "[WPA2-EAP+EAP-SHA384+FILS-SHA384-CCMP]"
+                + "[RSN-EAP+EAP-SHA384+FILS-SHA384-CCMP][ESS]";
+
+        ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
+                "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
+                0, true);
+
+        input.informationElements = new InformationElement[] {
+                createIE(InformationElement.EID_SSID, ssid.getBytes(StandardCharsets.UTF_8))
+        };
+
+        assertTrue(ScanResultUtil.isScanResultForFilsSha384Network(input));
     }
 
     private static InformationElement createIE(int id, byte[] bytes) {

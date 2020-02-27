@@ -32,6 +32,7 @@ import com.android.server.wifi.hotspot2.anqp.HSWanMetricsElement;
 import com.android.server.wifi.util.ScanResultUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +136,9 @@ public class PasspointNetworkNominateHelper {
      */
     private @NonNull List<Pair<ScanDetail, WifiConfiguration>> findBestMatchScanDetailForProviders(
             List<ScanDetail> scanDetails, boolean isFromSuggestion) {
+        if (mPasspointManager.isProvidersListEmpty()) {
+            return Collections.emptyList();
+        }
         List<Pair<ScanDetail, WifiConfiguration>> results = new ArrayList<>();
         Map<PasspointProvider, List<PasspointNetworkCandidate>> candidatesPerProvider =
                 new HashMap<>();

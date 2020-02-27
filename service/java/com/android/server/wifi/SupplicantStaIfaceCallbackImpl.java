@@ -70,7 +70,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
     /**
      * Converts the supplicant state received from HIDL to the equivalent framework state.
      */
-    private static SupplicantState supplicantHidlStateToFrameworkState(int state) {
+    protected static SupplicantState supplicantHidlStateToFrameworkState(int state) {
         switch (state) {
             case ISupplicantStaIfaceCallback.State.DISCONNECTED:
                 return SupplicantState.DISCONNECTED;

@@ -432,7 +432,7 @@ public class XmlUtil {
             writeWepKeysToXml(out, configuration.wepKeys);
             XmlUtil.writeNextValue(out, XML_TAG_WEP_TX_KEY_INDEX, configuration.wepTxKeyIndex);
             XmlUtil.writeNextValue(out, XML_TAG_HIDDEN_SSID, configuration.hiddenSSID);
-            XmlUtil.writeNextValue(out, XML_TAG_REQUIRE_PMF, configuration.requirePMF);
+            XmlUtil.writeNextValue(out, XML_TAG_REQUIRE_PMF, configuration.requirePmf);
             XmlUtil.writeNextValue(
                     out, XML_TAG_ALLOWED_KEY_MGMT,
                     configuration.allowedKeyManagement.toByteArray());
@@ -601,7 +601,7 @@ public class XmlUtil {
                             configuration.hiddenSSID = (boolean) value;
                             break;
                         case XML_TAG_REQUIRE_PMF:
-                            configuration.requirePMF = (boolean) value;
+                            configuration.requirePmf = (boolean) value;
                             break;
                         case XML_TAG_ALLOWED_KEY_MGMT:
                             byte[] allowedKeyMgmt = (byte[]) value;

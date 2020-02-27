@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.util.InformationElementUtil.BssLoad.CHANNEL_UTILIZATION_SCALE;
+
 import android.content.Context;
 import android.os.Handler;
 import android.provider.DeviceConfig;
@@ -49,8 +51,20 @@ public class DeviceConfigFacade {
     public static final int DEFAULT_DATA_STALL_RX_TPUT_THR_KBPS = 2000;
     // Default threshold of Tx packet error rate above which to trigger a data stall in percentage
     public static final int DEFAULT_DATA_STALL_TX_PER_THR = 90;
-    // Default threshold of CCA level above which to trigger a data stall in percentage
-    public static final int DEFAULT_DATA_STALL_CCA_LEVEL_THR = 100;
+    // Default threshold of CCA level above which to trigger a data stall
+    public static final int DEFAULT_DATA_STALL_CCA_LEVEL_THR = CHANNEL_UTILIZATION_SCALE;
+    // Default low threshold of L2 sufficient throughput in Kbps
+    public static final int DEFAULT_TPUT_SUFFICIENT_THR_LOW_KBPS = 1000;
+    // Default high threshold of L2 sufficient throughput in Kbps
+    public static final int DEFAULT_TPUT_SUFFICIENT_THR_HIGH_KBPS = 4000;
+    // Numerator part of default threshold of L2 throughput over L3 throughput ratio
+    public static final int DEFAULT_TPUT_SUFFICIENT_RATIO_THR_NUM = 2;
+    // Denominator part of default threshold of L2 throughput over L3 throughput ratio
+    public static final int DEFAULT_TPUT_SUFFICIENT_RATIO_THR_DEN = 1;
+    // Default threshold of Tx packet per second
+    public static final int DEFAULT_TX_PACKET_PER_SECOND_THR = 1;
+    // Default threshold of Rx packet per second
+    public static final int DEFAULT_RX_PACKET_PER_SECOND_THR = 1;
     // Default high and low threshold values for various connection failure rates.
     // All of them are in percent with respect to connection attempts
     static final int DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT = 30;
@@ -80,6 +94,12 @@ public class DeviceConfigFacade {
     private int mDataStallRxTputThrKbps;
     private int mDataStallTxPerThr;
     private int mDataStallCcaLevelThr;
+    private int mTputSufficientLowThrKbps;
+    private int mTputSufficientHighThrKbps;
+    private int mTputSufficientRatioThrNum;
+    private int mTputSufficientRatioThrDen;
+    private int mTxPktPerSecondThr;
+    private int mRxPktPerSecondThr;
     private int mConnectionFailureHighThrPercent;
     private int mConnectionFailureLowThrPercent;
     private int mAssocRejectionHighThrPercent;
@@ -132,6 +152,19 @@ public class DeviceConfigFacade {
         mWifiMetrics.setDataStallRxTputThrKbps(mDataStallRxTputThrKbps);
         mWifiMetrics.setDataStallTxPerThr(mDataStallTxPerThr);
         mWifiMetrics.setDataStallCcaLevelThr(mDataStallCcaLevelThr);
+
+        mTputSufficientLowThrKbps = DeviceConfig.getInt(NAMESPACE,
+                "tput_sufficient_low_thr_kbps", DEFAULT_TPUT_SUFFICIENT_THR_LOW_KBPS);
+        mTputSufficientHighThrKbps = DeviceConfig.getInt(NAMESPACE,
+                "tput_sufficient_high_thr_kbps", DEFAULT_TPUT_SUFFICIENT_THR_HIGH_KBPS);
+        mTputSufficientRatioThrNum = DeviceConfig.getInt(NAMESPACE,
+                "tput_sufficient_ratio_thr_num", DEFAULT_TPUT_SUFFICIENT_RATIO_THR_NUM);
+        mTputSufficientRatioThrDen = DeviceConfig.getInt(NAMESPACE,
+                "tput_sufficient_ratio_thr_den", DEFAULT_TPUT_SUFFICIENT_RATIO_THR_DEN);
+        mTxPktPerSecondThr = DeviceConfig.getInt(NAMESPACE,
+                "tx_pkt_per_second_thr", DEFAULT_TX_PACKET_PER_SECOND_THR);
+        mRxPktPerSecondThr = DeviceConfig.getInt(NAMESPACE,
+                "rx_pkt_per_second_thr", DEFAULT_RX_PACKET_PER_SECOND_THR);
 
         mConnectionFailureHighThrPercent = DeviceConfig.getInt(NAMESPACE,
                 "connection_failure_high_thr_percent",
@@ -242,6 +275,52 @@ public class DeviceConfigFacade {
      */
     public int getDataStallCcaLevelThr() {
         return mDataStallCcaLevelThr;
+    }
+
+    /**
+     * Gets the low threshold of L2 throughput below which L2 throughput is always insufficient
+     */
+    public int getTputSufficientLowThrKbps() {
+        return mTputSufficientLowThrKbps;
+    }
+
+    /**
+     * Gets the high threshold of L2 throughput above which L2 throughput is always sufficient
+     */
+    public int getTputSufficientHighThrKbps() {
+        return mTputSufficientHighThrKbps;
+    }
+
+    /**
+     * Gets the numerator part of L2 throughput over L3 throughput ratio sufficiency threshold
+     * above which L2 throughput is sufficient
+     */
+    public int getTputSufficientRatioThrNum() {
+        return mTputSufficientRatioThrNum;
+    }
+
+    /**
+     * Gets the denominator part of L2 throughput over L3 throughput ratio sufficiency threshold
+     * above which L2 throughput is sufficient
+     */
+    public int getTputSufficientRatioThrDen() {
+        return mTputSufficientRatioThrDen;
+    }
+
+    /**
+     * Gets the threshold of Tx packet per second
+     * below which Tx throughput sufficiency check will always pass
+     */
+    public int getTxPktPerSecondThr() {
+        return mTxPktPerSecondThr;
+    }
+
+    /**
+     * Gets the threshold of Rx packet per second
+     * below which Rx throughput sufficiency check will always pass
+     */
+    public int getRxPktPerSecondThr() {
+        return mRxPktPerSecondThr;
     }
 
     /**

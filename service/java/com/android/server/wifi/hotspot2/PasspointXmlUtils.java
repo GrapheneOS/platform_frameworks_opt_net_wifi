@@ -130,7 +130,7 @@ public class PasspointXmlUtils {
         XmlUtil.writeNextValue(out, XML_TAG_SUBSCRIPTION_CREATION_TIME,
                 config.getSubscriptionCreationTimeInMillis());
         XmlUtil.writeNextValue(out, XML_TAG_SUBSCRIPTION_EXPIRATION_TIME,
-                config.getSubscriptionExpirationTimeInMillis());
+                config.getSubscriptionExpirationTimeMillis());
         XmlUtil.writeNextValue(out, XML_TAG_SUBSCRIPTION_TYPE, config.getSubscriptionType());
         XmlUtil.writeNextValue(out, XML_TAG_USAGE_LIMIT_TIME_PERIOD,
                 config.getUsageLimitUsageTimePeriodInMinutes());

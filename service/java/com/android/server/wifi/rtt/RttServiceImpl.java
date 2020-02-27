@@ -18,6 +18,8 @@ package com.android.server.wifi.rtt;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
+
 import android.annotation.NonNull;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
@@ -25,7 +27,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.net.MacAddress;
 import android.net.wifi.aware.IWifiAwareMacAddressProvider;
@@ -49,14 +50,13 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.WorkSource;
 import android.os.WorkSource.WorkChain;
-import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseIntArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.WakeupMessage;
 import com.android.server.wifi.Clock;
-import com.android.server.wifi.FrameworkFacade;
+import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
@@ -240,11 +240,11 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
      * @param rttNative The Native interface to the HAL.
      * @param rttMetrics The Wi-Fi RTT metrics object.
      * @param wifiPermissionsUtil Utility for permission checks.
-     * @param frameworkFacade Facade for framework classes, allows mocking.
+     * @param settingsConfigStore Used for retrieving verbose logging level.
      */
     public void start(Looper looper, Clock clock, WifiAwareManager awareManager,
             RttNative rttNative, RttMetrics rttMetrics, WifiPermissionsUtil wifiPermissionsUtil,
-            FrameworkFacade frameworkFacade) {
+            WifiSettingsConfigStore settingsConfigStore) {
         mClock = clock;
         mAwareManager = awareManager;
         mRttNative = rttNative;
@@ -273,18 +273,12 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
                 }
             }, intentFilter);
 
-            frameworkFacade.registerContentObserver(mContext,
-                    Settings.Global.getUriFor(Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED), true,
-                    new ContentObserver(mRttServiceSynchronized.mHandler) {
-                        @Override
-                        public void onChange(boolean selfChange) {
-                            enableVerboseLogging(frameworkFacade.getIntegerSetting(mContext,
-                                    Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0));
-                        }
-                    });
-
-            enableVerboseLogging(frameworkFacade.getIntegerSetting(mContext,
-                    Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0));
+            settingsConfigStore.registerChangeListener(
+                    WIFI_VERBOSE_LOGGING_ENABLED,
+                    (key, newValue) -> enableVerboseLogging((boolean) newValue),
+                    mRttServiceSynchronized.mHandler);
+            enableVerboseLogging(settingsConfigStore.getBoolean(
+                    WIFI_VERBOSE_LOGGING_ENABLED, false));
 
             mBackgroundProcessExecGapMs = mContext.getResources().getInteger(
                     R.integer.config_wifiRttBackgroundExecGapMs);
@@ -307,12 +301,8 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
         });
     }
 
-    private void enableVerboseLogging(int verbose) {
-        if (verbose > 0) {
-            mDbg = true;
-        } else {
-            mDbg = false;
-        }
+    private void enableVerboseLogging(boolean verbose) {
+        mDbg = verbose;
         if (VDBG) {
             mDbg = true; // just override
         }

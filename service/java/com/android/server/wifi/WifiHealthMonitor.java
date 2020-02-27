@@ -41,6 +41,7 @@ import com.android.server.wifi.WifiScoreCard.MemoryStoreAccessBase;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.proto.WifiScoreCardProto.SoftwareBuildInfo;
 import com.android.server.wifi.proto.WifiScoreCardProto.SystemInfoStats;
+import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorFailureStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -78,11 +79,11 @@ public class WifiHealthMonitor {
     // The time that device waits after device boot before triggering post-boot detection.
     // This needs be long enough so that memory read can complete before post-boot detection.
     private static final int POST_BOOT_DETECTION_WAIT_TIME_MS = 25_000;
-    // 0 - ELAPSED_REAL_TIME, 1 - RTC
-    private static final int DAILY_DETECTION_ALARM_TYPE = 1;
     // The time interval between two daily detections
-    private static final int DAILY_DETECTION_INTERVAL_MS = 24 * 3600_000;
-    private static final int DAILY_DETECTION_HOUR = 23;
+    private static final long DAILY_DETECTION_INTERVAL_MS = 24 * 3600_000;
+    public static final int DAILY_DETECTION_HOUR = 23;
+    private static final int DAILY_DETECTION_MIN = 00;
+    private static final long MIN_WAIT_TIME_BEFORE_FIRST_DETECTION_MS = 100_000;
     // Max interval between pre-boot scan and post-boot scan to qualify post-boot scan detection
     private static final long MAX_INTERVAL_BETWEEN_TWO_SCAN_MS = 60_000;
     // The minimum number of BSSIDs that should be found during a normal scan to trigger detection
@@ -178,7 +179,7 @@ public class WifiHealthMonitor {
             Log.e(TAG, "Reinstalling MemoryStore");
         }
         requestReadForPostBootDetection();
-        setDailyDetectionAlarm();
+        setFirstHealthDetectionAlarm();
         setPostBootDetectionAlarm();
     }
 
@@ -258,22 +259,25 @@ public class WifiHealthMonitor {
                 + ", Above2g scanResult count: " + scanStats.getNumBssidLastScanAbove2g());
     }
 
-    private void setDailyDetectionAlarm() {
-        if (DAILY_DETECTION_ALARM_TYPE == 0) {
-            mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                    mClock.getElapsedSinceBootMillis() + DAILY_DETECTION_INTERVAL_MS,
-                    DAILY_DETECTION_TIMER_TAG,
-                    mDailyDetectionListener, mHandler);
-        } else {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.set(Calendar.HOUR_OF_DAY, DAILY_DETECTION_HOUR);
-            calendar.set(Calendar.MINUTE, 0);
-            mAlarmManager.set(AlarmManager.RTC_WAKEUP,
-                    calendar.getTimeInMillis(),
-                    DAILY_DETECTION_TIMER_TAG,
-                    mDailyDetectionListener, mHandler);
+    private void setFirstHealthDetectionAlarm() {
+        long currTimeMs = mClock.getWallClockMillis();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(currTimeMs);
+        calendar.set(Calendar.HOUR_OF_DAY, DAILY_DETECTION_HOUR);
+        calendar.set(Calendar.MINUTE, DAILY_DETECTION_MIN);
+        long targetTimeMs = calendar.getTimeInMillis();
+        long waitTimeMs = targetTimeMs - currTimeMs;
+        if (waitTimeMs < MIN_WAIT_TIME_BEFORE_FIRST_DETECTION_MS) {
+            waitTimeMs += DAILY_DETECTION_INTERVAL_MS;
         }
+        scheduleDailyDetectionAlarm(waitTimeMs);
+    }
+
+    private void scheduleDailyDetectionAlarm(long waitTimeMs) {
+        mAlarmManager.set(AlarmManager.ELAPSED_REALTIME,
+                mClock.getElapsedSinceBootMillis() + waitTimeMs,
+                DAILY_DETECTION_TIMER_TAG,
+                mDailyDetectionListener, mHandler);
     }
 
     private void setPostBootDetectionAlarm() {
@@ -294,7 +298,7 @@ public class WifiHealthMonitor {
         mHasNewDataForWifiMetrics = true;
         int connectionDurationSec = 0;
         // Set the alarm for the next day
-        setDailyDetectionAlarm();
+        scheduleDailyDetectionAlarm(DAILY_DETECTION_INTERVAL_MS);
         List<WifiConfiguration> configuredNetworks = mWifiConfigManager.getConfiguredNetworks();
         for (WifiConfiguration network : configuredNetworks) {
             if (isInValidConfiguredNetwork(network)) {
@@ -302,7 +306,6 @@ public class WifiHealthMonitor {
             }
             logd(network.SSID);
             PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(network.SSID);
-            logd("before daily update: " + perNetwork.toString());
 
             int detectionFlag = perNetwork.dailyDetection(mFailureStatsDecrease,
                     mFailureStatsIncrease, mFailureStatsHigh);
@@ -312,8 +315,11 @@ public class WifiHealthMonitor {
             if (detectionFlag == WifiScoreCard.SUFFICIENT_RECENT_PREV_STATS) {
                 mNumNetworkSufficientRecentPrevStats++;
             }
+
             connectionDurationSec += perNetwork.getRecentStats().getCount(
                     WifiScoreCard.CNT_CONNECTION_DURATION_SEC);
+
+            logd("before daily update: " + perNetwork.toString());
             // Update historical stats with dailyStats and clear dailyStats
             perNetwork.updateAfterDailyDetection();
             logd("after daily update: " + perNetwork.toString());
@@ -322,10 +328,58 @@ public class WifiHealthMonitor {
         logd("#networks w/ sufficient recent stats: " + mNumNetworkSufficientRecentStatsOnly);
         logd("#networks w/ sufficient recent and prev stats: "
                 + mNumNetworkSufficientRecentPrevStats);
-        // TODO: Report numNetworkSufficientRecentStatsOnly, numNetworkSufficientRecentPrevStats
-        //  mFailureStatsDecrease, mFailureStatsIncrease and mFailureStatsHigh to metrics
+        // Write metrics to WestWorld
+        writeToWifiStatsLog();
         doWrites();
         mWifiScoreCard.doWrites();
+    }
+
+    private void writeToWifiStatsLog() {
+        writeToWifiStatsLogPerStats(mFailureStatsIncrease,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__ABNORMALITY_TYPE__SIGNIFICANT_INCREASE);
+        writeToWifiStatsLogPerStats(mFailureStatsDecrease,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__ABNORMALITY_TYPE__SIGNIFICANT_DECREASE);
+        writeToWifiStatsLogPerStats(mFailureStatsHigh,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__ABNORMALITY_TYPE__SIMPLY_HIGH);
+    }
+
+    private void writeToWifiStatsLogPerStats(FailureStats failureStats, int abnormalityType) {
+        int cntAssocRejection = failureStats.getCount(REASON_ASSOC_REJECTION);
+        if (cntAssocRejection > 0) {
+            WifiStatsLog.write(WifiStatsLog.WIFI_FAILURE_STAT_REPORTED, abnormalityType,
+                    WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_ASSOCIATION_REJECTION,
+                    cntAssocRejection);
+        }
+        int cntAssocTimeout = failureStats.getCount(REASON_ASSOC_TIMEOUT);
+        if (cntAssocTimeout > 0) {
+            WifiStatsLog.write(WifiStatsLog.WIFI_FAILURE_STAT_REPORTED, abnormalityType,
+                    WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_ASSOCIATION_TIMEOUT,
+                    cntAssocTimeout);
+        }
+        int cntAuthFailure = failureStats.getCount(REASON_AUTH_FAILURE);
+        if (cntAuthFailure > 0) {
+            WifiStatsLog.write(WifiStatsLog.WIFI_FAILURE_STAT_REPORTED, abnormalityType,
+                    WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_AUTHENTICATION,
+                    cntAuthFailure);
+        }
+        int cntConnectionFailure = failureStats.getCount(REASON_CONNECTION_FAILURE);
+        if (cntConnectionFailure > 0) {
+            WifiStatsLog.write(WifiStatsLog.WIFI_FAILURE_STAT_REPORTED, abnormalityType,
+                    WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_CONNECTION,
+                    cntConnectionFailure);
+        }
+        int cntDisconnectionNonlocal =  failureStats.getCount(REASON_DISCONNECTION_NONLOCAL);
+        if (cntDisconnectionNonlocal > 0) {
+            WifiStatsLog.write(WifiStatsLog.WIFI_FAILURE_STAT_REPORTED, abnormalityType,
+                    WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_NON_LOCAL_DISCONNECTION,
+                    cntDisconnectionNonlocal);
+        }
+        int cntShortConnectionNonlocal = failureStats.getCount(REASON_SHORT_CONNECTION_NONLOCAL);
+        if (cntShortConnectionNonlocal > 0) {
+            WifiStatsLog.write(WifiStatsLog.WIFI_FAILURE_STAT_REPORTED, abnormalityType,
+                    WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_SHORT_CONNECTION_DUE_TO_NON_LOCAL_DISCONNECTION,
+                    cntShortConnectionNonlocal);
+        }
     }
 
     /**
@@ -885,7 +939,11 @@ public class WifiHealthMonitor {
 
         @Override
         public void onNetworkRemoved(WifiConfiguration config) {
-            if (config == null) return;
+            if (config == null || (config.fromWifiNetworkSuggestion && !config.isPasspoint())) {
+                // If a suggestion non-passpoint network is removed from wifiConfigManager do not
+                // remove the ScoreCard. That will be removed when suggestion is removed.
+                return;
+            }
             mWifiScoreCard.removeNetwork(config.SSID);
         }
 

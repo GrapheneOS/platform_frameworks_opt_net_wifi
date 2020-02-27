@@ -20,7 +20,8 @@ import android.net.wifi.ScanResult.InformationElement;
 import android.net.wifi.WifiAnnotations.Cipher;
 import android.net.wifi.WifiAnnotations.KeyMgmt;
 import android.net.wifi.WifiAnnotations.Protocol;
-import android.net.wifi.wificond.WifiCondManager;
+import android.net.wifi.nl80211.NativeScanResult;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.util.Log;
 
 import com.android.server.wifi.ByteBufferReader;
@@ -149,6 +150,7 @@ public class InformationElementUtil {
         public static final int INVALID = -1;
         public static final int MAX_CHANNEL_UTILIZATION = 255;
         public static final int MIN_CHANNEL_UTILIZATION = 0;
+        public static final int CHANNEL_UTILIZATION_SCALE = 256;
         public int stationCount = INVALID;
         public int channelUtilization = INVALID;
         public int capacity = INVALID;
@@ -702,7 +704,8 @@ public class InformationElementUtil {
     }
 
     public static class Vsa {
-        private static final int ANQP_DOMID_BIT = 0x04;
+        private static final int ANQP_DOMAIN_ID_PRESENT_BIT = 0x04;
+        private static final int ANQP_PPS_MO_ID_BIT = 0x02;
         private static final int OUI_WFA_ALLIANCE = 0x506F9a;
         private static final int OUI_TYPE_HS20 = 0x10;
         private static final int OUI_TYPE_MBO_OCE = 0x16;
@@ -777,8 +780,20 @@ public class InformationElementUtil {
                         hsRelease = NetworkDetail.HSRelease.Unknown;
                         break;
                 }
-                if ((hsConf & ANQP_DOMID_BIT) != 0) {
-                    if (ie.bytes.length < 7) {
+                if ((hsConf & ANQP_DOMAIN_ID_PRESENT_BIT) != 0) {
+                    // According to Hotspot 2.0 Specification v3.0 section 3.1.1 HS2.0 Indication
+                    // element, the size of the element is 5 bytes, and 2 bytes are optionally added
+                    // for each optional field; ANQP PPS MO ID and ANQP Domain ID present.
+                    int expectedSize = 7;
+                    if ((hsConf & ANQP_PPS_MO_ID_BIT) != 0) {
+                        expectedSize += 2;
+                        if (ie.bytes.length < expectedSize) {
+                            throw new IllegalArgumentException(
+                                    "HS20 indication element too short: " + ie.bytes.length);
+                        }
+                        data.getShort(); // Skip 2 bytes
+                    }
+                    if (ie.bytes.length < expectedSize) {
                         throw new IllegalArgumentException(
                                 "HS20 indication element too short: " + ie.bytes.length);
                     }
@@ -879,10 +894,6 @@ public class InformationElementUtil {
      * by wpa_supplicant.
      */
     public static class Capabilities {
-        private static final int CAP_ESS_BITMASK = 0x1 << 0;
-        private static final int CAP_IBSS_BITMASK = 0x1 << 1;
-        private static final int CAP_PRIVACY_BITMASK = 0x1 << 4;
-
         private static final int WPA_VENDOR_OUI_TYPE_ONE = 0x01f25000;
         private static final int WPS_VENDOR_OUI_TYPE = 0x04f25000;
         private static final short WPA_VENDOR_OUI_VERSION = 0x0001;
@@ -903,6 +914,8 @@ public class InformationElementUtil {
         private static final int RSN_AKM_OWE = 0x12ac0f00;
         private static final int RSN_AKM_EAP_SUITE_B_192 = 0x0cac0f00;
         private static final int RSN_OSEN = 0x019a6f50;
+        private static final int RSN_AKM_FILS_SHA256 = 0x0eac0f00;
+        private static final int RSN_AKM_FILS_SHA384 = 0x0fac0f00;
 
         private static final int WPA_CIPHER_NONE = 0x00f25000;
         private static final int WPA_CIPHER_TKIP = 0x02f25000;
@@ -1004,6 +1017,12 @@ public class InformationElementUtil {
                             break;
                         case RSN_OSEN:
                             rsnKeyManagement.add(ScanResult.KEY_MGMT_OSEN);
+                            break;
+                        case RSN_AKM_FILS_SHA256:
+                            rsnKeyManagement.add(ScanResult.KEY_MGMT_FILS_SHA256);
+                            break;
+                        case RSN_AKM_FILS_SHA384:
+                            rsnKeyManagement.add(ScanResult.KEY_MGMT_FILS_SHA384);
                             break;
                         default:
                             // do nothing
@@ -1168,12 +1187,12 @@ public class InformationElementUtil {
             if (ies == null) {
                 return;
             }
-            isESS = (beaconCap & CAP_ESS_BITMASK) != 0;
-            isIBSS = (beaconCap & CAP_IBSS_BITMASK) != 0;
-            isPrivacy = (beaconCap & CAP_PRIVACY_BITMASK) != 0;
+            isESS = (beaconCap & NativeScanResult.BSS_CAPABILITY_ESS) != 0;
+            isIBSS = (beaconCap & NativeScanResult.BSS_CAPABILITY_IBSS) != 0;
+            isPrivacy = (beaconCap & NativeScanResult.BSS_CAPABILITY_PRIVACY) != 0;
             for (InformationElement ie : ies) {
-                WifiCondManager.OemSecurityType oemSecurityType =
-                        WifiCondManager.parseOemSecurityTypeElement(
+                WifiNl80211Manager.OemSecurityType oemSecurityType =
+                        WifiNl80211Manager.parseOemSecurityTypeElement(
                         ie.id, ie.idExt, ie.bytes);
                 if (oemSecurityType != null
                         && oemSecurityType.protocol != ScanResult.PROTOCOL_NONE) {
@@ -1283,6 +1302,10 @@ public class InformationElementUtil {
                     return "WAPI-PSK";
                 case ScanResult.KEY_MGMT_WAPI_CERT:
                     return "WAPI-CERT";
+                case ScanResult.KEY_MGMT_FILS_SHA256:
+                    return "FILS-SHA256";
+                case ScanResult.KEY_MGMT_FILS_SHA384:
+                    return "FILS-SHA384";
                 default:
                     return "?";
             }

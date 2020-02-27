@@ -105,6 +105,7 @@ public class PasspointProvider {
     private boolean mIsShared;
     private boolean mIsFromSuggestion;
     private boolean mIsTrusted;
+    private boolean mVerboseLoggingEnabled;
 
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
             TelephonyUtil telephonyUtil, long providerId, int creatorUid, String packageName,
@@ -376,48 +377,68 @@ public class PasspointProvider {
      * Return the matching status with the given AP, based on the ANQP elements from the AP.
      *
      * @param anqpElements ANQP elements from the AP
-     * @param roamingConsortium Roaming Consortium information element from the AP
+     * @param roamingConsortiumFromAp Roaming Consortium information element from the AP
      * @return {@link PasspointMatch}
      */
     public PasspointMatch match(Map<ANQPElementType, ANQPElement> anqpElements,
-            RoamingConsortium roamingConsortium) {
-
+            RoamingConsortium roamingConsortiumFromAp) {
         // If the profile requires a SIM credential, make sure that the installed SIM matches
         String matchingSimImsi = null;
         if (mConfig.getCredential().getSimCredential() != null) {
             matchingSimImsi = getMatchingSimImsi();
             if (TextUtils.isEmpty(matchingSimImsi)) {
-                Log.d(TAG, "No SIM card for this profile with SIM credential.");
+                if (mVerboseLoggingEnabled) {
+                    Log.d(TAG, "No SIM card with IMSI "
+                            + mConfig.getCredential().getSimCredential().getImsi()
+                            + " is installed, final match: " + PasspointMatch.None);
+                }
                 return PasspointMatch.None;
             }
         }
 
         // Match FQDN for Home provider or RCOI(s) for Roaming provider
         // For SIM credential, the FQDN is in the format of wlan.mnc*.mcc*.3gppnetwork.org
-        PasspointMatch providerMatch = matchFqdnAndRcoi(anqpElements, roamingConsortium,
+        PasspointMatch providerMatch = matchFqdnAndRcoi(anqpElements, roamingConsortiumFromAp,
                 matchingSimImsi);
 
         // 3GPP Network matching
         if (providerMatch == PasspointMatch.None && ANQPMatcher.matchThreeGPPNetwork(
                 (ThreeGPPNetworkElement) anqpElements.get(ANQPElementType.ANQP3GPPNetwork),
                 mImsiParameter, matchingSimImsi)) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Final RoamingProvider match with "
+                        + anqpElements.get(ANQPElementType.ANQP3GPPNetwork));
+            }
             return PasspointMatch.RoamingProvider;
         }
 
         // Perform NAI Realm matching
-        int authMatch = ANQPMatcher.matchNAIRealm(
+        boolean realmMatch = ANQPMatcher.matchNAIRealm(
                 (NAIRealmElement) anqpElements.get(ANQPElementType.ANQPNAIRealm),
                 mConfig.getCredential().getRealm());
 
         // In case of no realm match, return provider match as is.
-        if ((authMatch & AuthMatch.REALM) == 0) {
+        if (!realmMatch) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "No NAI realm match, final match: " + providerMatch);
+            }
             return providerMatch;
         }
 
-        // Promote the provider match to roaming provider if provider match is not found, but NAI
+        if (mVerboseLoggingEnabled) {
+            Log.d(TAG, "NAI realm match with " + mConfig.getCredential().getRealm());
+        }
+
+        // Promote the provider match to RoamingProvider if provider match is not found, but NAI
         // realm is matched.
-        return providerMatch == PasspointMatch.None ? PasspointMatch.RoamingProvider
-                : providerMatch;
+        if (providerMatch == PasspointMatch.None) {
+            providerMatch = PasspointMatch.RoamingProvider;
+        }
+
+        if (mVerboseLoggingEnabled) {
+            Log.d(TAG, "Final match: " + providerMatch);
+        }
+        return providerMatch;
     }
 
     /**
@@ -431,6 +452,7 @@ public class PasspointProvider {
     public WifiConfiguration getWifiConfig() {
         WifiConfiguration wifiConfig = new WifiConfiguration();
         wifiConfig.FQDN = mConfig.getHomeSp().getFqdn();
+        wifiConfig.setPasspointUniqueId(mConfig.getUniqueId());
         if (mConfig.getHomeSp().getRoamingConsortiumOis() != null) {
             wifiConfig.roamingConsortiumIds = Arrays.copyOf(
                     mConfig.getHomeSp().getRoamingConsortiumOis(),
@@ -672,16 +694,20 @@ public class PasspointProvider {
      * Perform a provider match based on the given ANQP elements for FQDN and RCOI
      *
      * @param anqpElements List of ANQP elements
-     * @param roamingConsortium Roaming Consortium information element from the AP
+     * @param roamingConsortiumFromAp Roaming Consortium information element from the AP
      * @param matchingSIMImsi Installed SIM IMSI that matches the SIM credential ANQP element
      * @return {@link PasspointMatch}
      */
     private PasspointMatch matchFqdnAndRcoi(Map<ANQPElementType, ANQPElement> anqpElements,
-            RoamingConsortium roamingConsortium, String matchingSIMImsi) {
+            RoamingConsortium roamingConsortiumFromAp, String matchingSIMImsi) {
         // Domain name matching.
         if (ANQPMatcher.matchDomainName(
                 (DomainNameElement) anqpElements.get(ANQPElementType.ANQPDomName),
                 mConfig.getHomeSp().getFqdn(), mImsiParameter, matchingSIMImsi)) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Domain name " + mConfig.getHomeSp().getFqdn()
+                        + " match: HomeProvider");
+            }
             return PasspointMatch.HomeProvider;
         }
 
@@ -690,21 +716,30 @@ public class PasspointProvider {
         if (ANQPMatcher.matchRoamingConsortium(
                 (RoamingConsortiumElement) anqpElements.get(ANQPElementType.ANQPRoamingConsortium),
                 providerOIs)) {
+            if (mVerboseLoggingEnabled) {
+                Log.e(TAG, "ANQP RCOI match: RoamingProvider");
+            }
             return PasspointMatch.RoamingProvider;
         }
 
-        long[] roamingConsortiums = roamingConsortium.getRoamingConsortiums();
+        // AP Roaming Consortium OI matching.
+        long[] roamingConsortiums = roamingConsortiumFromAp.getRoamingConsortiums();
         // Roaming Consortium OI information element matching.
         if (roamingConsortiums != null && providerOIs != null) {
             for (long sta_oi: roamingConsortiums) {
                 for (long ap_oi: providerOIs) {
                     if (sta_oi == ap_oi) {
+                        if (mVerboseLoggingEnabled) {
+                            Log.e(TAG, "AP RCOI match: RoamingProvider");
+                        }
                         return PasspointMatch.RoamingProvider;
                     }
                 }
             }
         }
-
+        if (mVerboseLoggingEnabled) {
+            Log.e(TAG, "No domain name or RCOI match");
+        }
         return PasspointMatch.None;
     }
 
@@ -874,5 +909,13 @@ public class PasspointProvider {
         simCredential.setImsi(config.getPlmn());
         simCredential.setEapType(eapType);
         return simCredential;
+    }
+
+    /**
+     * Enable verbose logging
+     * @param verbose more than 0 enables verbose logging
+     */
+    public void enableVerboseLogging(int verbose) {
+        mVerboseLoggingEnabled = (verbose > 0) ? true : false;
     }
 }

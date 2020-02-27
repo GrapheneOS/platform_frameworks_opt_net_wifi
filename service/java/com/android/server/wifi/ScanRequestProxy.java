@@ -16,12 +16,13 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_SCAN_THROTTLE_ENABLED;
+
 import android.annotation.NonNull;
 import android.app.ActivityManager;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -32,7 +33,6 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.WorkSource;
-import android.provider.Settings;
 import android.util.ArrayMap;
 import android.util.Log;
 import android.util.Pair;
@@ -89,12 +89,12 @@ public class ScanRequestProxy {
     private final WifiPermissionsUtil mWifiPermissionsUtil;
     private final WifiMetrics mWifiMetrics;
     private final Clock mClock;
-    private final FrameworkFacade mFrameworkFacade;
-    private final ThrottleEnabledSettingObserver mThrottleEnabledSettingObserver;
+    private final WifiSettingsConfigStore mSettingsConfigStore;
     private WifiScanner mWifiScanner;
 
     // Verbose logging flag.
     private boolean mVerboseLoggingEnabled = false;
+    private boolean mThrottleEnabled = true;
     // Flag to decide if we need to scan or not.
     private boolean mScanningEnabled = false;
     // Flag to decide if we need to scan for hidden networks or not.
@@ -191,57 +191,10 @@ public class ScanRequestProxy {
         }
     };
 
-    /**
-     * Observer for scan throttle enable settings changes.
-     * This is enabled by default. Will be toggled off via adb command or a developer settings
-     * toggle by the user to disable all scan throttling.
-     */
-    private class ThrottleEnabledSettingObserver extends ContentObserver {
-        private boolean mThrottleEnabled = true;
-
-        ThrottleEnabledSettingObserver(Handler handler) {
-            super(handler);
-        }
-
-        /**
-         * Register for any changes to the scan throttle setting.
-         */
-        public void initialize() {
-            mFrameworkFacade.registerContentObserver(mContext,
-                    Settings.Global.getUriFor(Settings.Global.WIFI_SCAN_THROTTLE_ENABLED),
-                    true, this);
-            mThrottleEnabled = getValue();
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "Scan throttle enabled " + mThrottleEnabled);
-            }
-        }
-
-        /**
-         * Check if throttling is enabled or not.
-         *
-         * @return true if throttling is enabled, false otherwise.
-         */
-        public boolean isEnabled() {
-            return mThrottleEnabled;
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-            mThrottleEnabled = getValue();
-            Log.i(TAG, "Scan throttle enabled " + mThrottleEnabled);
-        }
-
-        private boolean getValue() {
-            return mFrameworkFacade.getIntegerSetting(mContext,
-                    Settings.Global.WIFI_SCAN_THROTTLE_ENABLED, 1) == 1;
-        }
-    }
-
     ScanRequestProxy(Context context, AppOpsManager appOpsManager, ActivityManager activityManager,
                      WifiInjector wifiInjector, WifiConfigManager configManager,
                      WifiPermissionsUtil wifiPermissionUtil, WifiMetrics wifiMetrics, Clock clock,
-                     FrameworkFacade frameworkFacade, Handler handler) {
+                     Handler handler, WifiSettingsConfigStore settingsConfigStore) {
         mContext = context;
         mHandler = handler;
         mAppOps = appOpsManager;
@@ -251,8 +204,7 @@ public class ScanRequestProxy {
         mWifiPermissionsUtil = wifiPermissionUtil;
         mWifiMetrics = wifiMetrics;
         mClock = clock;
-        mFrameworkFacade = frameworkFacade;
-        mThrottleEnabledSettingObserver = new ThrottleEnabledSettingObserver(handler);
+        mSettingsConfigStore = settingsConfigStore;
         mRegisteredScanResultsCallbacks = new RemoteCallbackList<>();
     }
 
@@ -271,7 +223,10 @@ public class ScanRequestProxy {
         if (mWifiScanner == null) {
             mWifiScanner = mWifiInjector.getWifiScanner();
             // Start listening for throttle settings change after we retrieve scanner instance.
-            mThrottleEnabledSettingObserver.initialize();
+            mThrottleEnabled = mSettingsConfigStore.getBoolean(WIFI_SCAN_THROTTLE_ENABLED, true);
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "Scan throttle enabled " + mThrottleEnabled);
+            }
             // Register the global scan listener.
             if (mWifiScanner != null) {
                 mWifiScanner.registerScanListener(
@@ -471,7 +426,7 @@ public class ScanRequestProxy {
         // Check and throttle scan request unless,
         // a) App has either NETWORK_SETTINGS or NETWORK_SETUP_WIZARD permission.
         // b) Throttling has been disabled by user.
-        if (!fromSettingsOrSetupWizard && mThrottleEnabledSettingObserver.isEnabled()
+        if (!fromSettingsOrSetupWizard && mThrottleEnabled
                 && shouldScanRequestBeThrottledForApp(callingUid, packageName)) {
             Log.i(TAG, "Scan request from " + packageName + " throttled");
             sendScanResultFailureBroadcastToPackage(packageName);
@@ -562,5 +517,22 @@ public class ScanRequestProxy {
      */
     public void unregisterScanResultsCallback(IScanResultsCallback callback) {
         mRegisteredScanResultsCallbacks.unregister(callback);
+    }
+
+    /**
+     * Enable/disable wifi scan throttling from 3rd party apps.
+     */
+    public void setScanThrottleEnabled(boolean enable) {
+        mThrottleEnabled = enable;
+        mSettingsConfigStore.putBoolean(WIFI_SCAN_THROTTLE_ENABLED, enable);
+        Log.i(TAG, "Scan throttle enabled " + mThrottleEnabled);
+    }
+
+    /**
+     * Get the persisted Wi-Fi scan throttle state, set by
+     * {@link #setScanThrottleEnabled(boolean)}.
+     */
+    public boolean isScanThrottleEnabled() {
+        return mThrottleEnabled;
     }
 }

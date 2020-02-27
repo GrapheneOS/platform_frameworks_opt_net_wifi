@@ -304,7 +304,7 @@ public class WifiConfigurationUtil {
         if (existingConfig.hiddenSSID != newConfig.hiddenSSID) {
             return true;
         }
-        if (existingConfig.requirePMF != newConfig.requirePMF) {
+        if (existingConfig.requirePmf != newConfig.requirePmf) {
             return true;
         }
         if (hasEnterpriseConfigChanged(existingConfig.enterpriseConfig,
@@ -496,8 +496,8 @@ public class WifiConfigurationUtil {
 
     private static boolean validateKeyMgmt(BitSet keyMgmnt) {
         if (keyMgmnt.cardinality() > 1) {
-            if (keyMgmnt.cardinality() > 3) {
-                Log.e(TAG, "validateKeyMgmt failed: cardinality > 3");
+            if (keyMgmnt.cardinality() > 4) {
+                Log.e(TAG, "validateKeyMgmt failed: cardinality > 4");
                 return false;
             }
             if (!keyMgmnt.get(WifiConfiguration.KeyMgmt.WPA_EAP)) {
@@ -509,9 +509,11 @@ public class WifiConfigurationUtil {
                 Log.e(TAG, "validateKeyMgmt failed: not PSK or 8021X");
                 return false;
             }
-            if (keyMgmnt.cardinality() == 3
-                    && !keyMgmnt.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
-                Log.e(TAG, "validateKeyMgmt failed: not SUITE_B_192");
+            if (keyMgmnt.cardinality() == 4
+                    && (!keyMgmnt.get(WifiConfiguration.KeyMgmt.SUITE_B_192)
+                    && !keyMgmnt.get(WifiConfiguration.KeyMgmt.FILS_SHA256)
+                    && !keyMgmnt.get(WifiConfiguration.KeyMgmt.FILS_SHA384))) {
+                Log.e(TAG, "validateKeyMgmt failed: neither SUITE_B_192 nor FILS");
                 return false;
             }
         }
@@ -583,14 +585,14 @@ public class WifiConfigurationUtil {
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
             // PMF mandatory for OWE networks
-            if (!config.requirePMF) {
+            if (!config.requirePmf) {
                 Log.e(TAG, "PMF must be enabled for OWE networks");
                 return false;
             }
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
             // PMF mandatory for WPA3-Personal networks
-            if (!config.requirePMF) {
+            if (!config.requirePmf) {
                 Log.e(TAG, "PMF must be enabled for SAE networks");
                 return false;
             }
@@ -600,7 +602,7 @@ public class WifiConfigurationUtil {
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
             // PMF mandatory for WPA3-Enterprise networks
-            if (!config.requirePMF) {
+            if (!config.requirePmf) {
                 Log.e(TAG, "PMF must be enabled for Suite-B 192-bit networks");
                 return false;
             }
@@ -738,13 +740,13 @@ public class WifiConfigurationUtil {
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
             // PMF mandatory for OWE networks
-            if (!config.requirePMF) {
+            if (!config.requirePmf) {
                 return false;
             }
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
             // PMF mandatory for WPA3-Personal networks
-            if (!config.requirePMF) {
+            if (!config.requirePmf) {
                 return false;
             }
             if (!validatePassword(config.preSharedKey, true, true)) {
@@ -753,7 +755,7 @@ public class WifiConfigurationUtil {
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
             // PMF mandatory for WPA3-Enterprise networks
-            if (!config.requirePMF) {
+            if (!config.requirePmf) {
                 return false;
             }
         }

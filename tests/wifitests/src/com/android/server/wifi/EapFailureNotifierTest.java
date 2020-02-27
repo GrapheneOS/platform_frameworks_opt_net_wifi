@@ -92,6 +92,7 @@ public class EapFailureNotifierTest extends WifiBaseTest {
                 anyString())).thenReturn(0);
         when(mResources.getString(eq(0), anyString())).thenReturn(null);
         when(mResources.getString(eq(1), anyString())).thenReturn("Error Message");
+        when(mContext.createPackageContext(anyString(), eq(0))).thenReturn(mContext);
         mEapFailureNotifier =
                 new EapFailureNotifier(mContext, mFrameworkFacade, mTelephonyUtil);
     }

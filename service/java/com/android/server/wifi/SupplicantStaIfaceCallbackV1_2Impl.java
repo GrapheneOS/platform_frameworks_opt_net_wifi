@@ -173,7 +173,7 @@ abstract class SupplicantStaIfaceCallbackV1_2Impl extends
         // Set up key management: SAE or PSK
         if (securityAkm == DppAkm.SAE || securityAkm == DppAkm.PSK_SAE) {
             newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
-            newWifiConfiguration.requirePMF = true;
+            newWifiConfiguration.requirePmf = true;
         } else if (securityAkm == DppAkm.PSK) {
             newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
         } else {

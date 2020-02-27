@@ -881,6 +881,19 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     }
 
     @Test
+    public void tryTakeBugReportTwiceWithInsufficientTimeGap() {
+        when(mBuildProperties.isUserBuild()).thenReturn(false);
+        // 1st attempt should succeed
+        when(mClock.getWallClockMillis()).thenReturn(10L);
+        mWifiDiagnostics.takeBugReport("", "");
+        verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
+        // 2nd attempt should fail
+        when(mClock.getWallClockMillis()).thenReturn(1000_000L);
+        mWifiDiagnostics.takeBugReport("", "");
+        verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
+    }
+
+    @Test
     public void takeBugReportDoesNothingWhenConfigOverlayDisabled() {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         mResources.setBoolean(R.bool.config_wifi_diagnostics_bugreport_enabled, false);

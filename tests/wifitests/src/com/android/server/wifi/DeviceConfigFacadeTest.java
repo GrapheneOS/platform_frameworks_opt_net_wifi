@@ -124,6 +124,18 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getDataStallTxPerThr());
         assertEquals(DeviceConfigFacade.DEFAULT_DATA_STALL_CCA_LEVEL_THR,
                 mDeviceConfigFacade.getDataStallCcaLevelThr());
+        assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_THR_LOW_KBPS,
+                mDeviceConfigFacade.getTputSufficientLowThrKbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_THR_HIGH_KBPS,
+                mDeviceConfigFacade.getTputSufficientHighThrKbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_RATIO_THR_NUM,
+                mDeviceConfigFacade.getTputSufficientRatioThrNum());
+        assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_RATIO_THR_DEN,
+                mDeviceConfigFacade.getTputSufficientRatioThrDen());
+        assertEquals(DeviceConfigFacade.DEFAULT_TX_PACKET_PER_SECOND_THR,
+                mDeviceConfigFacade.getTxPktPerSecondThr());
+        assertEquals(DeviceConfigFacade.DEFAULT_RX_PACKET_PER_SECOND_THR,
+                mDeviceConfigFacade.getRxPktPerSecondThr());
         assertEquals(DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT,
                 mDeviceConfigFacade.getConnectionFailureHighThrPercent());
         assertEquals(DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_LOW_THR_PERCENT,
@@ -178,6 +190,18 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(95);
         when(DeviceConfig.getInt(anyString(), eq("data_stall_cca_level_thr"),
                 anyInt())).thenReturn(80);
+        when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_low_thr_kbps"),
+                anyInt())).thenReturn(4000);
+        when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_high_thr_kbps"),
+                anyInt())).thenReturn(8000);
+        when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_ratio_thr_num"),
+                anyInt())).thenReturn(3);
+        when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_ratio_thr_den"),
+                anyInt())).thenReturn(2);
+        when(DeviceConfig.getInt(anyString(), eq("tx_pkt_per_second_thr"),
+                anyInt())).thenReturn(10);
+        when(DeviceConfig.getInt(anyString(), eq("rx_pkt_per_second_thr"),
+                anyInt())).thenReturn(5);
         when(DeviceConfig.getInt(anyString(), eq("connection_failure_high_thr_percent"),
                 anyInt())).thenReturn(31);
         when(DeviceConfig.getInt(anyString(), eq("connection_failure_low_thr_percent"),
@@ -225,6 +249,12 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(1500, mDeviceConfigFacade.getDataStallRxTputThrKbps());
         assertEquals(95, mDeviceConfigFacade.getDataStallTxPerThr());
         assertEquals(80, mDeviceConfigFacade.getDataStallCcaLevelThr());
+        assertEquals(4000, mDeviceConfigFacade.getTputSufficientLowThrKbps());
+        assertEquals(8000, mDeviceConfigFacade.getTputSufficientHighThrKbps());
+        assertEquals(3, mDeviceConfigFacade.getTputSufficientRatioThrNum());
+        assertEquals(2, mDeviceConfigFacade.getTputSufficientRatioThrDen());
+        assertEquals(10, mDeviceConfigFacade.getTxPktPerSecondThr());
+        assertEquals(5, mDeviceConfigFacade.getRxPktPerSecondThr());
         assertEquals(31, mDeviceConfigFacade.getConnectionFailureHighThrPercent());
         assertEquals(3, mDeviceConfigFacade.getConnectionFailureLowThrPercent());
         assertEquals(10, mDeviceConfigFacade.getAssocRejectionHighThrPercent());

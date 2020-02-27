@@ -169,8 +169,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 int creatorUid = wCmConfiguredNetwork.creatorUid;
                 Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsFromSamePackage =
                         autojoinEnableSuggestions.stream()
-                                .filter(ewns -> ewns.wns.wifiConfiguration.creatorUid
-                                        == creatorUid)
+                                .filter(ewns -> ewns.perAppInfo.uid == creatorUid)
                                 .collect(Collectors.toSet());
                 if (matchingExtNetworkSuggestionsFromSamePackage.isEmpty()) {
                     continue;
@@ -178,8 +177,8 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 ExtendedWifiNetworkSuggestion matchingExtNetworkSuggestion =
                         matchingExtNetworkSuggestionsFromSamePackage.stream().findFirst().get();
                 // Update the WifiConfigManager with the latest WifiConfig
-                WifiConfiguration config = createConfigForAddingToWifiConfigManager(
-                        matchingExtNetworkSuggestion, true);
+                WifiConfiguration config =
+                        matchingExtNetworkSuggestion.createInternalWifiConfiguration();
                 NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
                         config,
                         matchingExtNetworkSuggestion.perAppInfo.uid,
@@ -225,8 +224,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             if (!ewns.wns.isUserAllowedToManuallyConnect) {
                 continue;
             }
-            WifiConfiguration config =
-                    createConfigForAddingToWifiConfigManager(ewns, false);
+            WifiConfiguration config = ewns.createInternalWifiConfiguration();
             WifiConfiguration wCmConfiguredNetwork =
                     mWifiConfigManager.getConfiguredNetwork(config.getKey());
             NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
@@ -257,8 +255,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     // Returns the copy of WifiConfiguration with the allocated network ID filled in.
     private WifiConfiguration addCandidateToWifiConfigManager(
             @NonNull ExtendedWifiNetworkSuggestion ewns) {
-        WifiConfiguration wifiConfiguration =
-                createConfigForAddingToWifiConfigManager(ewns, true);
+        WifiConfiguration wifiConfiguration = ewns.createInternalWifiConfiguration();
         NetworkUpdateResult result =
                 mWifiConfigManager.addOrUpdateNetwork(wifiConfiguration, ewns.perAppInfo.uid,
                         ewns.perAppInfo.packageName);
@@ -273,17 +270,6 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         }
         int candidateNetworkId = result.getNetworkId();
         return mWifiConfigManager.getConfiguredNetwork(candidateNetworkId);
-    }
-
-    private WifiConfiguration createConfigForAddingToWifiConfigManager(
-            ExtendedWifiNetworkSuggestion ewns, boolean allowAutojoin) {
-        WifiConfiguration wifiConfiguration = new WifiConfiguration(ewns.wns.wifiConfiguration);
-        // Mark the network ephemeral because we don't want these persisted by WifiConfigManager.
-        wifiConfiguration.ephemeral = true;
-        wifiConfiguration.fromWifiNetworkSuggestion = true;
-        wifiConfiguration.allowAutojoin = allowAutojoin;
-        wifiConfiguration.trusted = !ewns.wns.isNetworkUntrusted;
-        return wifiConfiguration;
     }
 
     @Override

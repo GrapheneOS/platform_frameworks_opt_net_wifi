@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="8750623020267885175">"स्वतः जडान गर्ने सुविधा असक्षम पारियो"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"स्वतः जोडिने सुविधा निष्क्रिय छ"</string>
     <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g> द्वारा सुरक्षित गरियो"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"स्वतः जडान हुने छैन"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"इन्टरनेटमाथिको पहुँच छैन"</string>

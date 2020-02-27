@@ -62,6 +62,7 @@ import android.telephony.TelephonyManager;
 import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.server.wifi.MockResources;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
@@ -79,6 +80,7 @@ import com.android.server.wifi.hotspot2.soap.UpdateResponseMessage;
 import com.android.server.wifi.hotspot2.soap.command.BrowserUri;
 import com.android.server.wifi.hotspot2.soap.command.PpsMoData;
 import com.android.server.wifi.hotspot2.soap.command.SppCommand;
+import com.android.wifi.resources.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -122,11 +124,9 @@ public class PasspointProvisionerTest extends WifiBaseTest {
     private static final String TEST_LANGUAGE = "en";
     private static final String TEST_SESSION_ID = "123456";
     private static final String TEST_URL = "https://127.0.0.1/session_id=" + TEST_SESSION_ID;
-    private static final String TEST_HW_VERSION = "Test HW 1.0";
     private static final String TEST_MAC_ADDR = "11:22:33:44:55:66";
     private static final String TEST_IMSI = "310150123456789";
     private static final String TEST_SW_VERSION = "Android Test 1.0";
-    private static final String TEST_FW_VERSION = "Test FW 1.0";
     private static final String TEST_REDIRECT_URL = "http://127.0.0.1:12345/index.htm";
     private static final String TEST_SSID = "TestSSID";
     private static final String TEST_BSSID_STRING = "11:22:33:44:55:66";
@@ -134,7 +134,7 @@ public class PasspointProvisionerTest extends WifiBaseTest {
     private static final String TEST_BSSID_STRING2 = "11:22:33:44:55:77";
     private static final String TEST_SSID3 = "TestSSID3";
     private static final String TEST_BSSID_STRING3 = "11:22:33:44:55:88";
-    private static final String OSU_APP_PACKAGE = "com.android.hotspot2";
+    private static final String OSU_APP_PACKAGE = "com.android.hotspot2.osulogin";
     private static final String OSU_APP_NAME = "OsuLogin";
 
     private static final byte[] TEST_OSU_SSID_BYTES = "OSU_SSID".getBytes(StandardCharsets.UTF_8);
@@ -237,10 +237,8 @@ public class PasspointProvisionerTest extends WifiBaseTest {
         when(mSystemInfo.getLanguage()).thenReturn(TEST_LANGUAGE);
         when(mSystemInfo.getDeviceId()).thenReturn(TEST_DEV_ID);
         when(mSystemInfo.getDeviceManufacturer()).thenReturn(TEST_MANUFACTURER);
-        when(mSystemInfo.getHwVersion()).thenReturn(TEST_HW_VERSION);
         when(mSystemInfo.getMacAddress(any(String.class))).thenReturn(TEST_MAC_ADDR);
         when(mSystemInfo.getSoftwareVersion()).thenReturn(TEST_SW_VERSION);
-        when(mSystemInfo.getFirmwareVersion()).thenReturn(TEST_FW_VERSION);
         when(mDataTelephonyManager.getSubscriberId()).thenReturn(TEST_IMSI);
 
         when(mExchangeCompleteMessage.getMessageType()).thenReturn(
@@ -260,6 +258,9 @@ public class PasspointProvisionerTest extends WifiBaseTest {
         when(mOsuServerConnection.exchangeSoapMessage(
                 any(SoapSerializationEnvelope.class))).thenReturn(true);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
+        MockResources mockResources = new MockResources();
+        mockResources.setString(R.string.config_wifiOsuLoginPackage, OSU_APP_PACKAGE);
+        when(mContext.getResources()).thenReturn(mockResources);
         ResolveInfo resolveInfo = new ResolveInfo();
         resolveInfo.activityInfo = new ActivityInfo();
         resolveInfo.activityInfo.applicationInfo = new ApplicationInfo();

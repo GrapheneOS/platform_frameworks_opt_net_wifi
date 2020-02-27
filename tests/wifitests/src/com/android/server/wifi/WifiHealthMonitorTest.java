@@ -44,21 +44,27 @@ import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiConfigManager.OnNetworkUpdateListener;
 import com.android.server.wifi.WifiHealthMonitor.ScanStats;
 import com.android.server.wifi.WifiHealthMonitor.WifiSoftwareBuildInfo;
 import com.android.server.wifi.WifiHealthMonitor.WifiSystemInfoStats;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.proto.WifiScoreCardProto.SystemInfoStats;
+import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
+
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -70,9 +76,11 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     static final WifiSsid TEST_SSID_1 = WifiSsid.createFromAsciiEncoded("Joe's Place");
     static final WifiSsid TEST_SSID_2 = WifiSsid.createFromAsciiEncoded("Poe's Place");
     static final MacAddress TEST_BSSID_1 = MacAddress.fromString("aa:bb:cc:dd:ee:ff");
+    private static final long CURRENT_ELAPSED_TIME_MS = 1000;
 
     private WifiScoreCard mWifiScoreCard;
     private WifiHealthMonitor mWifiHealthMonitor;
+    private MockitoSession mSession;
 
     @Mock
     Clock mClock;
@@ -389,7 +397,70 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     }
 
     /**
-     * Check stats after two daily detections.
+     * Check alarm timing of a multi-day run.
+     */
+    @Test
+    public void testTimerMultiDayRun() throws Exception {
+        long currentWallClockTimeMs = 23 * 3600_000;
+        long currentElapsedTimeMs = CURRENT_ELAPSED_TIME_MS;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(currentWallClockTimeMs);
+        int expectedWaitHours = WifiHealthMonitor.DAILY_DETECTION_HOUR
+                - calendar.get(Calendar.HOUR_OF_DAY);
+        if (expectedWaitHours <= 0) expectedWaitHours += 24;
+
+        // day 1
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentElapsedTimeMs);
+        when(mClock.getWallClockMillis()).thenReturn(currentWallClockTimeMs);
+        mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
+        long waitTimeMs = mAlarmManager
+                .getTriggerTimeMillis(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG)
+                - currentElapsedTimeMs;
+        assertEquals(expectedWaitHours * 3600_000, waitTimeMs);
+        currentElapsedTimeMs += 24 * 3600_000 + 1;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentElapsedTimeMs);
+        mAlarmManager.dispatch(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG);
+        mLooper.dispatchAll();
+        waitTimeMs = mAlarmManager
+                .getTriggerTimeMillis(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG)
+                - currentElapsedTimeMs;
+        assertEquals(24 * 3600_000, waitTimeMs);
+        // day 2
+        currentElapsedTimeMs += 24 * 3600_000 - 1;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentElapsedTimeMs);
+        mAlarmManager.dispatch(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG);
+        mLooper.dispatchAll();
+        waitTimeMs = mAlarmManager
+                .getTriggerTimeMillis(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG)
+                - currentElapsedTimeMs;
+        assertEquals(24 * 3600_000, waitTimeMs);
+    }
+
+    /**
+     * Check the alarm timing with a different wall clock time
+     */
+    @Test
+    public void testTimerWith() throws Exception {
+        long currentWallClockTimeMs = 7 * 3600_000;
+        long currentElapsedTimeMs = CURRENT_ELAPSED_TIME_MS;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(currentWallClockTimeMs);
+        int expectedWaitHours = WifiHealthMonitor.DAILY_DETECTION_HOUR
+                - calendar.get(Calendar.HOUR_OF_DAY);
+        if (expectedWaitHours <= 0) expectedWaitHours += 24;
+
+        // day 1
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentElapsedTimeMs);
+        when(mClock.getWallClockMillis()).thenReturn(currentWallClockTimeMs);
+        mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
+        long waitTimeMs = mAlarmManager
+                .getTriggerTimeMillis(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG)
+                - currentElapsedTimeMs;
+        assertEquals(expectedWaitHours * 3600_000, waitTimeMs);
+    }
+
+    /**
+     * Check stats with two daily detections.
      */
     @Test
     public void testTwoDailyDetections() throws Exception {
@@ -439,6 +510,36 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         healthMetrics = mWifiHealthMonitor.buildProto();
         // Second call should result in an empty proto
         assertEquals(null, healthMetrics);
+    }
+
+    /**
+     * Check WestWorld logging after one daily detection with high non-local disconnection rate
+     */
+    @Test
+    public void testWifiStatsLogWrite() throws Exception {
+        // static mocking for WifiStatsLog
+        mSession = ExtendedMockito.mockitoSession()
+                .strictness(Strictness.LENIENT)
+                .mockStatic(WifiStatsLog.class)
+                .startMocking();
+
+        mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
+        makeRecentStatsWithSufficientConnectionAttempt();
+        mAlarmManager.dispatch(WifiHealthMonitor.DAILY_DETECTION_TIMER_TAG);
+        mLooper.dispatchAll();
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__ABNORMALITY_TYPE__SIMPLY_HIGH,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_NON_LOCAL_DISCONNECTION,
+                1));
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__ABNORMALITY_TYPE__SIMPLY_HIGH,
+                WifiStatsLog.WIFI_FAILURE_STAT_REPORTED__FAILURE_TYPE__FAILURE_SHORT_CONNECTION_DUE_TO_NON_LOCAL_DISCONNECTION,
+                1));
+        mSession.finishMocking();
     }
 
     /**
@@ -584,8 +685,11 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         assertEquals(4, mWifiHealthMonitor.getWifiSystemInfoStats().getScanFailure());
     }
 
+    /**
+     * Test when remove a saved network will remove network from the WifiScoreCard.
+     */
     @Test
-    public void testRemoveNetwork() throws Exception {
+    public void testRemoveSavedNetwork() {
         makeNetworkConnectionExample();
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         assertNotNull(perNetwork);
@@ -594,6 +698,22 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         mWifiConfigManager.removeNetwork(1, 1, "some package");
         perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         assertNull(perNetwork);
+    }
+
+    /**
+     * Test when remove a suggestion network will not remove network from the WifiScoreCard.
+     */
+    @Test
+    public void testRemoveSuggestionNetwork() throws Exception {
+        mWifiConfig.fromWifiNetworkSuggestion = true;
+        makeNetworkConnectionExample();
+        PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        assertNotNull(perNetwork);
+
+        // Now remove the network
+        mWifiConfigManager.removeNetwork(1, 1, "some package");
+        perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        assertNotNull(perNetwork);
     }
 
     @Test
@@ -606,5 +726,4 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         assertNotNull(perNetwork);
     }
-    // TODO: add test for metric report
 }

@@ -42,9 +42,10 @@ import java.util.Iterator;
 public class WifiChannelUtilization {
     private static final String TAG = "WifiChannelUtilization";
     private static final boolean DBG = false;
+    public static final int UNKNOWN_FREQ = -1;
     // Minimum time interval in ms between two cache updates.
     @VisibleForTesting
-    static final int CACHE_UPDATE_INTERVAL_MIN_MS = 10 * 60 * 1000;
+    static final int DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS = 10 * 60 * 1000;
     // To get valid channel utilization, the time difference between the reference chanStat's
     // radioOnTime and current chanStat's radioOntime should be no less than the following value
     @VisibleForTesting
@@ -55,6 +56,7 @@ public class WifiChannelUtilization {
     static final int CHANNEL_STATS_CACHE_SIZE = 3;
     private final Clock mClock;
     private @DeviceMobilityState int mDeviceMobilityState = DEVICE_MOBILITY_STATE_UNKNOWN;
+    private int mCacheUpdateIntervalMinMs = DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS;
 
     // Map frequency (key) to utilization ratio (value) with the valid range of
     // [BssLoad.MIN_CHANNEL_UTILIZATION, BssLoad.MAX_CHANNEL_UTILIZATION],
@@ -91,6 +93,13 @@ public class WifiChannelUtilization {
     }
 
     /**
+     * Set channel stats cache update minimum interval
+     */
+    public void setCacheUpdateIntervalMs(int cacheUpdateIntervalMinMs) {
+        mCacheUpdateIntervalMinMs = cacheUpdateIntervalMinMs;
+    }
+
+    /**
      * Get channel utilization ratio for a given frequency
      * @param frequency The center frequency of 20MHz WLAN channel
      * @return Utilization ratio value if it is available; BssLoad.INVALID otherwise
@@ -122,9 +131,13 @@ public class WifiChannelUtilization {
     /**
      * Update channel utilization with the latest link layer stats and the cached channel stats
      * and then update channel stats cache
+     * If the given frequency is UNKNOWN_FREQ, calculate channel utilization of all frequencies
+     * Otherwise, calculate the channel utilization of the given frequency
      * @param wifiLinkLayerStats The latest wifi link layer stats
+     * @param frequency Current frequency of network.
      */
-    public void refreshChannelStatsAndChannelUtilization(WifiLinkLayerStats wifiLinkLayerStats) {
+    public void refreshChannelStatsAndChannelUtilization(WifiLinkLayerStats wifiLinkLayerStats,
+            int frequency) {
         if (wifiLinkLayerStats == null) {
             return;
         }
@@ -132,34 +145,40 @@ public class WifiChannelUtilization {
         if (channelStatsMap == null) {
             return;
         }
-
-        for (int i = 0; i < channelStatsMap.size(); i++) {
-            ChannelStats channelStats = channelStatsMap.valueAt(i);
-            int freq = channelStats.frequency;
-            int ccaBusyTimeMs = channelStats.ccaBusyTimeMs;
-            int radioOnTimeMs = channelStats.radioOnTimeMs;
-
-            ChannelStats channelStatsRef = findChanStatsReference(freq, radioOnTimeMs);
-            int busyTimeDiff =  ccaBusyTimeMs - channelStatsRef.ccaBusyTimeMs;
-            int radioOnTimeDiff = radioOnTimeMs - channelStatsRef.radioOnTimeMs;
-            int utilizationRatio = BssLoad.INVALID;
-            if (radioOnTimeDiff >= RADIO_ON_TIME_DIFF_MIN_MS) {
-                utilizationRatio = calculateUtilizationRatio(radioOnTimeDiff, busyTimeDiff);
-            }
-            mChannelUtilizationMap.put(freq, utilizationRatio);
-
-            if (DBG) {
-                int utilizationRatioT0 = calculateUtilizationRatio(radioOnTimeMs, ccaBusyTimeMs);
-                Log.d(TAG, " freq: " + freq + " busyTimeDiff: " + busyTimeDiff
-                        + " radioOnTimeDiff: " + radioOnTimeDiff
-                        + " utilization: " + utilizationRatio
-                        + " utilization from time 0: " + utilizationRatioT0);
+        if (frequency != UNKNOWN_FREQ) {
+            ChannelStats channelStats = channelStatsMap.get(frequency, null);
+            if (channelStats != null) calculateChannelUtilization(channelStats);
+        } else {
+            for (int i = 0; i < channelStatsMap.size(); i++) {
+                ChannelStats channelStats = channelStatsMap.valueAt(i);
+                calculateChannelUtilization(channelStats);
             }
         }
-
         updateChannelStatsCache(channelStatsMap);
     }
 
+    private void calculateChannelUtilization(ChannelStats channelStats) {
+        int freq = channelStats.frequency;
+        int ccaBusyTimeMs = channelStats.ccaBusyTimeMs;
+        int radioOnTimeMs = channelStats.radioOnTimeMs;
+
+        ChannelStats channelStatsRef = findChanStatsReference(freq, radioOnTimeMs);
+        int busyTimeDiff = ccaBusyTimeMs - channelStatsRef.ccaBusyTimeMs;
+        int radioOnTimeDiff = radioOnTimeMs - channelStatsRef.radioOnTimeMs;
+        int utilizationRatio = BssLoad.INVALID;
+        if (radioOnTimeDiff >= RADIO_ON_TIME_DIFF_MIN_MS && busyTimeDiff >= 0) {
+            utilizationRatio = calculateUtilizationRatio(radioOnTimeDiff, busyTimeDiff);
+        }
+        mChannelUtilizationMap.put(freq, utilizationRatio);
+
+        if (DBG) {
+            int utilizationRatioT0 = calculateUtilizationRatio(radioOnTimeMs, ccaBusyTimeMs);
+            Log.d(TAG, " freq: " + freq + " busyTimeDiff: " + busyTimeDiff
+                    + " radioOnTimeDiff: " + radioOnTimeDiff
+                    + " utilization: " + utilizationRatio
+                    + " utilization from time 0: " + utilizationRatioT0);
+        }
+    }
     /**
      * Find a proper channelStats reference from channelStatsMap cache.
      * The search continues until it finds a channelStat at the given frequency with radioOnTime
@@ -222,7 +241,7 @@ public class WifiChannelUtilization {
         if (DBG) {
             Log.d(TAG, " current time stamp: " + currTimeStamp);
         }
-        if ((currTimeStamp - mLastChannelStatsMapTimeStamp) >= CACHE_UPDATE_INTERVAL_MIN_MS) {
+        if ((currTimeStamp - mLastChannelStatsMapTimeStamp) >= mCacheUpdateIntervalMinMs) {
             mChannelStatsMapCache.addFirst(channelStatsMap);
             mChannelStatsMapCache.removeLast();
             mLastChannelStatsMapTimeStamp = currTimeStamp;

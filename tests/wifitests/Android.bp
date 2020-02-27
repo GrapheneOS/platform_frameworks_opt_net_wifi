@@ -107,6 +107,7 @@ android_test {
         "libdexmakerjvmtiagent",
         "libstaticjvmtiagent",
     ],
+    compile_multilib: "both",
 
     min_sdk_version: "29",
     privileged: true,

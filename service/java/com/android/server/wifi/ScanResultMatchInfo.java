@@ -90,12 +90,12 @@ public class ScanResultMatchInfo {
     private static @WifiConfiguration.SecurityType int getNetworkType(ScanResult scanResult) {
         if (ScanResultUtil.isScanResultForSaeNetwork(scanResult)) {
             return WifiConfiguration.SECURITY_TYPE_SAE;
-        } else if (ScanResultUtil.isScanResultForPskNetwork(scanResult)) {
-            return WifiConfiguration.SECURITY_TYPE_PSK;
         } else if (ScanResultUtil.isScanResultForWapiPskNetwork(scanResult)) {
             return WifiConfiguration.SECURITY_TYPE_WAPI_PSK;
         } else if (ScanResultUtil.isScanResultForWapiCertNetwork(scanResult)) {
             return WifiConfiguration.SECURITY_TYPE_WAPI_CERT;
+        } else if (ScanResultUtil.isScanResultForPskNetwork(scanResult)) {
+            return WifiConfiguration.SECURITY_TYPE_PSK;
         } else if (ScanResultUtil.isScanResultForEapSuiteBNetwork(scanResult)) {
             return WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B;
         } else if (ScanResultUtil.isScanResultForEapNetwork(scanResult)) {

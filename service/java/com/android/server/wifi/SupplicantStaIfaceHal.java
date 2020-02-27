@@ -16,6 +16,8 @@
 package com.android.server.wifi;
 
 import static android.net.wifi.WifiManager.WIFI_FEATURE_DPP;
+import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA256;
+import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA384;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_MBO;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_OCE;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_OWE;
@@ -2129,6 +2131,88 @@ public class SupplicantStaIfaceHal {
     }
 
     /**
+     * Flush all previously configured HLPs.
+     *
+     * @param ifaceName Name of the interface.
+     * @return true if request is sent successfully, false otherwise.
+     */
+    public boolean flushAllHlp(@NonNull String ifaceName) {
+        synchronized (mLock) {
+            final String methodStr = "filsHlpFlushRequest";
+            if (isV1_3()) {
+                ISupplicantStaIface iface =
+                        checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+                if (iface == null) {
+                    return false;
+                }
+
+                // Get a v1.3 supplicant STA Interface
+                android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface staIfaceV13 =
+                        getStaIfaceMockableV1_3(iface);
+
+                if (staIfaceV13 == null) {
+                    Log.e(TAG, methodStr
+                            + ": ISupplicantStaIface is null, cannot flushAllHlp");
+                    return false;
+                }
+                try {
+                    SupplicantStatus status = staIfaceV13.filsHlpFlushRequest();
+                    return checkStatusAndLogFailure(status, methodStr);
+                } catch (RemoteException e) {
+                    handleRemoteException(e, methodStr);
+                    return false;
+                }
+            } else {
+                Log.e(TAG, "Method " + methodStr + " is not supported in existing HAL");
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Set FILS HLP packet.
+     *
+     * @param ifaceName Name of the interface.
+     * @param dst Destination MAC address.
+     * @param hlpPacket Hlp Packet data in hex.
+     * @return true if request is sent successfully, false otherwise.
+     */
+    public boolean addHlpReq(@NonNull String ifaceName, byte [] dst, byte [] hlpPacket) {
+        synchronized (mLock) {
+            final String methodStr = "filsHlpAddRequest";
+            if (isV1_3()) {
+                ISupplicantStaIface iface =
+                        checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+                if (iface == null) {
+                    return false;
+                }
+
+                // Get a v1.3 supplicant STA Interface
+                android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface staIfaceV13 =
+                        getStaIfaceMockableV1_3(iface);
+
+                if (staIfaceV13 == null) {
+                    Log.e(TAG, methodStr
+                            + ": ISupplicantStaIface is null, cannot addHlpReq");
+                    return false;
+                }
+                try {
+                    ArrayList<Byte> payload = NativeUtil.byteArrayToArrayList(hlpPacket);
+                    SupplicantStatus status = staIfaceV13.filsHlpAddRequest(dst, payload);
+                    return checkStatusAndLogFailure(status, methodStr);
+                } catch (RemoteException e) {
+                    handleRemoteException(e, methodStr);
+                    return false;
+                }
+            } else {
+                Log.e(TAG, "Method " + methodStr + " is not supported in existing HAL");
+                return false;
+            }
+        }
+    }
+
+
+    /**
      * Start WPS pin registrar operation with the specified peer and pin.
      *
      * @param ifaceName Name of the interface.
@@ -2655,6 +2739,23 @@ public class SupplicantStaIfaceHal {
 
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, methodStr + ": WAPI supported");
+            }
+        }
+
+        if ((keyMgmtCapabilities & android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
+                .KeyMgmtMask.FILS_SHA256) != 0) {
+            advancedCapabilities |= WIFI_FEATURE_FILS_SHA256;
+
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, methodStr + ": FILS_SHA256 supported");
+            }
+        }
+        if ((keyMgmtCapabilities & android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
+                .KeyMgmtMask.FILS_SHA384) != 0) {
+            advancedCapabilities |= WIFI_FEATURE_FILS_SHA384;
+
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, methodStr + ": FILS_SHA384 supported");
             }
         }
 

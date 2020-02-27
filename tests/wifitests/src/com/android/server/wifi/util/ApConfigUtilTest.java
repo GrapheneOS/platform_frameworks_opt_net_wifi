@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.net.MacAddress;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
@@ -41,9 +42,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Unit tests for {@link com.android.server.wifi.util.ApConfigUtil}.
@@ -116,10 +116,10 @@ public class ApConfigUtilTest extends WifiBaseTest {
             6100, SoftApConfiguration.BAND_6GHZ, 32
     };
 
-    private static final List<Integer> EMPTY_CHANNEL_LIST = Collections.emptyList();
-    private static final List<Integer> ALLOWED_2G_FREQS = Arrays.asList(2462); //ch# 11
-    private static final List<Integer> ALLOWED_5G_FREQS = Arrays.asList(5745, 5765); //ch# 149, 153
-    private static final List<Integer> ALLOWED_6G_FREQS = Arrays.asList(5945, 5965);
+    private static final int[] EMPTY_CHANNEL_LIST = {};
+    private static final int[] ALLOWED_2G_FREQS = {2462}; //ch# 11
+    private static final int[] ALLOWED_5G_FREQS = {5745, 5765}; //ch# 149, 153
+    private static final int[] ALLOWED_6G_FREQS = {5945, 5965};
 
     @Mock Context mContext;
     @Mock Resources mResources;
@@ -290,7 +290,7 @@ public class ApConfigUtilTest extends WifiBaseTest {
      */
     @Test
     public void chooseApChannel2GBandWithNoAllowedChannel() throws Exception {
-        List<Integer> allowed2gChannels = Collections.emptyList();
+        int[] allowed2gChannels = {};
         when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_24_GHZ))
                 .thenReturn(allowed2gChannels);
         int freq = ApConfigUtil.chooseApChannel(SoftApConfiguration.BAND_2GHZ, mWifiNative,
@@ -325,7 +325,7 @@ public class ApConfigUtilTest extends WifiBaseTest {
 
         int freq = ApConfigUtil.chooseApChannel(
                 SoftApConfiguration.BAND_5GHZ, mWifiNative, mResources);
-        assertTrue(ALLOWED_5G_FREQS.contains(freq));
+        assertTrue(ArrayUtils.contains(ALLOWED_5G_FREQS, freq));
     }
 
     /**
@@ -339,6 +339,27 @@ public class ApConfigUtilTest extends WifiBaseTest {
         assertEquals(-1, ApConfigUtil.chooseApChannel(SoftApConfiguration.BAND_5GHZ, mWifiNative,
                 mResources));
     }
+
+    /**
+     * Verify chooseApChannel will select high band channel.
+     */
+    @Test
+    public void chooseApChannelWillHighBandPrefer() throws Exception {
+        when(mResources.getString(R.string.config_wifiSoftap2gChannelList))
+                .thenReturn("1, 6, 11");
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_24_GHZ))
+                .thenReturn(ALLOWED_2G_FREQS); // ch#11
+        when(mResources.getString(R.string.config_wifiSoftap5gChannelList))
+                .thenReturn("149, 153");
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ))
+                .thenReturn(ALLOWED_5G_FREQS); //ch# 149, 153
+
+        int freq = ApConfigUtil.chooseApChannel(
+                SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ,
+                mWifiNative, mResources);
+        assertTrue(ArrayUtils.contains(ALLOWED_5G_FREQS, freq));
+    }
+
 
     /**
      * Verify default band and channel is used when HAL support is
@@ -447,7 +468,7 @@ public class ApConfigUtilTest extends WifiBaseTest {
 
     @Test
     public void testSoftApCapabilityInitWithResourceValue() throws Exception {
-        int testFeatures = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT;
+        long testFeatures = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT;
         SoftApCapability capability = new SoftApCapability(testFeatures);
         int test_max_client = 10;
         capability.setMaxSupportedClients(test_max_client);
@@ -470,5 +491,87 @@ public class ApConfigUtilTest extends WifiBaseTest {
         wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA2_PSK);
         wifiConfig.preSharedKey = "1233443";
         assertNull(ApConfigUtil.fromWifiConfiguration(wifiConfig));
+    }
+
+
+    @Test
+    public void testCheckConfigurationChangeNeedToRestart() throws Exception {
+        SoftApConfiguration currentConfig = new SoftApConfiguration.Builder()
+                .setSsid("TestSSid")
+                .setBssid(MacAddress.fromString("11:22:33:44:55:66"))
+                .setPassphrase("testpassphrase", SoftApConfiguration.SECURITY_TYPE_WPA2_PSK)
+                .setBand(SoftApConfiguration.BAND_2GHZ)
+                .setChannel(11, SoftApConfiguration.BAND_2GHZ)
+                .setHiddenSsid(true)
+                .build();
+
+        // Test no changed
+        // DO NOT use copy constructor to copy to test since it's instance is the same.
+        SoftApConfiguration newConfig_noChange = new SoftApConfiguration.Builder()
+                .setSsid("TestSSid")
+                .setBssid(MacAddress.fromString("11:22:33:44:55:66"))
+                .setPassphrase("testpassphrase", SoftApConfiguration.SECURITY_TYPE_WPA2_PSK)
+                .setBand(SoftApConfiguration.BAND_2GHZ)
+                .setChannel(11, SoftApConfiguration.BAND_2GHZ)
+                .setHiddenSsid(true)
+                .build();
+        assertFalse(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_noChange));
+
+        // Test SSID changed
+        SoftApConfiguration newConfig_ssidChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setSsid("NewTestSSid").build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_ssidChanged));
+        // Test BSSID changed
+        SoftApConfiguration newConfig_bssidChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setBssid(MacAddress.fromString("aa:bb:cc:dd:ee:ff")).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_bssidChanged));
+        // Test Passphrase Changed
+        SoftApConfiguration newConfig_passphraseChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setPassphrase("newtestpassphrase",
+                SoftApConfiguration.SECURITY_TYPE_WPA2_PSK).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_passphraseChanged));
+        // Test Security Type Changed
+        SoftApConfiguration newConfig_securityeChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setPassphrase("newtestpassphrase",
+                SoftApConfiguration.SECURITY_TYPE_WPA3_SAE).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_securityeChanged));
+        // Test Channel Changed
+        SoftApConfiguration newConfig_channelChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setChannel(6, SoftApConfiguration.BAND_2GHZ).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_channelChanged));
+        // Test Band Changed
+        SoftApConfiguration newConfig_bandChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setBand(SoftApConfiguration.BAND_5GHZ).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_bandChanged));
+        // Test isHidden Changed
+        SoftApConfiguration newConfig_hiddenChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setHiddenSsid(false).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_hiddenChanged));
+        // Test Others Changed
+        SoftApConfiguration newConfig_nonRevalentChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setMaxNumberOfClients(10)
+                .setAutoShutdownEnabled(false)
+                .setShutdownTimeoutMillis(500000)
+                .enableClientControlByUser(true)
+                .setClientList(new ArrayList<>(), new ArrayList<>())
+                .build();
+        assertFalse(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_nonRevalentChanged));
     }
 }

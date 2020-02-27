@@ -16,14 +16,12 @@
 
 package com.android.server.wifi.scanner;
 
-import java.util.List;
-
 /**
  * KnownBandsChannelHelper that uses a supplied list of band to channels mappings.
  */
 public class PresetKnownBandsChannelHelper extends KnownBandsChannelHelper {
-    public PresetKnownBandsChannelHelper(List<Integer> channels2G, List<Integer> channels5G,
-            List<Integer> channelsDfs, List<Integer> channels6G) {
+    public PresetKnownBandsChannelHelper(int[] channels2G, int[] channels5G, int[] channelsDfs,
+            int[] channels6G) {
         setBandChannels(channels2G, channels5G, channelsDfs, channels6G);
     }
 }

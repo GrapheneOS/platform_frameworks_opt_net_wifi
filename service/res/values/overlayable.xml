@@ -61,6 +61,7 @@
           <item type="integer" name="config_wifi_framework_associated_partial_scan_max_num_active_channels" />
           <item type="integer" name="config_wifi_framework_recovery_timeout_delay" />
           <item type="bool" name="config_wifi_framework_enable_associated_network_selection" />
+          <item type="integer" name="config_wifiSufficientDurationAfterUserSelectionMilliseconds" />
           <item type="bool" name="config_wifiEnablePartialInitialScan" />
           <item type="integer" name="config_wifiInitialPartialScanChannelMaxCount" />
           <item type="integer" name="config_wifiInitialPartialScanChannelCacheAgeMins" />
@@ -104,8 +105,8 @@
           <item type="integer" name="config_wifiBssidBlocklistMonitorDhcpFailureThreshold" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorAbnormalDisconnectThreshold" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorBaseBlockDurationMs" />
+          <item type="integer" name="config_wifiBssidBlocklistMonitorBaseLowRssiBlockDurationMs" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorFailureStreakCap" />
-          <item type="integer" name="config_wifiBssidBlocklistMonitorMaxBlockDurationMs" />
           <item type="integer" name="config_wifiBssidBlocklistAbnormalDisconnectTimeWindowMs" />
           <item type="bool" name="config_wifiScanHiddenNetworksScanOnlyMode" />
           <item type="integer" name="config_wifiHardwareSoftapMaxClientCount" />
@@ -120,6 +121,7 @@
           <item type="integer" name="config_wifiPollRssiIntervalMilliseconds" />
           <item type="bool" name="config_wifiSaeUpgradeEnabled" />
           <item type="bool" name="config_wifiSaeUpgradeOffloadEnabled" />
+          <item type="string" name="config_wifiOsuLoginPackage" />
           <!-- Params from config.xml that can be overlayed -->
 
           <!-- Params from strings.xml that can be overlayed -->
@@ -180,6 +182,8 @@
           <item type="string" name="wifi_softap_auto_shutdown_timeout_expired_title" />
           <item type="string" name="wifi_softap_auto_shutdown_timeout_expired_summary" />
           <item type="string" name="wifi_softap_auto_shutdown_timeout_expired_detail" />
+          <item type="string" name="wifi_sim_required_title" />
+          <item type="string" name="wifi_sim_required_message" />
           <!-- Params from strings.xml that can be overlayed -->
 
           <!-- Params from styles.xml that can be overlayed -->

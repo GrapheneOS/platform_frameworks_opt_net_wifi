@@ -19,8 +19,7 @@ package com.android.server.wifi.scanner;
 import static com.android.server.wifi.ScanTestUtil.NativeScanSettingsBuilder;
 import static com.android.server.wifi.ScanTestUtil.setupMockChannels;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import android.app.test.TestAlarmManager;
@@ -47,7 +46,6 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -77,10 +75,10 @@ public class WificondPnoScannerTest extends WifiBaseTest {
         mResources = new MockResources();
 
         setupMockChannels(mWifiNative,
-                Arrays.asList(2400, 2450),
-                Arrays.asList(5150, 5175),
-                Arrays.asList(5600, 5650),
-                Arrays.asList(5945, 5985));
+                new int[]{2400, 2450},
+                new int[]{5150, 5175},
+                new int[]{5600, 5650},
+                new int[]{5945, 5985});
 
         when(mWifiNative.getClientInterfaceName()).thenReturn(IFACE_NAME);
         when(mContext.getSystemService(Context.ALARM_SERVICE))

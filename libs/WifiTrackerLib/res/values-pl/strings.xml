@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="8750623020267885175">"Wyłączono automatyczne łączenie"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"Łączenie automatyczne wyłączone"</string>
     <string name="saved_network" msgid="6241977554502802914">"Zapisane przez: <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"Nie można połączyć automatycznie"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"Brak dostępu do internetu"</string>
@@ -35,8 +35,7 @@
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Automatycznie połączono przez dostawcę ocen jakości sieci"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Ograniczone połączenie"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Brak dostępu do prywatnego serwera DNS"</string>
-    <!-- no translation found for wifi_connected_no_internet (7273909077465731259) -->
-    <skip />
+    <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Brak internetu"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Brak"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Ważność wygasła"</string>
 </resources>

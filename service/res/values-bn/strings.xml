@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g>-এর সাজেস্ট করা নেটওয়ার্ক। ডিভাইস নিজে থেকে কানেক্ট হতে পারে।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"অনুমতি দিন"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"না থাক"</string>
-    <!-- no translation found for wifi_suggestion_imsi_privacy_title (5072368033308094465) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_imsi_privacy_content (5050532382656368119) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_carrier (5500037364868978935) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier (7020127735591720299) -->
-    <skip />
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI সুরক্ষার জন্য গোপনীয়তা সংক্রান্ত বিজ্ঞপ্তি"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"গোপনীয়তা নিরাপত্তা ছাড়াই আপনার সিম কার্ডের তথ্য ব্যবহার করে <xliff:g id="CARRIERNAME">%s</xliff:g> নেটওয়ার্ক সাজেস্ট করেছে, নিজে থেকে কানেক্ট করার জন্য নেটওয়ার্কে অনুমতি দেবেন?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"অনুমতি দিন"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"অনুমতি দেবেন না"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"ওয়াই-ফাই অটোমেটিক চালু হবে"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"যখন আপনি একটি উচ্চ মানের সংরক্ষিত নেটওয়ার্ক কাছাকাছি থাকেন"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"আবার চালু করবেন না"</string>
@@ -80,4 +76,8 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"মোবাইল হটস্পট বন্ধ করা আছে"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"মোবাইল হটস্পট বন্ধ করা হয়েছে"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"নিষ্ক্রিয় সময়সীমা শেষ হওয়ার কারণে মোবাইল হটস্পট বন্ধ করা হয়েছে।"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

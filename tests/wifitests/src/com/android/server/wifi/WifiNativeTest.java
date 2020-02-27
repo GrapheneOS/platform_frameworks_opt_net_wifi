@@ -35,10 +35,10 @@ import android.net.MacAddress;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiScanner;
-import android.net.wifi.wificond.NativeScanResult;
-import android.net.wifi.wificond.RadioChainInfo;
-import android.net.wifi.wificond.WifiCondManager;
-import android.net.wifi.wificond.WifiCondManager.SendMgmtFrameCallback;
+import android.net.wifi.nl80211.NativeScanResult;
+import android.net.wifi.nl80211.RadioChainInfo;
+import android.net.wifi.nl80211.WifiNl80211Manager;
+import android.net.wifi.nl80211.WifiNl80211Manager.SendMgmtFrameCallback;
 import android.os.Handler;
 
 import androidx.test.filters.SmallTest;
@@ -128,10 +128,10 @@ public class WifiNativeTest extends WifiBaseTest {
             new FateMapping(WifiLoggerHal.RX_PKT_FATE_DRV_DROP_OTHER, "driver dropped (other)"),
             new FateMapping((byte) 42, "42")
     };
-    private static final WifiCondManager.SignalPollResult SIGNAL_POLL_RESULT =
-            new WifiCondManager.SignalPollResult(-60, 12, 6, 5240);
-    private static final WifiCondManager.TxPacketCounters PACKET_COUNTERS_RESULT =
-            new WifiCondManager.TxPacketCounters(2000, 120);
+    private static final WifiNl80211Manager.SignalPollResult SIGNAL_POLL_RESULT =
+            new WifiNl80211Manager.SignalPollResult(-60, 12, 6, 5240);
+    private static final WifiNl80211Manager.TxPacketCounters PACKET_COUNTERS_RESULT =
+            new WifiNl80211Manager.TxPacketCounters(2000, 120);
 
     private static final Set<Integer> SCAN_FREQ_SET =
             new HashSet<Integer>() {{
@@ -224,7 +224,7 @@ public class WifiNativeTest extends WifiBaseTest {
     private static final RadioChainInfo MOCK_NATIVE_RADIO_CHAIN_INFO_2 = new RadioChainInfo(0, -78);
 
     @Mock private WifiVendorHal mWifiVendorHal;
-    @Mock private WifiCondManager mWificondControl;
+    @Mock private WifiNl80211Manager mWificondControl;
     @Mock private SupplicantStaIfaceHal mStaIfaceHal;
     @Mock private HostapdHal mHostapdHal;
     @Mock private WifiMonitor mWifiMonitor;
@@ -236,8 +236,8 @@ public class WifiNativeTest extends WifiBaseTest {
     @Mock private WifiInjector mWifiInjector;
     @Mock private NetdWrapper mNetdWrapper;
 
-    ArgumentCaptor<WifiCondManager.ScanEventCallback> mScanCallbackCaptor =
-            ArgumentCaptor.forClass(WifiCondManager.ScanEventCallback.class);
+    ArgumentCaptor<WifiNl80211Manager.ScanEventCallback> mScanCallbackCaptor =
+            ArgumentCaptor.forClass(WifiNl80211Manager.ScanEventCallback.class);
 
     private WifiNative mWifiNative;
 
@@ -708,7 +708,7 @@ public class WifiNativeTest extends WifiBaseTest {
         when(mWificondControl.signalPoll(WIFI_IFACE_NAME))
                 .thenReturn(SIGNAL_POLL_RESULT);
 
-        WifiCondManager.SignalPollResult pollResult = mWifiNative.signalPoll(WIFI_IFACE_NAME);
+        WifiNl80211Manager.SignalPollResult pollResult = mWifiNative.signalPoll(WIFI_IFACE_NAME);
         assertEquals(SIGNAL_POLL_RESULT.currentRssiDbm, pollResult.currentRssiDbm);
         assertEquals(SIGNAL_POLL_RESULT.txBitrateMbps, pollResult.txBitrateMbps);
         assertEquals(SIGNAL_POLL_RESULT.associationFrequencyMHz,
@@ -752,8 +752,8 @@ public class WifiNativeTest extends WifiBaseTest {
     public void testStartPnoScanOnRequestProcessed() throws Exception {
         mWifiNative.startPnoScan(WIFI_IFACE_NAME, TEST_PNO_SETTINGS);
 
-        ArgumentCaptor<WifiCondManager.PnoScanRequestCallback> captor = ArgumentCaptor.forClass(
-                WifiCondManager.PnoScanRequestCallback.class);
+        ArgumentCaptor<WifiNl80211Manager.PnoScanRequestCallback> captor =
+                ArgumentCaptor.forClass(WifiNl80211Manager.PnoScanRequestCallback.class);
         verify(mWificondControl).startPnoScan(eq(WIFI_IFACE_NAME),
                 eq(TEST_PNO_SETTINGS.toNativePnoSettings()), any(), captor.capture());
         captor.getValue().onPnoRequestSucceeded();
@@ -767,8 +767,8 @@ public class WifiNativeTest extends WifiBaseTest {
     public void testStartPnoScanOnRequestFailed() throws Exception {
         mWifiNative.startPnoScan(WIFI_IFACE_NAME, TEST_PNO_SETTINGS);
 
-        ArgumentCaptor<WifiCondManager.PnoScanRequestCallback> captor = ArgumentCaptor.forClass(
-                WifiCondManager.PnoScanRequestCallback.class);
+        ArgumentCaptor<WifiNl80211Manager.PnoScanRequestCallback> captor =
+                ArgumentCaptor.forClass(WifiNl80211Manager.PnoScanRequestCallback.class);
         verify(mWificondControl).startPnoScan(eq(WIFI_IFACE_NAME),
                 eq(TEST_PNO_SETTINGS.toNativePnoSettings()), any(), captor.capture());
         captor.getValue().onPnoRequestFailed();
@@ -1015,7 +1015,8 @@ public class WifiNativeTest extends WifiBaseTest {
         mWifiNative.probeLink(WIFI_IFACE_NAME, MacAddress.fromString(TEST_BSSID_STR),
                 mSendMgmtFrameCallback, TEST_MCS_RATE);
 
-        verify(mSendMgmtFrameCallback).onFailure(WifiCondManager.SEND_MGMT_FRAME_ERROR_UNKNOWN);
+        verify(mSendMgmtFrameCallback).onFailure(
+                WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_UNKNOWN);
         verify(mWificondControl, never()).sendMgmtFrame(any(), any(), anyInt(), any(), any());
     }
 
@@ -1028,7 +1029,37 @@ public class WifiNativeTest extends WifiBaseTest {
 
         mWifiNative.probeLink(WIFI_IFACE_NAME, null, mSendMgmtFrameCallback, TEST_MCS_RATE);
 
-        verify(mSendMgmtFrameCallback).onFailure(WifiCondManager.SEND_MGMT_FRAME_ERROR_UNKNOWN);
+        verify(mSendMgmtFrameCallback).onFailure(
+                WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_UNKNOWN);
         verify(mWificondControl, never()).sendMgmtFrame(any(), any(), anyInt(), any(), any());
+    }
+
+    /**
+     * Tests that WifiNative#addHlpReq() calls
+     * SupplicantStaIfaceHal#addHlpReq()
+     */
+    @Test
+    public void testaddHlpReq() {
+        byte[] hlpPacket = {
+                0x40, 0x00, 0x3c, 0x00, (byte) 0xa8, (byte) 0xbd, 0x27, 0x5b,
+                0x33, 0x72, (byte) 0xf4, (byte) 0xf5, (byte) 0xe8, 0x51, (byte) 0x9e, 0x09,
+                (byte) 0xa8, (byte) 0xbd, 0x27, 0x5b, 0x33, 0x72, (byte) 0xb0, 0x66,
+                0x00, 0x00
+        };
+        mWifiNative.addHlpReq(WIFI_IFACE_NAME, TEST_MAC_ADDRESS, hlpPacket);
+
+        verify(mStaIfaceHal).addHlpReq(eq(WIFI_IFACE_NAME),
+                eq(TEST_MAC_ADDRESS.toByteArray()), eq(hlpPacket));
+    }
+
+    /**
+     * Tests that WifiNative#flushAllHlp() calls
+     * SupplicantStaIfaceHal#flushAllHlp()
+     */
+    @Test
+    public void testflushAllHlp() {
+        mWifiNative.flushAllHlp(WIFI_IFACE_NAME);
+
+        verify(mStaIfaceHal).flushAllHlp(eq(WIFI_IFACE_NAME));
     }
 }

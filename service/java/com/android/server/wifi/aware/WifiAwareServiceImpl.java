@@ -16,12 +16,13 @@
 
 package com.android.server.wifi.aware;
 
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
+
 import android.Manifest;
 import android.annotation.NonNull;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.database.ContentObserver;
 import android.hardware.wifi.V1_0.NanStatusType;
 import android.net.wifi.aware.Characteristics;
 import android.net.wifi.aware.ConfigRequest;
@@ -38,14 +39,13 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
-import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
 import com.android.server.wifi.Clock;
-import com.android.server.wifi.FrameworkFacade;
 import com.android.server.wifi.WifiInjector;
+import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -98,8 +98,8 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
     public void start(HandlerThread handlerThread, WifiAwareStateManager awareStateManager,
             WifiAwareShellCommand awareShellCommand, WifiAwareMetrics awareMetrics,
             WifiPermissionsUtil wifiPermissionsUtil, WifiPermissionsWrapper permissionsWrapper,
-            FrameworkFacade frameworkFacade, WifiAwareNativeManager wifiAwareNativeManager,
-            WifiAwareNativeApi wifiAwareNativeApi,
+            WifiSettingsConfigStore settingsConfigStore,
+            WifiAwareNativeManager wifiAwareNativeManager, WifiAwareNativeApi wifiAwareNativeApi,
             WifiAwareNativeCallback wifiAwareNativeCallback, NetdWrapper netdWrapper) {
         Log.i(TAG, "Starting Wi-Fi Aware service");
 
@@ -112,34 +112,25 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
             mStateManager.start(mContext, handlerThread.getLooper(), awareMetrics,
                     wifiPermissionsUtil, permissionsWrapper, new Clock(), netdWrapper);
 
-            frameworkFacade.registerContentObserver(mContext,
-                    Settings.Global.getUriFor(Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED), true,
-                    new ContentObserver(new Handler(handlerThread.getLooper())) {
-                        @Override
-                        public void onChange(boolean selfChange) {
-                            enableVerboseLogging(frameworkFacade.getIntegerSetting(mContext,
-                                    Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0),
-                                    awareStateManager,
-                                    wifiAwareNativeManager, wifiAwareNativeApi,
-                                    wifiAwareNativeCallback);
-                        }
-                    });
-            enableVerboseLogging(frameworkFacade.getIntegerSetting(mContext,
-                    Settings.Global.WIFI_VERBOSE_LOGGING_ENABLED, 0), awareStateManager,
-                    wifiAwareNativeManager, wifiAwareNativeApi, wifiAwareNativeCallback);
+            settingsConfigStore.registerChangeListener(
+                    WIFI_VERBOSE_LOGGING_ENABLED,
+                    (key, newValue) -> enableVerboseLogging((boolean) newValue, awareStateManager,
+                            wifiAwareNativeManager, wifiAwareNativeApi, wifiAwareNativeCallback),
+                    mHandler);
+            enableVerboseLogging(settingsConfigStore.getBoolean(
+                    WIFI_VERBOSE_LOGGING_ENABLED, false),
+                    awareStateManager,
+                    wifiAwareNativeManager, wifiAwareNativeApi,
+                    wifiAwareNativeCallback);
         });
     }
 
-    private void enableVerboseLogging(int verbose, WifiAwareStateManager awareStateManager,
+    private void enableVerboseLogging(boolean verbose, WifiAwareStateManager awareStateManager,
             WifiAwareNativeManager wifiAwareNativeManager, WifiAwareNativeApi wifiAwareNativeApi,
             WifiAwareNativeCallback wifiAwareNativeCallback) {
         boolean dbg;
 
-        if (verbose > 0) {
-            dbg = true;
-        } else {
-            dbg = false;
-        }
+        dbg = verbose;
         if (VDBG) {
             dbg = true; // just override
         }

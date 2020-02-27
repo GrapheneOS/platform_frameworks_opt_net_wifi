@@ -38,8 +38,6 @@ import com.android.server.wifi.WifiBaseTest;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 /**
  * Unit tests for filtering of scan results in
  * {@link com.android.server.wifi.scanner.ScanScheduleUtil}.
@@ -52,10 +50,10 @@ public class ScanScheduleUtilFilterTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         mChannelHelper = new PresetKnownBandsChannelHelper(
-                Arrays.asList(2400, 2450),
-                Arrays.asList(5150, 5175),
-                Arrays.asList(5600, 5650),
-                Arrays.asList(5945, 5985));
+                new int[]{2400, 2450},
+                new int[]{5150, 5175},
+                new int[]{5600, 5650},
+                new int[]{5945, 5985});
     }
 
     @Test

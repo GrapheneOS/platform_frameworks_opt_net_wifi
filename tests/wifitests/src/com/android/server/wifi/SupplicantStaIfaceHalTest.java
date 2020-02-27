@@ -16,6 +16,8 @@
 package com.android.server.wifi;
 
 import static android.net.wifi.WifiManager.WIFI_FEATURE_DPP;
+import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA256;
+import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA384;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_MBO;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_OCE;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_OWE;
@@ -1673,6 +1675,44 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     }
 
     /**
+     * Test FILS SHA256 key management support.
+     */
+    @Test
+    public void testGetKeyMgmtCapabilitiesFilsSha256() throws Exception {
+        setupMocksForHalV1_3();
+
+        executeAndValidateInitializationSequenceV1_3();
+
+        doAnswer(new GetKeyMgmtCapabilities_1_3Answer(android.hardware.wifi.supplicant.V1_3
+                .ISupplicantStaNetwork.KeyMgmtMask.FILS_SHA256))
+                .when(mISupplicantStaIfaceMockV13).getKeyMgmtCapabilities_1_3(any(
+                android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface
+                        .getKeyMgmtCapabilities_1_3Callback.class));
+
+        assertEquals(WIFI_FEATURE_FILS_SHA256,
+                mDut.getAdvancedKeyMgmtCapabilities(WLAN0_IFACE_NAME));
+    }
+
+    /**
+     * Test FILS SHA384 key management support.
+     */
+    @Test
+    public void testGetKeyMgmtCapabilitiesFilsSha384() throws Exception {
+        setupMocksForHalV1_3();
+
+        executeAndValidateInitializationSequenceV1_3();
+
+        doAnswer(new GetKeyMgmtCapabilities_1_3Answer(android.hardware.wifi.supplicant.V1_3
+                .ISupplicantStaNetwork.KeyMgmtMask.FILS_SHA384))
+                .when(mISupplicantStaIfaceMockV13).getKeyMgmtCapabilities_1_3(any(
+                android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface
+                        .getKeyMgmtCapabilities_1_3Callback.class));
+
+        assertEquals(WIFI_FEATURE_FILS_SHA384,
+                mDut.getAdvancedKeyMgmtCapabilities(WLAN0_IFACE_NAME));
+    }
+
+    /**
      * Test Easy Connect (DPP) calls return failure if hal version is less than 1_2
      */
     @Test
@@ -2532,6 +2572,201 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 ArgumentCaptor.forClass(BtmFrameData.class);
         verify(mWifiMonitor).broadcastBssTmHandlingDoneEvent(
                 eq(WLAN0_IFACE_NAME), btmFrameDataCaptor.capture());
+    }
+
+    /**
+     * Tests the configuring of FILS HLP packet in supplicant.
+     */
+    @Test
+    public void testAddHlpReq() throws Exception {
+        byte[] dstAddr = {0x45, 0x23, 0x12, 0x12, 0x12, 0x45};
+        byte[] hlpPacket = {0x00, 0x01, 0x02, 0x03, 0x04, 0x12, 0x15, 0x34, 0x55, 0x12,
+                0x12, 0x45, 0x23, 0x52, 0x32, 0x16, 0x15, 0x53, 0x62, 0x32, 0x32, 0x10};
+
+        setupMocksForHalV1_3();
+        when(mISupplicantStaIfaceMockV13.filsHlpAddRequest(any(byte[].class),
+                any(ArrayList.class))).thenReturn(mStatusSuccess);
+
+        // Fail before initialization is performed.
+        assertFalse(mDut.addHlpReq(WLAN0_IFACE_NAME, dstAddr, hlpPacket));
+        verify(mISupplicantStaIfaceMockV13, never()).filsHlpAddRequest(any(byte[].class),
+                any(ArrayList.class));
+
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+
+        ArrayList<Byte> hlpPayload = NativeUtil.byteArrayToArrayList(hlpPacket);
+        assertTrue(mDut.addHlpReq(WLAN0_IFACE_NAME, dstAddr, hlpPacket));
+        verify(mISupplicantStaIfaceMockV13).filsHlpAddRequest(eq(dstAddr), eq(hlpPayload));
+    }
+
+    /**
+     * Tests the flushing of FILS HLP packet from supplicant.
+     */
+    @Test
+    public void testFlushAllHlp() throws Exception {
+
+        setupMocksForHalV1_3();
+        when(mISupplicantStaIfaceMockV13.filsHlpFlushRequest()).thenReturn(mStatusSuccess);
+
+        // Fail before initialization is performed.
+        assertFalse(mDut.flushAllHlp(WLAN0_IFACE_NAME));
+        verify(mISupplicantStaIfaceMockV13, never()).filsHlpFlushRequest();
+
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+
+        assertTrue(mDut.flushAllHlp(WLAN0_IFACE_NAME));
+        verify(mISupplicantStaIfaceMockV13).filsHlpFlushRequest();
+    }
+
+    /**
+     * Tests the handling of state change V13 notification without
+     * any configured network.
+     */
+    @Test
+    public void testonStateChangedV13CallbackWithNoConfiguredNetwork() throws Exception {
+        setupMocksForHalV1_3();
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+
+        mISupplicantStaIfaceCallbackV13.onStateChanged_1_3(
+                ISupplicantStaIfaceCallback.State.INACTIVE,
+                NativeUtil.macAddressToByteArray(BSSID), SUPPLICANT_NETWORK_ID,
+                NativeUtil.decodeSsid(SUPPLICANT_SSID), false);
+
+        // Can't compare WifiSsid instances because they lack an equals.
+        verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
+                eq(WLAN0_IFACE_NAME), eq(WifiConfiguration.INVALID_NETWORK_ID),
+                any(WifiSsid.class), eq(BSSID), eq(SupplicantState.INACTIVE));
+    }
+
+    /**
+     * Tests the handling of state change V13 notification to
+     * associated after configuring a network.
+     */
+    @Test
+    public void testStateChangeV13ToAssociatedCallback() throws Exception {
+        setupMocksForHalV1_3();
+        executeAndValidateInitializationSequenceV1_3();
+        int frameworkNetworkId = 6;
+        executeAndValidateConnectSequence(frameworkNetworkId, false);
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+
+        mISupplicantStaIfaceCallbackV13.onStateChanged_1_3(
+                ISupplicantStaIfaceCallback.State.ASSOCIATED,
+                NativeUtil.macAddressToByteArray(BSSID), SUPPLICANT_NETWORK_ID,
+                NativeUtil.decodeSsid(SUPPLICANT_SSID), false);
+
+        verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId),
+                any(WifiSsid.class), eq(BSSID), eq(SupplicantState.ASSOCIATED));
+    }
+
+    /**
+     * Tests the handling of state change V13 notification to
+     * completed after configuring a network.
+     */
+    @Test
+    public void testStateChangeV13ToCompletedCallback() throws Exception {
+        InOrder wifiMonitorInOrder = inOrder(mWifiMonitor);
+        setupMocksForHalV1_3();
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+        int frameworkNetworkId = 6;
+        executeAndValidateConnectSequence(frameworkNetworkId, false);
+
+        mISupplicantStaIfaceCallbackV13.onStateChanged_1_3(
+                ISupplicantStaIfaceCallback.State.COMPLETED,
+                NativeUtil.macAddressToByteArray(BSSID), SUPPLICANT_NETWORK_ID,
+                NativeUtil.decodeSsid(SUPPLICANT_SSID), false);
+
+        wifiMonitorInOrder.verify(mWifiMonitor).broadcastNetworkConnectionEvent(
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(BSSID));
+        wifiMonitorInOrder.verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId),
+                any(WifiSsid.class), eq(BSSID), eq(SupplicantState.COMPLETED));
+    }
+
+    /**
+     * Tests the handling of incorrect network passwords, edge case
+     * when onStateChanged_1_3() is used.
+     *
+     * If the network is removed during 4-way handshake, do not call it a password mismatch.
+     */
+    @Test
+    public void testNetworkRemovedDuring4wayWhenonStateChangedV13IsUsed() throws Exception {
+        executeAndValidateInitializationSequence();
+        assertNotNull(mISupplicantStaIfaceCallback);
+        setupMocksForHalV1_3();
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+
+        int reasonCode = 3;
+
+        mISupplicantStaIfaceCallbackV13.onStateChanged_1_3(
+                ISupplicantStaIfaceCallback.State.FOURWAY_HANDSHAKE,
+                NativeUtil.macAddressToByteArray(BSSID),
+                SUPPLICANT_NETWORK_ID,
+                NativeUtil.decodeSsid(SUPPLICANT_SSID), false);
+        mISupplicantStaIfaceCallback.onNetworkRemoved(SUPPLICANT_NETWORK_ID);
+        mISupplicantStaIfaceCallback.onDisconnected(
+                NativeUtil.macAddressToByteArray(BSSID), true, reasonCode);
+        verify(mWifiMonitor, times(0)).broadcastAuthenticationFailureEvent(any(), anyInt(),
+                anyInt());
+    }
+
+     /**
+      * Tests the handling of incorrect network passwords when
+      * onStateChanged_1_3() is used, edge case.
+      *
+      * If the disconnect reason is "IE in 4way differs", do not call it a password mismatch.
+      */
+    @Test
+    public void testIeDiffersWhenonStateChangedV13IsUsed() throws Exception {
+        executeAndValidateInitializationSequence();
+        assertNotNull(mISupplicantStaIfaceCallback);
+        setupMocksForHalV1_3();
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+
+        int reasonCode = ISupplicantStaIfaceCallback.ReasonCode.IE_IN_4WAY_DIFFERS;
+
+        mISupplicantStaIfaceCallbackV13.onStateChanged_1_3(
+                ISupplicantStaIfaceCallback.State.FOURWAY_HANDSHAKE,
+                NativeUtil.macAddressToByteArray(BSSID),
+                SUPPLICANT_NETWORK_ID,
+                NativeUtil.decodeSsid(SUPPLICANT_SSID), false);
+        mISupplicantStaIfaceCallback.onDisconnected(
+                NativeUtil.macAddressToByteArray(BSSID), true, reasonCode);
+        verify(mWifiMonitor, times(0)).broadcastAuthenticationFailureEvent(any(), anyInt(),
+                anyInt());
+    }
+
+    /**
+     * Tests the handling of state change V13 notification to
+     * completed (with FILS HLP IE sent) after configuring a
+     * network.
+     */
+    @Test
+    public void testStateChangeV13WithFilsHlpIESentToCompletedCallback() throws Exception {
+        InOrder wifiMonitorInOrder = inOrder(mWifiMonitor);
+        setupMocksForHalV1_3();
+        executeAndValidateInitializationSequenceV1_3();
+        assertNotNull(mISupplicantStaIfaceCallbackV13);
+        int frameworkNetworkId = 6;
+        executeAndValidateConnectSequence(frameworkNetworkId, false);
+
+        mISupplicantStaIfaceCallbackV13.onStateChanged_1_3(
+                ISupplicantStaIfaceCallback.State.COMPLETED,
+                NativeUtil.macAddressToByteArray(BSSID), SUPPLICANT_NETWORK_ID,
+                NativeUtil.decodeSsid(SUPPLICANT_SSID), true);
+
+        wifiMonitorInOrder.verify(mWifiMonitor).broadcastFilsNetworkConnectionEvent(
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(BSSID));
+        wifiMonitorInOrder.verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId),
+                any(WifiSsid.class), eq(BSSID), eq(SupplicantState.COMPLETED));
     }
 
 }

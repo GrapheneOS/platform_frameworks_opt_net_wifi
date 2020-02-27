@@ -96,19 +96,19 @@ public class ANQPMatcher {
      *
      * @param element The NAI Realm ANQP element
      * @param realm The realm of the provider's credential
-     * @return an integer indicating the match status
+     * @return true if there is a NAI Realm match, false otherwise
      */
-    public static int matchNAIRealm(NAIRealmElement element, String realm) {
+    public static boolean matchNAIRealm(NAIRealmElement element, String realm) {
         if (element == null || element.getRealmDataList().isEmpty()) {
-            return AuthMatch.INDETERMINATE;
+            return false;
         }
 
         for (NAIRealmData realmData : element.getRealmDataList()) {
-            if (matchNAIRealmData(realmData, realm) == AuthMatch.REALM) {
-                return AuthMatch.REALM;
+            if (matchNAIRealmData(realmData, realm)) {
+                return true;
             }
         }
-        return AuthMatch.NONE;
+        return false;
     }
 
     /**
@@ -118,7 +118,7 @@ public class ANQPMatcher {
      * @param imsiParam The IMSI parameter of the provider's SIM credential
      * @param simImsi The IMSI from the installed SIM cards that best matched provider's
      *                    IMSI parameter
-     * @return true if a matched is found
+     * @return true if a match is found
      */
     public static  boolean matchThreeGPPNetwork(ThreeGPPNetworkElement element,
             IMSIParameter imsiParam, String simImsi) {
@@ -138,17 +138,16 @@ public class ANQPMatcher {
      *
      * @param realmData The NAI Realm data
      * @param realm The realm of the provider's credential
-     * @return an integer indicating the match status
+     * @return true if a match is found
      */
-    private static int matchNAIRealmData(NAIRealmData realmData, String realm) {
+    private static boolean matchNAIRealmData(NAIRealmData realmData, String realm) {
         // Check for realm domain name match.
         for (String realmStr : realmData.getRealms()) {
             if (DomainMatcher.arg2SubdomainOfArg1(realm, realmStr)) {
-                return AuthMatch.REALM;
+                return true;
             }
         }
-
-        return AuthMatch.NONE;
+        return false;
     }
 
     /**

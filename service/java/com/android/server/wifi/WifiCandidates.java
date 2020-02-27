@@ -57,10 +57,7 @@ public class WifiCandidates {
          * Generally, a CandidateScorer should not need to use this.
          */
         @Nullable Key getKey();
-        /**
-         * Gets the ScanDetail associate with the candidate.
-         */
-        @Nullable ScanDetail getScanDetail();
+
         /**
          * Gets the config id.
          */
@@ -90,13 +87,7 @@ public class WifiCandidates {
          */
         @WifiNetworkSelector.NetworkNominator.NominatorId
         int getNominatorId();
-        /**
-         * Gets the score that was provided by the nominator.
-         *
-         * Not all nominators provide a useful score. Scores from different nominators
-         * are not directly comparable.
-         */
-        int getNominatorScore();
+
         /**
          * Returns true if the candidate is in the same network as the
          * current connection.
@@ -135,78 +126,75 @@ public class WifiCandidates {
      * Represents a connectable candidate
      */
     private static class CandidateImpl implements Candidate {
-        public final Key key;                   // SSID/sectype/BSSID/configId
-        public final ScanDetail scanDetail;
-        public final WifiConfiguration config;
-        // First nominator to nominate this config
-        public final @WifiNetworkSelector.NetworkNominator.NominatorId int nominatorId;
-        public final int nominatorScore;        // Score provided by first nominator
-        public final double lastSelectionWeight; // Value between 0 and 1
-
-        private WifiScoreCard.PerBssid mPerBssid; // For accessing the scorecard entry
+        private final Key mKey;                   // SSID/sectype/BSSID/configId
+        private final @WifiNetworkSelector.NetworkNominator.NominatorId int mNominatorId;
+        private final int mScanRssi;
+        private final int mFrequency;
+        private final double mLastSelectionWeight;
+        private final WifiScoreCard.PerBssid mPerBssid; // For accessing the scorecard entry
         private final boolean mIsCurrentNetwork;
         private final boolean mIsCurrentBssid;
         private final boolean mIsMetered;
+        private final boolean mIsOpenNetwork;
+        private final boolean mPasspoint;
+        private final boolean mEphemeral;
+        private final boolean mTrusted;
         private final int mPredictedThroughputMbps;
 
-        CandidateImpl(Key key,
-                ScanDetail scanDetail,
-                WifiConfiguration config,
-                @WifiNetworkSelector.NetworkNominator.NominatorId int nominatorId,
-                int nominatorScore,
+        CandidateImpl(Key key, WifiConfiguration config,
                 WifiScoreCard.PerBssid perBssid,
+                @WifiNetworkSelector.NetworkNominator.NominatorId int nominatorId,
+                int scanRssi,
+                int frequency,
                 double lastSelectionWeight,
                 boolean isCurrentNetwork,
                 boolean isCurrentBssid,
                 boolean isMetered,
                 int predictedThroughputMbps) {
-            this.key = key;
-            this.scanDetail = scanDetail;
-            this.config = config;
-            this.nominatorId = nominatorId;
-            this.nominatorScore = nominatorScore;
+            this.mKey = key;
+            this.mNominatorId = nominatorId;
+            this.mScanRssi = scanRssi;
+            this.mFrequency = frequency;
             this.mPerBssid = perBssid;
-            this.lastSelectionWeight = lastSelectionWeight;
+            this.mLastSelectionWeight = lastSelectionWeight;
             this.mIsCurrentNetwork = isCurrentNetwork;
             this.mIsCurrentBssid = isCurrentBssid;
             this.mIsMetered = isMetered;
+            this.mIsOpenNetwork = WifiConfigurationUtil.isConfigForOpenNetwork(config);
+            this.mPasspoint = config.isPasspoint();
+            this.mEphemeral = config.ephemeral;
+            this.mTrusted = config.trusted;
             this.mPredictedThroughputMbps = predictedThroughputMbps;
         }
 
         @Override
         public Key getKey() {
-            return key;
+            return mKey;
         }
 
         @Override
         public int getNetworkConfigId() {
-            return key.networkId;
-        }
-
-        @Override
-        public ScanDetail getScanDetail() {
-            return scanDetail;
+            return mKey.networkId;
         }
 
         @Override
         public boolean isOpenNetwork() {
-            // TODO - should be able to base this on key.matchInfo.securityType
-            return WifiConfigurationUtil.isConfigForOpenNetwork(config);
+            return mIsOpenNetwork;
         }
 
         @Override
         public boolean isPasspoint() {
-            return config.isPasspoint();
+            return mPasspoint;
         }
 
         @Override
         public boolean isEphemeral() {
-            return config.ephemeral;
+            return mEphemeral;
         }
 
         @Override
         public boolean isTrusted() {
-            return config.trusted;
+            return mTrusted;
         }
 
         @Override
@@ -216,17 +204,12 @@ public class WifiCandidates {
 
         @Override
         public @WifiNetworkSelector.NetworkNominator.NominatorId int getNominatorId() {
-            return nominatorId;
-        }
-
-        @Override
-        public int getNominatorScore() {
-            return nominatorScore;
+            return mNominatorId;
         }
 
         @Override
         public double getLastSelectionWeight() {
-            return lastSelectionWeight;
+            return mLastSelectionWeight;
         }
 
         @Override
@@ -241,12 +224,12 @@ public class WifiCandidates {
 
         @Override
         public int getScanRssi() {
-            return scanDetail.getScanResult().level;
+            return mScanRssi;
         }
 
         @Override
         public int getFrequency() {
-            return scanDetail.getScanResult().frequency;
+            return mFrequency;
         }
 
         @Override
@@ -266,6 +249,32 @@ public class WifiCandidates {
             return perSignal.toSignal();
         }
 
+        @Override
+        public String toString() {
+            Key key = getKey();
+            String lastSelectionWeightString = "";
+            if (getLastSelectionWeight() != 0.0) {
+                // Round this to 3 places
+                lastSelectionWeightString = "lastSelectionWeight = "
+                        + Math.round(getLastSelectionWeight() * 1000.0) / 1000.0
+                        + ", ";
+            }
+            return "Candidate { "
+                    + "networkId = " + getNetworkConfigId() + ", "
+                    + "bssid = " + key.bssid + ", "
+                    + "frequency = " + getFrequency() + ", "
+                    + "rssi = " + getScanRssi() + ", "
+                    + "Mbps = " + getPredictedThroughputMbps() + ", "
+                    + "nominator = " + getNominatorId() + ", "
+                    + lastSelectionWeightString
+                    + (isCurrentBssid() ? "connected, " : "")
+                    + (isCurrentNetwork() ? "current, " : "")
+                    + (isEphemeral() ? "ephemeral" : "saved") + ", "
+                    + (isTrusted() ? "trusted, " : "")
+                    + (isMetered() ? "metered, " : "")
+                    + (isPasspoint() ? "passpoint, " : "")
+                    + (isOpenNetwork() ? "open" : "secure") + " }";
+        }
     }
 
     /**
@@ -299,14 +308,12 @@ public class WifiCandidates {
         public final double err;
         public final Key candidateKey;
         public final boolean userConnectChoiceOverride;
-        public final ScanDetail scanDetail;
         public ScoredCandidate(double value, double err, boolean userConnectChoiceOverride,
                 Candidate candidate) {
             this.value = value;
             this.err = err;
             this.candidateKey = (candidate == null) ? null : candidate.getKey();
             this.userConnectChoiceOverride = userConnectChoiceOverride;
-            this.scanDetail = (candidate == null) ? null : candidate.getScanDetail();
         }
         /**
          * Represents no score
@@ -371,15 +378,81 @@ public class WifiCandidates {
     /**
      * Adds a new candidate
      *
-     * @returns true if added or replaced, false otherwise
+     * @return true if added or replaced, false otherwise
      */
     public boolean add(ScanDetail scanDetail,
-                    WifiConfiguration config,
-                    @WifiNetworkSelector.NetworkNominator.NominatorId int nominatorId,
-                    int nominatorScore,
-                    double lastSelectionWeightBetweenZeroAndOne,
-                    boolean isMetered,
-                    int predictedThroughputMbps) {
+            WifiConfiguration config,
+            @WifiNetworkSelector.NetworkNominator.NominatorId int nominatorId,
+            double lastSelectionWeightBetweenZeroAndOne,
+            boolean isMetered,
+            int predictedThroughputMbps) {
+        Key key = keyFromScanDetailAndConfig(scanDetail, config);
+        if (key == null) return false;
+        return add(key, config, nominatorId,
+                scanDetail.getScanResult().level,
+                scanDetail.getScanResult().frequency,
+                lastSelectionWeightBetweenZeroAndOne,
+                isMetered,
+                predictedThroughputMbps);
+    }
+
+    /**
+     * Makes a Key from a ScanDetail and WifiConfiguration (null if error).
+     */
+    public @Nullable Key keyFromScanDetailAndConfig(ScanDetail scanDetail,
+            WifiConfiguration config) {
+        if (!validConfigAndScanDetail(config, scanDetail)) return null;
+        ScanResult scanResult = scanDetail.getScanResult();
+        MacAddress bssid = MacAddress.fromString(scanResult.BSSID);
+        return new Key(ScanResultMatchInfo.fromScanResult(scanResult), bssid, config.networkId);
+    }
+
+    /**
+     * Adds a new candidate
+     *
+     * @return true if added or replaced, false otherwise
+     */
+    public boolean add(@NonNull Key key,
+            WifiConfiguration config,
+            @WifiNetworkSelector.NetworkNominator.NominatorId int nominatorId,
+            int scanRssi,
+            int frequency,
+            double lastSelectionWeightBetweenZeroAndOne,
+            boolean isMetered,
+            int predictedThroughputMbps) {
+        CandidateImpl old = mCandidates.get(key);
+        if (old != null) {
+            // check if we want to replace this old candidate
+            if (nominatorId > old.mNominatorId) return false;
+            remove(old);
+        }
+        WifiScoreCard.PerBssid perBssid = mWifiScoreCard.lookupBssid(
+                key.matchInfo.networkSsid,
+                key.bssid.toString());
+        perBssid.setSecurityType(
+                WifiScoreCardProto.SecurityType.forNumber(key.matchInfo.networkType));
+        perBssid.setNetworkConfigId(config.networkId);
+        CandidateImpl candidate = new CandidateImpl(key, config, perBssid, nominatorId,
+                scanRssi,
+                frequency,
+                Math.min(Math.max(lastSelectionWeightBetweenZeroAndOne, 0.0), 1.0),
+                config.networkId == mCurrentNetworkId,
+                key.bssid.equals(mCurrentBssid),
+                isMetered,
+                predictedThroughputMbps);
+        mCandidates.put(key, candidate);
+        return true;
+    }
+
+    /**
+     * Checks that the supplied config and scan detail are valid (for the parts
+     * we care about) and consistent with each other.
+     *
+     * @param config to be validated
+     * @param scanDetail to be validated
+     * @return true if the config and scanDetail are consistent with each other
+     */
+    private boolean validConfigAndScanDetail(WifiConfiguration config, ScanDetail scanDetail) {
         if (config == null) return failure();
         if (scanDetail == null) return failure();
         ScanResult scanResult = scanDetail.getScanResult();
@@ -398,39 +471,16 @@ public class WifiCandidates {
                 return failure(key1, key2);
             }
         }
-        Key key = new Key(key1, bssid, config.networkId);
-        CandidateImpl old = mCandidates.get(key);
-        if (old != null) {
-            // check if we want to replace this old candidate
-            if (nominatorId < old.nominatorId) return failure();
-            if (nominatorId > old.nominatorId) return false;
-            if (nominatorScore <= old.nominatorScore) return false;
-            remove(old);
-        }
-        WifiScoreCard.PerBssid perBssid = mWifiScoreCard.lookupBssid(
-                key.matchInfo.networkSsid,
-                key.bssid.toString());
-        perBssid.setSecurityType(
-                WifiScoreCardProto.SecurityType.forNumber(key.matchInfo.networkType));
-        perBssid.setNetworkConfigId(config.networkId);
-        CandidateImpl candidate = new CandidateImpl(key,
-                scanDetail, config, nominatorId, nominatorScore, perBssid,
-                Math.min(Math.max(lastSelectionWeightBetweenZeroAndOne, 0.0), 1.0),
-                config.networkId == mCurrentNetworkId,
-                bssid.equals(mCurrentBssid),
-                isMetered,
-                predictedThroughputMbps);
-        mCandidates.put(key, candidate);
         return true;
     }
 
     /**
      * Removes a candidate
-     * @returns true if the candidate was successfully removed
+     * @return true if the candidate was successfully removed
      */
     public boolean remove(Candidate candidate) {
         if (!(candidate instanceof CandidateImpl)) return failure();
-        return mCandidates.remove(((CandidateImpl) candidate).key, candidate);
+        return mCandidates.remove(candidate.getKey(), candidate);
     }
 
     /**
@@ -446,10 +496,10 @@ public class WifiCandidates {
     public Collection<Collection<Candidate>> getGroupedCandidates() {
         Map<Integer, Collection<Candidate>> candidatesForNetworkId = new ArrayMap<>();
         for (CandidateImpl candidate : mCandidates.values()) {
-            Collection<Candidate> cc = candidatesForNetworkId.get(candidate.key.networkId);
+            Collection<Candidate> cc = candidatesForNetworkId.get(candidate.getNetworkConfigId());
             if (cc == null) {
                 cc = new ArrayList<>(2); // Guess 2 bssids per network
-                candidatesForNetworkId.put(candidate.key.networkId, cc);
+                candidatesForNetworkId.put(candidate.getNetworkConfigId(), cc);
             }
             cc.add(candidate);
         }
@@ -459,7 +509,7 @@ public class WifiCandidates {
     /**
      * Make a choice from among the candidates, using the provided scorer.
      *
-     * @returns the chosen scored candidate, or ScoredCandidate.NONE.
+     * @return the chosen scored candidate, or ScoredCandidate.NONE.
      */
     public @NonNull ScoredCandidate choose(@NonNull CandidateScorer candidateScorer) {
         Preconditions.checkNotNull(candidateScorer);
@@ -504,7 +554,7 @@ public class WifiCandidates {
      * This captures a stack trace, so don't bother to construct a string message, just
      * supply any culprits (convertible to strings) that might aid diagnosis.
      *
-     * @returns false
+     * @return false
      * @throws RuntimeException (if in picky mode)
      */
     private boolean failure(Object... culprits) {

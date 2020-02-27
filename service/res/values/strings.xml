@@ -125,4 +125,8 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title">Mobile Hotspot disabled</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary">Mobile hotspot has been disabled</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail">Mobile hotspot has been disabled due to inactivity timeout expiration.</string>
+
+    <!-- A notification is shown when eap-sim/aka/aka' wifi network is disconnected due to sim removal -->
+    <string name="wifi_sim_required_title">Wi\u2011Fi disconnected</string>
+    <string name="wifi_sim_required_message">To connect to <xliff:g id="ssid">%1$s</xliff:g>, insert a <xliff:g id="carrier_name">%2$s</xliff:g> SIM</string>
 </resources>

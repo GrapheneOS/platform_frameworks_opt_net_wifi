@@ -134,20 +134,14 @@ public class BssidBlocklistMonitor {
      * @param failureStreak should be greater or equal to 0.
      * @return duration to block the BSSID in milliseconds
      */
-    private long getBlocklistDurationWithExponentialBackoff(int failureStreak) {
-        int maxBlocklistDurationMs = mContext.getResources().getInteger(
-                R.integer.config_wifiBssidBlocklistMonitorMaxBlockDurationMs);
-        if (failureStreak > mContext.getResources().getInteger(
-                R.integer.config_wifiBssidBlocklistMonitorFailureStreakCap)) {
-            return maxBlocklistDurationMs;
-        }
-        int baseBlocklistDurationMs = mContext.getResources().getInteger(
-                R.integer.config_wifiBssidBlocklistMonitorBaseBlockDurationMs);
+    private long getBlocklistDurationWithExponentialBackoff(int failureStreak,
+            int baseBlocklistDurationMs) {
+        failureStreak = Math.min(failureStreak, mContext.getResources().getInteger(
+                R.integer.config_wifiBssidBlocklistMonitorFailureStreakCap));
         if (failureStreak < 1) {
             return baseBlocklistDurationMs;
         }
-        long duration = (long) (Math.pow(2.0, (double) failureStreak) * baseBlocklistDurationMs);
-        return Math.min(maxBlocklistDurationMs, duration);
+        return (long) (Math.pow(2.0, (double) failureStreak) * baseBlocklistDurationMs);
     }
 
     /**
@@ -271,7 +265,7 @@ public class BssidBlocklistMonitor {
     }
 
     private boolean handleBssidConnectionFailureInternal(String bssid, String ssid,
-            @FailureReason int reasonCode) {
+            @FailureReason int reasonCode, boolean isLowRssi) {
         BssidStatus entry = incrementFailureCountForBssid(bssid, ssid, reasonCode);
         int failureThreshold = getFailureThresholdForReason(reasonCode);
         int currentStreak = mWifiScoreCard.getBssidBlocklistStreak(ssid, bssid, reasonCode);
@@ -281,7 +275,15 @@ public class BssidBlocklistMonitor {
             if (shouldWaitForWatchdogToTriggerFirst(bssid, reasonCode)) {
                 return false;
             }
-            addToBlocklist(entry, getBlocklistDurationWithExponentialBackoff(currentStreak),
+            int baseBlockDurationMs = mContext.getResources().getInteger(
+                    R.integer.config_wifiBssidBlocklistMonitorBaseBlockDurationMs);
+            if ((reasonCode == REASON_ASSOCIATION_TIMEOUT
+                    || reasonCode == REASON_ABNORMAL_DISCONNECT) && isLowRssi) {
+                baseBlockDurationMs = mContext.getResources().getInteger(
+                        R.integer.config_wifiBssidBlocklistMonitorBaseLowRssiBlockDurationMs);
+            }
+            addToBlocklist(entry,
+                    getBlocklistDurationWithExponentialBackoff(currentStreak, baseBlockDurationMs),
                     false, getFailureReasonString(reasonCode));
             mWifiScoreCard.incrementBssidBlocklistStreak(ssid, bssid, reasonCode);
             return true;
@@ -294,7 +296,7 @@ public class BssidBlocklistMonitor {
      * @return True if the blocklist has been modified.
      */
     public boolean handleBssidConnectionFailure(String bssid, String ssid,
-            @FailureReason int reasonCode) {
+            @FailureReason int reasonCode, boolean isLowRssi) {
         if (!isValidNetworkAndFailureReason(bssid, ssid, reasonCode)) {
             return false;
         }
@@ -307,7 +309,7 @@ public class BssidBlocklistMonitor {
                 return false;
             }
         }
-        return handleBssidConnectionFailureInternal(bssid, ssid, reasonCode);
+        return handleBssidConnectionFailureInternal(bssid, ssid, reasonCode, isLowRssi);
     }
 
     /**

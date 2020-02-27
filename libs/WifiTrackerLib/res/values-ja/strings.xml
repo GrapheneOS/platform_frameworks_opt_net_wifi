@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="8750623020267885175">"自動接続: 無効"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"自動接続がオフです"</string>
     <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g>で保存"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"自動的に接続されません"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"インターネット接続なし"</string>

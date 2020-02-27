@@ -30,7 +30,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
-import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
 import android.text.TextUtils;
 
@@ -76,19 +75,19 @@ public class PasspointWifiEntry extends WifiEntry {
      */
     PasspointWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull PasspointConfiguration passpointConfig,
-            @NonNull WifiManager wifiManager) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, false /* forSavedNetworksPage */);
+            @NonNull WifiManager wifiManager,
+            boolean forSavedNetworksPage) throws IllegalArgumentException {
+        super(callbackHandler, wifiManager, forSavedNetworksPage);
 
         checkNotNull(passpointConfig, "Cannot construct with null PasspointConfiguration!");
 
         mContext = context;
         mPasspointConfig = passpointConfig;
-        final HomeSp homeSp = passpointConfig.getHomeSp();
-        mKey = fqdnToPasspointWifiEntryKey(homeSp.getFqdn());
-        mFriendlyName = homeSp.getFriendlyName();
+        mKey = uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId());
+        mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();
         mSecurity = SECURITY_NONE; //TODO: Should this always be Enterprise?
         mSubscriptionExpirationTimeInMillis =
-                passpointConfig.getSubscriptionExpirationTimeInMillis();
+                passpointConfig.getSubscriptionExpirationTimeMillis();
         mMeteredOverride = mPasspointConfig.getMeteredOverride();
     }
 
@@ -335,39 +334,43 @@ public class PasspointWifiEntry extends WifiEntry {
         mPasspointConfig = passpointConfig;
         mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();
         mSubscriptionExpirationTimeInMillis =
-                passpointConfig.getSubscriptionExpirationTimeInMillis();
+                passpointConfig.getSubscriptionExpirationTimeMillis();
         mMeteredOverride = mPasspointConfig.getMeteredOverride();
         notifyOnUpdated();
     }
 
     @WorkerThread
-    void updateScanResultInfo(@NonNull WifiConfiguration wifiConfig,
+    void updateScanResultInfo(@Nullable WifiConfiguration wifiConfig,
             @Nullable List<ScanResult> homeScanResults,
             @Nullable List<ScanResult> roamingScanResults)
             throws IllegalArgumentException {
+        mIsRoaming = false;
         mWifiConfig = wifiConfig;
-        mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
-
-        if (homeScanResults == null) {
-            homeScanResults = new ArrayList<>();
+        mCurrentHomeScanResults.clear();
+        mCurrentRoamingScanResults.clear();
+        if (homeScanResults != null) {
+            mCurrentHomeScanResults.addAll(homeScanResults);
         }
-        if (roamingScanResults == null) {
-            roamingScanResults = new ArrayList<>();
+        if (roamingScanResults != null) {
+            mCurrentRoamingScanResults.addAll(roamingScanResults);
         }
-
-        ScanResult bestScanResult;
-        if (homeScanResults.isEmpty() && !roamingScanResults.isEmpty()) {
-            mIsRoaming = true;
-            bestScanResult = getBestScanResultByLevel(roamingScanResults);
+        if (mWifiConfig != null) {
+            mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
+            ScanResult bestScanResult = null;
+            if (homeScanResults != null && !homeScanResults.isEmpty()) {
+                bestScanResult = getBestScanResultByLevel(homeScanResults);
+            } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
+                mIsRoaming = true;
+                bestScanResult = getBestScanResultByLevel(roamingScanResults);
+            }
+            if (bestScanResult == null) {
+                mLevel = WIFI_LEVEL_UNREACHABLE;
+            } else {
+                mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
+                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+            }
         } else {
-            mIsRoaming = false;
-            bestScanResult = getBestScanResultByLevel(homeScanResults);
-        }
-
-        if (bestScanResult == null) {
             mLevel = WIFI_LEVEL_UNREACHABLE;
-        } else {
-            mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
         }
 
         notifyOnUpdated();
@@ -386,9 +389,9 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @NonNull
-    static String fqdnToPasspointWifiEntryKey(@NonNull String fqdn) {
-        checkNotNull(fqdn, "Cannot create key with null fqdn!");
-        return KEY_PREFIX + fqdn;
+    static String uniqueIdToPasspointWifiEntryKey(@NonNull String uniqueId) {
+        checkNotNull(uniqueId, "Cannot create key with null unique id!");
+        return KEY_PREFIX + uniqueId;
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.android.server.wifi.scanner;
 import static com.android.server.wifi.ScanTestUtil.NativeScanSettingsBuilder;
 import static com.android.server.wifi.ScanTestUtil.setupMockChannels;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import android.app.AlarmManager;
@@ -37,6 +37,7 @@ import com.android.server.wifi.scanner.ChannelHelper.ChannelCollection;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -60,10 +61,10 @@ public class WificondScannerTest extends BaseWifiScannerImplTest {
     @Before
     public void setup() throws Exception {
         setupMockChannels(mWifiNative,
-                Arrays.asList(2400, 2450),
-                Arrays.asList(5150, 5175),
-                Arrays.asList(5600, 5650),
-                Arrays.asList(5945, 5985));
+                new int[]{2400, 2450},
+                new int[]{5150, 5175},
+                new int[]{5600, 5650},
+                new int[]{5945, 5985});
         mWifiMonitorSpy = spy(mWifiMonitor);
         mScanner = new WificondScannerImpl(mContext, BaseWifiScannerImplTest.IFACE_NAME,
                 mWifiNative, mWifiMonitorSpy, new WificondChannelHelper(mWifiNative),

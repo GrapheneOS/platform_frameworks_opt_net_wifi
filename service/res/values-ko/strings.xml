@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g>에서 네트워크를 제안했습니다. 기기가 자동으로 연결될 수 있습니다."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"허용"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"허용 안함"</string>
-    <!-- no translation found for wifi_suggestion_imsi_privacy_title (5072368033308094465) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_imsi_privacy_content (5050532382656368119) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_carrier (5500037364868978935) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier (7020127735591720299) -->
-    <skip />
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI 보호를 위한 개인정보 보호 경고"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g>에서 개인정보 보호 기능 없이 SIM 카드 정보를 사용하는 네트워크를 제안했습니다. 네트워크가 자동으로 연결되도록 허용하시겠습니까?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"허용"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"허용 안함"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi가 자동으로 사용 설정됨"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"저장된 고품질 네트워크가 가까이 있는 경우"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"다시 사용 설정하지 않음"</string>
@@ -80,4 +76,8 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"모바일 핫스팟 사용 중지됨"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"모바일 핫스팟이 사용 중지되었습니다."</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"비활성 시간 초과로 인해 모바일 핫스팟이 사용 중지되었습니다."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

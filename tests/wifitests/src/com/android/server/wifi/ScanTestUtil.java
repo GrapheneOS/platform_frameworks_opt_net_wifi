@@ -16,11 +16,9 @@
 
 package com.android.server.wifi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
+import static org.mockito.Mockito.*;
 
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiScanner;
@@ -33,7 +31,6 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,9 +38,8 @@ import java.util.Set;
  */
 public class ScanTestUtil {
 
-    public static void setupMockChannels(WifiNative wifiNative, List<Integer> channels24,
-            List<Integer> channels5, List<Integer> channelsDfs, List<Integer> channels6)
-            throws Exception {
+    public static void setupMockChannels(WifiNative wifiNative, int[] channels24, int[] channels5,
+            int[] channelsDfs, int[] channels6) throws Exception {
         when(wifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_24_GHZ))
                 .thenReturn(channels24);
         when(wifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ))

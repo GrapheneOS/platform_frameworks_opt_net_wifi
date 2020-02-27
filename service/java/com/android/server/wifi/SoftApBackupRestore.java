@@ -16,9 +16,11 @@
 
 package com.android.server.wifi;
 
+import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiMigration;
 import android.util.BackupUtils;
 import android.util.Log;
 
@@ -47,11 +49,14 @@ public class SoftApBackupRestore {
     /**
      * Current backup data version.
      */
-    private static final int CURRENT_SAP_BACKUP_DATA_VERSION = 5;
+    private static final int CURRENT_SAP_BACKUP_DATA_VERSION = 6;
 
     private static final int ETHER_ADDR_LEN = 6; // Byte array size of MacAddress
 
-    public SoftApBackupRestore() {
+    private final Context mContext;
+
+    public SoftApBackupRestore(Context context) {
+        mContext = context;
     }
 
     /**
@@ -82,6 +87,7 @@ public class SoftApBackupRestore {
             out.writeBoolean(config.isClientControlByUserEnabled());
             writeMacAddressList(out, config.getBlockedClientList());
             writeMacAddressList(out, config.getAllowedClientList());
+            out.writeBoolean(config.isAutoShutdownEnabled());
         } catch (IOException io) {
             Log.e(TAG, "Invalid configuration received, IOException " + io);
             return new byte[0];
@@ -146,6 +152,18 @@ public class SoftApBackupRestore {
                 List<MacAddress> allowedList = new ArrayList<>(
                         macAddressListFromByteArray(in, numberOfAllowedClient));
                 configBuilder.setClientList(blockedList, allowedList);
+            }
+            if (version >= 6) {
+                configBuilder.setAutoShutdownEnabled(in.readBoolean());
+            } else {
+                // Migrate data out of settings.
+                WifiMigration.SettingsMigrationData migrationData =
+                        WifiMigration.loadFromSettings(mContext);
+                if (migrationData == null) {
+                    Log.e(TAG, "No migration data present");
+                } else {
+                    configBuilder.setAutoShutdownEnabled(migrationData.isSoftApTimeoutEnabled());
+                }
             }
         } catch (IOException io) {
             Log.e(TAG, "Invalid backup data received, IOException: " + io);

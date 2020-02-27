@@ -18,8 +18,12 @@ package com.android.server.wifi;
 import android.annotation.NonNull;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.hardware.wifi.supplicant.V1_3.ISupplicantStaIfaceCallback.BssTmData;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiSsid;
 import android.util.Log;
+
+import com.android.server.wifi.util.NativeUtil;
 
 import java.util.ArrayList;
 
@@ -29,7 +33,9 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
     private final SupplicantStaIfaceHal mStaIfaceHal;
     private final String mIfaceName;
     private final WifiMonitor mWifiMonitor;
+    private final SupplicantStaIfaceHal.SupplicantStaIfaceHalCallback mCallbackV10;
     private final SupplicantStaIfaceHal.SupplicantStaIfaceHalCallbackV1_2 mCallbackV12;
+    private boolean mStateIsFourwayV13 = false; // Used to help check for PSK password mismatch
 
     SupplicantStaIfaceCallbackV1_3Impl(@NonNull SupplicantStaIfaceHal staIfaceHal,
             @NonNull String ifaceName,
@@ -40,6 +46,7 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
         // Create an older callback for function delegation,
         // and it would cascadingly create older one.
         mCallbackV12 = mStaIfaceHal.new SupplicantStaIfaceHalCallbackV1_2(mIfaceName);
+        mCallbackV10 = mStaIfaceHal.new SupplicantStaIfaceHalCallback(mIfaceName);
     }
 
     @Override
@@ -49,7 +56,9 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
 
     @Override
     public void onNetworkRemoved(int id) {
-        mCallbackV12.onNetworkRemoved(id);
+        mStaIfaceHal.logCallback("onNetworkRemoved");
+        // Reset 4way handshake state since network has been removed.
+        mStateIsFourwayV13 = false;
     }
 
     @Override
@@ -86,7 +95,20 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
     @Override
     public void onDisconnected(byte[/* 6 */] bssid, boolean locallyGenerated,
             int reasonCode) {
-        mCallbackV12.onDisconnected(bssid, locallyGenerated, reasonCode);
+        mStaIfaceHal.logCallback("onDisconnected");
+        if (mStaIfaceHal.isVerboseLoggingEnabled()) {
+            Log.e(TAG, "onDisconnected 4way=" + mStateIsFourwayV13
+                    + " locallyGenerated=" + locallyGenerated
+                    + " reasonCode=" + reasonCode);
+        }
+        if (mStateIsFourwayV13
+                && (!locallyGenerated || reasonCode != ReasonCode.IE_IN_4WAY_DIFFERS)) {
+            mWifiMonitor.broadcastAuthenticationFailureEvent(
+                    mIfaceName, WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD, -1);
+        }
+        mWifiMonitor.broadcastNetworkDisconnectionEvent(
+                mIfaceName, locallyGenerated ? 1 : 0, reasonCode,
+                NativeUtil.macAddressFromByteArray(bssid));
     }
 
     @Override
@@ -333,7 +355,25 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
     @Override
     public void onStateChanged_1_3(int newState, byte[/* 6 */] bssid, int id,
             ArrayList<Byte> ssid, boolean filsHlpSent) {
-        mCallbackV12.onStateChanged(newState, bssid, id, ssid);
+        mStaIfaceHal.logCallback("onStateChanged_1_3");
+        SupplicantState newSupplicantState =
+                mCallbackV10.supplicantHidlStateToFrameworkState(newState);
+        WifiSsid wifiSsid =
+                WifiSsid.createFromByteArray(NativeUtil.byteArrayFromArrayList(ssid));
+        String bssidStr = NativeUtil.macAddressFromByteArray(bssid);
+        mStateIsFourwayV13 =
+                (newState == ISupplicantStaIfaceCallback.State.FOURWAY_HANDSHAKE);
+        if (newSupplicantState == SupplicantState.COMPLETED) {
+            if (filsHlpSent) {
+                mWifiMonitor.broadcastFilsNetworkConnectionEvent(
+                        mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), bssidStr);
+            } else {
+                mWifiMonitor.broadcastNetworkConnectionEvent(
+                        mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), bssidStr);
+            }
+        }
+        mWifiMonitor.broadcastSupplicantStateChangeEvent(
+                mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName),
+                wifiSsid, bssidStr, newSupplicantState);
     }
-
 }

@@ -24,7 +24,6 @@ import static com.android.server.wifi.util.ApConfigUtil.SUCCESS;
 import android.annotation.NonNull;
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.net.MacAddress;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
@@ -33,13 +32,12 @@ import android.net.wifi.SoftApInfo;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiClient;
 import android.net.wifi.WifiManager;
-import android.net.wifi.wificond.NativeWifiClient;
+import android.net.wifi.nl80211.NativeWifiClient;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.os.UserHandle;
-import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -196,6 +194,7 @@ public class SoftApManager implements ActiveModeManager {
         if (softApConfig != null) {
             mBlockedClientList = new HashSet<>(softApConfig.getBlockedClientList());
             mAllowedClientList = new HashSet<>(softApConfig.getAllowedClientList());
+            mTimeoutEnabled = softApConfig.isAutoShutdownEnabled();
         }
     }
 
@@ -395,7 +394,7 @@ public class SoftApManager implements ActiveModeManager {
         // Make a copy of configuration for updating AP band and channel.
         SoftApConfiguration.Builder localConfigBuilder = new SoftApConfiguration.Builder(config);
 
-        boolean acsEnabled = mCurrentSoftApCapability.isFeatureSupported(
+        boolean acsEnabled = mCurrentSoftApCapability.areFeaturesSupported(
                 SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD);
 
         result = ApConfigUtil.updateApChannelConfig(
@@ -438,7 +437,7 @@ public class SoftApManager implements ActiveModeManager {
     }
 
     private boolean checkSoftApClient(SoftApConfiguration config, WifiClient newClient) {
-        if (!mCurrentSoftApCapability.isFeatureSupported(
+        if (!mCurrentSoftApCapability.areFeaturesSupported(
                 SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT)) {
             return true;
         }
@@ -479,7 +478,6 @@ public class SoftApManager implements ActiveModeManager {
         public static final int CMD_INTERFACE_STATUS_CHANGED = 3;
         public static final int CMD_ASSOCIATED_STATIONS_CHANGED = 4;
         public static final int CMD_NO_ASSOCIATED_STATIONS_TIMEOUT = 5;
-        public static final int CMD_TIMEOUT_TOGGLE_CHANGED = 6;
         public static final int CMD_INTERFACE_DESTROYED = 7;
         public static final int CMD_INTERFACE_DOWN = 8;
         public static final int CMD_SOFT_AP_CHANNEL_SWITCHED = 9;
@@ -583,6 +581,7 @@ public class SoftApManager implements ActiveModeManager {
                                 newConfig, mCurrentSoftApCapability);
                         mBlockedClientList = new HashSet<>(newConfig.getBlockedClientList());
                         mAllowedClientList = new HashSet<>(newConfig.getAllowedClientList());
+                        mTimeoutEnabled = newConfig.isAutoShutdownEnabled();
                         break;
                     default:
                         // Ignore all other commands.
@@ -595,40 +594,6 @@ public class SoftApManager implements ActiveModeManager {
 
         private class StartedState extends State {
             private WakeupMessage mSoftApTimeoutMessage;
-            private SoftApTimeoutEnabledSettingObserver mSettingObserver;
-
-            /**
-             * Observer for timeout settings changes.
-             */
-            private class SoftApTimeoutEnabledSettingObserver extends ContentObserver {
-                SoftApTimeoutEnabledSettingObserver(Handler handler) {
-                    super(handler);
-                }
-
-                public void register() {
-                    mFrameworkFacade.registerContentObserver(mContext,
-                            Settings.Global.getUriFor(Settings.Global.SOFT_AP_TIMEOUT_ENABLED),
-                            true, this);
-                    mTimeoutEnabled = getValue();
-                }
-
-                public void unregister() {
-                    mFrameworkFacade.unregisterContentObserver(mContext, this);
-                }
-
-                @Override
-                public void onChange(boolean selfChange) {
-                    super.onChange(selfChange);
-                    mStateMachine.sendMessage(SoftApStateMachine.CMD_TIMEOUT_TOGGLE_CHANGED,
-                            getValue() ? 1 : 0);
-                }
-
-                private boolean getValue() {
-                    boolean enabled = mFrameworkFacade.getIntegerSetting(mContext,
-                            Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1) == 1;
-                    return enabled;
-                }
-            }
 
             private void scheduleTimeoutMessage() {
                 if (!mTimeoutEnabled || mConnectedClients.size() != 0) {
@@ -656,7 +621,7 @@ public class SoftApManager implements ActiveModeManager {
              * configuration.
              */
             private void updateClientConnection() {
-                if (!mCurrentSoftApCapability.isFeatureSupported(
+                if (!mCurrentSoftApCapability.areFeaturesSupported(
                         SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT)) {
                     return;
                 }
@@ -804,11 +769,6 @@ public class SoftApManager implements ActiveModeManager {
                 mSoftApTimeoutMessage = new WakeupMessage(mContext, handler,
                         SOFT_AP_SEND_MESSAGE_TIMEOUT_TAG,
                         SoftApStateMachine.CMD_NO_ASSOCIATED_STATIONS_TIMEOUT);
-                mSettingObserver = new SoftApTimeoutEnabledSettingObserver(handler);
-
-                if (mSettingObserver != null) {
-                    mSettingObserver.register();
-                }
 
                 mSarManager.setSapWifiState(WifiManager.WIFI_AP_STATE_ENABLED);
 
@@ -823,9 +783,6 @@ public class SoftApManager implements ActiveModeManager {
                     stopSoftAp();
                 }
 
-                if (mSettingObserver != null) {
-                    mSettingObserver.unregister();
-                }
                 Log.d(TAG, "Resetting num stations on stop");
                 if (mConnectedClients.size() != 0) {
                     mConnectedClients.clear();
@@ -884,12 +841,11 @@ public class SoftApManager implements ActiveModeManager {
                         }
                         NativeWifiClient nativeClient = (NativeWifiClient) message.obj;
                         boolean isConnected = (message.arg1 == 1);
-                        if (nativeClient != null && nativeClient.macAddress != null) {
-                            MacAddress clientMacAddress =
-                                    MacAddress.fromBytes(nativeClient.macAddress);
-                            WifiClient client = new WifiClient(clientMacAddress);
+                        if (nativeClient != null && nativeClient.getMacAddress() != null) {
+                            WifiClient client = new WifiClient(nativeClient.getMacAddress());
                             Log.d(TAG, "CMD_ASSOCIATED_STATIONS_CHANGED, Client: "
-                                    + clientMacAddress.toString() + " isConnected: " + isConnected);
+                                    + nativeClient.getMacAddress().toString() + " isConnected: "
+                                    + isConnected);
                             updateConnectedClients(client, isConnected);
                         }
                         break;
@@ -899,14 +855,6 @@ public class SoftApManager implements ActiveModeManager {
                             break;
                         }
                         setSoftApChannel(message.arg1, message.arg2);
-                        break;
-                    case CMD_TIMEOUT_TOGGLE_CHANGED:
-                        boolean isEnabled = (message.arg1 == 1);
-                        if (mTimeoutEnabled == isEnabled) {
-                            break;
-                        }
-                        mTimeoutEnabled = isEnabled;
-                        scheduleTimeoutMessage();
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
                         boolean isUp = message.arg1 == 1;
@@ -973,9 +921,11 @@ public class SoftApManager implements ActiveModeManager {
                             Log.d(TAG, "Configuration changed to " + newConfig);
                             boolean needRescheduleTimer =
                                     mApConfig.getSoftApConfiguration().getShutdownTimeoutMillis()
-                                    != newConfig.getShutdownTimeoutMillis();
+                                    != newConfig.getShutdownTimeoutMillis()
+                                    || mTimeoutEnabled != newConfig.isAutoShutdownEnabled();
                             mBlockedClientList = new HashSet<>(newConfig.getBlockedClientList());
                             mAllowedClientList = new HashSet<>(newConfig.getAllowedClientList());
+                            mTimeoutEnabled = newConfig.isAutoShutdownEnabled();
                             mApConfig = new SoftApModeConfiguration(mApConfig.getTargetMode(),
                                     newConfig, mCurrentSoftApCapability);
                             updateClientConnection();

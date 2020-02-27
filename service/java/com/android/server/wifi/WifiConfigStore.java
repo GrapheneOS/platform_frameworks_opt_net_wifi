@@ -53,6 +53,7 @@ import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -146,10 +147,6 @@ public class WifiConfigStore {
      */
     private static final String TAG = "WifiConfigStore";
     /**
-     * Directory to store the config store files in.
-     */
-    private static final String STORE_DIRECTORY_NAME = "wifi";
-    /**
      * Time interval for buffering file writes for non-forced writes
      */
     private static final int BUFFERED_WRITE_ALARM_INTERVAL_MS = 10 * 1000;
@@ -193,6 +190,7 @@ public class WifiConfigStore {
      */
     private final Clock mClock;
     private final WifiMetrics mWifiMetrics;
+    private final WifiConfigStoreMigrationDataHolder mStoreMigrationDataHolder;
     /**
      * Shared config store file instance. There are 2 shared store files:
      * {@link #STORE_FILE_NAME_SHARED_GENERAL} & {@link #STORE_FILE_NAME_SHARED_SOFTAP}.
@@ -238,17 +236,20 @@ public class WifiConfigStore {
      * @param handler     handler instance to post alarm timeouts to.
      * @param clock       clock instance to retrieve timestamps for alarms.
      * @param wifiMetrics Metrics instance.
+     * @param storeMigrationDataHolder Needed for migration data out of OEM stores.
      * @param sharedStores List of {@link StoreFile} instances pointing to the shared store files.
      *                     This should be retrieved using {@link #createSharedFiles(boolean)}
      *                     method.
      */
     public WifiConfigStore(Context context, Handler handler, Clock clock, WifiMetrics wifiMetrics,
+            WifiConfigStoreMigrationDataHolder storeMigrationDataHolder,
             List<StoreFile> sharedStores) {
 
         mAlarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         mEventHandler = handler;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
+        mStoreMigrationDataHolder = storeMigrationDataHolder;
         mStoreDataList = new ArrayList<>();
 
         // Initialize the store files.
@@ -291,20 +292,35 @@ public class WifiConfigStore {
         return true;
     }
 
+    private static void copyLegacyStoreFileIfNeeded(File legacyStoreFile, File storeFile) {
+        try {
+            // If the new store file exists, nothing to copy.
+            if (storeFile.exists()) return;
+            // If the legacy file does not exist, nothing to copy.
+            if (!legacyStoreFile.exists()) return;
+            Log.d(TAG, "Copying wifi store file from " + legacyStoreFile + " to " + storeFile);
+            Files.copy(legacyStoreFile.toPath(), storeFile.toPath());
+        } catch (SecurityException | IOException e) {
+            Log.e(TAG, "Failed to copy the legacy store file", e);
+        }
+    }
+
     /**
      * Helper method to create a store file instance for either the shared store or user store.
      * Note: The method creates the store directory if not already present. This may be needed for
      * user store files.
      *
-     * @param storeBaseDir Base directory under which the store file is to be stored. The store file
-     *                     will be at <storeBaseDir>/wifi/WifiConfigStore.xml.
+     * @param storeDir Base directory under which the store file is to be stored. The store file
+     *                 will be at <storeDir>/WifiConfigStore.xml.
+     * @param legacyStoreDir Base directory under which the store file was stored. The store file
+     *                       will be at <storeDir>/WifiConfigStore.xml. This is needed to perform
+     *                       a one time migration of the files from this folder to |storeDir|.
      * @param fileId Identifier for the file. See {@link StoreFileId}.
      * @param shouldEncryptCredentials Whether to encrypt credentials or not.
      * @return new instance of the store file or null if the directory cannot be created.
      */
-    private static @Nullable StoreFile createFile(File storeBaseDir, @StoreFileId int fileId,
-            boolean shouldEncryptCredentials) {
-        File storeDir = new File(storeBaseDir, STORE_DIRECTORY_NAME);
+    private static @Nullable StoreFile createFile(File storeDir, File legacyStoreDir,
+            @StoreFileId int fileId, boolean shouldEncryptCredentials) {
         if (!storeDir.exists()) {
             if (!storeDir.mkdir()) {
                 Log.w(TAG, "Could not create store directory " + storeDir);
@@ -312,6 +328,11 @@ public class WifiConfigStore {
             }
         }
         File file = new File(storeDir, STORE_ID_TO_FILE_NAME.get(fileId));
+        // Note: This performs a one time migration of the existing wifi config store files
+        // from the old /data/misc/wifi & /data/misc_ce/<userId>/wifi folder to the
+        // wifi apex folder.
+        copyLegacyStoreFileIfNeeded(
+                new File(legacyStoreDir, STORE_ID_TO_FILE_NAME.get(fileId)), file);
         WifiConfigStoreEncryptionUtil encryptionUtil = null;
         if (shouldEncryptCredentials) {
             encryptionUtil = new WifiConfigStoreEncryptionUtil(file.getName());
@@ -319,11 +340,12 @@ public class WifiConfigStore {
         return new StoreFile(file, fileId, encryptionUtil);
     }
 
-    private static @Nullable List<StoreFile> createFiles(File storeBaseDir,
+    private static @Nullable List<StoreFile> createFiles(File storeDir, File legacyStoreDir,
             List<Integer> storeFileIds, boolean shouldEncryptCredentials) {
         List<StoreFile> storeFiles = new ArrayList<>();
         for (int fileId : storeFileIds) {
-            StoreFile storeFile = createFile(storeBaseDir, fileId, shouldEncryptCredentials);
+            StoreFile storeFile =
+                    createFile(storeDir, legacyStoreDir, fileId, shouldEncryptCredentials);
             if (storeFile == null) {
                 return null;
             }
@@ -340,7 +362,8 @@ public class WifiConfigStore {
      */
     public static @NonNull List<StoreFile> createSharedFiles(boolean shouldEncryptCredentials) {
         return createFiles(
-                Environment.getDataMiscDirectory(),
+                Environment.getWifiSharedDirectory(),
+                Environment.getLegacyWifiSharedDirectory(),
                 Arrays.asList(STORE_FILE_SHARED_GENERAL, STORE_FILE_SHARED_SOFTAP),
                 shouldEncryptCredentials);
     }
@@ -357,7 +380,8 @@ public class WifiConfigStore {
     public static @Nullable List<StoreFile> createUserFiles(int userId,
             boolean shouldEncryptCredentials) {
         return createFiles(
-                Environment.getDataMiscCeDirectory(userId),
+                Environment.getWifiUserDirectory(userId),
+                Environment.getLegacyWifiUserDirectory(userId),
                 Arrays.asList(STORE_FILE_USER_GENERAL, STORE_FILE_USER_NETWORK_SUGGESTIONS),
                 shouldEncryptCredentials);
     }
@@ -548,6 +572,8 @@ public class WifiConfigStore {
         } catch (ArithmeticException e) {
             // Silently ignore on any overflow errors.
         }
+        // Read is complete, go ahead and remove any OEM config stores.
+        mStoreMigrationDataHolder.removeStoreIfPresent();
         Log.d(TAG, "Reading from all stores completed in " + readTime + " ms.");
     }
 
@@ -596,7 +622,7 @@ public class WifiConfigStore {
             @Version int version, @NonNull WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         for (StoreData storeData : storeDataSet) {
-            storeData.deserializeData(null, 0, version, encryptionUtil);
+            storeData.deserializeData(null, 0, version, encryptionUtil, mStoreMigrationDataHolder);
         }
     }
 
@@ -651,7 +677,7 @@ public class WifiConfigStore {
                 continue;
             }
             storeData.deserializeData(in, rootTagDepth + 1, version,
-                    storeFile.getEncryptionUtil());
+                    storeFile.getEncryptionUtil(), mStoreMigrationDataHolder);
             storeDatasInvoked.add(storeData);
         }
         // Inform all the other registered store data clients that there is nothing in the store
@@ -851,12 +877,14 @@ public class WifiConfigStore {
          * @param outerTagDepth The depth of the outer tag in the XML document
          * @param version Version of config store file.
          * @param encryptionUtil Utility to help decrypt any credential data.
+         * @param storeMigrationDataHolder Needed for migration data out of OEM stores.
          *
          * Note: This will be invoked every time a store file is read, even if there is nothing
          *                      in the store for them.
          */
         void deserializeData(@Nullable XmlPullParser in, int outerTagDepth, @Version int version,
-                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
+                @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
                 throws XmlPullParserException, IOException;
 
         /**

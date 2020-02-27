@@ -37,6 +37,12 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "wifi-service-BaseWifiService",
+    srcs: ["java/com/android/server/wifi/BaseWifiService.java"],
+    path: "java",
+}
+
 // pre-jarjar version of wifi-service that builds against pre-jarjar version of framework-wifi
 java_library {
     name: "wifi-service-pre-jarjar",
@@ -60,8 +66,7 @@ java_library {
         // compile time
         "framework-wifi-pre-jarjar",
         "android_module_lib_stubs_current",
-        // TODO(b/146167933): Use framework-statsd-stubs instead.
-        "framework-statsd",
+        "framework-statsd-stubs-module_libs_api",
         "unsupportedappusage",
     ],
 
@@ -91,8 +96,7 @@ java_library {
         "netd_aidl_interface-V2-java",
         "services.net",
         "wifi-lite-protos",
-        "wifi-nano-protos",
-        "PlatformProperties",
+        "wifi-nano-protos"
     ],
 }
 
@@ -115,11 +119,6 @@ java_library {
     // @CorePlatformApi's
     sdk_version: "core_platform",
 
-    required: [
-        "services",
-        "wifi-service-resources",
-    ],
-
     jarjar_rules: ":wifi-jarjar-rules",
     optimize: {
         enabled: true,
@@ -130,8 +129,6 @@ java_library {
         enabled: false,
         app_image: false,
     },
-
-    init_rc: [":wifi-init-rc"],
 
     visibility: [
         "//frameworks/opt/net/wifi/service/apex",
@@ -168,7 +165,9 @@ android_app {
     manifest: "AndroidManifest_Resources.xml",
 }
 
-filegroup {
-    name: "wifi-init-rc",
-    srcs: ["wifi.rc"],
+// Prebuilt for the wifi.rc file.
+prebuilt_etc {
+    name: "wifi.rc",
+    src: "wifi.rc",
+    sub_dir: "init"
 }

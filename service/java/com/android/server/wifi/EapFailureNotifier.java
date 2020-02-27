@@ -21,6 +21,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Icon;
 import android.net.wifi.WifiConfiguration;
@@ -72,8 +73,9 @@ public class EapFailureNotifier {
                 return;
             }
         }
-        Resources res = SubscriptionManager.getResourcesForSubId(mContext,
+        Resources res = getResourcesForSubId(mContext,
                 mTelephonyUtil.getBestMatchSubscriptionId(config));
+        if (res == null) return;
         int resourceId = res.getIdentifier(ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
                 "string", WifiContext.WIFI_OVERLAY_APK_PKG_NAME);
 
@@ -106,6 +108,22 @@ public class EapFailureNotifier {
                         android.R.color.system_notification_accent_color));
         mNotificationManager.notify(NOTIFICATION_ID, builder.build());
         mCurrentShownSsid = ssid;
+    }
+
+    /**
+     *  Returns the resources from the given context for the MCC/MNC
+     *  associated with the subscription.
+     */
+    private Resources getResourcesForSubId(Context context, int subId) {
+        Context resourceContext = null;
+        try {
+            resourceContext = context.createPackageContext(
+                    WifiContext.WIFI_OVERLAY_APK_PKG_NAME, 0);
+        } catch (PackageManager.NameNotFoundException ex) {
+            return null;
+        }
+
+        return SubscriptionManager.getResourcesForSubId(resourceContext, subId);
     }
 
     /**

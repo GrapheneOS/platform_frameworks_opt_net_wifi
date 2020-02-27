@@ -63,7 +63,7 @@ import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.ProvisioningCallback;
 import android.net.wifi.hotspot2.pps.Credential;
-import android.net.wifi.wificond.WifiCondManager;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -75,12 +75,14 @@ import android.util.SparseIntArray;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SmallTest;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.aware.WifiAwareMetrics;
 import com.android.server.wifi.hotspot2.NetworkDetail;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointMatch;
 import com.android.server.wifi.hotspot2.PasspointProvider;
 import com.android.server.wifi.p2p.WifiP2pMetrics;
+import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
@@ -111,6 +113,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
@@ -138,6 +142,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     Random mRandom = new Random();
     private static final int TEST_WIFI_USABILITY_STATS_LISTENER_IDENTIFIER = 2;
     private static final int TEST_NETWORK_ID = 42;
+    private MockitoSession mSession;
     @Mock Context mContext;
     MockResources mResources;
     @Mock FrameworkFacade mFacade;
@@ -1562,6 +1567,26 @@ public class WifiMetricsTest extends WifiBaseTest {
     }
 
     /**
+     * Test the logging of BssidBlocklistStats.
+     */
+    @Test
+    public void testBssidBlocklistMetrics() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            mWifiMetrics.incrementNetworkSelectionFilteredBssidCount(i);
+        }
+        mWifiMetrics.incrementNetworkSelectionFilteredBssidCount(2);
+        dumpProtoAndDeserialize();
+
+        Int32Count[] expectedHistogram = {
+                buildInt32Count(0, 1),
+                buildInt32Count(1, 1),
+                buildInt32Count(2, 2),
+        };
+        assertKeyCountsEqual(expectedHistogram,
+                mDecodedProto.bssidBlocklistStats.networkSelectionFilteredBssidCount);
+    }
+
+    /**
      * Test that WifiMetrics is being cleared after dumping via proto
      */
     @Test
@@ -1618,6 +1643,40 @@ public class WifiMetricsTest extends WifiBaseTest {
         dumpProtoAndDeserialize();
         //Check there are only 2 connection events
         assertEquals(2, mDecodedProto.connectionEvent.length);
+    }
+
+    /**
+     * Test logging to WestWorld when a connection event finishes.
+     */
+    @Test
+    public void testLogWifiConnectionResultWestworld() throws Exception {
+        // static mocking for WifiStatsLog
+        mSession = ExtendedMockito.mockitoSession()
+                .strictness(Strictness.LENIENT)
+                .mockStatic(WifiStatsLog.class)
+                .startMocking();
+
+        WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiConfiguration.NetworkSelectionStatus networkSelectionStatus =
+                mock(WifiConfiguration.NetworkSelectionStatus.class);
+        ScanResult scanResult = mock(ScanResult.class);
+        scanResult.level = -55;
+        when(networkSelectionStatus.getCandidate()).thenReturn(scanResult);
+        network.setNetworkSelectionStatus(networkSelectionStatus);
+
+        // Start and end Connection event
+        mWifiMetrics.startConnectionEvent(network, "RED",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE,
+                WifiMetricsProto.ConnectionEvent.HLF_DHCP,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED, false,
+                WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED__FAILURE_CODE__FAILURE_AUTHENTICATION_GENERAL,
+                -55));
+        mSession.finishMocking();
     }
 
     /**
@@ -3468,13 +3527,13 @@ public class WifiMetricsTest extends WifiBaseTest {
     public void testLogLinkProbeMetrics() throws Exception {
         mWifiMetrics.logLinkProbeSuccess(10000, -75, 50, 5);
         mWifiMetrics.logLinkProbeFailure(30000, -80, 10,
-                WifiCondManager.SEND_MGMT_FRAME_ERROR_NO_ACK);
+                WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK);
         mWifiMetrics.logLinkProbeSuccess(3000, -71, 160, 12);
         mWifiMetrics.logLinkProbeFailure(40000, -80, 6,
-                WifiCondManager.SEND_MGMT_FRAME_ERROR_NO_ACK);
+                WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK);
         mWifiMetrics.logLinkProbeSuccess(5000, -73, 160, 10);
         mWifiMetrics.logLinkProbeFailure(2000, -78, 6,
-                WifiCondManager.SEND_MGMT_FRAME_ERROR_TIMEOUT);
+                WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_TIMEOUT);
 
         dumpProtoAndDeserialize();
 
@@ -4097,5 +4156,26 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         dumpProtoAndDeserialize();
         assertEquals(0, mDecodedProto.wifiUsabilityStatsList.length);
+    }
+
+    /**
+     * Test the logging of connection duration stats
+     */
+    @Test
+    public void testConnectionDurationStats() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            mWifiMetrics.incrementConnectionDuration(5000, false, true);
+            mWifiMetrics.incrementConnectionDuration(3000, true, true);
+            mWifiMetrics.incrementConnectionDuration(1000, false, false);
+            mWifiMetrics.incrementConnectionDuration(500, true, false);
+        }
+        dumpProtoAndDeserialize();
+
+        assertEquals(6000,
+                mDecodedProto.connectionDurationStats.totalTimeSufficientThroughputMs);
+        assertEquals(10000,
+                mDecodedProto.connectionDurationStats.totalTimeInsufficientThroughputMs);
+        assertEquals(3000,
+                mDecodedProto.connectionDurationStats.totalTimeCellularDataOffMs);
     }
 }

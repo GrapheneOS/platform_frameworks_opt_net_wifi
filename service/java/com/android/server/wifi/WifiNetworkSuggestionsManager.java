@@ -268,6 +268,18 @@ public class WifiNetworkSuggestionsManager {
                 @NonNull PerAppInfo perAppInfo, boolean isAutoJoinEnabled) {
             return new ExtendedWifiNetworkSuggestion(wns, perAppInfo, isAutoJoinEnabled);
         }
+
+        /**
+         * Create a {@link WifiConfiguration} from suggestion for framework internal use.
+         */
+        public WifiConfiguration createInternalWifiConfiguration() {
+            WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
+            config.ephemeral = true;
+            config.fromWifiNetworkSuggestion = true;
+            config.allowAutojoin = isAutojoinEnabled;
+            config.trusted = !wns.isNetworkUntrusted;
+            return config;
+        }
     }
 
     /**
@@ -398,7 +410,7 @@ public class WifiNetworkSuggestionsManager {
                             extNetworkSuggestions.iterator().next().perAppInfo.uid);
                 }
                 for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
-                    if (ewns.wns.wifiConfiguration.FQDN != null) {
+                    if (ewns.wns.wifiConfiguration.isPasspoint()) {
                         addToPasspointInfoMap(ewns);
                     } else {
                         addToScanResultMatchInfoMap(ewns);
@@ -597,7 +609,7 @@ public class WifiNetworkSuggestionsManager {
         extNetworkSuggestionsForScanResultMatchInfo.add(extNetworkSuggestion);
     }
 
-    private void removeFromScanResultMatchInfoMap(
+    private void removeFromScanResultMatchInfoMapAndRemoveRelatedScoreCard(
             @NonNull ExtendedWifiNetworkSuggestion extNetworkSuggestion) {
         ScanResultMatchInfo scanResultMatchInfo =
                 ScanResultMatchInfo.fromWifiConfiguration(
@@ -620,6 +632,9 @@ public class WifiNetworkSuggestionsManager {
             // Remove the set from map if empty.
             if (extNetworkSuggestionsForScanResultMatchInfo.isEmpty()) {
                 mActiveScanResultMatchInfoWithBssid.remove(lookupPair);
+                if (!mActiveScanResultMatchInfoWithNoBssid.containsKey(scanResultMatchInfo)) {
+                    removeNetworkFromScoreCard(extNetworkSuggestion.wns.wifiConfiguration);
+                }
             }
         } else {
             extNetworkSuggestionsForScanResultMatchInfo =
@@ -634,8 +649,19 @@ public class WifiNetworkSuggestionsManager {
             // Remove the set from map if empty.
             if (extNetworkSuggestionsForScanResultMatchInfo.isEmpty()) {
                 mActiveScanResultMatchInfoWithNoBssid.remove(scanResultMatchInfo);
+                removeNetworkFromScoreCard(extNetworkSuggestion.wns.wifiConfiguration);
             }
         }
+    }
+
+    private void removeNetworkFromScoreCard(WifiConfiguration wifiConfiguration) {
+        WifiConfiguration existing =
+                mWifiConfigManager.getConfiguredNetwork(wifiConfiguration.getKey());
+        // If there is a saved network, do not remove from the score card.
+        if (existing != null && !existing.fromWifiNetworkSuggestion) {
+            return;
+        }
+        mWifiInjector.getWifiScoreCard().removeNetwork(wifiConfiguration.SSID);
     }
 
     private void addToPasspointInfoMap(ExtendedWifiNetworkSuggestion ewns) {
@@ -924,15 +950,15 @@ public class WifiNetworkSuggestionsManager {
         }
         // Clear the cache.
         for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
-            if (ewns.wns.wifiConfiguration.FQDN != null) {
+            if (ewns.wns.wifiConfiguration.isPasspoint()) {
                 // Clear the Passpoint config.
                 mWifiInjector.getPasspointManager().removeProvider(
                         ewns.perAppInfo.uid,
                         false,
-                        ewns.wns.wifiConfiguration.FQDN);
+                        ewns.wns.wifiConfiguration.getKey(), null);
                 removeFromPassPointInfoMap(ewns);
             } else {
-                removeFromScanResultMatchInfoMap(ewns);
+                removeFromScanResultMatchInfoMapAndRemoveRelatedScoreCard(ewns);
             }
         }
         // Disconnect suggested network if connected
@@ -1098,6 +1124,34 @@ public class WifiNetworkSuggestionsManager {
                 .flatMap(e -> convertToWnsSet(e.extNetworkSuggestions)
                         .stream())
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Get all user approved, non-passpoint networks from suggestion.
+     */
+    public List<WifiConfiguration> getAllPnoAvailableSuggestionNetworks() {
+        List<WifiConfiguration> networks = new ArrayList<>();
+        for (PerAppInfo info : mActiveNetworkSuggestionsPerApp.values()) {
+            if (!info.hasUserApproved && info.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+                continue;
+            }
+            for (ExtendedWifiNetworkSuggestion ewns : info.extNetworkSuggestions) {
+                if (ewns.wns.getPasspointConfiguration() != null) {
+                    continue;
+                }
+                WifiConfiguration network = mWifiConfigManager
+                        .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getKey());
+                if (network == null) {
+                    network = new WifiConfiguration(ewns.wns.getWifiConfiguration());
+                    network.ephemeral = true;
+                    network.fromWifiNetworkSuggestion = true;
+                    network.allowAutojoin = ewns.isAutojoinEnabled;
+                    network.trusted = !ewns.wns.isNetworkUntrusted;
+                }
+                networks.add(network);
+            }
+        }
+        return networks;
     }
 
     private List<Integer> getAllMaxSizes() {
@@ -1814,7 +1868,8 @@ public class WifiNetworkSuggestionsManager {
         Set<ExtendedWifiNetworkSuggestion> matchingExtendedWifiNetworkSuggestions =
                 getNetworkSuggestionsForWifiConfiguration(config, config.BSSID);
         if (config.isPasspoint()) {
-            if (!mWifiInjector.getPasspointManager().enableAutojoin(config.FQDN, choice)) {
+            if (!mWifiInjector.getPasspointManager().enableAutojoin(config.getKey(),
+                    null, choice)) {
                 return false;
             }
         }

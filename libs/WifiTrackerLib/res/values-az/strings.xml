@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="8750623020267885175">"Avtomatik qoşulma deaktivdir"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"Avtomatik qoşulma sönülüdür"</string>
     <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g> tərəfindən saxlandı"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"Avtomatik qoşulmayacaq"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"İnternetə giriş yoxdur"</string>
@@ -35,8 +35,7 @@
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Avtomatik olaraq şəbəkə reytinq provayderi ilə qoşuludur"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Məhdud bağlantı"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Özəl DNS serverinə giriş mümkün deyil"</string>
-    <!-- no translation found for wifi_connected_no_internet (7273909077465731259) -->
-    <skip />
+    <string name="wifi_connected_no_internet" msgid="7273909077465731259">"İnternet yoxdur"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Heç biri"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Vaxtı keçib"</string>
 </resources>

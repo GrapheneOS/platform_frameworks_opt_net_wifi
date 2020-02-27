@@ -225,7 +225,7 @@ public class XmlUtilTest extends WifiBaseTest {
         configuration.linkedConfigurations = new HashMap<>();
         configuration.linkedConfigurations.put(TEST_DUMMY_CONFIG_KEY, Integer.valueOf(1));
         configuration.defaultGwMacAddress = TEST_STATIC_IP_GATEWAY_ADDRESS;
-        configuration.requirePMF = true;
+        configuration.requirePmf = true;
         configuration.validatedInternetAccess = true;
         configuration.noInternetAccessExpected = true;
         configuration.meteredHint = true;
@@ -477,6 +477,7 @@ public class XmlUtilTest extends WifiBaseTest {
     public void testLegacyPasspointConfigSerializeDeserialize() throws Exception {
         WifiConfiguration config = WifiConfigurationTestUtil.createPasspointNetwork();
         config.isLegacyPasspointConfig = true;
+        config.setPasspointUniqueId(null); // Did not exist for legacy Passpoint
         config.roamingConsortiumIds = new long[] {0x12345678};
         config.enterpriseConfig.setPlmn("1234");
         config.enterpriseConfig.setRealm("test.com");

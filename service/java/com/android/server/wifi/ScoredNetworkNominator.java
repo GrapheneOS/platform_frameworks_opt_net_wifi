@@ -18,16 +18,12 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.database.ContentObserver;
 import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
-import android.os.Handler;
 import android.os.Process;
-import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.LocalLog;
 import android.util.Log;
@@ -50,13 +46,10 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
     private final PackageManager mPackageManager;
     private final WifiConfigManager mWifiConfigManager;
     private final LocalLog mLocalLog;
-    private final ContentObserver mContentObserver;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
-    private boolean mNetworkRecommendationsEnabled;
     private WifiNetworkScoreCache mScoreCache;
 
-    ScoredNetworkNominator(final Context context, Handler handler,
-            final FrameworkFacade frameworkFacade, NetworkScoreManager networkScoreManager,
+    ScoredNetworkNominator(NetworkScoreManager networkScoreManager,
             PackageManager packageManager,
             WifiConfigManager wifiConfigManager, LocalLog localLog,
             WifiNetworkScoreCache wifiNetworkScoreCache,
@@ -67,24 +60,19 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
         mPackageManager = packageManager;
         mWifiConfigManager = wifiConfigManager;
         mLocalLog = localLog;
-        mContentObserver = new ContentObserver(handler) {
-            @Override
-            public void onChange(boolean selfChange) {
-                mNetworkRecommendationsEnabled = frameworkFacade.getIntegerSetting(context,
-                        Settings.Global.NETWORK_RECOMMENDATIONS_ENABLED, 0) == 1;
-            }
-        };
-        frameworkFacade.registerContentObserver(context,
-                Settings.Global.getUriFor(Settings.Global.NETWORK_RECOMMENDATIONS_ENABLED),
-                false /* notifyForDescendents */, mContentObserver);
-        mContentObserver.onChange(false /* unused */);
         mLocalLog.log("ScoredNetworkNominator constructed. mNetworkRecommendationsEnabled: "
-                + mNetworkRecommendationsEnabled);
+                + isNetworkRecommendationsEnabled());
+    }
+
+    private boolean isNetworkRecommendationsEnabled() {
+        // Check if we have any active scorer, not enabled otherwise.
+        String packageName = mNetworkScoreManager.getActiveScorerPackage();
+        return !TextUtils.isEmpty(packageName);
     }
 
     @Override
     public void update(List<ScanDetail> scanDetails) {
-        if (mNetworkRecommendationsEnabled) {
+        if (isNetworkRecommendationsEnabled()) {
             updateNetworkScoreCache(scanDetails);
         }
     }
@@ -133,7 +121,7 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
             WifiConfiguration currentNetwork, String currentBssid, boolean connected,
             boolean untrustedNetworkAllowed,
             @NonNull OnConnectableListener onConnectableListener) {
-        if (!mNetworkRecommendationsEnabled) {
+        if (!isNetworkRecommendationsEnabled()) {
             mLocalLog.log("Skipping nominateNetworks; Network recommendations disabled.");
             return;
         }

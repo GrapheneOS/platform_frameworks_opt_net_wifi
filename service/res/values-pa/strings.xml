@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ਦੇ ਸੁਝਾਏ ਨੈੱਟਵਰਕ। ਸ਼ਾਇਦ ਡੀਵਾਈਸ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਕਨੈਕਟ ਹੋਵੇ।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ਵਰਤਣ ਦਿਓ"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"ਨਹੀਂ ਧੰਨਵਾਦ"</string>
-    <!-- no translation found for wifi_suggestion_imsi_privacy_title (5072368033308094465) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_imsi_privacy_content (5050532382656368119) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_carrier (5500037364868978935) -->
-    <skip />
-    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier (7020127735591720299) -->
-    <skip />
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI ਸੁਰੱਖਿਆ ਲਈ ਪਰਦੇਦਾਰੀ ਚਿਤਾਵਨੀ"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> ਨੇ ਅਜਿਹੇ ਨੈੱਟਵਰਕਾਂ ਦਾ ਸੁਝਾਅ ਦਿੱਤਾ ਹੈ ਜੋ ਪਰਦੇਦਾਰੀ ਸੁਰੱਖਿਆ ਦਿੱਤੇ ਬਿਨਾਂ ਸਿਮ ਕਾਰਡ ਸੰਬੰਧੀ ਜਾਣਕਾਰੀ ਵਰਤਦੇ ਹਨ, ਕੀ ਅਜਿਹੇ ਨੈੱਟਵਰਕ ਨੂੰ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਕਨੈਕਟ ਹੋਣ ਦੀ ਆਗਿਆ ਦੇਣੀ ਹੈ?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"ਆਗਿਆ ਦਿਓ"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"ਆਗਿਆ ਨਾ ਦਿਓ"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"ਵਾਈ‑ਫਾਈ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਚੱਲ ਪਵੇਗਾ"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"ਜਦੋਂ ਤੁਸੀਂ ਕਿਸੇ ਰੱਖਿਅਤ ਕੀਤੇ ਉੱਚ-ਗੁਣਵੱਤਾ ਵਾਲੇ ਨੈੱਟਵਰਕ ਦੇ ਨੇੜੇ ਹੋਵੋ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"ਵਾਪਸ ਚਾਲੂ ਨਾ ਕਰੋ"</string>
@@ -80,4 +76,8 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"ਮੋਬਾਈਲ ਹੌਟਸਪੌਟ ਨੂੰ ਬੰਦ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"ਮੋਬਾਈਲ ਹੌਟਸਪੌਟ ਨੂੰ ਬੰਦ ਕਰ ਦਿੱਤਾ ਗਿਆ ਹੈ"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"ਅਕਿਰਿਆਸ਼ੀਲਤਾ ਦੀ ਮਿਆਦ ਮੁੱਕਣ ਕਰਕੇ ਮੋਬਾਈਲ ਹੌਟਸਪੌਟ ਨੂੰ ਬੰਦ ਕਰ ਦਿੱਤਾ ਗਿਆ ਹੈ।"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

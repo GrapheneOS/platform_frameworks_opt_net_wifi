@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import static com.android.server.wifi.WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.net.IpConfiguration;
@@ -59,17 +60,14 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
             "WifiEnterpriseConfiguration";
 
     private final Context mContext;
-    private final WifiOemConfigStoreMigrationDataHolder mWifiOemConfigStoreMigrationDataHolder;
 
     /**
      * List of saved shared networks visible to all the users to be stored in the store file.
      */
     private List<WifiConfiguration> mConfigurations;
 
-    NetworkListStoreData(Context context,
-            WifiOemConfigStoreMigrationDataHolder wifiOemConfigStoreMigrationDataHolder) {
+    NetworkListStoreData(Context context) {
         mContext = context;
-        mWifiOemConfigStoreMigrationDataHolder = wifiOemConfigStoreMigrationDataHolder;
     }
 
     @Override
@@ -82,11 +80,12 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
+            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
             throws XmlPullParserException, IOException {
         // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
         List<WifiConfiguration> oemMigratedConfigurations =
-                mWifiOemConfigStoreMigrationDataHolder.getUserSavedNetworks();
+                storeMigrationDataHolder.getUserSavedNetworks();
         if (oemMigratedConfigurations != null) {
             Log.i(TAG, "Loading data from OEM migration hook");
             mConfigurations = oemMigratedConfigurations;

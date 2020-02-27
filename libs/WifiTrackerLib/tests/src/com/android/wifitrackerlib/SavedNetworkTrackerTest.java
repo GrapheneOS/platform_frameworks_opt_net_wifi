@@ -34,6 +34,7 @@ import android.net.NetworkScoreManager;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
 import android.os.test.TestLooper;
@@ -205,7 +206,9 @@ public class SavedNetworkTrackerTest {
                 any(), any(), any());
         mTestLooper.dispatchAll();
 
-        assertThat(savedNetworkTracker.getSavedWifiEntries().stream().map(WifiEntry::getTitle)
+        assertThat(savedNetworkTracker.getSavedWifiEntries().stream()
+                .filter(entry -> entry.mForSavedNetworksPage)
+                .map(WifiEntry::getTitle)
                 .collect(Collectors.toSet()))
                 .containsExactly("ssid0", "ssid1", "ssid2");
     }
@@ -231,7 +234,10 @@ public class SavedNetworkTrackerTest {
                         .putExtra(WifiManager.EXTRA_CHANGE_REASON,
                                 WifiManager.CHANGE_REASON_ADDED));
 
-        assertThat(savedNetworkTracker.getSavedWifiEntries()).hasSize(1);
+        assertThat(savedNetworkTracker.getSavedWifiEntries().stream()
+                .filter(entry -> entry.mForSavedNetworksPage)
+                .collect(Collectors.toSet()))
+                .hasSize(1);
     }
 
     /**
@@ -316,6 +322,7 @@ public class SavedNetworkTrackerTest {
         homeSp.setFqdn("fqdn");
         homeSp.setFriendlyName("friendlyName");
         passpointConfig.setHomeSp(homeSp);
+        passpointConfig.setCredential(new Credential());
         when(mMockWifiManager.getPasspointConfigurations())
                 .thenReturn(Collections.singletonList(passpointConfig));
 

@@ -627,6 +627,88 @@ public class InformationElementUtilTest extends WifiBaseTest {
     }
 
     /**
+     * Test Capabilities.generateCapabilitiesString() with RSN IE,
+     * CCMP and FILS SHA256. Expect the function to return a string
+     * with the proper security information.
+     */
+    @Test
+    public void buildCapabilities_rsnFilsSha256Element() {
+        InformationElement ieRsn = new InformationElement();
+        ieRsn.id = InformationElement.EID_RSN;
+        ieRsn.bytes = new byte[] {
+                // RSNE Version (0x0001)
+                (byte) 0x01, (byte) 0x00,
+                // Group cipher suite: CCMP
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x04,
+                // Number of cipher suites (1)
+                (byte) 0x01, (byte) 0x00,
+                // Cipher suite: CCMP
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x04,
+                // Number of AKMs (3)
+                (byte) 0x03, (byte) 0x00,
+                // WPA AKM
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x01,
+                // WPA SHA256 AKM
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x05,
+                // FILS SHA256 AKM
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x0E,
+                // RSN capabilities
+                (byte) 0x00, (byte) 0x00 };
+
+        InformationElement[] ies = new InformationElement[] { ieRsn };
+        int beaconCap = 0x1 << 4;
+
+        InformationElementUtil.Capabilities capabilities =
+                new InformationElementUtil.Capabilities();
+        capabilities.from(ies, beaconCap, true);
+        String result = capabilities.generateCapabilitiesString();
+
+        assertEquals("[WPA2-EAP+EAP-SHA256+FILS-SHA256-CCMP][RSN-EAP+EAP-SHA256+FILS-SHA256-CCMP]",
+                result);
+    }
+
+    /**
+     * Test Capabilities.generateCapabilitiesString() with RSN IE,
+     * CCMP and FILS SHA384. Expect the function to return a string
+     * with the proper security information.
+     */
+    @Test
+    public void buildCapabilities_rsnFilsSha384Element() {
+        InformationElement ieRsn = new InformationElement();
+        ieRsn.id = InformationElement.EID_RSN;
+        ieRsn.bytes = new byte[] {
+                // RSNE Version (0x0001)
+                (byte) 0x01, (byte) 0x00,
+                // Group cipher suite: CCMP
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x04,
+                // Number of cipher suites (1)
+                (byte) 0x01, (byte) 0x00,
+                // Cipher suite: CCMP
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x04,
+                // Number of AKMs (3)
+                (byte) 0x03, (byte) 0x00,
+                // WPA AKM
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x01,
+                // WPA SHA256 AKM
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x05,
+                // FILS SHA384 AKM
+                (byte) 0x00, (byte) 0x0F, (byte) 0xAC, (byte) 0x0F,
+                // RSN capabilities
+                (byte) 0x00, (byte) 0x00 };
+
+        InformationElement[] ies = new InformationElement[] { ieRsn };
+        int beaconCap = 0x1 << 4;
+
+        InformationElementUtil.Capabilities capabilities =
+                new InformationElementUtil.Capabilities();
+        capabilities.from(ies, beaconCap, true);
+        String result = capabilities.generateCapabilitiesString();
+
+        assertEquals("[WPA2-EAP+EAP-SHA256+FILS-SHA384-CCMP][RSN-EAP+EAP-SHA256+FILS-SHA384-CCMP]",
+                result);
+    }
+
+    /**
      * Test Capabilities.generateCapabilitiesString() with both RSN and WPA1 IE which are malformed.
      * Expect the function to return a string with empty key management & pairswise cipher security
      * information.
@@ -947,7 +1029,7 @@ public class InformationElementUtilTest extends WifiBaseTest {
      * @throws Exception
      */
     @Test
-    public void getHS2VendorSpecificIE() throws Exception {
+    public void getHS2VendorSpecificIEWithDomainIdOnly() throws Exception {
         InformationElement ie = new InformationElement();
         ie.id = InformationElement.EID_VSA;
         /**
@@ -967,6 +1049,65 @@ public class InformationElementUtilTest extends WifiBaseTest {
                 InformationElementUtil.getHS2VendorSpecificIE(new InformationElement[] {ie});
         assertEquals(NetworkDetail.HSRelease.R2, vsa.hsRelease);
         assertEquals(0x2211, vsa.anqpDomainID);
+    }
+
+    /**
+     * Verify that the expected Hotspot 2.0 Vendor Specific information element is parsed and
+     * retrieved from the list of IEs.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void getHS2VendorSpecificIEWithDomainIdAndPpsMoId() throws Exception {
+        InformationElement ie = new InformationElement();
+        ie.id = InformationElement.EID_VSA;
+        /**
+         * Vendor Specific OI Format:
+         * | OI | Type | Hotspot Configuration | PPS MO ID (optional) | ANQP Domain ID (optional)
+         *    3    1              1                    2                        2
+         *
+         * With OI=0x506F9A and Type=0x10 for Hotspot 2.0
+         *
+         * The Format of Hotspot Configuration:
+         *        B0               B1                   B2             B3    B4              B7
+         * | DGAF Disabled | PPS MO ID Flag | ANQP Domain ID Flag | reserved | Release Number |
+         */
+        ie.bytes = new byte[] { (byte) 0x50, (byte) 0x6F, (byte) 0x9A, (byte) 0x10,
+                (byte) 0x16 /* Hotspot Configuration */, (byte) 0x44, (byte) 0x33 /* PPS MO */,
+                (byte) 0x11, (byte) 0x22 /* ANQP Domain */};
+        InformationElementUtil.Vsa vsa =
+                InformationElementUtil.getHS2VendorSpecificIE(new InformationElement[] {ie});
+        assertEquals(NetworkDetail.HSRelease.R2, vsa.hsRelease);
+        assertEquals(0x2211, vsa.anqpDomainID);
+    }
+
+    /**
+     * Verify that the expected Hotspot 2.0 Vendor Specific information element is parsed and
+     * retrieved from the list of IEs.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testHS2VendorSpecificIEWithDomainIdAndPpsMoIdBitsIncorrectSize() throws Exception {
+        InformationElement ie = new InformationElement();
+        ie.id = InformationElement.EID_VSA;
+        /**
+         * Vendor Specific OI Format:
+         * | OI | Type | Hotspot Configuration | PPS MO ID (optional) | ANQP Domain ID (optional)
+         *    3    1              1                    2                        2
+         *
+         * With OI=0x506F9A and Type=0x10 for Hotspot 2.0
+         *
+         * The Format of Hotspot Configuration:
+         *        B0               B1                   B2             B3    B4              B7
+         * | DGAF Disabled | PPS MO ID Flag | ANQP Domain ID Flag | reserved | Release Number |
+         */
+        ie.bytes = new byte[] { (byte) 0x50, (byte) 0x6F, (byte) 0x9A, (byte) 0x10,
+                (byte) 0x16 /* Hotspot Configuration */, (byte) 0x44, (byte) 0x33 /* PPS MO */
+                /* ANQP Domain missing */};
+        InformationElementUtil.Vsa vsa =
+                InformationElementUtil.getHS2VendorSpecificIE(new InformationElement[] {ie});
+        assertEquals(0, vsa.anqpDomainID);
     }
 
     /**

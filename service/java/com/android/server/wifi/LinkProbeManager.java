@@ -19,7 +19,7 @@ package com.android.server.wifi;
 import android.content.Context;
 import android.net.MacAddress;
 import android.net.wifi.WifiInfo;
-import android.net.wifi.wificond.WifiCondManager;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.util.Log;
 
@@ -231,7 +231,7 @@ public class LinkProbeManager {
         mWifiNative.probeLink(
                 interfaceName,
                 MacAddress.fromString(wifiInfo.getBSSID()),
-                new WifiCondManager.SendMgmtFrameCallback() {
+                new WifiNl80211Manager.SendMgmtFrameCallback() {
                     @Override
                     public void onAck(int elapsedTimeMs) {
                         if (mVerboseLoggingEnabled) {

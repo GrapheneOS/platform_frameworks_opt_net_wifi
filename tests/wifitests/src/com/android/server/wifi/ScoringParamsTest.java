@@ -19,19 +19,12 @@ package com.android.server.wifi;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.net.wifi.WifiInfo;
-import android.os.Handler;
-import android.provider.Settings;
 
 import androidx.test.filters.SmallTest;
 
@@ -39,7 +32,6 @@ import com.android.wifi.resources.R;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -327,58 +319,5 @@ public class ScoringParamsTest extends WifiBaseTest {
         assertEquals(mSufficient6GHz, mScoringParams.getSufficientRssi(6255));
         assertEquals(mGood6GHz, mScoringParams.getGoodRssi(6275));
         assertEquals(mGood6GHz, mScoringParams.getGoodRssi(ScoringParams.BAND6));
-    }
-
-    /**
-     * Additional mocks for handling Settings
-     */
-    @Mock FrameworkFacade mFrameworkFacade;
-    @Mock Handler mHandler;
-
-    /**
-     * Test getting updates from Settings
-     *
-     * Exercises the ContentObserver notification path
-     */
-    @Test
-    public void testFullConstructorWithUpdatesFromSettings() throws Exception {
-        ArgumentCaptor<ContentObserver> captor = ArgumentCaptor.forClass(ContentObserver.class);
-        when(mFrameworkFacade.getStringSetting(mContext, Settings.Global.WIFI_SCORE_PARAMS))
-                .thenReturn(null);
-        mScoringParams = new ScoringParams(mContext, mFrameworkFacade, mHandler);
-        verify(mFrameworkFacade)
-                .registerContentObserver(eq(mContext), any(), anyBoolean(), captor.capture());
-
-        String before = mScoringParams.toString();
-        String changed = before.replace('8', '9');
-        assertFalse(changed.equals(before));
-
-        when(mFrameworkFacade.getStringSetting(mContext, Settings.Global.WIFI_SCORE_PARAMS))
-                .thenReturn(changed);
-        captor.getValue().onChange(/*selfChange*/ false);
-        assertEquals(changed, mScoringParams.toString());
-
-        when(mFrameworkFacade.getStringSetting(mContext, Settings.Global.WIFI_SCORE_PARAMS))
-                .thenReturn("");
-        captor.getValue().onChange(/*selfChange*/ false);
-        assertEquals(before, mScoringParams.toString());
-    }
-
-    @Test
-    public void testBadSettings() throws Exception {
-        ArgumentCaptor<ContentObserver> captor = ArgumentCaptor.forClass(ContentObserver.class);
-        when(mFrameworkFacade.getStringSetting(mContext, Settings.Global.WIFI_SCORE_PARAMS))
-                .thenReturn(null);
-        mScoringParams = new ScoringParams(mContext, mFrameworkFacade, mHandler);
-        verify(mFrameworkFacade)
-                .registerContentObserver(eq(mContext), any(), anyBoolean(), captor.capture());
-
-        String before = mScoringParams.toString();
-        String garbage = "what??";
-
-        when(mFrameworkFacade.getStringSetting(mContext, Settings.Global.WIFI_SCORE_PARAMS))
-                .thenReturn(garbage);
-        captor.getValue().onChange(/*selfChange*/ false);
-        assertEquals(before, mScoringParams.toString());
     }
 }

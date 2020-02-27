@@ -57,11 +57,9 @@ public class PostDevDataMessageTest extends WifiBaseTest {
     private static final String TEST_LANGUAGE = "en";
     private static final String TEST_SESSION_ID = "123456";
     private static final String TEST_REQUEST_REASON = "test Reason";
-    private static final String TEST_HW_VERSION = "Test HW 1.0";
     private static final String TEST_MAC_ADDR = "11:22:33:44:55:66";
     private static final String TEST_IMSI = "310150123456789";
     private static final String TEST_SW_VERSION = "Android Test 1.0";
-    private static final String TEST_FW_VERSION = "Test FW 1.0";
     private static final String TEST_REDIRECT_URL = "http://127.0.0.1:12345/index.htm";
 
     @Mock
@@ -86,10 +84,8 @@ public class PostDevDataMessageTest extends WifiBaseTest {
 
         when(mSystemInfo.getDeviceId()).thenReturn(TEST_DEV_ID);
         when(mSystemInfo.getDeviceManufacturer()).thenReturn(TEST_MANUFACTURER);
-        when(mSystemInfo.getHwVersion()).thenReturn(TEST_HW_VERSION);
         when(mSystemInfo.getMacAddress(any(String.class))).thenReturn(TEST_MAC_ADDR);
         when(mSystemInfo.getSoftwareVersion()).thenReturn(TEST_SW_VERSION);
-        when(mSystemInfo.getFirmwareVersion()).thenReturn(TEST_FW_VERSION);
         when(mDataTelephonyManager.getSubscriberId()).thenReturn(TEST_IMSI);
     }
 

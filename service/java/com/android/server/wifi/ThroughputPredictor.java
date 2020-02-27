@@ -21,7 +21,7 @@ import static com.android.server.wifi.util.InformationElementUtil.BssLoad.MIN_CH
 import android.annotation.NonNull;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
-import android.net.wifi.wificond.DeviceWiphyCapabilities;
+import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.util.Log;
 
 /**
@@ -30,7 +30,7 @@ import android.util.Log;
  */
 public class ThroughputPredictor {
     private static final String TAG = "WifiThroughputPredictor";
-    private static final boolean DBG = false;
+    private boolean mVerboseLoggingEnabled = false;
 
     // Default value of channel utilization at 2G when channel utilization is not available from
     // BssLoad IE or from link layer stats
@@ -94,6 +94,15 @@ public class ThroughputPredictor {
     private static final int MAX_NUM_SPATIAL_STREAM_11AC = 8;
     private static final int MAX_NUM_SPATIAL_STREAM_11N = 4;
     private static final int MAX_NUM_SPATIAL_STREAM_LEGACY = 1;
+
+    /**
+     * Enable/Disable verbose logging.
+     *
+     * @param verbose true to enable and false to disable.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
+    }
 
     /**
      * Predict maximum Tx throughput supported by connected network at the highest RSSI
@@ -194,8 +203,12 @@ public class ThroughputPredictor {
                 channelWidth = ScanResult.CHANNEL_WIDTH_20MHZ;
         }
 
-        if (DBG) {
-            Log.d(TAG, " AP Nss: " + maxNumSpatialStreamAp + " freq: " + frequency);
+        if (mVerboseLoggingEnabled) {
+            StringBuilder sb = new StringBuilder();
+            Log.d(TAG, sb.append("AP Nss: ").append(maxNumSpatialStreamAp)
+                    .append(", Device Nss: ").append(maxNumSpatialStreamDevice)
+                    .append(", freq: ").append(frequency)
+                    .toString());
         }
 
         int channelUtilization = getValidChannelUtilization(frequency,
@@ -215,6 +228,10 @@ public class ThroughputPredictor {
         int numTonePerSym;
         int symDurationNs;
         int maxBitsPerTone;
+        if (maxNumSpatialStream < 1) {
+            Log.e(TAG, "maxNumSpatialStream < 1 due to wrong implementation. Overridden to 1");
+            maxNumSpatialStream = 1;
+        }
         if (wifiStandard == ScanResult.WIFI_STANDARD_UNKNOWN) {
             return WifiInfo.LINK_SPEED_UNKNOWN;
         } else if (wifiStandard == ScanResult.WIFI_STANDARD_LEGACY) {
@@ -286,7 +303,7 @@ public class ThroughputPredictor {
 
         int throughputMbps = (phyRateMbps * airTimeFraction) / MAX_CHANNEL_UTILIZATION;
 
-        if (DBG) {
+        if (mVerboseLoggingEnabled) {
             StringBuilder sb = new StringBuilder();
             Log.d(TAG, sb.append(" BW: ").append(channelWidth)
                     .append(" RSSI: ").append(rssiDbm)
@@ -320,7 +337,7 @@ public class ThroughputPredictor {
         return bitPerTone;
     }
 
-    private static int getValidChannelUtilization(int frequency, int channelUtilizationBssLoad,
+    private int getValidChannelUtilization(int frequency, int channelUtilizationBssLoad,
             int channelUtilizationLinkLayerStats, boolean isBluetoothConnected) {
         int channelUtilization;
         boolean is2G = (frequency < ScoringParams.MINIMUM_5GHZ_BAND_FREQUENCY_IN_MEGAHERTZ);
@@ -337,7 +354,7 @@ public class ThroughputPredictor {
             channelUtilization += CHANNEL_UTILIZATION_BOOST_BT_CONNECTED_2G;
             channelUtilization = Math.min(channelUtilization, MAX_CHANNEL_UTILIZATION);
         }
-        if (DBG) {
+        if (mVerboseLoggingEnabled) {
             StringBuilder sb = new StringBuilder();
             Log.d(TAG, sb.append(" utilization (BssLoad) ").append(channelUtilizationBssLoad)
                     .append(" utilization (LLStats) ").append(channelUtilizationLinkLayerStats)
@@ -359,7 +376,7 @@ public class ThroughputPredictor {
     // Calculate the available airtime fraction value which is multiplied by
     // MAX_CHANNEL_UTILIZATION for integer representation. It is calculated as
     // (1 - channelUtilization / MAX_CHANNEL_UTILIZATION) * MAX_CHANNEL_UTILIZATION
-    private static int calculateAirTimeFraction(int channelUtilization, int channelWidthFactor) {
+    private int calculateAirTimeFraction(int channelUtilization, int channelWidthFactor) {
         int airTimeFraction20MHz = MAX_CHANNEL_UTILIZATION - channelUtilization;
         int airTimeFraction = airTimeFraction20MHz;
         // For the cases of 40MHz or above, need to take
@@ -369,7 +386,7 @@ public class ThroughputPredictor {
             airTimeFraction *= airTimeFraction;
             airTimeFraction /= MAX_CHANNEL_UTILIZATION;
         }
-        if (DBG) {
+        if (mVerboseLoggingEnabled) {
             Log.d(TAG, " airTime20: " + airTimeFraction20MHz + " airTime: " + airTimeFraction);
         }
         return airTimeFraction;

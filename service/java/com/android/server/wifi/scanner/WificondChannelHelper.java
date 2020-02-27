@@ -21,9 +21,6 @@ import android.util.Log;
 
 import com.android.server.wifi.WifiNative;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * KnownBandsChannelHelper that uses band to channel mappings retrieved from wificond.
  * Also supporting updating the channel list from the wificond on demand.
@@ -35,27 +32,30 @@ public class WificondChannelHelper extends KnownBandsChannelHelper {
 
     public WificondChannelHelper(WifiNative wifiNative) {
         mWifiNative = wifiNative;
-        final List<Integer> emptyFreqList = Collections.emptyList();
+        final int[] emptyFreqList = new int[0];
         setBandChannels(emptyFreqList, emptyFreqList, emptyFreqList, emptyFreqList);
         updateChannels();
     }
 
     @Override
     public void updateChannels() {
-        List<Integer> channels24G =
+        int[] channels24G =
                 mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_24_GHZ);
-        if (channels24G.isEmpty()) Log.e(TAG, "Failed to get channels for 2.4GHz band");
-        List<Integer> channels5G = mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
-        if (channels5G.isEmpty()) Log.e(TAG, "Failed to get channels for 5GHz band");
-        List<Integer> channelsDfs =
+        if (channels24G == null) Log.e(TAG, "Failed to get channels for 2.4GHz band");
+        int[] channels5G = mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
+        if (channels5G == null) Log.e(TAG, "Failed to get channels for 5GHz band");
+        int[] channelsDfs =
                 mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY);
-        if (channelsDfs.isEmpty()) Log.e(TAG, "Failed to get channels for 5GHz DFS only band");
-        List<Integer> channels6G =
+        if (channelsDfs == null) Log.e(TAG, "Failed to get channels for 5GHz DFS only band");
+        int[] channels6G =
                 mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
-        if (channels6G.isEmpty()) Log.e(TAG, "Failed to get channels for 6GHz band");
+        if (channels6G == null) Log.e(TAG, "Failed to get channels for 6GHz band");
 
-        if (!channels24G.isEmpty() || !channels5G.isEmpty() || !channelsDfs.isEmpty()
-                || !channels6G.isEmpty()) {
+        if (channels24G == null || channels5G == null || channelsDfs == null
+                || channels6G == null) {
+            Log.e(TAG, "Failed to get all channels for band, not updating band channel lists");
+        } else if (channels24G.length > 0 || channels5G.length > 0 || channelsDfs.length > 0
+                || channels6G.length > 0) {
             setBandChannels(channels24G, channels5G, channelsDfs, channels6G);
         } else {
             Log.e(TAG, "Got zero length for all channel lists");

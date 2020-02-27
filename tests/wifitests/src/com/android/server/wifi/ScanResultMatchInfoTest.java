@@ -47,6 +47,18 @@ public class ScanResultMatchInfoTest extends WifiBaseTest {
         scan = createScanDetailForNetwork(conf, "BB:BB:BB:BB:BB:BB");
         assertEquals(ScanResultMatchInfo.fromWifiConfiguration(conf),
                 ScanResultMatchInfo.fromScanResult(scan.getScanResult()));
+
+        conf =
+                WifiConfigurationTestUtil.createWapiPskNetwork();
+        scan = createScanDetailForNetwork(conf, "AA:AA:AA:AA:AA:AA");
+        assertEquals(ScanResultMatchInfo.fromWifiConfiguration(conf),
+                ScanResultMatchInfo.fromScanResult(scan.getScanResult()));
+
+        conf =
+                WifiConfigurationTestUtil.createWapiPskNetwork();
+        scan = createScanDetailForNetwork(conf, "BB:BB:BB:BB:BB:BB");
+        assertEquals(ScanResultMatchInfo.fromWifiConfiguration(conf),
+                ScanResultMatchInfo.fromScanResult(scan.getScanResult()));
     }
 
     /**

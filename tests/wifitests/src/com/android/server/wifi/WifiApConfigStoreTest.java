@@ -85,6 +85,8 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     private static final MacAddress TEST_RANDOMIZED_MAC =
             MacAddress.fromString("d2:11:19:34:a5:20");
 
+    private final int mBand25G = SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ;
+
     @Mock private Context mContext;
     @Mock private WifiInjector mWifiInjector;
     private TestLooper mLooper;
@@ -133,16 +135,16 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     /**
      * Helper method to create and verify actions for the ApConfigStore used in the following tests.
      */
-    private WifiApConfigStore createWifiApConfigStore(String legacyFilePath) {
+    private WifiApConfigStore createWifiApConfigStore(File legacyFile) {
         WifiApConfigStore store;
-        if (legacyFilePath == null) {
+        if (legacyFile == null) {
             store = new WifiApConfigStore(
                     mContext, mWifiInjector, mHandler, mBackupManagerProxy,
                     mWifiConfigStore, mWifiConfigManager, mActiveModeWarden);
         } else {
             store = new WifiApConfigStore(
                     mContext, mWifiInjector, mHandler, mBackupManagerProxy,
-                    mWifiConfigStore, mWifiConfigManager, mActiveModeWarden, legacyFilePath);
+                    mWifiConfigStore, mWifiConfigManager, mActiveModeWarden, legacyFile);
         }
 
         verify(mWifiConfigStore).registerStoreData(any());
@@ -323,7 +325,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         assertWifiConfigurationEqualSoftApConfiguration(backupConfig, expectedConfig);
 
         writeLegacyApConfigFile(backupConfig);
-        WifiApConfigStore store = createWifiApConfigStore(mLegacyApConfigFile.getPath());
+        WifiApConfigStore store = createWifiApConfigStore(mLegacyApConfigFile);
         verify(mWifiConfigManager).saveToStore(true);
         verify(mBackupManagerProxy).notifyDataChanged();
         verifyApConfig(expectedConfig, store.getApConfiguration());
@@ -393,109 +395,12 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a single mode device will have apBand =
-     * ANY converted to 5GHZ.
-     */
-    @Test
-    public void convertSingleModeDeviceAnyTo5Ghz() throws Exception {
-        /* Initialize WifiApConfigStore with default configuration. */
-        WifiApConfigStore store = createWifiApConfigStore();
-        verifyDefaultApConfig(store.getApConfiguration(), TEST_DEFAULT_AP_SSID);
-        verify(mWifiConfigManager).saveToStore(true);
-
-        /* Update with a valid configuration. */
-        SoftApConfiguration providedConfig = setupApConfig(
-                "ConfiguredAP",                /* SSID */
-                "randomKey",                   /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,        /* security type */
-                SoftApConfiguration.BAND_ANY,  /* AP band (ANY) */
-                0,                             /* AP channel */
-                false                          /* Hidden SSID */);
-
-        SoftApConfiguration expectedConfig = setupApConfig(
-                "ConfiguredAP",                       /* SSID */
-                "randomKey",                          /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,               /* security type */
-                SoftApConfiguration.BAND_5GHZ,        /* AP band (5GHz) */
-                0,                                    /* AP channel */
-                false                                 /* Hidden SSID */);
-        store.setApConfiguration(providedConfig);
-        verifyApConfig(expectedConfig, store.getApConfiguration());
-        verifyApConfig(expectedConfig, mDataStoreSource.toSerialize());
-        verify(mWifiConfigManager, times(2)).saveToStore(true);
-        verify(mBackupManagerProxy, times(2)).notifyDataChanged();
-    }
-
-    /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a single mode device will have apBand
-     * is a multiband not including 5GHz converted into 2GHz.
-     */
-    @Test
-    public void convertSingleModeDeviceMultibandTo2Ghz() throws Exception {
-        /* Initialize WifiApConfigStore with default configuration. */
-        WifiApConfigStore store = createWifiApConfigStore();
-        verifyDefaultApConfig(store.getApConfiguration(), TEST_DEFAULT_AP_SSID);
-        verify(mWifiConfigManager).saveToStore(true);
-
-        /* Update with a valid configuration. */
-        SoftApConfiguration providedConfig = setupApConfig(
-                "ConfiguredAP",                /* SSID */
-                "randomKey",                   /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,        /* security type */
-                SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_6GHZ,  /* AP band */
-                0,                             /* AP channel */
-                false                          /* Hidden SSID */);
-
-        SoftApConfiguration expectedConfig = setupApConfig(
-                "ConfiguredAP",                       /* SSID */
-                "randomKey",                          /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,               /* security type */
-                SoftApConfiguration.BAND_2GHZ,        /* AP band (5GHz) */
-                0,                                    /* AP channel */
-                false                                 /* Hidden SSID */);
-        store.setApConfiguration(providedConfig);
-        verifyApConfig(expectedConfig, store.getApConfiguration());
-        verifyApConfig(expectedConfig, mDataStoreSource.toSerialize());
-        verify(mWifiConfigManager, times(2)).saveToStore(true);
-        verify(mBackupManagerProxy, times(2)).notifyDataChanged();
-    }
-
-    /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a single mode device does not convert
-     * apBand to ANY.
-     */
-    @Test
-    public void singleModeDevice5GhzNotConverted() throws Exception {
-        /* Initialize WifiApConfigStore with default configuration. */
-        WifiApConfigStore store = createWifiApConfigStore();
-        verifyDefaultApConfig(store.getApConfiguration(), TEST_DEFAULT_AP_SSID);
-        verify(mWifiConfigManager).saveToStore(true);
-
-        /* Update with a valid configuration. */
-        SoftApConfiguration expectedConfig = setupApConfig(
-                "ConfiguredAP",                 /* SSID */
-                "randomKey",                    /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,         /* security type */
-                SoftApConfiguration.BAND_5GHZ,  /* AP band */
-                40,                             /* AP channel */
-                false                           /* Hidden SSID */);
-        store.setApConfiguration(expectedConfig);
-        verifyApConfig(expectedConfig, store.getApConfiguration());
-        verifyApConfig(expectedConfig, mDataStoreSource.toSerialize());
-        verify(mWifiConfigManager, times(2)).saveToStore(true);
-        verify(mBackupManagerProxy, times(2)).notifyDataChanged();
-    }
-
-    /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a dual mode device will have apBand =
+     * Due to different countries capabilities, some bands are not available.
+     * This test verifies that a device will have apBand =
      * 5GHz converted to include 2.4GHz.
      */
     @Test
-    public void convertDualModeDevice5GhzToAny() throws Exception {
+    public void convertDevice5GhzToAny() throws Exception {
         when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
                 .thenReturn(true);
 
@@ -510,7 +415,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
                 "randomKey",                    /* preshared key */
                 SECURITY_TYPE_WPA2_PSK,         /* security type */
                 SoftApConfiguration.BAND_5GHZ,  /* AP band */
-                40,                             /* AP channel */
+                0,                              /* AP channel */
                 false                           /* Hidden SSID */);
 
         SoftApConfiguration expectedConfig = setupApConfig(
@@ -529,12 +434,12 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a dual mode device does not convert
-     * apBand to 5Ghz.
+     * Due to different countries capabilities, some bands are not available.
+     * This test verifies that a device does not need to conver apBand since it already
+     * included 2.4G.
      */
     @Test
-    public void dualModeDeviceAnyNotConverted() throws Exception {
+    public void deviceAnyNotConverted() throws Exception {
         when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
                 .thenReturn(true);
 
@@ -559,64 +464,41 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a single mode device converts a persisted
-     * ap config with ANY set for the apBand to 5GHz.
+     * Due to different countries capabilities, some bands are not available.
+     * This test verifies that a device does not convert apBand because channel is specific.
      */
     @Test
-    public void singleModeDeviceAnyConvertedTo5GhzAtRetrieval() throws Exception {
+    public void deviceWithChannelNotConverted() throws Exception {
+        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+                .thenReturn(true);
 
-        SoftApConfiguration persistedConfig = setupApConfig(
+        /* Initialize WifiApConfigStore with default configuration. */
+        WifiApConfigStore store = createWifiApConfigStore();
+        verifyDefaultApConfig(store.getApConfiguration(), TEST_DEFAULT_AP_SSID);
+        verify(mWifiConfigManager).saveToStore(true);
+
+        /* Update with a valid configuration. */
+        SoftApConfiguration expectedConfig = setupApConfig(
                 "ConfiguredAP",                 /* SSID */
                 "randomKey",                    /* preshared key */
                 SECURITY_TYPE_WPA2_PSK,         /* security type */
-                SoftApConfiguration.BAND_ANY,   /* AP band */
-                0,                              /* AP channel */
+                SoftApConfiguration.BAND_5GHZ,  /* AP band */
+                40,                             /* AP channel */
                 false                           /* Hidden SSID */);
-        SoftApConfiguration expectedConfig = setupApConfig(
-                "ConfiguredAP",                        /* SSID */
-                "randomKey",                           /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,                /* security type */
-                SoftApConfiguration.BAND_5GHZ,         /* AP band */
-                0,                                     /* AP channel */
-                false                                  /* Hidden SSID */);
-        WifiApConfigStore store = createWifiApConfigStore();
-        mDataStoreSource.fromDeserialized(persistedConfig);
+        store.setApConfiguration(expectedConfig);
         verifyApConfig(expectedConfig, store.getApConfiguration());
         verifyApConfig(expectedConfig, mDataStoreSource.toSerialize());
-        verify(mWifiConfigManager).saveToStore(true);
-        verify(mBackupManagerProxy).notifyDataChanged();
+        verify(mWifiConfigManager, times(2)).saveToStore(true);
+        verify(mBackupManagerProxy, times(2)).notifyDataChanged();
     }
 
     /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a single mode device does not convert
-     * a persisted ap config with 5GHz set for the apBand.
-     */
-    @Test
-    public void singleModeDeviceNotConvertedAtRetrieval() throws Exception {
-        SoftApConfiguration persistedConfig = setupApConfig(
-                "ConfiguredAP",                  /* SSID */
-                "randomKey",                     /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,          /* security type */
-                SoftApConfiguration.BAND_5GHZ,   /* AP band */
-                40,                              /* AP channel */
-                false                            /* Hidden SSID */);
-
-        WifiApConfigStore store = createWifiApConfigStore();
-        mDataStoreSource.fromDeserialized(persistedConfig);
-        verifyApConfig(persistedConfig, store.getApConfiguration());
-        verify(mWifiConfigManager, never()).saveToStore(true);
-        verify(mBackupManagerProxy, never()).notifyDataChanged();
-    }
-
-    /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a dual mode device converts a persisted ap
+     * Due to different countries capabilities, some bands are not available.
+     * This test verifies that a device converts a persisted ap
      * config with 5GHz only set for the apBand to include 2.4GHz.
      */
     @Test
-    public void dualModeDevice5GhzConvertedToAnyAtRetrieval() throws Exception {
+    public void device5GhzConvertedToAnyAtRetrieval() throws Exception {
         when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
                 .thenReturn(true);
 
@@ -625,14 +507,13 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
                 "randomKey",                     /* preshared key */
                 SECURITY_TYPE_WPA2_PSK,          /* security type */
                 SoftApConfiguration.BAND_5GHZ,   /* AP band */
-                40,                              /* AP channel */
+                0,                               /* AP channel */
                 false                            /* Hidden SSID */);
         SoftApConfiguration expectedConfig = setupApConfig(
                 "ConfiguredAP",                       /* SSID */
                 "randomKey",                          /* preshared key */
                 SECURITY_TYPE_WPA2_PSK,               /* security type */
-                SoftApConfiguration.BAND_5GHZ
-                | SoftApConfiguration.BAND_2GHZ,      /* AP band */
+                mBand25G,                             /* AP band */
                 0,                                    /* AP channel */
                 false                                 /* Hidden SSID */);
 
@@ -645,12 +526,13 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     /**
-     * Due to different device hw capabilities, some bands are not available if a device is
-     * dual/single mode capable.  This test verifies that a dual mode device does not convert
-     * a persisted ap config with ANY set for the apBand.
+     * Due to different countries capabilities, some bands are not available.
+     * This test verifies that a device does not convert
+     * a persisted ap config with ANY  since it already
+     * included 2.4G.
      */
     @Test
-    public void dualModeDeviceNotConvertedAtRetrieval() throws Exception {
+    public void deviceNotConvertedAtRetrieval() throws Exception {
         when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
                 .thenReturn(true);
 

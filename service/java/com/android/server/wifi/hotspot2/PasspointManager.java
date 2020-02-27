@@ -67,6 +67,7 @@ import com.android.server.wifi.util.TelephonyUtil;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -136,6 +137,10 @@ public class PasspointManager {
         @Override
         public void onANQPResponse(long bssid,
                 Map<Constants.ANQPElementType, ANQPElement> anqpElements) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "ANQP response received from BSSID "
+                        + Utils.macToString(bssid));
+            }
             // Notify request manager for the completion of a request.
             ANQPNetworkKey anqpKey =
                     mAnqpRequestManager.onRequestCompleted(bssid, anqpElements != null);
@@ -204,7 +209,8 @@ public class PasspointManager {
         public void setProviders(List<PasspointProvider> providers) {
             mProviders.clear();
             for (PasspointProvider provider : providers) {
-                mProviders.put(provider.getConfig().getHomeSp().getFqdn(), provider);
+                provider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
+                mProviders.put(provider.getConfig().getUniqueId(), provider);
                 if (provider.getPackageName() != null) {
                     startTrackingAppOpsChange(provider.getPackageName(),
                             provider.getCreatorUid());
@@ -274,9 +280,9 @@ public class PasspointManager {
         stopTrackingAppOpsChange(packageName);
         for (Map.Entry<String, PasspointProvider> entry : getPasspointProviderWithPackage(
                 packageName).entrySet()) {
-            String fqdn = entry.getValue().getConfig().getHomeSp().getFqdn();
-            removeProvider(Process.WIFI_UID /* ignored */, true, fqdn);
-            disconnectIfPasspointNetwork(fqdn);
+            String uniqueId = entry.getValue().getConfig().getUniqueId();
+            removeProvider(Process.WIFI_UID /* ignored */, true, uniqueId, null);
+            disconnectIfPasspointNetwork(uniqueId);
         }
     }
 
@@ -306,14 +312,15 @@ public class PasspointManager {
         mAppOps.stopWatchingMode(appOpsChangedListener);
     }
 
-    private void disconnectIfPasspointNetwork(String fqdn) {
+    private void disconnectIfPasspointNetwork(String uniqueId) {
         WifiConfiguration currentConfiguration =
                 mWifiInjector.getClientModeImpl().getCurrentWifiConfiguration();
         if (currentConfiguration == null) return;
-        if (currentConfiguration.isPasspoint() && TextUtils.equals(currentConfiguration.FQDN,
-                fqdn)) {
-            Log.i(TAG, "Disconnect current Passpoint network for " + fqdn
-                    + "because the profile was removed");
+        if (currentConfiguration.isPasspoint() && TextUtils.equals(currentConfiguration.getKey(),
+                uniqueId)) {
+            Log.i(TAG, "Disconnect current Passpoint network for FQDN: "
+                    + currentConfiguration.FQDN + " and ID: " + uniqueId
+                    + " because the profile was removed");
             mWifiInjector.getClientModeImpl().disconnectCommand();
         }
     }
@@ -363,13 +370,17 @@ public class PasspointManager {
     public void enableVerboseLogging(int verbose) {
         mVerboseLoggingEnabled = (verbose > 0) ? true : false;
         mPasspointProvisioner.enableVerboseLogging(verbose);
+        for (PasspointProvider provider : mProviders.values()) {
+            provider.enableVerboseLogging(verbose);
+        }
     }
 
     /**
      * Add or update a Passpoint provider with the given configuration.
      *
-     * Each provider is uniquely identified by its FQDN (Fully Qualified Domain Name).
-     * In the case when there is an existing configuration with the same FQDN
+     * Each provider is uniquely identified by its unique identifier, see
+     * {@link PasspointConfiguration#getUniqueId()}.
+     * In the case when there is an existing configuration with the same unique identifier,
      * a provider with the new configuration will replace the existing provider.
      *
      * @param config Configuration of the Passpoint provider to be added
@@ -408,9 +419,9 @@ public class PasspointManager {
             return false;
         }
 
-        // Remove existing provider with the same FQDN.
-        if (mProviders.containsKey(config.getHomeSp().getFqdn())) {
-            PasspointProvider old = mProviders.get(config.getHomeSp().getFqdn());
+        // Remove existing provider with the same unique ID.
+        if (mProviders.containsKey(config.getUniqueId())) {
+            PasspointProvider old = mProviders.get(config.getUniqueId());
             // If new profile is from suggestion and from a different App, ignore new profile,
             // return true.
             // If from same app, update it.
@@ -418,41 +429,31 @@ public class PasspointManager {
                 newProvider.uninstallCertsAndKeys();
                 return false;
             }
-            Log.d(TAG, "Replacing configuration for " + config.getHomeSp().getFqdn());
+            Log.d(TAG, "Replacing configuration for FQDN: " + config.getHomeSp().getFqdn()
+                    + " and unique ID: " + config.getUniqueId());
             old.uninstallCertsAndKeys();
-            mProviders.remove(config.getHomeSp().getFqdn());
+            mProviders.remove(config.getUniqueId());
             // New profile changes the credential, remove the related WifiConfig.
             if (!old.equals(newProvider)) {
                 mWifiConfigManager.removePasspointConfiguredNetwork(
                         newProvider.getWifiConfig().getKey());
             }
         }
-        mProviders.put(config.getHomeSp().getFqdn(), newProvider);
+        newProvider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
+        mProviders.put(config.getUniqueId(), newProvider);
         mWifiConfigManager.saveToStore(true /* forceWrite */);
         if (!isFromSuggestion && newProvider.getPackageName() != null) {
             startTrackingAppOpsChange(newProvider.getPackageName(), uid);
         }
-        Log.d(TAG, "Added/updated Passpoint configuration: " + config.getHomeSp().getFqdn()
-                + " by " + uid);
+        Log.d(TAG, "Added/updated Passpoint configuration for FQDN: "
+                + config.getHomeSp().getFqdn() + " with unique ID: " + config.getUniqueId()
+                + " by UID: " + uid);
         mWifiMetrics.incrementNumPasspointProviderInstallSuccess();
         return true;
     }
 
-    /**
-     * Remove a Passpoint provider identified by the given FQDN.
-     *
-     * @param callingUid Calling UID.
-     * @param privileged Whether the caller is a privileged entity
-     * @param fqdn The FQDN of the provider to remove
-     * @return true if a provider is removed, false otherwise
-     */
-    public boolean removeProvider(int callingUid, boolean privileged, String fqdn) {
-        mWifiMetrics.incrementNumPasspointProviderUninstallation();
-        PasspointProvider provider = mProviders.get(fqdn);
-        if (provider == null) {
-            Log.e(TAG, "Config doesn't exist");
-            return false;
-        }
+    private boolean removeProviderInternal(PasspointProvider provider, int callingUid,
+            boolean privileged) {
         if (!privileged && callingUid != provider.getCreatorUid()) {
             Log.e(TAG, "UID " + callingUid + " cannot remove profile created by "
                     + provider.getCreatorUid());
@@ -463,17 +464,70 @@ public class PasspointManager {
         // Remove any configs corresponding to the profile in WifiConfigManager.
         mWifiConfigManager.removePasspointConfiguredNetwork(
                 provider.getWifiConfig().getKey());
-        mProviders.remove(fqdn);
+        String uniqueId = provider.getConfig().getUniqueId();
+        mProviders.remove(uniqueId);
         mWifiConfigManager.saveToStore(true /* forceWrite */);
 
-        // Stop monitoring the package if there is no Passpoint profile installed by the package.
+        // Stop monitoring the package if there is no Passpoint profile installed by the package
         if (mAppOpsChangedListenerPerApp.containsKey(packageName)
                 && getPasspointProviderWithPackage(packageName).size() == 0) {
             stopTrackingAppOpsChange(packageName);
         }
-        Log.d(TAG, "Removed Passpoint configuration: " + fqdn);
+        Log.d(TAG, "Removed Passpoint configuration: " + uniqueId);
         mWifiMetrics.incrementNumPasspointProviderUninstallSuccess();
         return true;
+    }
+
+    /**
+     * Remove a Passpoint provider identified by the given its unique identifier.
+     *
+     * @param callingUid Calling UID.
+     * @param privileged Whether the caller is a privileged entity
+     * @param uniqueId The ID of the provider to remove. Not required if FQDN is specified.
+     * @param fqdn The FQDN of the provider to remove. Not required if unique ID is specified.
+     * @return true if a provider is removed, false otherwise
+     */
+    public boolean removeProvider(int callingUid, boolean privileged, String uniqueId,
+            String fqdn) {
+        if (uniqueId == null && fqdn == null) {
+            mWifiMetrics.incrementNumPasspointProviderUninstallation();
+            Log.e(TAG, "Cannot remove provider, both FQDN and unique ID are null");
+            return false;
+        }
+
+        if (uniqueId != null) {
+            // Unique identifier provided
+            mWifiMetrics.incrementNumPasspointProviderUninstallation();
+            PasspointProvider provider = mProviders.get(uniqueId);
+            if (provider == null) {
+                Log.e(TAG, "Config doesn't exist");
+                return false;
+            }
+            return removeProviderInternal(provider, callingUid, privileged);
+        }
+
+        // FQDN provided, loop through all profiles with matching FQDN
+        ArrayList<PasspointProvider> passpointProviders = new ArrayList<>(mProviders.values());
+        int removedProviders = 0;
+        int numOfUninstallations = 0;
+        for (PasspointProvider provider : passpointProviders) {
+            if (!TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
+                continue;
+            }
+            mWifiMetrics.incrementNumPasspointProviderUninstallation();
+            numOfUninstallations++;
+            if (removeProviderInternal(provider, callingUid, privileged)) {
+                removedProviders++;
+            }
+        }
+
+        if (numOfUninstallations == 0) {
+            // Update uninstallation requests metrics here to cover the corner case of trying to
+            // uninstall a non-existent provider.
+            mWifiMetrics.incrementNumPasspointProviderUninstallation();
+        }
+
+        return removedProviders > 0;
     }
 
     /**
@@ -481,19 +535,41 @@ public class PasspointManager {
      * passpoint configuration is used for auto connection (network selection). Note that even
      * when auto-join is disabled the configuration can still be used for manual connection.
      *
-     * @param fqdn The FQDN of the configuration.
+     * @param uniqueId The unique identifier of the configuration. Not required if FQDN is specified
+     * @param fqdn The FQDN of the configuration. Not required if uniqueId is specified.
      * @param enableAutojoin true to enable auto-join, false to disable.
      * @return true on success, false otherwise (e.g. if no such provider exists).
      */
-    public boolean enableAutojoin(@NonNull String fqdn, boolean enableAutojoin) {
-        PasspointProvider provider = mProviders.get(fqdn);
-        if (provider == null) {
-            Log.e(TAG, "Config doesn't exist");
+    public boolean enableAutojoin(String uniqueId, String fqdn, boolean enableAutojoin) {
+        if (uniqueId == null && fqdn == null) {
             return false;
         }
-        provider.setAutojoinEnabled(enableAutojoin);
-        mWifiConfigManager.saveToStore(true);
-        return true;
+        if (uniqueId != null) {
+            // Unique identifier provided
+            PasspointProvider provider = mProviders.get(uniqueId);
+            if (provider == null) {
+                Log.e(TAG, "Config doesn't exist");
+                return false;
+            }
+            provider.setAutojoinEnabled(enableAutojoin);
+            mWifiConfigManager.saveToStore(true);
+            return true;
+        }
+
+        ArrayList<PasspointProvider> passpointProviders = new ArrayList<>(mProviders.values());
+        boolean found = false;
+
+        // FQDN provided, loop through all profiles with matching FQDN
+        for (PasspointProvider provider : passpointProviders) {
+            if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
+                provider.setAutojoinEnabled(enableAutojoin);
+                found = true;
+            }
+        }
+        if (found) {
+            mWifiConfigManager.saveToStore(true);
+        }
+        return found;
     }
 
     /**
@@ -503,17 +579,24 @@ public class PasspointManager {
      * @return true on success, false otherwise (e.g. if no such provider exists).
      */
     public boolean enableMacRandomization(@NonNull String fqdn, boolean enable) {
-        PasspointProvider provider = mProviders.get(fqdn);
-        if (provider == null) {
-            Log.e(TAG, "Config fqdn=\"" + fqdn + "\" doesn't exist");
-            return false;
+        ArrayList<PasspointProvider> passpointProviders = new ArrayList<>(mProviders.values());
+        boolean found = false;
+
+        // Loop through all profiles with matching FQDN
+        for (PasspointProvider provider : passpointProviders) {
+            if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
+                boolean settingChanged = provider.setMacRandomizationEnabled(enable);
+                if (settingChanged) {
+                    mWifiConfigManager.removePasspointConfiguredNetwork(
+                            provider.getWifiConfig().getKey());
+                }
+                found = true;
+            }
         }
-        boolean settingChanged = provider.setMacRandomizationEnabled(enable);
-        mWifiConfigManager.saveToStore(true);
-        if (settingChanged) {
-            mWifiConfigManager.removePasspointConfiguredNetwork(provider.getWifiConfig().getKey());
+        if (found) {
+            mWifiConfigManager.saveToStore(true);
         }
-        return true;
+        return found;
     }
 
     /**
@@ -523,14 +606,20 @@ public class PasspointManager {
      * @return true on success, false otherwise (e.g. if no such provider exists).
      */
     public boolean setMeteredOverride(@NonNull String fqdn, @MeteredOverride int meteredOverride) {
-        PasspointProvider provider = mProviders.get(fqdn);
-        if (provider == null) {
-            Log.e(TAG, "Config fqdn=\"" + fqdn + "\" doesn't exist");
-            return false;
+        ArrayList<PasspointProvider> passpointProviders = new ArrayList<>(mProviders.values());
+        boolean found = false;
+
+        // Loop through all profiles with matching FQDN
+        for (PasspointProvider provider : passpointProviders) {
+            if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
+                provider.setMeteredOverride(meteredOverride);
+                found = true;
+            }
         }
-        provider.setMeteredOverride(meteredOverride);
-        mWifiConfigManager.saveToStore(true);
-        return true;
+        if (found) {
+            mWifiConfigManager.saveToStore(true);
+        }
+        return found;
     }
 
     /**
@@ -678,6 +767,11 @@ public class PasspointManager {
             if (provider.tryUpdateCarrierId()) {
                 anyProviderUpdated = true;
             }
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Matching provider " + provider.getConfig().getHomeSp().getFqdn()
+                        + " with "
+                        + anqpEntry.getElements().get(Constants.ANQPElementType.ANQPDomName));
+            }
             PasspointMatch matchStatus = provider.match(anqpEntry.getElements(),
                     roamingConsortium);
             if (matchStatus == PasspointMatch.HomeProvider
@@ -794,18 +888,15 @@ public class PasspointManager {
     }
 
     /**
-     * Returns a list of FQDN (Fully Qualified Domain Name) for installed Passpoint configurations.
-     *
-     * Return the map of all matching configurations with corresponding scanResults (or an empty
+     * Return a map of all matching configurations keys with corresponding scanResults (or an empty
      * map if none).
      *
      * @param scanResults The list of scan results
-     * @return Map that consists of FQDN (Fully Qualified Domain Name) and corresponding
-     * scanResults per network type({@link WifiManager#PASSPOINT_HOME_NETWORK} and {@link
-     * WifiManager#PASSPOINT_ROAMING_NETWORK}).
+     * @return Map that consists of identifies and corresponding scanResults per network type
+     * ({@link WifiManager#PASSPOINT_HOME_NETWORK}, {@link WifiManager#PASSPOINT_ROAMING_NETWORK}).
      */
-    public Map<String, Map<Integer, List<ScanResult>>> getAllMatchingFqdnsForScanResults(
-            List<ScanResult> scanResults) {
+    public Map<String, Map<Integer, List<ScanResult>>>
+            getAllMatchingPasspointProfilesForScanResults(List<ScanResult> scanResults) {
         if (scanResults == null) {
             Log.e(TAG, "Attempt to get matching config for a null ScanResults");
             return new HashMap<>();
@@ -822,10 +913,11 @@ public class PasspointManager {
                 if (!config.isHomeProviderNetwork) {
                     type = WifiManager.PASSPOINT_ROAMING_NETWORK;
                 }
-                Map<Integer, List<ScanResult>> scanResultsPerNetworkType = configs.get(config.FQDN);
+                Map<Integer, List<ScanResult>> scanResultsPerNetworkType =
+                        configs.get(config.getKey());
                 if (scanResultsPerNetworkType == null) {
                     scanResultsPerNetworkType = new HashMap<>();
-                    configs.put(config.FQDN, scanResultsPerNetworkType);
+                    configs.put(config.getKey(), scanResultsPerNetworkType);
                 }
                 List<ScanResult> matchingScanResults = scanResultsPerNetworkType.get(type);
                 if (matchingScanResults == null) {
@@ -924,25 +1016,29 @@ public class PasspointManager {
     }
 
     /**
-     * Returns the corresponding wifi configurations for given FQDN (Fully Qualified Domain Name)
-     * list.
+     * Returns the corresponding wifi configurations for given a list Passpoint profile unique
+     * identifiers.
      *
      * An empty list will be returned when no match is found.
      *
-     * @param fqdnList a list of FQDN
+     * @param idList a list of unique identifiers
      * @return List of {@link WifiConfiguration} converted from {@link PasspointProvider}
      */
-    public List<WifiConfiguration> getWifiConfigsForPasspointProfiles(List<String> fqdnList) {
-        Set<String> fqdnSet = new HashSet<>();
-        fqdnSet.addAll(fqdnList);
+    public List<WifiConfiguration> getWifiConfigsForPasspointProfiles(List<String> idList) {
+        if (mProviders.isEmpty()) {
+            return Collections.emptyList();
+        }
         List<WifiConfiguration> configs = new ArrayList<>();
-        for (String fqdn : fqdnSet) {
-            PasspointProvider provider = mProviders.get(fqdn);
+        Set<String> uniqueIdSet = new HashSet<>();
+        uniqueIdSet.addAll(idList);
+        for (String uniqueId : uniqueIdSet) {
+            PasspointProvider provider = mProviders.get(uniqueId);
             if (provider == null) {
                 continue;
             }
             WifiConfiguration config = provider.getWifiConfig();
-            // If passpoint is from suggestion, check if app share this suggestion with user.
+            // If the Passpoint configuration is from a suggestion, check if the app shares this
+            // suggestion with the user.
             if (provider.isFromSuggestion()
                     && !mWifiInjector.getWifiNetworkSuggestionsManager()
                     .isPasspointSuggestionSharedWithUser(config)) {
@@ -955,14 +1051,14 @@ public class PasspointManager {
 
     /**
      * Invoked when a Passpoint network was successfully connected based on the credentials
-     * provided by the given Passpoint provider (specified by its FQDN).
+     * provided by the given Passpoint provider
      *
-     * @param fqdn The FQDN of the Passpoint provider
+     * @param uniqueId The unique identifier of the Passpointprofile
      */
-    public void onPasspointNetworkConnected(String fqdn) {
-        PasspointProvider provider = mProviders.get(fqdn);
+    public void onPasspointNetworkConnected(String uniqueId) {
+        PasspointProvider provider = mProviders.get(uniqueId);
         if (provider == null) {
-            Log.e(TAG, "Passpoint network connected without provider: " + fqdn);
+            Log.e(TAG, "Passpoint network connected without provider: " + uniqueId);
             return;
         }
         if (!provider.getHasEverConnected()) {
@@ -1002,6 +1098,7 @@ public class PasspointManager {
         pw.println("PasspointManager - Providers End ---");
         pw.println("PasspointManager - Next provider ID to be assigned " + mProviderIndex);
         mAnqpCache.dump(pw);
+        mAnqpRequestManager.dump(pw);
     }
 
     /**
@@ -1049,7 +1146,8 @@ public class PasspointManager {
                 mProviderIndex++, wifiConfig.creatorUid, null, false,
                 Arrays.asList(enterpriseConfig.getCaCertificateAlias()),
                 enterpriseConfig.getClientCertificateAlias(), null, false, false);
-        mProviders.put(passpointConfig.getHomeSp().getFqdn(), provider);
+        provider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
+        mProviders.put(passpointConfig.getUniqueId(), provider);
         return true;
     }
 
@@ -1072,7 +1170,7 @@ public class PasspointManager {
      * @return True if the configuration is expired, false if not or expiration is unset
      */
     private boolean isExpired(@NonNull PasspointConfiguration config) {
-        long expirationTime = config.getSubscriptionExpirationTimeInMillis();
+        long expirationTime = config.getSubscriptionExpirationTimeMillis();
 
         if (expirationTime != Long.MIN_VALUE) {
             long curTime = System.currentTimeMillis();
@@ -1111,5 +1209,22 @@ public class PasspointManager {
         }
 
         return filteredScanResults;
+    }
+
+    /**
+     * Check if the providers list is empty
+     *
+     * @return true if the providers list is empty, false otherwise
+     */
+    public boolean isProvidersListEmpty() {
+        return mProviders.isEmpty();
+    }
+
+    /**
+     * Clear ANQP requests and flush ANQP Cache (for factory reset)
+     */
+    public void clearAnqpRequestsAndFlushCache() {
+        mAnqpRequestManager.clear();
+        mAnqpCache.flush();
     }
 }

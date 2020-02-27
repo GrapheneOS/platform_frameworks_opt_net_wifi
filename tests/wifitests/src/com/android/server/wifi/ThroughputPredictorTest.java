@@ -25,7 +25,7 @@ import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.when;
 
 import android.net.wifi.ScanResult;
-import android.net.wifi.wificond.DeviceWiphyCapabilities;
+import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 
 import androidx.test.filters.SmallTest;
 
@@ -201,6 +201,17 @@ public class ThroughputPredictorTest extends WifiBaseTest {
     }
 
     @Test
+    public void verifyHighRssiMinChannelUtilizationHt2g20MhzIncorrectNss() {
+        when(mDeviceCapabilities.getMaxNumberTxSpatialStreams()).thenReturn(0);
+        when(mDeviceCapabilities.getMaxNumberRxSpatialStreams()).thenReturn(0);
+        int predictedThroughputMbps = mThroughputPredictor.predictThroughput(mDeviceCapabilities,
+                ScanResult.WIFI_STANDARD_11N, ScanResult.CHANNEL_WIDTH_20MHZ, -50, 2437, 2,
+                MIN_CHANNEL_UTILIZATION, INVALID, false);
+        // Expect to 1SS peak rate because maxNumberSpatialStream is overridden to 1.
+        assertEquals(72, predictedThroughputMbps);
+    }
+
+    @Test
     public void verifyLowRssiDefaultChannelUtilizationHt2g20Mhz1ss() {
         int predictedThroughputMbps = mThroughputPredictor.predictThroughput(mDeviceCapabilities,
                 ScanResult.WIFI_STANDARD_11N, ScanResult.CHANNEL_WIDTH_20MHZ, -80, 2437, 1,
@@ -250,6 +261,15 @@ public class ThroughputPredictorTest extends WifiBaseTest {
         mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_80MHZ;
         mConnectionCap.maxNumberRxSpatialStreams = 2;
         assertEquals(866, mThroughputPredictor.predictMaxRxThroughput(mConnectionCap));
+    }
+
+    @Test
+    public void verifyMaxThroughputAc80MhzIncorrectNss() {
+        mConnectionCap.wifiStandard = ScanResult.WIFI_STANDARD_11AC;
+        mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_80MHZ;
+        mConnectionCap.maxNumberRxSpatialStreams = -5;
+        // Expect to 1SS peak rate because maxNumberSpatialStream is overridden to 1.
+        assertEquals(433, mThroughputPredictor.predictMaxRxThroughput(mConnectionCap));
     }
 
     @Test

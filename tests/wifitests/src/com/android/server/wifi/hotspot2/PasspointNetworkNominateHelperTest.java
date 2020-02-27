@@ -16,6 +16,8 @@
 
 package com.android.server.wifi.hotspot2;
 
+import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_EAP;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -98,9 +100,11 @@ public class PasspointNetworkNominateHelperTest {
      * @return {@link WifiConfiguration}
      */
     private static WifiConfiguration generateWifiConfig(String fqdn) {
-        WifiConfiguration config = new WifiConfiguration();
-        config.FQDN = fqdn;
-        return config;
+        WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.generateWifiConfig(-1,
+                TEST_UID, "\"PasspointTestSSID\"", true, true,
+                fqdn, fqdn, SECURITY_EAP);
+
+        return wifiConfiguration;
     }
 
     /**

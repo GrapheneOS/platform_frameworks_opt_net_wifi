@@ -161,6 +161,8 @@ message NetworkStats {
   optional ConnectionStats stats_curr_build = 3;
   // Accumulated connection stats with previous SW build
   optional ConnectionStats stats_prev_build = 4;
+  // List of frequencies observed for this network from scan results, sorted by most recent first.
+  repeated int32 frequencies = 5;
 
 };
 

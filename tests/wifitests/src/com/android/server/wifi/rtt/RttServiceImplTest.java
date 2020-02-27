@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -62,6 +61,7 @@ import android.net.wifi.rtt.WifiRttManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.IPowerManager;
+import android.os.IThermalService;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -72,9 +72,9 @@ import android.util.Pair;
 import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.Clock;
-import com.android.server.wifi.FrameworkFacade;
 import com.android.server.wifi.MockResources;
 import com.android.server.wifi.WifiBaseTest;
+import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
@@ -156,7 +156,7 @@ public class RttServiceImplTest extends WifiBaseTest {
     public IRttCallback mockCallback;
 
     @Mock
-    FrameworkFacade mFrameworkFacade;
+    WifiSettingsConfigStore mWifiSettingsConfigStore;
 
     /**
      * Using instead of spy to avoid native crash failures - possibly due to
@@ -196,8 +196,6 @@ public class RttServiceImplTest extends WifiBaseTest {
                 R.integer.config_wifiRttBackgroundExecGapMs, BACKGROUND_PROCESS_EXEC_GAP_MS);
 
         mAlarmManager = new TestAlarmManager();
-        doNothing().when(mFrameworkFacade).registerContentObserver(eq(mockContext), any(),
-                anyBoolean(), any());
         when(mockContext.getSystemService(Context.ALARM_SERVICE))
                 .thenReturn(mAlarmManager.getAlarmManager());
         mInOrder = inOrder(mAlarmManager.getAlarmManager(), mockContext);
@@ -215,7 +213,7 @@ public class RttServiceImplTest extends WifiBaseTest {
                 true);
 
         mMockPowerManager = new PowerManager(mockContext, mock(IPowerManager.class),
-                new Handler(mMockLooper.getLooper()));
+                mock(IThermalService.class), new Handler(mMockLooper.getLooper()));
         when(mMockPowerManager.isDeviceIdleMode()).thenReturn(false);
         when(mockContext.getSystemServiceName(PowerManager.class)).thenReturn(
                 Context.POWER_SERVICE);
@@ -225,7 +223,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         doAnswer(mBinderUnlinkToDeathCounter).when(mockIbinder).unlinkToDeath(any(), anyInt());
 
         mDut.start(mMockLooper.getLooper(), mockClock, mockAwareManager, mockNative,
-                mockMetrics, mockPermissionUtil, mFrameworkFacade);
+                mockMetrics, mockPermissionUtil, mWifiSettingsConfigStore);
         mMockLooper.dispatchAll();
         ArgumentCaptor<BroadcastReceiver> bcastRxCaptor = ArgumentCaptor.forClass(
                 BroadcastReceiver.class);

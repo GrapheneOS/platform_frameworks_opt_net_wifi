@@ -76,4 +76,6 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"已停用流動熱點"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"已停用流動熱點"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"由於閒置逾時，流動熱點已停用。"</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi 連線已中斷"</string>
+    <string name="wifi_sim_required_message" msgid="8337512370882674437">"插入「<xliff:g id="CARRIER_NAME">%2$s</xliff:g>」SIM 卡即可連線至「<xliff:g id="SSID">%1$s</xliff:g>」。"</string>
 </resources>

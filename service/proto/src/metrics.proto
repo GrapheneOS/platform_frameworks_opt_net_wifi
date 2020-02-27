@@ -579,6 +579,12 @@ message WifiLog {
 
   // Metrics collected by health monitor
   optional HealthMonitorMetrics health_monitor_metrics = 158;
+
+  // Metrics related to the BssidBlocklistMonitor
+  optional BssidBlocklistStats bssid_blocklist_stats = 159;
+
+  // Connection duration under various health conditions
+  optional ConnectionDurationStats connection_duration_stats = 160;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -1841,6 +1847,11 @@ message ExperimentValues {
   optional int32 data_stall_cca_level_thr = 9;
 }
 
+message BssidBlocklistStats {
+  // Distributions of number of blocked BSSIDs filtered out from network selection.
+  repeated Int32Count network_selection_filtered_bssid_count = 1;
+}
+
 message WifiIsUnusableEvent {
   enum TriggerType {
     // Default/Invalid event
@@ -2776,4 +2787,15 @@ message HealthMonitorMetrics {
   optional int32 num_network_sufficient_recent_stats_only = 4;
   // Number of networks with sufficient connection attempts for both current and previous builds
   optional int32 num_network_sufficient_recent_prev_stats = 5;
+}
+
+// Connection duration statistics collected under various health conditions
+// while Wifi link layer stats report are on
+message ConnectionDurationStats {
+  // Total time with sufficient Wifi throughput and with cellular data on
+  optional int32 total_time_sufficient_throughput_ms = 1;
+  // Total time with insufficient Wifi throughput and with cellular data on
+  optional int32 total_time_insufficient_throughput_ms = 2;
+  // Total time with cellular data off
+  optional int32 total_time_cellular_data_off_ms = 3;
 }

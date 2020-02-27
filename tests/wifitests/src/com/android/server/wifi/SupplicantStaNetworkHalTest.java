@@ -220,7 +220,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     @Test
     public void testPskPassphraseNetworkWifiConfigurationSaveLoad() throws Exception {
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
-        config.requirePMF = true;
+        config.requirePmf = true;
         testWifiConfigurationSaveLoad(config);
         verify(mISupplicantStaNetworkMock).setPskPassphrase(anyString());
         verify(mISupplicantStaNetworkMock)
@@ -384,6 +384,29 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         verify(mISupplicantStaNetworkV12, never()).setPsk(any(byte[].class));
         verify(mISupplicantStaNetworkV12, never())
                 .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration with FILS AKM
+     * to wpa_supplicant.
+     */
+    @Test
+    public void testTLSWifiEnterpriseConfigWithFilsEapErp() throws Exception {
+        // Now expose the V1.3 ISupplicantStaNetwork
+        createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_3);
+
+        WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork();
+        config.enterpriseConfig =
+                WifiConfigurationTestUtil.createTLSWifiEnterpriseConfigWithNonePhase2();
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.FILS_SHA256);
+        config.enterpriseConfig.setFieldValue(WifiEnterpriseConfig.EAP_ERP, "1");
+        testWifiConfigurationSaveLoad(config);
+        // Check the supplicant variables to ensure that we have added the FILS AKM.
+        assertTrue((mSupplicantVariables.keyMgmtMask & android.hardware.wifi.supplicant.V1_3
+                .ISupplicantStaNetwork.KeyMgmtMask.FILS_SHA256)
+                == android.hardware.wifi.supplicant.V1_3
+                .ISupplicantStaNetwork.KeyMgmtMask.FILS_SHA256);
+        verify(mISupplicantStaNetworkV13).setEapErp(eq(true));
     }
 
     /**
@@ -973,6 +996,14 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
             assertEquals(
                     Integer.parseInt(oppKeyCaching) == 1 ? true : false,
                     mSupplicantVariables.eapProactiveKeyCaching);
+        }
+        // There is no getter for this one, so check the supplicant variable.
+        String eapErp =
+                config.enterpriseConfig.getFieldValue(WifiEnterpriseConfig.EAP_ERP);
+        if (!TextUtils.isEmpty(eapErp)) {
+            assertEquals(
+                    Integer.parseInt(eapErp) == 1 ? true : false,
+                    mSupplicantVariables.eapErp);
         }
     }
 
@@ -1695,6 +1726,14 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         }).when(mISupplicantStaNetworkV13)
                 .getWapiCertSuite(any(android.hardware.wifi.supplicant.V1_3
                         .ISupplicantStaNetwork.getWapiCertSuiteCallback.class));
+
+        /** EAP ERP */
+        doAnswer(new AnswerWithArguments() {
+            public SupplicantStatus answer(boolean enable) throws RemoteException {
+                mSupplicantVariables.eapErp = enable;
+                return mStatusSuccess;
+            }
+        }).when(mISupplicantStaNetworkV13).setEapErp(any(boolean.class));
     }
 
     private SupplicantStatus createSupplicantStatus(int code) {
@@ -1761,5 +1800,6 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         public int ocsp;
         public ArrayList<Byte> serializedPmkCache;
         public String wapiCertSuite;
+        public boolean eapErp;
     }
 }

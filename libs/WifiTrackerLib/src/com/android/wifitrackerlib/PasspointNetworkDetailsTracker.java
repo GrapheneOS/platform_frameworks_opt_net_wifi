@@ -18,7 +18,7 @@ package com.android.wifitrackerlib;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
-import static com.android.wifitrackerlib.PasspointWifiEntry.fqdnToPasspointWifiEntryKey;
+import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 
 import android.content.Context;
@@ -70,13 +70,15 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
         PasspointConfiguration passpointConfig = mWifiManager.getPasspointConfigurations().stream()
                 .filter(config -> TextUtils.equals(
-                        fqdnToPasspointWifiEntryKey(config.getHomeSp().getFqdn()), key))
+                        uniqueIdToPasspointWifiEntryKey(config.getUniqueId()), key))
                 .findAny().get();
 
-        checkNotNull(passpointConfig, "Cannot find PasspointConfiguration with matching FQDN!");
+        checkNotNull(passpointConfig,
+                "Cannot find PasspointConfiguration with matching unique identifier: "
+                        + passpointConfig.getUniqueId());
 
         mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler, passpointConfig,
-                mWifiManager);
+                mWifiManager, false /* forSavedNetworksPage */);
         cacheNewScanResults();
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
@@ -139,15 +141,19 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                 mWifiManager.getAllMatchingWifiConfigs(scanResults);
         for (Pair<WifiConfiguration, Map<Integer, List<ScanResult>>> pair : matchingWifiConfigs) {
             final WifiConfiguration wifiConfig = pair.first;
-            final String key = fqdnToPasspointWifiEntryKey(wifiConfig.FQDN);
+            final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
 
             if (TextUtils.equals(key, mChosenEntry.getKey())) {
                 mChosenEntry.updateScanResultInfo(wifiConfig,
                         pair.second.get(WifiManager.PASSPOINT_HOME_NETWORK),
                         pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK));
-                break;
+                return;
             }
         }
+        // No AP in range; set scan results and connection config to null.
+        mChosenEntry.updateScanResultInfo(null /* wifiConfig */,
+                null /* homeScanResults */,
+                null /* roamingScanResults */);
     }
 
     /**
@@ -179,7 +185,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private void conditionallyUpdateConfig() {
         mWifiManager.getPasspointConfigurations().stream()
                 .filter(config -> TextUtils.equals(
-                        fqdnToPasspointWifiEntryKey(config.getHomeSp().getFqdn()),
+                        uniqueIdToPasspointWifiEntryKey(config.getUniqueId()),
                         mChosenEntry.getKey()))
                 .findAny().ifPresent(config -> mChosenEntry.updatePasspointConfig(config));
     }

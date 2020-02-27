@@ -18,10 +18,7 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.content.Context;
-import android.database.ContentObserver;
 import android.net.wifi.WifiInfo;
-import android.os.Handler;
-import android.provider.Settings;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -238,11 +235,6 @@ public class ScoringParams {
         mContext = context;
     }
 
-    public ScoringParams(Context context, FrameworkFacade facade, Handler handler) {
-        mContext = context;
-        setupContentObserver(context, facade, handler);
-    }
-
     private void loadResources(Context context) {
         if (mVal != null) return;
         mVal = new Values();
@@ -297,29 +289,6 @@ public class ScoringParams {
         }
     }
 
-    private void setupContentObserver(Context context, FrameworkFacade facade, Handler handler) {
-        final ScoringParams self = this;
-        String defaults = self.toString();
-        ContentObserver observer = new ContentObserver(handler) {
-            @Override
-            public void onChange(boolean selfChange) {
-                String params = facade.getStringSetting(
-                        context, Settings.Global.WIFI_SCORE_PARAMS);
-                self.update(defaults);
-                if (!self.update(params)) {
-                    Log.e(TAG, "Error in " + Settings.Global.WIFI_SCORE_PARAMS + ": "
-                            + sanitize(params));
-                }
-                Log.i(TAG, self.toString());
-            }
-        };
-        facade.registerContentObserver(context,
-                Settings.Global.getUriFor(Settings.Global.WIFI_SCORE_PARAMS),
-                true,
-                observer);
-        observer.onChange(false);
-    }
-
     private static final String COMMA_KEY_VAL_STAR = "^(,[A-Za-z_][A-Za-z0-9_]*=[0-9.:+-]+)*$";
 
     /**
@@ -328,6 +297,7 @@ public class ScoringParams {
      * @param kvList is a comma-separated key=value list.
      * @return true for success
      */
+    @VisibleForTesting
     public boolean update(String kvList) {
         if (kvList == null || "".equals(kvList)) {
             return true;

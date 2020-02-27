@@ -27,10 +27,12 @@ apex_defaults {
         "target-cacert-wifi-21125ccd.0",
         "target-cacert-wifi-ea93cb5b.0",
     ],
-    init_rc: [":wifi-init-rc"],
     key: "com.android.wifi.key",
     certificate: ":com.android.wifi.certificate",
-    apps: ["wifi-service-resources"],
+    apps: [
+        "wifi-service-resources",
+        "OsuLogin",
+    ],
 }
 
 filegroup {

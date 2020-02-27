@@ -100,4 +100,16 @@ public class AnqpCacheTest extends WifiBaseTest {
         mCache.sweep();
         assertNull(mCache.getEntry(ENTRY_KEY));
     }
+
+    /**
+     * Verify the expectation for the flush function (all entries will be removed).
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testCacheFlush() throws Exception {
+        mCache.addEntry(ENTRY_KEY, null);
+        mCache.flush();
+        assertNull(mCache.getEntry(ENTRY_KEY));
+    }
 }

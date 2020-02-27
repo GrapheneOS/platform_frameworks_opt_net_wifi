@@ -65,6 +65,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     private static final int RSSI_BUMP = 1;
     private static final int DUMMY_NOMINATOR_ID_1 = -2; // lowest index
     private static final int DUMMY_NOMINATOR_ID_2 = -1;
+    private static final int WAIT_JUST_A_MINUTE = 60_000;
     private static final HashSet<String> EMPTY_BLACKLIST = new HashSet<>();
 
     /** Sets up test. */
@@ -216,6 +217,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     private int mThresholdQualifiedRssi2G;
     private int mThresholdQualifiedRssi5G;
     private int mMinPacketRateActiveTraffic;
+    private int mSufficientDurationAfterUserSelection;
     private CompatibilityScorer mCompatibilityScorer;
     private ScoreCardBasedScorer mScoreCardBasedScorer;
     private ThroughputScorer mThroughputScorer;
@@ -234,6 +236,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 R.bool.config_wifi_framework_enable_associated_network_selection);
         mMinPacketRateActiveTraffic = setupIntegerResource(
                 R.integer.config_wifiFrameworkMinPacketPerSecondActiveTraffic, 16);
+        mSufficientDurationAfterUserSelection = setupIntegerResource(
+                R.integer.config_wifiSufficientDurationAfterUserSelectionMilliseconds,
+                WAIT_JUST_A_MINUTE);
         doReturn(false).when(mResource).getBoolean(R.bool.config_wifi11axSupportOverride);
     }
 
@@ -361,7 +366,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
 
-        verify(mWifiConfigManager, times(2)).updateScanDetailCacheFromScanDetail(any());
+        verify(mWifiConfigManager, atLeast(2)).updateScanDetailCacheFromScanDetail(any());
     }
 
     /**
@@ -534,6 +539,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         // Do network selection.
         mWifiNetworkSelector.selectNetwork(scanDetails,
                 blacklist, mWifiInfo, true, false, false);
+        verify(mWifiMetrics).incrementNetworkSelectionFilteredBssidCount(0);
 
         verify(mWifiConfigManager).getConfiguredNetworks();
         verify(mWifiConfigManager, times(savedConfigs.length)).tryEnableNetwork(anyInt());
@@ -567,6 +573,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(scanDetails,
                 blacklist, mWifiInfo, false, true, false);
+        verify(mWifiMetrics).incrementNetworkSelectionFilteredBssidCount(1);
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
     }
@@ -625,7 +632,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         // missing from the scan results.
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
-        verify(mWifiConfigManager, times(1)).updateScanDetailCacheFromScanDetail(any());
+        verify(mWifiConfigManager, atLeast(1)).updateScanDetailCacheFromScanDetail(any());
     }
 
     /**
@@ -866,6 +873,33 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 false);
     }
 
+    /**
+     * New network selection is not performed if the currently connected network
+     * was recently selected.
+     */
+    @Test
+    public void networkIsSufficientWhenRecentlyUserSelected() {
+        // Approximate mClock.getElapsedSinceBootMillis value mocked by testStayOrTryToSwitch
+        long millisSinceBoot = SystemClock.elapsedRealtime()
+                + WifiNetworkSelector.MINIMUM_NETWORK_SELECTION_INTERVAL_MS + 2000;
+        when(mWifiConfigManager.getLastSelectedTimeStamp())
+                .thenReturn(millisSinceBoot
+                        - WAIT_JUST_A_MINUTE
+                        + 1000);
+        setupWifiConfigManager(0); // testStayOrTryToSwitch first connects to network 0
+        // Rssi after connected.
+        when(mWifiInfo.getRssi()).thenReturn(mThresholdQualifiedRssi2G + 1);
+        // No streaming traffic.
+        when(mWifiInfo.getSuccessfulTxPacketsPerSecond()).thenReturn(0.0);
+        when(mWifiInfo.getSuccessfulRxPacketsPerSecond()).thenReturn(0.0);
+
+        testStayOrTryToSwitch(
+                mThresholdQualifiedRssi2G + 1 /* rssi before connected */,
+                false /* not a 5G network */,
+                false /* not open network */,
+                // Should not try to switch.
+                false);
+    }
 
     /**
      * New network selection is performed if the currently connected network has bad rssi.
@@ -1365,5 +1399,11 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 blacklist, mWifiInfo, false, true, false);
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
+    }
+
+    @Test
+    public void resetOnDisableCallsClearLastSelectedNetwork() {
+        mWifiNetworkSelector.resetOnDisable();
+        verify(mWifiConfigManager).clearLastSelectedNetwork();
     }
 }
