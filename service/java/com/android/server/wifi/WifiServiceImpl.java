@@ -110,7 +110,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.os.PowerProfile;
 import com.android.internal.telephony.IccCardConstants;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.internal.util.AsyncChannel;
 import com.android.server.wifi.hotspot2.PasspointProvider;
@@ -2682,10 +2681,12 @@ public class WifiServiceImpl extends BaseWifiService {
                         BluetoothAdapter.STATE_DISCONNECTED);
                 mClientModeImpl.sendBluetoothAdapterStateChange(state);
             } else if (action.equals(TelephonyIntents.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED)) {
-                boolean emergencyMode = intent.getBooleanExtra("phoneinECMState", false);
+                boolean emergencyMode = intent.getBooleanExtra(
+                        TelephonyManager.EXTRA_PHONE_IN_ECM_STATE, false);
                 mWifiController.sendMessage(CMD_EMERGENCY_MODE_CHANGED, emergencyMode ? 1 : 0, 0);
             } else if (action.equals(TelephonyIntents.ACTION_EMERGENCY_CALL_STATE_CHANGED)) {
-                boolean inCall = intent.getBooleanExtra(PhoneConstants.PHONE_IN_EMERGENCY_CALL, false);
+                boolean inCall = intent.getBooleanExtra(
+                        TelephonyManager.EXTRA_PHONE_IN_EMERGENCY_CALL, false);
                 mWifiController.sendMessage(CMD_EMERGENCY_CALL_STATE_CHANGED, inCall ? 1 : 0, 0);
             } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
                 handleIdleModeChanged();
