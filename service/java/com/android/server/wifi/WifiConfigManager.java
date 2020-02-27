@@ -2058,7 +2058,7 @@ public class WifiConfigManager {
         if (connectChoiceConfigKey == null) {
             return;
         }
-        for (WifiConfiguration config : mConfiguredNetworks.valuesForCurrentUser()) {
+        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
             WifiConfiguration.NetworkSelectionStatus status = config.getNetworkSelectionStatus();
             String connectChoice = status.getConnectChoice();
             if (TextUtils.equals(connectChoice, connectChoiceConfigKey)) {
@@ -2627,7 +2627,7 @@ public class WifiConfigManager {
      * @return Set containing the frequeincies which were used for connection recently.
      */
     public Set<Integer> fetchChannelSetForPartialScan(long ageInMillis, int maxCount) {
-        List<WifiConfiguration> networks = new ArrayList<>(getInternalConfiguredNetworks());
+        List<WifiConfiguration> networks = getConfiguredNetworks();
 
         // Remove any permanently or temporarily disabled networks.
         Iterator<WifiConfiguration> iter = networks.iterator();
@@ -2760,7 +2760,7 @@ public class WifiConfigManager {
      */
     public List<WifiScanner.ScanSettings.HiddenNetwork> retrieveHiddenNetworkList() {
         List<WifiScanner.ScanSettings.HiddenNetwork> hiddenList = new ArrayList<>();
-        List<WifiConfiguration> networks = new ArrayList<>(getInternalConfiguredNetworks());
+        List<WifiConfiguration> networks = getConfiguredNetworks();
         // Remove any non hidden networks.
         networks.removeIf(config -> !config.hiddenSSID);
         networks.sort(sScanListComparator);
@@ -3035,7 +3035,7 @@ public class WifiConfigManager {
         localLog("clearInternalUserData: Clearing user internal data for " + mCurrentUserId);
         Set<Integer> removedNetworkIds = new HashSet<>();
         // Remove any private networks of the old user before switching the userId.
-        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
+        for (WifiConfiguration config : getConfiguredNetworks()) {
             if (!config.shared && doesUidBelongToCurrentUser(config.creatorUid)) {
                 removedNetworkIds.add(config.networkId);
                 localLog("clearInternalUserData: removed config."

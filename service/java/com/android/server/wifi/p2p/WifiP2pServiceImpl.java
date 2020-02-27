@@ -866,7 +866,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
 
                 mSettingsConfigStore.registerChangeListener(
                         WIFI_VERBOSE_LOGGING_ENABLED,
-                        (key, newValue) -> enableVerboseLogging((boolean) newValue),
+                        (key, newValue) -> enableVerboseLogging(newValue),
                         getHandler());
             }
         }
@@ -3615,7 +3615,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         }
 
         private String getPersistedDeviceName() {
-            String deviceName = mSettingsConfigStore.getString(WIFI_P2P_DEVICE_NAME, null);
+            String deviceName = mSettingsConfigStore.get(WIFI_P2P_DEVICE_NAME);
             if (deviceName == null) {
                 // We use the 4 digits of the ANDROID_ID to have a friendly
                 // default that has low likelihood of collision with a peer
@@ -3637,7 +3637,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             mThisDevice.deviceName = devName;
             mWifiNative.setP2pSsidPostfix("-" + mThisDevice.deviceName);
 
-            mSettingsConfigStore.putString(WIFI_P2P_DEVICE_NAME, devName);
+            mSettingsConfigStore.put(WIFI_P2P_DEVICE_NAME, devName);
             sendThisDeviceChangedBroadcast();
             return true;
         }
@@ -3685,8 +3685,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             mServiceDiscReqId = null;
 
             updatePersistentNetworks(RELOAD);
-            enableVerboseLogging(mSettingsConfigStore.getBoolean(
-                    WIFI_VERBOSE_LOGGING_ENABLED, false));
+            enableVerboseLogging(mSettingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
         }
 
         private void updateThisDevice(int status) {
@@ -4099,11 +4098,11 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         }
 
         private void setPendingFactoryReset(boolean pending) {
-            mSettingsConfigStore.putBoolean(WIFI_P2P_PENDING_FACTORY_RESET, pending);
+            mSettingsConfigStore.put(WIFI_P2P_PENDING_FACTORY_RESET, pending);
         }
 
         private boolean isPendingFactoryReset() {
-            return mSettingsConfigStore.getBoolean(WIFI_P2P_PENDING_FACTORY_RESET, false);
+            return mSettingsConfigStore.get(WIFI_P2P_PENDING_FACTORY_RESET);
         }
 
         /**

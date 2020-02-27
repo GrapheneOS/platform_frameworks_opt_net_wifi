@@ -402,6 +402,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
         when(mScanRequestProxy.startScan(anyInt(), anyString())).thenReturn(true);
         when(mLohsCallback.asBinder()).thenReturn(mock(IBinder.class));
+        when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
 
         mWifiServiceImpl = makeWifiServiceImpl();
         mDppCallback = new IDppCallback() {
@@ -1214,8 +1215,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testWifiVerboseLoggingInitialization() {
         when(mSettingsStore.isWifiToggleEnabled()).thenReturn(false);
-        when(mWifiSettingsConfigStore.getBoolean(eq(WIFI_VERBOSE_LOGGING_ENABLED), anyBoolean()))
-                .thenReturn(true);
+        when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
         mWifiServiceImpl.checkAndStartWifi();
         mLooper.dispatchAll();
         verify(mWifiConfigManager).loadFromStore();
@@ -3400,7 +3400,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         // before invocation.
         reset(mClientModeImpl);
         mWifiServiceImpl.enableVerboseLogging(1);
-        verify(mWifiSettingsConfigStore).putBoolean(WIFI_VERBOSE_LOGGING_ENABLED, true);
+        verify(mWifiSettingsConfigStore).put(WIFI_VERBOSE_LOGGING_ENABLED, true);
         verify(mClientModeImpl).enableVerboseLogging(anyInt());
     }
 
@@ -3417,7 +3417,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         // before invocation.
         reset(mClientModeImpl);
         mWifiServiceImpl.enableVerboseLogging(1);
-        verify(mWifiSettingsConfigStore, never()).putBoolean(
+        verify(mWifiSettingsConfigStore, never()).put(
                 WIFI_VERBOSE_LOGGING_ENABLED, anyBoolean());
         verify(mClientModeImpl, never()).enableVerboseLogging(anyInt());
     }
