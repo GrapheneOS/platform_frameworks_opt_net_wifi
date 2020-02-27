@@ -18,6 +18,7 @@ package com.android.server.wifi.p2p;
 
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_P2P_DEVICE_NAME;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_P2P_PENDING_FACTORY_RESET;
+import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -710,10 +711,8 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
 
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mContext.getResources()).thenReturn(mResources);
-        when(mWifiSettingsConfigStore.getString(eq(WIFI_P2P_DEVICE_NAME), any()))
-                .thenReturn(thisDeviceName);
-        when(mWifiSettingsConfigStore.getBoolean(
-                eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false))).thenReturn(false);
+        when(mWifiSettingsConfigStore.get(eq(WIFI_P2P_DEVICE_NAME))).thenReturn(thisDeviceName);
+        when(mWifiSettingsConfigStore.get(eq(WIFI_P2P_PENDING_FACTORY_RESET))).thenReturn(false);
         when(mHandlerThread.getLooper()).thenReturn(mLooper.getLooper());
         if (supported) {
             when(mPackageManager.hasSystemFeature(eq(PackageManager.FEATURE_WIFI_DIRECT)))
@@ -754,6 +753,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
                 return true;
             }
         }).when(mWifiNative).removeP2pNetwork(anyInt());
+        when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
 
         mWifiP2pServiceImpl = new WifiP2pServiceImpl(mContext, mWifiInjector);
         if (supported) {
@@ -2731,7 +2731,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
         sendSetDeviceNameMsg(mClientMessenger, mTestThisDevice);
         verify(mWifiNative).setDeviceName(eq(mTestThisDevice.deviceName));
         verify(mWifiNative).setP2pSsidPostfix(eq("-" + mTestThisDevice.deviceName));
-        verify(mWifiSettingsConfigStore).putString(
+        verify(mWifiSettingsConfigStore).put(
                 eq(WIFI_P2P_DEVICE_NAME), eq(mTestThisDevice.deviceName));
         checkSendThisDeviceChangedBroadcast();
         verify(mClientHandler).sendMessage(mMessageCaptor.capture());
@@ -3175,7 +3175,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
                 eq(UserManager.DISALLOW_NETWORK_RESET), any());
         verify(mUserManager).hasUserRestrictionForUser(eq(UserManager.DISALLOW_CONFIG_WIFI), any());
         verify(mWifiNative, atLeastOnce()).p2pListNetworks(any());
-        verify(mWifiSettingsConfigStore).putBoolean(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false));
+        verify(mWifiSettingsConfigStore).put(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false));
         verify(mClientHandler).sendMessage(mMessageCaptor.capture());
         Message message = mMessageCaptor.getValue();
         assertEquals(WifiP2pManager.FACTORY_RESET_SUCCEEDED, message.what);
@@ -3203,14 +3203,13 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
                 eq(UserManager.DISALLOW_NETWORK_RESET), any());
         verify(mUserManager).hasUserRestrictionForUser(eq(UserManager.DISALLOW_CONFIG_WIFI), any());
         verify(mWifiNative, never()).p2pListNetworks(any());
-        verify(mWifiSettingsConfigStore).putBoolean(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(true));
+        verify(mWifiSettingsConfigStore).put(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(true));
         verify(mClientHandler).sendMessage(mMessageCaptor.capture());
         Message message = mMessageCaptor.getValue();
         assertEquals(WifiP2pManager.FACTORY_RESET_SUCCEEDED, message.what);
 
         // Move to enabled state
-        when(mWifiSettingsConfigStore.getBoolean(
-                eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false))).thenReturn(true);
+        when(mWifiSettingsConfigStore.get(eq(WIFI_P2P_PENDING_FACTORY_RESET))).thenReturn(true);
         forceP2pEnabled(mClient1);
         verify(mWifiInjector, times(2)).getUserManager();
         verify(mPackageManager, times(2)).getNameForUid(anyInt());
@@ -3220,8 +3219,8 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
         verify(mUserManager, times(2)).hasUserRestrictionForUser(
                 eq(UserManager.DISALLOW_CONFIG_WIFI), any());
         verify(mWifiNative, atLeastOnce()).p2pListNetworks(any());
-        verify(mWifiSettingsConfigStore).getBoolean(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false));
-        verify(mWifiSettingsConfigStore).putBoolean(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false));
+        verify(mWifiSettingsConfigStore).get(eq(WIFI_P2P_PENDING_FACTORY_RESET));
+        verify(mWifiSettingsConfigStore).put(eq(WIFI_P2P_PENDING_FACTORY_RESET), eq(false));
         checkSendP2pPersistentGroupsChangedBroadcast();
     }
 

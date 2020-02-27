@@ -138,8 +138,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                         new int[]{WifiScanner.WIFI_BAND_BOTH_WITH_DFS});
 
         // Scan throttling is enabled by default.
-        when(mWifiSettingsConfigStore.getBoolean(eq(WIFI_SCAN_THROTTLE_ENABLED), anyBoolean()))
-                .thenReturn(true);
+        when(mWifiSettingsConfigStore.get(eq(WIFI_SCAN_THROTTLE_ENABLED))).thenReturn(true);
         mLooper = new TestLooper();
         mScanRequestProxy =
             new ScanRequestProxy(mContext, mAppOps, mActivityManager, mWifiInjector,
@@ -644,7 +643,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         // Triggers the scan throttle setting registration.
         testEnableScanning();
         mScanRequestProxy.setScanThrottleEnabled(false);
-        verify(mWifiSettingsConfigStore).putBoolean(WIFI_SCAN_THROTTLE_ENABLED, false);
+        verify(mWifiSettingsConfigStore).put(WIFI_SCAN_THROTTLE_ENABLED, false);
 
         long firstRequestMs = 782;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(firstRequestMs);
