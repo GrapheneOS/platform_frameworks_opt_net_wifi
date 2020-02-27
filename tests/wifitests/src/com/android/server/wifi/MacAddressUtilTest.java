@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.security.ProviderException;
 import java.util.Random;
 
 import javax.crypto.Mac;
@@ -67,6 +68,20 @@ public class MacAddressUtilTest {
             MacAddress macAddress = mMacAddressUtil.calculatePersistentMacForConfiguration(
                     config, mMac);
             assertTrue(WifiConfiguration.isValidMacAddressForRandomization(macAddress));
+        }
+    }
+
+    /**
+     * Verify the java.security.ProviderException is caught.
+     */
+    @Test
+    public void testCalculatePersistentMacCatchesException() {
+        when(mMac.doFinal(any())).thenThrow(new ProviderException("error occurred"));
+        try {
+            WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+            assertNull(mMacAddressUtil.calculatePersistentMacForConfiguration(config, mMac));
+        } catch (Exception e) {
+            fail("Exception not caught.");
         }
     }
 }

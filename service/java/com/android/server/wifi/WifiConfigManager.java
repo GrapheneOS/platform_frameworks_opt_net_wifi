@@ -76,8 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.crypto.Mac;
-
 /**
  * This class provides the APIs to manage configured Wi-Fi networks.
  * It deals with the following:
@@ -278,7 +276,6 @@ public class WifiConfigManager {
     private final WifiInjector mWifiInjector;
     private final MacAddressUtil mMacAddressUtil;
     private boolean mConnectedMacRandomzationSupported;
-    private Mac mMac;
 
     /**
      * Local log used for debugging any WifiConfigManager issues.
@@ -516,7 +513,18 @@ public class WifiConfigManager {
                 mRandomizedMacAddressMapping.remove(config.getSsidAndSecurityTypeString());
             }
         }
-        return mMacAddressUtil.calculatePersistentMacForConfiguration(config, mMac);
+        MacAddress result = mMacAddressUtil.calculatePersistentMacForConfiguration(
+                config, mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
+        if (result == null) {
+            result = mMacAddressUtil.calculatePersistentMacForConfiguration(
+                    config, mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
+        }
+        if (result == null) {
+            Log.wtf(TAG, "Failed to generate MAC address from KeyStore even after retrying. "
+                    + "Using locally generated MAC address instead.");
+            result = MacAddress.createRandomUnicastAddress();
+        }
+        return result;
     }
 
     /**
@@ -3146,12 +3154,6 @@ public class WifiConfigManager {
      * @return true on success or not needed (fresh install), false otherwise.
      */
     public boolean loadFromStore() {
-        // Get the hashfunction that is used to generate randomized MACs from the KeyStore
-        mMac = mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID);
-        if (mMac == null) {
-            Log.wtf(TAG, "Failed to obtain secret for MAC randomization."
-                    + " All randomized MAC addresses are lost!");
-        }
         // If the user unlock comes in before we load from store, which means the user store have
         // not been setup yet for the current user. Setup the user store before the read so that
         // configurations for the current user will also being loaded.
