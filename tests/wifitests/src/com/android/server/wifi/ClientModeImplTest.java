@@ -3524,6 +3524,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // should have internet capability.
         assertTrue(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET));
         assertNull(networkCapabilities.getNetworkSpecifier());
+        assertEquals(mConnectedNetwork.creatorUid, networkCapabilities.getOwnerUid());
     }
 
     /**
