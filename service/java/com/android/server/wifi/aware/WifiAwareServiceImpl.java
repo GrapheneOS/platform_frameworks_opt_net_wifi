@@ -114,11 +114,10 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
 
             settingsConfigStore.registerChangeListener(
                     WIFI_VERBOSE_LOGGING_ENABLED,
-                    (key, newValue) -> enableVerboseLogging((boolean) newValue, awareStateManager,
+                    (key, newValue) -> enableVerboseLogging(newValue, awareStateManager,
                             wifiAwareNativeManager, wifiAwareNativeApi, wifiAwareNativeCallback),
                     mHandler);
-            enableVerboseLogging(settingsConfigStore.getBoolean(
-                    WIFI_VERBOSE_LOGGING_ENABLED, false),
+            enableVerboseLogging(settingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED),
                     awareStateManager,
                     wifiAwareNativeManager, wifiAwareNativeApi,
                     wifiAwareNativeCallback);

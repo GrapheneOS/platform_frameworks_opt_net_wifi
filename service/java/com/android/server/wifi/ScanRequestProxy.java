@@ -223,7 +223,7 @@ public class ScanRequestProxy {
         if (mWifiScanner == null) {
             mWifiScanner = mWifiInjector.getWifiScanner();
             // Start listening for throttle settings change after we retrieve scanner instance.
-            mThrottleEnabled = mSettingsConfigStore.getBoolean(WIFI_SCAN_THROTTLE_ENABLED, true);
+            mThrottleEnabled = mSettingsConfigStore.get(WIFI_SCAN_THROTTLE_ENABLED);
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "Scan throttle enabled " + mThrottleEnabled);
             }
@@ -524,7 +524,7 @@ public class ScanRequestProxy {
      */
     public void setScanThrottleEnabled(boolean enable) {
         mThrottleEnabled = enable;
-        mSettingsConfigStore.putBoolean(WIFI_SCAN_THROTTLE_ENABLED, enable);
+        mSettingsConfigStore.put(WIFI_SCAN_THROTTLE_ENABLED, enable);
         Log.i(TAG, "Scan throttle enabled " + mThrottleEnabled);
     }
 

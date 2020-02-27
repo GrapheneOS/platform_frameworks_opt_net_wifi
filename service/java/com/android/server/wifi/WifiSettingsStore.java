@@ -129,7 +129,7 @@ public class WifiSettingsStore {
     }
 
     private void persistScanAlwaysAvailableState(boolean isAvailable) {
-        mSettingsConfigStore.putBoolean(
+        mSettingsConfigStore.put(
                 WifiSettingsConfigStore.WIFI_SCAN_ALWAYS_AVAILABLE, isAvailable);
     }
 
@@ -165,7 +165,7 @@ public class WifiSettingsStore {
     }
 
     private boolean getPersistedScanAlwaysAvailable() {
-        return mSettingsConfigStore.getBoolean(
-                WifiSettingsConfigStore.WIFI_SCAN_ALWAYS_AVAILABLE, false);
+        return mSettingsConfigStore.get(
+                WifiSettingsConfigStore.WIFI_SCAN_ALWAYS_AVAILABLE);
     }
 }
