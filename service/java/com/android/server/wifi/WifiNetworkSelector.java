@@ -662,6 +662,7 @@ public class WifiNetworkSelector {
         return candidate;
     }
 
+
     /**
      * Cleans up state that should go away when wifi is disabled.
      */
@@ -670,7 +671,7 @@ public class WifiNetworkSelector {
     }
 
     /**
-     * Select the best network from the ones in range. Scan detail cache is also updated here.
+     * Returns the list of Candidates from networks in range.
      *
      * @param scanDetails             List of ScanDetail for all the APs in range
      * @param bssidBlacklist          Blacklisted BSSIDs
@@ -678,11 +679,10 @@ public class WifiNetworkSelector {
      * @param connected               True if the device is connected
      * @param disconnected            True if the device is disconnected
      * @param untrustedNetworkAllowed True if untrusted networks are allowed for connection
-     * @return Configuration of the selected network, or Null if nothing
+     * @return list of valid Candidate(s)
      */
-    @Nullable
-    public WifiConfiguration selectNetwork(List<ScanDetail> scanDetails,
-            Set<String> bssidBlacklist, WifiInfo wifiInfo,
+    public List<WifiCandidates.Candidate> getCandidatesFromScan(
+            List<ScanDetail> scanDetails, Set<String> bssidBlacklist, WifiInfo wifiInfo,
             boolean connected, boolean disconnected, boolean untrustedNetworkAllowed) {
         mFilteredNetworks.clear();
         mConnectableNetworks.clear();
@@ -770,18 +770,31 @@ public class WifiNetworkSelector {
                         }
                     });
         }
-
         if (mConnectableNetworks.size() != wifiCandidates.size()) {
             localLog("Connectable: " + mConnectableNetworks.size()
                     + " Candidates: " + wifiCandidates.size());
         }
+        return wifiCandidates.getCandidates();
+    }
+
+    /**
+     * Using the registered Scorers, choose the best network from the list of Candidate(s).
+     * The ScanDetailCache is also updated here.
+     * @param candidates - Candidates to perferm network selection on.
+     * @return WifiConfiguration - the selected network, or null.
+     */
+    @NonNull
+    public WifiConfiguration selectNetwork(List<WifiCandidates.Candidate> candidates) {
+        if (candidates == null || candidates.size() == 0) {
+            return null;
+        }
+        WifiCandidates wifiCandidates = new WifiCandidates(mWifiScoreCard, mContext, candidates);
         final WifiCandidates.CandidateScorer activeScorer = getActiveCandidateScorer();
         // Update the NetworkSelectionStatus in the configs for the current candidates
         // This is needed for the legacy user connect choice, at least
         Collection<Collection<WifiCandidates.Candidate>> groupedCandidates =
                 wifiCandidates.getGroupedCandidates();
         for (Collection<WifiCandidates.Candidate> group : groupedCandidates) {
-
             WifiCandidates.ScoredCandidate choice = activeScorer.scoreCandidates(group);
             if (choice == null) continue;
             ScanDetail scanDetail = getScanDetailForCandidateKey(choice.candidateKey);
