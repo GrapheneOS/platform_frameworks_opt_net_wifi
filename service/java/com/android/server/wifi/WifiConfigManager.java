@@ -1571,7 +1571,7 @@ public class WifiConfigManager {
                 != NetworkSelectionStatus.NETWORK_SELECTION_ENABLED) {
             localLog("setNetworkSelectionEnabled: configKey=" + config.getKey()
                     + " old networkStatus=" + status.getNetworkStatusString()
-                    + " disableReason=" + status.getNetworkDisableReasonString());
+                    + " disableReason=" + status.getNetworkSelectionDisableReasonString());
         }
         status.setNetworkSelectionStatus(
                 NetworkSelectionStatus.NETWORK_SELECTION_ENABLED);
@@ -1659,7 +1659,7 @@ public class WifiConfigManager {
         }
         localLog("setNetworkSelectionStatus: configKey=" + config.getKey()
                 + " networkStatus=" + networkStatus.getNetworkStatusString() + " disableReason="
-                + networkStatus.getNetworkDisableReasonString());
+                + networkStatus.getNetworkSelectionDisableReasonString());
         saveToStore(false);
         return true;
     }
@@ -1700,9 +1700,9 @@ public class WifiConfigManager {
                 if (mVerboseLoggingEnabled) {
                     Log.v(TAG, "Disable counter for network " + config.getPrintableSsid()
                             + " for reason "
-                            + NetworkSelectionStatus.getNetworkDisableReasonString(reason) + " is "
-                            + networkStatus.getDisableReasonCounter(reason) + " and threshold is "
-                            + disableReasonThreshold);
+                            + NetworkSelectionStatus.getNetworkSelectionDisableReasonString(reason)
+                            + " is " + networkStatus.getDisableReasonCounter(reason)
+                            + " and threshold is " + disableReasonThreshold);
                 }
                 return true;
             }
