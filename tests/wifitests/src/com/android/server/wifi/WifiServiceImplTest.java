@@ -88,6 +88,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ParceledListSlice;
 import android.content.res.Resources;
@@ -308,6 +309,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock IWifiConnectedNetworkScorer mWifiConnectedNetworkScorer;
     @Mock WifiSettingsConfigStore mWifiSettingsConfigStore;
     @Mock WifiScanAlwaysAvailableSettingsCompatibility mScanAlwaysAvailableSettingsCompatibility;
+    @Mock PackageInfo mPackageInfo;
 
     WifiLog mLog = new LogcatLog(TAG);
 
@@ -338,6 +340,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mPackageManager.getApplicationInfoAsUser(any(), anyInt(), any()))
                 .thenReturn(mApplicationInfo);
+        when(mPackageManager.getPackageInfo(anyString(), anyInt())).thenReturn(mPackageInfo);
         when(mWifiInjector.getWifiApConfigStore()).thenReturn(mWifiApConfigStore);
         doNothing().when(mFrameworkFacade).registerContentObserver(eq(mContext), any(),
                 anyBoolean(), any());
@@ -3636,17 +3639,81 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     @Test
-    public void testPackageRemovedBroadcastHandling() {
+    public void testPackageFullyRemovedBroadcastHandling() throws Exception {
         mWifiServiceImpl.checkAndStartWifi();
         mLooper.dispatchAll();
         verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 argThat((IntentFilter filter) ->
-                        filter.hasAction(Intent.ACTION_PACKAGE_FULLY_REMOVED)));
+                        filter.hasAction(Intent.ACTION_PACKAGE_FULLY_REMOVED)
+                                && filter.hasAction(Intent.ACTION_PACKAGE_REMOVED)
+                                && filter.hasAction(Intent.ACTION_PACKAGE_CHANGED)));
+        int uid = TEST_UID;
+        String packageName = TEST_PACKAGE_NAME;
+        when(mPackageManager.getApplicationInfo(TEST_PACKAGE_NAME, 0)).thenReturn(null);
+        // Send the broadcast
+        Intent intent = new Intent(Intent.ACTION_PACKAGE_FULLY_REMOVED);
+        intent.putExtra(Intent.EXTRA_UID, uid);
+        intent.setData(Uri.fromParts("package", packageName, ""));
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+        mLooper.dispatchAll();
 
+        ArgumentCaptor<ApplicationInfo> aiCaptor = ArgumentCaptor.forClass(ApplicationInfo.class);
+        verify(mWifiConfigManager).removeNetworksForApp(aiCaptor.capture());
+        assertNotNull(aiCaptor.getValue());
+        assertEquals(uid, aiCaptor.getValue().uid);
+        assertEquals(packageName, aiCaptor.getValue().packageName);
+
+        verify(mScanRequestProxy).clearScanRequestTimestampsForApp(packageName, uid);
+        verify(mWifiNetworkSuggestionsManager).removeApp(packageName);
+        verify(mClientModeImpl).removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+        verify(mPasspointManager).removePasspointProviderWithPackage(packageName);
+    }
+
+    @Test
+    public void testPackageRemovedBroadcastHandling() throws Exception {
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(Intent.ACTION_PACKAGE_FULLY_REMOVED)
+                                && filter.hasAction(Intent.ACTION_PACKAGE_REMOVED)
+                                && filter.hasAction(Intent.ACTION_PACKAGE_CHANGED)));
         int uid = TEST_UID;
         String packageName = TEST_PACKAGE_NAME;
         // Send the broadcast
-        Intent intent = new Intent(Intent.ACTION_PACKAGE_FULLY_REMOVED);
+        Intent intent = new Intent(Intent.ACTION_PACKAGE_REMOVED);
+        intent.putExtra(Intent.EXTRA_UID, uid);
+        intent.setData(Uri.fromParts("package", packageName, ""));
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+        mLooper.dispatchAll();
+
+        ArgumentCaptor<ApplicationInfo> aiCaptor = ArgumentCaptor.forClass(ApplicationInfo.class);
+        verify(mWifiConfigManager).removeNetworksForApp(aiCaptor.capture());
+        assertNotNull(aiCaptor.getValue());
+        assertEquals(uid, aiCaptor.getValue().uid);
+        assertEquals(packageName, aiCaptor.getValue().packageName);
+
+        verify(mScanRequestProxy).clearScanRequestTimestampsForApp(packageName, uid);
+        verify(mWifiNetworkSuggestionsManager).removeApp(packageName);
+        verify(mClientModeImpl).removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+        verify(mPasspointManager).removePasspointProviderWithPackage(packageName);
+    }
+
+    @Test
+    public void testPackageDisableBroadcastHandling() throws Exception {
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(Intent.ACTION_PACKAGE_FULLY_REMOVED)
+                                && filter.hasAction(Intent.ACTION_PACKAGE_REMOVED)
+                                && filter.hasAction(Intent.ACTION_PACKAGE_CHANGED)));
+        int uid = TEST_UID;
+        String packageName = TEST_PACKAGE_NAME;
+        mPackageInfo.applicationInfo = mApplicationInfo;
+        mApplicationInfo.enabled = false;
+        // Send the broadcast
+        Intent intent = new Intent(Intent.ACTION_PACKAGE_CHANGED);
         intent.putExtra(Intent.EXTRA_UID, uid);
         intent.setData(Uri.fromParts("package", packageName, ""));
         mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
@@ -3674,7 +3741,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         String packageName = TEST_PACKAGE_NAME;
         // Send the broadcast
-        Intent intent = new Intent(Intent.ACTION_PACKAGE_FULLY_REMOVED);
+        Intent intent = new Intent(Intent.ACTION_PACKAGE_REMOVED);
         intent.setData(Uri.fromParts("package", packageName, ""));
         mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
 
