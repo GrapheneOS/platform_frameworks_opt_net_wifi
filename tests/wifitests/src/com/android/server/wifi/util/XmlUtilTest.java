@@ -336,7 +336,7 @@ public class XmlUtilTest extends WifiBaseTest {
      * Verify that a network selection disable reason deprecation is handled correctly during
      * restore of data after upgrade.
      * This test tries to simulate the scenario where we have a
-     * {@link NetworkSelectionStatus#getNetworkDisableReasonString()} ()} string stored
+     * {@link NetworkSelectionStatus#getNetworkSelectionDisableReasonString()} ()} string stored
      * in the XML file from a previous release which has now been deprecated. The network should
      * be restored as enabled.
      */
@@ -358,7 +358,8 @@ public class XmlUtilTest extends WifiBaseTest {
         // Now modify the disable reason string with some invalid string in XML data.
         String xmlString = new String(xmlData);
         String deprecatedXmlString =
-                xmlString.replaceAll(status.getNetworkDisableReasonString(), "DISABLED_DEPRECATED");
+                xmlString.replaceAll(status.getNetworkSelectionDisableReasonString(),
+                        "DISABLED_DEPRECATED");
         // Ensure that the modification did take effect.
         assertFalse(xmlString.equals(deprecatedXmlString));
 
