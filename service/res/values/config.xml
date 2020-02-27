@@ -369,6 +369,18 @@
     <!-- Suspend optimization. -->
     <bool translatable="false" name="config_wifiSuspendOptimizationsEnabled">true</bool>
 
+    <!-- Network selection optimization at DEVICE_MOBILITY_STATE_HIGH_MVMT -->
+    <bool translatable="false" name="config_wifiHighMovementNetworkSelectionOptimizationEnabled">true</bool>
+
+    <!-- Duration for the delayed scan used to verify access points are staying relatively stationary
+    to the device at high mobility state. (default = 10 seconds) -->
+    <integer translatable="false" name="config_wifiHighMovementNetworkSelectionOptimizationScanDelayMs">10000</integer>
+
+    <!-- When config_wifiHighMovementNetworkSelectionOptimizationEnabled is true, BSSIDs with RSSI
+    from 2 consecutive scans that differ in either direction by more than this threshold will be
+    filtered out from network selection. (default = 10 dBs) -->
+    <integer translatable="false" name="config_wifiHighMovementNetworkSelectionOptimizationRssiDelta">10</integer>
+
     <!-- The interval in milliseconds at which wifi rtt ranging requests will be throttled when
          they are coming from the background apps (default = 30 mins). -->
     <integer translatable="false" name="config_wifiRttBackgroundExecGapMs">1800000</integer>
