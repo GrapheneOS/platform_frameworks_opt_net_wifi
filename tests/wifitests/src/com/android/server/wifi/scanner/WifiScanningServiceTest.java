@@ -3537,4 +3537,29 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         List<Integer> expected = Arrays.asList(2400, 2450);
         assertEquals(expected, actual);
     }
+
+    /**
+     * Tests that {@link WifiScanningServiceImpl#getAvailableChannels(int, String)} returns
+     * an empty array when wifi is off.
+     */
+    @Test
+    public void getAvailableChannels_DoesNotCrashWhenWifiDisabled() throws Exception {
+        // Don't enable wifi.
+
+        // Client doesn't have NETWORK_STACK permission.
+        doThrow(new SecurityException()).when(mContext).enforcePermission(
+                eq(Manifest.permission.NETWORK_STACK), anyInt(), eq(Binder.getCallingUid()), any());
+
+        // has access scan results permission
+        doNothing().when(mWifiPermissionsUtil).enforceCanAccessScanResultsForWifiScanner(
+                TEST_PACKAGE_NAME, TEST_FEATURE_ID, Binder.getCallingUid(), false, false);
+
+        mLooper.startAutoDispatch();
+        Bundle bundle = mWifiScanningServiceImpl.getAvailableChannels(
+                WifiScanner.WIFI_BAND_24_GHZ, TEST_PACKAGE_NAME, TEST_FEATURE_ID);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        List<Integer> actual = bundle.getIntegerArrayList(GET_AVAILABLE_CHANNELS_EXTRA);
+
+        assertTrue(actual.isEmpty());
+    }
 }
