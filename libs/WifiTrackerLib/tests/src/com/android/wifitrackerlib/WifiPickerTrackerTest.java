@@ -535,6 +535,45 @@ public class WifiPickerTrackerTest {
         assertThat(wifiPickerTracker.getWifiEntries().get(0).getTitle()).isEqualTo("friendlyName");
     }
 
+    /**
+     * Tests that a PasspointWifiEntry will disappear from getWifiEntries() once it is out of range.
+     */
+    @Test
+    public void testGetWifiEntries_passpointOutOfRange_returnsNull() {
+        // Create conditions for one PasspointWifiEntry in getWifiEntries()
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final PasspointConfiguration passpointConfig = new PasspointConfiguration();
+        final HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("fqdn");
+        homeSp.setFriendlyName("friendlyName");
+        passpointConfig.setHomeSp(homeSp);
+        passpointConfig.setCredential(new Credential());
+        when(mMockWifiManager.getPasspointConfigurations())
+                .thenReturn(Collections.singletonList(passpointConfig));
+        final WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
+        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
+                Collections.singletonList(new Pair<>(wifiConfig, mapping));
+        when(mMockWifiManager.getAllMatchingWifiConfigs(any())).thenReturn(allMatchingWifiConfigs);
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+        // Age out the scans and get out of range of Passpoint AP
+        when(mMockClock.millis()).thenReturn(START_MILLIS + MAX_SCAN_AGE_MILLIS + 1);
+        when(mMockWifiManager.getAllMatchingWifiConfigs(any())).thenReturn(new ArrayList<>());
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
+        // getWifiEntries() should be empty now
+        assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
+
+    }
+
     @Test
     public void testGetConnectedEntry_alreadyConnectedToPasspoint_returnsPasspointEntry() {
         final String fqdn = "fqdn";
