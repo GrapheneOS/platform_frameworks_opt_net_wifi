@@ -128,6 +128,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
         }
 
         ChannelSpec[][] channelSpecs = mWifiThreadRunner.call(() -> {
+            if (mChannelHelper == null) return new ChannelSpec[0][0];
             mChannelHelper.updateChannels();
             return mChannelHelper.getAvailableScanChannels(band);
         }, new ChannelSpec[0][0]);
