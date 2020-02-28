@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -336,6 +337,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     private void updatePasspointWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
 
+        Set<String> seenKeys = new TreeSet<>();
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> matchingWifiConfigs =
                 mWifiManager.getAllMatchingWifiConfigs(scanResults);
         for (Pair<WifiConfiguration, Map<Integer, List<ScanResult>>> pair : matchingWifiConfigs) {
@@ -345,6 +347,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             final List<ScanResult> roamingScans =
                     pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK);
             final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
+            seenKeys.add(key);
             // Skip in case we don't have a Passpoint configuration for the returned unique key
             if (!mPasspointConfigCache.containsKey(key)) {
                 continue;
@@ -362,7 +365,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         // Remove entries that are now unreachable
         mPasspointWifiEntryCache.entrySet()
-                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
+                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE
+                        || !seenKeys.contains(entry.getKey()));
     }
 
     @WorkerThread
