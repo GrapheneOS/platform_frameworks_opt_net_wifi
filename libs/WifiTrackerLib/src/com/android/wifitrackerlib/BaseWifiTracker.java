@@ -25,6 +25,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.NetworkScoreManager;
 import android.net.wifi.WifiManager;
@@ -124,7 +125,8 @@ public class BaseWifiTracker implements LifecycleObserver {
     protected final long mScanIntervalMillis;
     protected final ScanResultUpdater mScanResultUpdater;
 
-    // Network request for listening on changes to Wifi link properties.
+    // Network request for listening on changes to Wifi link properties and network capabilities
+    // such as captive portal availability.
     private final NetworkRequest mNetworkRequest = new NetworkRequest.Builder()
             .clearCapabilities().addTransportType(TRANSPORT_WIFI).build();
 
@@ -133,6 +135,12 @@ public class BaseWifiTracker implements LifecycleObserver {
                 @Override
                 public void onLinkPropertiesChanged(Network network, LinkProperties lp) {
                     handleLinkPropertiesChanged(lp);
+                }
+
+                @Override
+                public void onCapabilitiesChanged(Network network,
+                        NetworkCapabilities networkCapabilities) {
+                    handleNetworkCapabilitiesChanged(networkCapabilities);
                 }
             };
 
@@ -236,7 +244,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @WorkerThread
     protected  void handleOnStart() {
         // Do nothing.
-    };
+    }
 
     /**
      * Handle receiving the WifiManager.WIFI_STATE_CHANGED_ACTION broadcast
@@ -244,7 +252,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @WorkerThread
     protected void handleWifiStateChangedAction() {
         // Do nothing.
-    };
+    }
 
     /**
      * Handle receiving the WifiManager.SCAN_RESULTS_AVAILABLE_ACTION broadcast
@@ -252,7 +260,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @WorkerThread
     protected void handleScanResultsAvailableAction(@NonNull Intent intent) {
         // Do nothing.
-    };
+    }
 
     /**
      * Handle receiving the WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION broadcast
@@ -260,7 +268,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @WorkerThread
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
         // Do nothing.
-    };
+    }
 
     /**
      * Handle receiving the WifiManager.NETWORK_STATE_CHANGED_ACTION broadcast
@@ -268,12 +276,23 @@ public class BaseWifiTracker implements LifecycleObserver {
     @WorkerThread
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         // Do nothing.
-    };
+    }
 
+    /**
+     * Handle link property changes for the current connected Wifi network.
+     */
     @WorkerThread
     protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
         // Do nothing.
-    };
+    }
+
+    /**
+     * Handle network capability changes for the current connected Wifi network.
+     */
+    @WorkerThread
+    protected void handleNetworkCapabilitiesChanged(@Nullable NetworkCapabilities capabilities) {
+        // Do nothing.
+    }
 
     /**
      * Scanner to handle starting scans every SCAN_INTERVAL_MILLIS

@@ -34,6 +34,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
@@ -245,10 +246,19 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     @WorkerThread
     @Override
-    protected void handleLinkPropertiesChanged(@NonNull LinkProperties linkProperties) {
+    protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
         if (mConnectedWifiEntry != null
                 && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mConnectedWifiEntry.updateLinkProperties(linkProperties);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkCapabilitiesChanged(@Nullable NetworkCapabilities capabilities) {
+        if (mConnectedWifiEntry != null
+                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            mConnectedWifiEntry.updateNetworkCapabilities(capabilities);
         }
     }
 
