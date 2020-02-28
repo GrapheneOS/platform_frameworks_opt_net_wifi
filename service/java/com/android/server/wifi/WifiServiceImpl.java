@@ -40,6 +40,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ParceledListSlice;
 import android.content.pm.ResolveInfo;
@@ -315,7 +316,6 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiPermissionsUtil = mWifiInjector.getWifiPermissionsUtil();
         mLog = mWifiInjector.makeLog(TAG);
         mFrameworkFacade = wifiInjector.getFrameworkFacade();
-        enableVerboseLoggingInternal(getVerboseLoggingLevel());
         mTetheredSoftApTracker = new TetheredSoftApTracker();
         mActiveModeWarden.registerSoftApCallback(mTetheredSoftApTracker);
         mLohsSoftApTracker = new LohsSoftApTracker();
@@ -343,6 +343,8 @@ public class WifiServiceImpl extends BaseWifiService {
             if (!mWifiConfigManager.loadFromStore()) {
                 Log.e(TAG, "Failed to load from config store");
             }
+            // config store is read, check if verbose logging is enabled.
+            enableVerboseLoggingInternal(getVerboseLoggingLevel());
             // Check if wi-fi needs to be enabled
             boolean wifiEnabled = mSettingsStore.isWifiToggleEnabled();
             Log.i(TAG,
@@ -3051,36 +3053,50 @@ public class WifiServiceImpl extends BaseWifiService {
     private void registerForBroadcasts() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_PACKAGE_FULLY_REMOVED);
+        intentFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+        intentFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
         intentFilter.addDataScheme("package");
         mContext.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action.equals(Intent.ACTION_PACKAGE_FULLY_REMOVED)) {
-                    int uid = intent.getIntExtra(Intent.EXTRA_UID, -1);
-                    Uri uri = intent.getData();
-                    if (uid == -1 || uri == null) {
-                        return;
-                    }
-                    String pkgName = uri.getSchemeSpecificPart();
-
-                    // Call the method in the main Wifi thread.
-                    mWifiThreadRunner.post(() -> {
-                        ApplicationInfo ai = new ApplicationInfo();
-                        ai.packageName = pkgName;
-                        ai.uid = uid;
-                        mWifiConfigManager.removeNetworksForApp(ai);
-                        mScanRequestProxy.clearScanRequestTimestampsForApp(pkgName, uid);
-
-                        // Remove all suggestions from the package.
-                        mWifiNetworkSuggestionsManager.removeApp(pkgName);
-                        mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(pkgName);
-
-                        // Remove all Passpoint profiles from package.
-                        mWifiInjector.getPasspointManager().removePasspointProviderWithPackage(
-                                pkgName);
-                    });
+                int uid = intent.getIntExtra(Intent.EXTRA_UID, -1);
+                Uri uri = intent.getData();
+                if (uid == -1 || uri == null) {
+                    Log.e(TAG, "Uid or Uri is missing for action:" + intent.getAction());
+                    return;
                 }
+                String pkgName = uri.getSchemeSpecificPart();
+                PackageManager pm = context.getPackageManager();
+                PackageInfo packageInfo = null;
+                try {
+                    packageInfo = pm.getPackageInfo(pkgName, 0);
+                } catch (PackageManager.NameNotFoundException e) {
+                    Log.e(TAG, "Couldn't get PackageInfo for package:" + pkgName);
+                    return;
+                }
+                // If package is not removed or disabled, just ignore.
+                if (packageInfo != null
+                        && packageInfo.applicationInfo != null
+                        && packageInfo.applicationInfo.enabled) {
+                    return;
+                }
+                Log.d(TAG, "Remove settings for package:" + pkgName);
+                // Call the method in the main Wifi thread.
+                mWifiThreadRunner.post(() -> {
+                    ApplicationInfo ai = new ApplicationInfo();
+                    ai.packageName = pkgName;
+                    ai.uid = uid;
+                    mWifiConfigManager.removeNetworksForApp(ai);
+                    mScanRequestProxy.clearScanRequestTimestampsForApp(pkgName, uid);
+
+                    // Remove all suggestions from the package.
+                    mWifiNetworkSuggestionsManager.removeApp(pkgName);
+                    mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(pkgName);
+
+                    // Remove all Passpoint profiles from package.
+                    mWifiInjector.getPasspointManager().removePasspointProviderWithPackage(
+                            pkgName);
+                });
             }
         }, intentFilter);
     }
@@ -3287,8 +3303,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mLog.info("enableVerboseLogging uid=% verbose=%")
                 .c(Binder.getCallingUid())
                 .c(verbose).flush();
-        mWifiInjector.getSettingsConfigStore().putBoolean(
-                WIFI_VERBOSE_LOGGING_ENABLED, verbose > 0);
+        mWifiInjector.getSettingsConfigStore().put(WIFI_VERBOSE_LOGGING_ENABLED, verbose > 0);
         enableVerboseLoggingInternal(verbose);
     }
 
@@ -3305,8 +3320,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getVerboseLoggingLevel uid=%").c(Binder.getCallingUid()).flush();
         }
-        return mWifiInjector.getSettingsConfigStore().getBoolean(
-                WIFI_VERBOSE_LOGGING_ENABLED, false) ? 1 : 0;
+        return mWifiInjector.getSettingsConfigStore().get(WIFI_VERBOSE_LOGGING_ENABLED) ? 1 : 0;
     }
 
     @Override
@@ -3350,6 +3364,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiThreadRunner.post(() -> {
             mPasspointManager.clearAnqpRequestsAndFlushCache();
             mWifiConfigManager.clearDeletedEphemeralNetworks();
+            mWifiConfigManager.removeAllEphemeralOrPasspointConfiguredNetworks();
             mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
             mWifiNetworkSuggestionsManager.clear();
             mWifiInjector.getWifiScoreCard().clear();

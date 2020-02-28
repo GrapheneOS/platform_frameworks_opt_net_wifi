@@ -106,10 +106,7 @@ public class WifiKeyStore {
         if (caCertificates != null) {
             caCertificateAliases = new ArrayList<>();
             for (int i = 0; i < caCertificates.length; i++) {
-                // Use a different alias only if there is more than 1 certificate in the chain.
-                String caAlias = caCertificates.length == 1
-                        ? alias
-                        : String.format("%s_%d", alias, i);
+                String caAlias = String.format("%s_%d", alias, i);
 
                 oldCaCertificatesToRemove.remove(caAlias);
                 if (!putCaCertInKeyStore(caAlias, caCertificates[i])) {
@@ -120,7 +117,7 @@ public class WifiKeyStore {
                     }
                     return false;
                 }
-                caCertificateAliases.add(alias);
+                caCertificateAliases.add(caAlias);
             }
         }
         if (existingAlias != null) {

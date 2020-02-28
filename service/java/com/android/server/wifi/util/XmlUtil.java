@@ -1012,7 +1012,8 @@ public class XmlUtil {
             XmlUtil.writeNextValue(
                     out, XML_TAG_SELECTION_STATUS, selectionStatus.getNetworkStatusString());
             XmlUtil.writeNextValue(
-                    out, XML_TAG_DISABLE_REASON, selectionStatus.getNetworkDisableReasonString());
+                    out, XML_TAG_DISABLE_REASON,
+                    selectionStatus.getNetworkSelectionDisableReasonString());
             XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE, selectionStatus.getConnectChoice());
             XmlUtil.writeNextValue(
                     out, XML_TAG_HAS_EVER_CONNECTED, selectionStatus.hasEverConnected());

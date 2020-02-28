@@ -30,9 +30,12 @@ import com.android.wifi.resources.R;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 /**
  * Candidates for network selection
@@ -40,10 +43,19 @@ import java.util.StringJoiner;
 public class WifiCandidates {
     private static final String TAG = "WifiCandidates";
 
-    WifiCandidates(@NonNull WifiScoreCard wifiScoreCard, @NonNull Context context) {
+    public WifiCandidates(@NonNull WifiScoreCard wifiScoreCard, @NonNull Context context) {
+        this(wifiScoreCard, context, Collections.EMPTY_LIST);
+    }
+
+    public WifiCandidates(@NonNull WifiScoreCard wifiScoreCard, @NonNull Context context,
+            @NonNull List<Candidate> candidates) {
         mWifiScoreCard = Preconditions.checkNotNull(wifiScoreCard);
         mContext = context;
+        for (Candidate c : candidates) {
+            mCandidates.put(c.getKey(), c);
+        }
     }
+
     private final WifiScoreCard mWifiScoreCard;
     private final Context mContext;
 
@@ -356,7 +368,7 @@ public class WifiCandidates {
         }
     }
 
-    private final Map<Key, CandidateImpl> mCandidates = new ArrayMap<>();
+    private final Map<Key, Candidate> mCandidates = new ArrayMap<>();
 
     private int mCurrentNetworkId = -1;
     @Nullable private MacAddress mCurrentBssid = null;
@@ -420,10 +432,10 @@ public class WifiCandidates {
             double lastSelectionWeightBetweenZeroAndOne,
             boolean isMetered,
             int predictedThroughputMbps) {
-        CandidateImpl old = mCandidates.get(key);
+        Candidate old = mCandidates.get(key);
         if (old != null) {
             // check if we want to replace this old candidate
-            if (nominatorId > old.mNominatorId) return false;
+            if (nominatorId > old.getNominatorId()) return false;
             remove(old);
         }
         WifiScoreCard.PerBssid perBssid = mWifiScoreCard.lookupBssid(
@@ -495,7 +507,7 @@ public class WifiCandidates {
      */
     public Collection<Collection<Candidate>> getGroupedCandidates() {
         Map<Integer, Collection<Candidate>> candidatesForNetworkId = new ArrayMap<>();
-        for (CandidateImpl candidate : mCandidates.values()) {
+        for (Candidate candidate : mCandidates.values()) {
             Collection<Candidate> cc = candidatesForNetworkId.get(candidate.getNetworkConfigId());
             if (cc == null) {
                 cc = new ArrayList<>(2); // Guess 2 bssids per network
@@ -504,6 +516,14 @@ public class WifiCandidates {
             cc.add(candidate);
         }
         return candidatesForNetworkId.values();
+    }
+
+    /**
+     * Return a copy of the Candidates.
+     */
+    public List<Candidate> getCandidates() {
+        return mCandidates.entrySet().stream().map(entry -> entry.getValue())
+                .collect(Collectors.toList());
     }
 
     /**

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import android.content.Context;
 import android.os.Handler;
@@ -33,6 +34,7 @@ import android.util.Xml;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
+import com.android.server.wifi.WifiSettingsConfigStore.Key;
 import com.android.server.wifi.util.XmlUtil;
 
 import org.junit.After;
@@ -86,10 +88,10 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
 
     @Test
     public void testSetterGetter() {
-        assertFalse(mWifiSettingsConfigStore.getBoolean(WIFI_VERBOSE_LOGGING_ENABLED, false));
-        mWifiSettingsConfigStore.putBoolean(WIFI_VERBOSE_LOGGING_ENABLED, true);
+        assertFalse(mWifiSettingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
+        mWifiSettingsConfigStore.put(WIFI_VERBOSE_LOGGING_ENABLED, true);
         mLooper.dispatchAll();
-        assertTrue(mWifiSettingsConfigStore.getBoolean(WIFI_VERBOSE_LOGGING_ENABLED, false));
+        assertTrue(mWifiSettingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
         verify(mWifiConfigManager).saveToStore(true);
     }
 
@@ -99,11 +101,14 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
                 WifiSettingsConfigStore.OnSettingsChangedListener.class);
         mWifiSettingsConfigStore.registerChangeListener(WIFI_VERBOSE_LOGGING_ENABLED, listener,
                 new Handler(mLooper.getLooper()));
-
-        mWifiSettingsConfigStore.putBoolean(WIFI_VERBOSE_LOGGING_ENABLED, true);
+        mWifiSettingsConfigStore.put(WIFI_VERBOSE_LOGGING_ENABLED, true);
         mLooper.dispatchAll();
-
         verify(listener).onSettingsChanged(WIFI_VERBOSE_LOGGING_ENABLED, true);
+
+        mWifiSettingsConfigStore.unregisterChangeListener(WIFI_VERBOSE_LOGGING_ENABLED, listener);
+        mWifiSettingsConfigStore.put(WIFI_VERBOSE_LOGGING_ENABLED, false);
+        mLooper.dispatchAll();
+        verifyNoMoreInteractions(listener);
     }
 
     @Test
@@ -119,14 +124,14 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
         storeDataCaptor.getValue().deserializeData(in, in.getDepth(), -1, null,
                 mock(WifiConfigStoreMigrationDataHolder.class));
 
-        assertTrue(mWifiSettingsConfigStore.getBoolean(WIFI_VERBOSE_LOGGING_ENABLED, false));
+        assertTrue(mWifiSettingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
     }
 
-    private XmlPullParser createSettingsTestXmlForParsing(String key, Object value)
+    private XmlPullParser createSettingsTestXmlForParsing(Key key, Object value)
             throws Exception {
         Map<String, Object> settings = new HashMap<>();
         // Serialize
-        settings.put(key, value);
+        settings.put(key.key, value);
         final XmlSerializer out = new FastXmlSerializer();
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         out.setOutput(outputStream, StandardCharsets.UTF_8.name());

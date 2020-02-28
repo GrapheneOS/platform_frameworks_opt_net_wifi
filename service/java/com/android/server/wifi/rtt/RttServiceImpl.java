@@ -275,10 +275,9 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
 
             settingsConfigStore.registerChangeListener(
                     WIFI_VERBOSE_LOGGING_ENABLED,
-                    (key, newValue) -> enableVerboseLogging((boolean) newValue),
+                    (key, newValue) -> enableVerboseLogging(newValue),
                     mRttServiceSynchronized.mHandler);
-            enableVerboseLogging(settingsConfigStore.getBoolean(
-                    WIFI_VERBOSE_LOGGING_ENABLED, false));
+            enableVerboseLogging(settingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
 
             mBackgroundProcessExecGapMs = mContext.getResources().getInteger(
                     R.integer.config_wifiRttBackgroundExecGapMs);

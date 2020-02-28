@@ -113,6 +113,16 @@ public class WifiCandidatesTest extends WifiBaseTest {
     }
 
     /**
+     * Test retrieving the list of candidates.
+     */
+    @Test
+    public void testGetCandidates() {
+        assertTrue(mWifiCandidates.add(mScanDetail1, mConfig1, 2, 0.0, false, 100));
+        assertNotNull(mWifiCandidates.getCandidates());
+        assertEquals(1, mWifiCandidates.getCandidates().size());
+    }
+
+    /**
      * Make sure we catch SSID mismatch due to quoting error
      */
     @Test

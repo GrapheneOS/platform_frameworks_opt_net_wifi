@@ -682,4 +682,31 @@ public class PasspointNetworkNominateHelperTest {
         // Verify that no provider matching is performed.
         verify(mPasspointManager, never()).matchProvider(any(ScanResult.class));
     }
+
+    /**
+     * Verify matching passpoint provider with ChargeablePublic AP will nominate a metered
+     * candidate.
+     */
+    @Test
+    public void evaluateScansWithAntIsChargeablePublic() {
+        ScanDetail scanDetail = generateScanDetail(TEST_SSID1, TEST_BSSID1);
+        NetworkDetail networkDetail = scanDetail.getNetworkDetail();
+        when(networkDetail.getAnt()).thenReturn(NetworkDetail.Ant.ChargeablePublic);
+        List<ScanDetail> scanDetails = Arrays.asList(scanDetail);
+
+        List<Pair<PasspointProvider, PasspointMatch>> homeProvider = new ArrayList<>();
+        homeProvider.add(Pair.create(sTestProvider1, PasspointMatch.HomeProvider));
+
+        // Return homeProvider for the first ScanDetail (TEST_SSID1) and a null (no match) for
+        // for the second (TEST_SSID2);
+        when(mPasspointManager.matchProvider(any(ScanResult.class))).thenReturn(homeProvider)
+                .thenReturn(null);
+        when(mWifiConfigManager.addOrUpdateNetwork(any(WifiConfiguration.class), anyInt()))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
+        when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID)).thenReturn(TEST_CONFIG1);
+        List<Pair<ScanDetail, WifiConfiguration>> candidates = mNominateHelper
+                .getPasspointNetworkCandidates(scanDetails, false);
+        assertEquals(1, candidates.size());
+        assertTrue(WifiConfiguration.isMetered(candidates.get(0).second, null));
+    }
 }
