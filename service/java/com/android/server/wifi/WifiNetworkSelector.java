@@ -29,6 +29,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.text.TextUtils;
 import android.util.ArrayMap;
+import android.util.ArraySet;
 import android.util.LocalLog;
 import android.util.Log;
 import android.util.Pair;
@@ -664,10 +665,48 @@ public class WifiNetworkSelector {
 
 
     /**
+     * Indicates whether we have ever seen the network to be metered since wifi was enabled.
+     *
+     * This is sticky to prevent continuous flip-flopping between networks, when the metered
+     * status is learned after association.
+     */
+    private boolean isEverMetered(@NonNull WifiConfiguration config, @Nullable WifiInfo info) {
+        // If info does not match config, don't use it.
+        // TODO(b/149988649) Metrics
+        if (info != null && info.getNetworkId() != config.networkId) info = null;
+        boolean metered = WifiConfiguration.isMetered(config, info);
+        if (config.meteredOverride != WifiConfiguration.METERED_OVERRIDE_NONE) {
+            // User override is in effect; we should trust it
+            if (mKnownMeteredNetworkIds.remove(config.networkId)) {
+                localLog("KnownMeteredNetworkIds = " + mKnownMeteredNetworkIds);
+            }
+        } else if (mKnownMeteredNetworkIds.contains(config.networkId)) {
+            // Use the saved information
+            metered = true;
+        } else if (metered) {
+            // Update the saved information
+            mKnownMeteredNetworkIds.add(config.networkId);
+            localLog("KnownMeteredNetworkIds = " + mKnownMeteredNetworkIds);
+        }
+        return metered;
+    }
+
+    /**
+     * Returns the set of known metered network ids (for tests. dumpsys, and metrics).
+     */
+    public Set<Integer> getKnownMeteredNetworkIds() {
+        return new ArraySet<>(mKnownMeteredNetworkIds);
+    }
+
+    private final ArraySet<Integer> mKnownMeteredNetworkIds = new ArraySet<>();
+
+
+    /**
      * Cleans up state that should go away when wifi is disabled.
      */
     public void resetOnDisable() {
         mWifiConfigManager.clearLastSelectedNetwork();
+        mKnownMeteredNetworkIds.clear();
     }
 
     /**
@@ -752,13 +791,14 @@ public class WifiNetworkSelector {
                         WifiCandidates.Key key = wifiCandidates.keyFromScanDetailAndConfig(
                                 scanDetail, config);
                         if (key != null) {
+                            boolean metered = isEverMetered(config, wifiInfo);
                             boolean added = wifiCandidates.add(key, config,
                                     registeredNominator.getId(),
                                     scanDetail.getScanResult().level,
                                     scanDetail.getScanResult().frequency,
                                     (config.networkId == lastUserSelectedNetworkId)
                                             ? lastSelectionWeight : 0.0,
-                                    WifiConfiguration.isMetered(config, wifiInfo),
+                                    metered,
                                     predictThroughput(scanDetail));
                             if (added) {
                                 mConnectableNetworks.add(Pair.create(scanDetail, config));
