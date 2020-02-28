@@ -340,25 +340,37 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @WorkerThread
-    void updateScanResultInfo(@NonNull WifiConfiguration wifiConfig,
+    void updateScanResultInfo(@Nullable WifiConfiguration wifiConfig,
             @Nullable List<ScanResult> homeScanResults,
             @Nullable List<ScanResult> roamingScanResults)
             throws IllegalArgumentException {
-        mWifiConfig = wifiConfig;
-        mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
         mIsRoaming = false;
-        ScanResult bestScanResult = null;
-        if (homeScanResults != null && !homeScanResults.isEmpty()) {
-            bestScanResult = getBestScanResultByLevel(homeScanResults);
-        } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
-            mIsRoaming = true;
-            bestScanResult = getBestScanResultByLevel(roamingScanResults);
+        mWifiConfig = wifiConfig;
+        mCurrentHomeScanResults.clear();
+        mCurrentRoamingScanResults.clear();
+        if (homeScanResults != null) {
+            mCurrentHomeScanResults.addAll(homeScanResults);
         }
-        if (bestScanResult == null) {
-            mLevel = WIFI_LEVEL_UNREACHABLE;
+        if (roamingScanResults != null) {
+            mCurrentRoamingScanResults.addAll(roamingScanResults);
+        }
+        if (mWifiConfig != null) {
+            mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
+            ScanResult bestScanResult = null;
+            if (homeScanResults != null && !homeScanResults.isEmpty()) {
+                bestScanResult = getBestScanResultByLevel(homeScanResults);
+            } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
+                mIsRoaming = true;
+                bestScanResult = getBestScanResultByLevel(roamingScanResults);
+            }
+            if (bestScanResult == null) {
+                mLevel = WIFI_LEVEL_UNREACHABLE;
+            } else {
+                mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
+                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+            }
         } else {
-            mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
-            mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+            mLevel = WIFI_LEVEL_UNREACHABLE;
         }
 
         notifyOnUpdated();

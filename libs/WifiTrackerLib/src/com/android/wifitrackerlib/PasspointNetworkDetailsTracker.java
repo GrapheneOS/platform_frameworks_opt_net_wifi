@@ -147,9 +147,13 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                 mChosenEntry.updateScanResultInfo(wifiConfig,
                         pair.second.get(WifiManager.PASSPOINT_HOME_NETWORK),
                         pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK));
-                break;
+                return;
             }
         }
+        // No AP in range; set scan results and connection config to null.
+        mChosenEntry.updateScanResultInfo(null /* wifiConfig */,
+                null /* homeScanResults */,
+                null /* roamingScanResults */);
     }
 
     /**
