@@ -144,4 +144,22 @@
 
     <!-- Passpoint summary for an expired passpoint [CHAR LIMIT=40] -->
     <string name="wifi_passpoint_expired">Expired</string>
+
+    <!-- Status message of OSU Provider network when not connected. [CHAR LIMIT=NONE] -->
+    <string name="tap_to_sign_up">Tap to sign up</string>
+
+    <!-- Status message of OSU Provider upon initiating provisioning flow [CHAR LIMIT=NONE] -->
+    <string name="osu_opening_provider">Opening <xliff:g id="passpointProvider" example="Passpoint Provider">%1$s</xliff:g></string>
+
+    <!-- Status message of OSU Provider when connection fails [CHAR LIMIT=NONE] -->
+    <string name="osu_connect_failed">Couldn\u2019t connect</string>
+
+    <!-- Status message of OSU Provider after user completes provisioning flow [CHAR LIMIT=NONE] -->
+    <string name="osu_completing_sign_up">Completing sign-up\u2026</string>
+
+    <!-- Status message of OSU Provider when sign up could not be completed [CHAR LIMIT=NONE] -->
+    <string name="osu_sign_up_failed">Couldn\u2019t complete sign-up. Tap to try again.</string>
+
+    <!-- Status message of OSU Provider on completing provisioning. [CHAR LIMIT=NONE] -->
+    <string name="osu_sign_up_complete">Sign-up complete. Connecting\u2026</string>
 </resources>

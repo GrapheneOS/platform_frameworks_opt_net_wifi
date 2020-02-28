@@ -19,7 +19,9 @@ package com.android.wifitrackerlib;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
+import static com.android.wifitrackerlib.WifiEntry.ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN;
 
+import android.annotation.MainThread;
 import android.content.Context;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -27,14 +29,20 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.OsuProvider;
+import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.hotspot2.ProvisioningCallback;
 import android.os.Handler;
+import android.text.TextUtils;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * WifiEntry representation of an Online Sign-up entry, uniquely identified by FQDN.
@@ -45,9 +53,9 @@ class OsuWifiEntry extends WifiEntry {
     @NonNull private final List<ScanResult> mCurrentScanResults = new ArrayList<>();
 
     @NonNull private final String mKey;
-    @NonNull private String mFriendlyName;
     @NonNull private final Context mContext;
     @NonNull private OsuProvider mOsuProvider;
+    private String mOsuStatusString;
 
     private int mLevel = WIFI_LEVEL_UNREACHABLE;
 
@@ -84,8 +92,9 @@ class OsuWifiEntry extends WifiEntry {
 
     @Override
     public String getSummary(boolean concise) {
-        // TODO(b/70983952): Fill this method in
-        return "Osu (Placeholder Text)"; // Placeholder string
+        // TODO(b/70983952): Add verbose summary
+        return mOsuStatusString != null
+                ? mOsuStatusString : mContext.getString(R.string.tap_to_sign_up);
     }
 
     @Override
@@ -139,7 +148,9 @@ class OsuWifiEntry extends WifiEntry {
 
     @Override
     public void connect(@Nullable ConnectCallback callback) {
-        // TODO(b/70983952): Fill this method in.
+        mConnectCallback = callback;
+        mWifiManager.startSubscriptionProvisioning(mOsuProvider, mContext.getMainExecutor(),
+                new OsuWifiEntryProvisioningCallback());
     }
 
     // Exiting from the OSU flow should disconnect from the network.
@@ -283,13 +294,106 @@ class OsuWifiEntry extends WifiEntry {
     @Override
     protected boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
             @NonNull NetworkInfo networkInfo) {
-        // TODO(b/70983952): Fill this method in.
-        return false;
+        return wifiInfo.isOsuAp() && TextUtils.equals(
+                wifiInfo.getPasspointProviderFriendlyName(), mOsuProvider.getFriendlyName());
     }
 
     @Override
     String getScanResultDescription() {
         // TODO(b/70983952): Fill this method in.
         return "";
+    }
+
+    OsuProvider getOsuProvider() {
+        return mOsuProvider;
+    }
+
+    class OsuWifiEntryProvisioningCallback extends ProvisioningCallback {
+        @Override
+        @MainThread public void onProvisioningFailure(int status) {
+            if (TextUtils.equals(
+                    mOsuStatusString, mContext.getString(R.string.osu_completing_sign_up))) {
+                mOsuStatusString = mContext.getString(R.string.osu_sign_up_failed);
+            } else {
+                mOsuStatusString = mContext.getString(R.string.osu_connect_failed);
+            }
+            if (mConnectCallback != null) {
+                mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+            }
+            notifyOnUpdated();
+        }
+
+        @Override
+        @MainThread public void onProvisioningStatus(int status) {
+            String newStatusString = null;
+            switch (status) {
+                case OSU_STATUS_AP_CONNECTING:
+                case OSU_STATUS_AP_CONNECTED:
+                case OSU_STATUS_SERVER_CONNECTING:
+                case OSU_STATUS_SERVER_VALIDATED:
+                case OSU_STATUS_SERVER_CONNECTED:
+                case OSU_STATUS_INIT_SOAP_EXCHANGE:
+                case OSU_STATUS_WAITING_FOR_REDIRECT_RESPONSE:
+                    newStatusString = String.format(mContext.getString(
+                            R.string.osu_opening_provider),
+                            mOsuProvider.getFriendlyName());
+                    break;
+                case OSU_STATUS_REDIRECT_RESPONSE_RECEIVED:
+                case OSU_STATUS_SECOND_SOAP_EXCHANGE:
+                case OSU_STATUS_THIRD_SOAP_EXCHANGE:
+                case OSU_STATUS_RETRIEVING_TRUST_ROOT_CERTS:
+                    newStatusString = mContext.getString(R.string.osu_completing_sign_up);
+                    break;
+            }
+            boolean updated = !TextUtils.equals(mOsuStatusString, newStatusString);
+            mOsuStatusString = newStatusString;
+            if (updated) {
+                notifyOnUpdated();
+            }
+        }
+
+        @Override
+        @MainThread public void onProvisioningComplete() {
+            mOsuStatusString = mContext.getString(R.string.osu_sign_up_complete);
+            notifyOnUpdated();
+
+            PasspointConfiguration passpointConfig = mWifiManager
+                    .getMatchingPasspointConfigsForOsuProviders(Collections.singleton(mOsuProvider))
+                    .get(mOsuProvider);
+            if (passpointConfig == null) {
+                // Failed to find the config we just provisioned
+                if (mConnectCallback != null) {
+                    mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+                }
+                return;
+            }
+            String uniqueId = passpointConfig.getUniqueId();
+            for (Pair<WifiConfiguration, Map<Integer, List<ScanResult>>> pairing :
+                    mWifiManager.getAllMatchingWifiConfigs(mWifiManager.getScanResults())) {
+                WifiConfiguration config = pairing.first;
+                if (TextUtils.equals(config.getKey(), uniqueId)) {
+                    List<ScanResult> homeScans =
+                            pairing.second.get(WifiManager.PASSPOINT_HOME_NETWORK);
+                    List<ScanResult> roamingScans =
+                            pairing.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK);
+                    ScanResult bestScan;
+                    if (homeScans != null && !homeScans.isEmpty()) {
+                        bestScan = getBestScanResultByLevel(homeScans);
+                    } else if (roamingScans != null && !roamingScans.isEmpty()) {
+                        bestScan = getBestScanResultByLevel(roamingScans);
+                    } else {
+                        break;
+                    }
+                    config.SSID = "\"" + bestScan.SSID + "\"";
+                    mWifiManager.connect(config, null /* ActionListener */);
+                    return;
+                }
+            }
+
+            // Failed to find the network we provisioned for
+            if (mConnectCallback != null) {
+                mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+            }
+        }
     }
 }
