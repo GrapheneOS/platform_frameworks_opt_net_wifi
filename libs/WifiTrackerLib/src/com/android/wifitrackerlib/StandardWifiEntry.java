@@ -109,6 +109,8 @@ public class StandardWifiEntry extends WifiEntry {
     @Nullable private WifiConfiguration mWifiConfig;
     @Nullable private String mRecommendationServiceLabel;
 
+    private boolean mShouldAutoOpenCaptivePortal = false;
+
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull String key,
             @NonNull List<ScanResult> scanResults,
@@ -245,22 +247,21 @@ public class StandardWifiEntry extends WifiEntry {
             }
 
             // Check NetworkCapabilities.
-            final ConnectivityManager cm =
-                    (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-            final NetworkCapabilities nc =
-                    cm.getNetworkCapabilities(mWifiManager.getCurrentNetwork());
-            if (nc != null) {
-                if (nc.hasCapability(nc.NET_CAPABILITY_CAPTIVE_PORTAL)) {
+            if (mNetworkCapabilities != null) {
+                if (mNetworkCapabilities.hasCapability(
+                        NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
                     return mContext.getString(mContext.getResources()
                             .getIdentifier("network_available_sign_in", "string", "android"));
                 }
 
-                if (nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
+                if (mNetworkCapabilities.hasCapability(
+                        NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
                     return mContext.getString(R.string.wifi_limited_connection);
                 }
 
-                if (!nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
-                    if (nc.isPrivateDnsBroken()) {
+                if (!mNetworkCapabilities.hasCapability(
+                        NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+                    if (mNetworkCapabilities.isPrivateDnsBroken()) {
                         return mContext.getString(R.string.private_dns_broken);
                     }
                     return mContext.getString(R.string.wifi_connected_no_internet);
@@ -383,6 +384,9 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     public void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
+        // We should flag this network to auto-open captive portal since this method represents
+        // the user manually connecting to a network (i.e. not auto-join).
+        mShouldAutoOpenCaptivePortal = true;
         if (mWifiConfig == null) {
             // Unsaved network
             if (mSecurity == SECURITY_NONE
@@ -448,13 +452,19 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean canSignIn() {
-        // TODO(b/70983952): Fill this method in
-        return false;
+        return mNetworkCapabilities != null
+                && mNetworkCapabilities.hasCapability(
+                        NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
     }
 
     @Override
     public void signIn(@Nullable SignInCallback callback) {
-        // TODO(b/70983952): Fill this method in
+        if (canSignIn()) {
+            // canSignIn() implies that this WifiEntry is the currently connected network, so use
+            // getCurrentNetwork() to start the captive portal app.
+            ((ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                    .startCaptivePortalApp(mWifiManager.getCurrentNetwork());
+        }
     }
 
     /**
@@ -685,6 +695,18 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         notifyOnUpdated();
+    }
+
+    @WorkerThread
+    @Override
+    void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
+        super.updateNetworkCapabilities(capabilities);
+
+        // Auto-open an available captive portal if the user manually connected to this network.
+        if (canSignIn() && mShouldAutoOpenCaptivePortal) {
+            mShouldAutoOpenCaptivePortal = false;
+            signIn(null /* callback */);
+        }
     }
 
     private void updateEapType(ScanResult result) {

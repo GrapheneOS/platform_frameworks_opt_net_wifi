@@ -22,6 +22,7 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import android.net.LinkAddress;
 import android.net.LinkProperties;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkUtils;
 import android.net.RouteInfo;
@@ -190,6 +191,7 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     protected int mLevel = WIFI_LEVEL_UNREACHABLE;
     protected WifiInfo mWifiInfo;
     protected NetworkInfo mNetworkInfo;
+    protected NetworkCapabilities mNetworkCapabilities;
     protected ConnectedInfo mConnectedInfo;
 
     protected ConnectCallback mConnectCallback;
@@ -563,6 +565,7 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
             }
         } else { // Connection info doesn't matched, so this network is disconnected
             mNetworkInfo = null;
+            mNetworkCapabilities = null;
             mConnectedInfo = null;
             if (mCalledDisconnect) {
                 mCalledDisconnect = false;
@@ -619,6 +622,12 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
                 .map(InetAddress::getHostAddress).collect(Collectors.toList());
 
         notifyOnUpdated();
+    }
+
+    // Method for WifiTracker to update a connected WifiEntry's network capabilities.
+    @WorkerThread
+    void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
+        mNetworkCapabilities = capabilities;
     }
 
     String getWifiInfoDescription() {

@@ -43,6 +43,7 @@ import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.MacAddress;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
@@ -72,6 +73,7 @@ public class StandardWifiEntryTest {
     @Mock private WifiEntry.WifiEntryCallback mMockListener;
     @Mock private WifiEntry.ConnectCallback mMockConnectCallback;
     @Mock private WifiManager mMockWifiManager;
+    @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private WifiInfo mMockWifiInfo;
     @Mock private NetworkInfo mMockNetworkInfo;
     @Mock private Context mMockContext;
@@ -622,5 +624,44 @@ public class StandardWifiEntryTest {
         entry.setMeteredChoice(WifiEntry.METERED_CHOICE_METERED);
 
         assertThat(entry.getMeteredChoice()).isEqualTo(WifiEntry.METERED_CHOICE_METERED);
+    }
+
+    @Test
+    public void testCanSignIn_captivePortalCapability_returnsTrue() {
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE),
+                Arrays.asList(
+                        buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
+        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        entry.updateNetworkCapabilities(captivePortalCapabilities);
+
+        assertThat(entry.canSignIn()).isTrue();
+    }
+
+    @Test
+    public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mMockConnectivityManager);
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE),
+                Arrays.asList(
+                        buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
+        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+
+        // Simulate user tapping on the network and receiving captive portal capabilities.
+        // This should trigger the captive portal app.
+        entry.connect(null /* callback */);
+        entry.updateNetworkCapabilities(captivePortalCapabilities);
+
+        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+
+        // Update network capabilities again. This should not trigger the captive portal app.
+        entry.updateNetworkCapabilities(captivePortalCapabilities);
+
+        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
     }
 }
