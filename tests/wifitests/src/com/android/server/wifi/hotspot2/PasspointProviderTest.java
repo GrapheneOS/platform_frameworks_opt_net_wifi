@@ -93,6 +93,7 @@ public class PasspointProviderTest extends WifiBaseTest {
     private static final int TEST_USAGE_LIMIT_DATA_LIMIT = 100;
     private static final String TEST_FQDN = "test.com";
     private static final String TEST_FQDN2 = "test2.com";
+    private static final String TEST_FQDN3 = "test3.com";
     private static final String TEST_FRIENDLY_NAME = "Friendly Name";
     private static final long[] TEST_RC_OIS = new long[] {0x1234L, 0x2345L};
     private static final long[] TEST_IE_RC_OIS = new long[] {0x1234L, 0x2133L};
@@ -1392,8 +1393,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a user credential.
+     * Verify that a provider is a home provider when there is a match between Other Home Partners
+     * in the profile and the Domain Name ANQP element.
      *
      * @throws Exception
      */
@@ -1426,5 +1427,33 @@ public class PasspointProviderTest extends WifiBaseTest {
         mProvider = createProvider(config);
         verifyWifiConfigWithTestData(config,
                 createProvider(config).getWifiConfig());
+    }
+
+    /**
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
+     * with a user credential.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchOtherPartnersDomainName() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+
+        // Configuration was created with TEST_FQDN as the FQDN, add TEST_FQDN3 as other home
+        // partner.
+        HomeSp homeSp = config.getHomeSp();
+        homeSp.setOtherHomePartners(new String [] {TEST_FQDN3});
+        config.setHomeSp(homeSp);
+        mProvider = createProvider(config);
+
+        // Setup Domain Name ANQP element to TEST_FQDN2 and TEST_FQDN3
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[] {TEST_FQDN2, TEST_FQDN3}));
+
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
     }
 }

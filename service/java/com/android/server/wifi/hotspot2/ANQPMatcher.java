@@ -40,9 +40,9 @@ public class ANQPMatcher {
      *
      * @param element The Domain Name ANQP element
      * @param fqdn The FQDN to compare against
-     * @param imsiParam The IMSI parameter of the provider
+     * @param imsiParam The IMSI parameter of the provider (needed only for IMSI matching)
      * @param simImsi The IMSI from the installed SIM cards that best matched provider's
-     *                    IMSI parameter
+     *                    IMSI parameter (needed only for IMSI matching)
      * @return true if a match is found
      */
     public static boolean matchDomainName(DomainNameElement element, String fqdn,
@@ -54,6 +54,10 @@ public class ANQPMatcher {
         for (String domain : element.getDomains()) {
             if (DomainMatcher.arg2SubdomainOfArg1(fqdn, domain)) {
                 return true;
+            }
+
+            if (imsiParam == null || simImsi == null) {
+                continue;
             }
 
             // Try to retrieve the MCC-MNC string from the domain (for 3GPP network domain) and
