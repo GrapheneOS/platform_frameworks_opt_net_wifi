@@ -711,6 +711,21 @@ public class PasspointProvider {
             return PasspointMatch.HomeProvider;
         }
 
+        // Other Home Partners matching.
+        if (mConfig.getHomeSp().getOtherHomePartners() != null) {
+            for (String otherHomePartner : mConfig.getHomeSp().getOtherHomePartners()) {
+                if (ANQPMatcher.matchDomainName(
+                        (DomainNameElement) anqpElements.get(ANQPElementType.ANQPDomName),
+                        otherHomePartner, null, null)) {
+                    if (mVerboseLoggingEnabled) {
+                        Log.d(TAG, "Other Home Partner " + otherHomePartner
+                                + " match: HomeProvider");
+                    }
+                    return PasspointMatch.HomeProvider;
+                }
+            }
+        }
+
         // ANQP Roaming Consortium OI matching.
         long[] providerOIs = mConfig.getHomeSp().getRoamingConsortiumOis();
         if (ANQPMatcher.matchRoamingConsortium(
