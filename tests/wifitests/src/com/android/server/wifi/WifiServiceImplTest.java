@@ -5095,16 +5095,16 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
-     * Test that setMeteredOverridePasspoint is protected by NETWORK_SETTINGS permission.
+     * Test that setPasspointMeteredOverride is protected by NETWORK_SETTINGS permission.
      */
     @Test
-    public void testSetMeteredOverridePasspointFailureNoNetworkSettingsPermission()
+    public void testSetPasspointMeteredOverrideFailureNoNetworkSettingsPermission()
             throws Exception {
         doThrow(new SecurityException()).when(mContext)
                 .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                         eq("WifiService"));
         try {
-            mWifiServiceImpl.setMeteredOverridePasspoint("TEST_FQDN", METERED_OVERRIDE_METERED);
+            mWifiServiceImpl.setPasspointMeteredOverride("TEST_FQDN", METERED_OVERRIDE_METERED);
             fail("Expected SecurityException");
         } catch (SecurityException e) {
             // Test succeeded
@@ -5112,11 +5112,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
-     * Test that setMeteredOverridePasspoint makes the appropriate calls.
+     * Test that setPasspointMeteredOverride makes the appropriate calls.
      */
     @Test
-    public void testSetMeteredOverridePasspoint() throws Exception {
-        mWifiServiceImpl.setMeteredOverridePasspoint("TEST_FQDN", METERED_OVERRIDE_METERED);
+    public void testSetPasspointMeteredOverride() throws Exception {
+        mWifiServiceImpl.setPasspointMeteredOverride("TEST_FQDN", METERED_OVERRIDE_METERED);
         mLooper.dispatchAll();
         verify(mPasspointManager).setMeteredOverride("TEST_FQDN", METERED_OVERRIDE_METERED);
     }
