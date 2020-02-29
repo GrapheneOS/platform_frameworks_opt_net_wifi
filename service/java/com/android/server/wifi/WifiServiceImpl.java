@@ -2554,19 +2554,19 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
-     * See {@link android.net.wifi.WifiManager#setMeteredOverridePasspoint(String, boolean)}
+     * See {@link android.net.wifi.WifiManager#setPasspointMeteredOverride(String, boolean)}
      * @param fqdn the FQDN that identifies the passpoint configuration
      * @param meteredOverride One of the values in {@link MeteredOverride}
      */
     @Override
-    public void setMeteredOverridePasspoint(String fqdn, int meteredOverride) {
+    public void setPasspointMeteredOverride(String fqdn, int meteredOverride) {
         enforceNetworkSettingsPermission();
         if (fqdn == null) {
             throw new IllegalArgumentException("FQDN cannot be null");
         }
 
         int callingUid = Binder.getCallingUid();
-        mLog.info("setMeteredOverridePasspoint=% uid=%")
+        mLog.info("setPasspointMeteredOverride=% uid=%")
                 .c(meteredOverride).c(callingUid).flush();
         mWifiThreadRunner.post(
                 () -> mPasspointManager.setMeteredOverride(fqdn, meteredOverride));
