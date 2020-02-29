@@ -116,6 +116,7 @@ public class DeviceConfigFacade {
     private Set<String> mRandomizationFlakySsidHotlist;
     private Set<String> mAggressiveMacRandomizationSsidAllowlist;
     private Set<String> mAggressiveMacRandomizationSsidBlocklist;
+    private boolean mIsAbnormalEapAuthFailureBugreportEnabled;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -213,6 +214,9 @@ public class DeviceConfigFacade {
                 getUnmodifiableSetQuoted("aggressive_randomization_ssid_allowlist");
         mAggressiveMacRandomizationSsidBlocklist =
                 getUnmodifiableSetQuoted("aggressive_randomization_ssid_blocklist");
+
+        mIsAbnormalEapAuthFailureBugreportEnabled = DeviceConfig.getBoolean(NAMESPACE,
+                "abnormal_eap_auth_failure_bugreport_enabled", false);
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -433,5 +437,12 @@ public class DeviceConfigFacade {
      */
     public Set<String> getAggressiveMacRandomizationSsidBlocklist() {
         return mAggressiveMacRandomizationSsidBlocklist;
+    }
+
+    /**
+     * Gets the feature flag for reporting abnormal EAP authentication failure.
+     */
+    public boolean isAbnormalEapAuthFailureBugreportEnabled() {
+        return mIsAbnormalEapAuthFailureBugreportEnabled;
     }
 }
