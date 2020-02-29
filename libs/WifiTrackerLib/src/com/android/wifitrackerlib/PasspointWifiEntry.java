@@ -276,7 +276,7 @@ public class PasspointWifiEntry extends WifiEntry {
                 // Do nothing.
                 return;
         }
-        mWifiManager.setMeteredOverridePasspoint(mPasspointConfig.getHomeSp().getFqdn(),
+        mWifiManager.setPasspointMeteredOverride(mPasspointConfig.getHomeSp().getFqdn(),
                 mMeteredOverride);
     }
 

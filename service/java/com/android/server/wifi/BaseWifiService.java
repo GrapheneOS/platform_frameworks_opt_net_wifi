@@ -196,8 +196,14 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    /** @deprecated use {@link #setPasspointMeteredOverride} instead */
+    @Deprecated
     public void setMeteredOverridePasspoint(String fqdn, int meteredOverride) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setPasspointMeteredOverride(String fqdn, int meteredOverride) {
         throw new UnsupportedOperationException();
     }
 
