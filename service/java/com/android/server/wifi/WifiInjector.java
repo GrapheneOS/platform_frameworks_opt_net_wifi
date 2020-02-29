@@ -831,4 +831,8 @@ public class WifiInjector {
             getWifiScanAlwaysAvailableSettingsCompatibility() {
         return mWifiScanAlwaysAvailableSettingsCompatibility;
     }
+
+    public DeviceConfigFacade getDeviceConfigFacade() {
+        return mDeviceConfigFacade;
+    }
 }

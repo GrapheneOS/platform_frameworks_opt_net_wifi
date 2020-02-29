@@ -2888,7 +2888,8 @@ public class ClientModeImpl extends StateMachine {
                         blocklistReason == BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE
                         || blocklistReason == BssidBlocklistMonitor.REASON_EAP_FAILURE;
                 boolean isEnterpriseNetwork = configuration != null && configuration.isEnterprise();
-                if (isNonWrongPwdAuthFailure && isEnterpriseNetwork
+                if (isNonWrongPwdAuthFailure && isEnterpriseNetwork && mWifiInjector
+                        .getDeviceConfigFacade().isAbnormalEapAuthFailureBugreportEnabled()
                         && mWifiScoreCard.detectAbnormalAuthFailure(ssid)) {
                     String bugTitle = "Wi-Fi BugReport";
                     String bugDetail = "Abnormal authentication failure with enterprise network";
