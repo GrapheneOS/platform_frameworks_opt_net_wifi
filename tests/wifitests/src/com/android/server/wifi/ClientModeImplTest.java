@@ -416,6 +416,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock SimRequiredNotifier mSimRequiredNotifier;
     @Mock ThroughputPredictor mThroughputPredictor;
     @Mock ScanRequestProxy mScanRequestProxy;
+    @Mock DeviceConfigFacade mDeviceConfigFacade;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -477,6 +478,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiInjector.getBssidBlocklistMonitor()).thenReturn(mBssidBlocklistMonitor);
         when(mWifiInjector.getThroughputPredictor()).thenReturn(mThroughputPredictor);
         when(mWifiInjector.getScanRequestProxy()).thenReturn(mScanRequestProxy);
+        when(mWifiInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
         when(mWifiNetworkFactory.getSpecificNetworkRequestUidAndPackageName(any()))
                 .thenReturn(Pair.create(Process.INVALID_UID, ""));
         when(mWifiNative.initialize()).thenReturn(true);
@@ -547,6 +549,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mConnectedNetwork = spy(WifiConfigurationTestUtil.createOpenNetwork());
         when(mNullAsyncChannel.sendMessageSynchronously(any())).thenReturn(null);
         when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(new Pair<>(null, null));
+        when(mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled()).thenReturn(true);
     }
 
     private void registerAsyncChannel(Consumer<AsyncChannel> consumer, Messenger messenger,
@@ -1761,6 +1764,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mDataTelephonyManager).resetCarrierKeysForImsiEncryption();
         mockSession.finishMocking();
         verify(mWifiScoreCard).detectAbnormalAuthFailure(anyString());
+        verify(mDeviceConfigFacade).isAbnormalEapAuthFailureBugreportEnabled();
     }
 
     /**
@@ -1792,6 +1796,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mDataTelephonyManager, never()).resetCarrierKeysForImsiEncryption();
         verify(mWifiScoreCard).detectAbnormalAuthFailure(null);
+        verify(mDeviceConfigFacade).isAbnormalEapAuthFailureBugreportEnabled();
     }
 
     /**
@@ -1820,6 +1825,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 eq(WifiConfiguration.NetworkSelectionStatus
                         .DISABLED_AUTHENTICATION_NO_SUBSCRIPTION));
         verify(mWifiScoreCard, never()).detectAbnormalAuthFailure(null);
+        verify(mDeviceConfigFacade, never()).isAbnormalEapAuthFailureBugreportEnabled();
     }
 
     @Test
