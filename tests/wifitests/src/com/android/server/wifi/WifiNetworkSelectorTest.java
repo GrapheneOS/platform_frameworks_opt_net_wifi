@@ -114,6 +114,44 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     /**
+     * Nominates all networks.
+     */
+    public class AllNetworkNominator implements WifiNetworkSelector.NetworkNominator {
+        private static final String NAME = "AllNetworkNominator";
+        private final ScanDetailsAndWifiConfigs mScanDetailsAndWifiConfigs;
+
+        public AllNetworkNominator(ScanDetailsAndWifiConfigs scanDetailsAndWifiConfigs) {
+            mScanDetailsAndWifiConfigs = scanDetailsAndWifiConfigs;
+        }
+
+        @Override
+        public @NominatorId int getId() {
+            return WifiNetworkSelector.NetworkNominator.NOMINATOR_ID_SAVED;
+        }
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
+        @Override
+        public void update(List<ScanDetail> scanDetails) {}
+
+        @Override
+        public void nominateNetworks(List<ScanDetail> scanDetails,
+                WifiConfiguration currentNetwork, String currentBssid, boolean connected,
+                boolean untrustedNetworkAllowed,
+                @NonNull OnConnectableListener onConnectableListener) {
+            List<ScanDetail> myScanDetails = mScanDetailsAndWifiConfigs.getScanDetails();
+            WifiConfiguration[] configs = mScanDetailsAndWifiConfigs.getWifiConfigs();
+            for (int i = 0; i < configs.length; i++) {
+                onConnectableListener.onConnectable(myScanDetails.get(i), configs[i]);
+            }
+        }
+    }
+
+
+    /**
      * All this dummy network Nominator does is to pick the specified network in the scan results.
      */
     public class DummyNetworkNominator implements WifiNetworkSelector.NetworkNominator {
@@ -1441,5 +1479,77 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     public void resetOnDisableCallsClearLastSelectedNetwork() {
         mWifiNetworkSelector.resetOnDisable();
         verify(mWifiConfigManager).clearLastSelectedNetwork();
+        assertEquals(0, mWifiNetworkSelector.getKnownMeteredNetworkIds().size());
+    }
+
+    @Test
+    public void meteredStickyness() {
+        String[] ssids = {"\"test1\"", "\"test2\""};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2437, 2412};
+        String[] caps = {"[WPA2-PSK][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {mThresholdMinimumRssi2G + 1, mThresholdMinimumRssi2G + 1};
+        int[] securities = {SECURITY_PSK, SECURITY_EAP};
+
+        ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
+                WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
+                        freqs, caps, levels, securities, mWifiConfigManager, mClock);
+
+        // Nominate all of these networks
+        mWifiNetworkSelector.registerNetworkNominator(
+                new AllNetworkNominator(scanDetailsAndConfigs));
+
+        // Check setup
+        assertEquals(0, mWifiNetworkSelector.getKnownMeteredNetworkIds().size());
+
+        // No metered networks, expect no sticky bits
+        runNetworkSelectionWith(scanDetailsAndConfigs);
+        assertEquals(0, mWifiNetworkSelector.getKnownMeteredNetworkIds().size());
+
+        // Encountering a metered network should get recorded
+        scanDetailsAndConfigs.getWifiConfigs()[1].meteredHint = true;
+        runNetworkSelectionWith(scanDetailsAndConfigs);
+        HashSet<Integer> expect = new HashSet<>();
+        expect.add(scanDetailsAndConfigs.getWifiConfigs()[1].networkId);
+        assertEquals(expect, mWifiNetworkSelector.getKnownMeteredNetworkIds());
+
+        // Override to unmetered should cause sticky removal
+        // Make the other one metered this time, using hint
+        scanDetailsAndConfigs.getWifiConfigs()[1].meteredOverride =
+                WifiConfiguration.METERED_OVERRIDE_NOT_METERED;
+        scanDetailsAndConfigs.getWifiConfigs()[0].meteredHint = true;
+        runNetworkSelectionWith(scanDetailsAndConfigs);
+        expect.clear();
+        expect.add(scanDetailsAndConfigs.getWifiConfigs()[0].networkId);
+        assertEquals(expect, mWifiNetworkSelector.getKnownMeteredNetworkIds());
+
+        // Override to metered should also cause sticky removal
+        scanDetailsAndConfigs.getWifiConfigs()[0].meteredOverride =
+                WifiConfiguration.METERED_OVERRIDE_METERED;
+        runNetworkSelectionWith(scanDetailsAndConfigs);
+        assertEquals(0, mWifiNetworkSelector.getKnownMeteredNetworkIds().size());
+
+        // Need to make sticky list nonempty
+        scanDetailsAndConfigs.getWifiConfigs()[0].meteredOverride =
+                WifiConfiguration.METERED_OVERRIDE_NONE;
+        scanDetailsAndConfigs.getWifiConfigs()[0].meteredHint = true;
+        runNetworkSelectionWith(scanDetailsAndConfigs);
+        assertEquals(1, mWifiNetworkSelector.getKnownMeteredNetworkIds().size());
+        // Toggling wifi off should clear the sticky bits
+        mWifiNetworkSelector.resetOnDisable();
+        assertEquals(0, mWifiNetworkSelector.getKnownMeteredNetworkIds().size());
+    }
+
+    private void runNetworkSelectionWith(ScanDetailsAndWifiConfigs scanDetailsAndConfigs) {
+        List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
+                scanDetailsAndConfigs.getScanDetails(),
+                new HashSet<>(), // blocklist
+                mWifiInfo, // wifiInfo
+                false, // connected
+                true, // disconnected
+                true // untrustedNetworkAllowed
+        );
+        WifiConfiguration wifiConfiguration = mWifiNetworkSelector.selectNetwork(candidates);
+        assertNotNull(wifiConfiguration);
     }
 }

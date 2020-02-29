@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.WifiConfiguration;
@@ -38,6 +39,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
@@ -130,9 +132,17 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     @Override
-    protected void handleLinkPropertiesChanged(@NonNull LinkProperties linkProperties) {
+    protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
         if (mChosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mChosenEntry.updateLinkProperties(linkProperties);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkCapabilitiesChanged(@Nullable NetworkCapabilities capabilities) {
+        if (mChosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            mChosenEntry.updateNetworkCapabilities(capabilities);
         }
     }
 
