@@ -4022,9 +4022,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
+        mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.connect(
                 config, netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
@@ -4039,9 +4037,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
+        mLog.info("save uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.save(
                 config, binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
@@ -4055,9 +4051,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
+        mLog.info("forget uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.forget(
                 netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
