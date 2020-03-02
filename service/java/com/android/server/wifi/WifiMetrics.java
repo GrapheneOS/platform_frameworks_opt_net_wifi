@@ -38,6 +38,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemProperties;
+import android.telephony.TelephonyManager;
 import android.util.ArrayMap;
 import android.util.Base64;
 import android.util.Log;
@@ -804,6 +805,42 @@ public class WifiMetrics {
                         sb.append("FAILURE_REASON_UNKNOWN");
                         break;
                 }
+                sb.append(", networkType=");
+                switch(mConnectionEvent.networkType) {
+                    case WifiMetricsProto.ConnectionEvent.TYPE_UNKNOWN:
+                        sb.append("TYPE_UNKNOWN");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_WPA2:
+                        sb.append("TYPE_WPA2");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_WPA3:
+                        sb.append("TYPE_WPA3");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_PASSPOINT:
+                        sb.append("TYPE_PASSPOINT");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_EAP:
+                        sb.append("TYPE_EAP");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_OWE:
+                        sb.append("TYPE_OWE");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_OPEN:
+                        sb.append("TYPE_OPEN");
+                        break;
+                }
+                sb.append(", networkCreator=");
+                switch (mConnectionEvent.networkCreator) {
+                    case WifiMetricsProto.ConnectionEvent.CREATOR_UNKNOWN:
+                        sb.append("CREATOR_UNKNOWN");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.CREATOR_USER:
+                        sb.append("CREATOR_USER");
+                        break;
+                    case WifiMetricsProto.ConnectionEvent.CREATOR_CARRIER:
+                        sb.append("CREATOR_CARRIER");
+                        break;
+                }
             }
             return sb.toString();
         }
@@ -1099,6 +1136,38 @@ public class WifiMetrics {
                 }
                 mCurrentConnectionEvent.mConnectionEvent.numBssidInBlocklist =
                         mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(config.SSID);
+                mCurrentConnectionEvent.mConnectionEvent.networkType =
+                        WifiMetricsProto.ConnectionEvent.TYPE_UNKNOWN;
+                if (config.isPasspoint()) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_PASSPOINT;
+                } else if (WifiConfigurationUtil.isConfigForSaeNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_WPA3;
+                } else if (WifiConfigurationUtil.isConfigForPskNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_WPA2;
+                } else if (WifiConfigurationUtil.isConfigForEapNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_EAP;
+                } else if (WifiConfigurationUtil.isConfigForOweNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_OWE;
+                } else if (WifiConfigurationUtil.isConfigForOpenNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_OPEN;
+                }
+
+                if (!config.fromWifiNetworkSuggestion) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkCreator =
+                            WifiMetricsProto.ConnectionEvent.CREATOR_USER;
+                } else if (config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkCreator =
+                            WifiMetricsProto.ConnectionEvent.CREATOR_CARRIER;
+                } else {
+                    mCurrentConnectionEvent.mConnectionEvent.networkCreator =
+                            WifiMetricsProto.ConnectionEvent.CREATOR_UNKNOWN;
+                }
             }
         }
     }

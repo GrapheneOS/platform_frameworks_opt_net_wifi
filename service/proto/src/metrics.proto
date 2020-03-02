@@ -837,6 +837,40 @@ message ConnectionEvent {
     NOMINATOR_OPEN_NETWORK_AVAILABLE = 9;
   }
 
+  enum NetworkType {
+    // Unknown network type
+    TYPE_UNKNOWN = 0;
+
+    // WPA2 network
+    TYPE_WPA2 = 1;
+
+    // WPA3 network
+    TYPE_WPA3 = 2;
+
+    // Passpoint network
+    TYPE_PASSPOINT = 3;
+
+    // EAP network, excluding passpoint
+    TYPE_EAP = 4;
+
+    // OWE network
+    TYPE_OWE = 5;
+
+    // Open network
+    TYPE_OPEN = 6;
+  }
+
+  enum NetworkCreator {
+    // This network is created by an unknown app.
+    CREATOR_UNKNOWN = 0;
+
+    // This network is created by the user.
+    CREATOR_USER = 1;
+
+    // This network is created by a carrier app.
+    CREATOR_CARRIER = 2;
+  }
+
   // Start time of the connection.
   optional int64 start_time_millis = 1;// [(datapol.semantic_type) = ST_TIMESTAMP];
 
@@ -882,6 +916,12 @@ message ConnectionEvent {
 
   // Number of BSSIDs for this network that were excluded from network selection.
   optional int32 num_bssid_in_blocklist = 15;
+
+  // The type of network for this connection.
+  optional NetworkType network_type = 16;
+
+  // UID of the app that created this network.
+  optional NetworkCreator network_creator = 17;
 }
 
 // Number of occurrences of a specific RSSI poll rssi value
