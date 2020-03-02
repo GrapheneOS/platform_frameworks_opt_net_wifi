@@ -26,6 +26,7 @@ import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
 import static android.net.wifi.WifiManager.WIFI_STATE_ENABLING;
 import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
 
+import static com.android.server.wifi.WifiDataStall.INVALID_THROUGHPUT;
 import static com.android.server.wifi.WifiHealthMonitor.SCAN_RSSI_VALID_TIME_MS;
 
 import android.annotation.NonNull;
@@ -2626,6 +2627,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiInfo.setWifiStandard(capabilities.wifiStandard);
         mWifiInfo.setMaxSupportedTxLinkSpeedMbps(maxTxLinkSpeedMbps);
         mWifiInfo.setMaxSupportedRxLinkSpeedMbps(maxRxLinkSpeedMbps);
+        mWifiDataStall.setConnectionCapabilities(capabilities);
         if (mVerboseLoggingEnabled) {
             StringBuilder sb = new StringBuilder();
             logd(sb.append("WifiStandard: ").append(capabilities.wifiStandard)
@@ -4358,7 +4360,47 @@ public class ClientModeImpl extends StateMachine {
             result.setNetworkSpecifier(createNetworkAgentSpecifier(
                     currentWifiConfiguration, getCurrentBSSID()));
         }
+        updateLinkBandwidth(result);
         return result;
+    }
+
+    private void updateLinkBandwidth(NetworkCapabilities networkCapabilities) {
+        int rssiDbm = mWifiInfo.getRssi();
+        int txTputKbps = INVALID_THROUGHPUT;
+        int rxTputKbps = INVALID_THROUGHPUT;
+        // If RSSI is available, check if throughput is available
+        if (rssiDbm != WifiInfo.INVALID_RSSI && mWifiDataStall != null) {
+            txTputKbps = mWifiDataStall.getTxThroughputKbps();
+            rxTputKbps = mWifiDataStall.getRxThroughputKbps();
+        }
+        // If throughput is not available, check if Tx/Rx link speed is available
+        if (txTputKbps == INVALID_THROUGHPUT || rxTputKbps == INVALID_THROUGHPUT) {
+            int txLinkSpeedMbps = mWifiInfo.getLinkSpeed();
+            int rxLinkSpeedMbps = mWifiInfo.getRxLinkSpeedMbps();
+            if (txLinkSpeedMbps > 0) {
+                txTputKbps = txLinkSpeedMbps * 1000;
+            }
+            if (rxLinkSpeedMbps > 0) {
+                rxTputKbps = rxLinkSpeedMbps * 1000;
+            }
+        }
+        // If link speed is not available, check if max supported link speed is available
+        if (txTputKbps == INVALID_THROUGHPUT || rxTputKbps == INVALID_THROUGHPUT) {
+            int maxTxLinkSpeedMbps = mWifiInfo.getMaxSupportedTxLinkSpeedMbps();
+            int maxRxLinkSpeedMbps = mWifiInfo.getMaxSupportedRxLinkSpeedMbps();
+            if (maxTxLinkSpeedMbps > 0) {
+                txTputKbps = maxTxLinkSpeedMbps * 1000;
+            }
+            if (maxRxLinkSpeedMbps > 0) {
+                rxTputKbps = maxRxLinkSpeedMbps * 1000;
+            }
+        }
+        if (txTputKbps > 0) {
+            networkCapabilities.setLinkUpstreamBandwidthKbps(txTputKbps);
+        }
+        if (rxTputKbps > 0) {
+            networkCapabilities.setLinkDownstreamBandwidthKbps(rxTputKbps);
+        }
     }
 
     /**
