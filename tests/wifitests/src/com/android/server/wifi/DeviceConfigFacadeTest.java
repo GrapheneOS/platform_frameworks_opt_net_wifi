@@ -168,6 +168,7 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist());
         assertEquals(Collections.emptySet(),
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist());
+        assertEquals(false, mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled());
     }
 
     /**
@@ -235,6 +236,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyString())).thenReturn(testSsidList);
         when(DeviceConfig.getString(anyString(), eq("aggressive_randomization_ssid_blocklist"),
                 anyString())).thenReturn(testSsidList);
+        when(DeviceConfig.getBoolean(anyString(), eq("abnormal_eap_auth_failure_bugreport_enabled"),
+                anyBoolean())).thenReturn(true);
 
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
@@ -273,5 +276,6 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist());
         assertEquals(testSsidSet,
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist());
+        assertEquals(true, mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled());
     }
 }

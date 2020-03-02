@@ -2554,19 +2554,19 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
-     * See {@link android.net.wifi.WifiManager#setMeteredOverridePasspoint(String, boolean)}
+     * See {@link android.net.wifi.WifiManager#setPasspointMeteredOverride(String, boolean)}
      * @param fqdn the FQDN that identifies the passpoint configuration
      * @param meteredOverride One of the values in {@link MeteredOverride}
      */
     @Override
-    public void setMeteredOverridePasspoint(String fqdn, int meteredOverride) {
+    public void setPasspointMeteredOverride(String fqdn, int meteredOverride) {
         enforceNetworkSettingsPermission();
         if (fqdn == null) {
             throw new IllegalArgumentException("FQDN cannot be null");
         }
 
         int callingUid = Binder.getCallingUid();
-        mLog.info("setMeteredOverridePasspoint=% uid=%")
+        mLog.info("setPasspointMeteredOverride=% uid=%")
                 .c(meteredOverride).c(callingUid).flush();
         mWifiThreadRunner.post(
                 () -> mPasspointManager.setMeteredOverride(fqdn, meteredOverride));
@@ -4022,9 +4022,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
+        mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.connect(
                 config, netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
@@ -4039,9 +4037,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
+        mLog.info("save uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.save(
                 config, binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
@@ -4055,9 +4051,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
+        mLog.info("forget uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.forget(
                 netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
