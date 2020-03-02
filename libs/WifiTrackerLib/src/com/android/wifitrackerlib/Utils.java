@@ -16,6 +16,9 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
+
 import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP_SUITE_B;
@@ -33,6 +36,9 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
+import android.net.NetworkInfo.DetailedState;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.os.PersistableBundle;
@@ -328,9 +334,51 @@ class Utils {
         }
     }
 
+    static String getDisconnectedStateDescription(Context context, WifiEntry wifiEntry) {
+        if (context == null || wifiEntry == null) {
+            return "";
+        }
+        WifiConfiguration wifiConfiguration = wifiEntry.getWifiConfiguration();
+        if (wifiConfiguration == null) {
+            return null;
+        }
+
+        if (wifiConfiguration.hasNoInternetAccess()) {
+            int messageID =
+                    wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
+                            == NETWORK_SELECTION_PERMANENTLY_DISABLED
+                    ? R.string.wifi_no_internet_no_reconnect : R.string.wifi_no_internet;
+            return context.getString(messageID);
+        } else if (wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
+                != NETWORK_SELECTION_ENABLED) {
+            WifiConfiguration.NetworkSelectionStatus networkStatus =
+                    wifiConfiguration.getNetworkSelectionStatus();
+            switch (networkStatus.getNetworkSelectionDisableReason()) {
+                case WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE:
+                    return context.getString(R.string.wifi_disabled_password_failure);
+                case WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD:
+                    return context.getString(R.string.wifi_check_password_try_again);
+                case WifiConfiguration.NetworkSelectionStatus.DISABLED_DHCP_FAILURE:
+                    return context.getString(R.string.wifi_disabled_network_failure);
+                case WifiConfiguration.NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION:
+                    return context.getString(R.string.wifi_disabled_generic);
+                default:
+                    break;
+            }
+        } else if (wifiEntry.getLevel() == WifiEntry.WIFI_LEVEL_UNREACHABLE) {
+            // Do nothing because users know it by signal icon.
+        } else { // In range, not disabled.
+            if (wifiConfiguration.getRecentFailureReason()
+                    == WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA) {
+                return context.getString(R.string.wifi_ap_unable_to_handle_new_sta);
+            }
+        }
+        return "";
+    }
+
     static String getAutoConnectDescription(@NonNull Context context,
             @NonNull WifiEntry wifiEntry) {
-        if (context == null || wifiEntry == null || !wifiEntry.isSaved()) {
+        if (context == null || wifiEntry == null || !wifiEntry.canSetAutoJoinEnabled()) {
             return "";
         }
 
@@ -339,8 +387,12 @@ class Utils {
     }
 
     static String getMeteredDescription(@NonNull Context context, @Nullable WifiEntry wifiEntry) {
-        final WifiConfiguration config = wifiEntry.getWifiConfiguration();
-        if (context == null || wifiEntry == null || config == null) {
+        if (context == null || wifiEntry == null) {
+            return "";
+        }
+
+        if (!wifiEntry.canSetMeteredChoice()
+                && wifiEntry.getMeteredChoice() != WifiEntry.METERED_CHOICE_METERED) {
             return "";
         }
 
@@ -379,6 +431,46 @@ class Utils {
         }
 
         return sj.toString();
+    }
+
+    static String getCurrentNetworkCapabilitiesInformation(Context context,
+            NetworkCapabilities networkCapabilities) {
+        if (context == null || networkCapabilities == null) {
+            return "";
+        }
+
+        if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
+            return context.getString(context.getResources()
+                    .getIdentifier("network_available_sign_in", "string", "android"));
+        }
+
+        if (networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
+            return context.getString(R.string.wifi_limited_connection);
+        }
+
+        if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+            if (networkCapabilities.isPrivateDnsBroken()) {
+                return context.getString(R.string.private_dns_broken);
+            }
+            return context.getString(R.string.wifi_connected_no_internet);
+        }
+        return "";
+    }
+
+    static String getNetworkDetailedState(Context context, NetworkInfo networkInfo) {
+        if (context == null || networkInfo == null) {
+            return "";
+        }
+        DetailedState detailState = networkInfo.getDetailedState();
+        if (detailState == null) {
+            return "";
+        }
+
+        String[] wifiStatusArray = context.getResources()
+                .getStringArray(R.array.wifi_status);
+        int index = detailState.ordinal();
+        return index >= wifiStatusArray.length ? "" : wifiStatusArray[index];
     }
 
     /**
