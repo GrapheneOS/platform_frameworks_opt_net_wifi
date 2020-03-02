@@ -68,6 +68,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.test.TestLooper;
+import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.util.Pair;
 import android.util.SparseIntArray;
@@ -1404,6 +1405,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         config.SSID = "\"" + SSID + "\"";
         config.dtimInterval = CONFIG_DTIM;
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.allowedKeyManagement = new BitSet();
         WifiConfiguration.NetworkSelectionStatus networkSelectionStat =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
         when(networkSelectionStat.getCandidate()).thenReturn(scanResult);
@@ -1467,6 +1469,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         config.SSID = "\"" + SSID + "\"";
         config.dtimInterval = CONFIG_DTIM;
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.allowedKeyManagement = new BitSet();
         WifiConfiguration.NetworkSelectionStatus networkSelectionStat =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
         when(networkSelectionStat.getCandidate()).thenReturn(scanResult);
@@ -1527,6 +1530,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     public void testMetricNumBssidInBlocklist() throws Exception {
         WifiConfiguration config = mock(WifiConfiguration.class);
         config.SSID = "\"" + SSID + "\"";
+        config.allowedKeyManagement = new BitSet();
         when(config.getNetworkSelectionStatus()).thenReturn(
                 mock(WifiConfiguration.NetworkSelectionStatus.class));
         when(mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(eq(config.SSID))).thenReturn(3);
@@ -1540,6 +1544,100 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         assertEquals(1, mDecodedProto.connectionEvent.length);
         assertEquals(3, mDecodedProto.connectionEvent[0].numBssidInBlocklist);
+    }
+
+    /**
+     * Verify the ConnectionEvent is labeled with networkType open network correctly.
+     */
+    @Test
+    public void testConnectionNetworkTypeOpen() throws Exception {
+        WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = "\"" + SSID + "\"";
+        config.allowedKeyManagement = new BitSet();
+        when(config.getNetworkSelectionStatus()).thenReturn(
+                mock(WifiConfiguration.NetworkSelectionStatus.class));
+        when(config.isOpenNetwork()).thenReturn(true);
+        mWifiMetrics.startConnectionEvent(config, "RED",
+                WifiMetricsProto.ConnectionEvent.ROAM_NONE);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_TIMED_OUT,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        dumpProtoAndDeserialize();
+
+        assertEquals(1, mDecodedProto.connectionEvent.length);
+        assertEquals(WifiMetricsProto.ConnectionEvent.TYPE_OPEN,
+                mDecodedProto.connectionEvent[0].networkType);
+    }
+
+    /**
+     * Verify the ConnectionEvent is labeled with networkType passpoint correctly.
+     */
+    @Test
+    public void testConnectionNetworkTypePasspoint() throws Exception {
+        WifiConfiguration config = WifiConfigurationTestUtil.createPasspointNetwork();
+        mWifiMetrics.startConnectionEvent(config, "RED",
+                WifiMetricsProto.ConnectionEvent.ROAM_NONE);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_TIMED_OUT,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        dumpProtoAndDeserialize();
+
+        assertEquals(1, mDecodedProto.connectionEvent.length);
+        assertEquals(WifiMetricsProto.ConnectionEvent.TYPE_PASSPOINT,
+                mDecodedProto.connectionEvent[0].networkType);
+    }
+
+    /**
+     * Verify the ConnectionEvent is created with correct creatorUid.
+     */
+    @Test
+    public void testConnectionCreatorUid() throws Exception {
+        WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = "\"" + SSID + "\"";
+        config.allowedKeyManagement = new BitSet();
+        when(config.getNetworkSelectionStatus()).thenReturn(
+                mock(WifiConfiguration.NetworkSelectionStatus.class));
+
+        // First network is created by the user
+        config.fromWifiNetworkSuggestion = false;
+        mWifiMetrics.startConnectionEvent(config, "RED",
+                WifiMetricsProto.ConnectionEvent.ROAM_NONE);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_TIMED_OUT,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+
+        // Second network is created by a carrier app
+        config.fromWifiNetworkSuggestion = true;
+        config.carrierId = 123;
+        mWifiMetrics.startConnectionEvent(config, "RED",
+                WifiMetricsProto.ConnectionEvent.ROAM_NONE);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_TIMED_OUT,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+
+        // Third network is created by an unknown app
+        config.fromWifiNetworkSuggestion = true;
+        config.carrierId = TelephonyManager.UNKNOWN_CARRIER_ID;
+        mWifiMetrics.startConnectionEvent(config, "RED",
+                WifiMetricsProto.ConnectionEvent.ROAM_NONE);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_TIMED_OUT,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(3, mDecodedProto.connectionEvent.length);
+        assertEquals(WifiMetricsProto.ConnectionEvent.CREATOR_USER,
+                mDecodedProto.connectionEvent[0].networkCreator);
+        assertEquals(WifiMetricsProto.ConnectionEvent.CREATOR_CARRIER,
+                mDecodedProto.connectionEvent[1].networkCreator);
+        assertEquals(WifiMetricsProto.ConnectionEvent.CREATOR_UNKNOWN,
+                mDecodedProto.connectionEvent[2].networkCreator);
     }
 
     /**
@@ -2400,6 +2498,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         WifiConfiguration config = mock(WifiConfiguration.class);
         WifiConfiguration.NetworkSelectionStatus networkSelectionStat =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
+        config.allowedKeyManagement = new BitSet();
         when(networkSelectionStat.getCandidate()).thenReturn(scanResult);
         when(config.getNetworkSelectionStatus()).thenReturn(networkSelectionStat);
         mWifiMetrics.startConnectionEvent(config, "TestNetwork",
