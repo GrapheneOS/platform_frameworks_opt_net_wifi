@@ -38,4 +38,10 @@
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Internetga ulanmagansiz"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Hech qanday"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Muddati tugagan"</string>
+    <string name="tap_to_sign_up" msgid="2409214576606918295">"Registratsiya qilish uchun bosing"</string>
+    <string name="osu_opening_provider" msgid="5633521771769175139">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> ochilmoqda"</string>
+    <string name="osu_connect_failed" msgid="8503501619299851793">"Ulanmadi"</string>
+    <string name="osu_completing_sign_up" msgid="7188493241442946231">"Registratsiya tamomlanmoqda…"</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"Registratsiya tamomlanmadi. Qayta urinish uchun tegining."</string>
+    <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registratsiya qilindi. Ulanmoqda…"</string>
 </resources>

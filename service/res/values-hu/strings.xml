@@ -76,8 +76,6 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobil hotspot letiltva"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"A mobil hotspot le lett tiltva"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"A mobil hotspot le lett tiltva, mert lejárt az inaktivitási időkorlát."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Nincs Wi-Fi-kapcsolat"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"A(z) <xliff:g id="SSID">%1$s</xliff:g> csatlakoztatásához helyezzen be <xliff:g id="CARRIER_NAME">%2$s</xliff:g> szolgáltatóhoz tartozó SIM-kártyát"</string>
 </resources>
