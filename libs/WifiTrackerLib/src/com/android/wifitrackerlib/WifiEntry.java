@@ -242,7 +242,9 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     public abstract String getTitle();
 
     /** Returns the display summary, it's a concise summary. */
-    public abstract String getSummary();
+    public String getSummary() {
+        return getSummary(true /* concise */);
+    }
 
     /**
      * Returns the display summary.
