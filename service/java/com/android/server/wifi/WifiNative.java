@@ -1511,7 +1511,7 @@ public class WifiNative {
                     result.getSignalMbm() / 100, result.getFrequencyMhz(), result.getTsf(), ies,
                     null, result.getInformationElements());
             ScanResult scanResult = scanDetail.getScanResult();
-            scanResult.setWifiStandard(networkDetail.getWifiMode());
+            scanResult.setWifiStandard(wifiModeToWifiStandard(networkDetail.getWifiMode()));
 
             // Fill up the radio chain info.
             scanResult.radioChainInfos =
@@ -1530,6 +1530,25 @@ public class WifiNative {
         }
 
         return results;
+    }
+
+    @ScanResult.WifiStandard
+    private static int wifiModeToWifiStandard(int wifiMode) {
+        switch (wifiMode) {
+            case InformationElementUtil.WifiMode.MODE_11A:
+            case InformationElementUtil.WifiMode.MODE_11B:
+            case InformationElementUtil.WifiMode.MODE_11G:
+                return ScanResult.WIFI_STANDARD_LEGACY;
+            case InformationElementUtil.WifiMode.MODE_11N:
+                return ScanResult.WIFI_STANDARD_11N;
+            case InformationElementUtil.WifiMode.MODE_11AC:
+                return ScanResult.WIFI_STANDARD_11AC;
+            case InformationElementUtil.WifiMode.MODE_11AX:
+                return ScanResult.WIFI_STANDARD_11AX;
+            case InformationElementUtil.WifiMode.MODE_UNDEFINED:
+            default:
+                return ScanResult.WIFI_STANDARD_UNKNOWN;
+        }
     }
 
     private boolean mIsEnhancedOpenSupportedInitialized = false;
