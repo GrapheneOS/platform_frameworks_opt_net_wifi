@@ -366,21 +366,29 @@ public class WifiServiceImpl extends BaseWifiService {
                     new BroadcastReceiver() {
                         @Override
                         public void onReceive(Context context, Intent intent) {
-                            if (intent.getBooleanExtra(
-                                    Intent.EXTRA_REBROADCAST_ON_UNLOCK, false)) {
-                                return;
-                            }
-                            String state = intent.getStringExtra(Intent.EXTRA_SIM_STATE);
-                            if (Intent.SIM_STATE_ABSENT.equals(state)) {
+                            int state = intent.getIntExtra(TelephonyManager.EXTRA_SIM_STATE,
+                                    TelephonyManager.SIM_STATE_UNKNOWN);
+                            if (TelephonyManager.SIM_STATE_ABSENT == state) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
                                 mClientModeImpl.resetSimAuthNetworks(false);
-                            } else if (Intent.SIM_STATE_LOADED.equals(state)) {
+                            }
+                        }
+                    },
+                    new IntentFilter(TelephonyManager.ACTION_SIM_CARD_STATE_CHANGED));
+
+            mContext.registerReceiver(
+                    new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            int state = intent.getIntExtra(TelephonyManager.EXTRA_SIM_STATE,
+                                    TelephonyManager.SIM_STATE_UNKNOWN);
+                            if (TelephonyManager.SIM_STATE_LOADED == state) {
                                 Log.d(TAG, "resetting networks because SIM was loaded");
                                 mClientModeImpl.resetSimAuthNetworks(true);
                             }
                         }
                     },
-                    new IntentFilter(Intent.ACTION_SIM_STATE_CHANGED));
+                    new IntentFilter(TelephonyManager.ACTION_SIM_APPLICATION_STATE_CHANGED));
 
             // Adding optimizations of only receiving broadcasts when wifi is enabled
             // can result in race conditions when apps toggle wifi in the background
