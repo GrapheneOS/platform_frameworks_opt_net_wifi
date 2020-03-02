@@ -18,11 +18,15 @@ package com.android.wifitrackerlib;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
@@ -43,6 +47,8 @@ public class PasspointWifiEntryTest {
     private TestLooper mTestLooper;
     private Handler mTestHandler;
 
+    private static final String FQDN = "fqdn";
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -51,6 +57,7 @@ public class PasspointWifiEntryTest {
         mTestHandler = new Handler(mTestLooper.getLooper());
 
         when(mMockContext.getResources()).thenReturn(mMockResources);
+        when(mMockResources.getString(R.string.summary_separator)).thenReturn("/");
     }
 
     @Test
@@ -82,7 +89,7 @@ public class PasspointWifiEntryTest {
     private PasspointConfiguration getPasspointConfiguration() {
         PasspointConfiguration passpointConfiguration = new PasspointConfiguration();
         HomeSp homeSp = new HomeSp();
-        homeSp.setFqdn("fqdn");
+        homeSp.setFqdn(FQDN);
         passpointConfiguration.setHomeSp(homeSp);
         passpointConfiguration.setCredential(new Credential());
         return passpointConfiguration;
@@ -96,5 +103,33 @@ public class PasspointWifiEntryTest {
         entry.setMeteredChoice(WifiEntry.METERED_CHOICE_UNMETERED);
 
         assertThat(entry.getMeteredChoice()).isEqualTo(WifiEntry.METERED_CHOICE_UNMETERED);
+    }
+
+    @Test
+    public void testGetSummary_connectedWifiNetwork_showsConnected() {
+        String summarySeparator = " / ";
+        String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
+                "Authenticating", "Obtaining IP address", "Connected"};
+
+        Resources mockResources = mock(Resources.class);
+        when(mMockContext.getResources()).thenReturn(mockResources);
+        when(mockResources.getString(R.string.summary_separator)).thenReturn(summarySeparator);
+        when(mockResources.getStringArray(R.array.wifi_status)).thenReturn(wifiStatusArray);
+        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mockConnectivityManager);
+
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.isPasspointAp()).thenReturn(true);
+        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, false /* forSavedNetworksPage */);
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.getSummary()).isEqualTo("Connected");
     }
 }
