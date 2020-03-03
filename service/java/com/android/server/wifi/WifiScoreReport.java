@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.net.Network;
 import android.net.NetworkAgent;
 import android.net.wifi.WifiInfo;
 import android.util.Log;
@@ -103,7 +104,10 @@ public class WifiScoreReport {
         int netId = 0;
 
         if (networkAgent != null) {
-            netId = networkAgent.network.netId;
+            final Network network = networkAgent.getNetwork();
+            if (network != null) {
+                netId = network.netId;
+            }
         }
 
         mAggressiveConnectedScore.updateUsingWifiInfo(wifiInfo, millis);
