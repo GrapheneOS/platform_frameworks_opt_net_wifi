@@ -15,6 +15,7 @@
  */
 package com.android.server.wifi;
 
+import static com.android.server.wifi.util.InformationElementUtil.BssLoad.INVALID;
 import static com.android.server.wifi.util.InformationElementUtil.BssLoad.MAX_CHANNEL_UTILIZATION;
 import static com.android.server.wifi.util.InformationElementUtil.BssLoad.MIN_CHANNEL_UTILIZATION;
 
@@ -122,6 +123,30 @@ public class ThroughputPredictor {
     public int predictMaxRxThroughput(@NonNull WifiNative.ConnectionCapabilities capabilities) {
         return predictThroughputInternal(capabilities.wifiStandard, capabilities.channelBandwidth,
                 WifiInfo.MAX_RSSI, capabilities.maxNumberRxSpatialStreams, MIN_CHANNEL_UTILIZATION);
+    }
+
+    /**
+     * Predict Tx throughput with current connection capabilities, RSSI and channel utilization
+     * @return predicted Tx throughput in Mbps
+     */
+    public int predictTxThroughput(@NonNull WifiNative.ConnectionCapabilities capabilities,
+            int rssiDbm, int frequency, int channelUtilization) {
+        int channelUtilizationFinal = getValidChannelUtilization(frequency,
+                INVALID, channelUtilization, false);
+        return predictThroughputInternal(capabilities.wifiStandard, capabilities.channelBandwidth,
+                rssiDbm, capabilities.maxNumberTxSpatialStreams, channelUtilizationFinal);
+    }
+
+    /**
+     * Predict Rx throughput with current connection capabilities, RSSI and channel utilization
+     * @return predicted Rx throughput in Mbps
+     */
+    public int predictRxThroughput(@NonNull WifiNative.ConnectionCapabilities capabilities,
+            int rssiDbm, int frequency, int channelUtilization) {
+        int channelUtilizationFinal = getValidChannelUtilization(frequency,
+                INVALID, channelUtilization, false);
+        return predictThroughputInternal(capabilities.wifiStandard, capabilities.channelBandwidth,
+                rssiDbm, capabilities.maxNumberRxSpatialStreams, channelUtilizationFinal);
     }
 
     /**
