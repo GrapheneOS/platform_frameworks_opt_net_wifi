@@ -2885,7 +2885,6 @@ public class ClientModeImpl extends StateMachine {
     private NetworkInfo makeNetworkInfo() {
         final NetworkInfo ni = new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0, NETWORKTYPE, "");
         ni.setDetailedState(mNetworkAgentState, null, null);
-        ni.setIsAvailable(true);
         return ni;
     }
 
