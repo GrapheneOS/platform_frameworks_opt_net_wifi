@@ -752,23 +752,37 @@ public class SupplicantStaIfaceHal {
 
     protected ISupplicant getSupplicantMockable() throws RemoteException, NoSuchElementException {
         synchronized (mLock) {
-            return ISupplicant.getService();
+            ISupplicant iSupplicant = ISupplicant.getService();
+            if (iSupplicant == null) {
+                throw new NoSuchElementException("Cannot get root service.");
+            }
+            return iSupplicant;
         }
     }
 
     protected android.hardware.wifi.supplicant.V1_1.ISupplicant getSupplicantMockableV1_1()
             throws RemoteException, NoSuchElementException {
         synchronized (mLock) {
-            return android.hardware.wifi.supplicant.V1_1.ISupplicant.castFrom(
-                    ISupplicant.getService());
+            android.hardware.wifi.supplicant.V1_1.ISupplicant iSupplicantDerived =
+                    android.hardware.wifi.supplicant.V1_1.ISupplicant.castFrom(
+                            getSupplicantMockable());
+            if (iSupplicantDerived == null) {
+                throw new NoSuchElementException("Cannot cast to V1.1 service.");
+            }
+            return iSupplicantDerived;
         }
     }
 
     protected android.hardware.wifi.supplicant.V1_2.ISupplicant getSupplicantMockableV1_2()
             throws RemoteException, NoSuchElementException {
         synchronized (mLock) {
-            return android.hardware.wifi.supplicant.V1_2.ISupplicant.castFrom(
-                    ISupplicant.getService());
+            android.hardware.wifi.supplicant.V1_2.ISupplicant iSupplicantDerived =
+                    android.hardware.wifi.supplicant.V1_2.ISupplicant.castFrom(
+                            getSupplicantMockable());
+            if (iSupplicantDerived == null) {
+                throw new NoSuchElementException("Cannot cast to V1.1 service.");
+            }
+            return iSupplicantDerived;
         }
     }
 
