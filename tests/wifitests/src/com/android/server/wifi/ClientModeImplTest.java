@@ -486,8 +486,9 @@ public class ClientModeImplTest extends WifiBaseTest {
                 TEST_GLOBAL_MAC_ADDRESS);
         when(mWifiNative.getMacAddress(WIFI_IFACE_NAME))
                 .thenReturn(TEST_GLOBAL_MAC_ADDRESS.toString());
-        when(mWifiNative.getConnectionCapabilities(WIFI_IFACE_NAME)).thenReturn(
-                new WifiNative.ConnectionCapabilities());
+        WifiNative.ConnectionCapabilities cap = new WifiNative.ConnectionCapabilities();
+        cap.wifiStandard = ScanResult.WIFI_STANDARD_11AC;
+        when(mWifiNative.getConnectionCapabilities(WIFI_IFACE_NAME)).thenReturn(cap);
         when(mWifiNative.setMacAddress(eq(WIFI_IFACE_NAME), anyObject()))
                 .then(new AnswerWithArguments() {
                     public boolean answer(String iface, MacAddress mac) {
@@ -550,6 +551,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mNullAsyncChannel.sendMessageSynchronously(any())).thenReturn(null);
         when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(new Pair<>(null, null));
         when(mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled()).thenReturn(true);
+        when(mThroughputPredictor.predictMaxTxThroughput(any())).thenReturn(90);
+        when(mThroughputPredictor.predictMaxRxThroughput(any())).thenReturn(80);
     }
 
     private void registerAsyncChannel(Consumer<AsyncChannel> consumer, Messenger messenger,
@@ -1028,6 +1031,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiLockManager).updateWifiClientConnected(true);
         verify(mWifiNative).getConnectionCapabilities(any());
         verify(mThroughputPredictor).predictMaxTxThroughput(any());
+        verify(mWifiDataStall).setConnectionCapabilities(any());
+        assertEquals(90, wifiInfo.getMaxSupportedTxLinkSpeedMbps());
     }
 
     /**
@@ -2582,6 +2587,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(signalPollResult.txBitrateMbps, wifiInfo.getTxLinkSpeedMbps());
         assertEquals(signalPollResult.rxBitrateMbps, wifiInfo.getRxLinkSpeedMbps());
         assertEquals(sFreq, wifiInfo.getFrequency());
+        verify(mWifiDataStall, atLeastOnce()).getTxThroughputKbps();
+        verify(mWifiDataStall, atLeastOnce()).getRxThroughputKbps();
         verify(mWifiScoreCard).noteSignalPoll(any());
     }
 
@@ -3508,7 +3515,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that we set the INTERNET capability in the network agent when connected
+     * Verify that we set the INTERNET and bandwidth capability in the network agent when connected
      * as a result of auto-join/legacy API's .
      */
     @Test
@@ -3527,10 +3534,15 @@ public class ClientModeImplTest extends WifiBaseTest {
         NetworkCapabilities networkCapabilities = networkCapabilitiesCaptor.getValue();
         assertNotNull(networkCapabilities);
 
-        // should have internet capability.
+        // Should have internet capability.
         assertTrue(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET));
         assertNull(networkCapabilities.getNetworkSpecifier());
+
         assertEquals(mConnectedNetwork.creatorUid, networkCapabilities.getOwnerUid());
+
+        // Should set bandwidth correctly
+        assertEquals(90_000, networkCapabilities.getLinkUpstreamBandwidthKbps());
+        assertEquals(80_000, networkCapabilities.getLinkDownstreamBandwidthKbps());
     }
 
     /**
