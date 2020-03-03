@@ -732,7 +732,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     @Test
     public void testAddSingleSuggestionNetwork() throws Exception {
-        WifiConfiguration suggestionNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiConfiguration suggestionNetwork = WifiConfigurationTestUtil.createEapNetwork();
         ArgumentCaptor<WifiConfiguration> wifiConfigCaptor =
                 ArgumentCaptor.forClass(WifiConfiguration.class);
         suggestionNetwork.ephemeral = true;
@@ -741,6 +741,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         networks.add(suggestionNetwork);
 
         verifyAddSuggestionOrRequestNetworkToWifiConfigManager(suggestionNetwork);
+        verify(mWifiKeyStore, never()).updateNetworkKeys(any(), any());
 
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
@@ -751,6 +752,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.getSavedNetworks(Process.WIFI_UID).isEmpty());
         verify(mWcmListener).onNetworkAdded(wifiConfigCaptor.capture());
         assertEquals(suggestionNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        assertTrue(mWifiConfigManager
+                .removeNetwork(suggestionNetwork.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME));
+        verify(mWifiKeyStore, never()).removeKeys(any());
     }
 
     /**

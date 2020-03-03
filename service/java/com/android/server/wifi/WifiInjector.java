@@ -292,7 +292,7 @@ public class WifiInjector {
         mWifiMetrics.setWifiNetworkSelector(mWifiNetworkSelector);
         mWifiNetworkSuggestionsManager = new WifiNetworkSuggestionsManager(mContext, wifiHandler,
                 this, mWifiPermissionsUtil, mWifiConfigManager, mWifiConfigStore, mWifiMetrics,
-                mTelephonyUtil);
+                mTelephonyUtil, mWifiKeyStore);
         mPasspointManager = new PasspointManager(mContext, this,
                 wifiHandler, mWifiNative, mWifiKeyStore, mClock, new PasspointObjectFactory(),
                 mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mTelephonyUtil);
