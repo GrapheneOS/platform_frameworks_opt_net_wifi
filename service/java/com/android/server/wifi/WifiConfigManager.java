@@ -1051,6 +1051,10 @@ public class WifiConfigManager {
 
         // Copy over macRandomizationSetting
         internalConfig.macRandomizationSetting = externalConfig.macRandomizationSetting;
+
+        if (internalConfig.macRandomizationSetting == 2) {
+            internalConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        }
     }
 
     /**
