@@ -75,10 +75,11 @@ public class ANQPMatcher {
      *
      * @param element The Roaming Consortium ANQP element
      * @param providerOIs The roaming consortium OIs of the provider
+     * @param matchAll Indicates if a match with all OIs must be done
      * @return true if a match is found
      */
     public static boolean matchRoamingConsortium(RoamingConsortiumElement element,
-            long[] providerOIs) {
+            long[] providerOIs, boolean matchAll) {
         if (element == null) {
             return false;
         }
@@ -88,10 +89,14 @@ public class ANQPMatcher {
         List<Long> rcOIs = element.getOIs();
         for (long oi : providerOIs) {
             if (rcOIs.contains(oi)) {
-                return true;
+                if (!matchAll) {
+                    return true;
+                }
+            } else if (matchAll) {
+                return false;
             }
         }
-        return false;
+        return matchAll;
     }
 
     /**

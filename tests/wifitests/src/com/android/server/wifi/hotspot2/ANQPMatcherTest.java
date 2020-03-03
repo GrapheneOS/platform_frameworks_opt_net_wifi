@@ -97,7 +97,7 @@ public class ANQPMatcherTest extends WifiBaseTest {
      */
     @Test
     public void matchRoamingConsortiumWithNullElement() throws Exception {
-        assertFalse(ANQPMatcher.matchRoamingConsortium(null, new long[0]));
+        assertFalse(ANQPMatcher.matchRoamingConsortium(null, new long[0], false));
     }
 
     /**
@@ -111,7 +111,7 @@ public class ANQPMatcherTest extends WifiBaseTest {
         long oi = 0x1234L;
         RoamingConsortiumElement element =
                 new RoamingConsortiumElement(Arrays.asList(new Long[] {oi}));
-        assertTrue(ANQPMatcher.matchRoamingConsortium(element, new long[] {oi}));
+        assertTrue(ANQPMatcher.matchRoamingConsortium(element, new long[] {oi}, false));
     }
 
     /**
@@ -359,5 +359,65 @@ public class ANQPMatcherTest extends WifiBaseTest {
         String[] domains = new String[] {"wlan.mnc456.mccI23.3gppnetwork.org"};
         DomainNameElement element = new DomainNameElement(Arrays.asList(domains));
         assertFalse(ANQPMatcher.matchDomainName(element, null, imsiParam, simImsi));
+    }
+
+    /**
+     * Verify that match is found when HomeOI contains some of the RCOIs advertised by an AP marked
+     * as not required.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAnyHomeOi() throws Exception {
+        long[] providerOis = new long[] {0x1234L, 0x5678L, 0xabcdL};
+        Long[] anqpOis = new Long[] {0x1234L, 0x5678L, 0xdeadL, 0xf0cdL};
+        RoamingConsortiumElement element =
+                new RoamingConsortiumElement(Arrays.asList(anqpOis));
+        assertTrue(ANQPMatcher.matchRoamingConsortium(element, providerOis, false));
+    }
+
+    /**
+     * Verify that no match is found when HomeOI does not contain any of the RCOIs advertised by an
+     * AP marked as not required.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAnyHomeOiNegative() throws Exception {
+        long[] providerOis = new long[] {0x1234L, 0x5678L, 0xabcdL};
+        Long[] anqpOis = new Long[] {0xabc2L, 0x1232L};
+        RoamingConsortiumElement element =
+                new RoamingConsortiumElement(Arrays.asList(anqpOis));
+        assertFalse(ANQPMatcher.matchRoamingConsortium(element, providerOis, false));
+    }
+
+    /**
+     * Verify that match is found when HomeOI contains all of the RCOIs advertised by an AP marked
+     * as required.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAllHomeOi() throws Exception {
+        long[] providerOis = new long[] {0x1234L, 0x5678L, 0xabcdL};
+        Long[] anqpOis = new Long[] {0x1234L, 0x5678L, 0xabcdL, 0xdeadL, 0xf0cdL};
+        RoamingConsortiumElement element =
+                new RoamingConsortiumElement(Arrays.asList(anqpOis));
+        assertTrue(ANQPMatcher.matchRoamingConsortium(element, providerOis, true));
+    }
+
+    /**
+     * Verify that match is not found when HomeOI does not contain all of the RCOIs advertised by an
+     * AP marked as required.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAllHomeOiNegative() throws Exception {
+        long[] providerOis = new long[] {0x1234L, 0x5678L, 0xabcdL};
+        Long[] anqpOis = new Long[] {0x1234L, 0x5678L, 0xdeadL, 0xf0cdL};
+        RoamingConsortiumElement element =
+                new RoamingConsortiumElement(Arrays.asList(anqpOis));
+        assertFalse(ANQPMatcher.matchRoamingConsortium(element, providerOis, true));
     }
 }
