@@ -135,6 +135,7 @@ public class WifiNetworkSuggestionsManager {
     private final WifiInjector mWifiInjector;
     private final FrameworkFacade mFrameworkFacade;
     private final TelephonyUtil mTelephonyUtil;
+    private final WifiKeyStore mWifiKeyStore;
 
     /**
      * Per app meta data to store network suggestions, status, etc for each app providing network
@@ -232,6 +233,10 @@ public class WifiNetworkSuggestionsManager {
             this.wns = wns;
             this.perAppInfo = perAppInfo;
             this.isAutojoinEnabled = isAutoJoinEnabled;
+            this.wns.wifiConfiguration.fromWifiNetworkSuggestion = true;
+            this.wns.wifiConfiguration.ephemeral = true;
+            this.wns.wifiConfiguration.creatorName = perAppInfo.packageName;
+            this.wns.wifiConfiguration.creatorUid = perAppInfo.uid;
         }
 
         @Override
@@ -274,8 +279,6 @@ public class WifiNetworkSuggestionsManager {
          */
         public WifiConfiguration createInternalWifiConfiguration() {
             WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
-            config.ephemeral = true;
-            config.fromWifiNetworkSuggestion = true;
             config.allowAutojoin = isAutojoinEnabled;
             config.trusted = !wns.isNetworkUntrusted;
             return config;
@@ -531,7 +534,8 @@ public class WifiNetworkSuggestionsManager {
                                          WifiConfigManager wifiConfigManager,
                                          WifiConfigStore wifiConfigStore,
                                          WifiMetrics wifiMetrics,
-                                         TelephonyUtil telephonyUtil) {
+                                         TelephonyUtil telephonyUtil,
+                                         WifiKeyStore keyStore) {
         mContext = context;
         mResources = context.getResources();
         mHandler = handler;
@@ -545,6 +549,7 @@ public class WifiNetworkSuggestionsManager {
         mWifiConfigManager = wifiConfigManager;
         mWifiMetrics = wifiMetrics;
         mTelephonyUtil = telephonyUtil;
+        mWifiKeyStore = keyStore;
 
         // register the data store for serializing/deserializing data.
         wifiConfigStore.registerStoreData(
@@ -814,6 +819,13 @@ public class WifiNetworkSuggestionsManager {
                 if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
                     ewns.wns.wifiConfiguration.carrierId = carrierId;
                 }
+                if (ewns.wns.wifiConfiguration.isEnterprise()) {
+                    if (!mWifiKeyStore.updateNetworkKeys(ewns.wns.wifiConfiguration, null)) {
+                        Log.e(TAG, "Enterprise network install failure for SSID: "
+                                + ewns.wns.wifiConfiguration.SSID);
+                        continue;
+                    }
+                }
                 addToScanResultMatchInfoMap(ewns);
             } else {
                 if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
@@ -824,7 +836,8 @@ public class WifiNetworkSuggestionsManager {
                 if (!mWifiInjector.getPasspointManager().addOrUpdateProvider(
                         ewns.wns.passpointConfiguration, uid,
                         packageName, true, !ewns.wns.isNetworkUntrusted)) {
-                    Log.e(TAG, "Passpoint profile install failure.");
+                    Log.e(TAG, "Passpoint profile install failure for FQDN: "
+                            + ewns.wns.wifiConfiguration.FQDN);
                     continue;
                 }
                 addToPasspointInfoMap(ewns);
@@ -958,6 +971,9 @@ public class WifiNetworkSuggestionsManager {
                         ewns.wns.passpointConfiguration.getUniqueId(), null);
                 removeFromPassPointInfoMap(ewns);
             } else {
+                if (ewns.wns.wifiConfiguration.isEnterprise()) {
+                    mWifiKeyStore.removeKeys(ewns.wns.wifiConfiguration.enterpriseConfig);
+                }
                 removeFromScanResultMatchInfoMapAndRemoveRelatedScoreCard(ewns);
             }
         }
