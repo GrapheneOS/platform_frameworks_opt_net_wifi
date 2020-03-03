@@ -18,7 +18,6 @@ package com.android.server.wifi;
 
 import android.net.Network;
 import android.net.NetworkAgent;
-import android.net.NetworkScore;
 import android.net.wifi.IScoreChangeCallback;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiInfo;
@@ -89,7 +88,7 @@ public class WifiScoreReport {
                     return;
                 }
                 if (mNetworkAgent != null) {
-                    mNetworkAgent.sendNetworkScore(getNetworkScoreForLegacyInt(score));
+                    mNetworkAgent.sendNetworkScore(score);
                 }
 
                 long millis = mClock.getWallClockMillis();
@@ -273,11 +272,6 @@ public class WifiScoreReport {
         mVerboseLoggingEnabled = enable;
     }
 
-    NetworkScore getNetworkScoreForLegacyInt(int legacyScore) {
-        // STOPSHIP (b/148055573) : use a real NetworkScore when it's done
-        return new NetworkScore.Builder().setLegacyScore(legacyScore).build();
-    }
-
     /**
      * Calculate wifi network score based on updated link layer stats and send the score to
      * the WifiNetworkAgent.
@@ -351,7 +345,7 @@ public class WifiScoreReport {
         //report score
         if (score != mWifiInfo.getScore()) {
             if (mNetworkAgent != null) {
-                mNetworkAgent.sendNetworkScore(getNetworkScoreForLegacyInt(score));
+                mNetworkAgent.sendNetworkScore(score);
             }
         }
 
