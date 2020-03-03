@@ -701,6 +701,9 @@ public class XmlUtil {
                             break;
                         case XML_TAG_MAC_RANDOMIZATION_SETTING:
                             configuration.macRandomizationSetting = (int) value;
+                            if (configuration.macRandomizationSetting == 0) {
+                                configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_ALWAYS;
+                            }
                             macRandomizationSettingExists = true;
                             break;
                         default:
