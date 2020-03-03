@@ -235,7 +235,7 @@ public class ClientModeManager implements ActiveModeManager {
                 (CarrierConfigManager) mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE);
         PersistableBundle config = configManager.getConfigForSubId(defaultVoiceSubId);
         return (config != null)
-                ? config.getInt(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_INT)
+                ? config.getInt(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_MILLIS_INT)
                 : 0;
     }
 
