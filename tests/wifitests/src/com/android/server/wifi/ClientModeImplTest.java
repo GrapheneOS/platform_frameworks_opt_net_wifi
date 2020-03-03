@@ -43,6 +43,7 @@ import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.Network;
 import android.net.NetworkAgent;
+import android.net.NetworkAgentConfig;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkSpecifier;
@@ -2424,18 +2425,25 @@ public class ClientModeImplTest {
     }
 
     private void expectRegisterNetworkAgent() {
+        expectRegisterNetworkAgent((config) -> { });
+    }
+
+    private void expectRegisterNetworkAgent(Consumer<NetworkAgentConfig> configChecker) {
         // Expects that the code calls registerNetworkAgent and provides a way for the test to
         // verify the messages sent through the NetworkAgent to ConnectivityService.
         // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
         // TODO (b/134538181): consider exposing WifiNetworkAgent and using mocks.
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
+        ArgumentCaptor<NetworkAgentConfig> configCaptor =
+                ArgumentCaptor.forClass(NetworkAgentConfig.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), configCaptor.capture(), anyInt());
 
         registerAsyncChannel((x) -> {
             mNetworkAgentAsyncChannel = x;
         }, messengerCaptor.getValue(), mNetworkAgentHandler);
+        configChecker.accept(configCaptor.getValue());
 
         mNetworkAgentAsyncChannel.sendMessage(AsyncChannel.CMD_CHANNEL_FULL_CONNECTION);
         mLooper.dispatchAll();
@@ -2449,8 +2457,8 @@ public class ClientModeImplTest {
 
     /**
      * Verify that when a network is explicitly selected, but noInternetAccessExpected is false,
-     * {@link NetworkAgent#explicitlySelected} is called with explicitlySelected=false and
-     * acceptUnvalidated=false.
+     * the {@link NetworkAgentConfig} contains the right values of explicitlySelected,
+     * acceptUnvalidated and acceptPartialConnectivity.
      */
     @Test
     public void testExplicitlySelected_ExplicitInternetExpected() throws Exception {
@@ -2460,15 +2468,17 @@ public class ClientModeImplTest {
         mConnectedNetwork.noInternetAccessExpected = false;
 
         connect();
-        expectRegisterNetworkAgent();
-        expectNetworkAgentMessage(NetworkAgent.EVENT_SET_EXPLICITLY_SELECTED,
-                1 /* explicitlySelected */, 0 /* acceptUnvalidated */, null);
+        expectRegisterNetworkAgent((agentConfig) -> {
+            assertTrue(agentConfig.explicitlySelected);
+            assertFalse(agentConfig.acceptUnvalidated);
+            assertFalse(agentConfig.acceptPartialConnectivity);
+        });
     }
 
     /**
      * Verify that when a network is not explicitly selected, but noInternetAccessExpected is true,
-     * {@link NetworkAgent#explicitlySelected} is called with explicitlySelected=false and
-     * acceptUnvalidated=true.
+     * the {@link NetworkAgentConfig} contains the right values of explicitlySelected,
+     * acceptUnvalidated and acceptPartialConnectivity.
      */
     @Test
     public void testExplicitlySelected_NotExplicitNoInternetExpected() throws Exception {
@@ -2478,15 +2488,17 @@ public class ClientModeImplTest {
         mConnectedNetwork.noInternetAccessExpected = true;
 
         connect();
-        expectRegisterNetworkAgent();
-        expectNetworkAgentMessage(NetworkAgent.EVENT_SET_EXPLICITLY_SELECTED,
-                0 /* explicitlySelected */, 1 /* acceptUnvalidated */, null);
+        expectRegisterNetworkAgent((agentConfig) -> {
+            assertFalse(agentConfig.explicitlySelected);
+            assertFalse(agentConfig.acceptUnvalidated);
+            assertTrue(agentConfig.acceptPartialConnectivity);
+        });
     }
 
     /**
      * Verify that when a network is explicitly selected, and noInternetAccessExpected is true,
-     * {@link NetworkAgent#explicitlySelected} is called with explicitlySelected=true and
-     * acceptUnvalidated=true.
+     * the {@link NetworkAgentConfig} contains the right values of explicitlySelected,
+     * acceptUnvalidated and acceptPartialConnectivity.
      */
     @Test
     public void testExplicitlySelected_ExplicitNoInternetExpected() throws Exception {
@@ -2496,9 +2508,11 @@ public class ClientModeImplTest {
         mConnectedNetwork.noInternetAccessExpected = true;
 
         connect();
-        expectRegisterNetworkAgent();
-        expectNetworkAgentMessage(NetworkAgent.EVENT_SET_EXPLICITLY_SELECTED,
-                1 /* explicitlySelected */, 1 /* acceptUnvalidated */, null);
+        expectRegisterNetworkAgent((agentConfig) -> {
+            assertTrue(agentConfig.explicitlySelected);
+            assertTrue(agentConfig.acceptUnvalidated);
+            assertTrue(agentConfig.acceptPartialConnectivity);
+        });
     }
 
     /**
@@ -2528,7 +2542,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         ArrayList<Integer> thresholdsArray = new ArrayList<>();
         thresholdsArray.add(RSSI_THRESHOLD_MAX);
@@ -3040,7 +3054,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         Message message = new Message();
         message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
@@ -3248,7 +3262,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         WifiConfiguration currentNetwork = new WifiConfiguration();
         currentNetwork.networkId = FRAMEWORK_NETWORK_ID;
@@ -3282,7 +3296,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         WifiConfiguration currentNetwork = new WifiConfiguration();
         currentNetwork.networkId = FRAMEWORK_NETWORK_ID;
@@ -3317,7 +3331,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         WifiConfiguration currentNetwork = new WifiConfiguration();
         currentNetwork.networkId = FRAMEWORK_NETWORK_ID;
@@ -3350,7 +3364,7 @@ public class ClientModeImplTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
-                anyInt(), eq(null) /* config */, anyInt());
+                anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         when(mWifiConfigManager.getLastSelectedNetwork()).thenReturn(FRAMEWORK_NETWORK_ID + 1);
 
@@ -3382,7 +3396,7 @@ public class ClientModeImplTest {
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
         verify(mConnectivityManager).registerNetworkAgent(any(Messenger.class),
                 any(NetworkInfo.class), any(LinkProperties.class),
-                networkCapabilitiesCaptor.capture(), anyInt(), eq(null) /* config */,
+                networkCapabilitiesCaptor.capture(), anyInt(), any(NetworkAgentConfig.class),
                 anyInt());
 
         NetworkCapabilities networkCapabilities = networkCapabilitiesCaptor.getValue();
@@ -3415,7 +3429,7 @@ public class ClientModeImplTest {
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
         verify(mConnectivityManager).registerNetworkAgent(any(Messenger.class),
                 any(NetworkInfo.class), any(LinkProperties.class),
-                networkCapabilitiesCaptor.capture(), anyInt(), eq(null) /* config */,
+                networkCapabilitiesCaptor.capture(), anyInt(), any(NetworkAgentConfig.class),
                 anyInt());
 
         NetworkCapabilities networkCapabilities = networkCapabilitiesCaptor.getValue();
