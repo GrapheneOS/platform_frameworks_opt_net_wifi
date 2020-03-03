@@ -163,7 +163,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 .thenReturn(TelephonyManager.NETWORK_TYPE_UNKNOWN);
         when(mCarrierConfigManager.getConfigForSubId(anyInt())).thenReturn(mCarrierConfigBundle);
         when(mCarrierConfigBundle
-                .getInt(eq(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_INT)))
+                .getInt(eq(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_MILLIS_INT)))
                 .thenReturn(0);
 
         mLooper = new TestLooper();
@@ -554,7 +554,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         when(mTelephonyManager.getVoiceNetworkType())
                 .thenReturn(voiceNetworkType);
         when(mCarrierConfigBundle
-                .getInt(eq(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_INT)))
+                .getInt(eq(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_MILLIS_INT)))
                 .thenReturn(wifiOffDeferringTimeMs);
     }
 
