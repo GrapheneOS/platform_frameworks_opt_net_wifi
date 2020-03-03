@@ -221,7 +221,7 @@ public class ThroughputPredictorTest extends WifiBaseTest {
     }
 
     @Test
-    public void verifyHighRssiHighChannelUtilizationAx2g20Mhz2ss() {
+    public void verifyHighRssiHighChannelUtilizationAc2g20Mhz2ss() {
         int predictedThroughputMbps = mThroughputPredictor.predictThroughput(mDeviceCapabilities,
                 ScanResult.WIFI_STANDARD_11AC, ScanResult.CHANNEL_WIDTH_20MHZ, -50, 2437, 2,
                 INVALID, 80, true);
@@ -302,5 +302,24 @@ public class ThroughputPredictorTest extends WifiBaseTest {
         mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_80MHZ;
         mConnectionCap.maxNumberTxSpatialStreams = 2;
         assertEquals(-1, mThroughputPredictor.predictMaxTxThroughput(mConnectionCap));
+    }
+
+    @Test
+    public void verifyTxThroughputAc20Mhz2ssMiddleSnr() {
+        mConnectionCap.wifiStandard = ScanResult.WIFI_STANDARD_11AC;
+        mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+        mConnectionCap.maxNumberTxSpatialStreams = 2;
+        assertEquals(131, mThroughputPredictor.predictTxThroughput(mConnectionCap,
+                -50, 2437, 80));
+    }
+
+    @Test
+    public void verifyRxThroughputAx160Mhz4ssHighSnrInvalidUtilization() {
+        mConnectionCap.wifiStandard = ScanResult.WIFI_STANDARD_11AX;
+        mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_160MHZ;
+        mConnectionCap.maxNumberRxSpatialStreams = 4;
+        //mConnectionCap.maxNumberTxSpatialStreams = 4;
+        assertEquals(2881, mThroughputPredictor.predictRxThroughput(mConnectionCap,
+                -10, 5180, INVALID));
     }
 }

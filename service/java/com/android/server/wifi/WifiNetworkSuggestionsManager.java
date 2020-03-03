@@ -410,7 +410,7 @@ public class WifiNetworkSuggestionsManager {
                             extNetworkSuggestions.iterator().next().perAppInfo.uid);
                 }
                 for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
-                    if (ewns.wns.wifiConfiguration.isPasspoint()) {
+                    if (ewns.wns.passpointConfiguration != null) {
                         addToPasspointInfoMap(ewns);
                     } else {
                         addToScanResultMatchInfoMap(ewns);
@@ -950,12 +950,12 @@ public class WifiNetworkSuggestionsManager {
         }
         // Clear the cache.
         for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
-            if (ewns.wns.wifiConfiguration.isPasspoint()) {
+            if (ewns.wns.passpointConfiguration != null) {
                 // Clear the Passpoint config.
                 mWifiInjector.getPasspointManager().removeProvider(
                         ewns.perAppInfo.uid,
                         false,
-                        ewns.wns.wifiConfiguration.getKey(), null);
+                        ewns.wns.passpointConfiguration.getUniqueId(), null);
                 removeFromPassPointInfoMap(ewns);
             } else {
                 removeFromScanResultMatchInfoMapAndRemoveRelatedScoreCard(ewns);
@@ -1510,11 +1510,13 @@ public class WifiNetworkSuggestionsManager {
      * Check if the given passpoint suggestion has user approval and allow user manually connect.
      */
     public boolean isPasspointSuggestionSharedWithUser(WifiConfiguration config) {
+        Set<ExtendedWifiNetworkSuggestion> extendedWifiNetworkSuggestions =
+                getNetworkSuggestionsForFqdnMatch(config.FQDN);
         Set<ExtendedWifiNetworkSuggestion> matchedSuggestions =
-                getNetworkSuggestionsForFqdnMatch(config.FQDN)
-                        .stream().filter(ewns -> ewns.perAppInfo.uid == config.creatorUid)
-                        .collect(Collectors.toSet());
-        if (matchedSuggestions.isEmpty()) {
+                extendedWifiNetworkSuggestions == null ? null : extendedWifiNetworkSuggestions
+                .stream().filter(ewns -> ewns.perAppInfo.uid == config.creatorUid)
+                .collect(Collectors.toSet());
+        if (matchedSuggestions == null || matchedSuggestions.isEmpty()) {
             Log.e(TAG, "Matched network suggestion is missing for FQDN:" + config.FQDN);
             return false;
         }

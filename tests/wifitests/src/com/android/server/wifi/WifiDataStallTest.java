@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.lenient;
@@ -70,6 +71,8 @@ public class WifiDataStallTest extends WifiBaseTest {
     @Mock WifiInfo mWifiInfo;
     @Mock TelephonyManager mTelephonyManager;
     @Mock Handler mHandler;
+    @Mock ThroughputPredictor mThroughputPredictor;
+    @Mock WifiNative.ConnectionCapabilities mCapabilities;
 
     private final WifiLinkLayerStats mOldLlStats = new WifiLinkLayerStats();
     private final WifiLinkLayerStats mNewLlStats = new WifiLinkLayerStats();
@@ -123,7 +126,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         when(mWifiInfo.getBSSID()).thenReturn("5G_WiFi");
 
         mWifiDataStall = new WifiDataStall(mFrameworkFacade, mWifiMetrics, mContext,
-                mDeviceConfigFacade, mWifiChannelUtilization, mClock, mHandler);
+                mDeviceConfigFacade, mWifiChannelUtilization, mClock, mHandler,
+                mThroughputPredictor);
         mOldLlStats.txmpdu_be = 1000;
         mOldLlStats.retries_be = 1000;
         mOldLlStats.lostmpdu_be = 3000;
@@ -137,7 +141,11 @@ public class WifiDataStallTest extends WifiBaseTest {
         mNewLlStats.timeStampInMs = mOldLlStats.timeStampInMs
                 + WifiDataStall.MAX_MS_DELTA_FOR_DATA_STALL - 1;
         when(mWifiChannelUtilization.getUtilizationRatio(anyInt())).thenReturn(10);
-
+        when(mThroughputPredictor.predictTxThroughput(any(), anyInt(), anyInt(), anyInt()))
+                .thenReturn(50);
+        when(mThroughputPredictor.predictRxThroughput(any(), anyInt(), anyInt(), anyInt()))
+                .thenReturn(150);
+        mWifiDataStall.setConnectionCapabilities(mCapabilities);
         setUpWifiBytes(1, 1);
     }
 
@@ -195,6 +203,16 @@ public class WifiDataStallTest extends WifiBaseTest {
     }
 
     /**
+     * Verify first poll after a new connection
+     */
+    @Test
+    public void verifyFirstPoll() throws Exception {
+        mWifiDataStall.checkDataStallAndThroughputSufficiency(null, mNewLlStats, mWifiInfo);
+        assertEquals(50_000, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(150_000, mWifiDataStall.getRxThroughputKbps());
+    }
+
+    /**
      * Verify there is a Tx data stall from high Tx PER and low Tx throughput
      */
     @Test
@@ -210,6 +228,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_DATA_STALL_BAD_TX, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(false, mWifiDataStall.isThroughputSufficient());
+        assertEquals(960, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(9609, mWifiDataStall.getRxThroughputKbps());
         verify(mWifiMetrics).logWifiIsUnusableEvent(WifiIsUnusableEvent.TYPE_DATA_STALL_BAD_TX);
     }
 
@@ -231,6 +251,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(true, mWifiDataStall.isThroughputSufficient());
+        assertEquals(833132, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(9609, mWifiDataStall.getRxThroughputKbps());
         verify(mWifiMetrics, never()).logWifiIsUnusableEvent(
                 WifiIsUnusableEvent.TYPE_DATA_STALL_BAD_TX);
     }
@@ -275,6 +297,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_DATA_STALL_TX_WITHOUT_RX, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(false, mWifiDataStall.isThroughputSufficient());
+        assertEquals(4804, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(960, mWifiDataStall.getRxThroughputKbps());
         verify(mWifiMetrics).logWifiIsUnusableEvent(
                 WifiIsUnusableEvent.TYPE_DATA_STALL_TX_WITHOUT_RX);
     }
@@ -300,6 +324,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(true, mWifiDataStall.isThroughputSufficient());
+        assertEquals(4804, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(-1, mWifiDataStall.getRxThroughputKbps());
         verify(mWifiMetrics, never()).logWifiIsUnusableEvent(anyInt());
     }
 
@@ -315,6 +341,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         verifyUpdateWifiIsUnusableLinkLayerStats();
+        assertEquals(960, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(960, mWifiDataStall.getRxThroughputKbps());
 
         // 2nd poll with low tx and rx throughput
         when(mClock.getElapsedSinceBootMillis()).thenReturn(
@@ -323,6 +351,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_DATA_STALL_BOTH, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(false, mWifiDataStall.isThroughputSufficient());
+        assertEquals(960, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(960, mWifiDataStall.getRxThroughputKbps());
         verify(mWifiMetrics).logWifiIsUnusableEvent(WifiIsUnusableEvent.TYPE_DATA_STALL_BOTH);
 
         // 3rd poll with low tx/rx traffic and throughput
@@ -339,6 +369,8 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(false, mWifiDataStall.isThroughputSufficient());
+        assertEquals(960, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(960, mWifiDataStall.getRxThroughputKbps());
 
         // 4th poll with low tx/rx traffic but high throughput
         when(mWifiInfo.getLinkSpeed()).thenReturn(10);
@@ -346,10 +378,11 @@ public class WifiDataStallTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(
                 10L + 2 * DeviceConfigFacade.DEFAULT_DATA_STALL_DURATION_MS);
         setUpWifiBytes(TEST_WIFI_BYTES, TEST_WIFI_BYTES);
-
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(true, mWifiDataStall.isThroughputSufficient());
+        assertEquals(4804, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(9609, mWifiDataStall.getRxThroughputKbps());
     }
 
     /**

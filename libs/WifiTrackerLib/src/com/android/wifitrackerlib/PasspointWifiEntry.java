@@ -20,8 +20,15 @@ import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
+import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
+import static com.android.wifitrackerlib.Utils.getCurrentNetworkCapabilitiesInformation;
+import static com.android.wifitrackerlib.Utils.getDisconnectedStateDescription;
+import static com.android.wifitrackerlib.Utils.getMeteredDescription;
+import static com.android.wifitrackerlib.Utils.getNetworkDetailedState;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
+import static com.android.wifitrackerlib.Utils.getSpeedDescription;
+import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
 import android.content.Context;
 import android.net.NetworkInfo;
@@ -41,6 +48,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * WifiEntry representation of a subscribed Passpoint network, uniquely identified by FQDN.
@@ -102,18 +110,67 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getSummary() {
-        return getSummary(true /* concise */);
-    }
-
-    @Override
     public String getSummary(boolean concise) {
         if (isExpired()) {
             return mContext.getString(R.string.wifi_passpoint_expired);
         }
 
-        // TODO(b/70983952): Fill this method in
-        return "Passpoint (Placeholder Text)"; // Placeholder string
+        StringJoiner sj = new StringJoiner(mContext.getString(R.string.summary_separator));
+
+        // TODO(b/70983952): Check if it's necessary to add speend information here.
+        String speedDescription = getSpeedDescription(mContext, this);
+        if (!TextUtils.isEmpty(speedDescription)) {
+            sj.add(speedDescription);
+        }
+
+        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+            String disconnectDescription = getDisconnectedStateDescription(mContext, this);
+            if (TextUtils.isEmpty(disconnectDescription)) {
+                if (concise) {
+                    sj.add(mContext.getString(R.string.wifi_disconnected));
+                } else if (!mForSavedNetworksPage) {
+                    sj.add(mContext.getString(R.string.wifi_remembered));
+                }
+            } else {
+                sj.add(disconnectDescription);
+            }
+        } else {
+            String connectDescription = getConnectStateDescription();
+            if (!TextUtils.isEmpty(connectDescription)) {
+                sj.add(connectDescription);
+            }
+        }
+
+        String autoConnectDescription = getAutoConnectDescription(mContext, this);
+        if (!TextUtils.isEmpty(autoConnectDescription)) {
+            sj.add(autoConnectDescription);
+        }
+
+        String meteredDescription = getMeteredDescription(mContext, this);
+        if (!TextUtils.isEmpty(meteredDescription)) {
+            sj.add(meteredDescription);
+        }
+
+        if (!concise) {
+            String verboseLoggingDescription = getVerboseLoggingDescription(this);
+            if (!TextUtils.isEmpty(verboseLoggingDescription)) {
+                sj.add(verboseLoggingDescription);
+            }
+        }
+
+        return sj.toString();
+    }
+
+    private String getConnectStateDescription() {
+        if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            String networkCapabilitiesinformation =
+                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
+            if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
+                return networkCapabilitiesinformation;
+            }
+        }
+
+        return getNetworkDetailedState(mContext, mNetworkInfo);
     }
 
     @Override
