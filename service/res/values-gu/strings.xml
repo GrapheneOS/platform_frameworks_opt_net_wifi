@@ -76,8 +76,6 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"મોબાઇલ હૉટસ્પૉટ બંધ કરવામાં આવ્યું"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"મોબાઇલ હૉટસ્પૉટ બંધ કરવામાં આવ્યું છે"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"નિશ્ચિત સમયગાળા સુધી નિષ્ક્રિય રહ્યું હોવાને કારણે મોબાઇલ હૉટસ્પૉટ બંધ કરવામાં આવ્યું છે."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"વાઇ-ફાઇ ડિસ્કનેક્ટ થયું"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> સાથે કનેક્ટ કરવા માટે, <xliff:g id="CARRIER_NAME">%2$s</xliff:g>નું સિમ કાર્ડ દાખલ કરો"</string>
 </resources>

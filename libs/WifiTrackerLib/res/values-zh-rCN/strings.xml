@@ -38,4 +38,10 @@
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"无法访问互联网"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"无"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"已失效"</string>
+    <string name="tap_to_sign_up" msgid="2409214576606918295">"点按即可注册"</string>
+    <string name="osu_opening_provider" msgid="5633521771769175139">"正在打开<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
+    <string name="osu_connect_failed" msgid="8503501619299851793">"无法连接"</string>
+    <string name="osu_completing_sign_up" msgid="7188493241442946231">"正在完成注册…"</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"无法完成注册。点按即可重试。"</string>
+    <string name="osu_sign_up_complete" msgid="7013805426618985953">"注册完毕。正在连接…"</string>
 </resources>
