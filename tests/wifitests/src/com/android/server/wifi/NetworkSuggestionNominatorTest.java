@@ -953,6 +953,9 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
             configs[i].meteredOverride = meteredness[i]
                     ? WifiConfiguration.METERED_OVERRIDE_METERED
                     : WifiConfiguration.METERED_OVERRIDE_NONE;
+            configs[i].creatorName = packageNames[i];
+            configs[i].ephemeral = true;
+            configs[i].fromWifiNetworkSuggestion = true;
             PerAppInfo perAppInfo = new PerAppInfo(uids[i], packageNames[i], null);
             WifiNetworkSuggestion suggestion =
                     new WifiNetworkSuggestion(configs[i], null, appInteractions[i], false,
