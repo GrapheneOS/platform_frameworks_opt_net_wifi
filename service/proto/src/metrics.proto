@@ -1956,6 +1956,18 @@ message ExperimentValues {
 message BssidBlocklistStats {
   // Distributions of number of blocked BSSIDs filtered out from network selection.
   repeated Int32Count network_selection_filtered_bssid_count = 1;
+
+  // If this is enabled, then network connections in high movement state will be skipped unless
+  // we find a candidate BSSID with similar RSSI in 2 scans sufficiently far apart.
+  optional bool high_movement_multiple_scans_feature_enabled = 2;
+
+  // Number of times connection is skipped in the high movement state
+  // only relevant if high_movement_multiple_scans_feature_enabled=true
+  optional int32 num_high_movement_connection_skipped = 3;
+
+  // Number of times connection is initiated in the high movement state
+  // only relevant if high_movement_multiple_scans_feature_enabled=true
+  optional int32 num_high_movement_connection_started = 4;
 }
 
 message WifiIsUnusableEvent {
