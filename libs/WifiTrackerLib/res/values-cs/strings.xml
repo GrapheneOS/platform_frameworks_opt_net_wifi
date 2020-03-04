@@ -38,4 +38,10 @@
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Nejste připojeni k internetu"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Žádné"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Platnost vypršela"</string>
+    <string name="tap_to_sign_up" msgid="2409214576606918295">"Klepnutím se zaregistrujete"</string>
+    <string name="osu_opening_provider" msgid="5633521771769175139">"Spouštění aplikace <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
+    <string name="osu_connect_failed" msgid="8503501619299851793">"Nelze se připojit"</string>
+    <string name="osu_completing_sign_up" msgid="7188493241442946231">"Dokončování registrace…"</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"Registraci se nepodařilo dokončit. Klepnutím opakujte akci."</string>
+    <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registrace byla dokončena. Připojování…"</string>
 </resources>

@@ -77,5 +77,5 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"უსადენო მობილური ქსელი გაითიშა"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"უსადენო მობილური ქსელი გაითიშა უმოქმედობის დროის ამოწურვის გამო."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi ქსელთან კავშირი გაწყდა."</string>
-    <string name="wifi_sim_required_message" msgid="8337512370882674437">"<xliff:g id="SSID">%1$s</xliff:g>-თან დასაკავშირებლად მოათავსეთ <xliff:g id="CARRIER_NAME">%2$s</xliff:g>-ის SIM-ბარათი."</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g>-თან დასაკავშირებლად მოათავსეთ <xliff:g id="CARRIER_NAME">%2$s</xliff:g>-ის SIM-ბარათი"</string>
 </resources>

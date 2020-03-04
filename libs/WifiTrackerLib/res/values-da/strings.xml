@@ -38,4 +38,10 @@
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Intet internet"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Ingen"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Udløbet"</string>
+    <string name="tap_to_sign_up" msgid="2409214576606918295">"Tryk for at registrere"</string>
+    <string name="osu_opening_provider" msgid="5633521771769175139">"Åbner <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
+    <string name="osu_connect_failed" msgid="8503501619299851793">"Der kunne ikke oprettes forbindelse"</string>
+    <string name="osu_completing_sign_up" msgid="7188493241442946231">"Fuldfører registrering…"</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"Registreringen kunne ikke fuldføres. Tryk for at prøve igen."</string>
+    <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registreringen er fuldført. Opretter forbindelse…"</string>
 </resources>
