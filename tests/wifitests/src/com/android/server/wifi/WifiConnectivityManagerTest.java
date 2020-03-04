@@ -724,6 +724,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Verify a candidate if found this time.
         verify(mClientModeImpl).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
+        verify(mWifiMetrics, times(2)).incrementNumHighMovementConnectionSkipped();
+        verify(mWifiMetrics).incrementNumHighMovementConnectionStarted();
     }
 
     /**
@@ -802,6 +804,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Verify connect is not started.
         verify(mClientModeImpl, never()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
+        verify(mWifiMetrics, times(2)).incrementNumHighMovementConnectionSkipped();
     }
 
     /**
