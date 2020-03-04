@@ -465,7 +465,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     }
 
     boolean isRequestWithNetworkSpecifierValid(NetworkRequest networkRequest) {
-        NetworkSpecifier ns = networkRequest.networkCapabilities.getNetworkSpecifier();
+        NetworkSpecifier ns = networkRequest.getNetworkSpecifier();
         // Invalid network specifier.
         if (!(ns instanceof WifiNetworkSpecifier)) {
             Log.e(TAG, "Invalid network specifier mentioned. Rejecting");
@@ -488,7 +488,7 @@ public class WifiNetworkFactory extends NetworkFactory {
      */
     @Override
     public boolean acceptRequest(NetworkRequest networkRequest, int score) {
-        NetworkSpecifier ns = networkRequest.networkCapabilities.getNetworkSpecifier();
+        NetworkSpecifier ns = networkRequest.getNetworkSpecifier();
         if (ns == null) {
             // Generic wifi request. Always accept.
         } else {
@@ -563,7 +563,7 @@ public class WifiNetworkFactory extends NetworkFactory {
      */
     @Override
     protected void needNetworkFor(NetworkRequest networkRequest, int score) {
-        NetworkSpecifier ns = networkRequest.networkCapabilities.getNetworkSpecifier();
+        NetworkSpecifier ns = networkRequest.getNetworkSpecifier();
         if (ns == null) {
             // Generic wifi request. Turn on auto-join if necessary.
             if (++mGenericConnectionReqCount == 1) {
@@ -610,7 +610,7 @@ public class WifiNetworkFactory extends NetworkFactory {
 
     @Override
     protected void releaseNetworkFor(NetworkRequest networkRequest) {
-        NetworkSpecifier ns = networkRequest.networkCapabilities.getNetworkSpecifier();
+        NetworkSpecifier ns = networkRequest.getNetworkSpecifier();
         if (ns == null) {
             // Generic wifi request. Turn off auto-join if necessary.
             if (mGenericConnectionReqCount == 0) {

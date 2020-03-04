@@ -79,7 +79,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Manages Aware data-path lifetime: interface creation/deletion, data-path setup and tear-down.
@@ -841,8 +840,7 @@ public class WifiAwareDataPathStateManager {
                 return false;
             }
 
-            NetworkSpecifier networkSpecifierBase =
-                    request.networkCapabilities.getNetworkSpecifier();
+            NetworkSpecifier networkSpecifierBase = request.getNetworkSpecifier();
             if (!(networkSpecifierBase instanceof WifiAwareNetworkSpecifier)) {
                 Log.w(TAG, "WifiAwareNetworkFactory.acceptRequest: request=" + request
                         + " - not a WifiAwareNetworkSpecifier");
@@ -911,8 +909,7 @@ public class WifiAwareDataPathStateManager {
                         + networkRequest + ", score=" + score);
             }
 
-            NetworkSpecifier networkSpecifierObj =
-                    networkRequest.networkCapabilities.getNetworkSpecifier();
+            NetworkSpecifier networkSpecifierObj = networkRequest.getNetworkSpecifier();
             WifiAwareNetworkSpecifier networkSpecifier = null;
             if (networkSpecifierObj instanceof WifiAwareNetworkSpecifier) {
                 networkSpecifier = (WifiAwareNetworkSpecifier) networkSpecifierObj;
@@ -964,8 +961,7 @@ public class WifiAwareDataPathStateManager {
                         + networkRequest);
             }
 
-            NetworkSpecifier networkSpecifierObj =
-                    networkRequest.networkCapabilities.getNetworkSpecifier();
+            NetworkSpecifier networkSpecifierObj = networkRequest.getNetworkSpecifier();
             WifiAwareNetworkSpecifier networkSpecifier = null;
             if (networkSpecifierObj instanceof WifiAwareNetworkSpecifier) {
                 networkSpecifier = (WifiAwareNetworkSpecifier) networkSpecifierObj;
@@ -1219,10 +1215,10 @@ public class WifiAwareDataPathStateManager {
 
         private NetworkCapabilities getNetworkCapabilities() {
             NetworkCapabilities nc = new NetworkCapabilities(sNetworkCapabilitiesFilter);
-            nc.setNetworkSpecifier(
-                    new WifiAwareAgentNetworkSpecifier(equivalentRequests.stream().map(
-                            nr -> nr.networkCapabilities.getNetworkSpecifier()).collect(
-                            Collectors.toList()).toArray(new WifiAwareNetworkSpecifier[0])));
+            nc.setNetworkSpecifier(new WifiAwareAgentNetworkSpecifier(
+                    equivalentRequests.stream()
+                            .map(NetworkRequest::getNetworkSpecifier)
+                            .toArray(WifiAwareNetworkSpecifier[]::new)));
             if (peerIpv6 != null) {
                 nc.setTransportInfo(
                         new WifiAwareNetworkInfo(peerIpv6, peerPort, peerTransportProtocol));
@@ -1526,10 +1522,10 @@ public class WifiAwareDataPathStateManager {
             // configure agent
             networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, null, null);
 
-            networkCapabilities.setNetworkSpecifier(
-                    new WifiAwareAgentNetworkSpecifier(networkRequests.stream().map(
-                            nr -> nr.networkCapabilities.getNetworkSpecifier()).collect(
-                            Collectors.toList()).toArray(new WifiAwareNetworkSpecifier[0])));
+            networkCapabilities.setNetworkSpecifier(new WifiAwareAgentNetworkSpecifier(
+                    networkRequests.stream()
+                            .map(NetworkRequest::getNetworkSpecifier)
+                            .toArray(WifiAwareNetworkSpecifier[]::new)));
 
             linkProperties.setInterfaceName(nnri.interfaceName);
             linkProperties.addLinkAddress(new LinkAddress(linkLocal, 64));
