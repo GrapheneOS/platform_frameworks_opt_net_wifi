@@ -3226,6 +3226,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiThreadRunner.run(() -> {
                 mWifiInjector.getWifiNetworkScoreCache().dumpWithLatestScanResults(
                         fd, pw, args, mScanRequestProxy.getScanResults());
+                mWifiInjector.getSettingsConfigStore().dump(fd, pw, args);
             });
             pw.println();
         }
