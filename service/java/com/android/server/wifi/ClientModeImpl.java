@@ -3627,7 +3627,7 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
                 case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF:
                     if (mNetworkAgent != null) {
-                        mNetworkAgent.onSocketKeepaliveEvent(message.arg1,
+                        mNetworkAgent.sendSocketKeepaliveEvent(message.arg1,
                                 SocketKeepalive.ERROR_INVALID_NETWORK);
                     }
                     break;
@@ -4568,7 +4568,7 @@ public class ClientModeImpl extends StateMachine {
                     int slot = message.arg1;
                     int ret = stopWifiIPPacketOffload(slot);
                     if (mNetworkAgent != null) {
-                        mNetworkAgent.onSocketKeepaliveEvent(slot, ret);
+                        mNetworkAgent.sendSocketKeepaliveEvent(slot, ret);
                     }
                     break;
                 }
@@ -4728,29 +4728,30 @@ public class ClientModeImpl extends StateMachine {
         private int mLastNetworkStatus = -1; // To detect when the status really changes
 
         @Override
-        protected void unwanted() {
+        public void onNetworkUnwanted() {
             // Ignore if we're not the current networkAgent.
             if (this != mNetworkAgent) return;
             if (mVerboseLoggingEnabled) {
-                log("WifiNetworkAgent -> Wifi unwanted score " + Integer.toString(mWifiInfo.score));
+                logd("WifiNetworkAgent -> Wifi unwanted score " + Integer.toString(
+                        mWifiInfo.score));
             }
             unwantedNetwork(NETWORK_STATUS_UNWANTED_DISCONNECT);
         }
 
         @Override
-        protected void networkStatus(int status, String redirectUrl) {
+        public void onValidationStatus(int status, @Nullable String redirectUrl) {
             if (this != mNetworkAgent) return;
             if (status == mLastNetworkStatus) return;
             mLastNetworkStatus = status;
-            if (status == NetworkAgent.INVALID_NETWORK) {
+            if (status == NetworkAgent.VALIDATION_STATUS_NOT_VALID) {
                 if (mVerboseLoggingEnabled) {
-                    log("WifiNetworkAgent -> Wifi networkStatus invalid, score="
+                    logd("WifiNetworkAgent -> Wifi networkStatus invalid, score="
                             + Integer.toString(mWifiInfo.score));
                 }
                 unwantedNetwork(NETWORK_STATUS_UNWANTED_VALIDATION_FAILED);
-            } else if (status == NetworkAgent.VALID_NETWORK) {
+            } else if (status == NetworkAgent.VALIDATION_STATUS_VALID) {
                 if (mVerboseLoggingEnabled) {
-                    log("WifiNetworkAgent -> Wifi networkStatus valid, score= "
+                    logd("WifiNetworkAgent -> Wifi networkStatus valid, score= "
                             + Integer.toString(mWifiInfo.score));
                 }
                 mWifiMetrics.logStaEvent(StaEvent.TYPE_NETWORK_AGENT_VALID_NETWORK);
@@ -4759,37 +4760,36 @@ public class ClientModeImpl extends StateMachine {
         }
 
         @Override
-        protected void saveAcceptUnvalidated(boolean accept) {
+        public void onSaveAcceptUnvalidated(boolean accept) {
             if (this != mNetworkAgent) return;
             ClientModeImpl.this.sendMessage(CMD_ACCEPT_UNVALIDATED, accept ? 1 : 0);
         }
 
         @Override
-        protected void startSocketKeepalive(Message msg) {
+        public void onStartSocketKeepalive(int slot, int intervalSeconds,
+                @NonNull KeepalivePacketData packet) {
             ClientModeImpl.this.sendMessage(
-                    CMD_START_IP_PACKET_OFFLOAD, msg.arg1, msg.arg2, msg.obj);
+                    CMD_START_IP_PACKET_OFFLOAD, slot, intervalSeconds, packet);
         }
 
         @Override
-        protected void stopSocketKeepalive(Message msg) {
-            ClientModeImpl.this.sendMessage(
-                    CMD_STOP_IP_PACKET_OFFLOAD, msg.arg1, msg.arg2, msg.obj);
+        public void onStopSocketKeepalive(int slot) {
+            ClientModeImpl.this.sendMessage(CMD_STOP_IP_PACKET_OFFLOAD, slot);
         }
 
         @Override
-        protected void addKeepalivePacketFilter(Message msg) {
+        public void onAddKeepalivePacketFilter(int slot, @NonNull KeepalivePacketData packet) {
             ClientModeImpl.this.sendMessage(
-                    CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF, msg.arg1, msg.arg2, msg.obj);
+                    CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF, slot, 0, packet);
         }
 
         @Override
-        protected void removeKeepalivePacketFilter(Message msg) {
-            ClientModeImpl.this.sendMessage(
-                    CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF, msg.arg1, msg.arg2, msg.obj);
+        public void onRemoveKeepalivePacketFilter(int slot) {
+            ClientModeImpl.this.sendMessage(CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF, slot);
         }
 
         @Override
-        protected void setSignalStrengthThresholds(int[] thresholds) {
+        public void onSignalStrengthThresholdsUpdated(@NonNull int[] thresholds) {
             // 0. If there are no thresholds, or if the thresholds are invalid,
             //    stop RSSI monitoring.
             // 1. Tell the hardware to start RSSI monitoring here, possibly adding MIN_VALUE and
@@ -4801,7 +4801,7 @@ public class ClientModeImpl extends StateMachine {
             //    sent in the NetworkCapabilities) must be the one received from the hardware event
             //    received, or we might skip callbacks.
             // 3. Ensure that when we disconnect, RSSI monitoring is stopped.
-            log("Received signal strength thresholds: " + Arrays.toString(thresholds));
+            logd("Received signal strength thresholds: " + Arrays.toString(thresholds));
             if (thresholds.length == 0) {
                 ClientModeImpl.this.sendMessage(CMD_STOP_RSSI_MONITORING_OFFLOAD,
                         mWifiInfo.getRssi());
@@ -4831,7 +4831,7 @@ public class ClientModeImpl extends StateMachine {
         }
 
         @Override
-        protected void preventAutomaticReconnect() {
+        public void onAutomaticReconnectDisabled() {
             if (this != mNetworkAgent) return;
             unwantedNetwork(NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN);
         }
@@ -5229,7 +5229,7 @@ public class ClientModeImpl extends StateMachine {
                     KeepalivePacketData pkt = (KeepalivePacketData) message.obj;
                     int result = startWifiIPPacketOffload(slot, pkt, intervalSeconds);
                     if (mNetworkAgent != null) {
-                        mNetworkAgent.onSocketKeepaliveEvent(slot, result);
+                        mNetworkAgent.sendSocketKeepaliveEvent(slot, result);
                     }
                     break;
                 }
@@ -5685,7 +5685,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 case CMD_NETWORK_STATUS:
-                    if (message.arg1 == NetworkAgent.VALID_NETWORK) {
+                    if (message.arg1 == NetworkAgent.VALIDATION_STATUS_VALID) {
                         // stop collect last-mile stats since validation pass
                         removeMessages(CMD_DIAGS_CONNECT_TIMEOUT);
                         mWifiDiagnostics.reportConnectionEvent(
