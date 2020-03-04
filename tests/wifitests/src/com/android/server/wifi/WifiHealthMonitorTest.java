@@ -16,7 +16,7 @@
 
 package com.android.server.wifi;
 
-import static com.android.server.wifi.WifiScoreCard.MIN_NUM_CONNECTION_ATTEMPT;
+import static com.android.server.wifi.DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT;
 import static com.android.server.wifi.WifiScoreCard.TS_NONE;
 import static com.android.server.wifi.util.NativeUtil.hexStringFromByteArray;
 
@@ -197,7 +197,8 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_LOW_THR_PERCENT);
         when(mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_RSSI_THR_DBM);
-
+        when(mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, mWifiInjector, mClock,
                 mWifiConfigManager, mWifiScoreCard, new Handler(mLooper.getLooper()), mWifiNative,
                 "some seed", mDeviceConfigFacade);
@@ -299,7 +300,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     }
 
     private void makeRecentStatsWithSufficientConnectionAttempt() {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeNetworkConnectionExample();
         }
     }
@@ -475,7 +476,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
-        assertEquals(MIN_NUM_CONNECTION_ATTEMPT * 2,
+        assertEquals(DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT * 2,
                 perNetwork.getStatsCurrBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
     }
 
@@ -561,7 +562,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         assertEquals(0,
                 perNetwork.getStatsCurrBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
-        assertEquals(MIN_NUM_CONNECTION_ATTEMPT * 1,
+        assertEquals(DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT * 1,
                 perNetwork.getStatsPrevBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
     }
 
