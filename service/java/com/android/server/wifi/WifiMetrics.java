@@ -516,10 +516,16 @@ public class WifiMetrics {
 
     class BssidBlocklistStats {
         public IntCounter networkSelectionFilteredBssidCount = new IntCounter();
+        public int numHighMovementConnectionSkipped = 0;
+        public int numHighMovementConnectionStarted = 0;
 
         public WifiMetricsProto.BssidBlocklistStats toProto() {
             WifiMetricsProto.BssidBlocklistStats proto = new WifiMetricsProto.BssidBlocklistStats();
             proto.networkSelectionFilteredBssidCount = networkSelectionFilteredBssidCount.toProto();
+            proto.highMovementMultipleScansFeatureEnabled = mContext.getResources().getBoolean(
+                    R.bool.config_wifiHighMovementNetworkSelectionOptimizationEnabled);
+            proto.numHighMovementConnectionSkipped = numHighMovementConnectionSkipped;
+            proto.numHighMovementConnectionStarted = numHighMovementConnectionStarted;
             return proto;
         }
 
@@ -527,6 +533,11 @@ public class WifiMetrics {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("networkSelectionFilteredBssidCount=" + networkSelectionFilteredBssidCount);
+            sb.append(", highMovementMultipleScansFeatureEnabled="
+                    + mContext.getResources().getBoolean(
+                            R.bool.config_wifiHighMovementNetworkSelectionOptimizationEnabled));
+            sb.append(", numHighMovementConnectionSkipped=" + numHighMovementConnectionSkipped);
+            sb.append(", numHighMovementConnectionStarted=" + numHighMovementConnectionStarted);
             return sb.toString();
         }
     }
@@ -5262,6 +5273,21 @@ public class WifiMetrics {
      */
     public void incrementNetworkSelectionFilteredBssidCount(int numBssid) {
         mBssidBlocklistStats.networkSelectionFilteredBssidCount.increment(numBssid);
+    }
+
+    /**
+     * Increment the number of network connections skipped due to the high movement feature.
+     */
+    public void incrementNumHighMovementConnectionSkipped() {
+        mBssidBlocklistStats.numHighMovementConnectionSkipped++;
+    }
+
+    /**
+     * Increment the number of network connections initiated while under the high movement
+     * feature.
+     */
+    public void incrementNumHighMovementConnectionStarted() {
+        mBssidBlocklistStats.numHighMovementConnectionStarted++;
     }
 
     /**
