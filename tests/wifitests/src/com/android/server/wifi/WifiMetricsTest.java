@@ -1673,6 +1673,11 @@ public class WifiMetricsTest extends WifiBaseTest {
             mWifiMetrics.incrementNetworkSelectionFilteredBssidCount(i);
         }
         mWifiMetrics.incrementNetworkSelectionFilteredBssidCount(2);
+        mResources.setBoolean(R.bool.config_wifiHighMovementNetworkSelectionOptimizationEnabled,
+                true);
+        mWifiMetrics.incrementNumHighMovementConnectionStarted();
+        mWifiMetrics.incrementNumHighMovementConnectionSkipped();
+        mWifiMetrics.incrementNumHighMovementConnectionSkipped();
         dumpProtoAndDeserialize();
 
         Int32Count[] expectedHistogram = {
@@ -1682,6 +1687,10 @@ public class WifiMetricsTest extends WifiBaseTest {
         };
         assertKeyCountsEqual(expectedHistogram,
                 mDecodedProto.bssidBlocklistStats.networkSelectionFilteredBssidCount);
+        assertEquals(true, mDecodedProto.bssidBlocklistStats
+                .highMovementMultipleScansFeatureEnabled);
+        assertEquals(1, mDecodedProto.bssidBlocklistStats.numHighMovementConnectionStarted);
+        assertEquals(2, mDecodedProto.bssidBlocklistStats.numHighMovementConnectionSkipped);
     }
 
     /**
