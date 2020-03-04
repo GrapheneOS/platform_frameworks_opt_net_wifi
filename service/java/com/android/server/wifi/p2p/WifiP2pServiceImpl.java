@@ -408,7 +408,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     private NetworkInfo makeNetworkInfo() {
         final NetworkInfo info = new NetworkInfo(ConnectivityManager.TYPE_WIFI_P2P,
                 0, NETWORKTYPE, "");
-        info.setDetailedState(mDetailedState, null, null);
+        if (mDetailedState != NetworkInfo.DetailedState.IDLE) {
+            info.setDetailedState(mDetailedState, null, null);
+        }
         return info;
     }
 
