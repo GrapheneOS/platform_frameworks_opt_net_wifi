@@ -169,6 +169,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(Collections.emptySet(),
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist());
         assertEquals(false, mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled());
+        assertEquals(DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT,
+                mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
     }
 
     /**
@@ -238,6 +240,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyString())).thenReturn(testSsidList);
         when(DeviceConfig.getBoolean(anyString(), eq("abnormal_eap_auth_failure_bugreport_enabled"),
                 anyBoolean())).thenReturn(true);
+        when(DeviceConfig.getInt(anyString(), eq("health_monitor_min_num_connection_attempt"),
+                anyInt())).thenReturn(20);
 
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
@@ -277,5 +281,6 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(testSsidSet,
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist());
         assertEquals(true, mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled());
+        assertEquals(20, mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
     }
 }
