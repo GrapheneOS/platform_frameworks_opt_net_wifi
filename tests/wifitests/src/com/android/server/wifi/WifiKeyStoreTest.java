@@ -16,11 +16,19 @@
 
 package com.android.server.wifi;
 
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.AdditionalMatchers.aryEq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.os.Process;
 import android.security.Credentials;
@@ -34,6 +42,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.security.cert.X509Certificate;
+
 /**
  * Unit tests for {@link com.android.server.wifi.WifiConfigManager}.
  */
@@ -43,8 +53,10 @@ public class WifiKeyStoreTest {
     @Mock private KeyStore mKeyStore;
 
     private WifiKeyStore mWifiKeyStore;
+    private static final String TEST_KEY_ID = "blah";
     private static final String USER_CERT_ALIAS = "aabbccddee";
     private static final String [] USER_CA_CERT_ALIAS = {"aacccddd", "bbbqqqqmmm"};
+    private static final String TEST_PACKAGE_NAME = "TestApp";
 
     /**
      * Setup the mocks and an instance of WifiConfigManager before each test.
@@ -57,6 +69,16 @@ public class WifiKeyStoreTest {
         when(mWifiEnterpriseConfig.getClientCertificateAlias()).thenReturn(USER_CERT_ALIAS);
         when(mWifiEnterpriseConfig.getCaCertificateAliases())
                 .thenReturn(USER_CA_CERT_ALIAS);
+        when(mKeyStore.put(anyString(), any(), anyInt(), anyInt())).thenReturn(true);
+        when(mKeyStore.importKey(anyString(), any(), anyInt(), anyInt())).thenReturn(true);
+        when(mWifiEnterpriseConfig.getClientPrivateKey()).thenReturn(FakeKeys.RSA_KEY1);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(FakeKeys.CLIENT_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_CERT0);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[] {FakeKeys.CLIENT_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[] {FakeKeys.CA_CERT0});
+        when(mWifiEnterpriseConfig.getKeyId(any())).thenReturn(TEST_KEY_ID);
     }
 
     /**
@@ -128,5 +150,39 @@ public class WifiKeyStoreTest {
         when(mWifiEnterpriseConfig.isAppInstalledCaCert()).thenReturn(false);
         mWifiKeyStore.removeKeys(mWifiEnterpriseConfig);
         verifyNoMoreInteractions(mKeyStore);
+    }
+
+    /**
+     * Add two same network credential one is from user saved, the other is from suggestion.
+     * Both oh them should be installed successfully and has different alias, and will not override
+     * each other.
+     */
+    @Test
+    public void testAddFromBothSavedAndSuggestionNetwork() throws Exception {
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapNetwork();
+        WifiConfiguration suggestionNetwork = new WifiConfiguration(savedNetwork);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        suggestionNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        suggestionNetwork.fromWifiNetworkSuggestion = true;
+        suggestionNetwork.creatorName = TEST_PACKAGE_NAME;
+
+        assertTrue(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+        assertTrue(mWifiKeyStore.updateNetworkKeys(suggestionNetwork, null));
+
+        String savedNetworkAlias = savedNetwork.getKeyIdForCredentials(null);
+        String savedNetworkCaAlias = savedNetworkAlias;
+
+        String suggestionNetworkAlias = suggestionNetwork.getKeyIdForCredentials(null);
+        String suggestionNetworkCaAlias = suggestionNetworkAlias;
+
+        assertNotEquals(savedNetworkAlias, suggestionNetworkAlias);
+
+        verify(mWifiEnterpriseConfig).setClientCertificateAlias(eq(savedNetworkAlias));
+        verify(mWifiEnterpriseConfig).setCaCertificateAliases(
+                aryEq(new String[] {savedNetworkCaAlias}));
+
+        verify(mWifiEnterpriseConfig).setClientCertificateAlias(eq(suggestionNetworkAlias));
+        verify(mWifiEnterpriseConfig).setCaCertificateAliases(
+                aryEq(new String[] {suggestionNetworkCaAlias}));
     }
 }
