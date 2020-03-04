@@ -29,9 +29,11 @@ import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.MatchAllNetworkSpecifier;
 import android.net.NetworkAgent;
+import android.net.NetworkAgentConfig;
 import android.net.NetworkCapabilities;
 import android.net.NetworkFactory;
 import android.net.NetworkInfo;
+import android.net.NetworkProvider;
 import android.net.NetworkRequest;
 import android.net.NetworkSpecifier;
 import android.net.RouteInfo;
@@ -646,11 +648,15 @@ public class WifiAwareDataPathStateManager {
                 return networkSpecifier;
             }
 
+            final NetworkAgentConfig naConfig = new NetworkAgentConfig.Builder()
+                    .setLegacyType(ConnectivityManager.TYPE_NONE)
+                    .setLegacyTypeName(NETWORK_TAG)
+                    .build();
+
             nnri.networkAgent = new WifiAwareNetworkAgent(mLooper, mContext,
                     AGENT_TAG_PREFIX + nnri.ndpId,
-                    new NetworkInfo(ConnectivityManager.TYPE_NONE, 0, NETWORK_TAG, ""),
                     networkCapabilities, linkProperties, NETWORK_FACTORY_SCORE_AVAIL,
-                    nnri);
+                    naConfig, mNetworkFactory.getProvider(), nnri);
             nnri.startValidationTimestamp = mClock.getElapsedSinceBootMillis();
             handleAddressValidation(nnri, linkProperties, networkInfo, ndpId,
                     networkSpecifier.isOutOfBand());
@@ -1023,20 +1029,19 @@ public class WifiAwareDataPathStateManager {
      */
     @VisibleForTesting
     public class WifiAwareNetworkAgent extends NetworkAgent {
-        private NetworkInfo mNetworkInfo;
         private AwareNetworkRequestInformation mAwareNetworkRequestInfo;
 
-        WifiAwareNetworkAgent(Looper looper, Context context, String logTag, NetworkInfo ni,
+        WifiAwareNetworkAgent(Looper looper, Context context, String logTag,
                 NetworkCapabilities nc, LinkProperties lp, int score,
+                NetworkAgentConfig config, NetworkProvider provider,
                 AwareNetworkRequestInformation anri) {
-            super(looper, context, logTag, ni, nc, lp, score);
-
-            mNetworkInfo = ni;
+            super(context, looper, logTag, nc, lp, score, config, provider);
             mAwareNetworkRequestInfo = anri;
+            register();
         }
 
         @Override
-        protected void unwanted() {
+        public void onNetworkUnwanted() {
             if (VDBG) {
                 Log.v(TAG, "WifiAwareNetworkAgent.unwanted: request=" + mAwareNetworkRequestInfo);
             }
@@ -1053,9 +1058,7 @@ public class WifiAwareDataPathStateManager {
                 Log.v(TAG, "WifiAwareNetworkAgent.reconfigureAgentAsDisconnected: request="
                         + mAwareNetworkRequestInfo);
             }
-
-            mNetworkInfo.setDetailedState(NetworkInfo.DetailedState.DISCONNECTED, null, "");
-            sendNetworkInfo(mNetworkInfo);
+            unregister();
         }
     }
 
