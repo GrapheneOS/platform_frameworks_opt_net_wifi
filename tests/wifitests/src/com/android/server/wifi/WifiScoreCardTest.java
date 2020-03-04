@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_REJECTION;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_TIMEOUT;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_AUTH_FAILURE;
@@ -30,7 +31,6 @@ import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_DURATION_SEC;
 import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_FAILURE;
 import static com.android.server.wifi.WifiScoreCard.CNT_DISCONNECTION_NONLOCAL;
 import static com.android.server.wifi.WifiScoreCard.CNT_SHORT_CONNECTION_NONLOCAL;
-import static com.android.server.wifi.WifiScoreCard.MIN_NUM_CONNECTION_ATTEMPT;
 import static com.android.server.wifi.util.NativeUtil.hexStringFromByteArray;
 
 import static org.junit.Assert.*;
@@ -150,6 +150,8 @@ public class WifiScoreCardTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_LOW_THR_PERCENT);
         when(mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_RSSI_THR_DBM);
+        when(mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
         mWifiScoreCard.enableVerboseLogging(true);
     }
 
@@ -1022,7 +1024,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
 
     @Test
     public void testUpdateAfterDailyDetection() throws Exception {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeShortConnectionExample();
         }
 
@@ -1030,13 +1032,14 @@ public class WifiScoreCardTest extends WifiBaseTest {
         perNetwork.updateAfterDailyDetection();
 
         checkShortConnectionExample(perNetwork.getRecentStats(), 0);
-        checkShortConnectionExample(perNetwork.getStatsCurrBuild(), MIN_NUM_CONNECTION_ATTEMPT);
+        checkShortConnectionExample(perNetwork.getStatsCurrBuild(),
+                DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
         checkShortConnectionExample(perNetwork.getStatsPrevBuild(), 0);
     }
 
     @Test
     public void testUpdateAfterSwBuildChange() throws Exception {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeShortConnectionExample();
         }
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
@@ -1045,29 +1048,30 @@ public class WifiScoreCardTest extends WifiBaseTest {
 
         checkShortConnectionExample(perNetwork.getRecentStats(), 0);
         checkShortConnectionExample(perNetwork.getStatsCurrBuild(), 0);
-        checkShortConnectionExample(perNetwork.getStatsPrevBuild(), MIN_NUM_CONNECTION_ATTEMPT);
+        checkShortConnectionExample(perNetwork.getStatsPrevBuild(),
+                DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
     }
 
     private void makeRecentStatsWithGoodConnection() {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeNormalConnectionExample();
         }
     }
 
     private void makeRecentStatsWithShortConnection() {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeShortConnectionExample();
         }
     }
 
     private void makeRecentStatsWithAssocTimeOut() {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeAssocTimeOutExample();
         }
     }
 
     private void makeRecentStatsWithAuthFailure() {
-        for (int i = 0; i < MIN_NUM_CONNECTION_ATTEMPT; i++) {
+        for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
             makeAuthFailureExample();
         }
     }
