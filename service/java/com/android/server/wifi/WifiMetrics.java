@@ -25,6 +25,7 @@ import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.DeviceMobilityState;
@@ -473,6 +474,8 @@ public class WifiMetrics {
                 sb.append(", mHidden=" + mRouterFingerPrintProto.hidden);
                 sb.append(", mRouterTechnology=" + mRouterFingerPrintProto.routerTechnology);
                 sb.append(", mSupportsIpv6=" + mRouterFingerPrintProto.supportsIpv6);
+                sb.append(", mEapMethod=" + mRouterFingerPrintProto.eapMethod);
+                sb.append(", mAuthPhase2Method=" + mRouterFingerPrintProto.authPhase2Method);
             }
             return sb.toString();
         }
@@ -509,8 +512,62 @@ public class WifiMetrics {
                     if (candidate != null) {
                         updateMetricsFromScanResult(candidate);
                     }
+                    if (mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
+                            .authentication == WifiMetricsProto.RouterFingerPrint.AUTH_ENTERPRISE
+                            && config.enterpriseConfig != null) {
+                        int eapMethod = config.enterpriseConfig.getEapMethod();
+                        mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
+                                .eapMethod = getEapMethodProto(eapMethod);
+                        int phase2Method = config.enterpriseConfig.getPhase2Method();
+                        mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
+                                .authPhase2Method = getAuthPhase2MethodProto(phase2Method);
+                    }
                 }
             }
+        }
+    }
+    private int getEapMethodProto(int eapMethod) {
+        switch (eapMethod) {
+            case WifiEnterpriseConfig.Eap.WAPI_CERT:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_WAPI_CERT;
+            case WifiEnterpriseConfig.Eap.TLS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_TLS;
+            case WifiEnterpriseConfig.Eap.UNAUTH_TLS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_UNAUTH_TLS;
+            case WifiEnterpriseConfig.Eap.PEAP:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_PEAP;
+            case WifiEnterpriseConfig.Eap.PWD:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_PWD;
+            case WifiEnterpriseConfig.Eap.TTLS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_TTLS;
+            case WifiEnterpriseConfig.Eap.SIM:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_SIM;
+            case WifiEnterpriseConfig.Eap.AKA:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_AKA;
+            case WifiEnterpriseConfig.Eap.AKA_PRIME:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_AKA_PRIME;
+            default:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_EAP_UNKNOWN;
+        }
+    }
+    private int getAuthPhase2MethodProto(int phase2Method) {
+        switch (phase2Method) {
+            case WifiEnterpriseConfig.Phase2.PAP:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_PAP;
+            case WifiEnterpriseConfig.Phase2.MSCHAP:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_MSCHAP;
+            case WifiEnterpriseConfig.Phase2.MSCHAPV2:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_MSCHAPV2;
+            case WifiEnterpriseConfig.Phase2.GTC:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_GTC;
+            case WifiEnterpriseConfig.Phase2.SIM:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_SIM;
+            case WifiEnterpriseConfig.Phase2.AKA:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_AKA;
+            case WifiEnterpriseConfig.Phase2.AKA_PRIME:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_AKA_PRIME;
+            default:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_NONE;
         }
     }
 
