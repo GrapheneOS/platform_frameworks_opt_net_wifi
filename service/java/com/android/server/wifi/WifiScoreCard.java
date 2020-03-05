@@ -103,13 +103,6 @@ public class WifiScoreCard {
     // Maximum interval between last RSSI poll and disconnection to qualify
     // disconnection stats collection.
     private static final int LAST_RSSI_POLL_MAX_INTERVAL_MS = 3_100;
-    // Minimum number of connection attempts to qualify daily detection
-    @VisibleForTesting
-    static final int MIN_NUM_CONNECTION_ATTEMPT = 20;
-    // Minimum number of connection attempts for historical data
-    private static final int MIN_NUM_CONNECTION_ATTEMPT_PREV = 40;
-    private static final int MIN_NUM_DISCONNECTION = 20;
-    private static final int MIN_NUM_DISCONNECTION_PREV = 40;
 
     // Minimum number of connection attempts to qualify abnormal auth detection
     static final int MIN_NUM_CONNECTION_ATTEMPT_ABNORMAL_AUTH_FAILURE = 5;
@@ -892,7 +885,7 @@ public class WifiScoreCard {
             // Skip daily detection if recentStats is not sufficient
             if (!isRecentConnectionStatsSufficient()) return INSUFFICIENT_RECENT_STATS;
             if (mStatsPrevBuild.getCount(CNT_CONNECTION_ATTEMPT)
-                    < MIN_NUM_CONNECTION_ATTEMPT_PREV) {
+                    < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
                 // don't have enough historical data,
                 // so only detect high failure stats without relying on mStatsPrevBuild.
                 // Increase low threshold so that mStatsPrevBuild is always below it
@@ -911,8 +904,12 @@ public class WifiScoreCard {
         private void dailyDetectionDisconnectionEvent(FailureStats statsDec, FailureStats statsInc,
                 FailureStats statsHigh) {
             // Skip daily detection if recentStats is not sufficient
-            if (mRecentStats.getCount(CNT_DISCONNECTION) < MIN_NUM_DISCONNECTION) return;
-            if (mStatsPrevBuild.getCount(CNT_DISCONNECTION) < MIN_NUM_DISCONNECTION_PREV) {
+            if (mRecentStats.getCount(CNT_DISCONNECTION)
+                    < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
+                return;
+            }
+            if (mStatsPrevBuild.getCount(CNT_DISCONNECTION)
+                    < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
                 FailureStats statsDummy = new FailureStats();
                 statsDeltaDetectionDisconnection(statsDummy, statsHigh, ONE_HUNDRED_PERCENT);
             } else {
@@ -987,7 +984,8 @@ public class WifiScoreCard {
         }
 
         private boolean isRecentConnectionStatsSufficient() {
-            return (mRecentStats.getCount(CNT_CONNECTION_ATTEMPT) >= MIN_NUM_CONNECTION_ATTEMPT);
+            return (mRecentStats.getCount(CNT_CONNECTION_ATTEMPT)
+                >= mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
         }
 
         // Update StatsCurrBuild with recentStats and clear recentStats

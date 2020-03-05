@@ -345,6 +345,7 @@ public class WifiConnectivityManager {
             // cached candidates are too recent, wait for next scan
             if (mClock.getElapsedSinceBootMillis() - mCachedWifiCandidates.timeSinceBootMs
                     < minimumTimeBetweenScansMs) {
+                mWifiMetrics.incrementNumHighMovementConnectionSkipped();
                 return null;
             }
 
@@ -362,6 +363,7 @@ public class WifiConnectivityManager {
                             new CachedWifiCandidates(mClock.getElapsedSinceBootMillis(),
                             candidates);
                 }
+                mWifiMetrics.incrementNumHighMovementConnectionStarted();
                 return filteredCandidates;
             }
         }
@@ -375,6 +377,7 @@ public class WifiConnectivityManager {
                     + "Re-doing scan to confirm network quality.");
             scheduleDelayedPartialScan(minimumTimeBetweenScansMs);
         }
+        mWifiMetrics.incrementNumHighMovementConnectionSkipped();
         return null;
     }
 
