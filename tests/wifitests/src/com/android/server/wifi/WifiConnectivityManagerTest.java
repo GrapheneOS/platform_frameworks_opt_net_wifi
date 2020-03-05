@@ -50,6 +50,8 @@ import android.util.LocalLog;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.hotspot2.PasspointManager;
+import com.android.server.wifi.util.ScanResultUtil;
 import com.android.wifi.resources.R;
 
 import org.junit.After;
@@ -68,8 +70,10 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -107,6 +111,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
         when(mWifiInjector.getWifiNetworkSuggestionsManager())
                 .thenReturn(mWifiNetworkSuggestionsManager);
+        when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
         mWifiConnectivityManager = createConnectivityManager();
         verify(mWifiConfigManager).addOnNetworkUpdateListener(anyObject());
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
@@ -175,6 +180,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Mock private WifiChannelUtilization mWifiChannelUtilization;
     @Mock private ScoringParams mScoringParams;
     @Mock private WifiScoreCard mWifiScoreCard;
+    @Mock private PasspointManager mPasspointManager;
     @Mock private WifiScoreCard.PerNetwork mPerNetwork;
     @Mock private WifiScoreCard.PerNetwork mPerNetwork1;
     @Mock WifiCandidates.Candidate mCandidate1;
@@ -209,6 +215,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final int TEST_FREQUENCY_3 = 5240;
     private static final int HIGH_MVMT_SCAN_DELAY_MS = 10000;
     private static final int HIGH_MVMT_RSSI_DELTA = 10;
+    private static final String TEST_FQDN = "FQDN";
+    private static final String TEST_SSID = "SSID";
 
     Context mockContext() {
         Context context = mock(Context.class);
@@ -1679,6 +1687,37 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Roaming attempt because full band scan results are available.
         verify(mClientModeImpl).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
+    }
+
+    /**
+     * Verify when new scanResults are available, UserDisabledList will be updated.
+     */
+    @Test
+    public void verifyUserDisabledListUpdated() {
+        mResources.setBoolean(
+                R.bool.config_wifi_framework_use_single_radio_chain_scan_results_network_selection,
+                true);
+        verify(mWifiConfigManager, never()).updateUserDisabledList(anyList());
+        Set<String> updateNetworks = new HashSet<>();
+        mScanData = createScanDataWithDifferentRadioChainInfos();
+        int i = 0;
+        for (ScanResult scanResult : mScanData.getResults()) {
+            scanResult.SSID = TEST_SSID + i;
+            updateNetworks.add(ScanResultUtil.createQuotedSSID(scanResult.SSID));
+            i++;
+        }
+        updateNetworks.add(TEST_FQDN);
+        mScanData.getResults()[0].setFlag(ScanResult.FLAG_PASSPOINT_NETWORK);
+        HashMap<String, Map<Integer, List<ScanResult>>> passpointNetworks = new HashMap<>();
+        passpointNetworks.put(TEST_FQDN, new HashMap<>());
+        when(mPasspointManager.getAllMatchingPasspointProfilesForScanResults(any()))
+                .thenReturn(passpointNetworks);
+
+        mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
+        ArgumentCaptor<ArrayList<String>> listArgumentCaptor =
+                ArgumentCaptor.forClass(ArrayList.class);
+        verify(mWifiConfigManager).updateUserDisabledList(listArgumentCaptor.capture());
+        assertEquals(updateNetworks, new HashSet<>(listArgumentCaptor.getValue()));
     }
 
     /**

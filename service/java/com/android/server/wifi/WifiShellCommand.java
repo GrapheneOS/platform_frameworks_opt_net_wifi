@@ -247,8 +247,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
                     return 0;
                 }
-                case "clear-deleted-ephemeral-networks": {
-                    mWifiConfigManager.clearDeletedEphemeralNetworks();
+                case "clear-user-disabled-networks": {
+                    mWifiConfigManager.clearUserTemporarilyDisabledList();
                     return 0;
                 }
                 case "send-link-probe": {
@@ -475,8 +475,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Clear the user choice on Imsi protection exemption for carrier");
         pw.println("  network-requests-remove-user-approved-access-points <package name>");
         pw.println("    Removes all user approved network requests for the app.");
-        pw.println("  clear-deleted-ephemeral-networks");
-        pw.println("    Clears the deleted ephemeral networks list.");
+        pw.println("  clear-user-disabled-networks");
+        pw.println("    Clears the user disabled networks list.");
         pw.println("  send-link-probe");
         pw.println("    Manually triggers a link probe.");
         pw.println("  force-softap-channel enabled <int> | disabled");

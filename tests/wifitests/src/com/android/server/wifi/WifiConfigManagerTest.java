@@ -2964,7 +2964,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         }
         assertTrue(sharedNetwork1Id != WifiConfiguration.INVALID_NETWORK_ID);
         assertTrue(sharedNetwork2Id != WifiConfiguration.INVALID_NETWORK_ID);
-        assertFalse(mWifiConfigManager.wasEphemeralNetworkDeleted(TEST_SSID));
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(TEST_SSID));
 
         // Set up the user 2 store data that is loaded at user switch.
         List<WifiConfiguration> user2Networks = new ArrayList<WifiConfiguration>() {
@@ -2992,7 +2992,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         }
         assertEquals(sharedNetwork1Id, updatedSharedNetwork1Id);
         assertEquals(sharedNetwork2Id, updatedSharedNetwork2Id);
-        assertFalse(mWifiConfigManager.wasEphemeralNetworkDeleted(TEST_SSID));
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(TEST_SSID));
     }
 
     /**
@@ -4572,27 +4572,25 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * Verifies the deletion of ephemeral network using
-     * {@link WifiConfigManager#disableEphemeralNetwork(String)}.
+     * {@link WifiConfigManager#userTemporarilyDisabledNetwork(String)}.
      */
     @Test
-    public void testDisableEphemeralNetwork() throws Exception {
-        WifiConfiguration ephemeralNetwork = WifiConfigurationTestUtil.createEphemeralNetwork();
+    public void testUserDisableNetwork() throws Exception {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         List<WifiConfiguration> networks = new ArrayList<>();
-        networks.add(ephemeralNetwork);
-
-        verifyAddEphemeralNetworkToWifiConfigManager(ephemeralNetwork);
-
+        networks.add(openNetwork);
+        verifyAddNetworkToWifiConfigManager(openNetwork);
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 networks, retrievedNetworks);
 
-        verifyExpiryOfTimeout(ephemeralNetwork);
+        verifyExpiryOfTimeout(openNetwork);
     }
 
     /**
      * Verifies the disconnection of Passpoint network using
-     * {@link WifiConfigManager#disableEphemeralNetwork(String)}.
+     * {@link WifiConfigManager#userTemporarilyDisabledNetwork(String)}.
      */
     @Test
     public void testDisablePasspointNetwork() throws Exception {
@@ -4613,8 +4611,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * Verifies the disconnection of Passpoint network using
-     * {@link WifiConfigManager#disableEphemeralNetwork(String)} and ensures that any user choice
-     * set over other networks is removed.
+     * {@link WifiConfigManager#userTemporarilyDisabledNetwork(String)} and ensures that any user
+     * choice set over other networks is removed.
      */
     @Test
     public void testDisablePasspointNetworkRemovesUserChoice() throws Exception {
@@ -4636,10 +4634,43 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 retrievedSavedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // Disable the passpoint network & ensure the user choice is now removed from saved network.
-        mWifiConfigManager.disableEphemeralNetwork(passpointNetwork.SSID);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
 
         retrievedSavedNetwork = mWifiConfigManager.getConfiguredNetwork(savedNetwork.networkId);
         assertNull(retrievedSavedNetwork.getNetworkSelectionStatus().getConnectChoice());
+    }
+
+    @Test
+    public void  testUserEnableDisabledNetwork() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(openNetwork);
+        verifyAddNetworkToWifiConfigManager(openNetwork);
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+
+        mWifiConfigManager.userTemporarilyDisabledNetwork(openNetwork.SSID);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
+        mWifiConfigManager.userEnabledNetwork(retrievedNetworks.get(0).networkId);
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
+    }
+
+    @Test
+    public void testUserAddOrUpdateSavedNetworkEnableNetwork() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(openNetwork);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(openNetwork.SSID);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
+
+        verifyAddNetworkToWifiConfigManager(openNetwork);
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
     }
 
     private void verifyExpiryOfTimeout(WifiConfiguration config) {
@@ -4647,21 +4678,27 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         long disableTimeMs = 546643L;
         long currentTimeMs = disableTimeMs;
         when(mClock.getWallClockMillis()).thenReturn(currentTimeMs);
-        mWifiConfigManager.disableEphemeralNetwork(config.SSID);
-
-        // Before the expiry of timeout.
-        currentTimeMs = disableTimeMs + WifiConfigManager.DELETED_EPHEMERAL_SSID_EXPIRY_MS - 1;
+        String network = config.isPasspoint() ? config.FQDN : config.SSID;
+        mWifiConfigManager.userTemporarilyDisabledNetwork(network);
+        // Before timer is triggered, timer will not expiry will enable network.
+        currentTimeMs = disableTimeMs
+                + WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS + 1;
         when(mClock.getWallClockMillis()).thenReturn(currentTimeMs);
-        assertTrue(mWifiConfigManager.wasEphemeralNetworkDeleted(config.SSID));
-        assertTrue(mWifiConfigManager.getConfiguredNetwork(config.networkId)
-                .getNetworkSelectionStatus().isNetworkPermanentlyDisabled());
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network));
+        for (int i = 0; i < WifiConfigManager.SCAN_RESULT_MISSING_COUNT_THRESHOLD; i++) {
+            mWifiConfigManager.updateUserDisabledList(new ArrayList<>());
+        }
+        // Before the expiry of timeout.
+        currentTimeMs = currentTimeMs
+                + WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS - 1;
+        when(mClock.getWallClockMillis()).thenReturn(currentTimeMs);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network));
 
         // After the expiry of timeout.
-        currentTimeMs = disableTimeMs + WifiConfigManager.DELETED_EPHEMERAL_SSID_EXPIRY_MS + 1;
+        currentTimeMs = currentTimeMs
+                + WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS + 1;
         when(mClock.getWallClockMillis()).thenReturn(currentTimeMs);
-        assertFalse(mWifiConfigManager.wasEphemeralNetworkDeleted(config.SSID));
-        assertFalse(mWifiConfigManager.getConfiguredNetwork(config.networkId)
-                .getNetworkSelectionStatus().isNetworkPermanentlyDisabled());
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network));
     }
 
     private NetworkUpdateResult verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(
