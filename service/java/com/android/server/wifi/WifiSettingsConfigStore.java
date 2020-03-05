@@ -32,7 +32,9 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -91,6 +93,7 @@ public class WifiSettingsConfigStore {
     @GuardedBy("mLock")
     private final Map<String, Map<OnSettingsChangedListener, Handler>> mListeners =
             new HashMap<>();
+    private WifiMigration.SettingsMigrationData mCachedMigrationData = null;
 
     private boolean mHasNewDataToSerialize = false;
 
@@ -173,24 +176,23 @@ public class WifiSettingsConfigStore {
     private void migrateFromSettingsIfNeeded() {
         if (!mSettings.isEmpty()) return; // already migrated.
 
-        WifiMigration.SettingsMigrationData dataToMigrate =
-                WifiMigration.loadFromSettings(mContext);
-        if (dataToMigrate == null) {
+        mCachedMigrationData = WifiMigration.loadFromSettings(mContext);
+        if (mCachedMigrationData == null) {
             Log.e(TAG, "No settings data to migrate");
             return;
         }
         Log.i(TAG, "Migrating data out of settings to shared preferences");
 
         mSettings.put(WIFI_P2P_DEVICE_NAME.key,
-                dataToMigrate.getP2pDeviceName());
+                mCachedMigrationData.getP2pDeviceName());
         mSettings.put(WIFI_P2P_PENDING_FACTORY_RESET.key,
-                dataToMigrate.isP2pFactoryResetPending());
+                mCachedMigrationData.isP2pFactoryResetPending());
         mSettings.put(WIFI_SCAN_ALWAYS_AVAILABLE.key,
-                dataToMigrate.isScanAlwaysAvailable());
+                mCachedMigrationData.isScanAlwaysAvailable());
         mSettings.put(WIFI_SCAN_THROTTLE_ENABLED.key,
-                dataToMigrate.isScanThrottleEnabled());
+                mCachedMigrationData.isScanThrottleEnabled());
         mSettings.put(WIFI_VERBOSE_LOGGING_ENABLED.key,
-                dataToMigrate.isVerboseLoggingEnabled());
+                mCachedMigrationData.isVerboseLoggingEnabled());
         triggerSaveToStoreAndInvokeAllListeners();
     }
 
@@ -252,6 +254,38 @@ public class WifiSettingsConfigStore {
                 Log.e(TAG, "Unknown listener for " + key);
             }
         }
+    }
+
+    /**
+     * Dump output for debugging.
+     */
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println();
+        pw.println("Dump of " + TAG);
+        pw.println("Settings:");
+        for (Map.Entry<String, Object> entry : mSettings.entrySet()) {
+            pw.print(entry.getKey());
+            pw.print("=");
+            pw.println(entry.getValue());
+        }
+        if (mCachedMigrationData == null) return;
+        pw.println("Migration data:");
+        pw.print(WIFI_P2P_DEVICE_NAME.key);
+        pw.print("=");
+        pw.println(mCachedMigrationData.getP2pDeviceName());
+        pw.print(WIFI_P2P_PENDING_FACTORY_RESET.key);
+        pw.print("=");
+        pw.println(mCachedMigrationData.isP2pFactoryResetPending());
+        pw.print(WIFI_SCAN_ALWAYS_AVAILABLE.key);
+        pw.print("=");
+        pw.println(mCachedMigrationData.isScanAlwaysAvailable());
+        pw.print(WIFI_SCAN_THROTTLE_ENABLED.key);
+        pw.print("=");
+        pw.println(mCachedMigrationData.isScanThrottleEnabled());
+        pw.print(WIFI_VERBOSE_LOGGING_ENABLED.key);
+        pw.print("=");
+        pw.println(mCachedMigrationData.isVerboseLoggingEnabled());
+        pw.println();
     }
 
     /**
