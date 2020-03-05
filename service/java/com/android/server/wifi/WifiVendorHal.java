@@ -1072,7 +1072,7 @@ public class WifiVendorHal {
     /**
      * Translation table used by getSupportedFeatureSet for translating IWifiChip caps for V1.1
      */
-    private static final int[][] sChipFeatureCapabilityTranslation = {
+    private static final long[][] sChipFeatureCapabilityTranslation = {
             {WifiManager.WIFI_FEATURE_TX_POWER_LIMIT,
                     android.hardware.wifi.V1_1.IWifiChip.ChipCapabilityMask.SET_TX_POWER_LIMIT
             },
@@ -1139,7 +1139,7 @@ public class WifiVendorHal {
     /**
      * Translation table used by getSupportedFeatureSet for translating IWifiStaIface caps
      */
-    private static final int[][] sStaFeatureCapabilityTranslation = {
+    private static final long[][] sStaFeatureCapabilityTranslation = {
             {WifiManager.WIFI_FEATURE_INFRA_5G,
                     IWifiStaIface.StaIfaceCapabilityMask.STA_5G
             },
@@ -1188,8 +1188,8 @@ public class WifiVendorHal {
      * @return bitmask defined by WifiManager.WIFI_FEATURE_*
      */
     @VisibleForTesting
-    int wifiFeatureMaskFromStaCapabilities(int capabilities) {
-        int features = 0;
+    long wifiFeatureMaskFromStaCapabilities(int capabilities) {
+        long features = 0;
         for (int i = 0; i < sStaFeatureCapabilityTranslation.length; i++) {
             if ((capabilities & sStaFeatureCapabilityTranslation[i][1]) != 0) {
                 features |= sStaFeatureCapabilityTranslation[i][0];

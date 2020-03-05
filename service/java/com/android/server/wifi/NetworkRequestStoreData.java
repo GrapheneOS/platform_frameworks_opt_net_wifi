@@ -16,10 +16,12 @@
 
 package com.android.server.wifi;
 
+import android.annotation.Nullable;
 import android.net.MacAddress;
 import android.util.Log;
 
 import com.android.server.wifi.WifiNetworkFactory.AccessPoint;
+import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 import com.android.server.wifi.util.XmlUtil.WifiConfigurationXmlUtil;
 
@@ -87,13 +89,16 @@ public class NetworkRequestStoreData implements WifiConfigStore.StoreData {
     }
 
     @Override
-    public void serializeData(XmlSerializer out)
+    public void serializeData(XmlSerializer out,
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         serializeApprovedAccessPointsMap(out, mDataSource.toSerialize());
     }
 
     @Override
-    public void deserializeData(XmlPullParser in, int outerTagDepth)
+    public void deserializeData(XmlPullParser in, int outerTagDepth,
+            @WifiConfigStore.Version int version,
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         // Ignore empty reads.
         if (in == null) {

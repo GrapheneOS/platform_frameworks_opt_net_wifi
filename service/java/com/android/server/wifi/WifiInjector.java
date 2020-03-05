@@ -20,6 +20,7 @@ import android.annotation.NonNull;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AppOpsManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.SystemSensorManager;
@@ -154,6 +155,8 @@ public class WifiInjector {
     private final LinkProbeManager mLinkProbeManager;
     private final IpMemoryStore mIpMemoryStore;
     private final CellularLinkLayerStatsCollector mCellularLinkLayerStatsCollector;
+    private final MacAddressUtil mMacAddressUtil;
+    private final ConnectionFailureNotificationBuilder mConnectionFailureNotificationBuilder;
 
     public WifiInjector(Context context) {
         if (context == null) {
@@ -168,8 +171,11 @@ public class WifiInjector {
 
         sWifiInjector = this;
 
+        mMacAddressUtil = new MacAddressUtil();
         mContext = context;
         mDeviceConfigFacade = new DeviceConfigFacade();
+        mConnectionFailureNotificationBuilder = new ConnectionFailureNotificationBuilder(
+                mContext, getWifiStackPackageName(), mFrameworkFacade);
         mWifiScoreCard = new WifiScoreCard(mClock,
                 Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID));
         mSettingsStore = new WifiSettingsStore(mContext);
@@ -241,7 +247,7 @@ public class WifiInjector {
         mWifiKeyStore = new WifiKeyStore(mKeyStore);
         mWifiConfigStore = new WifiConfigStore(
                 mContext, clientModeImplLooper, mClock, mWifiMetrics,
-                WifiConfigStore.createSharedFile());
+                WifiConfigStore.createSharedFile(mFrameworkFacade.isNiapModeOn(mContext)));
         SubscriptionManager subscriptionManager =
                 mContext.getSystemService(SubscriptionManager.class);
         // Config Manager
@@ -251,7 +257,7 @@ public class WifiInjector {
                 mWifiPermissionsWrapper, this, new NetworkListSharedStoreData(mContext),
                 new NetworkListUserStoreData(mContext),
                 new DeletedEphemeralSsidsStoreData(mClock), new RandomizedMacStoreData(),
-                mFrameworkFacade, mWifiCoreHandlerThread.getLooper());
+                mFrameworkFacade, mWifiCoreHandlerThread.getLooper(), mDeviceConfigFacade);
         mWifiMetrics.setWifiConfigManager(mWifiConfigManager);
         mWifiConnectivityHelper = new WifiConnectivityHelper(mWifiNative);
         mConnectivityLocalLog = new LocalLog(ActivityManager.isLowRamDeviceStatic() ? 256 : 512);
@@ -621,6 +627,17 @@ public class WifiInjector {
     }
 
     /**
+     * Construct a new instance of ConnectionFailureNotifier.
+     * @param wifiConnectivityManager
+     * @return the created instance
+     */
+    public ConnectionFailureNotifier makeConnectionFailureNotifier(
+            WifiConnectivityManager wifiConnectivityManager) {
+        return new ConnectionFailureNotifier(mContext, this, mFrameworkFacade, mWifiConfigManager,
+                wifiConnectivityManager, new Handler(mWifiCoreHandlerThread.getLooper()));
+    }
+
+    /**
      * Construct a new instance of {@link WifiNetworkFactory}.
      * TODO(b/116233964): Remove cyclic dependency between WifiConnectivityManager & ClientModeImpl.
      */
@@ -695,6 +712,18 @@ public class WifiInjector {
         return mRttHandlerThread;
     }
 
+    public MacAddressUtil getMacAddressUtil() {
+        return mMacAddressUtil;
+    }
+
+    public NotificationManager getNotificationManager() {
+        return (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    public ConnectionFailureNotificationBuilder getConnectionFailureNotificationBuilder() {
+        return mConnectionFailureNotificationBuilder;
+    }
+
     /**
      * Returns a single instance of HalDeviceManager for injection.
      */
@@ -752,5 +781,9 @@ public class WifiInjector {
 
     public HostapdHal getHostapdHal() {
         return mHostapdHal;
+    }
+
+    public String getWifiStackPackageName() {
+        return mContext.getPackageName();
     }
 }

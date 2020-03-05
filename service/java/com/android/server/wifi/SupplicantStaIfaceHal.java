@@ -3074,10 +3074,10 @@ public class SupplicantStaIfaceHal {
      *  This is a v1.2+ HAL feature.
      *  On error, or if these features are not supported, 0 is returned.
      */
-    public int getAdvancedKeyMgmtCapabilities(@NonNull String ifaceName) {
+    public long getAdvancedKeyMgmtCapabilities(@NonNull String ifaceName) {
         final String methodStr = "getAdvancedKeyMgmtCapabilities";
 
-        int advancedCapabilities = 0;
+        long advancedCapabilities = 0;
         int keyMgmtCapabilities = getKeyMgmtCapabilities(ifaceName);
 
         if ((keyMgmtCapabilities & android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork

@@ -28,6 +28,7 @@ import androidx.test.filters.SmallTest;
 import com.android.internal.util.FastXmlSerializer;
 import com.android.server.wifi.WifiNetworkSuggestionsManager.ExtendedWifiNetworkSuggestion;
 import com.android.server.wifi.WifiNetworkSuggestionsManager.PerAppInfo;
+import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -119,7 +120,7 @@ public class NetworkSuggestionStoreDataTest {
         final XmlSerializer out = new FastXmlSerializer();
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         out.setOutput(outputStream, StandardCharsets.UTF_8.name());
-        mNetworkSuggestionStoreData.serializeData(out);
+        mNetworkSuggestionStoreData.serializeData(out, mock(WifiConfigStoreEncryptionUtil.class));
         out.flush();
         return outputStream.toByteArray();
     }
@@ -131,7 +132,9 @@ public class NetworkSuggestionStoreDataTest {
         final XmlPullParser in = Xml.newPullParser();
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
-        mNetworkSuggestionStoreData.deserializeData(in, in.getDepth());
+        mNetworkSuggestionStoreData.deserializeData(in, in.getDepth(),
+                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
+                mock(WifiConfigStoreEncryptionUtil.class));
     }
 
     /**

@@ -18,21 +18,19 @@ package com.android.server.wifi.util;
 
 import com.android.internal.util.Preconditions;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
- * A class to store data created by {@link DataIntegrityChecker}.
+ * A class to store data created by {@link WifiConfigStoreEncryptionUtil}.
  */
 public class EncryptedData {
-    public static final int ENCRYPTED_DATA_LENGTH = 48;
-    public static final int IV_LENGTH = 12;
-
     private final byte[] mEncryptedData;
     private final byte[] mIv;
 
     public EncryptedData(byte[] encryptedData, byte[] iv) {
-        Preconditions.checkNotNull(encryptedData, iv);
-        Preconditions.checkState(encryptedData.length == ENCRYPTED_DATA_LENGTH,
-                "encryptedData.length=" + encryptedData.length);
-        Preconditions.checkState(iv.length == IV_LENGTH, "iv.length=" + iv.length);
+        Preconditions.checkNotNull(encryptedData);
+        Preconditions.checkNotNull(iv);
         mEncryptedData = encryptedData;
         mIv = iv;
     }
@@ -43,5 +41,18 @@ public class EncryptedData {
 
     public byte[] getIv() {
         return mIv;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof EncryptedData)) return false;
+        EncryptedData otherEncryptedData = (EncryptedData) other;
+        return Arrays.equals(this.mEncryptedData, otherEncryptedData.mEncryptedData)
+                && Arrays.equals(this.mIv, otherEncryptedData.mIv);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(Arrays.hashCode(mEncryptedData), Arrays.hashCode(mIv));
     }
 }

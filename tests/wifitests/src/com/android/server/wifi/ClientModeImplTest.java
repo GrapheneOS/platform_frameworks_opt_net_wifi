@@ -386,7 +386,7 @@ public class ClientModeImplTest {
     @Mock AsyncChannel mNullAsyncChannel;
     @Mock CarrierNetworkConfig mCarrierNetworkConfig;
     @Mock Handler mNetworkAgentHandler;
-
+    @Mock ConnectionFailureNotifier mConnectionFailureNotifier;
 
     final ArgumentCaptor<WifiNative.InterfaceCallback> mInterfaceCallbackCaptor =
             ArgumentCaptor.forClass(WifiNative.InterfaceCallback.class);
@@ -443,6 +443,8 @@ public class ClientModeImplTest {
         when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
         when(mWifiInjector.getWifiLockManager()).thenReturn(mWifiLockManager);
         when(mWifiInjector.getCarrierNetworkConfig()).thenReturn(mCarrierNetworkConfig);
+        when(mWifiInjector.makeConnectionFailureNotifier(any()))
+                .thenReturn(mConnectionFailureNotifier);
         when(mWifiNetworkFactory.getSpecificNetworkRequestUidAndPackageName(any()))
                 .thenReturn(Pair.create(Process.INVALID_UID, ""));
         when(mWifiNative.initialize()).thenReturn(true);
@@ -1051,6 +1053,9 @@ public class ClientModeImplTest {
 
         when(mCarrierNetworkConfig.isCarrierEncryptionInfoAvailable()).thenReturn(true);
 
+        // Initial value should be "not set"
+        assertEquals("", mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+
         triggerConnect();
 
         // CMD_START_CONNECT should have set anonymousIdentity to anonymous@<realm>
@@ -1070,15 +1075,15 @@ public class ClientModeImplTest {
         mLooper.dispatchAll();
 
         verify(mWifiNative).getEapAnonymousIdentity(any());
-        // check that the anonymous identity remains anonymous@<realm> for subsequent connections.
-        assertEquals(expectedAnonymousIdentity,
-                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
-        // verify that WifiConfigManager#addOrUpdateNetwork() was never called if there is no
-        // real pseudonym to be stored. i.e. Encrypted IMSI will be always used
+
+        // Post connection value should remain "not set"
+        assertEquals("", mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+        // verify that WifiConfigManager#addOrUpdateNetwork() was called to clear any previously
+        // stored pseudonym. i.e. to enable Encrypted IMSI for subsequent connections.
         // Note: This test will fail if future logic will have additional conditions that would
         // trigger "add or update network" operation. The test needs to be updated to account for
         // this change.
-        verify(mWifiConfigManager, never()).addOrUpdateNetwork(any(), anyInt());
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt());
     }
 
     /**
@@ -1130,6 +1135,55 @@ public class ClientModeImplTest {
         verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt());
     }
 
+    /**
+     * Tests anonymous identity is set again whenever a connection is established for the carrier
+     * that supports encrypted IMSI and anonymous identity but real but not decorated pseudonym was
+     * provided for subsequent connections.
+     */
+    @Test
+    public void testSetAnonymousIdentityWhenConnectionIsEstablishedWithNonDecoratedPseudonym()
+            throws Exception {
+        mConnectedNetwork = spy(WifiConfigurationTestUtil.createEapNetwork(
+                WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE));
+        when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
+        when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
+        mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
+
+        String realm = "wlan.mnc456.mcc123.3gppnetwork.org";
+        String expectedAnonymousIdentity = "anonymous";
+        String pseudonym = "83bcca9384fca";
+
+        when(mCarrierNetworkConfig.isCarrierEncryptionInfoAvailable()).thenReturn(true);
+
+        triggerConnect();
+
+        // CMD_START_CONNECT should have set anonymousIdentity to anonymous@<realm>
+        assertEquals(expectedAnonymousIdentity + "@" + realm,
+                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+
+        when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
+                .thenReturn(mScanDetailCache);
+        when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
+        when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
+        when(mWifiNative.getEapAnonymousIdentity(anyString()))
+                .thenReturn(pseudonym);
+
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).getEapAnonymousIdentity(any());
+        assertEquals(pseudonym + "@" + realm,
+                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+        // Verify that WifiConfigManager#addOrUpdateNetwork() was called if there we received a
+        // real pseudonym to be stored. i.e. Encrypted IMSI will be used once, followed by
+        // pseudonym usage in all subsequent connections.
+        // Note: This test will fail if future logic will have additional conditions that would
+        // trigger "add or update network" operation. The test needs to be updated to account for
+        // this change.
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt());
+    }
     /**
      * Tests the Passpoint information is set in WifiInfo for Passpoint AP connection.
      */
@@ -1793,10 +1847,10 @@ public class ClientModeImplTest {
     /** Verifies that syncGetSupportedFeatures() masks out capabilities based on system flags. */
     @Test
     public void syncGetSupportedFeatures() {
-        final int featureAware = WifiManager.WIFI_FEATURE_AWARE;
-        final int featureInfra = WifiManager.WIFI_FEATURE_INFRA;
-        final int featureD2dRtt = WifiManager.WIFI_FEATURE_D2D_RTT;
-        final int featureD2apRtt = WifiManager.WIFI_FEATURE_D2AP_RTT;
+        final long featureAware = WifiManager.WIFI_FEATURE_AWARE;
+        final long featureInfra = WifiManager.WIFI_FEATURE_INFRA;
+        final long featureD2dRtt = WifiManager.WIFI_FEATURE_D2D_RTT;
+        final long featureD2apRtt = WifiManager.WIFI_FEATURE_D2AP_RTT;
         final long featureLongBits = 0x1100000000L;
 
         assertEquals(0, testGetSupportedFeaturesCase(0, false));
@@ -1870,15 +1924,15 @@ public class ClientModeImplTest {
     @Test
     public void syncRemovePasspointConfig() throws Exception {
         String fqdn = "test.com";
-        when(mPasspointManager.removeProvider(fqdn)).thenReturn(true);
+        when(mPasspointManager.removeProvider(anyInt(), anyBoolean(), eq(fqdn))).thenReturn(true);
         mLooper.startAutoDispatch();
-        assertTrue(mCmi.syncRemovePasspointConfig(mCmiAsyncChannel, fqdn));
+        assertTrue(mCmi.syncRemovePasspointConfig(mCmiAsyncChannel, true, fqdn));
         mLooper.stopAutoDispatch();
         reset(mPasspointManager);
 
-        when(mPasspointManager.removeProvider(fqdn)).thenReturn(false);
+        when(mPasspointManager.removeProvider(anyInt(), anyBoolean(), eq(fqdn))).thenReturn(false);
         mLooper.startAutoDispatch();
-        assertFalse(mCmi.syncRemovePasspointConfig(mCmiAsyncChannel, fqdn));
+        assertFalse(mCmi.syncRemovePasspointConfig(mCmiAsyncChannel, true, fqdn));
         mLooper.stopAutoDispatch();
     }
 
@@ -1906,16 +1960,17 @@ public class ClientModeImplTest {
         config.setHomeSp(homeSp);
         expectedConfigs.add(config);
 
-        when(mPasspointManager.getProviderConfigs()).thenReturn(expectedConfigs);
+        when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
+                .thenReturn(expectedConfigs);
         mLooper.startAutoDispatch();
-        assertEquals(expectedConfigs, mCmi.syncGetPasspointConfigs(mCmiAsyncChannel));
+        assertEquals(expectedConfigs, mCmi.syncGetPasspointConfigs(mCmiAsyncChannel, true));
         mLooper.stopAutoDispatch();
         reset(mPasspointManager);
 
-        when(mPasspointManager.getProviderConfigs())
-                .thenReturn(new ArrayList<PasspointConfiguration>());
+        when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
+                .thenReturn(new ArrayList<>());
         mLooper.startAutoDispatch();
-        assertTrue(mCmi.syncGetPasspointConfigs(mCmiAsyncChannel).isEmpty());
+        assertTrue(mCmi.syncGetPasspointConfigs(mCmiAsyncChannel, true).isEmpty());
         mLooper.stopAutoDispatch();
     }
 
@@ -2765,6 +2820,59 @@ public class ClientModeImplTest {
     }
 
     /**
+     * Verify that we don't crash when WifiNative returns null as the current MAC address.
+     * @throws Exception
+     */
+    @Test
+    public void testMacRandomizationWifiNativeReturningNull() throws Exception {
+        when(mWifiNative.getMacAddress(anyString())).thenReturn(null);
+        initializeAndAddNetworkAndVerifySuccess();
+        assertEquals(ClientModeImpl.CONNECT_MODE, mCmi.getOperationalModeForTest());
+        assertEquals(WifiManager.WIFI_STATE_ENABLED, mCmi.syncGetWifiState());
+
+        connect();
+        verify(mWifiNative).setMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
+    }
+
+    /**
+     * Verifies that a notification is posted when a connection failure happens on a network
+     * in the hotlist. Then verify that tapping on the notification launches an dialog, which
+     * could be used to set the randomization setting for a network to "Trusted".
+     */
+    @Test
+    public void testConnectionFailureSendRandomizationSettingsNotification() throws Exception {
+        when(mWifiConfigManager.isInFlakyRandomizationSsidHotlist(anyInt())).thenReturn(true);
+        // Setup CONNECT_MODE & a WifiConfiguration
+        initializeAndAddNetworkAndVerifySuccess();
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, FRAMEWORK_NETWORK_ID, 0, sBSSID);
+        mCmi.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
+                WifiManager.ERROR_AUTH_FAILURE_TIMEOUT);
+        mLooper.dispatchAll();
+
+        WifiConfiguration config = mCmi.getCurrentWifiConfiguration();
+        verify(mConnectionFailureNotifier)
+                .showFailedToConnectDueToNoRandomizedMacSupportNotification(FRAMEWORK_NETWORK_ID);
+    }
+
+    /**
+     * Verifies that a notification is not posted when a wrong password failure happens on a
+     * network in the hotlist.
+     */
+    @Test
+    public void testNotCallingIsInFlakyRandomizationSsidHotlistOnWrongPassword() throws Exception {
+        when(mWifiConfigManager.isInFlakyRandomizationSsidHotlist(anyInt())).thenReturn(true);
+        // Setup CONNECT_MODE & a WifiConfiguration
+        initializeAndAddNetworkAndVerifySuccess();
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, FRAMEWORK_NETWORK_ID, 0, sBSSID);
+        mCmi.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
+                WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD);
+        mLooper.dispatchAll();
+
+        verify(mConnectionFailureNotifier, never())
+                .showFailedToConnectDueToNoRandomizedMacSupportNotification(anyInt());
+    }
+
+    /**
      * Verifies that CMD_START_CONNECT make WifiDiagnostics report
      * CONNECTION_EVENT_STARTED
      * @throws Exception
@@ -3561,14 +3669,15 @@ public class ClientModeImplTest {
     @Test
     public void testRemovePasspointConfig() throws Exception {
         String fqdn = "test.com";
-        when(mPasspointManager.removeProvider(anyString())).thenReturn(true);
+        when(mPasspointManager.removeProvider(anyInt(), anyBoolean(), anyString()))
+                .thenReturn(true);
 
         // switch to connect mode and verify wifi is reported as enabled
         startSupplicantAndDispatchMessages();
-        mCmi.sendMessage(ClientModeImpl.CMD_REMOVE_PASSPOINT_CONFIG, fqdn);
+        mCmi.sendMessage(ClientModeImpl.CMD_REMOVE_PASSPOINT_CONFIG, TEST_UID, 0, fqdn);
         mLooper.dispatchAll();
 
-        verify(mWifiConfigManager).removePasspointConfiguredNetwork(eq(fqdn));
+        verify(mWifiConfigManager).removePasspointConfiguredNetwork(fqdn);
     }
 
     /**

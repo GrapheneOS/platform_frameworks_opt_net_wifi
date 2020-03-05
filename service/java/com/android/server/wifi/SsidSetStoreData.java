@@ -16,8 +16,10 @@
 
 package com.android.server.wifi;
 
+import android.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -74,7 +76,8 @@ public class SsidSetStoreData implements WifiConfigStore.StoreData {
     }
 
     @Override
-    public void serializeData(XmlSerializer out)
+    public void serializeData(XmlSerializer out,
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         Set<String> ssidSet = mDataSource.getSsids();
         if (ssidSet != null && !ssidSet.isEmpty()) {
@@ -83,7 +86,9 @@ public class SsidSetStoreData implements WifiConfigStore.StoreData {
     }
 
     @Override
-    public void deserializeData(XmlPullParser in, int outerTagDepth)
+    public void deserializeData(XmlPullParser in, int outerTagDepth,
+            @WifiConfigStore.Version int version,
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         // Ignore empty reads.
         if (in == null) {

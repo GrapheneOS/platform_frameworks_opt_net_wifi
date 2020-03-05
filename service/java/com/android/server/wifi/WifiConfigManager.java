@@ -76,8 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.crypto.Mac;
-
 /**
  * This class provides the APIs to manage configured Wi-Fi networks.
  * It deals with the following:
@@ -276,8 +274,8 @@ public class WifiConfigManager {
     private final WifiPermissionsUtil mWifiPermissionsUtil;
     private final WifiPermissionsWrapper mWifiPermissionsWrapper;
     private final WifiInjector mWifiInjector;
+    private final MacAddressUtil mMacAddressUtil;
     private boolean mConnectedMacRandomzationSupported;
-    private final Mac mMac;
 
     /**
      * Local log used for debugging any WifiConfigManager issues.
@@ -320,6 +318,7 @@ public class WifiConfigManager {
     private final int mMaxNumActiveChannelsForPartialScans;
 
     private final FrameworkFacade mFrameworkFacade;
+    private final DeviceConfigFacade mDeviceConfigFacade;
 
     /**
      * Verbose logging flag. Toggled by developer options.
@@ -377,6 +376,7 @@ public class WifiConfigManager {
 
     private boolean mPnoFrequencyCullingEnabled = false;
     private boolean mPnoRecencySortingEnabled = false;
+    private Set<String> mRandomizationFlakySsidHotlist;
 
 
 
@@ -394,7 +394,8 @@ public class WifiConfigManager {
             NetworkListUserStoreData networkListUserStoreData,
             DeletedEphemeralSsidsStoreData deletedEphemeralSsidsStoreData,
             RandomizedMacStoreData randomizedMacStoreData,
-            FrameworkFacade frameworkFacade, Looper looper) {
+            FrameworkFacade frameworkFacade, Looper looper,
+            DeviceConfigFacade deviceConfigFacade) {
         mContext = context;
         mClock = clock;
         mUserManager = userManager;
@@ -446,17 +447,21 @@ public class WifiConfigManager {
         updatePnoRecencySortingSetting();
         mConnectedMacRandomzationSupported = mContext.getResources()
                 .getBoolean(R.bool.config_wifi_connected_mac_randomization_supported);
+        mDeviceConfigFacade = deviceConfigFacade;
+        mDeviceConfigFacade.addOnPropertiesChangedListener(
+                command -> new Handler(looper).post(command),
+                properties -> {
+                    mRandomizationFlakySsidHotlist =
+                            mDeviceConfigFacade.getRandomizationFlakySsidHotlist();
+                });
+        mRandomizationFlakySsidHotlist = mDeviceConfigFacade.getRandomizationFlakySsidHotlist();
         try {
             mSystemUiUid = mContext.getPackageManager().getPackageUidAsUser(SYSUI_PACKAGE_NAME,
                     PackageManager.MATCH_SYSTEM_ONLY, UserHandle.USER_SYSTEM);
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Unable to resolve SystemUI's UID.");
         }
-        mMac = WifiConfigurationUtil.obtainMacRandHashFunction(Process.WIFI_UID);
-        if (mMac == null) {
-            Log.wtf(TAG, "Failed to obtain secret for MAC randomization."
-                    + " All randomized MAC addresses are lost!");
-        }
+        mMacAddressUtil = mWifiInjector.getMacAddressUtil();
     }
 
     /**
@@ -508,7 +513,18 @@ public class WifiConfigManager {
                 mRandomizedMacAddressMapping.remove(config.getSsidAndSecurityTypeString());
             }
         }
-        return WifiConfigurationUtil.calculatePersistentMacForConfiguration(config, mMac);
+        MacAddress result = mMacAddressUtil.calculatePersistentMacForConfiguration(
+                config, mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
+        if (result == null) {
+            result = mMacAddressUtil.calculatePersistentMacForConfiguration(
+                    config, mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
+        }
+        if (result == null) {
+            Log.wtf(TAG, "Failed to generate MAC address from KeyStore even after retrying. "
+                    + "Using locally generated MAC address instead.");
+            result = MacAddress.createRandomUnicastAddress();
+        }
+        return result;
     }
 
     /**
@@ -1522,6 +1538,19 @@ public class WifiConfigManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Check whether a network belong to a known list of networks that may not support randomized
+     * MAC.
+     * @param networkId
+     * @return true if the network is in the hotlist and MAC randomization is enabled.
+     */
+    public boolean isInFlakyRandomizationSsidHotlist(int networkId) {
+        WifiConfiguration config = getConfiguredNetwork(networkId);
+        return config != null
+                && config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT
+                && mRandomizationFlakySsidHotlist.contains(config.SSID);
     }
 
     /**
@@ -3131,7 +3160,8 @@ public class WifiConfigManager {
         if (mDeferredUserUnlockRead) {
             Log.i(TAG, "Handling user unlock before loading from store.");
             List<WifiConfigStore.StoreFile> userStoreFiles =
-                    WifiConfigStore.createUserFiles(mCurrentUserId);
+                    WifiConfigStore.createUserFiles(
+                            mCurrentUserId, mFrameworkFacade.isNiapModeOn(mContext));
             if (userStoreFiles == null) {
                 Log.wtf(TAG, "Failed to create user store files");
                 return false;
@@ -3170,7 +3200,8 @@ public class WifiConfigManager {
     private boolean loadFromUserStoreAfterUnlockOrSwitch(int userId) {
         try {
             List<WifiConfigStore.StoreFile> userStoreFiles =
-                    WifiConfigStore.createUserFiles(userId);
+                    WifiConfigStore.createUserFiles(
+                            userId, mFrameworkFacade.isNiapModeOn(mContext));
             if (userStoreFiles == null) {
                 Log.e(TAG, "Failed to create user store files");
                 return false;
@@ -3180,8 +3211,8 @@ public class WifiConfigManager {
             Log.wtf(TAG, "Reading from new store failed. All saved private networks are lost!", e);
             return false;
         } catch (XmlPullParserException e) {
-            Log.wtf(TAG, "XML deserialization of store failed. All saved private networks are" +
-                    "lost!", e);
+            Log.wtf(TAG, "XML deserialization of store failed. All saved private networks are "
+                    + "lost!", e);
             return false;
         }
         loadInternalDataFromUserStore(mNetworkListUserStoreData.getConfigurations(),

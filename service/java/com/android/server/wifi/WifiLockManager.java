@@ -183,10 +183,6 @@ public class WifiLockManager {
      * @return true if the lock was successfully acquired, false if the lockMode was invalid.
      */
     public boolean acquireWifiLock(int lockMode, String tag, IBinder binder, WorkSource ws) {
-        if (!isValidLockMode(lockMode)) {
-            throw new IllegalArgumentException("lockMode =" + lockMode);
-        }
-
         // Make a copy of the WorkSource before adding it to the WakeLock
         // This is to make sure worksource value can not be changed by caller
         // after function returns.
@@ -384,7 +380,13 @@ public class WifiLockManager {
         }
     }
 
-    private static boolean isValidLockMode(int lockMode) {
+    /**
+     * Validate that the lock mode is valid - i.e. one of the supported enumerations.
+     *
+     * @param lockMode The lock mode to verify.
+     * @return true for valid lock modes, false otherwise.
+     */
+    public static boolean isValidLockMode(int lockMode) {
         if (lockMode != WifiManager.WIFI_MODE_FULL
                 && lockMode != WifiManager.WIFI_MODE_SCAN_ONLY
                 && lockMode != WifiManager.WIFI_MODE_FULL_HIGH_PERF

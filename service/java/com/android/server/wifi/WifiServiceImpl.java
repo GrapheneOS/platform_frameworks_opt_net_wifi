@@ -529,10 +529,6 @@ public class WifiServiceImpl extends BaseWifiService {
                         if (mSettingsStore.handleAirplaneModeToggled()) {
                             mWifiController.sendMessage(CMD_AIRPLANE_TOGGLED);
                         }
-                        if (mSettingsStore.isAirplaneModeOn()) {
-                            Log.d(TAG, "resetting country code because Airplane mode is ON");
-                            mCountryCode.airplaneModeEnabled();
-                        }
                     }
                 },
                 new IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED));
@@ -2340,18 +2336,16 @@ public class WifiServiceImpl extends BaseWifiService {
     @Override
     public boolean removePasspointConfiguration(String fqdn, String packageName) {
         final int uid = Binder.getCallingUid();
-        if (!mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
-                && !mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)) {
-            if (mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.Q, uid)) {
-                return false;
-            }
-            throw new SecurityException(TAG + ": Permission denied");
+        boolean privileged = false;
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
+                || mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)) {
+            privileged = true;
         }
         mLog.info("removePasspointConfiguration uid=%").c(Binder.getCallingUid()).flush();
         if (!mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_PASSPOINT)) {
             return false;
         }
-        return mClientModeImpl.syncRemovePasspointConfig(mClientModeImplChannel, fqdn);
+        return mClientModeImpl.syncRemovePasspointConfig(mClientModeImplChannel, privileged, fqdn);
     }
 
     /**
@@ -2364,13 +2358,10 @@ public class WifiServiceImpl extends BaseWifiService {
     @Override
     public List<PasspointConfiguration> getPasspointConfigurations(String packageName) {
         final int uid = Binder.getCallingUid();
-        mAppOps.checkPackage(uid, packageName);
-        if (!mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
-                && !mWifiPermissionsUtil.checkNetworkSetupWizardPermission(uid)) {
-            if (mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.Q, uid)) {
-                return new ArrayList<>();
-            }
-            throw new SecurityException(TAG + ": Permission denied");
+        boolean privileged = false;
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
+                || mWifiPermissionsUtil.checkNetworkSetupWizardPermission(uid)) {
+            privileged = true;
         }
         if (mVerboseLoggingEnabled) {
             mLog.info("getPasspointConfigurations uid=%").c(Binder.getCallingUid()).flush();
@@ -2379,7 +2370,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 PackageManager.FEATURE_WIFI_PASSPOINT)) {
             return new ArrayList<>();
         }
-        return mClientModeImpl.syncGetPasspointConfigs(mClientModeImplChannel);
+        return mClientModeImpl.syncGetPasspointConfigs(mClientModeImplChannel, privileged);
     }
 
     /**
@@ -2865,6 +2856,10 @@ public class WifiServiceImpl extends BaseWifiService {
         WorkSource updatedWs = (ws == null || ws.isEmpty())
                 ? new WorkSource(Binder.getCallingUid()) : ws;
 
+        if (!WifiLockManager.isValidLockMode(lockMode)) {
+            throw new IllegalArgumentException("lockMode =" + lockMode);
+        }
+
         Mutable<Boolean> lockSuccess = new Mutable<>();
         boolean runWithScissorsSuccess = mWifiInjector.getClientModeImplHandler().runWithScissors(
                 () -> {
@@ -3008,7 +3003,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 if (mContext.getPackageManager().hasSystemFeature(
                         PackageManager.FEATURE_WIFI_PASSPOINT)) {
                     List<PasspointConfiguration> configs = mClientModeImpl.syncGetPasspointConfigs(
-                            mClientModeImplChannel);
+                            mClientModeImplChannel, true);
                     if (configs != null) {
                         for (PasspointConfiguration config : configs) {
                             removePasspointConfiguration(config.getHomeSp().getFqdn(), packageName);

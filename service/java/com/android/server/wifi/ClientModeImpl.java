@@ -765,6 +765,7 @@ public class ClientModeImpl extends StateMachine {
     private WifiStateTracker mWifiStateTracker;
     private final BackupManagerProxy mBackupManagerProxy;
     private final WrongPasswordNotifier mWrongPasswordNotifier;
+    private final ConnectionFailureNotifier mConnectionFailureNotifier;
     private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private boolean mConnectedMacRandomzationSupported;
     // Maximum duration to continue to log Wifi usability stats after a data stall is triggered.
@@ -818,7 +819,8 @@ public class ClientModeImpl extends StateMachine {
         mSupplicantStateTracker =
                 mFacade.makeSupplicantStateTracker(context, mWifiConfigManager, getHandler());
         mWifiConnectivityManager = mWifiInjector.makeWifiConnectivityManager(this);
-
+        mConnectionFailureNotifier = mWifiInjector.makeConnectionFailureNotifier(
+                mWifiConnectivityManager);
 
         mLinkProperties = new LinkProperties();
         mMcastLockManagerFilterController = new McastLockManagerFilterController();
@@ -1781,12 +1783,14 @@ public class ClientModeImpl extends StateMachine {
      * Remove a Passpoint configuration synchronously.
      *
      * @param channel Channel for communicating with the state machine
+     * @param privileged Whether the caller is a privileged entity
      * @param fqdn The FQDN of the Passpoint configuration to remove
      * @return true on success
      */
-    public boolean syncRemovePasspointConfig(AsyncChannel channel, String fqdn) {
+    public boolean syncRemovePasspointConfig(AsyncChannel channel, boolean privileged,
+            String fqdn) {
         Message resultMsg = channel.sendMessageSynchronously(CMD_REMOVE_PASSPOINT_CONFIG,
-                fqdn);
+                privileged ? 1 : 0, 0, fqdn);
         if (messageIsNull(resultMsg)) return false;
         boolean result = (resultMsg.arg1 == SUCCESS);
         resultMsg.recycle();
@@ -1797,10 +1801,13 @@ public class ClientModeImpl extends StateMachine {
      * Get the list of installed Passpoint configurations synchronously.
      *
      * @param channel Channel for communicating with the state machine
+     * @param privileged Whether the caller is a privileged entity
      * @return List of {@link PasspointConfiguration}
      */
-    public List<PasspointConfiguration> syncGetPasspointConfigs(AsyncChannel channel) {
-        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_PASSPOINT_CONFIGS);
+    public List<PasspointConfiguration> syncGetPasspointConfigs(AsyncChannel channel,
+            boolean privileged) {
+        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_PASSPOINT_CONFIGS,
+                privileged ? 1 : 0);
         if (messageIsNull(resultMsg)) return null;
         List<PasspointConfiguration> result = (List<PasspointConfiguration>) resultMsg.obj;
         resultMsg.recycle();
@@ -3138,6 +3145,16 @@ public class ClientModeImpl extends StateMachine {
             mWifiScoreCard.noteConnectionFailure(mWifiInfo,
                     level2FailureCode, connectivityFailureCode);
         }
+        boolean isAssociationRejection = level2FailureCode
+                == WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION;
+        boolean isAuthenticationFailure = level2FailureCode
+                == WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE
+                && level2FailureReason != WifiMetricsProto.ConnectionEvent.AUTH_FAILURE_WRONG_PSWD;
+        if ((isAssociationRejection || isAuthenticationFailure)
+                && mWifiConfigManager.isInFlakyRandomizationSsidHotlist(mTargetNetworkId)) {
+            mConnectionFailureNotifier
+                    .showFailedToConnectDueToNoRandomizedMacSupportNotification(mTargetNetworkId);
+        }
         // if connected, this should be non-null.
         WifiConfiguration configuration = getCurrentWifiConfiguration();
         if (configuration == null) {
@@ -3365,12 +3382,14 @@ public class ClientModeImpl extends StateMachine {
             Log.e(TAG, "No config to change MAC address to");
             return;
         }
-        MacAddress currentMac = MacAddress.fromString(mWifiNative.getMacAddress(mInterfaceName));
+        String currentMacString = mWifiNative.getMacAddress(mInterfaceName);
+        MacAddress currentMac = currentMacString == null ? null :
+                MacAddress.fromString(currentMacString);
         MacAddress newMac = config.getOrCreateRandomizedMacAddress();
         mWifiConfigManager.setNetworkRandomizedMacAddress(config.networkId, newMac);
         if (!WifiConfiguration.isValidMacAddressForRandomization(newMac)) {
             Log.wtf(TAG, "Config generated an invalid MAC address");
-        } else if (currentMac.equals(newMac)) {
+        } else if (newMac.equals(currentMac)) {
             Log.d(TAG, "No changes in MAC address");
         } else {
             mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
@@ -3378,7 +3397,7 @@ public class ClientModeImpl extends StateMachine {
                     mWifiNative.setMacAddress(mInterfaceName, newMac);
             Log.d(TAG, "ConnectedMacRandomization SSID(" + config.getPrintableSsid()
                     + "). setMacAddress(" + newMac.toString() + ") from "
-                    + currentMac.toString() + " = " + setMacSuccess);
+                    + currentMacString + " = " + setMacSuccess);
         }
     }
 
@@ -3670,11 +3689,13 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_REMOVE_PASSPOINT_CONFIG:
                     int removeResult = mPasspointManager.removeProvider(
-                            (String) message.obj) ? SUCCESS : FAILURE;
+                            message.sendingUid, message.arg1 == 1, (String) message.obj)
+                            ? SUCCESS : FAILURE;
                     replyToMessage(message, message.what, removeResult);
                     break;
                 case CMD_GET_PASSPOINT_CONFIGS:
-                    replyToMessage(message, message.what, mPasspointManager.getProviderConfigs());
+                    replyToMessage(message, message.what, mPasspointManager.getProviderConfigs(
+                            message.sendingUid, message.arg1 == 1));
                     break;
                 case CMD_RESET_SIM_NETWORKS:
                     /* Defer this message until supplicant is started. */
@@ -4436,14 +4457,25 @@ public class ClientModeImpl extends StateMachine {
                                         config.enterpriseConfig.getEapMethod())) {
                             String anonymousIdentity =
                                     mWifiNative.getEapAnonymousIdentity(mInterfaceName);
-                            if (mVerboseLoggingEnabled) {
-                                log("EAP Pseudonym: " + anonymousIdentity);
-                            }
-                            if (!TelephonyUtil.isAnonymousAtRealmIdentity(anonymousIdentity)) {
+                            if (!TextUtils.isEmpty(anonymousIdentity)
+                                    && !TelephonyUtil
+                                    .isAnonymousAtRealmIdentity(anonymousIdentity)) {
+                                String decoratedPseudonym = TelephonyUtil
+                                        .decoratePseudonymWith3GppRealm(getTelephonyManager(),
+                                                anonymousIdentity);
+                                if (decoratedPseudonym != null) {
+                                    anonymousIdentity = decoratedPseudonym;
+                                }
+                                if (mVerboseLoggingEnabled) {
+                                    log("EAP Pseudonym: " + anonymousIdentity);
+                                }
                                 // Save the pseudonym only if it is a real one
                                 config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
-                                mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
+                            } else {
+                                // Clear any stored pseudonyms
+                                config.enterpriseConfig.setAnonymousIdentity(null);
                             }
+                            mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
                         }
                         transitionTo(mObtainingIpState);
                     } else {
@@ -4495,7 +4527,8 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_REMOVE_PASSPOINT_CONFIG:
                     String fqdn = (String) message.obj;
-                    if (mPasspointManager.removeProvider(fqdn)) {
+                    if (mPasspointManager.removeProvider(
+                            message.sendingUid, message.arg1 == 1, fqdn)) {
                         if (isProviderOwnedNetwork(mTargetNetworkId, fqdn)
                                 || isProviderOwnedNetwork(mLastNetworkId, fqdn)) {
                             logd("Disconnect from current network since its provider is removed");
@@ -5379,7 +5412,6 @@ public class ClientModeImpl extends StateMachine {
                             .withNetwork(getCurrentNetwork())
                             .withScanResultInfo(scanResultInfo)
                             .withDisplayName(currentConfig.SSID)
-                            .withRandomMacAddress()
                             .build();
             } else {
                 StaticIpConfiguration staticIpConfig = currentConfig.getStaticIpConfiguration();

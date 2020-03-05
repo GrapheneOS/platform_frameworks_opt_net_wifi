@@ -18,6 +18,7 @@
 package com.android.server.wifi.rtt;
 
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +43,7 @@ import android.hardware.wifi.V1_0.WifiStatus;
 import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.net.MacAddress;
 import android.net.wifi.rtt.RangingRequest;
+import android.net.wifi.rtt.ResponderConfig;
 
 import androidx.test.filters.SmallTest;
 
@@ -463,6 +465,28 @@ public class RttNativeTest {
         for (int i = 0; i < rttR.size(); ++i) {
             collector.checkThat("entry", rttR.get(i), IsNull.notNullValue());
         }
+    }
+
+    /**
+     * Validation ranging with invalid bw and preamble combination will be ignored.
+     */
+    @Test
+    public void testRangingWithInvalidParameterCombination() throws Exception {
+        int cmdId = 88;
+        RangingRequest request = new RangingRequest.Builder().build();
+        ResponderConfig invalidConfig = new ResponderConfig(
+                MacAddress.fromString("08:09:08:07:06:88"), ResponderConfig.RESPONDER_AP, true,
+                ResponderConfig.CHANNEL_WIDTH_80MHZ, 0, 0, 0, ResponderConfig.PREAMBLE_HT);
+        ResponderConfig config = new ResponderConfig(MacAddress.fromString("08:09:08:07:06:89"),
+                ResponderConfig.RESPONDER_AP, true,
+                ResponderConfig.CHANNEL_WIDTH_80MHZ, 0, 0, 0, ResponderConfig.PREAMBLE_VHT);
+
+        // Add a ResponderConfig with invalid parameter, should be ignored.
+        request.mRttPeers.add(invalidConfig);
+        request.mRttPeers.add(config);
+        mDut.rangeRequest(cmdId, request, true);
+        verify(mockRttController).rangeRequest(eq(cmdId), mRttConfigCaptor.capture());
+        assertEquals(request.mRttPeers.size() - 1, mRttConfigCaptor.getValue().size());
     }
 
     // Utilities

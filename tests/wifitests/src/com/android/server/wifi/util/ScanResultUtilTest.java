@@ -116,6 +116,82 @@ public class ScanResultUtilTest {
         assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X));
     }
 
+    /**
+     * Test that a PSK-SHA256+SAE network is detected as transition mode
+     */
+    @Test
+    public void testPskSha256SaeTransitionModeCheck() {
+        final String ssid = "WPA3-Transition";
+        String caps = "[WPA2-FT/PSK-CCMP][RSN-FT/PSK+PSK-SHA256+SAE+FT/SAE-CCMP][ESS][WPS]";
+
+        ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
+                "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
+                0, true);
+
+        input.informationElements = new InformationElement[] {
+                createIE(InformationElement.EID_SSID, ssid.getBytes(StandardCharsets.UTF_8))
+        };
+
+        assertTrue(ScanResultUtil.isScanResultForPskSaeTransitionNetwork(input));
+    }
+
+    /**
+     * Test that a PSK+SAE network is detected as transition mode
+     */
+    @Test
+    public void testPskSaeTransitionModeCheck() {
+        final String ssid = "WPA3-Transition";
+        String caps = "[WPA2-FT/PSK+PSK+SAE+FT/SAE-CCMP][ESS][WPS]";
+
+        ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
+                "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
+                0, true);
+
+        input.informationElements = new InformationElement[] {
+                createIE(InformationElement.EID_SSID, ssid.getBytes(StandardCharsets.UTF_8))
+        };
+
+        assertTrue(ScanResultUtil.isScanResultForPskSaeTransitionNetwork(input));
+    }
+
+    /**
+     * Test that a PSK network is not detected as transition mode
+     */
+    @Test
+    public void testPskNotInTransitionModeCheck() {
+        final String ssid = "WPA2-Network";
+        String caps = "[WPA2-FT/PSK+PSK][ESS][WPS]";
+
+        ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
+                "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
+                0, true);
+
+        input.informationElements = new InformationElement[] {
+                createIE(InformationElement.EID_SSID, ssid.getBytes(StandardCharsets.UTF_8))
+        };
+
+        assertFalse(ScanResultUtil.isScanResultForPskSaeTransitionNetwork(input));
+    }
+
+    /**
+     * Test that an SAE network is not detected as transition mode
+     */
+    @Test
+    public void testSaeNotInTransitionModeCheck() {
+        final String ssid = "WPA3-Network";
+        String caps = "[WPA2-FT/SAE+SAE][ESS][WPS]";
+
+        ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
+                "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
+                0, true);
+
+        input.informationElements = new InformationElement[] {
+                createIE(InformationElement.EID_SSID, ssid.getBytes(StandardCharsets.UTF_8))
+        };
+
+        assertFalse(ScanResultUtil.isScanResultForPskSaeTransitionNetwork(input));
+    }
+
     private static InformationElement createIE(int id, byte[] bytes) {
         InformationElement ie = new InformationElement();
         ie.id = id;

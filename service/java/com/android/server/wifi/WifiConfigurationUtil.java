@@ -28,9 +28,6 @@ import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiScanner;
 import android.os.PatternMatcher;
 import android.os.UserHandle;
-import android.security.keystore.AndroidKeyStoreProvider;
-import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyProperties;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
@@ -39,27 +36,13 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.NativeUtil;
 import com.android.server.wifi.util.TelephonyUtil;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.ProviderException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
 
 /**
  * WifiConfiguration utility for any {@link android.net.wifi.WifiConfiguration} related operations.
@@ -89,10 +72,6 @@ public class WifiConfigurationUtil {
             new Pair(MacAddress.BROADCAST_ADDRESS, MacAddress.BROADCAST_ADDRESS);
     private static final Pair<MacAddress, MacAddress> MATCH_ALL_BSSID_PATTERN =
             new Pair(MacAddress.ALL_ZEROS_ADDRESS, MacAddress.ALL_ZEROS_ADDRESS);
-    private static final String MAC_RANDOMIZATION_ALIAS = "MacRandSecret";
-    private static final long MAC_ADDRESS_VALID_LONG_MASK = (1L << 48) - 1;
-    private static final long MAC_ADDRESS_LOCALLY_ASSIGNED_MASK = 1L << 41;
-    private static final long MAC_ADDRESS_MULTICAST_MASK = 1L << 40;
 
     /**
      * Check whether a network configuration is visible to a user or any of its managed profiles.
@@ -245,87 +224,6 @@ public class WifiConfigurationUtil {
             return newConfig.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_PERSISTENT;
         }
         return newConfig.macRandomizationSetting != existingConfig.macRandomizationSetting;
-    }
-
-    /**
-     * Computes the persistent randomized MAC of the given configuration using the given
-     * hash function.
-     * @param config the WifiConfiguration to compute MAC address for
-     * @param hashFunction the hash function that will perform the MAC address computation.
-     * @return The persistent randomized MAC address or null if inputs are invalid.
-     */
-    public static MacAddress calculatePersistentMacForConfiguration(WifiConfiguration config,
-            Mac hashFunction) {
-        if (config == null || hashFunction == null) {
-            return null;
-        }
-        byte[] hashedBytes = hashFunction.doFinal(
-                config.getSsidAndSecurityTypeString().getBytes(StandardCharsets.UTF_8));
-        ByteBuffer bf = ByteBuffer.wrap(hashedBytes);
-        long longFromSsid = bf.getLong();
-        /**
-         * Masks the generated long so that it represents a valid randomized MAC address.
-         * Specifically, this sets the locally assigned bit to 1, multicast bit to 0
-         */
-        longFromSsid &= MAC_ADDRESS_VALID_LONG_MASK;
-        longFromSsid |= MAC_ADDRESS_LOCALLY_ASSIGNED_MASK;
-        longFromSsid &= ~MAC_ADDRESS_MULTICAST_MASK;
-        bf.clear();
-        bf.putLong(0, longFromSsid);
-
-        // MacAddress.fromBytes requires input of length 6, which is obtained from the
-        // last 6 bytes from the generated long.
-        MacAddress macAddress = MacAddress.fromBytes(Arrays.copyOfRange(bf.array(), 2, 8));
-        return macAddress;
-    }
-
-    /**
-     * Retrieves a Hash function that could be used to calculate the persistent randomized MAC
-     * for a WifiConfiguration.
-     * @param uid the UID of the KeyStore to get the secret of the hash function from.
-     */
-    public static Mac obtainMacRandHashFunction(int uid) {
-        try {
-            KeyStore keyStore = AndroidKeyStoreProvider.getKeyStoreForUid(uid);
-            // tries to retrieve the secret, and generate a new one if it's unavailable.
-            Key key = keyStore.getKey(MAC_RANDOMIZATION_ALIAS, null);
-            if (key == null) {
-                key = generateAndPersistNewMacRandomizationSecret(uid);
-            }
-            if (key == null) {
-                Log.e(TAG, "Failed to generate secret for " + MAC_RANDOMIZATION_ALIAS);
-                return null;
-            }
-            Mac result = Mac.getInstance("HmacSHA256");
-            result.init(key);
-            return result;
-        } catch (KeyStoreException | NoSuchAlgorithmException | InvalidKeyException
-                | UnrecoverableKeyException | NoSuchProviderException e) {
-            Log.e(TAG, "Failure in obtainMacRandHashFunction", e);
-            return null;
-        }
-    }
-
-    /**
-     * Generates and returns a secret key to use for Mac randomization.
-     * Will also persist the generated secret inside KeyStore, accessible in the
-     * future with KeyGenerator#getKey.
-     */
-    private static SecretKey generateAndPersistNewMacRandomizationSecret(int uid) {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance(
-                    KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore");
-            keyGenerator.init(
-                    new KeyGenParameterSpec.Builder(MAC_RANDOMIZATION_ALIAS,
-                            KeyProperties.PURPOSE_SIGN)
-                            .setUid(uid)
-                            .build());
-            return keyGenerator.generateKey();
-        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException
-                | NoSuchProviderException | ProviderException e) {
-            Log.e(TAG, "Failure in generateMacRandomizationSecret", e);
-            return null;
-        }
     }
 
     /**

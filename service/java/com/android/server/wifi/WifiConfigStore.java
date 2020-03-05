@@ -35,8 +35,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.os.AtomicFile;
 import com.android.internal.util.FastXmlSerializer;
 import com.android.internal.util.Preconditions;
-import com.android.server.wifi.util.DataIntegrityChecker;
 import com.android.server.wifi.util.EncryptedData;
+import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -53,7 +53,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class provides a mechanism to save data to persistent store files {@link StoreFile}.
@@ -101,22 +101,36 @@ public class WifiConfigStore {
     private static final String XML_TAG_DOCUMENT_HEADER = "WifiConfigStoreData";
     private static final String XML_TAG_VERSION = "Version";
     private static final String XML_TAG_HEADER_INTEGRITY = "Integrity";
-    private static final String XML_TAG_INTEGRITY_ENCRYPTED_DATA = "EncryptedData";
-    private static final String XML_TAG_INTEGRITY_IV = "IV";
     /**
      * Current config store data version. This will be incremented for any additions.
      */
-    private static final int CURRENT_CONFIG_STORE_DATA_VERSION = 2;
+    private static final int CURRENT_CONFIG_STORE_DATA_VERSION = 3;
     /** This list of older versions will be used to restore data from older config store. */
     /**
      * First version of the config store data format.
      */
-    private static final int INITIAL_CONFIG_STORE_DATA_VERSION = 1;
+    public static final int INITIAL_CONFIG_STORE_DATA_VERSION = 1;
     /**
      * Second version of the config store data format, introduced:
      *  - Integrity info.
      */
-    private static final int INTEGRITY_CONFIG_STORE_DATA_VERSION = 2;
+    public static final int INTEGRITY_CONFIG_STORE_DATA_VERSION = 2;
+    /**
+     * Third version of the config store data format,
+     * introduced:
+     *  - Encryption of credentials
+     * removed:
+     *  - Integrity info.
+     */
+    public static final int ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION = 3;
+
+    @IntDef(suffix = { "_VERSION" }, value = {
+            INITIAL_CONFIG_STORE_DATA_VERSION,
+            INTEGRITY_CONFIG_STORE_DATA_VERSION,
+            ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Version { }
 
     /**
      * Alarm tag to use for starting alarms for buffering file writes.
@@ -157,12 +171,6 @@ public class WifiConfigStore {
                 put(STORE_FILE_USER_GENERAL, STORE_FILE_NAME_USER_GENERAL);
                 put(STORE_FILE_USER_NETWORK_SUGGESTIONS, STORE_FILE_NAME_USER_NETWORK_SUGGESTIONS);
             }};
-
-    @VisibleForTesting
-    public static final EncryptedData ZEROED_ENCRYPTED_DATA =
-            new EncryptedData(
-                    new byte[EncryptedData.ENCRYPTED_DATA_LENGTH],
-                    new byte[EncryptedData.IV_LENGTH]);
     /**
      * Handler instance to post alarm timeouts to
      */
@@ -280,9 +288,11 @@ public class WifiConfigStore {
      * @param storeBaseDir Base directory under which the store file is to be stored. The store file
      *                     will be at <storeBaseDir>/wifi/WifiConfigStore.xml.
      * @param fileId Identifier for the file. See {@link StoreFileId}.
+     * @param shouldEncryptCredentials Whether to encrypt credentials or not.
      * @return new instance of the store file or null if the directory cannot be created.
      */
-    private static @Nullable StoreFile createFile(File storeBaseDir, @StoreFileId int fileId) {
+    private static @Nullable StoreFile createFile(File storeBaseDir, @StoreFileId int fileId,
+            boolean shouldEncryptCredentials) {
         File storeDir = new File(storeBaseDir, STORE_DIRECTORY_NAME);
         if (!storeDir.exists()) {
             if (!storeDir.mkdir()) {
@@ -291,17 +301,22 @@ public class WifiConfigStore {
             }
         }
         File file = new File(storeDir, STORE_ID_TO_FILE_NAME.get(fileId));
-        DataIntegrityChecker dataIntegrityChecker = new DataIntegrityChecker(file.getName());
-        return new StoreFile(file, fileId, dataIntegrityChecker);
+        WifiConfigStoreEncryptionUtil encryptionUtil = null;
+        if (shouldEncryptCredentials) {
+            encryptionUtil = new WifiConfigStoreEncryptionUtil(file.getName());
+        }
+        return new StoreFile(file, fileId, encryptionUtil);
     }
 
     /**
      * Create a new instance of the shared store file.
      *
+     * @param shouldEncryptCredentials Whether to encrypt credentials or not.
      * @return new instance of the store file or null if the directory cannot be created.
      */
-    public static @Nullable StoreFile createSharedFile() {
-        return createFile(Environment.getDataMiscDirectory(), STORE_FILE_SHARED_GENERAL);
+    public static @Nullable StoreFile createSharedFile(boolean shouldEncryptCredentials) {
+        return createFile(Environment.getDataMiscDirectory(), STORE_FILE_SHARED_GENERAL,
+                shouldEncryptCredentials);
     }
 
     /**
@@ -309,14 +324,18 @@ public class WifiConfigStore {
      * The user store file is inside the user's encrypted data directory.
      *
      * @param userId userId corresponding to the currently logged-in user.
+     * @param shouldEncryptCredentials Whether to encrypt credentials or not.
      * @return List of new instances of the store files created or null if the directory cannot be
      * created.
      */
-    public static @Nullable List<StoreFile> createUserFiles(int userId) {
+    public static @Nullable List<StoreFile> createUserFiles(int userId,
+            boolean shouldEncryptCredentials) {
         List<StoreFile> storeFiles = new ArrayList<>();
         for (int fileId : Arrays.asList(
                 STORE_FILE_USER_GENERAL, STORE_FILE_USER_NETWORK_SUGGESTIONS)) {
-            StoreFile storeFile = createFile(Environment.getDataMiscCeDirectory(userId), fileId);
+            StoreFile storeFile =
+                    createFile(Environment.getDataMiscCeDirectory(userId), fileId,
+                            shouldEncryptCredentials);
             if (storeFile == null) {
                 return null;
             }
@@ -427,88 +446,18 @@ public class WifiConfigStore {
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         out.setOutput(outputStream, StandardCharsets.UTF_8.name());
 
-        // To compute integrity, write zeroes in the integrity fields. Once the integrity is
-        // computed, go back and modfiy the XML fields in place with the computed values.
-        writeDocumentMetadata(out, ZEROED_ENCRYPTED_DATA);
-        for (StoreData storeData : storeDataList) {
-            String tag = storeData.getName();
-            XmlUtil.writeNextSectionStart(out, tag);
-            storeData.serializeData(out);
-            XmlUtil.writeNextSectionEnd(out, tag);
-        }
-        XmlUtil.writeDocumentEnd(out, XML_TAG_DOCUMENT_HEADER);
-
-        byte[] outBytes = outputStream.toByteArray();
-        EncryptedData encryptedData = storeFile.computeIntegrity(outBytes);
-        if (encryptedData == null) {
-            // should never happen, this is a fatal failure. Abort file write.
-            Log.wtf(TAG, "Failed to compute integrity, failing write");
-            return null;
-        }
-        return rewriteDocumentMetadataRawBytes(outBytes, encryptedData);
-    }
-
-    /**
-     * Helper method to write the metadata at the start of every config store file.
-     * The metadata consists of:
-     * a) Version
-     * b) Integrity data computed on the data contents.
-     */
-    private void writeDocumentMetadata(XmlSerializer out, EncryptedData encryptedData)
-            throws XmlPullParserException, IOException {
         // First XML header.
         XmlUtil.writeDocumentStart(out, XML_TAG_DOCUMENT_HEADER);
         // Next version.
         XmlUtil.writeNextValue(out, XML_TAG_VERSION, CURRENT_CONFIG_STORE_DATA_VERSION);
-
-        // Next integrity data.
-        XmlUtil.writeNextSectionStart(out, XML_TAG_HEADER_INTEGRITY);
-        XmlUtil.writeNextValue(out, XML_TAG_INTEGRITY_ENCRYPTED_DATA,
-                encryptedData.getEncryptedData());
-        XmlUtil.writeNextValue(out, XML_TAG_INTEGRITY_IV, encryptedData.getIv());
-        XmlUtil.writeNextSectionEnd(out, XML_TAG_HEADER_INTEGRITY);
-    }
-
-    /**
-     * Helper method to generate the raw bytes containing the the metadata at the start of every
-     * config store file.
-     *
-     * NOTE: This does not create a fully formed XML document (the start tag is not closed for
-     * example). This only creates the top portion of the XML which contains the modified
-     * integrity data & version along with the XML prolog (metadata):
-     * <?xml version='1.0' encoding='utf-8' standalone='yes' ?>
-     * <WifiConfigStoreData>
-     * <int name="Version" value="2" />
-     * <Integrity>
-     * <byte-array name="EncryptedData" num="48">!EncryptedData!</byte-array>
-     * <byte-array name="IV" num="12">!IV!</byte-array>
-     * </Integrity>
-     */
-    private byte[] generateDocumentMetadataRawBytes(EncryptedData encryptedData)
-            throws XmlPullParserException, IOException {
-        final XmlSerializer outXml = new FastXmlSerializer();
-        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        outXml.setOutput(outStream, StandardCharsets.UTF_8.name());
-        writeDocumentMetadata(outXml, encryptedData);
-        outXml.endDocument();
-        return outStream.toByteArray();
-    }
-
-    /**
-     * Helper method to rewrite the existing document metadata in the incoming raw bytes in
-     * |inBytes| with the new document metadata created with the provided |encryptedData|.
-     *
-     * NOTE: This assumes that the metadata in existing XML inside |inBytes| aligns exactly
-     * with the new metadata created. So, a simple in place rewrite of the first few bytes (
-     * corresponding to metadata section of the document) from |inBytes| will preserve the overall
-     * document structure.
-     */
-    private byte[] rewriteDocumentMetadataRawBytes(byte[] inBytes, EncryptedData encryptedData)
-            throws XmlPullParserException, IOException {
-        byte[] replaceMetadataBytes = generateDocumentMetadataRawBytes(encryptedData);
-        ByteBuffer outByteBuffer = ByteBuffer.wrap(inBytes);
-        outByteBuffer.put(replaceMetadataBytes);
-        return outByteBuffer.array();
+        for (StoreData storeData : storeDataList) {
+            String tag = storeData.getName();
+            XmlUtil.writeNextSectionStart(out, tag);
+            storeData.serializeData(out, storeFile.getEncryptionUtil());
+            XmlUtil.writeNextSectionEnd(out, tag);
+        }
+        XmlUtil.writeDocumentEnd(out, XML_TAG_DOCUMENT_HEADER);
+        return outputStream.toByteArray();
     }
 
     /**
@@ -629,10 +578,11 @@ public class WifiConfigStore {
     }
 
     // Inform all the provided store data clients that there is nothing in the store for them.
-    private void indicateNoDataForStoreDatas(Collection<StoreData> storeDataSet)
+    private void indicateNoDataForStoreDatas(Collection<StoreData> storeDataSet,
+            @Version int version, @NonNull WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         for (StoreData storeData : storeDataSet) {
-            storeData.deserializeData(null, 0);
+            storeData.deserializeData(null, 0, version, encryptionUtil);
         }
     }
 
@@ -654,7 +604,8 @@ public class WifiConfigStore {
             throws XmlPullParserException, IOException {
         List<StoreData> storeDataList = retrieveStoreDataListForStoreFile(storeFile);
         if (dataBytes == null) {
-            indicateNoDataForStoreDatas(storeDataList);
+            indicateNoDataForStoreDatas(storeDataList, -1 /* unknown */,
+                    storeFile.getEncryptionUtil());
             return;
         }
         final XmlPullParser in = Xml.newPullParser();
@@ -665,21 +616,10 @@ public class WifiConfigStore {
         int rootTagDepth = in.getDepth() + 1;
         XmlUtil.gotoDocumentStart(in, XML_TAG_DOCUMENT_HEADER);
 
-        int version = parseVersionFromXml(in);
-        // Version 2 onwards contains integrity data, so check the integrity of the file.
-        if (version >= INTEGRITY_CONFIG_STORE_DATA_VERSION) {
-            EncryptedData integrityData = parseIntegrityDataFromXml(in, rootTagDepth);
-            // To compute integrity, write zeroes in the integrity fields.
-            dataBytes = rewriteDocumentMetadataRawBytes(dataBytes, ZEROED_ENCRYPTED_DATA);
-            if (!storeFile.checkIntegrity(dataBytes, integrityData)) {
-                Log.wtf(TAG, "Integrity mismatch, discarding data from " + storeFile.mFileName);
-                return;
-            }
-        } else {
-            // When integrity checking is introduced. The existing data will have no related
-            // integrity file for validation. Thus, we will assume the existing data is correct.
-            // Integrity will be computed for the next write.
-            Log.d(TAG, "No integrity data to check; thus vacously true");
+        @Version int version = parseVersionFromXml(in);
+        // Version 2 contains the now unused integrity data, parse & then discard the information.
+        if (version == INTEGRITY_CONFIG_STORE_DATA_VERSION) {
+            parseAndDiscardIntegrityDataFromXml(in, rootTagDepth);
         }
 
         String[] headerName = new String[1];
@@ -695,14 +635,15 @@ public class WifiConfigStore {
                 throw new XmlPullParserException("Unknown store data: " + headerName[0]
                         + ". List of store data: " + storeDataList);
             }
-            storeData.deserializeData(in, rootTagDepth + 1);
+            storeData.deserializeData(in, rootTagDepth + 1, version,
+                    storeFile.getEncryptionUtil());
             storeDatasInvoked.add(storeData);
         }
         // Inform all the other registered store data clients that there is nothing in the store
         // for them.
         Set<StoreData> storeDatasNotInvoked = new HashSet<>(storeDataList);
         storeDatasNotInvoked.removeAll(storeDatasInvoked);
-        indicateNoDataForStoreDatas(storeDatasNotInvoked);
+        indicateNoDataForStoreDatas(storeDatasNotInvoked, version, storeFile.getEncryptionUtil());
     }
 
     /**
@@ -712,7 +653,7 @@ public class WifiConfigStore {
      * @param in XmlPullParser instance pointing to the XML stream.
      * @return version number retrieved from the Xml stream.
      */
-    private static int parseVersionFromXml(XmlPullParser in)
+    private static @Version int parseVersionFromXml(XmlPullParser in)
             throws XmlPullParserException, IOException {
         int version = (int) XmlUtil.readNextValueWithName(in, XML_TAG_VERSION);
         if (version < INITIAL_CONFIG_STORE_DATA_VERSION
@@ -723,22 +664,15 @@ public class WifiConfigStore {
     }
 
     /**
-     * Parse the integrity data structure from the XML stream.
-     * This is used for both the shared and user config store data.
+     * Parse the integrity data structure from the XML stream and discard it.
      *
      * @param in XmlPullParser instance pointing to the XML stream.
      * @param outerTagDepth Outer tag depth.
-     * @return Instance of {@link EncryptedData} retrieved from the Xml stream.
      */
-    private static @NonNull EncryptedData parseIntegrityDataFromXml(
-            XmlPullParser in, int outerTagDepth)
+    private static void parseAndDiscardIntegrityDataFromXml(XmlPullParser in, int outerTagDepth)
             throws XmlPullParserException, IOException {
         XmlUtil.gotoNextSectionWithName(in, XML_TAG_HEADER_INTEGRITY, outerTagDepth);
-        byte[] encryptedData =
-                (byte[]) XmlUtil.readNextValueWithName(in, XML_TAG_INTEGRITY_ENCRYPTED_DATA);
-        byte[] iv =
-                (byte[]) XmlUtil.readNextValueWithName(in, XML_TAG_INTEGRITY_IV);
-        return new EncryptedData(encryptedData, iv);
+        XmlUtil.EncryptedDataXmlUtil.parseFromXml(in, outerTagDepth + 1);
     }
 
     /**
@@ -746,6 +680,13 @@ public class WifiConfigStore {
      */
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("Dump of WifiConfigStore");
+        pw.println("WifiConfigStore - Store File Begin ----");
+        Stream.of(Arrays.asList(mSharedStore), mUserStores)
+                .flatMap(List::stream)
+                .forEach((storeFile) -> {
+                    pw.print("Name: " + storeFile.mFileName);
+                    pw.println(", Credentials encrypted: " + storeFile.getEncryptionUtil() != null);
+                });
         pw.println("WifiConfigStore - Store Data Begin ----");
         for (StoreData storeData : mStoreDataList) {
             pw.print("StoreData =>");
@@ -790,14 +731,14 @@ public class WifiConfigStore {
         /**
          * Integrity checking for the store file.
          */
-        private final DataIntegrityChecker mDataIntegrityChecker;
+        private final WifiConfigStoreEncryptionUtil mEncryptionUtil;
 
         public StoreFile(File file, @StoreFileId int fileId,
-                         @NonNull DataIntegrityChecker dataIntegrityChecker) {
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil) {
             mAtomicFile = new AtomicFile(file);
             mFileName = file.getAbsolutePath();
             mFileId = fileId;
-            mDataIntegrityChecker = dataIntegrityChecker;
+            mEncryptionUtil = encryptionUtil;
         }
 
         /**
@@ -807,6 +748,13 @@ public class WifiConfigStore {
          */
         public boolean exists() {
             return mAtomicFile.exists();
+        }
+
+        /**
+         * @return Returns the encryption util used for this store file.
+         */
+        public @Nullable WifiConfigStoreEncryptionUtil getEncryptionUtil() {
+            return mEncryptionUtil;
         }
 
         /**
@@ -862,33 +810,6 @@ public class WifiConfigStore {
             // Reset the pending write data after write.
             mWriteData = null;
         }
-
-        /**
-         * Compute integrity of |dataWithZeroedIntegrityFields| to be written to the file.
-         *
-         * @param dataWithZeroedIntegrityFields raw data to be written to the file with the
-         *                                      integrity fields zeroed out for integrity
-         *                                      calculation.
-         * @return Instance of {@link EncryptedData} holding the encrypted integrity data for the
-         * raw data to be written to the file.
-         */
-        public EncryptedData computeIntegrity(byte[] dataWithZeroedIntegrityFields) {
-            return mDataIntegrityChecker.compute(dataWithZeroedIntegrityFields);
-        }
-
-        /**
-         * Check integrity of |dataWithZeroedIntegrityFields| read from the file with the integrity
-         * data parsed from the file.
-         * @param dataWithZeroedIntegrityFields raw data read from the file with the integrity
-         *                                      fields zeroed out for integrity calculation.
-         * @param parsedEncryptedData Instance of {@link EncryptedData} parsed from the integrity
-         *                            fields in the raw data.
-         * @return true if the integrity matches, false otherwise.
-         */
-        public boolean checkIntegrity(byte[] dataWithZeroedIntegrityFields,
-                                      EncryptedData parsedEncryptedData) {
-            return mDataIntegrityChecker.isOk(dataWithZeroedIntegrityFields, parsedEncryptedData);
-        }
     }
 
     /**
@@ -908,8 +829,10 @@ public class WifiConfigStore {
          * Serialize a XML data block to the output stream.
          *
          * @param out The output stream to serialize the data to
+         * @param encryptionUtil Utility to help encrypt any credential data.
          */
-        void serializeData(XmlSerializer out)
+        void serializeData(XmlSerializer out,
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
                 throws XmlPullParserException, IOException;
 
         /**
@@ -918,10 +841,14 @@ public class WifiConfigStore {
          * @param in The input stream to read the data from. This could be null if there is
          *           nothing in the store.
          * @param outerTagDepth The depth of the outer tag in the XML document
+         * @param version Version of config store file.
+         * @param encryptionUtil Utility to help decrypt any credential data.
+         *
          * Note: This will be invoked every time a store file is read, even if there is nothing
          *                      in the store for them.
          */
-        void deserializeData(@Nullable XmlPullParser in, int outerTagDepth)
+        void deserializeData(@Nullable XmlPullParser in, int outerTagDepth, @Version int version,
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
                 throws XmlPullParserException, IOException;
 
         /**

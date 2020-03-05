@@ -288,7 +288,7 @@ public class PasspointManager {
         for (Map.Entry<String, PasspointProvider> entry : getPasspointProviderWithPackage(
                 packageName).entrySet()) {
             String fqdn = entry.getValue().getConfig().getHomeSp().getFqdn();
-            removeProvider(fqdn);
+            removeProvider(Process.WIFI_UID /* ignored */, true, fqdn);
             disconnectIfPasspointNetwork(fqdn);
         }
     }
@@ -658,18 +658,26 @@ public class PasspointManager {
     /**
      * Remove a Passpoint provider identified by the given FQDN.
      *
+     * @param callingUid Calling UID.
+     * @param privileged Whether the caller is a privileged entity
      * @param fqdn The FQDN of the provider to remove
      * @return true if a provider is removed, false otherwise
      */
-    public boolean removeProvider(String fqdn) {
+    public boolean removeProvider(int callingUid, boolean privileged, String fqdn) {
         mWifiMetrics.incrementNumPasspointProviderUninstallation();
         String packageName;
-        if (!mProviders.containsKey(fqdn)) {
+        PasspointProvider provider = mProviders.get(fqdn);
+        if (provider == null) {
             Log.e(TAG, "Config doesn't exist");
             return false;
         }
-        mProviders.get(fqdn).uninstallCertsAndKeys();
-        packageName = mProviders.get(fqdn).getPackageName();
+        if (!privileged && callingUid != provider.getCreatorUid()) {
+            Log.e(TAG, "UID " + callingUid + " cannot remove profile created by "
+                    + provider.getCreatorUid());
+            return false;
+        }
+        provider.uninstallCertsAndKeys();
+        packageName = provider.getPackageName();
         mProviders.remove(fqdn);
         mWifiConfigManager.saveToStore(true /* forceWrite */);
 
@@ -702,12 +710,17 @@ public class PasspointManager {
      *
      * An empty list will be returned when no provider is installed.
      *
+     * @param callingUid Calling UID.
+     * @param privileged Whether the caller is a privileged entity
      * @return A list of {@link PasspointConfiguration}
      */
-    public List<PasspointConfiguration> getProviderConfigs() {
+    public List<PasspointConfiguration> getProviderConfigs(int callingUid, boolean privileged) {
         List<PasspointConfiguration> configs = new ArrayList<>();
         for (Map.Entry<String, PasspointProvider> entry : mProviders.entrySet()) {
-            configs.add(entry.getValue().getConfig());
+            PasspointProvider provider = entry.getValue();
+            if (privileged || callingUid == provider.getCreatorUid()) {
+                configs.add(provider.getConfig());
+            }
         }
         return configs;
     }
@@ -1007,7 +1020,8 @@ public class PasspointManager {
     public Map<OsuProvider, PasspointConfiguration> getMatchingPasspointConfigsForOsuProviders(
             List<OsuProvider> osuProviders) {
         Map<OsuProvider, PasspointConfiguration> matchingPasspointConfigs = new HashMap<>();
-        List<PasspointConfiguration> passpointConfigurations = getProviderConfigs();
+        List<PasspointConfiguration> passpointConfigurations =
+                getProviderConfigs(Process.WIFI_UID /* ignored */, true);
 
         for (OsuProvider osuProvider : osuProviders) {
             Map<String, String> friendlyNamesForOsuProvider = osuProvider.getFriendlyNameList();

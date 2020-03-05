@@ -84,18 +84,6 @@ public class WifiCountryCode {
     }
 
     /**
-     * This is called when airplane mode is enabled.
-     * In this case we should invalidate all other country code except the
-     * phone default one.
-     */
-    public synchronized void airplaneModeEnabled() {
-        Log.d(TAG, "Airplane Mode Enabled");
-        // Airplane mode is enabled, we need to reset the country code to phone default.
-        // Country code will be set upon when wpa_supplicant starts next time.
-        mTelephonyCountryCode = null;
-    }
-
-    /**
      * Change the state to indicates if wpa_supplicant is ready to handle country code changing
      * request or not.
      * We call native code to request country code changes only when wpa_supplicant is

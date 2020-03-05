@@ -161,17 +161,6 @@ public class WifiLockManagerTest {
     }
 
     /**
-     * Test to verify that the lock mode is verified before adding a lock.
-     *
-     * Steps: call acquireWifiLock with an invalid lock mode.
-     * Expected: the call should throw an IllegalArgumentException.
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void acquireWifiLockShouldThrowExceptionOnInivalidLockMode() throws Exception {
-        mWifiLockManager.acquireWifiLock(WIFI_LOCK_MODE_INVALID, "", mBinder, mWorkSource);
-    }
-
-    /**
      * Test that a call to acquireWifiLock with valid parameters works.
      *
      * Steps: call acquireWifiLock on the empty WifiLockManager.

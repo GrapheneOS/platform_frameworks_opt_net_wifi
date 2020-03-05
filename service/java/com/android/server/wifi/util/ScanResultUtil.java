@@ -104,10 +104,10 @@ public class ScanResultUtil {
 
     /**
      * Helper method to check if the provided |scanResult| corresponds to PSK-SAE transition
-     * network. This checks if the provided capabilities string contains PSK+SAE or not.
+     * network. This checks if the provided capabilities string contains both PSK and SAE or not.
      */
     public static boolean isScanResultForPskSaeTransitionNetwork(ScanResult scanResult) {
-        return scanResult.capabilities.contains("PSK+SAE");
+        return scanResult.capabilities.contains("PSK") && scanResult.capabilities.contains("SAE");
     }
 
     /**

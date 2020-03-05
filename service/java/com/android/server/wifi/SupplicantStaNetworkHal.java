@@ -339,19 +339,11 @@ public class SupplicantStaNetworkHal {
                 Log.e(TAG, config.SSID + ": failed to set hiddenSSID: " + config.hiddenSSID);
                 return false;
             }
-            // The logic below is skipping WPA2-Enterprise explicit setting of PMF to disabled
-            // in order to allow connection to networks with PMF required. Skipping means that
-            // wpa_supplicant will use the global setting (optional/capable).
-            // TODO(b/130755779): A permanent fix should convert requirePMF to a tri-state variablbe
-            boolean wpa2EnterpriseSkipPmf = !config.requirePMF
-                    && (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP)
-                    || config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X));
+
             /** RequirePMF */
-            if (!wpa2EnterpriseSkipPmf) {
-                if (!setRequirePmf(config.requirePMF)) {
-                    Log.e(TAG, config.SSID + ": failed to set requirePMF: " + config.requirePMF);
-                    return false;
-                }
+            if (!setRequirePmf(config.requirePMF)) {
+                Log.e(TAG, config.SSID + ": failed to set requirePMF: " + config.requirePMF);
+                return false;
             }
             /** Key Management Scheme */
             if (config.allowedKeyManagement.cardinality() != 0) {

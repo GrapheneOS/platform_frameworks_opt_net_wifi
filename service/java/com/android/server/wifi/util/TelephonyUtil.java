@@ -22,6 +22,7 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.telephony.ImsiEncryptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
@@ -729,5 +730,44 @@ public class TelephonyUtil {
      */
     public static boolean isSimPresent(@Nonnull SubscriptionManager sm) {
         return sm.getActiveSubscriptionIdList().length > 0;
+    }
+
+    /**
+     * Decorates a pseudonym with the NAI realm, in case it wasn't provided by the server
+     *
+     * @param tm TelephonyManager instance
+     * @param pseudonym The pseudonym (temporary identity) provided by the server
+     * @return pseudonym@realm which is based on current MCC/MNC, {@code null} if SIM is
+     * not ready or absent.
+     */
+    public static String decoratePseudonymWith3GppRealm(@NonNull TelephonyManager tm,
+            String pseudonym) {
+        if (tm == null || TextUtils.isEmpty(pseudonym)) {
+            return null;
+        }
+        if (pseudonym.contains("@")) {
+            // Pseudonym is already decorated
+            return pseudonym;
+        }
+        TelephonyManager defaultDataTm = tm.createForSubscriptionId(
+                SubscriptionManager.getDefaultDataSubscriptionId());
+        if (defaultDataTm.getSimState() != TelephonyManager.SIM_STATE_READY) {
+            return null;
+        }
+        String mccMnc = defaultDataTm.getSimOperator();
+        if (mccMnc == null || mccMnc.isEmpty()) {
+            return null;
+        }
+
+        // Extract mcc & mnc from mccMnc
+        String mcc = mccMnc.substring(0, 3);
+        String mnc = mccMnc.substring(3);
+
+        if (mnc.length() == 2) {
+            mnc = "0" + mnc;
+        }
+
+        String realm = String.format(THREE_GPP_NAI_REALM_FORMAT, mnc, mcc);
+        return String.format("%s@%s", pseudonym, realm);
     }
 }

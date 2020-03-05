@@ -178,6 +178,7 @@ public class WifiServiceImplTest {
     private static final String WIFI_IFACE_NAME2 = "wlan1";
     private static final String TEST_COUNTRY_CODE = "US";
     private static final String TEST_FACTORY_MAC = "10:22:34:56:78:92";
+    private static final String TEST_FQDN = "testfqdn";
     private static final List<WifiConfiguration> TEST_WIFI_CONFIGURATION_LIST = Arrays.asList(
             WifiConfigurationTestUtil.generateWifiConfig(
                     0, 1000000, "\"red\"", true, true, null, null),
@@ -2799,77 +2800,57 @@ public class WifiServiceImplTest {
     }
 
     /**
-     * Verify that the call to getPasspointConfigurations is not redirected to specific API
-     * syncGetPasspointConfigs when the caller doesn't have NETWORK_SETTINGS permissions and
-     * NETWORK_SETUP_WIZARD.
-     */
-    @Test(expected = SecurityException.class)
-    public void testGetPasspointConfigurationsWithOutPermissions() {
-        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
-        when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(false);
-
-        mWifiServiceImpl.getPasspointConfigurations(TEST_PACKAGE_NAME);
-    }
-
-    /**
-     * Verify that getPasspointConfigurations called by apps that has invalid package will
-     * throw {@link SecurityException}.
-     */
-    @Test(expected = SecurityException.class)
-    public void testGetPasspointConfigurationWithInvalidPackage() {
-        doThrow(new SecurityException()).when(mAppOpsManager).checkPackage(anyInt(),
-                eq(TEST_PACKAGE_NAME));
-        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
-        when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(true);
-
-        mWifiServiceImpl.getPasspointConfigurations(TEST_PACKAGE_NAME);
-    }
-
-    /**
-     * Verify that getPasspointConfigurations called by apps targeting below Q SDK will return
-     * empty list if the caller doesn't have NETWORK_SETTINGS permissions and NETWORK_SETUP_WIZARD.
+     * Verify the call to getPasspointConfigurations when the caller doesn't have
+     * NETWORK_SETTINGS and NETWORK_SETUP_WIZARD permissions.
      */
     @Test
-    public void testGetPasspointConfigurationForAppsTargetingBelowQSDK() {
+    public void testGetPasspointConfigurationsWithOutPrivilegedPermissions() {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
         when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(false);
-        when(mWifiPermissionsUtil.isTargetSdkLessThan(eq(TEST_PACKAGE_NAME),
-                eq(Build.VERSION_CODES.Q), anyInt())).thenReturn(true);
 
-        List<PasspointConfiguration> result = mWifiServiceImpl.getPasspointConfigurations(
-                TEST_PACKAGE_NAME);
-        assertNotNull(result);
-        assertEquals(0, result.size());
+        mWifiServiceImpl.getPasspointConfigurations(TEST_PACKAGE_NAME);
+
+        verify(mClientModeImpl).syncGetPasspointConfigs(any(), eq(false));
     }
 
     /**
-     * Verify that the call to removePasspointConfiguration is not redirected to specific API
-     * syncRemovePasspointConfig when the caller doesn't have NETWORK_SETTINGS and
+     * Verify that the call to getPasspointConfigurations when the caller does have
+     * NETWORK_SETTINGS permission.
+     */
+    @Test
+    public void testGetPasspointConfigurationsWithPrivilegedPermissions() {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
+
+        mWifiServiceImpl.getPasspointConfigurations(TEST_PACKAGE_NAME);
+
+        verify(mClientModeImpl).syncGetPasspointConfigs(any(), eq(true));
+    }
+
+    /**
+     * Verify the call to removePasspointConfigurations when the caller doesn't have
+     * NETWORK_SETTINGS and NETWORK_CARRIER_PROVISIONING permissions.
+     */
+    @Test
+    public void testRemovePasspointConfigurationWithOutPrivilegedPermissions() {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
+        when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(anyInt())).thenReturn(
+                false);
+
+        mWifiServiceImpl.removePasspointConfiguration(TEST_FQDN, TEST_PACKAGE_NAME);
+        verify(mClientModeImpl).syncRemovePasspointConfig(any(), eq(false), eq(TEST_FQDN));
+    }
+
+    /**
+     * Verify the call to removePasspointConfigurations when the caller does have
      * NETWORK_CARRIER_PROVISIONING permission.
      */
-    @Test(expected = SecurityException.class)
-    public void testRemovePasspointConfigurationWithOutPermissions() {
-        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
-        when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(anyInt())).thenReturn(
-                false);
-
-        mWifiServiceImpl.removePasspointConfiguration(null, null);
-    }
-
-    /**
-     * Verify that the call to removePasspointConfiguration for apps targeting below Q SDK will
-     * return false if the caller doesn't have NETWORK_SETTINGS and NETWORK_CARRIER_PROVISIONING
-     * permission.
-     */
     @Test
-    public void testRemovePasspointConfigurationForAppsTargetingBelowQSDK() {
-        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
+    public void testRemovePasspointConfigurationWithPrivilegedPermissions() {
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(anyInt())).thenReturn(
-                false);
-        when(mWifiPermissionsUtil.isTargetSdkLessThan(isNull(),
-                eq(Build.VERSION_CODES.Q), anyInt())).thenReturn(true);
+                true);
 
-        assertFalse(mWifiServiceImpl.removePasspointConfiguration(null, null));
+        mWifiServiceImpl.removePasspointConfiguration(TEST_FQDN, TEST_PACKAGE_NAME);
+        verify(mClientModeImpl).syncRemovePasspointConfig(any(), eq(true), eq(TEST_FQDN));
     }
 
     /**
@@ -3460,6 +3441,25 @@ public class WifiServiceImplTest {
     }
 
     /**
+     * Verifies that entering airplane mode does not reset country code.
+     */
+    @Test
+    public void testEnterAirplaneModeNotResetCountryCode() {
+        mWifiServiceImpl.checkAndStartWifi();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                (IntentFilter) argThat((IntentFilter filter) ->
+                        filter.hasAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)));
+
+        when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
+
+        // Send the broadcast
+        Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+
+        verifyNoMoreInteractions(mWifiCountryCode);
+    }
+
+    /**
      * Verify calls to notify users of a softap config change check the NETWORK_SETTINGS permission.
      */
     @Test
@@ -3661,13 +3661,14 @@ public class WifiServiceImplTest {
         mWifiServiceImpl.mClientModeImplChannel = mAsyncChannel;
         when(mClientModeImpl.syncGetConfiguredNetworks(anyInt(), any(), anyInt()))
                 .thenReturn(Arrays.asList(network));
-        when(mClientModeImpl.syncGetPasspointConfigs(any())).thenReturn(Arrays.asList(config));
+        when(mClientModeImpl.syncGetPasspointConfigs(any(), anyBoolean()))
+                .thenReturn(Arrays.asList(config));
 
         mWifiServiceImpl.factoryReset(TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
 
         verify(mClientModeImpl).syncRemoveNetwork(mAsyncChannel, network.networkId);
-        verify(mClientModeImpl).syncRemovePasspointConfig(mAsyncChannel, fqdn);
+        verify(mClientModeImpl).syncRemovePasspointConfig(mAsyncChannel, true, fqdn);
         verify(mWifiConfigManager).clearDeletedEphemeralNetworks();
         verify(mClientModeImpl).clearNetworkRequestUserApprovedAccessPoints();
         verify(mWifiNetworkSuggestionsManager).clear();
@@ -3690,8 +3691,9 @@ public class WifiServiceImplTest {
         mLooper.dispatchAll();
 
         verify(mClientModeImpl).syncGetConfiguredNetworks(anyInt(), any(), anyInt());
-        verify(mClientModeImpl, never()).syncGetPasspointConfigs(any());
-        verify(mClientModeImpl, never()).syncRemovePasspointConfig(any(), anyString());
+        verify(mClientModeImpl, never()).syncGetPasspointConfigs(any(), anyBoolean());
+        verify(mClientModeImpl, never()).syncRemovePasspointConfig(
+                any(), anyBoolean(), anyString());
         verify(mWifiConfigManager).clearDeletedEphemeralNetworks();
         verify(mClientModeImpl).clearNetworkRequestUserApprovedAccessPoints();
         verify(mWifiNetworkSuggestionsManager).clear();
@@ -3714,7 +3716,7 @@ public class WifiServiceImplTest {
         } catch (SecurityException e) {
         }
         verify(mClientModeImpl, never()).syncGetConfiguredNetworks(anyInt(), any(), anyInt());
-        verify(mClientModeImpl, never()).syncGetPasspointConfigs(any());
+        verify(mClientModeImpl, never()).syncGetPasspointConfigs(any(), eq(false));
     }
 
     /**
@@ -4279,5 +4281,18 @@ public class WifiServiceImplTest {
             mWifiServiceImpl.stopDppSession();
         } catch (RemoteException e) {
         }
+    }
+
+    /**
+     * Test to verify that the lock mode is verified before dispatching the operation
+     *
+     * Steps: call acquireWifiLock with an invalid lock mode.
+     * Expected: the call should throw an IllegalArgumentException.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void acquireWifiLockShouldThrowExceptionOnInvalidLockMode() throws Exception {
+        final int wifiLockModeInvalid = -1;
+
+        mWifiServiceImpl.acquireWifiLock(mAppBinder, wifiLockModeInvalid, "", null);
     }
 }

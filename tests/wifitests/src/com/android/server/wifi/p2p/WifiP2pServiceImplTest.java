@@ -3793,4 +3793,28 @@ public class WifiP2pServiceImplTest {
         mLooper.dispatchAll();
         verify(mWifiNative).p2pStopFind();
     }
+
+    /**
+     * Verify a network name which is too long is rejected.
+     */
+    @Test
+    public void testSendConnectMsgWithTooLongNetworkName() throws Exception {
+        mTestWifiP2pFastConnectionConfig.networkName = "DIRECT-xy-abcdefghijklmnopqrstuvw";
+        sendConnectMsg(mClientMessenger, mTestWifiP2pFastConnectionConfig);
+        verify(mClientHandler).sendMessage(mMessageCaptor.capture());
+        Message message = mMessageCaptor.getValue();
+        assertEquals(WifiP2pManager.CONNECT_FAILED, message.what);
+    }
+
+    /**
+     * Verify a network name which is too short is rejected.
+     */
+    @Test
+    public void testSendConnectMsgWithTooShortNetworkName() throws Exception {
+        mTestWifiP2pFastConnectionConfig.networkName = "DIRECT-x";
+        sendConnectMsg(mClientMessenger, mTestWifiP2pFastConnectionConfig);
+        verify(mClientHandler).sendMessage(mMessageCaptor.capture());
+        Message message = mMessageCaptor.getValue();
+        assertEquals(WifiP2pManager.CONNECT_FAILED, message.what);
+    }
 }

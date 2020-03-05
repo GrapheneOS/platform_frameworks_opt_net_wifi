@@ -17,7 +17,9 @@
 package com.android.server.wifi;
 
 import android.provider.DeviceConfig;
+import android.util.ArraySet;
 
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -104,5 +106,24 @@ public class DeviceConfigFacade {
     public int getDataStallCcaLevelThr() {
         return DeviceConfig.getInt(NAMESPACE, "data_stall_cca_level_thr",
                 DEFAULT_DATA_STALL_CCA_LEVEL_THR);
+    }
+
+    /**
+     * Gets the Set of SSIDs in the flaky SSID hotlist.
+     */
+    public Set<String> getRandomizationFlakySsidHotlist() {
+        String ssidHotlist = DeviceConfig.getString(NAMESPACE,
+                "randomization_flaky_ssid_hotlist", "");
+        Set<String> result = new ArraySet<String>();
+        String[] ssidHotlistArray = ssidHotlist.split(",");
+        for (int i = 0; i < ssidHotlistArray.length; i++) {
+            String cur = ssidHotlistArray[i];
+            if (cur.length() == 0) {
+                continue;
+            }
+            // Make sure the SSIDs are quoted. Server side should not quote ssids.
+            result.add("\"" + cur + "\"");
+        }
+        return result;
     }
 }

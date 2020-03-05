@@ -311,6 +311,7 @@ public class RttNative extends IWifiRttControllerEventCallback.Stub {
                 config.channel.centerFreq1 = responder.centerFreq1;
                 config.bw = halRttChannelBandwidthFromResponderChannelWidth(responder.channelWidth);
                 config.preamble = halRttPreambleFromResponderPreamble(responder.preamble);
+                validateBwAndPreambleCombination(config.bw, config.preamble);
 
                 if (config.peer == RttPeerType.NAN) {
                     config.mustRequestLci = false;
@@ -347,6 +348,20 @@ public class RttNative extends IWifiRttControllerEventCallback.Stub {
         }
 
         return rttConfigs;
+    }
+
+    private static void validateBwAndPreambleCombination(int bw, int preamble) {
+        if (bw <= RttBw.BW_20MHZ) {
+            return;
+        }
+        if (bw == RttBw.BW_40MHZ && preamble >= RttPreamble.HT) {
+            return;
+        }
+        if (bw >= RttBw.BW_80MHZ && preamble >= RttPreamble.VHT) {
+            return;
+        }
+        throw new IllegalArgumentException(
+                "bw and preamble combination is invalid, bw: " + bw + " preamble: " + preamble);
     }
 
     private static int halRttPeerTypeFromResponderType(int responderType) {

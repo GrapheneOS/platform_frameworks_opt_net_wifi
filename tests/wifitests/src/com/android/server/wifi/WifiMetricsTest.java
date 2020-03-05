@@ -3000,9 +3000,10 @@ public class WifiMetricsTest {
         dumpProtoAndDeserialize();
         assertEquals(2 * WifiMetrics.MAX_WIFI_USABILITY_STATS_PER_TYPE_TO_UPLOAD,
                 mDecodedProto.wifiUsabilityStatsList.length);
-        for (int i = 0; i < mDecodedProto.wifiUsabilityStatsList.length; i++) {
+        for (int i = 0; i < WifiMetrics.MAX_WIFI_USABILITY_STATS_PER_TYPE_TO_UPLOAD; i++) {
             assertEquals(WifiMetrics.MAX_WIFI_USABILITY_STATS_ENTRIES_LIST_SIZE,
-                    mDecodedProto.wifiUsabilityStatsList[i].stats.length);
+                    mDecodedProto.wifiUsabilityStatsList[2 * i].stats.length);
+            assertEquals(2, mDecodedProto.wifiUsabilityStatsList[2 * i + 1].stats.length);
         }
     }
 
