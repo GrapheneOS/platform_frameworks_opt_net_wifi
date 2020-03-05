@@ -250,6 +250,7 @@ public class PasspointWifiEntry extends WifiEntry {
                             DisconnectCallback.DISCONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             }, 10_000 /* delayMillis */);
+            mWifiManager.disableEphemeralNetwork(mWifiConfig.FQDN);
             mWifiManager.disconnect();
         }
     }
