@@ -288,6 +288,8 @@ public class WifiConnectivityManager {
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
                 mStateMachine.getWifiLinkLayerStats(), WifiChannelUtilization.UNKNOWN_FREQ);
 
+        updateUserDisabledList(scanDetails);
+
         // Check if any blocklisted BSSIDs can be freed.
         Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
 
@@ -379,6 +381,23 @@ public class WifiConnectivityManager {
         }
         mWifiMetrics.incrementNumHighMovementConnectionSkipped();
         return null;
+    }
+
+    private void updateUserDisabledList(List<ScanDetail> scanDetails) {
+        List<String> results = new ArrayList<>();
+        List<ScanResult> passpointAp = new ArrayList<>();
+        for (ScanDetail scanDetail : scanDetails) {
+            results.add(ScanResultUtil.createQuotedSSID(scanDetail.getScanResult().SSID));
+            if (!scanDetail.getScanResult().isPasspointNetwork()) {
+                continue;
+            }
+            passpointAp.add(scanDetail.getScanResult());
+        }
+        if (!passpointAp.isEmpty()) {
+            results.addAll(new ArrayList<>(mWifiInjector.getPasspointManager()
+                    .getAllMatchingPasspointProfilesForScanResults(passpointAp).keySet()));
+        }
+        mConfigManager.updateUserDisabledList(results);
     }
 
     /**

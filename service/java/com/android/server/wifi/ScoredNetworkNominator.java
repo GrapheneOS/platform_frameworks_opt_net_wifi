@@ -131,9 +131,9 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
             ScanDetail scanDetail = scanDetails.get(i);
             ScanResult scanResult = scanDetail.getScanResult();
             if (scanResult == null) continue;
-            if (mWifiConfigManager.wasEphemeralNetworkDeleted(
+            if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(
                     ScanResultUtil.createQuotedSSID(scanResult.SSID))) {
-                debugLog("Ignoring disabled ephemeral SSID: " + scanResult.SSID);
+                debugLog("Ignoring user disabled SSID: " + scanResult.SSID);
                 continue;
             }
             final WifiConfiguration configuredNetwork =

@@ -24,7 +24,6 @@ import android.util.Pair;
 
 import com.android.server.wifi.WifiNetworkSuggestionsManager.ExtendedWifiNetworkSuggestion;
 import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
-import com.android.server.wifi.util.ScanResultUtil;
 import com.android.server.wifi.util.TelephonyUtil;
 
 import java.util.ArrayList;
@@ -77,18 +76,14 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             WifiConfiguration currentNetwork, String currentBssid, boolean connected,
             boolean untrustedNetworkAllowed,
             @NonNull OnConnectableListener onConnectableListener) {
+        if (scanDetails.isEmpty()) {
+            return;
+        }
         MatchMetaInfo matchMetaInfo = new MatchMetaInfo();
         Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions = new HashSet<>();
 
-        List<ScanDetail> filteredScanDetails = scanDetails.stream().filter(scanDetail ->
-                !mWifiConfigManager.wasEphemeralNetworkDeleted(
-                        ScanResultUtil.createQuotedSSID(scanDetail.getScanResult().SSID)))
-                .collect(Collectors.toList());
-        if (filteredScanDetails.isEmpty()) {
-            return;
-        }
-        findMatchedPasspointSuggestionNetworks(filteredScanDetails, matchMetaInfo);
-        findMatchedSuggestionNetworks(filteredScanDetails, matchMetaInfo,
+        findMatchedPasspointSuggestionNetworks(scanDetails, matchMetaInfo);
+        findMatchedSuggestionNetworks(scanDetails, matchMetaInfo,
                 autoJoinDisabledSuggestions);
 
         if (matchMetaInfo.isEmpty()) {
@@ -139,12 +134,19 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
             Set<ExtendedWifiNetworkSuggestion> autojoinEnableSuggestions = new HashSet<>();
             for (ExtendedWifiNetworkSuggestion ewns : matchingExtNetworkSuggestions) {
-                if (ewns.isAutojoinEnabled
-                        && isSimBasedNetworkAvailableToAutoConnect(ewns.wns.wifiConfiguration)) {
-                    autojoinEnableSuggestions.add(ewns);
-                } else {
+                if (!ewns.isAutojoinEnabled
+                        || !isSimBasedNetworkAvailableToAutoConnect(ewns.wns.wifiConfiguration)) {
                     autoJoinDisabledSuggestions.add(ewns);
+                    continue;
                 }
+                if (mWifiConfigManager
+                        .isNetworkTemporarilyDisabledByUser(ewns.wns.wifiConfiguration.SSID)) {
+                    mLocalLog.log("Ignoring user disabled SSID: "
+                            + ewns.wns.wifiConfiguration.SSID);
+                    autoJoinDisabledSuggestions.add(ewns);
+                    continue;
+                }
+                autojoinEnableSuggestions.add(ewns);
             }
 
             if (autojoinEnableSuggestions.isEmpty()) {

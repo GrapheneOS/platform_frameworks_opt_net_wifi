@@ -408,8 +408,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         assertTrue(connectableNetworks.isEmpty());
 
-        verify(mWifiConfigManager, times(scanSsids.length))
-                .wasEphemeralNetworkDeleted(anyString());
+        verify(mWifiConfigManager, times(suggestionSsids.length))
+                .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager).getConfiguredNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.getKey()));
         verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt(), anyString());
@@ -466,8 +466,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         validateConnectableNetworks(connectableNetworks, new String[] {scanSsids[0]});
 
         // check for any saved networks.
-        verify(mWifiConfigManager, times(scanSsids.length))
-                .wasEphemeralNetworkDeleted(anyString());
+        verify(mWifiConfigManager, times(suggestionSsids.length))
+                .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager)
                 .getConfiguredNetwork(suggestions[0].wns.wifiConfiguration.getKey());
         verify(mWifiConfigManager).addOrUpdateNetwork(
@@ -513,7 +513,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         // setup config manager interactions.
         setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
         // Network was disabled by the user.
-        when(mWifiConfigManager.wasEphemeralNetworkDeleted(suggestionSsids[0])).thenReturn(true);
+        when(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(suggestionSsids[0]))
+                .thenReturn(true);
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
@@ -523,10 +524,11 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         assertTrue(connectableNetworks.isEmpty());
 
-        verify(mWifiConfigManager, times(scanSsids.length)).wasEphemeralNetworkDeleted(anyString());
-        // Verify we did not try to add any new networks or other interactions with
+        verify(mWifiConfigManager, times(suggestionSsids.length))
+                .isNetworkTemporarilyDisabledByUser(anyString());
+        // Verify we did try to add any new networks or other interactions with
         // WifiConfigManager.
-        verifyNoMoreInteractions(mWifiConfigManager);
+        verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
     }
 
     /**
@@ -580,8 +582,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         assertTrue(connectableNetworks.isEmpty());
 
-        verify(mWifiConfigManager, times(scanSsids.length))
-                .wasEphemeralNetworkDeleted(anyString());
+        verify(mWifiConfigManager, times(suggestionSsids.length))
+                .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager).getConfiguredNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.getKey()));
         verify(mWifiConfigManager).addOrUpdateNetwork(
@@ -649,8 +651,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         validateConnectableNetworks(connectableNetworks, new String[] {scanSsids[0]});
 
-        verify(mWifiConfigManager, times(scanSsids.length))
-                .wasEphemeralNetworkDeleted(anyString());
+        verify(mWifiConfigManager, times(suggestionSsids.length))
+                .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager).getConfiguredNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.getKey()));
         verify(mWifiConfigManager).addOrUpdateNetwork(
