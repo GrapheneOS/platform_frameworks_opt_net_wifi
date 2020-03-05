@@ -218,6 +218,11 @@ public class BssidBlocklistMonitor {
     public void blockBssidForDurationMs(@NonNull String bssid, @NonNull String ssid,
             long durationMs) {
         BssidStatus status = getOrCreateBssidStatus(bssid, ssid);
+        if (status.isInBlocklist
+                && status.blocklistEndTimeMs - mClock.getWallClockMillis() > durationMs) {
+            // Return because this BSSID is already being blocked for a longer time.
+            return;
+        }
         addToBlocklist(status, durationMs, true,
                 FAILURE_BSSID_BLOCKED_BY_FRAMEWORK_REASON_STRING);
     }
