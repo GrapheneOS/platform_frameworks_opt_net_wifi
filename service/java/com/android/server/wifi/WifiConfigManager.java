@@ -52,6 +52,7 @@ import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.hotspot2.PasspointManager;
+import com.android.server.wifi.util.MissingCounterTimerLockList;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -186,10 +187,13 @@ public class WifiConfigManager {
             MacAddress.fromString(WifiInfo.DEFAULT_MAC_ADDRESS);
 
     /**
-     * Expiration timeout for deleted ephemeral ssids. (1 day)
+     * Expiration timeout for user disconnect network. (1 hour)
      */
     @VisibleForTesting
-    public static final long DELETED_EPHEMERAL_SSID_EXPIRY_MS = (long) 1000 * 60 * 60 * 24;
+    public static final long USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS = (long) 1000 * 60 * 60;
+
+    @VisibleForTesting
+    public static final int SCAN_RESULT_MISSING_COUNT_THRESHOLD = 1;
 
     /**
      * General sorting algorithm of all networks for scanning purposes:
@@ -244,14 +248,14 @@ public class WifiConfigManager {
      */
     private final Map<Integer, ScanDetailCache> mScanDetailCaches;
     /**
-     * Framework keeps a list of ephemeral SSIDs that where deleted by user,
+     * Framework keeps a list of networks that where temporarily disabled by user,
      * framework knows not to autoconnect again even if the app/scorer recommends it.
-     * The entries are deleted after 24 hours.
-     * The SSIDs are encoded in a String as per definition of WifiConfiguration.SSID field.
-     *
-     * The map stores the SSID and the wall clock time when the network was deleted.
+     * Network will be based on FQDN for passpoint and SSID for non-passpoint.
+     * List will be deleted when Wifi turn off, device restart or network settings reset.
+     * Also when user manfully select to connect network will unblock that network.
      */
-    private final Map<String, Long> mDeletedEphemeralSsidsToTimeMap;
+    private final MissingCounterTimerLockList<String> mUserTemporarilyDisabledList;
+
 
     /**
      * Framework keeps a mapping from configKey to the randomized MAC address so that
@@ -342,7 +346,8 @@ public class WifiConfigManager {
 
         mConfiguredNetworks = new ConfigurationMap(userManager);
         mScanDetailCaches = new HashMap<>(16, 0.75f);
-        mDeletedEphemeralSsidsToTimeMap = new HashMap<>();
+        mUserTemporarilyDisabledList =
+                new MissingCounterTimerLockList<>(SCAN_RESULT_MISSING_COUNT_THRESHOLD, mClock);
         mRandomizedMacAddressMapping = new HashMap<>();
         mListeners = new ArrayList<>();
 
@@ -1253,13 +1258,9 @@ public class WifiConfigManager {
             Log.e(TAG, "Failed to add network to config map", e);
             return new NetworkUpdateResult(WifiConfiguration.INVALID_NETWORK_ID);
         }
-
-        if (mDeletedEphemeralSsidsToTimeMap.remove(config.SSID) != null) {
-            updateNetworkSelectionStatus(
-                    newInternalConfig, NetworkSelectionStatus.DISABLED_NONE);
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "Removed from ephemeral blacklist: " + config.SSID);
-            }
+        // Add or update user saved network or saved passpoint network will re-enable network.
+        if (!newInternalConfig.fromWifiNetworkSuggestion) {
+            userEnabledNetwork(newInternalConfig.networkId);
         }
 
         // Stage the backup of the SettingsProvider package which backs this up.
@@ -2771,86 +2772,87 @@ public class WifiConfigManager {
         return hiddenList;
     }
 
-    private @Nullable WifiConfiguration getInternalEphemeralConfiguredNetwork(
-            @NonNull String ssid) {
-        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
-            if ((config.ephemeral || config.isPasspoint()) && TextUtils.equals(config.SSID, ssid)) {
-                return config;
-            }
-        }
-        return null;
-    }
-
     /**
-     * Check if the provided ephemeral network was deleted by the user or not. This call also clears
-     * the SSID from the deleted ephemeral network map, if the duration has expired the
-     * timeout specified by {@link #DELETED_EPHEMERAL_SSID_EXPIRY_MS}.
+     * Check if the provided network was temporarily disabled by the user and still blocked.
      *
-     * @param ssid caller must ensure that the SSID passed thru this API match
-     *             the WifiConfiguration.SSID rules, and thus be surrounded by quotes.
-     * @return true if network was deleted, false otherwise.
+     * @param network Input can be SSID or FQDN. And caller must ensure that the SSID passed thru
+     *                this API matched the WifiConfiguration.SSID rules, and thus be surrounded by
+     *                quotes.
+     * @return true if network is blocking, otherwise false.
      */
-    public boolean wasEphemeralNetworkDeleted(String ssid) {
-        if (!mDeletedEphemeralSsidsToTimeMap.containsKey(ssid)) {
-            return false;
+    public boolean isNetworkTemporarilyDisabledByUser(String network) {
+        if (mUserTemporarilyDisabledList.isLocked(network)) {
+            return true;
         }
-        long deletedTimeInMs = mDeletedEphemeralSsidsToTimeMap.get(ssid);
-        long nowInMs = mClock.getWallClockMillis();
-        // Clear the ssid from the map if the age > |DELETED_EPHEMERAL_SSID_EXPIRY_MS|.
-        if (nowInMs - deletedTimeInMs > DELETED_EPHEMERAL_SSID_EXPIRY_MS) {
-            mDeletedEphemeralSsidsToTimeMap.remove(ssid);
-            WifiConfiguration foundConfig = getInternalEphemeralConfiguredNetwork(ssid);
-            if (foundConfig != null) {
-                updateNetworkSelectionStatus(
-                        foundConfig, NetworkSelectionStatus.DISABLED_NONE);
-            }
-            return false;
-        }
-        return true;
+        mUserTemporarilyDisabledList.remove(network);
+        return false;
     }
 
     /**
-     * Disable an ephemeral or Passpoint SSID for the purpose of network selection.
+     * User temporarily disable a network and will be block to auto-join when network is still
+     * nearby.
      *
      * The network will be re-enabled when:
-     * a) The user creates a network for that SSID and then forgets.
-     * b) The time specified by {@link #DELETED_EPHEMERAL_SSID_EXPIRY_MS} expires after the disable.
+     * a) User select to connect the network.
+     * b) The network is not in range for {@link #USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS}
+     * c) Toggle wifi off, reset network settings or device reboot.
      *
-     * @param ssid caller must ensure that the SSID passed thru this API match
-     *             the WifiConfiguration.SSID rules, and thus be surrounded by quotes.
-     * @return the {@link WifiConfiguration} corresponding to this SSID, if any, so that we can
-     * disconnect if this is the current network.
+     * @param network Input can be SSID or FQDN. And caller must ensure that the SSID passed thru
+     *                this API matched the WifiConfiguration.SSID rules, and thus be surrounded by
+     *                quotes.
      */
-    public WifiConfiguration disableEphemeralNetwork(String ssid) {
-        if (ssid == null) {
-            return null;
+    public void userTemporarilyDisabledNetwork(String network) {
+        mUserTemporarilyDisabledList.add(network, USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS);
+        Log.d(TAG, "Temporarily disable network: " + network + " num="
+                + mUserTemporarilyDisabledList.size());
+        removeUserChoiceFromDisabledNetwork(network);
+    }
+
+    /**
+     * Update the user temporarily disabled network list with networks in range.
+     * @param networks networks in range in String format, FQDN or SSID. And caller must ensure
+     *                 that the SSID passed thru this API matched the WifiConfiguration.SSID rules,
+     *                 and thus be surrounded by quotes.
+     */
+    public void updateUserDisabledList(List<String> networks) {
+        mUserTemporarilyDisabledList.update(new HashSet<>(networks));
+    }
+
+    private void removeUserChoiceFromDisabledNetwork(
+            @NonNull String network) {
+        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
+            if (TextUtils.equals(config.SSID, network) || TextUtils.equals(config.FQDN, network)) {
+                removeConnectChoiceFromAllNetworks(config.getKey());
+            }
         }
-        WifiConfiguration foundConfig = getInternalEphemeralConfiguredNetwork(ssid);
-        if (foundConfig == null) return null;
-        // Store the ssid & the wall clock time at which the network was disabled.
-        mDeletedEphemeralSsidsToTimeMap.put(ssid, mClock.getWallClockMillis());
-        // Also, mark the ephemeral permanently blacklisted. Will be taken out of blacklist
-        // when the ssid is taken out of |mDeletedEphemeralSsidsToTimeMap|.
-        updateNetworkSelectionStatus(foundConfig, NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER);
-        Log.d(TAG, "Forget ephemeral SSID " + ssid + " num="
-                + mDeletedEphemeralSsidsToTimeMap.size());
-        if (foundConfig.ephemeral) {
-            Log.d(TAG, "Found ephemeral config in disableEphemeralNetwork: "
-                    + foundConfig.networkId);
-        } else if (foundConfig.isPasspoint()) {
-            Log.d(TAG, "Found Passpoint config in disableEphemeralNetwork: "
-                    + foundConfig.networkId + ", FQDN: " + foundConfig.FQDN);
+    }
+
+    /**
+     * User enabled network manually, maybe trigger by user select to connect network.
+     * @param networkId enabled network id.
+     */
+    public void userEnabledNetwork(int networkId) {
+        WifiConfiguration configuration = getInternalConfiguredNetwork(networkId);
+        if (configuration == null) {
+            return;
         }
-        removeConnectChoiceFromAllNetworks(foundConfig.getKey());
-        return foundConfig;
+        String network;
+        if (configuration.isPasspoint()) {
+            network = configuration.FQDN;
+        } else {
+            network = configuration.SSID;
+        }
+        mUserTemporarilyDisabledList.remove(network);
+        Log.d(TAG, "Enable disabled network: " + network + " num="
+                + mUserTemporarilyDisabledList.size());
     }
 
     /**
      * Clear all deleted ephemeral networks.
      */
     @VisibleForTesting
-    public void clearDeletedEphemeralNetworks() {
-        mDeletedEphemeralSsidsToTimeMap.clear();
+    public void clearUserTemporarilyDisabledList() {
+        mUserTemporarilyDisabledList.clear();
     }
 
     /**
@@ -3015,7 +3017,7 @@ public class WifiConfigManager {
     private void clearInternalData() {
         localLog("clearInternalData: Clearing all internal data");
         mConfiguredNetworks.clear();
-        mDeletedEphemeralSsidsToTimeMap.clear();
+        mUserTemporarilyDisabledList.clear();
         mRandomizedMacAddressMapping.clear();
         mScanDetailCaches.clear();
         clearLastSelectedNetwork();
@@ -3044,7 +3046,7 @@ public class WifiConfigManager {
                 mConfiguredNetworks.remove(config.networkId);
             }
         }
-        mDeletedEphemeralSsidsToTimeMap.clear();
+        mUserTemporarilyDisabledList.clear();
         mScanDetailCaches.clear();
         clearLastSelectedNetwork();
         return removedNetworkIds;

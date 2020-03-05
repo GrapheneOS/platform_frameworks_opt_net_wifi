@@ -1391,7 +1391,7 @@ public class WifiNetworkFactory extends NetworkFactory {
                     findUserApprovedAccessPointForActiveRequestFromActiveMatchedScanResults();
         }
         if (approvedScanResult != null
-                && !mWifiConfigManager.wasEphemeralNetworkDeleted(
+                && !mWifiConfigManager.isNetworkTemporarilyDisabledByUser(
                 ScanResultUtil.createQuotedSSID(approvedScanResult.SSID))) {
             Log.v(TAG, "Approved access point found in matching scan results. "
                     + "Triggering connect " + approvedScanResult);

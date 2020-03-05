@@ -121,6 +121,11 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
             // TODO (b/112196799): another side effect
             status.setSeenInLastQualifiedNetworkSelection(true);
 
+            if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network.SSID)) {
+                mLocalLog.log("Ignoring user disabled SSID: " + network.SSID);
+                continue;
+            }
+
             if (!status.isNetworkEnabled()) {
                 continue;
             } else if (network.BSSID != null &&  !network.BSSID.equals("any")
