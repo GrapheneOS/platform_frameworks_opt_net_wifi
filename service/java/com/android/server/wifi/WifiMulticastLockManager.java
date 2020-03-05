@@ -20,6 +20,7 @@ import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.os.WorkSource;
 import android.util.Log;
 
 import com.android.server.wifi.proto.WifiStatsLog;
@@ -150,7 +151,7 @@ public class WifiMulticastLockManager {
 
         int uid = Binder.getCallingUid();
         final long ident = Binder.clearCallingIdentity();
-        mBatteryStats.reportWifiMulticastEnabled(uid);
+        mBatteryStats.reportWifiMulticastEnabled(new WorkSource(uid));
         WifiStatsLog.write_non_chained(
                 WifiStatsLog.WIFI_MULTICAST_LOCK_STATE_CHANGED, uid, null,
                 WifiStatsLog.WIFI_MULTICAST_LOCK_STATE_CHANGED__STATE__ON, tag);
@@ -184,7 +185,7 @@ public class WifiMulticastLockManager {
         }
 
         final long ident = Binder.clearCallingIdentity();
-        mBatteryStats.reportWifiMulticastDisabled(uid);
+        mBatteryStats.reportWifiMulticastDisabled(new WorkSource(uid));
         WifiStatsLog.write_non_chained(
                 WifiStatsLog.WIFI_MULTICAST_LOCK_STATE_CHANGED, uid, null,
                 WifiStatsLog.WIFI_MULTICAST_LOCK_STATE_CHANGED__STATE__OFF, tag);
