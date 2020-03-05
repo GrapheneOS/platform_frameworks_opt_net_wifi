@@ -2923,7 +2923,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiDiagnostics).reportConnectionEvent(
                 eq(WifiDiagnostics.CONNECTION_EVENT_FAILED));
         verify(mWifiConnectivityManager).handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION);
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION, sBSSID, sSSID);
         verify(mWifiNetworkFactory).handleConnectionAttemptEnded(
                 eq(WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION),
                 any(WifiConfiguration.class));
@@ -2952,7 +2952,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiDiagnostics).reportConnectionEvent(
                 eq(WifiDiagnostics.CONNECTION_EVENT_FAILED));
         verify(mWifiConnectivityManager).handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE);
+                WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE, sBSSID, sSSID);
         verify(mWifiNetworkFactory).handleConnectionAttemptEnded(
                 eq(WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE),
                 any(WifiConfiguration.class));
@@ -3137,7 +3137,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiDiagnostics, atLeastOnce()).reportConnectionEvent(
                 eq(WifiDiagnostics.CONNECTION_EVENT_FAILED));
         verify(mWifiConnectivityManager, atLeastOnce()).handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_DHCP);
+                WifiMetrics.ConnectionEvent.FAILURE_DHCP, sBSSID, sSSID);
         verify(mWifiNetworkFactory, atLeastOnce()).handleConnectionAttemptEnded(
                 eq(WifiMetrics.ConnectionEvent.FAILURE_DHCP), any(WifiConfiguration.class));
         verify(mWifiNetworkSuggestionsManager, atLeastOnce()).handleConnectionAttemptEnded(
@@ -3171,7 +3171,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiDiagnostics).reportConnectionEvent(
                 eq(WifiDiagnostics.CONNECTION_EVENT_SUCCEEDED));
         verify(mWifiConnectivityManager).handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_NONE);
+                WifiMetrics.ConnectionEvent.FAILURE_NONE, sBSSID, sSSID);
         verify(mWifiNetworkFactory).handleConnectionAttemptEnded(
                 eq(WifiMetrics.ConnectionEvent.FAILURE_NONE), any(WifiConfiguration.class));
         verify(mWifiNetworkSuggestionsManager).handleConnectionAttemptEnded(

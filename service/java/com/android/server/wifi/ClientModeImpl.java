@@ -2869,17 +2869,14 @@ public class ClientModeImpl extends StateMachine {
             configuration = getTargetWifiConfiguration();
         }
 
+        String bssid = mLastBssid == null ? mTargetBssid : mLastBssid;
+        String ssid = mWifiInfo.getSSID();
+        if (WifiManager.UNKNOWN_SSID.equals(ssid)) {
+            ssid = getTargetSsid();
+        }
         if (level2FailureCode != WifiMetrics.ConnectionEvent.FAILURE_NONE) {
-
             int blocklistReason = convertToBssidBlocklistMonitorFailureReason(
                     level2FailureCode, level2FailureReason);
-
-            String bssid = mLastBssid == null ? mTargetBssid : mLastBssid;
-            String ssid = mWifiInfo.getSSID();
-            if (WifiManager.UNKNOWN_SSID.equals(ssid)) {
-                ssid = getTargetSsid();
-            }
-
             if (blocklistReason != -1) {
                 int networkId = (configuration == null) ? WifiConfiguration.INVALID_NETWORK_ID
                         : configuration.networkId;
@@ -2920,7 +2917,7 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiMetrics.endConnectionEvent(level2FailureCode, connectivityFailureCode,
                 level2FailureReason);
-        mWifiConnectivityManager.handleConnectionAttemptEnded(level2FailureCode);
+        mWifiConnectivityManager.handleConnectionAttemptEnded(level2FailureCode, bssid, ssid);
         if (configuration != null) {
             mNetworkFactory.handleConnectionAttemptEnded(level2FailureCode, configuration);
             mWifiNetworkSuggestionsManager.handleConnectionAttemptEnded(

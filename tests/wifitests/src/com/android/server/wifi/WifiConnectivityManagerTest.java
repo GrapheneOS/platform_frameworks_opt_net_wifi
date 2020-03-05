@@ -27,6 +27,7 @@ import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.app.test.TestAlarmManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.MacAddress;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.ScanResult.InformationElement;
@@ -197,6 +198,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final int CANDIDATE_NETWORK_ID = 0;
     private static final String CANDIDATE_SSID = "\"AnSsid\"";
     private static final String CANDIDATE_BSSID = "6c:f3:7f:ae:8c:f3";
+    private static final String CANDIDATE_BSSID_2 = "6c:f3:7f:ae:8d:f3";
     private static final String INVALID_SCAN_RESULT_BSSID = "6c:f3:7f:ae:8c:f4";
     private static final int TEST_FREQUENCY = 2420;
     private static final long CURRENT_SYSTEM_TIME_MS = 1000;
@@ -217,6 +219,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final int HIGH_MVMT_RSSI_DELTA = 10;
     private static final String TEST_FQDN = "FQDN";
     private static final String TEST_SSID = "SSID";
+    private static final int TEMP_BSSID_BLOCK_DURATION = 10 * 1000; // 10 seconds
 
     Context mockContext() {
         Context context = mock(Context.class);
@@ -323,7 +326,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidate.getNetworkSelectionStatus().setCandidate(candidateScanResult);
 
         when(mWifiConfigManager.getConfiguredNetwork(CANDIDATE_NETWORK_ID)).thenReturn(candidate);
-        WifiCandidates.Key key = mock(WifiCandidates.Key.class);
+        MacAddress macAddress = MacAddress.fromString(CANDIDATE_BSSID);
+        WifiCandidates.Key key = new WifiCandidates.Key(mock(ScanResultMatchInfo.class),
+                macAddress, 0);
         when(mCandidate1.getKey()).thenReturn(key);
         when(mCandidate1.getScanRssi()).thenReturn(-40);
         when(mCandidate1.getFrequency()).thenReturn(TEST_FREQUENCY);
@@ -336,7 +341,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(ns.selectNetwork(any()))
                 .then(new AnswerWithArguments() {
                     public WifiConfiguration answer(List<WifiCandidates.Candidate> candidateList) {
-                        if (candidateList == null) {
+                        if (candidateList == null || candidateList.size() == 0) {
                             return null;
                         }
                         return candidate;
@@ -775,6 +780,103 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that when there are we obtain more than one valid candidates from scan results and
+     * network connection fails, connection is immediately retried on the remaining candidates.
+     */
+    @Test
+    public void testRetryConnectionOnFailure() {
+        // Setup WifiNetworkSelector to return 2 valid candidates from scan results
+        MacAddress macAddress = MacAddress.fromString(CANDIDATE_BSSID_2);
+        WifiCandidates.Key key = new WifiCandidates.Key(mock(ScanResultMatchInfo.class),
+                macAddress, 0);
+        WifiCandidates.Candidate otherCandidate = mock(WifiCandidates.Candidate.class);
+        when(otherCandidate.getKey()).thenReturn(key);
+        List<WifiCandidates.Candidate> candidateList = new ArrayList<>();
+        candidateList.add(mCandidate1);
+        candidateList.add(otherCandidate);
+        when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
+                anyBoolean())).thenReturn(candidateList);
+
+        // Set WiFi to disconnected state to trigger scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+        mLooper.dispatchAll();
+        // Verify a connection starting
+        verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
+                argThat(new WifiCandidatesListSizeMatcher(2)));
+        verify(mClientModeImpl).startConnectToNetwork(anyInt(), anyInt(), any());
+
+        // Simulate the connection failing
+        mWifiConnectivityManager.handleConnectionAttemptEnded(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION, CANDIDATE_BSSID,
+                CANDIDATE_SSID);
+        // Verify the failed BSSID is added to blocklist
+        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(CANDIDATE_BSSID),
+                eq(CANDIDATE_SSID), anyLong());
+        // Verify another connection starting
+        verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
+                argThat(new WifiCandidatesListSizeMatcher(1)));
+        verify(mClientModeImpl, times(2)).startConnectToNetwork(anyInt(), anyInt(), any());
+
+        // Simulate the second connection also failing
+        mWifiConnectivityManager.handleConnectionAttemptEnded(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION, CANDIDATE_BSSID_2,
+                CANDIDATE_SSID);
+        // Verify there are no more connections
+        verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
+                argThat(new WifiCandidatesListSizeMatcher(0)));
+        verify(mClientModeImpl, times(2)).startConnectToNetwork(anyInt(), anyInt(), any());
+    }
+
+    private class WifiCandidatesListSizeMatcher implements
+            ArgumentMatcher<List<WifiCandidates.Candidate>> {
+        int mSize;
+        WifiCandidatesListSizeMatcher(int size) {
+            mSize = size;
+        }
+        @Override
+        public boolean matches(List<WifiCandidates.Candidate> candidateList) {
+            return candidateList.size() == mSize;
+        }
+    }
+
+    /**
+     * Verify that the cached candidates become cleared after a period of time.
+     */
+    @Test
+    public void testRetryConnectionOnFailureCacheTimeout() {
+        // Setup WifiNetworkSelector to return 2 valid candidates from scan results
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
+        MacAddress macAddress = MacAddress.fromString(CANDIDATE_BSSID_2);
+        WifiCandidates.Key key = new WifiCandidates.Key(mock(ScanResultMatchInfo.class),
+                macAddress, 0);
+        WifiCandidates.Candidate otherCandidate = mock(WifiCandidates.Candidate.class);
+        when(otherCandidate.getKey()).thenReturn(key);
+        List<WifiCandidates.Candidate> candidateList = new ArrayList<>();
+        candidateList.add(mCandidate1);
+        candidateList.add(otherCandidate);
+        when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
+                anyBoolean())).thenReturn(candidateList);
+
+        // Set WiFi to disconnected state to trigger scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+        mLooper.dispatchAll();
+        // Verify a connection starting
+        verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
+                argThat(new WifiCandidatesListSizeMatcher(2)));
+        verify(mClientModeImpl).startConnectToNetwork(anyInt(), anyInt(), any());
+
+        // Simulate the connection failing after the cache timeout period.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEMP_BSSID_BLOCK_DURATION + 1L);
+        mWifiConnectivityManager.handleConnectionAttemptEnded(
+                WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION, CANDIDATE_BSSID,
+                CANDIDATE_SSID);
+        // verify there are no additional connections.
+        verify(mClientModeImpl).startConnectToNetwork(anyInt(), anyInt(), any());
+    }
+
+    /**
      * Verify that in the high movement mobility state, when the RSSI delta of a BSSID from
      * 2 consecutive scans becomes greater than a threshold, the candidate get ignored from
      * network selection.
@@ -852,7 +954,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set WiFi to connected state
         mWifiInfo.setSSID(WifiSsid.createFromAsciiEncoded(CANDIDATE_SSID));
         mWifiConnectivityManager.handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_NONE);
+                WifiMetrics.ConnectionEvent.FAILURE_NONE, CANDIDATE_BSSID, CANDIDATE_SSID);
         verify(mOpenNetworkNotifier).handleWifiConnected(CANDIDATE_SSID);
     }
 
@@ -881,7 +983,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Test
     public void wifiConnectionEndsWithFailure_openNetworkNotifierHandlesConnectionFailure() {
         mWifiConnectivityManager.handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_CONNECT_NETWORK_FAILED);
+                WifiMetrics.ConnectionEvent.FAILURE_CONNECT_NETWORK_FAILED, CANDIDATE_BSSID,
+                CANDIDATE_SSID);
 
         verify(mOpenNetworkNotifier).handleConnectionFailure();
     }
@@ -896,7 +999,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Test
     public void wifiConnectionEndsWithSuccess_openNetworkNotifierDoesNotHandleConnectionFailure() {
         mWifiConnectivityManager.handleConnectionAttemptEnded(
-                WifiMetrics.ConnectionEvent.FAILURE_NONE);
+                WifiMetrics.ConnectionEvent.FAILURE_NONE, CANDIDATE_BSSID, CANDIDATE_SSID);
 
         verify(mOpenNetworkNotifier, never()).handleConnectionFailure();
     }
