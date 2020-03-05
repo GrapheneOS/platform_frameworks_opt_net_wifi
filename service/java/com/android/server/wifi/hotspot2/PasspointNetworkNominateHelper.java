@@ -94,13 +94,6 @@ public class PasspointNetworkNominateHelper {
                         + WifiNetworkSelector.toScanId(scanDetail.getScanResult()));
                 continue;
             }
-            if (mWifiConfigManager.wasEphemeralNetworkDeleted(
-                    ScanResultUtil.createQuotedSSID(scanDetail.getScanResult().SSID))) {
-                // If the user previously disconnects this network, don't select it.
-                mLocalLog.log("Ignoring disabled the SSID of Passpoint AP: "
-                        + WifiNetworkSelector.toScanId(scanDetail.getScanResult()));
-                continue;
-            }
             filteredScanDetails.add(scanDetail);
         }
 
@@ -168,6 +161,10 @@ public class PasspointNetworkNominateHelper {
             for (PasspointNetworkCandidate candidate : bestCandidates) {
                 WifiConfiguration config = createWifiConfigForProvider(candidate);
                 if (config == null) {
+                    continue;
+                }
+                if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(config.FQDN)) {
+                    mLocalLog.log("Ignoring user disabled FQDN: " + config.FQDN);
                     continue;
                 }
                 results.add(Pair.create(candidate.mScanDetail, config));

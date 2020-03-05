@@ -893,6 +893,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.connect(null, config.networkId, mock(Binder.class), connectActionListener, 0,
                 Binder.getCallingUid());
         mLooper.dispatchAll();
+        verify(mWifiConfigManager).userEnabledNetwork(config.networkId);
         verify(connectActionListener).onSuccess();
     }
 
