@@ -6025,6 +6025,7 @@ public class ClientModeImpl extends StateMachine {
                 result = new NetworkUpdateResult(netId);
             }
             final int networkId = result.getNetworkId();
+            mWifiConfigManager.userEnabledNetwork(networkId);
             if (!mWifiConfigManager.enableNetwork(networkId, true, callingUid, null)
                     || !mWifiConfigManager.updateLastConnectUid(networkId, callingUid)) {
                 logi("connect Allowing uid " + callingUid

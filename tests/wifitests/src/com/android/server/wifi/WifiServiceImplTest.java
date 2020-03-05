@@ -4102,7 +4102,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mPasspointManager).removeProvider(anyInt(), anyBoolean(), eq(config.getUniqueId()),
                 isNull());
         verify(mPasspointManager).clearAnqpRequestsAndFlushCache();
-        verify(mWifiConfigManager).clearDeletedEphemeralNetworks();
+        verify(mWifiConfigManager).clearUserTemporarilyDisabledList();
         verify(mWifiConfigManager).removeAllEphemeralOrPasspointConfiguredNetworks();
         verify(mClientModeImpl).clearNetworkRequestUserApprovedAccessPoints();
         verify(mWifiNetworkSuggestionsManager).clear();
@@ -4482,7 +4482,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         mWifiServiceImpl.disableEphemeralNetwork(new String(), TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
-        verify(mWifiConfigManager).disableEphemeralNetwork(anyString());
+        verify(mWifiConfigManager).userTemporarilyDisabledNetwork(anyString());
     }
 
     /**
@@ -4495,7 +4495,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
         mWifiServiceImpl.disableEphemeralNetwork(new String(), TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
-        verify(mWifiConfigManager, never()).disableEphemeralNetwork(anyString());
+        verify(mWifiConfigManager, never()).userTemporarilyDisabledNetwork(anyString());
     }
 
     /**
