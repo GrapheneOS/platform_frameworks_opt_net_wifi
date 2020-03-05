@@ -1,6 +1,9 @@
 {
   "presubmit": [
     {
+      "name": "FrameworksWifiTests"
+    },
+    {
       "name": "CtsBackupHostTestCases",
       "options": [
         {
@@ -10,4 +13,3 @@
     }
   ]
 }
-
