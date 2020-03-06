@@ -500,6 +500,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Now change BSSID for the network.
         assertAndSetNetworkBSSID(openNetwork, TEST_BSSID);
+        // Change the trusted bit.
+        openNetwork.trusted = true;
         verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(openNetwork);
 
         // Now verify that the modification has been effective.
