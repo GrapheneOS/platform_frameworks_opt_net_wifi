@@ -30,6 +30,7 @@ import android.net.IpConfiguration;
 import android.net.MacAddress;
 import android.net.ProxyInfo;
 import android.net.StaticIpConfiguration;
+import android.net.util.MacAddressUtils;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -522,7 +523,7 @@ public class WifiConfigManager {
         if (result == null) {
             Log.wtf(TAG, "Failed to generate MAC address from KeyStore even after retrying. "
                     + "Using locally generated MAC address instead.");
-            result = MacAddress.createRandomUnicastAddress();
+            result = MacAddressUtils.createRandomUnicastAddress();
         }
         return result;
     }
