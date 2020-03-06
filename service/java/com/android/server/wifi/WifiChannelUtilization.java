@@ -53,7 +53,7 @@ public class WifiChannelUtilization {
     // The number of chanStatsMap readings saved in cache
     // where each reading corresponds to one link layer stats update.
     @VisibleForTesting
-    static final int CHANNEL_STATS_CACHE_SIZE = 3;
+    static final int CHANNEL_STATS_CACHE_SIZE = 5;
     private final Clock mClock;
     private @DeviceMobilityState int mDeviceMobilityState = DEVICE_MOBILITY_STATE_UNKNOWN;
     private int mCacheUpdateIntervalMinMs = DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS;
@@ -78,6 +78,8 @@ public class WifiChannelUtilization {
     public void init(WifiLinkLayerStats wifiLinkLayerStats) {
         mChannelUtilizationMap.clear();
         mChannelStatsMapCache.clear();
+        mDeviceMobilityState = DEVICE_MOBILITY_STATE_UNKNOWN;
+        mLastChannelStatsMapMobilityState = DEVICE_MOBILITY_STATE_UNKNOWN;
         for (int i = 0; i < (CHANNEL_STATS_CACHE_SIZE - 1); ++i) {
             mChannelStatsMapCache.addFirst(new SparseArray<>());
         }
@@ -220,7 +222,7 @@ public class WifiChannelUtilization {
 
     private int calculateUtilizationRatio(int radioOnTimeDiff, int busyTimeDiff) {
         int maxRange = BssLoad.MAX_CHANNEL_UTILIZATION - BssLoad.MIN_CHANNEL_UTILIZATION;
-        if (radioOnTimeDiff > 0) {
+        if (radioOnTimeDiff > 0 && busyTimeDiff <= radioOnTimeDiff) {
             return (busyTimeDiff * maxRange / radioOnTimeDiff + BssLoad.MIN_CHANNEL_UTILIZATION);
         } else {
             return BssLoad.INVALID;
