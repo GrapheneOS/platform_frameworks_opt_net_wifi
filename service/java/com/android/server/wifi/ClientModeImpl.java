@@ -2714,6 +2714,7 @@ public class ClientModeImpl extends StateMachine {
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
         mWifiScoreCard.resetConnectionState();
+        mWifiDataStall.reset();
         updateL2KeyAndGroupHint();
     }
 
@@ -3671,6 +3672,7 @@ public class ClientModeImpl extends StateMachine {
             mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_ENABLED);
             mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
             mWifiHealthMonitor.setWifiEnabled(true);
+            mWifiDataStall.init();
         }
 
         @Override
@@ -3693,6 +3695,7 @@ public class ClientModeImpl extends StateMachine {
             mWifiInfo.setSupplicantState(SupplicantState.DISCONNECTED);
             mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
             mWifiHealthMonitor.setWifiEnabled(false);
+            mWifiDataStall.reset();
             stopClientMode();
         }
 
