@@ -465,6 +465,9 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         // with migration of data for devices upgrading from Q to R.
         perAppInfo.setUid(suggestorUid);
         WifiConfiguration wifiConfiguration = parsedConfig.second;
+        if (passpointConfiguration != null) {
+            wifiConfiguration.setPasspointUniqueId(passpointConfiguration.getUniqueId());
+        }
         if (enterpriseConfig != null) {
             wifiConfiguration.enterpriseConfig = enterpriseConfig;
         }
