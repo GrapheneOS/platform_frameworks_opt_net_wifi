@@ -19,8 +19,12 @@ package com.android.server.wifi;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import android.net.wifi.EAPConstants;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiNetworkSuggestion;
+import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.hotspot2.pps.Credential;
+import android.net.wifi.hotspot2.pps.HomeSp;
 import android.util.Xml;
 
 import androidx.test.filters.SmallTest;
@@ -53,6 +57,9 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
     private static final String TEST_PACKAGE_NAME_1 = "com.android.test.1";
     private static final String TEST_PACKAGE_NAME_2 = "com.android.test.2";
     private static final String  TEST_FEATURE_ID = "com.android.feature.1";
+    private static final String TEST_FQDN = "FQDN";
+    private static final String TEST_FRIENDLY_NAME = "test_friendly_name";
+    private static final String TEST_REALM = "realm.test.com";
     private static final String TEST_PRE_R_STORE_FORMAT_XML_STRING =
             "<NetworkSuggestionPerApp>\n"
                     + "<string name=\"SuggestorPackageName\">%1$s</string>\n"
@@ -439,6 +446,33 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         assertNotNull(deserializedPerAppInfoMapPostRFormat.get(TEST_PACKAGE_NAME_1));
     }
 
+    /**
+     * Serialize/Deserialize a single Passpoint network suggestion from a single app.
+     */
+    @Test
+    public void serializeDeserializeSinglePasspointSuggestionFromSingleApp() throws Exception {
+        Map<String, PerAppInfo> networkSuggestionsMap = new HashMap<>();
+
+        PerAppInfo appInfo = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_NAME_1, TEST_FEATURE_ID);
+
+        WifiNetworkSuggestion.Builder builder = new WifiNetworkSuggestion.Builder();
+        builder.setPasspointConfig(
+                createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME));
+        WifiNetworkSuggestion networkSuggestion = builder.build();
+        appInfo.hasUserApproved = false;
+        appInfo.extNetworkSuggestions.add(
+                ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
+        networkSuggestionsMap.put(TEST_PACKAGE_NAME_1, appInfo);
+
+        Map<String, PerAppInfo> deserializedPerAppInfoMap =
+                assertSerializeDeserialize(networkSuggestionsMap);
+        ExtendedWifiNetworkSuggestion deserializedSuggestion =
+                deserializedPerAppInfoMap.get(TEST_PACKAGE_NAME_1).extNetworkSuggestions.stream()
+                        .findAny()
+                        .orElse(null);
+        assertEquals(networkSuggestion, deserializedSuggestion.wns);
+    }
+
     private Map<String, PerAppInfo> assertSerializeDeserialize(
             Map<String, PerAppInfo> networkSuggestionsMap) throws Exception {
         // Setup the data to serialize.
@@ -453,5 +487,30 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         verify(mDataSource).fromDeserialized(deserializedNetworkSuggestionsMap.capture());
         assertEquals(networkSuggestionsMap, deserializedNetworkSuggestionsMap.getValue());
         return deserializedNetworkSuggestionsMap.getValue();
+    }
+
+    private PasspointConfiguration createTestConfigWithUserCredential(String fqdn,
+            String friendlyName) {
+        PasspointConfiguration config = new PasspointConfiguration();
+        HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn(fqdn);
+        homeSp.setFriendlyName(friendlyName);
+        config.setHomeSp(homeSp);
+        Map<String, String> friendlyNames = new HashMap<>();
+        friendlyNames.put("en", friendlyName);
+        friendlyNames.put("kr", friendlyName + 1);
+        friendlyNames.put("jp", friendlyName + 2);
+        config.setServiceFriendlyNames(friendlyNames);
+        Credential credential = new Credential();
+        credential.setRealm(TEST_REALM);
+        credential.setCaCertificate(FakeKeys.CA_CERT0);
+        Credential.UserCredential userCredential = new Credential.UserCredential();
+        userCredential.setUsername("username");
+        userCredential.setPassword("password");
+        userCredential.setEapType(EAPConstants.EAP_TTLS);
+        userCredential.setNonEapInnerMethod(Credential.UserCredential.AUTH_METHOD_MSCHAP);
+        credential.setUserCredential(userCredential);
+        config.setCredential(credential);
+        return config;
     }
 }
