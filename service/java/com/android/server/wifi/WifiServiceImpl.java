@@ -565,7 +565,7 @@ public class WifiServiceImpl extends BaseWifiService {
             // Someone requested a scan while we were idle; do a full scan now.
             // A security check of the caller's identity was made when the request arrived via
             // Binder. Now we'll pass the current process's identity to startScan().
-            startScan(mContext.getOpPackageName(), mContext.getFeatureId());
+            startScan(mContext.getOpPackageName(), mContext.getAttributionTag());
         }
     }
 

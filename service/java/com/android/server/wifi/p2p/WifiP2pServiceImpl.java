@@ -4166,7 +4166,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             if (clientInfo != null) {
                 return clientInfo.mFeatureId;
             }
-            if (uid == Process.SYSTEM_UID) return mContext.getFeatureId();
+            if (uid == Process.SYSTEM_UID) return mContext.getAttributionTag();
             return null;
         }
 
