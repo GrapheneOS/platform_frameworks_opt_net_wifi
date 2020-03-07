@@ -93,6 +93,19 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
     }
 
     @Test
+    public void verifyOneReadChanStatsWithLargeCcaBusyTime() throws Exception {
+        WifiLinkLayerStats llstats = new WifiLinkLayerStats();
+        int freq = 5180;
+        ChannelStats cs = new ChannelStats();
+        cs.frequency = freq;
+        cs.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS * 2;
+        cs.ccaBusyTimeMs = RADIO_ON_TIME_DIFF_MIN_MS * 20;
+        llstats.channelStatsMap.put(freq, cs);
+        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats, UNKNOWN_FREQ);
+        assertEquals(INVALID, mWifiChannelUtilization.getUtilizationRatio(freq));
+    }
+
+    @Test
     public void verifyOneReadChanStatsWithLongRadioOnTime() throws Exception {
         WifiLinkLayerStats llstats = new WifiLinkLayerStats();
         int freq = 5180;

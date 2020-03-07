@@ -53,7 +53,7 @@ public class WifiDataStall {
     public static final int DEFAULT_CCA_LEVEL_2G = CHANNEL_UTILIZATION_SCALE * 16 / 100;
     public static final int DEFAULT_CCA_LEVEL_ABOVE_2G = CHANNEL_UTILIZATION_SCALE * 6 / 100;
     // Minimum time interval in ms between two link layer stats cache updates
-    private static final int LLSTATS_CACHE_UPDATE_INTERVAL_MIN_MS = 6 * 1000;
+    private static final int LLSTATS_CACHE_UPDATE_INTERVAL_MIN_MS = 30_000;
     // Maximum time margin between two link layer stats for connection duration update
     public static final int MAX_TIME_MARGIN_LAST_TWO_POLLS_MS = 200;
 
@@ -90,7 +90,6 @@ public class WifiDataStall {
         mContext = context;
         mClock = clock;
         mWifiChannelUtilization = wifiChannelUtilization;
-        mWifiChannelUtilization.init(null);
         mWifiChannelUtilization.setCacheUpdateIntervalMs(LLSTATS_CACHE_UPDATE_INTERVAL_MIN_MS);
         mThroughputPredictor = throughputPredictor;
         mPhoneStateListener = new PhoneStateListener(new HandlerExecutor(handler)) {
@@ -107,6 +106,30 @@ public class WifiDataStall {
                 logd("Cellular Data: " + mIsCellularDataAvailable);
             }
         };
+    }
+
+    /**
+     * initialization after wifi is enabled
+     */
+    public void init() {
+        mWifiChannelUtilization.init(null);
+        reset();
+    }
+
+    /**
+     * Reset internal variables
+     */
+    public void reset() {
+        mLastTxBytes = 0;
+        mLastRxBytes = 0;
+        mLastFrequency = -1;
+        mLastBssid = null;
+        mDataStallStartTimeMs = -1;
+        mDataStallTx = false;
+        mDataStallRx = false;
+        mIsThroughputSufficient = true;
+        mTxTputKbps = INVALID_THROUGHPUT;
+        mRxTputKbps = INVALID_THROUGHPUT;
     }
 
     /**
@@ -243,7 +266,7 @@ public class WifiDataStall {
         boolean isTxTrafficHigh = (totalTxDelta * 1000)
                 > (mDeviceConfigFacade.getTxPktPerSecondThr() * timeDeltaLastTwoPollsMs);
         boolean isRxTrafficHigh = (rxSuccessDelta * 1000)
-                > (mDeviceConfigFacade.getTxPktPerSecondThr() * timeDeltaLastTwoPollsMs);
+                > (mDeviceConfigFacade.getRxPktPerSecondThr() * timeDeltaLastTwoPollsMs);
         if (timeDeltaLastTwoPollsMs < 0
                 || txSuccessDelta < 0
                 || txRetriesDelta < 0
@@ -284,6 +307,8 @@ public class WifiDataStall {
                         * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE);
             }
             isTxTputLow =  mTxTputKbps < mDeviceConfigFacade.getDataStallTxTputThrKbps();
+        } else {
+            mTxTputKbps = INVALID_THROUGHPUT;
         }
 
         if (rxLinkSpeedMbps > 0) {
@@ -293,6 +318,8 @@ public class WifiDataStall {
                         * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE);
             }
             isRxTputLow = mRxTputKbps < mDeviceConfigFacade.getDataStallRxTputThrKbps();
+        } else {
+            mRxTputKbps = INVALID_THROUGHPUT;
         }
 
         mIsThroughputSufficient = isThroughputSufficientInternal(mTxTputKbps, mRxTputKbps,
