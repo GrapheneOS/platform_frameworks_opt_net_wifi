@@ -946,11 +946,15 @@ public class WifiNetworkSuggestionsManager {
             @NonNull Collection<ExtendedWifiNetworkSuggestion> extNetworkSuggestions,
             @NonNull String packageName,
             @NonNull PerAppInfo perAppInfo) {
+        // Get internal suggestions
+        Set<ExtendedWifiNetworkSuggestion> removingSuggestions =
+                new HashSet<>(perAppInfo.extNetworkSuggestions);
         if (!extNetworkSuggestions.isEmpty()) {
+            // Keep the internal suggestions need to remove.
+            removingSuggestions.retainAll(extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.removeAll(extNetworkSuggestions);
         } else {
             // empty list is used to clear everything for the app. Store a copy for use below.
-            extNetworkSuggestions = new HashSet<>(perAppInfo.extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.clear();
         }
         if (perAppInfo.extNetworkSuggestions.isEmpty()) {
@@ -962,7 +966,7 @@ public class WifiNetworkSuggestionsManager {
             stopTrackingAppOpsChange(packageName);
         }
         // Clear the cache.
-        for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
+        for (ExtendedWifiNetworkSuggestion ewns : removingSuggestions) {
             if (ewns.wns.passpointConfiguration != null) {
                 // Clear the Passpoint config.
                 mWifiInjector.getPasspointManager().removeProvider(
@@ -978,7 +982,7 @@ public class WifiNetworkSuggestionsManager {
             }
         }
         // Disconnect suggested network if connected
-        removeFromConfigManagerIfServingNetworkSuggestionRemoved(extNetworkSuggestions);
+        removeFromConfigManagerIfServingNetworkSuggestionRemoved(removingSuggestions);
     }
 
     /**
