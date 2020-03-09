@@ -120,7 +120,8 @@ public class WifiKeyStore {
                 caCertificateAliases.add(caAlias);
             }
         }
-        if (existingAlias != null) {
+        // If alias changed, remove the old one.
+        if (!alias.equals(existingAlias)) {
             // Remove old private keys.
             removeEntryFromKeyStore(existingAlias);
         }
@@ -217,17 +218,16 @@ public class WifiKeyStore {
         // Do not remove CA certs that were manually installed by the user
         if (config.isAppInstalledCaCert()) {
             String[] aliases = config.getCaCertificateAliases();
-            // only need remove CA certs here in case there are more than 1 CA certificate,
-            // otherwise the remove of priv key/user cert should already handle removal of the CA
-            // certificate as well.
-            if (aliases != null || aliases.length > 1) {
-                for (String ca : aliases) {
-                    if (!TextUtils.isEmpty(ca)) {
-                        if (mVerboseLoggingEnabled) {
-                            Log.d(TAG, "removing CA cert: " + ca);
-                        }
-                        removeEntryFromKeyStore(ca);
+            if (aliases == null || aliases.length == 0) {
+                return;
+            }
+            // Remove all CA certificate.
+            for (String ca : aliases) {
+                if (!TextUtils.isEmpty(ca)) {
+                    if (mVerboseLoggingEnabled) {
+                        Log.d(TAG, "removing CA cert: " + ca);
                     }
+                    removeEntryFromKeyStore(ca);
                 }
             }
         }

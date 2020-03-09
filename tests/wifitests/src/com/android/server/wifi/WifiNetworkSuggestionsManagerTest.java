@@ -363,7 +363,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 }};
         when(mWifiKeyStore.updateNetworkKeys(eq(networkSuggestion1.wifiConfiguration), any()))
                 .thenReturn(true);
-        when(mWifiKeyStore.updateNetworkKeys(eq(networkSuggestion1.wifiConfiguration), any()))
+        when(mWifiKeyStore.updateNetworkKeys(eq(networkSuggestion2.wifiConfiguration), any()))
                 .thenReturn(false);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
@@ -372,10 +372,17 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         Set<WifiNetworkSuggestion> allNetworkSuggestions =
                 mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
         assertEquals(1, allNetworkSuggestions.size());
+        WifiNetworkSuggestion removingSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                false);
+        removingSuggestion.wifiConfiguration.SSID = networkSuggestion1.wifiConfiguration.SSID;
+        // Remove with the networkSuggestion from external.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
-                mWifiNetworkSuggestionsManager.remove(new ArrayList<>(),
+                mWifiNetworkSuggestionsManager.remove(
+                        new ArrayList<WifiNetworkSuggestion>() {{ add(removingSuggestion); }},
                         TEST_UID_1, TEST_PACKAGE_1));
-        verify(mWifiKeyStore).removeKeys(any());
+        // Make sure remove the keyStore with the internal config
+        verify(mWifiKeyStore).removeKeys(networkSuggestion1.wifiConfiguration.enterpriseConfig);
     }
 
     /**
