@@ -31,6 +31,7 @@ import android.util.Xml;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
+import com.android.server.wifi.util.ScanResultUtil;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtilTest;
 
@@ -46,6 +47,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -699,5 +702,27 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         List<WifiConfiguration> parsedNetworks = deserializeData("".getBytes());
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigStore(
                 oemUserSavedNetworks, parsedNetworks);
+    }
+
+    /**
+     * The WifiConfiguration store should follow the sort of the SSIDs.
+     */
+    @Test
+    public void testWifiConfigSaveToStoreOrder() throws Exception {
+        String testSSID = "TEST_SSID";
+        List<WifiConfiguration> storedWIfiConfig = new ArrayList<>();
+        for (int i = 1; i <= 1; i++) {
+            WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork(
+                    ScanResultUtil.createQuotedSSID(testSSID + (1 - i)));
+            network.creatorName = TEST_CREATOR_NAME;
+        }
+        // Add to store data based on added order.
+        mNetworkListSharedStoreData.setConfigurations(storedWIfiConfig);
+        byte[] output1 = serializeData();
+        // Add to store data based on SSID sort.
+        Collections.sort(storedWIfiConfig, Comparator.comparing(a -> a.SSID));
+        mNetworkListSharedStoreData.setConfigurations(storedWIfiConfig);
+        byte[] output2 = serializeData();
+        assertArrayEquals(output2, output1);
     }
 }
