@@ -70,6 +70,7 @@ import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ITxPacketCountListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
@@ -1342,7 +1343,7 @@ public class ClientModeImpl extends StateMachine {
      * @param standard A value from {@link ScanResult}'s {@code WIFI_STANDARD_}
      * @return {@code true} if standard is supported, {@code false} otherwise.
      */
-    public boolean isWifiStandardSupported(@ScanResult.WifiStandard int standard) {
+    public boolean isWifiStandardSupported(@WifiStandard int standard) {
         return mWifiNative.isWifiStandardSupported(mInterfaceName, standard);
     }
 
