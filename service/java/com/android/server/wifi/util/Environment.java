@@ -16,7 +16,7 @@
 
 package com.android.server.wifi.util;
 
-import android.content.ApexContext;
+import android.content.ApexEnvironment;
 import android.os.UserHandle;
 
 import java.io.File;
@@ -72,15 +72,15 @@ public class Environment {
      * Wifi shared folder.
      */
     public static File getWifiSharedDirectory() {
-        return ApexContext.getApexContext(WIFI_APEX_NAME).getDeviceProtectedDataDir();
+        return ApexEnvironment.getApexEnvironment(WIFI_APEX_NAME).getDeviceProtectedDataDir();
     }
 
     /**
      * Wifi user specific folder.
      */
     public static File getWifiUserDirectory(int userId) {
-        return ApexContext.getApexContext(WIFI_APEX_NAME).getCredentialProtectedDataDirForUser(
-                UserHandle.of(userId));
+        return ApexEnvironment.getApexEnvironment(WIFI_APEX_NAME)
+                .getCredentialProtectedDataDirForUser(UserHandle.of(userId));
     }
 
 
