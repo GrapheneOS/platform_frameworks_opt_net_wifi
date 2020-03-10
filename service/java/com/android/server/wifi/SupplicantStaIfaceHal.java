@@ -44,6 +44,7 @@ import android.hardware.wifi.supplicant.V1_3.WpaDriverCapabilitiesMask;
 import android.hidl.manager.V1_0.IServiceManager;
 import android.hidl.manager.V1_0.IServiceNotification;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiConfiguration;
 import android.os.Handler;
 import android.os.IHwBinder.DeathRecipient;
@@ -2916,7 +2917,7 @@ public class SupplicantStaIfaceHal {
         return featureSet;
     }
 
-    private @ScanResult.WifiStandard int getWifiStandardFromCap(ConnectionCapabilities capa) {
+    private @WifiStandard int getWifiStandardFromCap(ConnectionCapabilities capa) {
         switch(capa.technology) {
             case WifiTechnology.HE:
                 return ScanResult.WIFI_STANDARD_11AX;
