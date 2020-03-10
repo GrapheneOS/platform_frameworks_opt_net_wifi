@@ -41,8 +41,13 @@ import java.util.Iterator;
  */
 public class WifiChannelUtilization {
     private static final String TAG = "WifiChannelUtilization";
-    private static final boolean DBG = false;
+    private static boolean sVerboseLoggingEnabled = false;
     public static final int UNKNOWN_FREQ = -1;
+    // Invalidate the utilization value if it is larger than the following value.
+    // This is to detect and mitigate the incorrect HW reports of ccaBusy/OnTime.
+    // It is reasonable to assume that utilization ratio in the real life is never beyond this value
+    // given by all the inter-frame-spacings (IFS)
+    static final int UTILIZATION_RATIO_MAX = BssLoad.MAX_CHANNEL_UTILIZATION * 94 / 100;
     // Minimum time interval in ms between two cache updates.
     @VisibleForTesting
     static final int DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS = 10 * 60 * 1000;
@@ -72,6 +77,14 @@ public class WifiChannelUtilization {
     }
 
     /**
+     * Enable/Disable verbose logging.
+     * @param verbose true to enable and false to disable.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        sVerboseLoggingEnabled = verbose;
+    }
+
+    /**
      * Initialize internal variables and status after wifi is enabled
      * @param wifiLinkLayerStats The latest wifi link layer stats
      */
@@ -89,7 +102,7 @@ public class WifiChannelUtilization {
             mChannelStatsMapCache.addFirst(new SparseArray<>());
         }
         mLastChannelStatsMapTimeStamp = mClock.getElapsedSinceBootMillis();
-        if (DBG) {
+        if (sVerboseLoggingEnabled) {
             Log.d(TAG, "initializing");
         }
     }
@@ -116,7 +129,7 @@ public class WifiChannelUtilization {
      */
     public void setDeviceMobilityState(@DeviceMobilityState int newState) {
         mDeviceMobilityState = newState;
-        if (DBG) {
+        if (sVerboseLoggingEnabled) {
             Log.d(TAG, " update device mobility state to " + newState);
         }
     }
@@ -156,7 +169,7 @@ public class WifiChannelUtilization {
                 calculateChannelUtilization(channelStats);
             }
         }
-        updateChannelStatsCache(channelStatsMap);
+        updateChannelStatsCache(channelStatsMap, frequency);
     }
 
     private void calculateChannelUtilization(ChannelStats channelStats) {
@@ -173,12 +186,17 @@ public class WifiChannelUtilization {
         }
         mChannelUtilizationMap.put(freq, utilizationRatio);
 
-        if (DBG) {
+        if (sVerboseLoggingEnabled) {
             int utilizationRatioT0 = calculateUtilizationRatio(radioOnTimeMs, ccaBusyTimeMs);
-            Log.d(TAG, " freq: " + freq + " busyTimeDiff: " + busyTimeDiff
-                    + " radioOnTimeDiff: " + radioOnTimeDiff
-                    + " utilization: " + utilizationRatio
-                    + " utilization from time 0: " + utilizationRatioT0);
+            StringBuilder sb = new StringBuilder();
+            Log.d(TAG, sb.append(" freq: ").append(freq)
+                    .append(" onTime: ").append(radioOnTimeMs)
+                    .append(" busyTime: ").append(ccaBusyTimeMs)
+                    .append(" onTimeDiff: ").append(radioOnTimeDiff)
+                    .append(" busyTimeDiff: ").append(busyTimeDiff)
+                    .append(" utilization: ").append(utilizationRatio)
+                    .append(" utilization t0: ").append(utilizationRatioT0)
+                    .toString());
         }
     }
     /**
@@ -207,11 +225,6 @@ public class WifiChannelUtilization {
                 return new ChannelStats();
             }
             ChannelStats channelStats = channelStatsMap.get(freq);
-            if (DBG) {
-                Log.d(TAG, "freq " + channelStats.frequency + " radioOnTime "
-                        + channelStats.radioOnTimeMs + " ccaBusyTime "
-                        + channelStats.ccaBusyTimeMs);
-            }
             int radioOnTimeDiff = radioOnTimeMs - channelStats.radioOnTimeMs;
             if (radioOnTimeDiff >= RADIO_ON_TIME_DIFF_MIN_MS) {
                 return channelStats;
@@ -221,33 +234,36 @@ public class WifiChannelUtilization {
     }
 
     private int calculateUtilizationRatio(int radioOnTimeDiff, int busyTimeDiff) {
-        int maxRange = BssLoad.MAX_CHANNEL_UTILIZATION - BssLoad.MIN_CHANNEL_UTILIZATION;
-        if (radioOnTimeDiff > 0 && busyTimeDiff <= radioOnTimeDiff) {
-            return (busyTimeDiff * maxRange / radioOnTimeDiff + BssLoad.MIN_CHANNEL_UTILIZATION);
+        if (radioOnTimeDiff > 0) {
+            int utilizationRatio = busyTimeDiff * BssLoad.MAX_CHANNEL_UTILIZATION / radioOnTimeDiff;
+            return (utilizationRatio > UTILIZATION_RATIO_MAX) ? BssLoad.INVALID : utilizationRatio;
         } else {
             return BssLoad.INVALID;
         }
     }
 
-    private void updateChannelStatsCache(SparseArray<ChannelStats> channelStatsMap) {
-        // Don't update cache if the device stays in the stationary state
-        if (mLastChannelStatsMapMobilityState == DEVICE_MOBILITY_STATE_STATIONARY
-                && mDeviceMobilityState == DEVICE_MOBILITY_STATE_STATIONARY) {
-            if (DBG) {
-                Log.d(TAG, " skip cache update since device remains in stationary state");
-            }
-            return;
-        }
-        // Update cache if it has been a while since the last update
+    private void updateChannelStatsCache(SparseArray<ChannelStats> channelStatsMap, int freq) {
+        // Update cache if it hits one of following conditions
+        // 1) it has been a long while since the last update and device doesn't remain stationary
+        // 2) cache is empty
+        boolean remainStationary =
+                mLastChannelStatsMapMobilityState == DEVICE_MOBILITY_STATE_STATIONARY
+                && mDeviceMobilityState == DEVICE_MOBILITY_STATE_STATIONARY;
         long currTimeStamp = mClock.getElapsedSinceBootMillis();
-        if (DBG) {
-            Log.d(TAG, " current time stamp: " + currTimeStamp);
-        }
-        if ((currTimeStamp - mLastChannelStatsMapTimeStamp) >= mCacheUpdateIntervalMinMs) {
+        boolean isLongTimeSinceLastUpdate =
+                (currTimeStamp - mLastChannelStatsMapTimeStamp) >= mCacheUpdateIntervalMinMs;
+        if ((isLongTimeSinceLastUpdate && !remainStationary) || isChannelStatsMapCacheEmpty(freq)) {
             mChannelStatsMapCache.addFirst(channelStatsMap);
             mChannelStatsMapCache.removeLast();
             mLastChannelStatsMapTimeStamp = currTimeStamp;
             mLastChannelStatsMapMobilityState = mDeviceMobilityState;
         }
+    }
+
+    private boolean isChannelStatsMapCacheEmpty(int freq) {
+        SparseArray<ChannelStats> channelStatsMap = mChannelStatsMapCache.peekFirst();
+        if (channelStatsMap == null || channelStatsMap.size() == 0) return true;
+        if (freq != UNKNOWN_FREQ && channelStatsMap.get(freq) == null) return true;
+        return false;
     }
 }
