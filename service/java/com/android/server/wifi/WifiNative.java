@@ -1532,7 +1532,7 @@ public class WifiNative {
         return results;
     }
 
-    @ScanResult.WifiStandard
+    @WifiAnnotations.WifiStandard
     private static int wifiModeToWifiStandard(int wifiMode) {
         switch (wifiMode) {
             case InformationElementUtil.WifiMode.MODE_11A:
@@ -2888,7 +2888,7 @@ public class WifiNative {
      * Class to retrieve connection capability parameters after association
      */
     public static class ConnectionCapabilities {
-        public @ScanResult.WifiStandard int wifiStandard;
+        public @WifiAnnotations.WifiStandard int wifiStandard;
         public int channelBandwidth;
         public int maxNumberTxSpatialStreams;
         public int maxNumberRxSpatialStreams;
@@ -3538,7 +3538,7 @@ public class WifiNative {
      * @return true if the wifi standard is supported on this interface, false otherwise.
      */
     public boolean isWifiStandardSupported(@NonNull String ifaceName,
-            @ScanResult.WifiStandard int standard) {
+            @WifiAnnotations.WifiStandard int standard) {
         synchronized (mLock) {
             Iface iface = mIfaceMgr.getIface(ifaceName);
             if (iface == null || iface.phyCapabilities == null) {
