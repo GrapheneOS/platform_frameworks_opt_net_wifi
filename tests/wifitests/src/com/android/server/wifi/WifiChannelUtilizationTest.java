@@ -99,7 +99,7 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
         ChannelStats cs = new ChannelStats();
         cs.frequency = freq;
         cs.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS * 2;
-        cs.ccaBusyTimeMs = RADIO_ON_TIME_DIFF_MIN_MS * 20;
+        cs.ccaBusyTimeMs = RADIO_ON_TIME_DIFF_MIN_MS * 2 * 19 / 20;
         llstats.channelStatsMap.put(freq, cs);
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats, UNKNOWN_FREQ);
         assertEquals(INVALID, mWifiChannelUtilization.getUtilizationRatio(freq));
@@ -133,7 +133,7 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
     }
 
     @Test
-    public void verifyTwoReadChanStatsRefWithLast() throws Exception {
+    public void verifyTwoReadChanStatsWithLargeTimeGap() throws Exception {
         WifiLinkLayerStats llstats1 = new WifiLinkLayerStats();
         int freq = 5180;
         ChannelStats cs1 = new ChannelStats();
@@ -161,7 +161,7 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
     }
 
     @Test
-    public void verifyTwoReadChanStatsRefWithZero() throws Exception {
+    public void verifyTwoReadChanStatsWithSmallTimeGap() throws Exception {
         WifiLinkLayerStats llstats1 = new WifiLinkLayerStats();
         int freq = 5180;
         ChannelStats cs1 = new ChannelStats();
@@ -183,7 +183,8 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats2, UNKNOWN_FREQ);
 
-        assertEquals(cs2.ccaBusyTimeMs * MAX_CHANNEL_UTILIZATION / cs2.radioOnTimeMs,
+        assertEquals((cs2.ccaBusyTimeMs - cs1.ccaBusyTimeMs) * MAX_CHANNEL_UTILIZATION
+                / (cs2.radioOnTimeMs - cs1.radioOnTimeMs),
                 mWifiChannelUtilization.getUtilizationRatio(freq));
     }
 
@@ -231,7 +232,7 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
     }
 
     @Test
-    public void verifyThreeReadChanStatsRefWithLast() throws Exception {
+    public void verifyThreeReadChanStatsLargeTimeGap() throws Exception {
         WifiLinkLayerStats llstats1 = new WifiLinkLayerStats();
         int freq = 5180;
         ChannelStats cs1 = new ChannelStats();
@@ -269,7 +270,7 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
     }
 
     @Test
-    public void verifyThreeReadChanStatsFirstTwoReadAreTooRecent() throws Exception {
+    public void verifyThreeReadChanStatsSmallTimeGap() throws Exception {
         WifiLinkLayerStats llstats1 = new WifiLinkLayerStats();
         int freq = 5180;
         ChannelStats cs1 = new ChannelStats();
@@ -296,7 +297,8 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats3, UNKNOWN_FREQ);
 
-        assertEquals(cs3.ccaBusyTimeMs * MAX_CHANNEL_UTILIZATION / cs3.radioOnTimeMs,
+        assertEquals((cs3.ccaBusyTimeMs - cs1.ccaBusyTimeMs) * MAX_CHANNEL_UTILIZATION
+                / (cs3.radioOnTimeMs - cs1.radioOnTimeMs),
                 mWifiChannelUtilization.getUtilizationRatio(freq));
     }
 
@@ -348,13 +350,22 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
         WifiLinkLayerStats llstats1 = new WifiLinkLayerStats();
         int freq = 5180;
         ChannelStats cs1 = new ChannelStats();
-        cs1.frequency = freq;
-        cs1.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS / 4;
-        cs1.ccaBusyTimeMs = 20;
+        cs1.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS / 8;
+        cs1.ccaBusyTimeMs = 10;
         llstats1.channelStatsMap.put(freq, cs1);
+        long currentTimeStamp = 0;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
+        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats1, freq);
 
-        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats1, UNKNOWN_FREQ);
-        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats1, UNKNOWN_FREQ);
+        WifiLinkLayerStats llstats2 = new WifiLinkLayerStats();
+        ChannelStats cs2 = new ChannelStats();
+        cs2.frequency = freq;
+        cs2.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS / 4;
+        cs2.ccaBusyTimeMs = 20;
+        llstats2.channelStatsMap.put(freq, cs2);
+        currentTimeStamp = 1 + DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
+        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats2, freq);
 
         WifiLinkLayerStats llstats3 = new WifiLinkLayerStats();
         ChannelStats cs3 = new ChannelStats();
@@ -362,11 +373,12 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
         cs3.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS * 2;
         cs3.ccaBusyTimeMs = 70;
         llstats3.channelStatsMap.put(freq, cs3);
-        long currentTimeStamp = DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS;
+        currentTimeStamp = 5 + DEFAULT_CACHE_UPDATE_INTERVAL_MIN_MS;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
-        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats3, UNKNOWN_FREQ);
+        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(llstats3, freq);
 
-        assertEquals(cs3.ccaBusyTimeMs * MAX_CHANNEL_UTILIZATION / cs3.radioOnTimeMs,
+        assertEquals((cs3.ccaBusyTimeMs - cs1.ccaBusyTimeMs) * MAX_CHANNEL_UTILIZATION
+                / (cs3.radioOnTimeMs - cs1.radioOnTimeMs),
                 mWifiChannelUtilization.getUtilizationRatio(freq));
     }
 
@@ -375,6 +387,8 @@ public class WifiChannelUtilizationTest extends WifiBaseTest {
         WifiLinkLayerStats llstats1 = new WifiLinkLayerStats();
         int freq = 5180;
         ChannelStats cs1 = new ChannelStats();
+        cs1.radioOnTimeMs = RADIO_ON_TIME_DIFF_MIN_MS / 8;
+        cs1.ccaBusyTimeMs = 10;
         llstats1.channelStatsMap.put(freq, cs1);
         long currentTimeStamp = 0;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
