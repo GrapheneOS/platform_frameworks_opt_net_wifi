@@ -42,6 +42,8 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -146,6 +148,8 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         if (networkList == null) {
             return;
         }
+        // Sort by SSID
+        Collections.sort(networkList, Comparator.comparing(a -> a.SSID));
         for (WifiConfiguration network : networkList) {
             serializeNetwork(out, network, encryptionUtil);
         }
