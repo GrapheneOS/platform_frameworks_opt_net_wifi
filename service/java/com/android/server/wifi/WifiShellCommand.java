@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * commands, which is checked using {@link #checkRootPermission()}.
  */
 public class WifiShellCommand extends BasicShellCommandHandler {
+    private static String SHELL_PACKAGE_NAME = "com.android.shell";
     private final ClientModeImpl mClientModeImpl;
     private final WifiLockManager mWifiLockManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
@@ -361,7 +362,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                         + " or 'disabled'");
                         return -1;
                     }
-                    mWifiService.setWifiEnabled("com.android.shell", enabled);
+                    mWifiService.setWifiEnabled(SHELL_PACKAGE_NAME, enabled);
                     return 0;
                 }
                 case "get-softap-supported-features":
@@ -372,6 +373,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     if (ApConfigUtil.isWpa3SaeSupported(mContext)) {
                         pw.println("wifi_softap_wpa3_sae_supported");
                     }
+                    break;
+                case "wifi-settings-reset":
+                    mWifiService.factoryReset(SHELL_PACKAGE_NAME);
                     break;
                 default:
                     return handleDefaultCommands(cmd);
@@ -495,6 +499,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  get-softap-supported-features");
         pw.println("    Gets softap supported features. Will print 'wifi_softap_acs_supported'");
         pw.println("    and/or 'wifi_softap_wpa3_sae_supported', each on a separate line.");
+        pw.println("  wifi-settings-reset");
+        pw.println("    Initiates wifi settings reset'");
         pw.println();
     }
 }
