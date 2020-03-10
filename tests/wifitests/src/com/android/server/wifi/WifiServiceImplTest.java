@@ -3648,7 +3648,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                                 && filter.hasAction(Intent.ACTION_PACKAGE_CHANGED)));
         int uid = TEST_UID;
         String packageName = TEST_PACKAGE_NAME;
-        when(mPackageManager.getApplicationInfo(TEST_PACKAGE_NAME, 0)).thenReturn(null);
+        doThrow(new PackageManager.NameNotFoundException()).when(mPackageManager)
+                .getApplicationInfo(TEST_PACKAGE_NAME, 0);
         // Send the broadcast
         Intent intent = new Intent(Intent.ACTION_PACKAGE_FULLY_REMOVED);
         intent.putExtra(Intent.EXTRA_UID, uid);
