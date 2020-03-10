@@ -639,11 +639,15 @@ public class WifiNetworkSuggestionsManager {
             @NonNull Collection<ExtendedWifiNetworkSuggestion> extNetworkSuggestions,
             @NonNull String packageName,
             @NonNull PerAppInfo perAppInfo) {
+        // Get internal suggestions
+        Set<ExtendedWifiNetworkSuggestion> removingSuggestions =
+                new HashSet<>(perAppInfo.extNetworkSuggestions);
         if (!extNetworkSuggestions.isEmpty()) {
+            // Keep the internal suggestions need to remove.
+            removingSuggestions.retainAll(extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.removeAll(extNetworkSuggestions);
         } else {
             // empty list is used to clear everything for the app. Store a copy for use below.
-            extNetworkSuggestions = new HashSet<>(perAppInfo.extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.clear();
         }
         if (perAppInfo.extNetworkSuggestions.isEmpty()) {
@@ -655,7 +659,7 @@ public class WifiNetworkSuggestionsManager {
             stopTrackingAppOpsChange(packageName);
         }
         // Clean the enterprise certifiacte.
-        for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
+        for (ExtendedWifiNetworkSuggestion ewns : removingSuggestions) {
             WifiConfiguration config = ewns.wns.wifiConfiguration;
             if (!config.isEnterprise()) {
                 continue;
@@ -663,7 +667,7 @@ public class WifiNetworkSuggestionsManager {
             mWifiKeyStore.removeKeys(config.enterpriseConfig);
         }
         // Clear the scan cache.
-        removeFromScanResultMatchInfoMap(extNetworkSuggestions);
+        removeFromScanResultMatchInfoMap(removingSuggestions);
     }
 
     /**
