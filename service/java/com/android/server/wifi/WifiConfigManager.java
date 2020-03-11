@@ -958,7 +958,6 @@ public class WifiConfigManager {
                 && !externalConfig.preSharedKey.equals(PASSWORD_MASK)) {
             internalConfig.preSharedKey = externalConfig.preSharedKey;
         }
-        internalConfig.saePasswordId = externalConfig.saePasswordId;
         // Modify only wep keys are present in the provided configuration. This is a little tricky
         // because there is no easy way to tell if the app is actually trying to null out the
         // existing keys or not.
