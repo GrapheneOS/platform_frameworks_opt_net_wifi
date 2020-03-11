@@ -4774,14 +4774,20 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         }
         if (configuration.allowedPairwiseCiphers.isEmpty()) {
+            configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
             configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
             configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
         }
         if (configuration.allowedGroupCiphers.isEmpty()) {
+            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
             configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
             configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
             configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
             configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
+        }
+        if (configuration.allowedGroupManagementCiphers.isEmpty()) {
+            configuration.allowedGroupManagementCiphers
+                    .set(WifiConfiguration.GroupMgmtCipher.BIP_GMAC_256);
         }
         if (configuration.getIpAssignment() == IpConfiguration.IpAssignment.UNASSIGNED) {
             configuration.setIpAssignment(IpConfiguration.IpAssignment.DHCP);
