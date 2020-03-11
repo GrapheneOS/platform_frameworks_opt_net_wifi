@@ -1469,7 +1469,8 @@ public class WifiNetworkSuggestionsManager {
         Set<ExtendedWifiNetworkSuggestion> approvedExtNetworkSuggestions =
                 extNetworkSuggestions
                         .stream()
-                        .filter(n -> n.perAppInfo.hasUserApproved)
+                        .filter(n -> n.perAppInfo.hasUserApproved
+                                || n.perAppInfo.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID)
                         .collect(Collectors.toSet());
         if (approvedExtNetworkSuggestions.isEmpty()) {
             return null;
