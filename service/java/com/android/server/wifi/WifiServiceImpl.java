@@ -1841,15 +1841,8 @@ public class WifiServiceImpl extends BaseWifiService {
     @NonNull
     @Override
     public SoftApConfiguration getSoftApConfiguration() {
-        enforceAccessPermission();
+        enforceNetworkSettingsPermission();
         int uid = Binder.getCallingUid();
-        // only allow Settings UI to get the saved SoftApConfig
-        if (!mWifiPermissionsUtil.checkConfigOverridePermission(uid)) {
-            // random apps should not be allowed to read the user specified config
-            throw new SecurityException("App not allowed to read or update stored WiFi Ap config "
-                    + "(uid = " + uid + ")");
-        }
-
         if (mVerboseLoggingEnabled) {
             mLog.info("getSoftApConfiguration uid=%").c(uid).flush();
         }
