@@ -1436,6 +1436,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         config.enterpriseConfig = new WifiEnterpriseConfig();
         config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.TTLS);
         config.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.MSCHAPV2);
+        config.enterpriseConfig.setOcsp(WifiEnterpriseConfig.OCSP_REQUIRE_CERT_STATUS);
         WifiConfiguration.NetworkSelectionStatus networkSelectionStat =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
         when(networkSelectionStat.getCandidate()).thenReturn(scanResult);
@@ -1480,6 +1481,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.connectionEvent[0].routerFingerprint.eapMethod);
         assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_MSCHAPV2,
                 mDecodedProto.connectionEvent[0].routerFingerprint.authPhase2Method);
+        assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_REQUIRE_CERT_STATUS,
+                mDecodedProto.connectionEvent[0].routerFingerprint.ocspType);
         assertEquals(SCAN_RESULT_LEVEL, mDecodedProto.connectionEvent[0].signalStrength);
         assertEquals(NETWORK_DETAIL_DTIM, mDecodedProto.connectionEvent[1].routerFingerprint.dtim);
         assertEquals(WifiMetricsProto.RouterFingerPrint.AUTH_OPEN,
@@ -1488,6 +1491,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.connectionEvent[1].routerFingerprint.eapMethod);
         assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_NONE,
                 mDecodedProto.connectionEvent[1].routerFingerprint.authPhase2Method);
+        assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_NONE,
+                mDecodedProto.connectionEvent[1].routerFingerprint.ocspType);
         assertEquals(SCAN_RESULT_LEVEL, mDecodedProto.connectionEvent[1].signalStrength);
         assertEquals(NETWORK_DETAIL_WIFIMODE,
                 mDecodedProto.connectionEvent[1].routerFingerprint.routerTechnology);
@@ -2490,6 +2495,22 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
         dumpProtoAndDeserialize();
         assertEquals(id, mDecodedProto.connectionEvent[0].networkSelectorExperimentId);
+    }
+
+    /**
+     * Check pmk cache
+     */
+    @Test
+    public void testConnectionWithPmkCache() throws Exception {
+        mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
+        mWifiMetrics.setConnectionPmkCache(true);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_NONE,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        dumpProtoAndDeserialize();
+        assertEquals(true, mDecodedProto.connectionEvent[0].routerFingerprint.pmkCacheEnabled);
     }
 
     /**
