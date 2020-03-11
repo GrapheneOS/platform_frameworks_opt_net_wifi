@@ -297,7 +297,7 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         WifiConfiguration configuration = parsedConfig.second;
 
         if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-            removeLegacySecurityFromSaeNetwork(configuration);
+            fixSaeNetworkSecurityBits(configuration);
         }
 
         String configKeyCalculated = configuration.getKey();
@@ -329,7 +329,7 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         return configuration;
     }
 
-    private void removeLegacySecurityFromSaeNetwork(WifiConfiguration saeNetwork) {
+    private void fixSaeNetworkSecurityBits(WifiConfiguration saeNetwork) {
         // SAE saved networks Auth Algorithm set to OPEN need to be have this field cleared.
         if (saeNetwork.allowedAuthAlgorithms.get(WifiConfiguration.AuthAlgorithm.OPEN)) {
             saeNetwork.allowedAuthAlgorithms.clear();
@@ -354,6 +354,8 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.TKIP)) {
             saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.TKIP);
         }
+        saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
     }
 }
 
