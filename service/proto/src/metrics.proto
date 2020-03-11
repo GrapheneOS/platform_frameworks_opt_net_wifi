@@ -585,6 +585,18 @@ message WifiLog {
 
   // Connection duration under various health conditions
   optional ConnectionDurationStats connection_duration_stats = 160;
+
+  // Number of WAPI-Personal saved networks.
+  optional int32 num_wapi_personal_networks = 161;
+
+  // Number of WAPI-Enterprise saved networks.
+  optional int32 num_wapi_enterprise_networks = 162;
+
+  // Total number of scan results for WAPI-Personal networks
+  optional int32 num_wapi_personal_network_scan_results = 163;
+
+  // Total number of scan results for WAPI-Enterprise networks
+  optional int32 num_wapi_enterprise_network_scan_results = 164;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -858,6 +870,9 @@ message ConnectionEvent {
 
     // Open network
     TYPE_OPEN = 6;
+
+    // WAPI network
+    TYPE_WAPI = 7;
   }
 
   enum NetworkCreator {

@@ -44,7 +44,7 @@ import android.net.Network;
 import android.net.NetworkAgent;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.wifi.IScoreChangeCallback;
+import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -103,19 +103,19 @@ public class WifiScoreReportTest extends WifiBaseTest {
     private TestLooper mLooper;
 
     public class WifiConnectedNetworkScorerImpl extends IWifiConnectedNetworkScorer.Stub {
-        public IScoreChangeCallback mScoreChangeCallback;
+        public IScoreUpdateObserver mScoreUpdateObserver;
         public int mSessionId = -1;
 
         @Override
-        public void start(int sessionId) {
+        public void onStart(int sessionId) {
             mSessionId = sessionId;
         }
         @Override
-        public void stop(int sessionId) {
+        public void onStop(int sessionId) {
         }
         @Override
-        public void setScoreChangeCallback(IScoreChangeCallback cbImpl) {
-            mScoreChangeCallback = cbImpl;
+        public void onSetScoreUpdateObserver(IScoreUpdateObserver observerImpl) {
+            mScoreUpdateObserver = observerImpl;
         }
     }
 
@@ -568,7 +568,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         // Register Client for verification.
         mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, mWifiConnectedNetworkScorer);
         // Client should get ScoreChangeCallback.
-        verify(mWifiConnectedNetworkScorer).setScoreChangeCallback(any());
+        verify(mWifiConnectedNetworkScorer).onSetScoreUpdateObserver(any());
     }
 
     /**
@@ -582,7 +582,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         verify(mAppBinder).unlinkToDeath(any(), anyInt());
 
         mWifiScoreReport.startConnectedNetworkScorer(10);
-        verify(mWifiConnectedNetworkScorer, never()).start(anyInt());
+        verify(mWifiConnectedNetworkScorer, never()).onStart(anyInt());
     }
 
     /**
@@ -605,11 +605,11 @@ public class WifiScoreReportTest extends WifiBaseTest {
         verify(mAppBinder).linkToDeath(any(IBinder.DeathRecipient.class), anyInt());
 
         // Client should not get any message when scorer add failed.
-        verify(mWifiConnectedNetworkScorer, never()).setScoreChangeCallback(any());
+        verify(mWifiConnectedNetworkScorer, never()).onSetScoreUpdateObserver(any());
     }
 
     /**
-     * Verify that client gets session ID when start method is called.
+     * Verify that client gets session ID when onStart() method is called.
      */
     @Test
     public void testClientGetSessionIdOnStart() throws Exception {
@@ -617,12 +617,12 @@ public class WifiScoreReportTest extends WifiBaseTest {
         // Register Client for verification.
         mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, mWifiConnectedNetworkScorer);
         mWifiScoreReport.startConnectedNetworkScorer(TEST_SESSION_ID);
-        verify(mWifiConnectedNetworkScorer).start(startId.capture());
+        verify(mWifiConnectedNetworkScorer).onStart(startId.capture());
         assertEquals((int) startId.getValue(), TEST_SESSION_ID);
     }
 
     /**
-     * Verify that client gets session ID when stop method is called.
+     * Verify that client gets session ID when onStop() method is called.
      */
     @Test
     public void testClientGetSessionIdOnStop() throws Exception {
@@ -631,7 +631,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, mWifiConnectedNetworkScorer);
         mWifiScoreReport.startConnectedNetworkScorer(TEST_SESSION_ID);
         mWifiScoreReport.stopConnectedNetworkScorer();
-        verify(mWifiConnectedNetworkScorer).stop(stopId.capture());
+        verify(mWifiConnectedNetworkScorer).onStop(stopId.capture());
         assertEquals((int) stopId.getValue(), TEST_SESSION_ID);
     }
 
@@ -648,7 +648,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that WifiScoreReport gets updated score when onScoreChange() is called by apps.
+     * Verify that WifiScoreReport gets updated score when notifyScoreUpdate() is called by apps.
      */
     @Test
     public void testFrameworkGetsUpdatesScore() throws Exception {
@@ -660,19 +660,19 @@ public class WifiScoreReportTest extends WifiBaseTest {
         assertEquals(TEST_SESSION_ID, scorerImpl.mSessionId);
 
         // Invalid session ID
-        scorerImpl.mScoreChangeCallback.onScoreChange(-1, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(-1, 49);
         assertEquals(mWifiScoreReport.getScore(), ConnectedScore.WIFI_MAX_SCORE);
 
         // Incorrect session ID
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId + 10, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId + 10, 49);
         assertEquals(mWifiScoreReport.getScore(), ConnectedScore.WIFI_MAX_SCORE);
 
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(49);
         assertEquals(mWifiScoreReport.getScore(), 49);
 
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 59);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 59);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(59);
         assertEquals(mWifiScoreReport.getScore(), 59);
@@ -689,7 +689,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiScoreReport.setInterfaceName("wlan0");
         mWifiScoreReport.startConnectedNetworkScorer(TEST_SESSION_ID);
 
-        scorerImpl.mScoreChangeCallback.onTriggerUpdateOfWifiUsabilityStats(scorerImpl.mSessionId);
+        scorerImpl.mScoreUpdateObserver.triggerUpdateOfWifiUsabilityStats(scorerImpl.mSessionId);
         mLooper.dispatchAll();
         verify(mWifiNative).getWifiLinkLayerStats("wlan0");
         verify(mWifiNative).signalPoll("wlan0");
@@ -707,18 +707,18 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 5001;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         assertTrue(mWifiScoreReport.shouldCheckIpLayer());
         mWifiScoreReport.noteIpCheck();
 
         mClock.mWallClockMillis = 10000;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         assertFalse(mWifiScoreReport.shouldCheckIpLayer());
 
         mClock.mWallClockMillis = 10001;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         assertTrue(mWifiScoreReport.shouldCheckIpLayer());
     }
@@ -736,10 +736,10 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 29009;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
@@ -759,10 +759,10 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 29011;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
@@ -781,13 +781,13 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 15000;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 51);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 51);
         mLooper.dispatchAll();
         mClock.mWallClockMillis = 29011;
-        scorerImpl.mScoreChangeCallback.onScoreChange(scorerImpl.mSessionId, 49);
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();

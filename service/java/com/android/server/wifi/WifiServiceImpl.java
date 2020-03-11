@@ -68,6 +68,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApInfo;
+import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiClient;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -2829,7 +2830,7 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public String getCountryCode() {
-        enforceNetworkStackPermission();
+        enforceNetworkSettingsPermission();
         if (mVerboseLoggingEnabled) {
             mLog.info("getCountryCode uid=%").c(Binder.getCallingUid()).flush();
         }
@@ -2865,7 +2866,7 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     @Override
-    public boolean isWifiStandardSupported(@ScanResult.WifiStandard int standard) {
+    public boolean isWifiStandardSupported(@WifiStandard int standard) {
         return mWifiThreadRunner.call(
                 () -> mClientModeImpl.isWifiStandardSupported(standard), false);
     }
@@ -3084,8 +3085,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 try {
                     packageInfo = pm.getPackageInfo(pkgName, 0);
                 } catch (PackageManager.NameNotFoundException e) {
-                    Log.e(TAG, "Couldn't get PackageInfo for package:" + pkgName);
-                    return;
+                    Log.w(TAG, "Couldn't get PackageInfo for package:" + pkgName);
                 }
                 // If package is not removed or disabled, just ignore.
                 if (packageInfo != null

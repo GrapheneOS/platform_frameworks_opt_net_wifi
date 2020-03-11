@@ -169,6 +169,7 @@ public class WifiDataStall {
      */
     public void enableVerboseLogging(boolean verbose) {
         mVerboseLoggingEnabled = verbose;
+        mWifiChannelUtilization.enableVerboseLogging(verbose);
     }
 
     /**
