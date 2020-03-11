@@ -371,7 +371,8 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_ABSENT == state) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
-                                mClientModeImpl.resetSimAuthNetworks(false);
+                                mClientModeImpl.resetSimAuthNetworks(
+                                        ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
                             }
                         }
                     },
@@ -385,11 +386,29 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_LOADED == state) {
                                 Log.d(TAG, "resetting networks because SIM was loaded");
-                                mClientModeImpl.resetSimAuthNetworks(true);
+                                mClientModeImpl.resetSimAuthNetworks(
+                                        ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED);
                             }
                         }
                     },
                     new IntentFilter(TelephonyManager.ACTION_SIM_APPLICATION_STATE_CHANGED));
+
+            mContext.registerReceiver(
+                    new BroadcastReceiver() {
+                        private int mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            final int subId = intent.getIntExtra("subscription",
+                                    SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+                            if (subId != mLastSubId) {
+                                Log.d(TAG, "resetting networks as default data SIM is changed");
+                                mClientModeImpl.resetSimAuthNetworks(
+                                        ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
+                                mLastSubId = subId;
+                            }
+                        }
+                    },
+                    new IntentFilter(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED));
 
             // Adding optimizations of only receiving broadcasts when wifi is enabled
             // can result in race conditions when apps toggle wifi in the background
