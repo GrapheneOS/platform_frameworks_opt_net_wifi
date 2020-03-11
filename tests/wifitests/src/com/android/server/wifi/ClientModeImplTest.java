@@ -1036,12 +1036,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(90, wifiInfo.getMaxSupportedTxLinkSpeedMbps());
     }
 
-    /**
-     * When the SIM card was removed, if the current wifi connection is not using it, the connection
-     * should be kept.
-     */
-    @Test
-    public void testResetSimWhenNonConnectedSimRemoved() throws Exception {
+    private void setupEapSimConnection() throws Exception {
         mConnectedNetwork = spy(WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE));
         mConnectedNetwork.carrierId = CARRIER_ID_1;
@@ -1050,8 +1045,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
         when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
         mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
-
-        String expectedAnonymousIdentity = "anonymous@wlan.mnc456.mcc123.3gppnetwork.org";
 
         triggerConnect();
 
@@ -1064,9 +1057,19 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
+        assertEquals("ObtainingIpState", getCurrentState().getName());
+    }
 
+    /**
+     * When the SIM card was removed, if the current wifi connection is not using it, the connection
+     * should be kept.
+     */
+    @Test
+    public void testResetSimWhenNonConnectedSimRemoved() throws Exception {
+        setupEapSimConnection();
         doReturn(true).when(mTelephonyUtil).isSimPresent(eq(DATA_SUBID));
-        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS, 0);
+        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
+                ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
         mLooper.dispatchAll();
 
         verify(mSimRequiredNotifier, never()).showSimRequiredNotification(any(), any());
@@ -1080,34 +1083,27 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testResetSimWhenConnectedSimRemoved() throws Exception {
-        mConnectedNetwork = spy(WifiConfigurationTestUtil.createEapNetwork(
-                WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE));
-        mConnectedNetwork.carrierId = CARRIER_ID_1;
-        doReturn(DATA_SUBID).when(mTelephonyUtil)
-                .getBestMatchSubscriptionId(any(WifiConfiguration.class));
-        when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
-        when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
-        mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
-
-        String expectedAnonymousIdentity = "anonymous@wlan.mnc456.mcc123.3gppnetwork.org";
-
-        triggerConnect();
-
-        when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
-                .thenReturn(mScanDetailCache);
-        when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
-                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
-        when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
-                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
-
-        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
-        mLooper.dispatchAll();
-
+        setupEapSimConnection();
         doReturn(false).when(mTelephonyUtil).isSimPresent(eq(DATA_SUBID));
-        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS, 0);
+        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
+                ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
         mLooper.dispatchAll();
 
         verify(mSimRequiredNotifier).showSimRequiredNotification(any(), any());
+        assertEquals("DisconnectingState", getCurrentState().getName());
+    }
+
+    /**
+     * When the default data SIM is changed, if the current wifi connection is carrier wifi,
+     * the connection should be disconnected.
+     */
+    @Test
+    public void testResetSimWhenDefaultDataSimChanged() throws Exception {
+        setupEapSimConnection();
+        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
+                ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
+        mLooper.dispatchAll();
+
         assertEquals("DisconnectingState", getCurrentState().getName());
     }
 
@@ -3810,7 +3806,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         startSupplicantAndDispatchMessages();
 
         // Indicate that sim is removed.
-        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS, 0);
+        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
+                ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
         mLooper.dispatchAll();
 
         verify(mWifiConfigManager).resetSimNetworks();
@@ -3827,7 +3824,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         startSupplicantAndDispatchMessages();
 
         // Indicate that sim is inserted.
-        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS, 1);
+        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
+                ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED);
         mLooper.dispatchAll();
 
         verify(mWifiConfigManager, never()).resetSimNetworks();
