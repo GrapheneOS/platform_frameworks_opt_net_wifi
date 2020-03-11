@@ -215,12 +215,6 @@ public class SupplicantStaNetworkHal {
                 config.preSharedKey = NativeUtil.hexStringFromByteArray(mPsk);
             } /* Do not read SAE password */
 
-            /** SAE Password id */
-            config.saePasswordId = null;
-            if (getSaePasswordId() && !TextUtils.isEmpty(mSaePasswordId)) {
-                config.saePasswordId = mSaePasswordId;
-            }
-
             /** allowedKeyManagement */
             if (getKeyMgmt()) {
                 BitSet keyMgmtMask = supplicantToWifiConfigurationKeyMgmtMask(mKeyMgmtMask);
@@ -331,14 +325,6 @@ public class SupplicantStaNetworkHal {
                         Log.e(TAG, "failed to set psk");
                         return false;
                     }
-                }
-            }
-
-            if (config.saePasswordId != null
-                    && config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-                if (!setSaePasswordId(config.saePasswordId)) {
-                    Log.e(TAG, "failed to ste sae password id");
-                    return false;
                 }
             }
 
@@ -1959,63 +1945,6 @@ public class SupplicantStaNetworkHal {
                 if (iSupplicantStaNetworkV13 != null) {
                     /* Support for set ERP Requires HAL v1.3 or higher */
                     SupplicantStatus status =  iSupplicantStaNetworkV13.setEapErp(enable);
-                    return checkStatusAndLogFailure(status, methodStr);
-                } else {
-                    return false;
-                }
-            } catch (RemoteException e) {
-                handleRemoteException(e, methodStr);
-                return false;
-            }
-        }
-    }
-    /** See ISupplicantStaNetwork.hal for documentation */
-    private boolean getSaePasswordId() {
-        synchronized (mLock) {
-            final String methodStr = "getSaePasswordId";
-            if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
-            try {
-                android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        iSupplicantStaNetworkV12;
-
-                iSupplicantStaNetworkV12 = getV1_2StaNetwork();
-                if (iSupplicantStaNetworkV12 != null) {
-                    /* Support for SAE Requires HAL v1.2 or higher */
-                    MutableBoolean statusOk = new MutableBoolean(false);
-                    iSupplicantStaNetworkV12.getSaePasswordId((SupplicantStatus status,
-                            String saePasswordId) -> {
-                        statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
-                        if (statusOk.value) {
-                            this.mSaePasswordId = saePasswordId;
-                        } else {
-                            checkStatusAndLogFailure(status, methodStr);
-                        }
-                    });
-                    return statusOk.value;
-                } else {
-                    return false;
-                }
-            } catch (RemoteException e) {
-                handleRemoteException(e, methodStr);
-                return false;
-            }
-        }
-    }
-
-    /** See ISupplicantStaNetwork.hal for documentation */
-    private boolean setSaePasswordId(String saePasswordId) {
-        synchronized (mLock) {
-            final String methodStr = "setSaePasswordId";
-            if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
-            try {
-                android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        iSupplicantStaNetworkV12;
-
-                iSupplicantStaNetworkV12 = getV1_2StaNetwork();
-                if (iSupplicantStaNetworkV12 != null) {
-                    /* Support for SAE Requires HAL v1.2 or higher */
-                    SupplicantStatus status = iSupplicantStaNetworkV12
-                            .setSaePasswordId(saePasswordId);
                     return checkStatusAndLogFailure(status, methodStr);
                 } else {
                     return false;
