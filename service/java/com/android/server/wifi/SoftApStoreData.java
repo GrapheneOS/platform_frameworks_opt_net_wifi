@@ -44,6 +44,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
     private static final String TAG = "SoftApStoreData";
     private static final String XML_TAG_SECTION_HEADER_SOFTAP = "SoftAp";
     private static final String XML_TAG_SSID = "SSID";
+    private static final String XML_TAG_BSSID = "Bssid";
     private static final String XML_TAG_BAND = "Band";
     private static final String XML_TAG_CHANNEL = "Channel";
     private static final String XML_TAG_HIDDEN_SSID = "HiddenSSID";
@@ -107,6 +108,9 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
         SoftApConfiguration softApConfig = mDataSource.toSerialize();
         if (softApConfig != null) {
             XmlUtil.writeNextValue(out, XML_TAG_SSID, softApConfig.getSsid());
+            if (softApConfig.getBssid() != null) {
+                XmlUtil.writeNextValue(out, XML_TAG_BSSID, softApConfig.getBssid().toString());
+            }
             XmlUtil.writeNextValue(out, XML_TAG_AP_BAND, softApConfig.getBand());
             XmlUtil.writeNextValue(out, XML_TAG_CHANNEL, softApConfig.getChannel());
             XmlUtil.writeNextValue(out, XML_TAG_HIDDEN_SSID, softApConfig.isHiddenSsid());
@@ -159,6 +163,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
         int securityType = SoftApConfiguration.SECURITY_TYPE_OPEN;
         String passphrase = null;
         String ssid = null;
+        String bssid = null;
         // Note that, during deserializaion, we may read the old band encoding (XML_TAG_BAND)
         // or the new band encoding (XML_TAG_AP_BAND) that is used after the introduction of the
         // 6GHz band. If the old encoding is found, a conversion is done.
@@ -179,6 +184,10 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
                         case XML_TAG_SSID:
                             ssid = (String) value;
                             softApConfigBuilder.setSsid((String) value);
+                            break;
+                        case XML_TAG_BSSID:
+                            bssid = (String) value;
+                            softApConfigBuilder.setBssid(MacAddress.fromString(bssid));
                             break;
                         case XML_TAG_BAND:
                             apBand = ApConfigUtil.convertWifiConfigBandToSoftApConfigBand(
