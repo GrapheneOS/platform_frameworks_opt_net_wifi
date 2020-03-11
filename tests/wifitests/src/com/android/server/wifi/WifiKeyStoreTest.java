@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -51,7 +52,7 @@ public class WifiKeyStoreTest extends WifiBaseTest {
     private WifiKeyStore mWifiKeyStore;
     private static final String TEST_KEY_ID = "blah";
     private static final String USER_CERT_ALIAS = "aabbccddee";
-    private static final String [] USER_CA_CERT_ALIAS = {"aacccddd", "bbbqqqqmmm"};
+    private static final String [] USER_CA_CERT_ALIAS = {"aacccddd"};
     private static final String TEST_PACKAGE_NAME = "TestApp";
 
     /**
@@ -95,7 +96,6 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         // Method calls the KeyStore#delete method 4 times, user key, user cert, and 2 CA cert
         verify(mKeyStore).deleteEntry(USER_CERT_ALIAS);
         verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIAS[0]);
-        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIAS[1]);
     }
 
     /**
@@ -125,7 +125,6 @@ public class WifiKeyStoreTest extends WifiBaseTest {
 
         // Method calls the KeyStore#delete method 2 times: 2 CA certs
         verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIAS[0]);
-        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIAS[1]);
         verifyNoMoreInteractions(mKeyStore);
     }
 
@@ -202,5 +201,16 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         verify(mWifiEnterpriseConfig).setClientCertificateAlias(eq(suggestionNetworkAlias));
         verify(mWifiEnterpriseConfig).setCaCertificateAliases(
                 aryEq(new String[] {suggestionNetworkCaAlias}));
+    }
+
+    @Test
+    public void test_remove_empty_alias_enterprise_config() throws Exception {
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapNetwork();
+        WifiConfiguration suggestionNetwork = new WifiConfiguration(savedNetwork);
+        suggestionNetwork.fromWifiNetworkSuggestion = true;
+        suggestionNetwork.creatorName = TEST_PACKAGE_NAME;
+        mWifiKeyStore.removeKeys(savedNetwork.enterpriseConfig);
+        mWifiKeyStore.removeKeys(suggestionNetwork.enterpriseConfig);
+        verify(mKeyStore, never()).deleteEntry(any());
     }
 }

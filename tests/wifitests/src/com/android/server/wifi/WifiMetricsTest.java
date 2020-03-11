@@ -293,9 +293,12 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_ENHANCED_OPEN_NETWORKS = 1;
     private static final int NUM_WPA3_PERSONAL_NETWORKS = 4;
     private static final int NUM_WPA3_ENTERPRISE_NETWORKS = 6;
+    private static final int NUM_WAPI_PERSONAL_NETWORKS = 4;
+    private static final int NUM_WAPI_ENTERPRISE_NETWORKS = 6;
     private static final int NUM_SAVED_NETWORKS = NUM_OPEN_NETWORKS + NUM_LEGACY_PERSONAL_NETWORKS
             + NUM_LEGACY_ENTERPRISE_NETWORKS + NUM_ENHANCED_OPEN_NETWORKS
-            + NUM_WPA3_PERSONAL_NETWORKS + NUM_WPA3_ENTERPRISE_NETWORKS;
+            + NUM_WPA3_PERSONAL_NETWORKS + NUM_WPA3_ENTERPRISE_NETWORKS
+            + NUM_WAPI_PERSONAL_NETWORKS + NUM_WAPI_ENTERPRISE_NETWORKS;
     private static final int NUM_HIDDEN_NETWORKS = NUM_OPEN_NETWORKS;
     private static final int NUM_PASSPOINT_NETWORKS = NUM_LEGACY_ENTERPRISE_NETWORKS;
     private static final int NUM_NETWORKS_ADDED_BY_USER = 0;
@@ -337,6 +340,8 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_ENHANCED_OPEN_NETWORK_SCAN_RESULTS = 1;
     private static final int NUM_WPA3_PERSONAL_NETWORK_SCAN_RESULTS = 2;
     private static final int NUM_WPA3_ENTERPRISE_NETWORK_SCAN_RESULTS = 1;
+    private static final int NUM_WAPI_PERSONAL_NETWORK_SCAN_RESULTS = 1;
+    private static final int NUM_WAPI_ENTERPRISE_NETWORK_SCAN_RESULTS = 2;
     private static final int NUM_HIDDEN_NETWORK_SCAN_RESULTS = 1;
     private static final int NUM_HOTSPOT2_R1_NETWORK_SCAN_RESULTS = 1;
     private static final int NUM_HOTSPOT2_R2_NETWORK_SCAN_RESULTS = 2;
@@ -349,7 +354,8 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_TOTAL_SCAN_RESULTS = NUM_OPEN_NETWORK_SCAN_RESULTS
             + NUM_LEGACY_PERSONAL_NETWORK_SCAN_RESULTS + NUM_LEGACY_ENTERPRISE_NETWORK_SCAN_RESULTS
             + NUM_ENHANCED_OPEN_NETWORK_SCAN_RESULTS + NUM_WPA3_PERSONAL_NETWORK_SCAN_RESULTS
-            + NUM_WPA3_ENTERPRISE_NETWORK_SCAN_RESULTS;
+            + NUM_WPA3_ENTERPRISE_NETWORK_SCAN_RESULTS + NUM_WAPI_PERSONAL_NETWORK_SCAN_RESULTS
+            + NUM_WAPI_ENTERPRISE_NETWORK_SCAN_RESULTS;
     private static final int MIN_RSSI_LEVEL = -127;
     private static final int MAX_RSSI_LEVEL = 0;
     private static final int WIFI_SCORE_RANGE_MIN = 0;
@@ -514,6 +520,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]"));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-OWE-CCMP]"));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-EAP-SUITE-B-192]"));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-PSK-SMS4-SMS4]"));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]"));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]"));
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R2,
                 "[WPA-EAP-CCMP]"));
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R2,
@@ -543,6 +552,12 @@ public class WifiMetricsTest extends WifiBaseTest {
         }
         for (int i = 0; i < NUM_WPA3_ENTERPRISE_NETWORKS; i++) {
             testSavedNetworks.add(WifiConfigurationTestUtil.createEapSuiteBNetwork());
+        }
+        for (int i = 0; i < NUM_WAPI_PERSONAL_NETWORKS; i++) {
+            testSavedNetworks.add(WifiConfigurationTestUtil.createWapiPskNetwork());
+        }
+        for (int i = 0; i < NUM_WAPI_ENTERPRISE_NETWORKS; i++) {
+            testSavedNetworks.add(WifiConfigurationTestUtil.createWapiCertNetwork());
         }
         testSavedNetworks.get(0).macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         return testSavedNetworks;
@@ -993,6 +1008,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 NUM_WPA3_PERSONAL_NETWORKS, mDecodedProto.numWpa3PersonalNetworks);
         assertEquals("mDecodedProto.numWpa3EnterpriseNetworks == NUM_WPA3_ENTERPRISE_NETWORKS",
                 NUM_WPA3_ENTERPRISE_NETWORKS, mDecodedProto.numWpa3EnterpriseNetworks);
+        assertEquals("mDecodedProto.numWapiPersonalNetworks == NUM_WAPI_PERSONAL_NETWORKS",
+                NUM_WAPI_PERSONAL_NETWORKS, mDecodedProto.numWapiPersonalNetworks);
+        assertEquals("mDecodedProto.numWapiEnterpriseNetworks == NUM_WAPI_ENTERPRISE_NETWORKS",
+                NUM_WAPI_ENTERPRISE_NETWORKS, mDecodedProto.numWapiEnterpriseNetworks);
         assertEquals("mDecodedProto.numNetworksAddedByUser == NUM_NETWORKS_ADDED_BY_USER",
                 NUM_NETWORKS_ADDED_BY_USER, mDecodedProto.numNetworksAddedByUser);
         assertEquals(NUM_HIDDEN_NETWORKS, mDecodedProto.numHiddenNetworks);
@@ -1083,6 +1102,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.numWpa3PersonalNetworkScanResults);
         assertEquals(NUM_WPA3_ENTERPRISE_NETWORK_SCAN_RESULTS * NUM_SCANS,
                 mDecodedProto.numWpa3EnterpriseNetworkScanResults);
+        assertEquals(NUM_WAPI_PERSONAL_NETWORK_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.numWapiPersonalNetworkScanResults);
+        assertEquals(NUM_WAPI_ENTERPRISE_NETWORK_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.numWapiEnterpriseNetworkScanResults);
         assertEquals(NUM_HIDDEN_NETWORK_SCAN_RESULTS * NUM_SCANS,
                 mDecodedProto.numHiddenNetworkScanResults);
         assertEquals(NUM_HOTSPOT2_R1_NETWORK_SCAN_RESULTS * NUM_SCANS,
@@ -1413,6 +1436,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         config.enterpriseConfig = new WifiEnterpriseConfig();
         config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.TTLS);
         config.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.MSCHAPV2);
+        config.enterpriseConfig.setOcsp(WifiEnterpriseConfig.OCSP_REQUIRE_CERT_STATUS);
         WifiConfiguration.NetworkSelectionStatus networkSelectionStat =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
         when(networkSelectionStat.getCandidate()).thenReturn(scanResult);
@@ -1457,6 +1481,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.connectionEvent[0].routerFingerprint.eapMethod);
         assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_MSCHAPV2,
                 mDecodedProto.connectionEvent[0].routerFingerprint.authPhase2Method);
+        assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_REQUIRE_CERT_STATUS,
+                mDecodedProto.connectionEvent[0].routerFingerprint.ocspType);
         assertEquals(SCAN_RESULT_LEVEL, mDecodedProto.connectionEvent[0].signalStrength);
         assertEquals(NETWORK_DETAIL_DTIM, mDecodedProto.connectionEvent[1].routerFingerprint.dtim);
         assertEquals(WifiMetricsProto.RouterFingerPrint.AUTH_OPEN,
@@ -1465,6 +1491,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.connectionEvent[1].routerFingerprint.eapMethod);
         assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_NONE,
                 mDecodedProto.connectionEvent[1].routerFingerprint.authPhase2Method);
+        assertEquals(WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_NONE,
+                mDecodedProto.connectionEvent[1].routerFingerprint.ocspType);
         assertEquals(SCAN_RESULT_LEVEL, mDecodedProto.connectionEvent[1].signalStrength);
         assertEquals(NETWORK_DETAIL_WIFIMODE,
                 mDecodedProto.connectionEvent[1].routerFingerprint.routerTechnology);
@@ -2467,6 +2495,22 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
         dumpProtoAndDeserialize();
         assertEquals(id, mDecodedProto.connectionEvent[0].networkSelectorExperimentId);
+    }
+
+    /**
+     * Check pmk cache
+     */
+    @Test
+    public void testConnectionWithPmkCache() throws Exception {
+        mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
+        mWifiMetrics.setConnectionPmkCache(true);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_NONE,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        dumpProtoAndDeserialize();
+        assertEquals(true, mDecodedProto.connectionEvent[0].routerFingerprint.pmkCacheEnabled);
     }
 
     /**

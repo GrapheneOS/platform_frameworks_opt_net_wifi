@@ -18,7 +18,7 @@ package com.android.server.wifi;
 
 import android.net.Network;
 import android.net.NetworkAgent;
-import android.net.wifi.IScoreChangeCallback;
+import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.nl80211.WifiNl80211Manager;
@@ -75,11 +75,11 @@ public class WifiScoreReport {
     WifiThreadRunner mWifiThreadRunner;
 
     /**
-     * Callback proxy. See {@link WifiManager#ScoreChangeCallback}.
+     * Callback proxy. See {@link WifiManager#ScoreUpdateObserver}.
      */
-    private class ScoreChangeCallbackProxy extends IScoreChangeCallback.Stub {
+    private class ScoreUpdateObserverProxy extends IScoreUpdateObserver.Stub {
         @Override
-        public void onScoreChange(int sessionId, int score) {
+        public void notifyScoreUpdate(int sessionId, int score) {
             mWifiThreadRunner.post(() -> {
                 if (mWifiConnectedNetworkScorerHolder == null) {
                     return;
@@ -106,7 +106,7 @@ public class WifiScoreReport {
         }
 
         @Override
-        public void onTriggerUpdateOfWifiUsabilityStats(int sessionId) {
+        public void triggerUpdateOfWifiUsabilityStats(int sessionId) {
             mWifiThreadRunner.post(() -> {
                 if (mWifiConnectedNetworkScorerHolder == null) {
                     return;
@@ -230,8 +230,8 @@ public class WifiScoreReport {
         }
     }
 
-    private final ScoreChangeCallbackProxy mScoreChangeCallback =
-            new ScoreChangeCallbackProxy();
+    private final ScoreUpdateObserverProxy mScoreUpdateObserver =
+            new ScoreUpdateObserverProxy();
 
     private WifiConnectedNetworkScorerHolder mWifiConnectedNetworkScorerHolder;
 
@@ -529,9 +529,9 @@ public class WifiScoreReport {
         mWifiConnectedNetworkScorerHolder = scorerHolder;
 
         try {
-            scorer.setScoreChangeCallback(mScoreChangeCallback);
+            scorer.onSetScoreUpdateObserver(mScoreUpdateObserver);
         } catch (RemoteException e) {
-            Log.e(TAG, "Unable to set score change callback " + scorer, e);
+            Log.e(TAG, "Unable to set score update observer " + scorer, e);
             revertAospConnectedScorer();
             return false;
         }
@@ -565,7 +565,7 @@ public class WifiScoreReport {
         }
         try {
             IWifiConnectedNetworkScorer scorer = mWifiConnectedNetworkScorerHolder.getScorer();
-            scorer.start(sessionId);
+            scorer.onStart(sessionId);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to start Wifi connected network scorer "
                     + mWifiConnectedNetworkScorerHolder, e);
@@ -583,7 +583,7 @@ public class WifiScoreReport {
         }
         try {
             IWifiConnectedNetworkScorer scorer = mWifiConnectedNetworkScorerHolder.getScorer();
-            scorer.stop(mSessionId);
+            scorer.onStop(mSessionId);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to stop Wifi connected network scorer "
                     + mWifiConnectedNetworkScorerHolder, e);

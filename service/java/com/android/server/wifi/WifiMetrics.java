@@ -476,6 +476,8 @@ public class WifiMetrics {
                 sb.append(", mSupportsIpv6=" + mRouterFingerPrintProto.supportsIpv6);
                 sb.append(", mEapMethod=" + mRouterFingerPrintProto.eapMethod);
                 sb.append(", mAuthPhase2Method=" + mRouterFingerPrintProto.authPhase2Method);
+                sb.append(", mOcspType=" + mRouterFingerPrintProto.ocspType);
+                sb.append(", mPmkCache=" + mRouterFingerPrintProto.pmkCacheEnabled);
             }
             return sb.toString();
         }
@@ -521,8 +523,17 @@ public class WifiMetrics {
                         int phase2Method = config.enterpriseConfig.getPhase2Method();
                         mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
                                 .authPhase2Method = getAuthPhase2MethodProto(phase2Method);
+                        int ocspType = config.enterpriseConfig.getOcsp();
+                        mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
+                                .ocspType = getOcspTypeProto(ocspType);
                     }
                 }
+            }
+        }
+
+        public void setPmkCache(boolean isEnabled) {
+            synchronized (mLock) {
+                mRouterFingerPrintProto.pmkCacheEnabled = isEnabled;
             }
         }
     }
@@ -568,6 +579,22 @@ public class WifiMetrics {
                 return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_AKA_PRIME;
             default:
                 return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_NONE;
+        }
+    }
+
+    private int getOcspTypeProto(int ocspType) {
+        switch (ocspType) {
+            case WifiEnterpriseConfig.OCSP_NONE:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_NONE;
+            case WifiEnterpriseConfig.OCSP_REQUEST_CERT_STATUS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_REQUEST_CERT_STATUS;
+            case WifiEnterpriseConfig.OCSP_REQUIRE_CERT_STATUS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_REQUIRE_CERT_STATUS;
+            case WifiEnterpriseConfig.OCSP_REQUIRE_ALL_NON_TRUSTED_CERTS_STATUS:
+                return WifiMetricsProto.RouterFingerPrint
+                        .TYPE_OCSP_REQUIRE_ALL_NON_TRUSTED_CERTS_STATUS;
+            default:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_NONE;
         }
     }
 
@@ -896,6 +923,9 @@ public class WifiMetrics {
                     case WifiMetricsProto.ConnectionEvent.TYPE_OPEN:
                         sb.append("TYPE_OPEN");
                         break;
+                    case WifiMetricsProto.ConnectionEvent.TYPE_WAPI:
+                        sb.append("TYPE_WAPI");
+                        break;
                 }
                 sb.append(", networkCreator=");
                 switch (mConnectionEvent.networkCreator) {
@@ -1212,6 +1242,12 @@ public class WifiMetrics {
                 } else if (WifiConfigurationUtil.isConfigForSaeNetwork(config)) {
                     mCurrentConnectionEvent.mConnectionEvent.networkType =
                             WifiMetricsProto.ConnectionEvent.TYPE_WPA3;
+                } else if (WifiConfigurationUtil.isConfigForWapiPskNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_WAPI;
+                } else if (WifiConfigurationUtil.isConfigForWapiCertNetwork(config)) {
+                    mCurrentConnectionEvent.mConnectionEvent.networkType =
+                            WifiMetricsProto.ConnectionEvent.TYPE_WAPI;
                 } else if (WifiConfigurationUtil.isConfigForPskNetwork(config)) {
                     mCurrentConnectionEvent.mConnectionEvent.networkType =
                             WifiMetricsProto.ConnectionEvent.TYPE_WPA2;
@@ -1268,6 +1304,17 @@ public class WifiMetrics {
                     updateMetricsFromNetworkDetail(networkDetail);
                     updateMetricsFromScanResult(scanResult);
                 }
+            }
+        }
+    }
+
+    /**
+     * Set PMK cache status for a connection event
+     */
+    public void setConnectionPmkCache(boolean isEnabled) {
+        synchronized (mLock) {
+            if (mCurrentConnectionEvent != null) {
+                mCurrentConnectionEvent.mRouterFingerPrint.setPmkCache(isEnabled);
             }
         }
     }
@@ -1932,6 +1979,8 @@ public class WifiMetrics {
         int enhacedOpenNetworks = 0;
         int wpa3PersonalNetworks = 0;
         int wpa3EnterpriseNetworks = 0;
+        int wapiPersonalNetworks = 0;
+        int wapiEnterpriseNetworks = 0;
 
         for (ScanDetail scanDetail : scanDetails) {
             NetworkDetail networkDetail = scanDetail.getNetworkDetail();
@@ -1952,6 +2001,10 @@ public class WifiMetrics {
             if (scanResult != null && scanResult.capabilities != null) {
                 if (ScanResultUtil.isScanResultForEapSuiteBNetwork(scanResult)) {
                     wpa3EnterpriseNetworks++;
+                } else if (ScanResultUtil.isScanResultForWapiPskNetwork(scanResult)) {
+                    wapiPersonalNetworks++;
+                } else if (ScanResultUtil.isScanResultForWapiCertNetwork(scanResult)) {
+                    wapiEnterpriseNetworks++;
                 } else if (ScanResultUtil.isScanResultForEapNetwork(scanResult)) {
                     enterpriseNetworks++;
                 } else if (ScanResultUtil.isScanResultForSaeNetwork(scanResult)) {
@@ -1974,6 +2027,8 @@ public class WifiMetrics {
             mWifiLogProto.numEnhancedOpenNetworkScanResults += enhacedOpenNetworks;
             mWifiLogProto.numWpa3PersonalNetworkScanResults += wpa3PersonalNetworks;
             mWifiLogProto.numWpa3EnterpriseNetworkScanResults += wpa3EnterpriseNetworks;
+            mWifiLogProto.numWapiPersonalNetworkScanResults += wapiPersonalNetworks;
+            mWifiLogProto.numWapiEnterpriseNetworkScanResults += wapiEnterpriseNetworks;
             mWifiLogProto.numHiddenNetworkScanResults += hiddenNetworks;
             mWifiLogProto.numHotspot2R1NetworkScanResults += hotspot2r1Networks;
             mWifiLogProto.numHotspot2R2NetworkScanResults += hotspot2r2Networks;
@@ -2576,6 +2631,10 @@ public class WifiMetrics {
                         + mWifiLogProto.numWpa3PersonalNetworks);
                 pw.println("mWifiLogProto.numWpa3EnterpriseNetworks="
                         + mWifiLogProto.numWpa3EnterpriseNetworks);
+                pw.println("mWifiLogProto.numWapiPersonalNetworks="
+                        + mWifiLogProto.numWapiPersonalNetworks);
+                pw.println("mWifiLogProto.numWapiEnterpriseNetworks="
+                        + mWifiLogProto.numWapiEnterpriseNetworks);
                 pw.println("mWifiLogProto.numHiddenNetworks=" + mWifiLogProto.numHiddenNetworks);
                 pw.println("mWifiLogProto.numPasspointNetworks="
                         + mWifiLogProto.numPasspointNetworks);
@@ -2741,6 +2800,10 @@ public class WifiMetrics {
                         + mWifiLogProto.numWpa3PersonalNetworkScanResults);
                 pw.println("mWifiLogProto.numWpa3EnterpriseNetworkScanResults="
                         + mWifiLogProto.numWpa3EnterpriseNetworkScanResults);
+                pw.println("mWifiLogProto.numWapiPersonalNetworkScanResults="
+                        + mWifiLogProto.numWapiPersonalNetworkScanResults);
+                pw.println("mWifiLogProto.numWapiEnterpriseNetworkScanResults="
+                        + mWifiLogProto.numWapiEnterpriseNetworkScanResults);
                 pw.println("mWifiLogProto.numHiddenNetworkScanResults="
                         + mWifiLogProto.numHiddenNetworkScanResults);
                 pw.println("mWifiLogProto.numHotspot2R1NetworkScanResults="
@@ -3142,6 +3205,8 @@ public class WifiMetrics {
             mWifiLogProto.numEnhancedOpenNetworks = 0;
             mWifiLogProto.numWpa3PersonalNetworks = 0;
             mWifiLogProto.numWpa3EnterpriseNetworks = 0;
+            mWifiLogProto.numWapiPersonalNetworks = 0;
+            mWifiLogProto.numWapiEnterpriseNetworks = 0;
             mWifiLogProto.numNetworksAddedByUser = 0;
             mWifiLogProto.numNetworksAddedByApps = 0;
             mWifiLogProto.numHiddenNetworks = 0;
@@ -3151,9 +3216,14 @@ public class WifiMetrics {
                     mWifiLogProto.numOpenNetworks++;
                 } else if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
                     mWifiLogProto.numEnhancedOpenNetworks++;
+                } else if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                    mWifiLogProto.numWapiPersonalNetworks++;
                 } else if (config.isEnterprise()) {
                     if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
                         mWifiLogProto.numWpa3EnterpriseNetworks++;
+                    } else if (config.allowedKeyManagement.get(
+                            WifiConfiguration.KeyMgmt.WAPI_CERT)) {
+                        mWifiLogProto.numWapiEnterpriseNetworks++;
                     } else {
                         mWifiLogProto.numLegacyEnterpriseNetworks++;
                     }

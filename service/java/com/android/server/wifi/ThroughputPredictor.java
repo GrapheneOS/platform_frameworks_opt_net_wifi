@@ -21,6 +21,7 @@ import static com.android.server.wifi.util.InformationElementUtil.BssLoad.MIN_CH
 
 import android.annotation.NonNull;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.util.Log;
@@ -163,7 +164,7 @@ public class ThroughputPredictor {
      * @return predicted throughput in Mbps
      */
     public int predictThroughput(DeviceWiphyCapabilities deviceCapabilities,
-            @ScanResult.WifiStandard int wifiStandardAp,
+            @WifiStandard int wifiStandardAp,
             int channelWidthAp, int rssiDbm, int frequency, int maxNumSpatialStreamAp,
             int channelUtilizationBssLoad, int channelUtilizationLinkLayerStats,
             boolean isBluetoothConnected) {
@@ -245,7 +246,7 @@ public class ThroughputPredictor {
                 channelUtilization);
     }
 
-    private int predictThroughputInternal(@ScanResult.WifiStandard int wifiStandard,
+    private int predictThroughputInternal(@WifiStandard int wifiStandard,
             int channelWidth, int rssiDbm, int maxNumSpatialStream,  int channelUtilization) {
 
         // channel bandwidth in MHz = 20MHz * (2 ^ channelWidthFactor);

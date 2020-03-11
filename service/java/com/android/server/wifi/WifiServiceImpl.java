@@ -68,6 +68,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApInfo;
+import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiClient;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -370,7 +371,8 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_ABSENT == state) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
-                                mClientModeImpl.resetSimAuthNetworks(false);
+                                mClientModeImpl.resetSimAuthNetworks(
+                                        ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
                             }
                         }
                     },
@@ -384,11 +386,29 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_LOADED == state) {
                                 Log.d(TAG, "resetting networks because SIM was loaded");
-                                mClientModeImpl.resetSimAuthNetworks(true);
+                                mClientModeImpl.resetSimAuthNetworks(
+                                        ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED);
                             }
                         }
                     },
                     new IntentFilter(TelephonyManager.ACTION_SIM_APPLICATION_STATE_CHANGED));
+
+            mContext.registerReceiver(
+                    new BroadcastReceiver() {
+                        private int mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            final int subId = intent.getIntExtra("subscription",
+                                    SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+                            if (subId != mLastSubId) {
+                                Log.d(TAG, "resetting networks as default data SIM is changed");
+                                mClientModeImpl.resetSimAuthNetworks(
+                                        ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
+                                mLastSubId = subId;
+                            }
+                        }
+                    },
+                    new IntentFilter(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED));
 
             // Adding optimizations of only receiving broadcasts when wifi is enabled
             // can result in race conditions when apps toggle wifi in the background
@@ -1821,15 +1841,8 @@ public class WifiServiceImpl extends BaseWifiService {
     @NonNull
     @Override
     public SoftApConfiguration getSoftApConfiguration() {
-        enforceAccessPermission();
+        enforceNetworkSettingsPermission();
         int uid = Binder.getCallingUid();
-        // only allow Settings UI to get the saved SoftApConfig
-        if (!mWifiPermissionsUtil.checkConfigOverridePermission(uid)) {
-            // random apps should not be allowed to read the user specified config
-            throw new SecurityException("App not allowed to read or update stored WiFi Ap config "
-                    + "(uid = " + uid + ")");
-        }
-
         if (mVerboseLoggingEnabled) {
             mLog.info("getSoftApConfiguration uid=%").c(uid).flush();
         }
@@ -2829,7 +2842,7 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public String getCountryCode() {
-        enforceNetworkStackPermission();
+        enforceNetworkSettingsPermission();
         if (mVerboseLoggingEnabled) {
             mLog.info("getCountryCode uid=%").c(Binder.getCallingUid()).flush();
         }
@@ -2865,7 +2878,7 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     @Override
-    public boolean isWifiStandardSupported(@ScanResult.WifiStandard int standard) {
+    public boolean isWifiStandardSupported(@WifiStandard int standard) {
         return mWifiThreadRunner.call(
                 () -> mClientModeImpl.isWifiStandardSupported(standard), false);
     }
@@ -3084,8 +3097,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 try {
                     packageInfo = pm.getPackageInfo(pkgName, 0);
                 } catch (PackageManager.NameNotFoundException e) {
-                    Log.e(TAG, "Couldn't get PackageInfo for package:" + pkgName);
-                    return;
+                    Log.w(TAG, "Couldn't get PackageInfo for package:" + pkgName);
                 }
                 // If package is not removed or disabled, just ignore.
                 if (packageInfo != null

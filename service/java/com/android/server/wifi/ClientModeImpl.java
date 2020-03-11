@@ -29,6 +29,7 @@ import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
 import static com.android.server.wifi.WifiDataStall.INVALID_THROUGHPUT;
 import static com.android.server.wifi.WifiHealthMonitor.SCAN_RSSI_VALID_TIME_MS;
 
+import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
@@ -70,6 +71,7 @@ import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ITxPacketCountListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
@@ -98,6 +100,7 @@ import android.os.WorkSource;
 import android.provider.Settings;
 import android.system.OsConstants;
 import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
@@ -139,6 +142,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -513,6 +518,17 @@ public class ClientModeImpl extends StateMachine {
 
     /* SIM is removed; reset any cached data for it */
     static final int CMD_RESET_SIM_NETWORKS                             = BASE + 101;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(prefix = {"RESET_SIM_REASON_"},
+            value = {
+                    RESET_SIM_REASON_SIM_REMOVED,
+                    RESET_SIM_REASON_SIM_INSERTED,
+                    RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED})
+    @interface ResetSimReason {}
+    static final int RESET_SIM_REASON_SIM_REMOVED              = 0;
+    static final int RESET_SIM_REASON_SIM_INSERTED             = 1;
+    static final int RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED = 2;
 
     /* OSU APIs */
     static final int CMD_QUERY_OSU_ICON                                 = BASE + 104;
@@ -1342,7 +1358,7 @@ public class ClientModeImpl extends StateMachine {
      * @param standard A value from {@link ScanResult}'s {@code WIFI_STANDARD_}
      * @return {@code true} if standard is supported, {@code false} otherwise.
      */
-    public boolean isWifiStandardSupported(@ScanResult.WifiStandard int standard) {
+    public boolean isWifiStandardSupported(@WifiStandard int standard) {
         return mWifiNative.isWifiStandardSupported(mInterfaceName, standard);
     }
 
@@ -1731,8 +1747,8 @@ public class ClientModeImpl extends StateMachine {
     /**
      * reset cached SIM credential data
      */
-    public synchronized void resetSimAuthNetworks(boolean simPresent) {
-        sendMessage(CMD_RESET_SIM_NETWORKS, simPresent ? 1 : 0);
+    public synchronized void resetSimAuthNetworks(@ResetSimReason int resetReason) {
+        sendMessage(CMD_RESET_SIM_NETWORKS, resetReason);
     }
 
     /**
@@ -4166,14 +4182,16 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_RESET_SIM_NETWORKS:
                     log("resetting EAP-SIM/AKA/AKA' networks since SIM was changed");
-                    boolean simPresent = message.arg1 == 1;
-                    if (simPresent) {
+                    int resetReason = message.arg1;
+                    if (resetReason == RESET_SIM_REASON_SIM_INSERTED) {
                         // whenever a SIM is inserted clear all SIM related notifications
                         mSimRequiredNotifier.dismissSimRequiredNotification();
                     } else {
                         mWifiConfigManager.resetSimNetworks();
                     }
-                    mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
+                    if (resetReason != RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED) {
+                        mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
+                    }
                     break;
                 case CMD_BLUETOOTH_ADAPTER_STATE_CHANGE:
                     // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE
@@ -4868,14 +4886,15 @@ public class ClientModeImpl extends StateMachine {
                     log(" Ignore CMD_RECONNECT request because wifi is already connected");
                     break;
                 case CMD_RESET_SIM_NETWORKS:
-                    if (message.arg1 == 0 // sim was removed
+                    if (message.arg1 != RESET_SIM_REASON_SIM_INSERTED
                             && mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID) {
                         WifiConfiguration config =
                                 mWifiConfigManager.getConfiguredNetwork(mLastNetworkId);
-                        if (config.enterpriseConfig != null
-                                && config.enterpriseConfig.isAuthenticationSimBased()
-                                && !mTelephonyUtil.isSimPresent(mLastSubId)) {
-                            // check if the removed sim card is associated with current config
+                        if ((message.arg1 == RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED
+                                && config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID)
+                                || (config.enterpriseConfig != null
+                                        && config.enterpriseConfig.isAuthenticationSimBased()
+                                        && !mTelephonyUtil.isSimPresent(mLastSubId))) {
                             mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                     StaEvent.DISCONNECT_RESET_SIM_NETWORKS);
 

@@ -31,6 +31,7 @@ import android.util.Xml;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
+import com.android.server.wifi.util.ScanResultUtil;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtilTest;
 
@@ -46,6 +47,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -206,8 +209,8 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<byte-array name=\"AllowedKeyMgmt\" num=\"2\">0001</byte-array>\n"
                     + "<byte-array name=\"AllowedProtocols\" num=\"1\">02</byte-array>\n"
                     + "<byte-array name=\"AllowedAuthAlgos\" num=\"0\"></byte-array>\n"
-                    + "<byte-array name=\"AllowedGroupCiphers\" num=\"1\">08</byte-array>\n"
-                    + "<byte-array name=\"AllowedPairwiseCiphers\" num=\"1\">04</byte-array>\n"
+                    + "<byte-array name=\"AllowedGroupCiphers\" num=\"1\">28</byte-array>\n"
+                    + "<byte-array name=\"AllowedPairwiseCiphers\" num=\"1\">0c</byte-array>\n"
                     + "<byte-array name=\"AllowedGroupMgmtCiphers\" num=\"0\"></byte-array>\n"
                     + "<byte-array name=\"AllowedSuiteBCiphers\" num=\"0\"></byte-array>\n"
                     + "<boolean name=\"Shared\" value=\"%s\" />\n"
@@ -323,9 +326,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         saeNetwork.setIpConfiguration(
                 WifiConfigurationTestUtil.createDHCPIpConfigurationWithNoProxy());
         saeNetwork.setRandomizedMacAddress(TEST_RANDOMIZED_MAC);
-        saeNetwork.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-        saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-        saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        saeNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         List<WifiConfiguration> networkList = new ArrayList<>();
         networkList.add(openNetwork);
         networkList.add(eapNetwork);
@@ -670,11 +671,11 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                 "name=\"AllowedProtocols\" num=\"1\">03</byte-array>");
 
         saeNetworkWithOpenAuthXml.replaceAll(
-                "name=\"AllowedGroupCiphers\" num=\"1\">08</byte-array>",
+                "name=\"AllowedGroupCiphers\" num=\"1\">28</byte-array>",
                 "name=\"AllowedGroupCiphers\" num=\"1\">0f</byte-array>");
 
         saeNetworkWithOpenAuthXml.replaceAll(
-                "name=\"AllowedPairwiseCiphers\" num=\"1\">04</byte-array>",
+                "name=\"AllowedPairwiseCiphers\" num=\"1\">0c</byte-array>",
                 "name=\"AllowedPairwiseCiphers\" num=\"1\">06</byte-array>");
 
         List<WifiConfiguration> retrievedNetworkList =
@@ -684,6 +685,11 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
 
         assertFalse(retrievedNetworkList.get(0).allowedAuthAlgorithms
                 .get(WifiConfiguration.AuthAlgorithm.OPEN));
+
+        assertTrue(retrievedNetworkList.get(0).allowedPairwiseCiphers
+                .get(WifiConfiguration.PairwiseCipher.GCMP_256));
+        assertTrue(retrievedNetworkList.get(0).allowedGroupCiphers
+                .get(WifiConfiguration.GroupCipher.GCMP_256));
     }
 
     /**
@@ -699,5 +705,27 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         List<WifiConfiguration> parsedNetworks = deserializeData("".getBytes());
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigStore(
                 oemUserSavedNetworks, parsedNetworks);
+    }
+
+    /**
+     * The WifiConfiguration store should follow the sort of the SSIDs.
+     */
+    @Test
+    public void testWifiConfigSaveToStoreOrder() throws Exception {
+        String testSSID = "TEST_SSID";
+        List<WifiConfiguration> storedWIfiConfig = new ArrayList<>();
+        for (int i = 1; i <= 1; i++) {
+            WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork(
+                    ScanResultUtil.createQuotedSSID(testSSID + (1 - i)));
+            network.creatorName = TEST_CREATOR_NAME;
+        }
+        // Add to store data based on added order.
+        mNetworkListSharedStoreData.setConfigurations(storedWIfiConfig);
+        byte[] output1 = serializeData();
+        // Add to store data based on SSID sort.
+        Collections.sort(storedWIfiConfig, Comparator.comparing(a -> a.SSID));
+        mNetworkListSharedStoreData.setConfigurations(storedWIfiConfig);
+        byte[] output2 = serializeData();
+        assertArrayEquals(output2, output1);
     }
 }
