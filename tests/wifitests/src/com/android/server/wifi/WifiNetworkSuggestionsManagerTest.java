@@ -16,10 +16,11 @@
 
 package com.android.server.wifi;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.app.AppOpsManager.MODE_ALLOWED;
 import static android.app.AppOpsManager.MODE_IGNORED;
 import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
-import static android.app.Notification.EXTRA_BIG_TEXT;
 
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.when;
@@ -37,12 +38,14 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.AppOpsManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -66,6 +69,8 @@ import android.os.UserHandle;
 import android.os.test.TestLooper;
 import android.telephony.TelephonyManager;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.view.LayoutInflater;
+import android.view.Window;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
@@ -137,6 +142,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     private @Mock ActivityManager mActivityManager;
     private @Mock WifiScoreCard mWifiScoreCard;
     private @Mock WifiKeyStore mWifiKeyStore;
+    private @Mock AlertDialog.Builder mAlertDialogBuilder;
+    private @Mock AlertDialog mAlertDialog;
+    private @Mock Notification.Builder mNotificationBuilder;
+    private @Mock Notification mNotification;
     private TestLooper mLooper;
     private ArgumentCaptor<AppOpsManager.OnOpChangedListener> mAppOpChangedListenerCaptor =
             ArgumentCaptor.forClass(AppOpsManager.OnOpChangedListener.class);
@@ -166,6 +175,28 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mWifiInjector.getFrameworkFacade()).thenReturn(mFrameworkFacade);
         when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
         when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
+        when(mAlertDialogBuilder.setTitle(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setMessage(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setPositiveButton(any(), any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setNegativeButton(any(), any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setOnDismissListener(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setOnCancelListener(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.create()).thenReturn(mAlertDialog);
+        when(mAlertDialog.getWindow()).thenReturn(mock(Window.class));
+        when(mNotificationBuilder.setSmallIcon(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setTicker(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setContentTitle(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setStyle(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setDeleteIntent(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setShowWhen(anyBoolean())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setLocalOnly(anyBoolean())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setColor(anyInt())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.addAction(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.build()).thenReturn(mNotification);
+        when(mFrameworkFacade.makeAlertDialogBuilder(any()))
+                .thenReturn(mAlertDialogBuilder);
+        when(mFrameworkFacade.makeNotificationBuilder(any(), anyString()))
+                .thenReturn(mNotificationBuilder);
         when(mFrameworkFacade.getBroadcast(any(), anyInt(), any(), anyInt()))
                 .thenReturn(mock(PendingIntent.class));
         when(mContext.getResources()).thenReturn(mResources);
@@ -174,7 +205,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .thenReturn(mNotificationManger);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mContext.getSystemService(ActivityManager.class)).thenReturn(mActivityManager);
+        when(mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE))
+                .thenReturn(mock(LayoutInflater.class));
         when(mActivityManager.isLowRamDevice()).thenReturn(false);
+        when(mActivityManager.getPackageImportance(any())).thenReturn(
+                IMPORTANCE_FOREGROUND_SERVICE);
 
         // setup resource strings for notification.
         when(mResources.getString(eq(R.string.wifi_suggestion_title), anyString()))
@@ -223,7 +258,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         verify(mContext).getSystemService(Context.APP_OPS_SERVICE);
         verify(mContext).getSystemService(Context.NOTIFICATION_SERVICE);
         verify(mContext).getPackageManager();
-        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(), any());
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(), any(), any(), any());
 
         ArgumentCaptor<NetworkSuggestionStoreData.DataSource> dataSourceArgumentCaptor =
                 ArgumentCaptor.forClass(NetworkSuggestionStoreData.DataSource.class);
@@ -2435,11 +2470,149 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify handling of user clicking allow on the user approval dialog when first time
+     * add suggestions.
+     */
+    @Test
+    public void testUserApprovalDialogClickOnAllowDuringAddingSuggestionsFromFgApp() {
+        // Fg app
+        when(mActivityManager.getPackageImportance(any())).thenReturn(IMPORTANCE_FOREGROUND);
+
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                false);
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion);
+                }};
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        validateUserApprovalDialog(TEST_APP_NAME_1);
+
+        // Simulate user clicking on allow in the dialog.
+        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setPositiveButton(
+                any(), clickListenerCaptor.capture());
+        assertNotNull(clickListenerCaptor.getValue());
+        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
+        mLooper.dispatchAll();
+
+        // Verify config store interactions.
+        verify(mWifiConfigManager, times(2)).saveToStore(true);
+        assertTrue(mDataSource.hasNewDataToSerialize());
+
+        // We should not resend the notification next time the network is found in scan results.
+        mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(
+                createScanDetailForNetwork(networkSuggestion.wifiConfiguration));
+        verifyNoMoreInteractions(mNotificationManger);
+    }
+
+    /**
+     * Verify handling of user clicking Disallow on the user approval dialog when first time
+     * add suggestions.
+     */
+    @Test
+    public void testUserApprovalDialogClickOnDisallowWhenAddSuggestionsFromFgApp() {
+        // Fg app
+        when(mActivityManager.getPackageImportance(any())).thenReturn(IMPORTANCE_FOREGROUND);
+
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false,  true, true,
+                false);
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion);
+                }};
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        verify(mAppOpsManager).startWatchingMode(eq(OPSTR_CHANGE_WIFI_STATE),
+                eq(TEST_PACKAGE_1), mAppOpChangedListenerCaptor.capture());
+        validateUserApprovalDialog(TEST_APP_NAME_1);
+
+        // Simulate user clicking on disallow in the dialog.
+        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setNegativeButton(
+                any(), clickListenerCaptor.capture());
+        assertNotNull(clickListenerCaptor.getValue());
+        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
+        mLooper.dispatchAll();
+        // Ensure we turn off CHANGE_WIFI_STATE app-ops.
+        verify(mAppOpsManager).setMode(
+                OPSTR_CHANGE_WIFI_STATE, TEST_UID_1, TEST_PACKAGE_1, MODE_IGNORED);
+
+        // Verify config store interactions.
+        verify(mWifiConfigManager, times(2)).saveToStore(true);
+        assertTrue(mDataSource.hasNewDataToSerialize());
+
+        // Now trigger the app-ops callback to ensure we remove all of their suggestions.
+        AppOpsManager.OnOpChangedListener listener = mAppOpChangedListenerCaptor.getValue();
+        assertNotNull(listener);
+        when(mAppOpsManager.unsafeCheckOpNoThrow(
+                OPSTR_CHANGE_WIFI_STATE, TEST_UID_1,
+                TEST_PACKAGE_1))
+                .thenReturn(MODE_IGNORED);
+        listener.onOpChanged(OPSTR_CHANGE_WIFI_STATE, TEST_PACKAGE_1);
+        mLooper.dispatchAll();
+        assertTrue(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions().isEmpty());
+
+        // Assuming the user re-enabled the app again & added the same suggestions back.
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        validateUserApprovalDialog(TEST_APP_NAME_1);
+        verifyNoMoreInteractions(mNotificationManger);
+    }
+
+    /**
+     * Verify handling of dismissal of the user approval dialog when first time
+     * add suggestions.
+     */
+    @Test
+    public void testUserApprovalDialiogDismissDuringAddingSuggestionsFromFgApp() {
+        // Fg app
+        when(mActivityManager.getPackageImportance(any())).thenReturn(IMPORTANCE_FOREGROUND);
+
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                false);
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion);
+                }};
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        validateUserApprovalDialog(TEST_APP_NAME_1);
+
+        // Simulate user clicking on allow in the dialog.
+        ArgumentCaptor<DialogInterface.OnDismissListener> dismissListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnDismissListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setOnDismissListener(
+                dismissListenerCaptor.capture());
+        assertNotNull(dismissListenerCaptor.getValue());
+        dismissListenerCaptor.getValue().onDismiss(mAlertDialog);
+        mLooper.dispatchAll();
+
+        // Verify no new config store or app-op interactions.
+        verify(mWifiConfigManager).saveToStore(true); // 1 already done for add
+        verify(mAppOpsManager, never()).setMode(any(), anyInt(), any(), anyInt());
+
+        // We should resend the notification next time the network is found in scan results.
+        mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(
+                createScanDetailForNetwork(networkSuggestion.wifiConfiguration));
+        validateUserApprovalNotification(TEST_APP_NAME_1);
+    }
+
+    /**
      * Verify handling of user clicking allow on the user approval notification when first time
      * add suggestions.
      */
     @Test
-    public void testUserApprovalNotificationClickOnAllowDuringAddingSuggestions() {
+    public void testUserApprovalNotificationClickOnAllowDuringAddingSuggestionsFromNonFgApp() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
                 false);
@@ -2474,7 +2647,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      * add suggestions.
      */
     @Test
-    public void testUserApprovalNotificationClickOnDisallowWhenAddSuggestions() {
+    public void testUserApprovalNotificationClickOnDisallowWhenAddSuggestionsFromNonFgApp() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, true, false,  true, true,
                 false);
@@ -2602,38 +2775,47 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(expectedNetworkSuggestion, networkSuggestion);
     }
 
-    private boolean checkUserApprovalNotificationParams(
-            Notification notification, String expectedAppName) {
-        return notification.extras.getString(EXTRA_BIG_TEXT).contains(expectedAppName);
-    }
-
-    private boolean checkImsiProtectionNotificationParams(
-            Notification notification, String carrierName) {
-        return notification.extras.getString(EXTRA_BIG_TEXT).contains(carrierName);
-    }
-
     private void validateImsiProtectionNotification(String carrierName) {
-        ArgumentCaptor<Notification> notificationArgumentCaptor =
-                ArgumentCaptor.forClass(Notification.class);
-        verify(mNotificationManger).notify(eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
-                notificationArgumentCaptor.capture());
-        Notification notification = notificationArgumentCaptor.getValue();
-        assertNotNull(notification);
-        assertTrue(checkImsiProtectionNotificationParams(notification, carrierName));
+        verify(mNotificationManger, atLeastOnce()).notify(
+                eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
+                eq(mNotification));
+        ArgumentCaptor<Notification.BigTextStyle> contentCaptor =
+                ArgumentCaptor.forClass(Notification.BigTextStyle.class);
+        verify(mNotificationBuilder, atLeastOnce()).setStyle(contentCaptor.capture());
+        Notification.BigTextStyle content = contentCaptor.getValue();
+        assertNotNull(content);
+        assertTrue(content.getBigText().toString().contains(carrierName));
     }
 
-    private void validateUserApprovalNotification(String... anyOfExpectedAppNames) {
-        ArgumentCaptor<Notification> notificationArgumentCaptor =
-                ArgumentCaptor.forClass(Notification.class);
-        verify(mNotificationManger).notify(eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
-                notificationArgumentCaptor.capture());
-        Notification notification = notificationArgumentCaptor.getValue();
-        assertNotNull(notification);
+    private void validateUserApprovalDialog(String... anyOfExpectedAppNames) {
+        verify(mAlertDialog, atLeastOnce()).show();
+        ArgumentCaptor<CharSequence> contentCaptor =
+                ArgumentCaptor.forClass(CharSequence.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setMessage(contentCaptor.capture());
+        CharSequence content = contentCaptor.getValue();
+        assertNotNull(content);
 
         boolean foundMatch = false;
         for (int i = 0; i < anyOfExpectedAppNames.length; i++) {
-            foundMatch = checkUserApprovalNotificationParams(
-                    notification, anyOfExpectedAppNames[i]);
+            foundMatch = content.toString().contains(anyOfExpectedAppNames[i]);
+            if (foundMatch) break;
+        }
+        assertTrue(foundMatch);
+    }
+
+    private void validateUserApprovalNotification(String... anyOfExpectedAppNames) {
+        verify(mNotificationManger, atLeastOnce()).notify(
+                eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
+                eq(mNotification));
+        ArgumentCaptor<Notification.BigTextStyle> contentCaptor =
+                ArgumentCaptor.forClass(Notification.BigTextStyle.class);
+        verify(mNotificationBuilder, atLeastOnce()).setStyle(contentCaptor.capture());
+        Notification.BigTextStyle content = contentCaptor.getValue();
+        assertNotNull(content);
+
+        boolean foundMatch = false;
+        for (int i = 0; i < anyOfExpectedAppNames.length; i++) {
+            foundMatch = content.getBigText().toString().contains(anyOfExpectedAppNames[i]);
             if (foundMatch) break;
         }
         assertTrue(foundMatch);
