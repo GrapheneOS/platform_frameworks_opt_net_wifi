@@ -146,6 +146,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     private @Mock SupplicantStaNetworkHal mSupplicantStaNetworkMock;
     private @Mock WifiNative.SupplicantDeathEventHandler mSupplicantHalDeathHandler;
     private @Mock Clock mClock;
+    private @Mock WifiMetrics mWifiMetrics;
 
     SupplicantStatus mStatusSuccess;
     SupplicantStatus mStatusFailure;
@@ -177,7 +178,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     private class SupplicantStaIfaceHalSpy extends SupplicantStaIfaceHal {
         SupplicantStaIfaceHalSpy() {
             super(mContext, mWifiMonitor, mFrameworkFacade,
-                    mHandler, mClock);
+                    mHandler, mClock, mWifiMetrics);
         }
 
         @Override
