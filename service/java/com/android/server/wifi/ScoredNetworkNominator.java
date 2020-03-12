@@ -18,16 +18,21 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.ContentObserver;
 import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.os.Handler;
 import android.os.Process;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.LocalLog;
 import android.util.Log;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.ScanResultUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 
@@ -40,16 +45,23 @@ import java.util.List;
  */
 public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNominator {
     private static final String TAG = "ScoredNetworkNominator";
+    // TODO (b/150977740): Stop using the @hide settings global flag.
+    @VisibleForTesting
+    public static final String SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE =
+            "use_open_wifi_package";
     private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
 
     private final NetworkScoreManager mNetworkScoreManager;
     private final PackageManager mPackageManager;
     private final WifiConfigManager mWifiConfigManager;
     private final LocalLog mLocalLog;
+    private final ContentObserver mContentObserver;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
+    private boolean mNetworkRecommendationsEnabled;
     private WifiNetworkScoreCache mScoreCache;
 
-    ScoredNetworkNominator(NetworkScoreManager networkScoreManager,
+    ScoredNetworkNominator(final Context context, Handler handler,
+            final FrameworkFacade frameworkFacade, NetworkScoreManager networkScoreManager,
             PackageManager packageManager,
             WifiConfigManager wifiConfigManager, LocalLog localLog,
             WifiNetworkScoreCache wifiNetworkScoreCache,
@@ -60,19 +72,24 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
         mPackageManager = packageManager;
         mWifiConfigManager = wifiConfigManager;
         mLocalLog = localLog;
+        mContentObserver = new ContentObserver(handler) {
+            @Override
+            public void onChange(boolean selfChange) {
+                mNetworkRecommendationsEnabled = frameworkFacade.getStringSetting(context,
+                        SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE) != null;
+            }
+        };
+        frameworkFacade.registerContentObserver(context,
+                Settings.Global.getUriFor(SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE),
+                false /* notifyForDescendents */, mContentObserver);
+        mContentObserver.onChange(false /* unused */);
         mLocalLog.log("ScoredNetworkNominator constructed. mNetworkRecommendationsEnabled: "
-                + isNetworkRecommendationsEnabled());
-    }
-
-    private boolean isNetworkRecommendationsEnabled() {
-        // Check if we have any active scorer, not enabled otherwise.
-        String packageName = mNetworkScoreManager.getActiveScorerPackage();
-        return !TextUtils.isEmpty(packageName);
+                + mNetworkRecommendationsEnabled);
     }
 
     @Override
     public void update(List<ScanDetail> scanDetails) {
-        if (isNetworkRecommendationsEnabled()) {
+        if (mNetworkRecommendationsEnabled) {
             updateNetworkScoreCache(scanDetails);
         }
     }
@@ -121,7 +138,7 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
             WifiConfiguration currentNetwork, String currentBssid, boolean connected,
             boolean untrustedNetworkAllowed,
             @NonNull OnConnectableListener onConnectableListener) {
-        if (!isNetworkRecommendationsEnabled()) {
+        if (!mNetworkRecommendationsEnabled) {
             mLocalLog.log("Skipping nominateNetworks; Network recommendations disabled.");
             return;
         }
