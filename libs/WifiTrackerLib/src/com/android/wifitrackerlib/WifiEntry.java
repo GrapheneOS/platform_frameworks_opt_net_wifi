@@ -304,6 +304,10 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
      * Returns null if getConnectedState() != CONNECTED_STATE_CONNECTED.
      */
     public ConnectedInfo getConnectedInfo() {
+        if (getConnectedState() != CONNECTED_STATE_CONNECTED) {
+            return null;
+        }
+
         return mConnectedInfo;
     }
 
@@ -585,7 +589,9 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     // Method for WifiTracker to update the link properties, which is valid for all WifiEntry types.
     @WorkerThread
     void updateLinkProperties(@Nullable LinkProperties linkProperties) {
-        if (getConnectedState() != CONNECTED_STATE_CONNECTED) {
+        if (linkProperties == null || getConnectedState() != CONNECTED_STATE_CONNECTED) {
+            mConnectedInfo = null;
+            notifyOnUpdated();
             return;
         }
 
