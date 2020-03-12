@@ -217,10 +217,15 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
                             autoShutdownEnabledTagPresent = true;
                             break;
                         case XML_TAG_SHUTDOWN_TIMEOUT_MILLIS:
-                            softApConfigBuilder.setShutdownTimeoutMillis((int) value);
+                            if (value instanceof Integer) {
+                                softApConfigBuilder
+                                        .setShutdownTimeoutMillis(Long.valueOf((int) value));
+                            } else if (value instanceof Long) {
+                                softApConfigBuilder.setShutdownTimeoutMillis((long) value);
+                            }
                             break;
                         case XML_TAG_CLIENT_CONTROL_BY_USER:
-                            softApConfigBuilder.enableClientControlByUser((boolean) value);
+                            softApConfigBuilder.setClientControlByUserEnabled((boolean) value);
                             break;
                         default:
                             Log.w(TAG, "Ignoring unknown value name " + valueName[0]);
@@ -251,7 +256,8 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
                     }
                 }
             }
-            softApConfigBuilder.setClientList(blockedList, allowedList);
+            softApConfigBuilder.setBlockedClientList(blockedList);
+            softApConfigBuilder.setAllowedClientList(allowedList);
             // Set channel and band
             if (channel == 0) {
                 softApConfigBuilder.setBand(apBand);
