@@ -82,9 +82,9 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         MatchMetaInfo matchMetaInfo = new MatchMetaInfo();
         Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions = new HashSet<>();
 
-        findMatchedPasspointSuggestionNetworks(scanDetails, matchMetaInfo);
+        findMatchedPasspointSuggestionNetworks(scanDetails, matchMetaInfo, untrustedNetworkAllowed);
         findMatchedSuggestionNetworks(scanDetails, matchMetaInfo,
-                autoJoinDisabledSuggestions);
+                autoJoinDisabledSuggestions, untrustedNetworkAllowed);
 
         if (matchMetaInfo.isEmpty()) {
             mLocalLog.log("did not see any matching auto-join enabled network suggestions.");
@@ -96,7 +96,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     }
 
     private void findMatchedPasspointSuggestionNetworks(List<ScanDetail> scanDetails,
-            MatchMetaInfo matchMetaInfo) {
+            MatchMetaInfo matchMetaInfo, boolean untrustedNetworkAllowed) {
         List<Pair<ScanDetail, WifiConfiguration>> candidates =
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, true);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
@@ -108,6 +108,13 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 mLocalLog.log("Suggestion is missing for passpoint: " + candidate.second.FQDN);
                 continue;
             }
+            if (!isSimBasedNetworkAvailableToAutoConnect(candidate.second)) {
+                continue;
+            }
+            // If untrusted network is not allowed, ignore untrusted suggestion.
+            if (!untrustedNetworkAllowed && !candidate.second.trusted) {
+                continue;
+            }
             Set<ExtendedWifiNetworkSuggestion> autoJoinEnabledExtSuggestions =
                     matchingPasspointExtSuggestions.stream()
                             .filter(ewns -> ewns.isAutojoinEnabled)
@@ -115,9 +122,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             if (autoJoinEnabledExtSuggestions.isEmpty()) {
                 continue;
             }
-            if (!isSimBasedNetworkAvailableToAutoConnect(candidate.second)) {
-                continue;
-            }
+
             matchMetaInfo.putAll(autoJoinEnabledExtSuggestions,
                     candidate.second, candidate.first);
         }
@@ -125,7 +130,8 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
 
     private void findMatchedSuggestionNetworks(List<ScanDetail> scanDetails,
             MatchMetaInfo matchMetaInfo,
-            Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions) {
+            Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions,
+            boolean untrustedNetworkAllowed) {
         for (ScanDetail scanDetail : scanDetails) {
             Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestions =
                     mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(scanDetail);
@@ -134,6 +140,10 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
             Set<ExtendedWifiNetworkSuggestion> autojoinEnableSuggestions = new HashSet<>();
             for (ExtendedWifiNetworkSuggestion ewns : matchingExtNetworkSuggestions) {
+                // If untrusted network is not allowed, ignore untrusted suggestion.
+                if (!untrustedNetworkAllowed && !ewns.wns.wifiConfiguration.trusted) {
+                    continue;
+                }
                 if (!ewns.isAutojoinEnabled
                         || !isSimBasedNetworkAvailableToAutoConnect(ewns.wns.wifiConfiguration)) {
                     autoJoinDisabledSuggestions.add(ewns);
