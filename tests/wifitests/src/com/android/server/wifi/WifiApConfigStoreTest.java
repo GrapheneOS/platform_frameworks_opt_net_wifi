@@ -767,7 +767,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         SoftApConfiguration sae_config = new SoftApConfiguration.Builder()
                 .setPassphrase("secretsecret", SoftApConfiguration.SECURITY_TYPE_WPA3_SAE)
                 .setMaxNumberOfClients(10)
-                .enableClientControlByUser(true)
+                .setClientControlByUserEnabled(true)
                 .build();
         WifiApConfigStore store = createWifiApConfigStore();
 
