@@ -476,6 +476,8 @@ public class WifiMetrics {
                 sb.append(", mSupportsIpv6=" + mRouterFingerPrintProto.supportsIpv6);
                 sb.append(", mEapMethod=" + mRouterFingerPrintProto.eapMethod);
                 sb.append(", mAuthPhase2Method=" + mRouterFingerPrintProto.authPhase2Method);
+                sb.append(", mOcspType=" + mRouterFingerPrintProto.ocspType);
+                sb.append(", mPmkCache=" + mRouterFingerPrintProto.pmkCacheEnabled);
             }
             return sb.toString();
         }
@@ -521,8 +523,17 @@ public class WifiMetrics {
                         int phase2Method = config.enterpriseConfig.getPhase2Method();
                         mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
                                 .authPhase2Method = getAuthPhase2MethodProto(phase2Method);
+                        int ocspType = config.enterpriseConfig.getOcsp();
+                        mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
+                                .ocspType = getOcspTypeProto(ocspType);
                     }
                 }
+            }
+        }
+
+        public void setPmkCache(boolean isEnabled) {
+            synchronized (mLock) {
+                mRouterFingerPrintProto.pmkCacheEnabled = isEnabled;
             }
         }
     }
@@ -568,6 +579,22 @@ public class WifiMetrics {
                 return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_AKA_PRIME;
             default:
                 return WifiMetricsProto.RouterFingerPrint.TYPE_PHASE2_NONE;
+        }
+    }
+
+    private int getOcspTypeProto(int ocspType) {
+        switch (ocspType) {
+            case WifiEnterpriseConfig.OCSP_NONE:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_NONE;
+            case WifiEnterpriseConfig.OCSP_REQUEST_CERT_STATUS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_REQUEST_CERT_STATUS;
+            case WifiEnterpriseConfig.OCSP_REQUIRE_CERT_STATUS:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_REQUIRE_CERT_STATUS;
+            case WifiEnterpriseConfig.OCSP_REQUIRE_ALL_NON_TRUSTED_CERTS_STATUS:
+                return WifiMetricsProto.RouterFingerPrint
+                        .TYPE_OCSP_REQUIRE_ALL_NON_TRUSTED_CERTS_STATUS;
+            default:
+                return WifiMetricsProto.RouterFingerPrint.TYPE_OCSP_NONE;
         }
     }
 
@@ -1277,6 +1304,17 @@ public class WifiMetrics {
                     updateMetricsFromNetworkDetail(networkDetail);
                     updateMetricsFromScanResult(scanResult);
                 }
+            }
+        }
+    }
+
+    /**
+     * Set PMK cache status for a connection event
+     */
+    public void setConnectionPmkCache(boolean isEnabled) {
+        synchronized (mLock) {
+            if (mCurrentConnectionEvent != null) {
+                mCurrentConnectionEvent.mRouterFingerPrint.setPmkCache(isEnabled);
             }
         }
     }

@@ -182,31 +182,6 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         verify(mISupplicantStaNetworkV12, never())
                 .getSaePassword(any(android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
                         .getSaePasswordCallback.class));
-        verify(mISupplicantStaNetworkV12, never()).setSaePasswordId(any(String.class));
-        verify(mISupplicantStaNetworkV12, never())
-                .getPskPassphrase(any(ISupplicantStaNetwork.getPskPassphraseCallback.class));
-        verify(mISupplicantStaNetworkV12, never()).setPsk(any(byte[].class));
-        verify(mISupplicantStaNetworkV12, never())
-                .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
-    }
-
-    /**
-     * Tests the saving/loading of WifiConfiguration to wpa_supplicant with SAE password identifier.
-     */
-    @Test
-    public void testSaePasswordIdNetworkWifiConfigurationSaveLoad() throws Exception {
-        // Now expose the V1.2 ISupplicantStaNetwork
-        mSupplicantNetwork = new SupplicantStaNetworkHalSpyV1_2(mISupplicantStaNetworkMock,
-                IFACE_NAME, mContext, mWifiMonitor);
-
-        WifiConfiguration config = WifiConfigurationTestUtil.createSaeNetwork();
-        config.saePasswordId = "TestIdentifier";
-        testWifiConfigurationSaveLoad(config);
-        verify(mISupplicantStaNetworkV12).setSaePassword(any(String.class));
-        verify(mISupplicantStaNetworkV12, never())
-                .getSaePassword(any(android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        .getSaePasswordCallback.class));
-        verify(mISupplicantStaNetworkV12).setSaePasswordId(any(String.class));
         verify(mISupplicantStaNetworkV12, never())
                 .getPskPassphrase(any(ISupplicantStaNetwork.getPskPassphraseCallback.class));
         verify(mISupplicantStaNetworkV12, never()).setPsk(any(byte[].class));
@@ -1148,22 +1123,6 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         }).when(mISupplicantStaNetworkV12)
                 .getSaePassword(any(android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
                         .getSaePasswordCallback.class));
-        /** SAE password identifier*/
-        doAnswer(new AnswerWithArguments() {
-            public SupplicantStatus answer(String saePasswordId) throws RemoteException {
-                mSupplicantVariables.saePasswordId = saePasswordId;
-                return mStatusSuccess;
-            }
-        }).when(mISupplicantStaNetworkV12).setSaePasswordId(any(String.class));
-        doAnswer(new AnswerWithArguments() {
-            public void answer(android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        .getSaePasswordIdCallback cb)
-                    throws RemoteException {
-                cb.onValues(mStatusSuccess, mSupplicantVariables.saePasswordId);
-            }
-        }).when(mISupplicantStaNetworkV12)
-                .getSaePasswordId(any(android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        .getSaePasswordIdCallback.class));
 
         /** PSK passphrase */
         doAnswer(new AnswerWithArguments() {
@@ -1778,7 +1737,6 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         public String idStr;
         public int updateIdentifier;
         public String pskPassphrase;
-        public String saePasswordId;
         public byte[] psk;
         public ArrayList<Byte>[] wepKey = new ArrayList[4];
         public int wepTxKeyIdx;

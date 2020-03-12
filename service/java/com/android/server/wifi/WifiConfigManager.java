@@ -958,7 +958,6 @@ public class WifiConfigManager {
                 && !externalConfig.preSharedKey.equals(PASSWORD_MASK)) {
             internalConfig.preSharedKey = externalConfig.preSharedKey;
         }
-        internalConfig.saePasswordId = externalConfig.saePasswordId;
         // Modify only wep keys are present in the provided configuration. This is a little tricky
         // because there is no easy way to tell if the app is actually trying to null out the
         // existing keys or not.
@@ -1071,13 +1070,18 @@ public class WifiConfigManager {
         configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
         configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
 
+        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
         configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
         configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
 
+        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
+
+        configuration.allowedGroupManagementCiphers
+                .set(WifiConfiguration.GroupMgmtCipher.BIP_GMAC_256);
 
         configuration.setIpAssignment(IpConfiguration.IpAssignment.DHCP);
         configuration.setProxySettings(IpConfiguration.ProxySettings.NONE);
