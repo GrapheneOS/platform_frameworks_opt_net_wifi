@@ -1159,7 +1159,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
         configBuilder.setSsid(TEST_SSID);
-        configBuilder.enableClientControlByUser(true);
+        configBuilder.setClientControlByUserEnabled(true);
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
                 configBuilder.build(), mTestSoftApCapability);
@@ -1192,7 +1192,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
         configBuilder.setSsid(TEST_SSID);
-        configBuilder.enableClientControlByUser(true);
+        configBuilder.setClientControlByUserEnabled(true);
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
                 configBuilder.build(), mTestSoftApCapability);
@@ -1220,7 +1220,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         reset(mWifiNative);
         // Update configuration
         allowedClientList.add(TEST_MAC_ADDRESS);
-        configBuilder.setClientList(new ArrayList<MacAddress>(), allowedClientList);
+        configBuilder.setAllowedClientList(allowedClientList);
         mSoftApManager.updateConfiguration(configBuilder.build());
         mLooper.dispatchAll();
         // Client connected again
@@ -1248,7 +1248,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
         configBuilder.setSsid(TEST_SSID);
-        configBuilder.enableClientControlByUser(true);
+        configBuilder.setClientControlByUserEnabled(true);
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
                 configBuilder.build(), mTestSoftApCapability);
@@ -1276,7 +1276,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         reset(mWifiNative);
         // Update configuration
         blockedClientList.add(TEST_MAC_ADDRESS);
-        configBuilder.setClientList(blockedClientList, new ArrayList<MacAddress>());
+        configBuilder.setBlockedClientList(blockedClientList);
         mSoftApManager.updateConfiguration(configBuilder.build());
         mLooper.dispatchAll();
         // Client connected again
@@ -1308,9 +1308,9 @@ public class SoftApManagerTest extends WifiBaseTest {
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
         configBuilder.setSsid(TEST_SSID);
-        configBuilder.enableClientControlByUser(true);
+        configBuilder.setClientControlByUserEnabled(true);
         configBuilder.setMaxNumberOfClients(2);
-        configBuilder.setClientList(new ArrayList<MacAddress>(), allowedClientList);
+        configBuilder.setAllowedClientList(allowedClientList);
         SoftApModeConfiguration apConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
                 configBuilder.build(), mTestSoftApCapability);
@@ -1350,7 +1350,8 @@ public class SoftApManagerTest extends WifiBaseTest {
         allowedClientList.add(TEST_MAC_ADDRESS_2);
 
         blockedClientList.add(TEST_MAC_ADDRESS);
-        configBuilder.setClientList(blockedClientList, allowedClientList);
+        configBuilder.setBlockedClientList(blockedClientList);
+        configBuilder.setAllowedClientList(allowedClientList);
         configBuilder.setMaxNumberOfClients(1);
         mSoftApManager.updateConfiguration(configBuilder.build());
         mLooper.dispatchAll();

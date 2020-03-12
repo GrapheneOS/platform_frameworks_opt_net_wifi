@@ -207,7 +207,7 @@ public class WifiApConfigStore {
      * Returns SoftApConfiguration in which some parameters might be reset to supported default
      * config.
      *
-     * MaxNumberOfClients and enableClientControlByUser will need HAL support client force
+     * MaxNumberOfClients and setClientControlByUserEnabled will need HAL support client force
      * disconnect. Reset to default when device doesn't support it.
      *
      * SAE/SAE-Transition need hardware support, reset to secured WPA2 security type when device
@@ -218,7 +218,7 @@ public class WifiApConfigStore {
         SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder(config);
         if (!ApConfigUtil.isClientForceDisconnectSupported(mContext)) {
             configBuilder.setMaxNumberOfClients(0);
-            configBuilder.enableClientControlByUser(false);
+            configBuilder.setClientControlByUserEnabled(false);
             if (config.getMaxNumberOfClients() != 0) {
                 Log.e(TAG, "Reset MaxNumberOfClients to 0 due to device doesn't support");
             }
