@@ -303,8 +303,8 @@ public class WifiInjector {
                 mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mTelephonyUtil);
         mNetworkSuggestionNominator = new NetworkSuggestionNominator(mWifiNetworkSuggestionsManager,
                 mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mTelephonyUtil);
-        mScoredNetworkNominator = new ScoredNetworkNominator(mNetworkScoreManager,
-                mContext.getPackageManager(),
+        mScoredNetworkNominator = new ScoredNetworkNominator(mContext, wifiHandler,
+                mFrameworkFacade, mNetworkScoreManager, mContext.getPackageManager(),
                 mWifiConfigManager, mConnectivityLocalLog,
                 mWifiNetworkScoreCache, mWifiPermissionsUtil);
 
