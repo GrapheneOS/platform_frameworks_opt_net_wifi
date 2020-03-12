@@ -75,7 +75,6 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<string name=\"ConfigKey\">%s</string>\n"
                     + "<string name=\"SSID\">%s</string>\n"
                     + "<null name=\"PreSharedKey\" />\n"
-                    + "<null name=\"SaePasswordId\" />\n"
                     + "<null name=\"WEPKeys\" />\n"
                     + "<int name=\"WEPTxKeyIndex\" value=\"0\" />\n"
                     + "<boolean name=\"HiddenSSID\" value=\"false\" />\n"
