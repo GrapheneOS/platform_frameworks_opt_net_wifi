@@ -466,7 +466,9 @@ public class WifiAwareMetricsTest extends WifiBaseTest {
     @Test
     public void testDataPathMetrics() {
         final int uid1 = 1005;
+        final String package1 = "com.test1";
         final int uid2 = 1006;
+        final String package2 = "com.test2";
         final String ndi0 = "aware_data0";
         final String ndi1 = "aware_data1";
         Map<WifiAwareNetworkSpecifier, WifiAwareDataPathStateManager.AwareNetworkRequestInformation>
@@ -476,27 +478,29 @@ public class WifiAwareMetricsTest extends WifiBaseTest {
         setTime(5);
 
         // uid1: ndp (non-secure) on ndi0
-        addNetworkInfoToCache(networkRequestCache, 10, uid1, ndi0, null);
-        mDut.recordNdpCreation(uid1, networkRequestCache);
+        addNetworkInfoToCache(networkRequestCache, 10, uid1, package1, ndi0, null);
+        mDut.recordNdpCreation(uid1, package1, networkRequestCache);
         setTime(7); // 2ms creation time
         mDut.recordNdpStatus(NanStatusType.SUCCESS, false, 5);
 
         // uid2: ndp (non-secure) on ndi0
-        WifiAwareNetworkSpecifier ns = addNetworkInfoToCache(networkRequestCache, 11, uid2, ndi0,
-                null);
-        mDut.recordNdpCreation(uid2, networkRequestCache);
+        WifiAwareNetworkSpecifier ns = addNetworkInfoToCache(networkRequestCache, 11, uid2,
+                package2, ndi0, null);
+        mDut.recordNdpCreation(uid2, package2, networkRequestCache);
         setTime(10); // 3 ms creation time
         mDut.recordNdpStatus(NanStatusType.SUCCESS, false, 7);
 
         // uid2: ndp (secure) on ndi1 (OOB)
-        addNetworkInfoToCache(networkRequestCache, 12, uid2, ndi1, "passphrase of some kind");
-        mDut.recordNdpCreation(uid2, networkRequestCache);
+        addNetworkInfoToCache(networkRequestCache, 12, uid2, package2, ndi1,
+                "passphrase of some kind");
+        mDut.recordNdpCreation(uid2, package2, networkRequestCache);
         setTime(25); // 15 ms creation time
         mDut.recordNdpStatus(NanStatusType.SUCCESS, true, 10);
 
         // uid2: ndp (secure) on ndi0 (OOB)
-        addNetworkInfoToCache(networkRequestCache, 13, uid2, ndi0, "super secret password");
-        mDut.recordNdpCreation(uid2, networkRequestCache);
+        addNetworkInfoToCache(networkRequestCache, 13, uid2, package2, ndi0,
+                "super secret password");
+        mDut.recordNdpCreation(uid2, package2, networkRequestCache);
         setTime(36); // 11 ms creation time
         mDut.recordNdpStatus(NanStatusType.SUCCESS, true, 25);
 
@@ -504,8 +508,8 @@ public class WifiAwareMetricsTest extends WifiBaseTest {
         networkRequestCache.remove(ns);
 
         // uid2: ndp (non-secure) on ndi0
-        addNetworkInfoToCache(networkRequestCache, 14, uid2, ndi0, null);
-        mDut.recordNdpCreation(uid2, networkRequestCache);
+        addNetworkInfoToCache(networkRequestCache, 14, uid2, package2, ndi0, null);
+        mDut.recordNdpCreation(uid2, package2, networkRequestCache);
         setTime(37); // 1 ms creation time!
         mDut.recordNdpStatus(NanStatusType.SUCCESS, false, 36);
 
@@ -670,7 +674,7 @@ public class WifiAwareMetricsTest extends WifiBaseTest {
     private WifiAwareNetworkSpecifier addNetworkInfoToCache(
             Map<WifiAwareNetworkSpecifier, WifiAwareDataPathStateManager
                     .AwareNetworkRequestInformation> networkRequestCache,
-            int index, int uid, String interfaceName, String passphrase) {
+            int index, int uid, String packageName, String interfaceName, String passphrase) {
         WifiAwareNetworkSpecifier ns = new WifiAwareNetworkSpecifier(0, 0, 0, index, 0, null, null,
                 passphrase, 0, 0);
         WifiAwareDataPathStateManager.AwareNetworkRequestInformation anri =
@@ -678,6 +682,7 @@ public class WifiAwareMetricsTest extends WifiBaseTest {
         anri.networkSpecifier = ns;
         anri.state = WifiAwareDataPathStateManager.AwareNetworkRequestInformation.STATE_CONFIRMED;
         anri.uid = uid;
+        anri.packageName = packageName;
         anri.interfaceName = interfaceName;
 
         networkRequestCache.put(ns, anri);
