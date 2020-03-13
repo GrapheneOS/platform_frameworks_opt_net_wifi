@@ -59,8 +59,7 @@ android_test {
 	// the necessary core platform APIs.
         "libprotobuf-java-lite",
         "libnanohttpd",
-        "netd_aidl_interface-V2-java",
-        "services.net",
+        "services.net-module-wifi",
         "services.core",
         "wifi-lite-protos",
         "wifi-nano-protos",
