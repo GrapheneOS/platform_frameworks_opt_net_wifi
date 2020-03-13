@@ -369,11 +369,9 @@ public class PasspointProviderTest extends WifiBaseTest {
             }
 
             if (!ArrayUtils.isEmpty(passpointConfig.getAaaServerTrustedNames())) {
-                assertTrue(Arrays.equals(new String[] {SYSTEM_CA_STORE_PATH},
-                        wifiEnterpriseConfig.getCaCertificateAliases()));
+                assertEquals(SYSTEM_CA_STORE_PATH, wifiEnterpriseConfig.getCaPath());
             } else if (ArrayUtils.isEmpty(credential.getCaCertificates())) {
-                assertTrue(Arrays.equals(new String[] {SYSTEM_CA_STORE_PATH},
-                        wifiEnterpriseConfig.getCaCertificateAliases()));
+                assertEquals(SYSTEM_CA_STORE_PATH, wifiEnterpriseConfig.getCaPath());
             } else {
                 assertEquals(CA_CERTIFICATE_ALIAS, wifiEnterpriseConfig.getCaCertificateAlias());
             }
@@ -396,18 +394,15 @@ public class PasspointProviderTest extends WifiBaseTest {
             } else {
                 assertEquals(String.join(";", passpointConfig.getAaaServerTrustedNames()),
                         wifiEnterpriseConfig.getDomainSuffixMatch());
-                assertTrue(Arrays.equals(new String[] {SYSTEM_CA_STORE_PATH},
-                        wifiEnterpriseConfig.getCaCertificateAliases()));
+                assertEquals(SYSTEM_CA_STORE_PATH, wifiEnterpriseConfig.getCaPath());
             }
             // CA certificate
             if (!ArrayUtils.isEmpty(passpointConfig.getAaaServerTrustedNames())) {
-                assertTrue(Arrays.equals(new String[] {SYSTEM_CA_STORE_PATH},
-                        wifiEnterpriseConfig.getCaCertificateAliases()));
+                assertEquals(SYSTEM_CA_STORE_PATH, wifiEnterpriseConfig.getCaPath());
             } else if (!ArrayUtils.isEmpty(credential.getCaCertificates())) {
                 assertEquals(CA_CERTIFICATE_ALIAS, wifiEnterpriseConfig.getCaCertificateAlias());
             } else {
-                assertTrue(Arrays.equals(new String[] {SYSTEM_CA_STORE_PATH},
-                        wifiEnterpriseConfig.getCaCertificateAliases()));
+                assertEquals(SYSTEM_CA_STORE_PATH, wifiEnterpriseConfig.getCaPath());
             }
             if (passpointConfig.getCredential().getCheckAaaServerCertStatus()) {
                 assertEquals(wifiEnterpriseConfig.getOcsp(),
