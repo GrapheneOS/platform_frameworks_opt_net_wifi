@@ -497,7 +497,7 @@ public class PasspointProvider {
         if (!ArrayUtils.isEmpty(mConfig.getAaaServerTrustedNames())) {
             enterpriseConfig.setDomainSuffixMatch(
                     String.join(";", mConfig.getAaaServerTrustedNames()));
-            enterpriseConfig.setCaCertificateAliases(new String[] {SYSTEM_CA_STORE_PATH});
+            enterpriseConfig.setCaPath(SYSTEM_CA_STORE_PATH);
         }
         wifiConfig.enterpriseConfig = enterpriseConfig;
         // PPS MO Credential/CheckAAAServerCertStatus node contains a flag which indicates
@@ -839,7 +839,7 @@ public class PasspointProvider {
         if (!ArrayUtils.isEmpty(mCaCertificateAliases)) {
             config.setCaCertificateAliases(mCaCertificateAliases.toArray(new String[0]));
         } else {
-            config.setCaCertificateAliases(new String[] {SYSTEM_CA_STORE_PATH});
+            config.setCaPath(SYSTEM_CA_STORE_PATH);
         }
         int phase2Method = WifiEnterpriseConfig.Phase2.NONE;
         switch (credential.getNonEapInnerMethod()) {
@@ -872,7 +872,7 @@ public class PasspointProvider {
         if (!ArrayUtils.isEmpty(mCaCertificateAliases)) {
             config.setCaCertificateAliases(mCaCertificateAliases.toArray(new String[0]));
         } else {
-            config.setCaCertificateAliases(new String[] {SYSTEM_CA_STORE_PATH});
+            config.setCaPath(SYSTEM_CA_STORE_PATH);
         }
     }
 
