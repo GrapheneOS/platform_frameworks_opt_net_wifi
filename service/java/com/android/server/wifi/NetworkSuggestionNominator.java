@@ -100,19 +100,25 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         List<Pair<ScanDetail, WifiConfiguration>> candidates =
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, true);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
+            WifiConfiguration config = candidate.second;
             Set<ExtendedWifiNetworkSuggestion> matchingPasspointExtSuggestions =
                     mWifiNetworkSuggestionsManager
-                            .getNetworkSuggestionsForFqdn(candidate.second.FQDN);
+                            .getNetworkSuggestionsForFqdn(config.FQDN);
             if (matchingPasspointExtSuggestions == null
                     || matchingPasspointExtSuggestions.isEmpty()) {
-                mLocalLog.log("Suggestion is missing for passpoint: " + candidate.second.FQDN);
+                mLocalLog.log("Suggestion is missing for passpoint: " + config.FQDN);
                 continue;
             }
-            if (!isSimBasedNetworkAvailableToAutoConnect(candidate.second)) {
+
+            if (WifiConfiguration.isMetered(config, null)
+                    && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+                continue;
+            }
+            if (!isSimBasedNetworkAvailableToAutoConnect(config)) {
                 continue;
             }
             // If untrusted network is not allowed, ignore untrusted suggestion.
-            if (!untrustedNetworkAllowed && !candidate.second.trusted) {
+            if (!untrustedNetworkAllowed && !config.trusted) {
                 continue;
             }
             Set<ExtendedWifiNetworkSuggestion> autoJoinEnabledExtSuggestions =
@@ -124,7 +130,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
 
             matchMetaInfo.putAll(autoJoinEnabledExtSuggestions,
-                    candidate.second, candidate.first);
+                    config, candidate.first);
         }
     }
 
@@ -141,18 +147,22 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             Set<ExtendedWifiNetworkSuggestion> autojoinEnableSuggestions = new HashSet<>();
             for (ExtendedWifiNetworkSuggestion ewns : matchingExtNetworkSuggestions) {
                 // If untrusted network is not allowed, ignore untrusted suggestion.
-                if (!untrustedNetworkAllowed && !ewns.wns.wifiConfiguration.trusted) {
+                WifiConfiguration config = ewns.wns.wifiConfiguration;
+                if (!untrustedNetworkAllowed && !config.trusted) {
+                    continue;
+                }
+                if (WifiConfiguration.isMetered(config, null)
+                        && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
                     continue;
                 }
                 if (!ewns.isAutojoinEnabled
-                        || !isSimBasedNetworkAvailableToAutoConnect(ewns.wns.wifiConfiguration)) {
+                        || !isSimBasedNetworkAvailableToAutoConnect(config)) {
                     autoJoinDisabledSuggestions.add(ewns);
                     continue;
                 }
-                if (mWifiConfigManager
-                        .isNetworkTemporarilyDisabledByUser(ewns.wns.wifiConfiguration.SSID)) {
+                if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(config.SSID)) {
                     mLocalLog.log("Ignoring user disabled SSID: "
-                            + ewns.wns.wifiConfiguration.SSID);
+                            + config.SSID);
                     autoJoinDisabledSuggestions.add(ewns);
                     continue;
                 }
@@ -211,6 +221,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             matchMetaInfo.putAll(matchingExtNetworkSuggestions, wCmConfiguredNetwork, scanDetail);
         }
     }
+
 
     private boolean isSimBasedNetworkAvailableToAutoConnect(WifiConfiguration config) {
         if (config.enterpriseConfig == null

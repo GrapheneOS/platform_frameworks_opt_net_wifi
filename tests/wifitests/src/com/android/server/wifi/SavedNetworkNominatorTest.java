@@ -54,7 +54,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         mLocalLog = new LocalLog(512);
         mSavedNetworkNominator = new SavedNetworkNominator(mWifiConfigManager,
                 mPasspointNetworkNominateHelper, mLocalLog, mTelephonyUtil);
-
+        when(mTelephonyUtil.isSimPresent(anyInt())).thenReturn(true);
+        when(mTelephonyUtil.getBestMatchSubscriptionId(any())).thenReturn(1);
     }
 
     /** Cleans up test. */
@@ -232,5 +233,31 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         mSavedNetworkNominator.nominateNetworks(scanDetails, null, null,
                 false, false, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(scanDetail, configuration);
+    }
+
+    /**
+     * Verify if a network is metered and with non-data sim, will not nominate as a candidate.
+     */
+    @Test
+    public void ignoreNetworksIfMeteredAndFromNonDataSim() {
+        String[] ssids = {"\"test1\""};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3"};
+        int[] freqs = {2470};
+        int[] levels = {RSSI_LEVEL};
+
+        ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
+                WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigForEapSimNetwork(ssids, bssids,
+                        freqs, levels, mWifiConfigManager, mClock);
+        List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
+        WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
+        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
+                .thenReturn(false);
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
+                null, null, true, false, mOnConnectableListener);
+        verify(mOnConnectableListener).onConnectable(any(), any());
+        reset(mOnConnectableListener);
+        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
+                .thenReturn(true);
+        verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
 }

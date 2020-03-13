@@ -1403,4 +1403,14 @@ public class TelephonyUtilTest extends WifiBaseTest {
         assertEquals(CARRIER_NAME, mTelephonyUtil.getCarrierNameforSubId(DATA_SUBID));
         assertNull(mTelephonyUtil.getCarrierNameforSubId(NON_DATA_SUBID));
     }
+
+    @Test
+    public void testIsCarrierNetworkFromNonDataSim() {
+        WifiConfiguration config = new WifiConfiguration();
+        assertFalse(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config));
+        config.carrierId = DATA_CARRIER_ID;
+        assertFalse(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config));
+        config.carrierId = NON_DATA_CARRIER_ID;
+        assertTrue(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config));
+    }
 }

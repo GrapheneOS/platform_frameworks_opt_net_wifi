@@ -941,6 +941,48 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
     }
 
+    /**
+     * Ensure that we nominate the no matching network suggestion.
+     * Because the only matched suggestion is untrusted and untrusted is not allowed
+     * Expected connectable Networks: {}
+     */
+    @Test
+    public void testSelectNetworkSuggestionForOneMatchMeteredNonDataSim() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser);
+        suggestions[0].wns.wifiConfiguration.meteredHint = true;
+        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(any())).thenReturn(true);
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+        assertTrue(connectableNetworks.isEmpty());
+    }
+
     private void setupAddToWifiConfigManager(WifiConfiguration...candidates) {
         for (int i = 0; i < candidates.length; i++) {
             WifiConfiguration candidate = candidates[i];
