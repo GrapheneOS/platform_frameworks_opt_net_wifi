@@ -145,6 +145,11 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                             + WifiNetworkSelector.toNetworkString(network));
                     continue;
                 }
+                // Ignore metered network with non-data Sim, ignore.
+                if (WifiConfiguration.isMetered(network, null)
+                        && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(network)) {
+                    continue;
+                }
             }
 
             // If the network is marked to use external scores, or is an open network with
@@ -165,7 +170,13 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
         List<Pair<ScanDetail, WifiConfiguration>> candidates =
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
-            onConnectableListener.onConnectable(candidate.first, candidate.second);
+            WifiConfiguration config = candidate.second;
+            // Ignore metered network with non-data Sim, ignore.
+            if (WifiConfiguration.isMetered(config, null)
+                    && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+                continue;
+            }
+            onConnectableListener.onConnectable(candidate.first, config);
         }
     }
 }

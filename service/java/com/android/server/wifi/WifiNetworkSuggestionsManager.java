@@ -1586,6 +1586,10 @@ public class WifiNetworkSuggestionsManager {
      * Check if the given passpoint suggestion has user approval and allow user manually connect.
      */
     public boolean isPasspointSuggestionSharedWithUser(WifiConfiguration config) {
+        if (WifiConfiguration.isMetered(config, null)
+                && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+            return false;
+        }
         Set<ExtendedWifiNetworkSuggestion> extendedWifiNetworkSuggestions =
                 getNetworkSuggestionsForFqdnMatch(config.FQDN);
         Set<ExtendedWifiNetworkSuggestion> matchedSuggestions =
