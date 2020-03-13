@@ -392,7 +392,7 @@ public class WifiAwareMetrics {
     /**
      * Record NDP (and by extension NDI) usage - on successful creation of an NDP.
      */
-    public void recordNdpCreation(int uid,
+    public void recordNdpCreation(int uid, String packageName,
             Map<WifiAwareNetworkSpecifier, WifiAwareDataPathStateManager
                     .AwareNetworkRequestInformation> networkRequestCache) {
         int numNdpInApp = 0;
@@ -412,12 +412,12 @@ public class WifiAwareMetrics {
                 continue; // only count completed (up-and-running) NDPs
             }
 
-            boolean sameUid = anri.uid == uid;
+            boolean sameApp = (anri.uid == uid) && TextUtils.equals(anri.packageName, packageName);
             boolean isSecure = !TextUtils.isEmpty(anri.networkSpecifier.passphrase) || (
                     anri.networkSpecifier.pmk != null && anri.networkSpecifier.pmk.length != 0);
 
             // in-app stats
-            if (sameUid) {
+            if (sameApp) {
                 numNdpInApp += 1;
                 if (isSecure) {
                     numSecureNdpInApp += 1;
