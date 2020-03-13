@@ -390,7 +390,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         // Create an OSU provider that can be provisioned via an open OSU AP
         mOsuProvider = PasspointProvisioningTestUtil.generateOsuProvider(true);
         when(mContext.getOpPackageName()).thenReturn(TEST_PACKAGE_NAME);
-        when(mContext.getFeatureId()).thenReturn(TEST_FEATURE_ID);
+        when(mContext.getAttributionTag()).thenReturn(TEST_FEATURE_ID);
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETUP_WIZARD),
