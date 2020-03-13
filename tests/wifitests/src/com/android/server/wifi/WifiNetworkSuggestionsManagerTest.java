@@ -2965,6 +2965,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         assertTrue(mWifiNetworkSuggestionsManager
                 .isPasspointSuggestionSharedWithUser(dummyConfiguration));
+        dummyConfiguration.meteredHint = true;
+        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(dummyConfiguration))
+                .thenReturn(true);
+        assertFalse(mWifiNetworkSuggestionsManager
+                .isPasspointSuggestionSharedWithUser(dummyConfiguration));
     }
 
     /**
