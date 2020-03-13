@@ -1892,6 +1892,10 @@ public class WifiConfigManager {
         }
 
         config.allowAutojoin = choice;
+        if (!choice) {
+            removeConnectChoiceFromAllNetworks(config.getKey());
+            clearNetworkConnectChoice(config.networkId);
+        }
         sendConfiguredNetworkChangedBroadcast(config, WifiManager.CHANGE_REASON_CONFIG_CHANGE);
         if (!config.ephemeral) {
             saveToStore(true);
