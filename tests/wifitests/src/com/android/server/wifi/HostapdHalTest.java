@@ -372,8 +372,9 @@ public class HostapdHalTest extends WifiBaseTest {
         assertTrue(mIfaceParamsCaptor.getValue().hwModeParams.enable80211N);
         assertFalse(mIfaceParamsCaptor.getValue().hwModeParams.enable80211AC);
         assertEquals(IHostapd.Band.BAND_2_4_GHZ, mIfaceParamsCaptor.getValue().channelParams.band);
-        assertTrue(mIfaceParamsCaptor.getValue().channelParams.enableAcs);
-        assertTrue(mIfaceParamsCaptor.getValue().channelParams.acsShouldExcludeDfs);
+        assertEquals(apChannel, mIfaceParamsCaptor.getValue().channelParams.channel);
+        assertFalse(mIfaceParamsCaptor.getValue().channelParams.enableAcs);
+        assertFalse(mIfaceParamsCaptor.getValue().channelParams.acsShouldExcludeDfs);
 
         assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
                 mNetworkParamsCaptor.getValue().ssid);
@@ -411,8 +412,9 @@ public class HostapdHalTest extends WifiBaseTest {
         assertTrue(mIfaceParamsCaptor.getValue().hwModeParams.enable80211N);
         assertTrue(mIfaceParamsCaptor.getValue().hwModeParams.enable80211AC);
         assertEquals(IHostapd.Band.BAND_2_4_GHZ, mIfaceParamsCaptor.getValue().channelParams.band);
-        assertTrue(mIfaceParamsCaptor.getValue().channelParams.enableAcs);
-        assertTrue(mIfaceParamsCaptor.getValue().channelParams.acsShouldExcludeDfs);
+        assertEquals(apChannel, mIfaceParamsCaptor.getValue().channelParams.channel);
+        assertFalse(mIfaceParamsCaptor.getValue().channelParams.enableAcs);
+        assertFalse(mIfaceParamsCaptor.getValue().channelParams.acsShouldExcludeDfs);
 
         assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
                 mNetworkParamsCaptor.getValue().ssid);
