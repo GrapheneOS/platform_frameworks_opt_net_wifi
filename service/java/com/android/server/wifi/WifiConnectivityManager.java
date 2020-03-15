@@ -184,17 +184,17 @@ public class WifiConnectivityManager {
 
     // Scanning Schedules
     // Default schedule used in case of invalid configuration
-    private static final int[] DEFAULT_SCANNING_SCHEDULE = {20, 40, 80, 160};
-    private int[] mConnectedSingleScanSchedule;
-    private int[] mDisconnectedSingleScanSchedule;
-    private int[] mConnectedSingleSavedNetworkSingleScanSchedule;
+    private static final int[] DEFAULT_SCANNING_SCHEDULE_SEC = {20, 40, 80, 160};
+    private int[] mConnectedSingleScanScheduleSec;
+    private int[] mDisconnectedSingleScanScheduleSec;
+    private int[] mConnectedSingleSavedNetworkSingleScanScheduleSec;
     private List<WifiCandidates.Candidate> mLatestCandidates = null;
     private long mLatestCandidatesTimestampMs = 0;
 
     private final Object mLock = new Object();
 
     @GuardedBy("mLock")
-    private int[] mCurrentSingleScanSchedule;
+    private int[] mCurrentSingleScanScheduleSec;
 
     private int mCurrentSingleScanScheduleIndex;
     private int mPnoScanIntervalMs;
@@ -517,7 +517,7 @@ public class WifiConnectivityManager {
                 if (wasConnectAttempted) {
                     Log.i(TAG, "Connection attempted with the reduced initial scans");
                     schedulePeriodicScanTimer(
-                            getScheduledSingleScanInterval(mCurrentSingleScanScheduleIndex));
+                            getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
                 } else {
                     Log.i(TAG, "Connection was not attempted, issuing a full scan");
                     startConnectivityScan(SCAN_IMMEDIATELY);
@@ -770,23 +770,23 @@ public class WifiConnectivityManager {
 
     /** Initialize single scanning schedules, and validate them */
     private int[] initializeScanningSchedule(int state) {
-        int[] schedule;
+        int[] scheduleSec;
 
         if (state == WIFI_STATE_CONNECTED) {
-            schedule = mContext.getResources().getIntArray(
+            scheduleSec = mContext.getResources().getIntArray(
                     R.array.config_wifiConnectedScanIntervalScheduleSec);
         } else if (state == WIFI_STATE_DISCONNECTED) {
-            schedule = mContext.getResources().getIntArray(
+            scheduleSec = mContext.getResources().getIntArray(
                     R.array.config_wifiDisconnectedScanIntervalScheduleSec);
         } else {
-            schedule = null;
+            scheduleSec = null;
         }
 
         boolean invalidConfig = false;
-        if (schedule == null || schedule.length == 0) {
+        if (scheduleSec == null || scheduleSec.length == 0) {
             invalidConfig = true;
         } else {
-            for (int val : schedule) {
+            for (int val : scheduleSec) {
                 if (val <= 0) {
                     invalidConfig = true;
                     break;
@@ -794,12 +794,12 @@ public class WifiConnectivityManager {
             }
         }
         if (!invalidConfig) {
-            return schedule;
+            return scheduleSec;
         }
 
         Log.e(TAG, "Configuration for wifi scanning schedule is mis-configured,"
                 + "using default schedule");
-        return DEFAULT_SCANNING_SCHEDULE;
+        return DEFAULT_SCANNING_SCHEDULE_SEC;
     }
 
     /**
@@ -994,11 +994,11 @@ public class WifiConnectivityManager {
 
         if (mLastPeriodicSingleScanTimeStamp != RESET_TIME_STAMP) {
             long msSinceLastScan = currentTimeStamp - mLastPeriodicSingleScanTimeStamp;
-            if (msSinceLastScan < getScheduledSingleScanInterval(0)) {
+            if (msSinceLastScan < getScheduledSingleScanIntervalMs(0)) {
                 localLog("Last periodic single scan started " + msSinceLastScan
                         + "ms ago, defer this new scan request.");
                 schedulePeriodicScanTimer(
-                        getScheduledSingleScanInterval(0) - (int) msSinceLastScan);
+                        getScheduledSingleScanIntervalMs(0) - (int) msSinceLastScan);
                 return;
             }
         }
@@ -1041,46 +1041,46 @@ public class WifiConnectivityManager {
 
             startSingleScan(isFullBandScan, WIFI_WORK_SOURCE);
             schedulePeriodicScanTimer(
-                    getScheduledSingleScanInterval(mCurrentSingleScanScheduleIndex));
+                    getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
 
             // Set up the next scan interval in an exponential backoff fashion.
             mCurrentSingleScanScheduleIndex++;
         } else {
             // Since we already skipped this scan, keep the same scan interval for next scan.
             schedulePeriodicScanTimer(
-                    getScheduledSingleScanInterval(mCurrentSingleScanScheduleIndex));
+                    getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
         }
     }
 
     // Retrieve a value from single scanning schedule in ms
-    private int getScheduledSingleScanInterval(int index) {
+    private int getScheduledSingleScanIntervalMs(int index) {
         synchronized (mLock) {
-            if (mCurrentSingleScanSchedule == null) {
+            if (mCurrentSingleScanScheduleSec == null) {
                 Log.e(TAG, "Invalid attempt to get schedule interval, Schedule array is null ");
 
                 // Use a default value
-                return DEFAULT_SCANNING_SCHEDULE[0];
+                return DEFAULT_SCANNING_SCHEDULE_SEC[0] * 1000;
             }
 
-            if (index >= mCurrentSingleScanSchedule.length) {
-                index = mCurrentSingleScanSchedule.length - 1;
+            if (index >= mCurrentSingleScanScheduleSec.length) {
+                index = mCurrentSingleScanScheduleSec.length - 1;
             }
 
-            return mCurrentSingleScanSchedule[index] * 1000;
+            return mCurrentSingleScanScheduleSec[index] * 1000;
         }
     }
 
     // Set the single scanning schedule
-    private void setSingleScanningSchedule(int[] schedule) {
+    private void setSingleScanningSchedule(int[] scheduleSec) {
         synchronized (mLock) {
-            mCurrentSingleScanSchedule = schedule;
+            mCurrentSingleScanScheduleSec = scheduleSec;
         }
     }
 
     // Get the single scanning schedule
     private int[] getSingleScanningSchedule() {
         synchronized (mLock) {
-            return mCurrentSingleScanSchedule;
+            return mCurrentSingleScanScheduleSec;
         }
     }
 
@@ -1093,14 +1093,14 @@ public class WifiConnectivityManager {
 
         boolean shouldUseSingleSavedNetworkSchedule = useSingleSavedNetworkSchedule();
 
-        if (mCurrentSingleScanSchedule == mConnectedSingleScanSchedule
+        if (mCurrentSingleScanScheduleSec == mConnectedSingleScanScheduleSec
                 && shouldUseSingleSavedNetworkSchedule) {
-            mCurrentSingleScanSchedule = mConnectedSingleSavedNetworkSingleScanSchedule;
+            mCurrentSingleScanScheduleSec = mConnectedSingleSavedNetworkSingleScanScheduleSec;
             return true;
         }
-        if (mCurrentSingleScanSchedule == mConnectedSingleSavedNetworkSingleScanSchedule
+        if (mCurrentSingleScanScheduleSec == mConnectedSingleSavedNetworkSingleScanScheduleSec
                 && !shouldUseSingleSavedNetworkSchedule) {
-            mCurrentSingleScanSchedule = mConnectedSingleScanSchedule;
+            mCurrentSingleScanScheduleSec = mConnectedSingleScanScheduleSec;
             return true;
         }
         return false;
@@ -1525,17 +1525,18 @@ public class WifiConnectivityManager {
     public void handleConnectionStateChanged(int state) {
         localLog("handleConnectionStateChanged: state=" + stateToString(state));
 
-        if (mConnectedSingleScanSchedule == null) {
-            mConnectedSingleScanSchedule = initializeScanningSchedule(WIFI_STATE_CONNECTED);
+        if (mConnectedSingleScanScheduleSec == null) {
+            mConnectedSingleScanScheduleSec = initializeScanningSchedule(WIFI_STATE_CONNECTED);
         }
-        if (mDisconnectedSingleScanSchedule == null) {
-            mDisconnectedSingleScanSchedule = initializeScanningSchedule(WIFI_STATE_DISCONNECTED);
+        if (mDisconnectedSingleScanScheduleSec == null) {
+            mDisconnectedSingleScanScheduleSec =
+                    initializeScanningSchedule(WIFI_STATE_DISCONNECTED);
         }
-        if (mConnectedSingleSavedNetworkSingleScanSchedule == null) {
-            mConnectedSingleSavedNetworkSingleScanSchedule =
+        if (mConnectedSingleSavedNetworkSingleScanScheduleSec == null) {
+            mConnectedSingleSavedNetworkSingleScanScheduleSec =
                     initSingleSavedNetworkSchedule();
-            if (mConnectedSingleSavedNetworkSingleScanSchedule == null) {
-                mConnectedSingleSavedNetworkSingleScanSchedule = mConnectedSingleScanSchedule;
+            if (mConnectedSingleSavedNetworkSingleScanScheduleSec == null) {
+                mConnectedSingleSavedNetworkSingleScanScheduleSec = mConnectedSingleScanScheduleSec;
             }
         }
 
@@ -1547,15 +1548,15 @@ public class WifiConnectivityManager {
             mLastConnectionAttemptBssid = null;
             scheduleWatchdogTimer();
             // Switch to the disconnected scanning schedule
-            setSingleScanningSchedule(mDisconnectedSingleScanSchedule);
+            setSingleScanningSchedule(mDisconnectedSingleScanScheduleSec);
             startConnectivityScan(SCAN_IMMEDIATELY);
         } else if (mWifiState == WIFI_STATE_CONNECTED) {
             if (useSingleSavedNetworkSchedule()) {
                 // Switch to Single-Saved-Network connected schedule
-                setSingleScanningSchedule(mConnectedSingleSavedNetworkSingleScanSchedule);
+                setSingleScanningSchedule(mConnectedSingleSavedNetworkSingleScanScheduleSec);
             } else {
                 // Switch to connected single scanning schedule
-                setSingleScanningSchedule(mConnectedSingleScanSchedule);
+                setSingleScanningSchedule(mConnectedSingleScanScheduleSec);
             }
             startConnectivityScan(SCAN_ON_SCHEDULE);
         } else {
