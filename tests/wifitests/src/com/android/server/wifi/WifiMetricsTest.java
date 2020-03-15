@@ -4351,4 +4351,14 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(3000,
                 mDecodedProto.connectionDurationStats.totalTimeCellularDataOffMs);
     }
+
+    /**
+     * Test the logging of isExternalWifiScorerOn
+     */
+    @Test
+    public void testIsExternalWifiScorerOn() throws Exception {
+        mWifiMetrics.setIsExternalWifiScorerOn(true);
+        dumpProtoAndDeserialize();
+        assertEquals(true, mDecodedProto.isExternalWifiScorerOn);
+    }
 }

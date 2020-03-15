@@ -540,6 +540,7 @@ public class WifiScoreReport {
         }
         // Disable AOSP scorer
         mVelocityBasedConnectedScore = null;
+        mWifiMetrics.setIsExternalWifiScorerOn(true);
         return true;
     }
 
@@ -629,5 +630,6 @@ public class WifiScoreReport {
         // Create AOSP scorer and null external Wifi connected network scorer
         mVelocityBasedConnectedScore = new VelocityBasedConnectedScore(mScoringParams, mClock);
         mWifiConnectedNetworkScorerHolder = null;
+        mWifiMetrics.setIsExternalWifiScorerOn(false);
     }
 }
