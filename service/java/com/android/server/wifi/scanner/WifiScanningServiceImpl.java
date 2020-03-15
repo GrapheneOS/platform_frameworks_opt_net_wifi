@@ -118,11 +118,11 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
 
     @Override
     public Bundle getAvailableChannels(@WifiBand int band, String packageName,
-            @Nullable String featureId) {
+            @Nullable String attributionTag) {
         int uid = Binder.getCallingUid();
         long ident = Binder.clearCallingIdentity();
         try {
-            enforcePermission(uid, packageName, featureId, false, false, false);
+            enforcePermission(uid, packageName, attributionTag, false, false, false);
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
@@ -171,9 +171,9 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
         return bundle.getString(WifiScanner.REQUEST_PACKAGE_NAME_KEY);
     }
 
-    // For non-privileged requests, retrieve the bundled featureId name for app-op & permission
+    // For non-privileged requests, retrieve the bundled attributionTag name for app-op & permission
     // checks.
-    private String getFeatureId(Message msg) {
+    private String getAttributionTag(Message msg) {
         if (!(msg.obj instanceof Bundle)) {
             return null;
         }
@@ -204,7 +204,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
      * @see #enforcePermission(int, String, String, boolean, boolean, boolean)
      */
     private void enforcePermission(int uid, Message msg) throws SecurityException {
-        enforcePermission(uid, getPackageName(msg), getFeatureId(msg),
+        enforcePermission(uid, getPackageName(msg), getAttributionTag(msg),
                 isPrivilegedMessage(msg.what), shouldIgnoreLocationSettingsForSingleScan(msg),
                 shouldHideFromAppsForSingleScan(msg));
     }
@@ -217,12 +217,12 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
      *    b) Can never make one of the privileged requests.
      * @param uid uid of the client
      * @param packageName package name of the client
-     * @param featureId The feature in the package of the client
+     * @param attributionTag The feature in the package of the client
      * @param isPrivilegedRequest whether we are checking for a privileged request
      * @param shouldIgnoreLocationSettings override to ignore location settings
      * @param shouldHideFromApps override to hide request from AppOps
      */
-    private void enforcePermission(int uid, String packageName, @Nullable String featureId,
+    private void enforcePermission(int uid, String packageName, @Nullable String attributionTag,
             boolean isPrivilegedRequest, boolean shouldIgnoreLocationSettings,
             boolean shouldHideFromApps) {
         try {
@@ -234,8 +234,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                 // Privileged message, only requests from clients with NETWORK_STACK allowed!
                 throw e;
             }
-            mWifiPermissionsUtil.enforceCanAccessScanResultsForWifiScanner(packageName, featureId,
-                    uid, shouldIgnoreLocationSettings, shouldHideFromApps);
+            mWifiPermissionsUtil.enforceCanAccessScanResultsForWifiScanner(packageName,
+                    attributionTag, uid, shouldIgnoreLocationSettings, shouldHideFromApps);
         }
     }
 

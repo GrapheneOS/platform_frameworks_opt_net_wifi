@@ -75,7 +75,7 @@ public class SoftApStoreDataTest extends WifiBaseTest {
     private static final boolean TEST_CLIENT_CONTROL_BY_USER = false;
     private static final boolean TEST_AUTO_SHUTDOWN_ENABLED = true;
     private static final int TEST_MAX_NUMBER_OF_CLIENTS = 10;
-    private static final int TEST_SHUTDOWN_TIMEOUT_MILLIS = 600_000;
+    private static final long TEST_SHUTDOWN_TIMEOUT_MILLIS = 600_000;
     private static final ArrayList<MacAddress> TEST_BLOCKEDLIST = new ArrayList<>();
     private static final String TEST_BLOCKED_CLIENT = "11:22:33:44:55:66";
     private static final ArrayList<MacAddress> TEST_ALLOWEDLIST = new ArrayList<>();
@@ -111,7 +111,7 @@ public class SoftApStoreDataTest extends WifiBaseTest {
                     + TEST_CLIENT_CONTROL_BY_USER + "\" />\n"
                     + "<boolean name=\"AutoShutdownEnabled\" value=\""
                     + TEST_AUTO_SHUTDOWN_ENABLED + "\" />\n"
-                    + "<int name=\"ShutdownTimeoutMillis\" value=\""
+                    + "<long name=\"ShutdownTimeoutMillis\" value=\""
                     + TEST_SHUTDOWN_TIMEOUT_MILLIS + "\" />\n"
                     + "<BlockedClientList>\n"
                     + "<string name=\"ClientMacAddress\">" + TEST_BLOCKED_CLIENT + "</string>\n"
@@ -131,6 +131,28 @@ public class SoftApStoreDataTest extends WifiBaseTest {
                     + TEST_MAX_NUMBER_OF_CLIENTS + "\" />\n"
                     + "<boolean name=\"ClientControlByUser\" value=\""
                     + TEST_CLIENT_CONTROL_BY_USER + "\" />\n"
+                    + "<long name=\"ShutdownTimeoutMillis\" value=\""
+                    + TEST_SHUTDOWN_TIMEOUT_MILLIS + "\" />\n"
+                    + "<BlockedClientList>\n"
+                    + "<string name=\"ClientMacAddress\">" + TEST_BLOCKED_CLIENT + "</string>\n"
+                    + "</BlockedClientList>\n"
+                    + "<AllowedClientList>\n"
+                    + "<string name=\"ClientMacAddress\">" + TEST_ALLOWED_CLIENT + "</string>\n"
+                    + "</AllowedClientList>\n";
+
+    private static final String TEST_SOFTAP_CONFIG_XML_STRING_WITH_INT_TYPE_SHUTDOWNTIMOUTMILLIS =
+            "<string name=\"SSID\">" + TEST_SSID + "</string>\n"
+                    + "<int name=\"ApBand\" value=\"" + TEST_BAND + "\" />\n"
+                    + "<int name=\"Channel\" value=\"" + TEST_CHANNEL + "\" />\n"
+                    + "<boolean name=\"HiddenSSID\" value=\"" + TEST_HIDDEN + "\" />\n"
+                    + "<int name=\"SecurityType\" value=\"" + TEST_SECURITY + "\" />\n"
+                    + "<string name=\"Passphrase\">" + TEST_PASSPHRASE + "</string>\n"
+                    + "<int name=\"MaxNumberOfClients\" value=\""
+                    + TEST_MAX_NUMBER_OF_CLIENTS + "\" />\n"
+                    + "<boolean name=\"ClientControlByUser\" value=\""
+                    + TEST_CLIENT_CONTROL_BY_USER + "\" />\n"
+                    + "<boolean name=\"AutoShutdownEnabled\" value=\""
+                    + TEST_AUTO_SHUTDOWN_ENABLED + "\" />\n"
                     + "<int name=\"ShutdownTimeoutMillis\" value=\""
                     + TEST_SHUTDOWN_TIMEOUT_MILLIS + "\" />\n"
                     + "<BlockedClientList>\n"
@@ -217,11 +239,12 @@ public class SoftApStoreDataTest extends WifiBaseTest {
         softApConfigBuilder.setPassphrase(TEST_PASSPHRASE,
                 SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
         softApConfigBuilder.setBand(TEST_BAND);
-        softApConfigBuilder.enableClientControlByUser(TEST_CLIENT_CONTROL_BY_USER);
+        softApConfigBuilder.setClientControlByUserEnabled(TEST_CLIENT_CONTROL_BY_USER);
         softApConfigBuilder.setMaxNumberOfClients(TEST_MAX_NUMBER_OF_CLIENTS);
         softApConfigBuilder.setAutoShutdownEnabled(true);
         softApConfigBuilder.setShutdownTimeoutMillis(TEST_SHUTDOWN_TIMEOUT_MILLIS);
-        softApConfigBuilder.setClientList(TEST_BLOCKEDLIST, TEST_ALLOWEDLIST);
+        softApConfigBuilder.setBlockedClientList(TEST_BLOCKEDLIST);
+        softApConfigBuilder.setAllowedClientList(TEST_ALLOWEDLIST);
         return softApConfigBuilder.build();
     }
 
@@ -295,6 +318,34 @@ public class SoftApStoreDataTest extends WifiBaseTest {
         assertNotNull(softApConfig);
         assertEquals(softApConfig.getSsid(), TEST_SSID);
         assertEquals(softApConfig.getBssid().toString(), TEST_BSSID);
+        assertEquals(softApConfig.getPassphrase(), TEST_PASSPHRASE);
+        assertEquals(softApConfig.getSecurityType(), SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
+        assertEquals(softApConfig.isHiddenSsid(), TEST_HIDDEN);
+        assertEquals(softApConfig.getBand(), TEST_BAND);
+        assertEquals(softApConfig.isClientControlByUserEnabled(), TEST_CLIENT_CONTROL_BY_USER);
+        assertEquals(softApConfig.getMaxNumberOfClients(), TEST_MAX_NUMBER_OF_CLIENTS);
+        assertTrue(softApConfig.isAutoShutdownEnabled());
+        assertEquals(softApConfig.getShutdownTimeoutMillis(), TEST_SHUTDOWN_TIMEOUT_MILLIS);
+        assertEquals(softApConfig.getBlockedClientList(), TEST_BLOCKEDLIST);
+        assertEquals(softApConfig.getAllowedClientList(), TEST_ALLOWEDLIST);
+    }
+
+    /**
+     * Verify that the store data is deserialized correctly using the predefined test XML data.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void deserializeOldSoftApXMLWhichShutdownTimeoutIsInt() throws Exception {
+        deserializeData(TEST_SOFTAP_CONFIG_XML_STRING_WITH_INT_TYPE_SHUTDOWNTIMOUTMILLIS
+                .getBytes());
+
+        ArgumentCaptor<SoftApConfiguration> softapConfigCaptor =
+                ArgumentCaptor.forClass(SoftApConfiguration.class);
+        verify(mDataSource).fromDeserialized(softapConfigCaptor.capture());
+        SoftApConfiguration softApConfig = softapConfigCaptor.getValue();
+        assertNotNull(softApConfig);
+        assertEquals(softApConfig.getSsid(), TEST_SSID);
         assertEquals(softApConfig.getPassphrase(), TEST_PASSPHRASE);
         assertEquals(softApConfig.getSecurityType(), SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
         assertEquals(softApConfig.isHiddenSsid(), TEST_HIDDEN);

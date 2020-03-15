@@ -3784,6 +3784,46 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Disabling autojoin should clear associated connect choice links.
+     */
+    @Test
+    public void testDisableAutojoinRemovesConnectChoice() throws Exception {
+        WifiConfiguration network1 = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
+        WifiConfiguration network3 = WifiConfigurationTestUtil.createPskNetwork();
+        verifyAddNetworkToWifiConfigManager(network1);
+        verifyAddNetworkToWifiConfigManager(network2);
+        verifyAddNetworkToWifiConfigManager(network3);
+
+        // Set connect choice of network 2 over network 1 and network 3.
+        assertTrue(
+                mWifiConfigManager.setNetworkConnectChoice(
+                        network1.networkId, network2.getKey()));
+        assertTrue(
+                mWifiConfigManager.setNetworkConnectChoice(
+                        network3.networkId, network2.getKey()));
+
+        WifiConfiguration retrievedNetwork =
+                mWifiConfigManager.getConfiguredNetwork(network3.networkId);
+        assertEquals(
+                network2.getKey(),
+                retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
+
+        // Disable network 3
+        assertTrue(mWifiConfigManager.allowAutojoin(network3.networkId, false));
+        // Ensure that the connect choice on network 3 is removed.
+        retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(network3.networkId);
+        assertEquals(
+                null,
+                retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
+        // Ensure that the connect choice on network 1 is not removed.
+        retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(network1.networkId);
+        assertEquals(
+                network2.getKey(),
+                retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
+    }
+
+    /**
      * Verifies that all the ephemeral and passpoint networks are removed when
      * {@link WifiConfigManager#removeAllEphemeralOrPasspointConfiguredNetworks()} is invoked.
      */

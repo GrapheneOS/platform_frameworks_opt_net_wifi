@@ -1171,4 +1171,16 @@ public class TelephonyUtil {
         }
         return name.toString();
     }
+
+    /**
+     * Check if a config is carrier network and from the non default data SIM.
+     * @return True if it is carrier network and from non default data SIM,otherwise return false.
+     */
+    public boolean isCarrierNetworkFromNonDefaultDataSim(WifiConfiguration config) {
+        if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            return false;
+        }
+        int subId = getMatchingSubId(config.carrierId);
+        return subId != SubscriptionManager.getDefaultDataSubscriptionId();
+    }
 }

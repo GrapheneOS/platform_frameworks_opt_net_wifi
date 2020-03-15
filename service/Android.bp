@@ -93,8 +93,7 @@ java_library {
         // the necessary core platform APIs.
         "libprotobuf-java-lite",
         "libnanohttpd",
-        "netd_aidl_interface-V2-java",
-        "services.net",
+        "services.net-module-wifi",
         "wifi-lite-protos",
         "wifi-nano-protos"
     ],

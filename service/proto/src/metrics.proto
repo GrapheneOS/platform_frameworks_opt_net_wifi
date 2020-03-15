@@ -597,6 +597,9 @@ message WifiLog {
 
   // Total number of scan results for WAPI-Enterprise networks
   optional int32 num_wapi_enterprise_network_scan_results = 164;
+
+  // Is the external WiFi connected network scorer from OEM extension module turned on
+  optional bool is_external_wifi_scorer_on = 165 [default = false];
 }
 
 // Information that gets logged for every WiFi connection.

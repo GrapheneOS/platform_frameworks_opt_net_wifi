@@ -568,8 +568,9 @@ public class ApConfigUtilTest extends WifiBaseTest {
                 .setMaxNumberOfClients(10)
                 .setAutoShutdownEnabled(false)
                 .setShutdownTimeoutMillis(500000)
-                .enableClientControlByUser(true)
-                .setClientList(new ArrayList<>(), new ArrayList<>())
+                .setClientControlByUserEnabled(true)
+                .setBlockedClientList(new ArrayList<>())
+                .setAllowedClientList(new ArrayList<>())
                 .build();
         assertFalse(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
                 newConfig_nonRevalentChanged));
