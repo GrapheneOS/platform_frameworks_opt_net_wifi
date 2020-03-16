@@ -560,7 +560,7 @@ public class WifiInjector {
      * @return a new instance of ClientModeManager
      */
     public ClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
-        return new ClientModeManager(mContext, mWifiHandlerThread.getLooper(),
+        return new ClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mSarManager, mWakeupController,
                 mClientModeImpl);
     }

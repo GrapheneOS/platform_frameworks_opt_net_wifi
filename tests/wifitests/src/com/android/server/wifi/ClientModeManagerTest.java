@@ -81,6 +81,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
     @Mock Context mContext;
     @Mock WifiMetrics mWifiMetrics;
     @Mock WifiNative mWifiNative;
+    @Mock Clock mClock;
     @Mock ClientModeManager.Listener mListener;
     @Mock SarManager mSarManager;
     @Mock WakeupController mWakeupController;
@@ -94,6 +95,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
             RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
     private @AccessNetworkConstants.TransportType int mCurrentImsConnectionType =
             AccessNetworkConstants.TRANSPORT_TYPE_INVALID;
+    private long mElapsedSinceBootMillis = 0L;
 
     private MockitoSession mStaticMockSession = null;
 
@@ -109,6 +111,15 @@ public class ClientModeManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
     }
+
+    /*
+     * Use this helper to move mock looper and clock together.
+     */
+    private void moveTimeForward(long timeMillis) {
+        mLooper.moveTimeForward(timeMillis);
+        mElapsedSinceBootMillis += timeMillis;
+    }
+
 
     @Before
     public void setUp() throws Exception {
@@ -165,6 +176,11 @@ public class ClientModeManagerTest extends WifiBaseTest {
         when(mCarrierConfigBundle
                 .getInt(eq(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_MILLIS_INT)))
                 .thenReturn(0);
+        doAnswer(new AnswerWithArguments() {
+            public long answer() {
+                return mElapsedSinceBootMillis;
+            }
+        }).when(mClock).getElapsedSinceBootMillis();
 
         mLooper = new TestLooper();
         mClientModeManager = createClientModeManager();
@@ -177,7 +193,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
     }
 
     private ClientModeManager createClientModeManager() {
-        return new ClientModeManager(mContext, mLooper.getLooper(), mWifiNative, mListener,
+        return new ClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative, mListener,
                 mWifiMetrics, mSarManager, mWakeupController, mClientModeImpl);
     }
 
@@ -578,6 +594,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
 
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
 
         // on an explicit stop, we should not trigger the callback
         verifyNoMoreInteractions(mListener);
@@ -606,6 +623,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
@@ -631,6 +649,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
 
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
@@ -662,6 +681,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mListener, never()).onStopped();
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Notify wifi service IMS service is de-registered.
         assertNotNull(mImsMmTelManagerRegistrationCallback);
@@ -673,6 +693,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
         verify(mListener).onStopped();
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
@@ -704,6 +725,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mListener, never()).onStopped();
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Notify wifi service IMS service is de-registered.
         assertNotNull(mImsMmTelManagerRegistrationCallback);
@@ -715,6 +737,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
         verify(mListener).onStopped();
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
@@ -746,18 +769,20 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mListener, never()).onStopped();
 
         // 1/2 deferring time passed, should be still waiting for the callback.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2);
         mLooper.dispatchAll();
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mListener, never()).onStopped();
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Exceeding the timeout, wifi should be stopped.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2 + 1000);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2 + 1000);
         mLooper.dispatchAll();
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
         verify(mListener).onStopped();
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(true), anyInt());
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
@@ -796,14 +821,16 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mListener, never()).onStopped();
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Exceeding the timeout, wifi should be stopped.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
         verify(mListener).onStopped();
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(true), anyInt());
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
@@ -850,14 +877,16 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mListener, never()).onStopped();
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Exceeding the timeout, wifi should NOT be stopped.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
         verify(mListener, never()).onStopped();
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // on an explicit stop, we should not trigger the callback
         verifyNoMoreInteractions(mListener);
@@ -884,6 +913,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
     }
 
     /**
@@ -913,6 +943,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
     }
 
     /**
@@ -937,6 +968,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
     }
 
     /**
@@ -966,6 +998,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Notify wifi service IMS service is de-registered.
         assertNotNull(mImsMmTelManagerRegistrationCallback);
@@ -977,6 +1010,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
     }
 
     /**
@@ -1006,6 +1040,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Notify wifi service IMS service is de-registered.
         assertNotNull(mImsMmTelManagerRegistrationCallback);
@@ -1017,6 +1052,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
     }
 
     /**
@@ -1047,18 +1083,20 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
 
         // 1/2 deferring time passed, should be still waiting for the callback.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2);
         mLooper.dispatchAll();
         verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Exceeding the timeout, wifi should be stopped.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2 + 1000);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2 + 1000);
         mLooper.dispatchAll();
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(true), anyInt());
     }
 
     /**
@@ -1096,14 +1134,16 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Exceeding the timeout, wifi should be stopped.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(true), anyInt());
     }
 
     /**
@@ -1147,13 +1187,15 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
-        // Exceeding the timeout, wifi should be stopped.
-        mLooper.moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
+        // Exceeding the timeout, wifi should NOT be stopped.
+        moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
         verify(mWifiNative, never()).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
     }
 }
