@@ -6387,8 +6387,25 @@ public class ClientModeImpl extends StateMachine {
             ScanDetailCache scanDetailCache =
                     mWifiConfigManager.getScanDetailCacheForNetwork(config.networkId);
             ScanResult scanResult = null;
-            if (scanDetailCache != null && mLastBssid != null) {
-                scanResult = scanDetailCache.getScanResult(mLastBssid);
+            if (mLastBssid != null) {
+                if (scanDetailCache != null) {
+                    scanResult = scanDetailCache.getScanResult(mLastBssid);
+                }
+
+                // The cached scan result of connected network would be null at the first
+                // connection, try to check full scan result list again to look up matched
+                // scan result associated to the current SSID and BSSID.
+                if (scanResult == null) {
+                    ScanRequestProxy scanRequestProxy = mWifiInjector.getScanRequestProxy();
+                    List<ScanResult> scanResults = scanRequestProxy.getScanResults();
+                    for (ScanResult result : scanResults) {
+                        if (result.SSID.equals(WifiInfo.removeDoubleQuotes(config.SSID))
+                                && result.BSSID.equals(mLastBssid)) {
+                            scanResult = result;
+                            break;
+                        }
+                    }
+                }
             }
 
             final ProvisioningConfiguration prov;
