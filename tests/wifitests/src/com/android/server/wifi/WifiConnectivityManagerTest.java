@@ -1700,15 +1700,21 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that we perform full band scan when the currently connected network's tx/rx success
-     * rate is low and current RSSI is also low.
+     * Verify that we perform full band scan in the following two cases
+     * 1) Current RSSI is low, no active stream, network is insufficient
+     * 2) Current RSSI is high, no active stream, and a long time since last network selection
      *
-     * Expected behavior: WifiConnectivityManager does full band scan.
+     * Expected behavior: WifiConnectivityManager does full band scan in both cases
      */
     @Test
-    public void checkSingleScanSettingsWhenConnectedWithLowDataRate() {
+    public void verifyFullBandScanWhenConnected() {
+        mResources.setInteger(
+                R.integer.config_wifiConnectedHighRssiScanMinimumWindowSizeSec, 600);
+
+        // Verify case 1
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(false);
 
         final HashSet<Integer> channelList = new HashSet<>();
         channelList.add(1);
@@ -1727,6 +1733,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 assertNull(settings.channels);
             }}).when(mWifiScanner).startScan(anyObject(), anyObject(), anyObject());
 
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
         // Set screen to ON
         mWifiConnectivityManager.handleScreenStateChanged(true);
 
@@ -1735,10 +1742,22 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 WifiConnectivityManager.WIFI_STATE_CONNECTED);
 
         verify(mWifiScanner).startScan(anyObject(), anyObject(), anyObject(), anyObject());
+
+        // Verify case 2
+        when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(600_000L + 1L);
+        mWifiConnectivityManager.handleScreenStateChanged(true);
+        // Set WiFi to connected state to trigger periodic scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_CONNECTED);
+        verify(mWifiScanner, times(2)).startScan(anyObject(), anyObject(), anyObject(),
+                anyObject());
     }
 
     /**
-     * Verify that we perform partial scan when the current network is not sufficient,
+     * Verify that we perform partial scan when the current RSSI is low,
      * Tx/Rx success rates are high, and when the currently connected network is present
      * in scan cache in WifiConfigManager.
      * WifiConnectivityManager does partial scan only when firmware roaming is not supported.
@@ -1749,6 +1768,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void checkPartialScanRequestedWithLowRssiAndActiveStreamWithoutFwRoaming() {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(false);
 
         final HashSet<Integer> channelList = new HashSet<>();
         channelList.add(1);
@@ -1764,6 +1784,51 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         doAnswer(new AnswerWithArguments() {
             public void answer(ScanSettings settings, Executor executor, ScanListener listener,
                     WorkSource workSource) throws Exception {
+                assertEquals(settings.band, WifiScanner.WIFI_BAND_UNSPECIFIED);
+                assertEquals(settings.channels.length, channelList.size());
+                for (int chanIdx = 0; chanIdx < settings.channels.length; chanIdx++) {
+                    assertTrue(channelList.contains(settings.channels[chanIdx].frequency));
+                }
+            }}).when(mWifiScanner).startScan(anyObject(), anyObject(), anyObject(), anyObject());
+
+        // Set screen to ON
+        mWifiConnectivityManager.handleScreenStateChanged(true);
+
+        // Set WiFi to connected state to trigger periodic scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_CONNECTED);
+
+        verify(mWifiScanner).startScan(anyObject(), anyObject(), anyObject(), anyObject());
+    }
+
+    /**
+     * Verify that we perform partial scan when the current RSSI is high,
+     * Tx/Rx success rates are low, and when the currently connected network is present
+     * in scan cache in WifiConfigManager.
+     * WifiConnectivityManager does partial scan only when firmware roaming is not supported.
+     *
+     * Expected behavior: WifiConnectivityManager does partial scan.
+     */
+    @Test
+    public void checkPartialScanRequestedWithHighRssiNoActiveStreamWithoutFwRoaming() {
+        when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
+
+        final HashSet<Integer> channelList = new HashSet<>();
+        channelList.add(1);
+        channelList.add(2);
+        channelList.add(3);
+
+        when(mClientModeImpl.getCurrentWifiConfiguration())
+                .thenReturn(new WifiConfiguration());
+        when(mWifiConfigManager.fetchChannelSetForNetworkForPartialScan(anyInt(), anyLong(),
+                anyInt())).thenReturn(channelList);
+        when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
+
+        doAnswer(new AnswerWithArguments() {
+            public void answer(ScanSettings settings, Executor executor, ScanListener listener,
+                               WorkSource workSource) throws Exception {
                 assertEquals(settings.band, WifiScanner.WIFI_BAND_UNSPECIFIED);
                 assertEquals(settings.channels.length, channelList.size());
                 for (int chanIdx = 0; chanIdx < settings.channels.length; chanIdx++) {
