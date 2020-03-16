@@ -204,13 +204,17 @@ public class WifiDataStallTest extends WifiBaseTest {
     }
 
     /**
-     * Verify first poll after a new connection
+     * Verify throughtput when Rx link speed is unavailable
      */
     @Test
-    public void verifyFirstPoll() throws Exception {
+    public void verifyThroughputNoRxLinkSpeed() throws Exception {
         mWifiDataStall.checkDataStallAndThroughputSufficiency(null, mNewLlStats, mWifiInfo);
         assertEquals(50_000, mWifiDataStall.getTxThroughputKbps());
         assertEquals(150_000, mWifiDataStall.getRxThroughputKbps());
+        when(mWifiInfo.getRxLinkSpeedMbps()).thenReturn(-1);
+        mWifiDataStall.checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo);
+        assertEquals(960, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(-1, mWifiDataStall.getRxThroughputKbps());
     }
 
     /**
