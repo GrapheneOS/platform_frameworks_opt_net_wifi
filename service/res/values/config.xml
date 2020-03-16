@@ -299,6 +299,10 @@
         <item>160</item>
     </integer-array>
 
+    <!-- Integer for minimum time between the last network selection and next high RSSI scan
+         in seconds when device is connected and screen is on -->
+    <integer translatable="false" name="config_wifiConnectedHighRssiScanMinimumWindowSizeSec"> 600 </integer>
+
     <!-- Array describing scanning schedule in seconds when device is connected and screen is on
          and the connected network is the only saved network.
          When this array is set to an empty array, the noraml connected scan schedule defined
