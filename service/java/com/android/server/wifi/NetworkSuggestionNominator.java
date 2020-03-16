@@ -222,7 +222,6 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         }
     }
 
-
     private boolean isSimBasedNetworkAvailableToAutoConnect(WifiConfiguration config) {
         if (config.enterpriseConfig == null
                 || !config.enterpriseConfig.isAuthenticationSimBased()) {
