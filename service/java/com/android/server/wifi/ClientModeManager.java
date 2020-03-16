@@ -58,6 +58,7 @@ public class ClientModeManager implements ActiveModeManager {
     private final ClientModeStateMachine mStateMachine;
 
     private final Context mContext;
+    private final Clock mClock;
     private final WifiNative mWifiNative;
     private final WifiMetrics mWifiMetrics;
     private final SarManager mSarManager;
@@ -71,10 +72,11 @@ public class ClientModeManager implements ActiveModeManager {
     private DeferStopHandler mDeferStopHandler;
     private int mTargetRole = ROLE_UNSPECIFIED;
 
-    ClientModeManager(Context context, @NonNull Looper looper, WifiNative wifiNative,
+    ClientModeManager(Context context, @NonNull Looper looper, Clock clock, WifiNative wifiNative,
             Listener listener, WifiMetrics wifiMetrics, SarManager sarManager,
             WakeupController wakeupController, ClientModeImpl clientModeImpl) {
         mContext = context;
+        mClock = clock;
         mWifiNative = wifiNative;
         mModeListener = listener;
         mWifiMetrics = wifiMetrics;
@@ -116,6 +118,8 @@ public class ClientModeManager implements ActiveModeManager {
         private ImsMmTelManager mImsMmTelManager = null;
         private Looper mLooper = null;
         private final Runnable mRunnable = () -> continueToStopWifi();
+        private int mMaximumDeferringTimeMillis = 0;
+        private long mDeferringStartTimeMillis = 0;
 
         private RegistrationManager.RegistrationCallback mImsRegistrationCallback =
                 new RegistrationManager.RegistrationCallback() {
@@ -144,6 +148,8 @@ public class ClientModeManager implements ActiveModeManager {
         public void start(int delayMs) {
             if (mIsDeferring) return;
 
+            mMaximumDeferringTimeMillis = delayMs;
+            mDeferringStartTimeMillis = mClock.getElapsedSinceBootMillis();
             // Most cases don't need delay, check it first to avoid unnecessary work.
             if (delayMs == 0) {
                 continueToStopWifi();
@@ -174,15 +180,21 @@ public class ClientModeManager implements ActiveModeManager {
         private void continueToStopWifi() {
             Log.d(TAG, "The target role " + mTargetRole);
 
+            int deferringDurationMillis =
+                    (int) (mClock.getElapsedSinceBootMillis() - mDeferringStartTimeMillis);
+            boolean isTimedOut = mMaximumDeferringTimeMillis > 0
+                    && deferringDurationMillis >= mMaximumDeferringTimeMillis;
             if (mTargetRole == ROLE_UNSPECIFIED) {
                 Log.d(TAG, "Continue to stop wifi");
                 mStateMachine.quitNow();
+                mWifiMetrics.noteWifiOff(mIsDeferring, isTimedOut, deferringDurationMillis);
             } else if (mTargetRole == ROLE_CLIENT_SCAN_ONLY) {
                 if (!mWifiNative.switchClientInterfaceToScanMode(mClientInterfaceName)) {
                     mModeListener.onStartFailure();
                 } else {
                     mStateMachine.sendMessage(
                             ClientModeStateMachine.CMD_SWITCH_TO_SCAN_ONLY_MODE_CONTINUE);
+                    mWifiMetrics.noteWifiOff(mIsDeferring, isTimedOut, deferringDurationMillis);
                 }
             } else {
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
