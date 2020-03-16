@@ -491,6 +491,9 @@ public class WifiHealthMonitor {
      * Extract current software build information from the running software.
      */
     private WifiSoftwareBuildInfo extractCurrentSoftwareBuildInfo() {
+        if (!mWifiEnabled) {
+            return null;
+        }
         PackageManager packageManager = mContext.getPackageManager();
         int wifiStackVersion = 0;
         try {
