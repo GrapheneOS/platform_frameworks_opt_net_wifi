@@ -600,6 +600,9 @@ message WifiLog {
 
   // Is the external WiFi connected network scorer from OEM extension module turned on
   optional bool is_external_wifi_scorer_on = 165 [default = false];
+
+  // Metrics related to Wi-Fi off
+  optional WifiOffMetrics wifi_off_metrics = 166;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -2955,4 +2958,20 @@ message ConnectionDurationStats {
   optional int32 total_time_insufficient_throughput_ms = 2;
   // Total time with cellular data off
   optional int32 total_time_cellular_data_off_ms = 3;
+}
+
+// Wi-Fi off metrics
+// Keeps track of Wi-Fi off stats
+message WifiOffMetrics {
+  // Total number of Wi-Fi off
+  optional int32 num_wifi_off = 1;
+
+  // Total number of Wi-Fi off with deferring
+  optional int32 num_wifi_off_deferring = 2;
+
+  // Total number of Wi-Fi off deferring timeout
+  optional int32 num_wifi_off_deferring_timeout = 3;
+
+  // Histogram of wifi off deferring time
+  repeated Int32Count wifi_off_deferring_time_histogram = 4;
 }
