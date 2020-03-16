@@ -557,9 +557,22 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         // Day 2
         String firmwareVersion = "HW 1.2";
         makeSwBuildChangeExample(firmwareVersion);
+        // Disable WiFi before post-boot-detection
+        mWifiHealthMonitor.setWifiEnabled(false);
         mAlarmManager.dispatch(WifiHealthMonitor.POST_BOOT_DETECTION_TIMER_TAG);
         mLooper.dispatchAll();
+        // Skip SW build change detection
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        assertEquals(DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT * 1,
+                perNetwork.getStatsCurrBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
+        assertEquals(DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT * 0,
+                perNetwork.getStatsPrevBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
+
+        // Day 3
+        mWifiHealthMonitor.setWifiEnabled(true);
+        mAlarmManager.dispatch(WifiHealthMonitor.POST_BOOT_DETECTION_TIMER_TAG);
+        mLooper.dispatchAll();
+        // Finally detect SW build change
         assertEquals(0,
                 perNetwork.getStatsCurrBuild().getCount(WifiScoreCard.CNT_CONNECTION_ATTEMPT));
         assertEquals(DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT * 1,
