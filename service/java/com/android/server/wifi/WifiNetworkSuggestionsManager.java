@@ -851,7 +851,7 @@ public class WifiNetworkSuggestionsManager {
                 // Install Passpoint config, if failure, ignore that suggestion
                 if (!mWifiInjector.getPasspointManager().addOrUpdateProvider(
                         ewns.wns.passpointConfiguration, uid,
-                        packageName, true, !ewns.wns.isNetworkUntrusted)) {
+                        packageName, true, !ewns.wns.isUntrusted())) {
                     Log.e(TAG, "Passpoint profile install failure for FQDN: "
                             + ewns.wns.wifiConfiguration.FQDN);
                     continue;
@@ -1178,11 +1178,7 @@ public class WifiNetworkSuggestionsManager {
                 WifiConfiguration network = mWifiConfigManager
                         .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getKey());
                 if (network == null) {
-                    network = new WifiConfiguration(ewns.wns.getWifiConfiguration());
-                    network.ephemeral = true;
-                    network.fromWifiNetworkSuggestion = true;
-                    network.allowAutojoin = ewns.isAutojoinEnabled;
-                    network.trusted = !ewns.wns.isNetworkUntrusted;
+                    network = ewns.createInternalWifiConfiguration();
                 }
                 networks.add(network);
             }
