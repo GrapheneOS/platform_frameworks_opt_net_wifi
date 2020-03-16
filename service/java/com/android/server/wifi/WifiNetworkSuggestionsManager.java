@@ -283,7 +283,6 @@ public class WifiNetworkSuggestionsManager {
         public WifiConfiguration createInternalWifiConfiguration() {
             WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
             config.allowAutojoin = isAutojoinEnabled;
-            config.trusted = !wns.isNetworkUntrusted;
             return config;
         }
     }
