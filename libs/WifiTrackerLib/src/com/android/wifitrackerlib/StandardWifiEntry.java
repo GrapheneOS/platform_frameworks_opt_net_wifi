@@ -366,7 +366,7 @@ public class StandardWifiEntry extends WifiEntry {
                             DisconnectCallback.DISCONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             }, 10_000 /* delayMillis */);
-            mWifiManager.disableEphemeralNetwork(mSsid);
+            mWifiManager.disableEphemeralNetwork(mWifiConfig.SSID);
             mWifiManager.disconnect();
         }
     }
