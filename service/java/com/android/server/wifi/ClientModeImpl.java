@@ -4390,19 +4390,11 @@ public class ClientModeImpl extends StateMachine {
             txTputKbps = mWifiDataStall.getTxThroughputKbps();
             rxTputKbps = mWifiDataStall.getRxThroughputKbps();
         }
-        // If throughput is not available, check if Tx/Rx link speed is available
-        if (txTputKbps == INVALID_THROUGHPUT || rxTputKbps == INVALID_THROUGHPUT) {
-            int txLinkSpeedMbps = mWifiInfo.getLinkSpeed();
-            int rxLinkSpeedMbps = mWifiInfo.getRxLinkSpeedMbps();
-            if (txLinkSpeedMbps > 0) {
-                txTputKbps = txLinkSpeedMbps * 1000;
-            }
-            if (rxLinkSpeedMbps > 0) {
-                rxTputKbps = rxLinkSpeedMbps * 1000;
-            }
-        }
-        // If link speed is not available, check if max supported link speed is available
-        if (txTputKbps == INVALID_THROUGHPUT || rxTputKbps == INVALID_THROUGHPUT) {
+        if (txTputKbps == INVALID_THROUGHPUT && rxTputKbps != INVALID_THROUGHPUT) {
+            txTputKbps = rxTputKbps;
+        } else if (rxTputKbps == INVALID_THROUGHPUT && txTputKbps != INVALID_THROUGHPUT) {
+            rxTputKbps = txTputKbps;
+        } else if (txTputKbps == INVALID_THROUGHPUT && rxTputKbps == INVALID_THROUGHPUT) {
             int maxTxLinkSpeedMbps = mWifiInfo.getMaxSupportedTxLinkSpeedMbps();
             int maxRxLinkSpeedMbps = mWifiInfo.getMaxSupportedRxLinkSpeedMbps();
             if (maxTxLinkSpeedMbps > 0) {
@@ -4411,6 +4403,10 @@ public class ClientModeImpl extends StateMachine {
             if (maxRxLinkSpeedMbps > 0) {
                 rxTputKbps = maxRxLinkSpeedMbps * 1000;
             }
+        }
+        if (mVerboseLoggingEnabled) {
+            logd("tx tput in kbps: " + txTputKbps);
+            logd("rx tput in kbps: " + rxTputKbps);
         }
         if (txTputKbps > 0) {
             networkCapabilities.setLinkUpstreamBandwidthKbps(txTputKbps);
