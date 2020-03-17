@@ -1032,6 +1032,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiLockManager).updateWifiClientConnected(true);
         verify(mWifiNative).getConnectionCapabilities(any());
         verify(mThroughputPredictor).predictMaxTxThroughput(any());
+        verify(mWifiMetrics).setConnectionMaxSupportedLinkSpeedMbps(90, 80);
         verify(mWifiDataStall).setConnectionCapabilities(any());
         assertEquals(90, wifiInfo.getMaxSupportedTxLinkSpeedMbps());
     }

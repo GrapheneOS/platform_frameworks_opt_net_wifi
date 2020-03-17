@@ -775,6 +775,12 @@ message RouterFingerPrint {
 
   // PMK caching enablement
   optional bool pmk_cache_enabled = 12;
+
+  // Max Tx link speed (in Mbps) supported by current network (STA and AP)
+  optional int32 max_supported_tx_link_speed_mbps = 13;
+
+  // Max Rx link speed (in Mbps) supported by current network (STA and AP)
+  optional int32 max_supported_rx_link_speed_mbps = 14;
 }
 
 message ConnectionEvent {
