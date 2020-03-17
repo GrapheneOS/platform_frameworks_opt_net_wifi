@@ -4390,19 +4390,11 @@ public class ClientModeImpl extends StateMachine {
             txTputKbps = mWifiDataStall.getTxThroughputKbps();
             rxTputKbps = mWifiDataStall.getRxThroughputKbps();
         }
-        // If throughput is not available, check if Tx/Rx link speed is available
-        if (txTputKbps == INVALID_THROUGHPUT || rxTputKbps == INVALID_THROUGHPUT) {
-            int txLinkSpeedMbps = mWifiInfo.getLinkSpeed();
-            int rxLinkSpeedMbps = mWifiInfo.getRxLinkSpeedMbps();
-            if (txLinkSpeedMbps > 0) {
-                txTputKbps = txLinkSpeedMbps * 1000;
-            }
-            if (rxLinkSpeedMbps > 0) {
-                rxTputKbps = rxLinkSpeedMbps * 1000;
-            }
-        }
-        // If link speed is not available, check if max supported link speed is available
-        if (txTputKbps == INVALID_THROUGHPUT || rxTputKbps == INVALID_THROUGHPUT) {
+        if (txTputKbps == INVALID_THROUGHPUT && rxTputKbps != INVALID_THROUGHPUT) {
+            txTputKbps = rxTputKbps;
+        } else if (rxTputKbps == INVALID_THROUGHPUT && txTputKbps != INVALID_THROUGHPUT) {
+            rxTputKbps = txTputKbps;
+        } else if (txTputKbps == INVALID_THROUGHPUT && rxTputKbps == INVALID_THROUGHPUT) {
             int maxTxLinkSpeedMbps = mWifiInfo.getMaxSupportedTxLinkSpeedMbps();
             int maxRxLinkSpeedMbps = mWifiInfo.getMaxSupportedRxLinkSpeedMbps();
             if (maxTxLinkSpeedMbps > 0) {
@@ -4411,6 +4403,10 @@ public class ClientModeImpl extends StateMachine {
             if (maxRxLinkSpeedMbps > 0) {
                 rxTputKbps = maxRxLinkSpeedMbps * 1000;
             }
+        }
+        if (mVerboseLoggingEnabled) {
+            logd("tx tput in kbps: " + txTputKbps);
+            logd("rx tput in kbps: " + rxTputKbps);
         }
         if (txTputKbps > 0) {
             networkCapabilities.setLinkUpstreamBandwidthKbps(txTputKbps);
@@ -6387,8 +6383,25 @@ public class ClientModeImpl extends StateMachine {
             ScanDetailCache scanDetailCache =
                     mWifiConfigManager.getScanDetailCacheForNetwork(config.networkId);
             ScanResult scanResult = null;
-            if (scanDetailCache != null && mLastBssid != null) {
-                scanResult = scanDetailCache.getScanResult(mLastBssid);
+            if (mLastBssid != null) {
+                if (scanDetailCache != null) {
+                    scanResult = scanDetailCache.getScanResult(mLastBssid);
+                }
+
+                // The cached scan result of connected network would be null at the first
+                // connection, try to check full scan result list again to look up matched
+                // scan result associated to the current SSID and BSSID.
+                if (scanResult == null) {
+                    ScanRequestProxy scanRequestProxy = mWifiInjector.getScanRequestProxy();
+                    List<ScanResult> scanResults = scanRequestProxy.getScanResults();
+                    for (ScanResult result : scanResults) {
+                        if (result.SSID.equals(WifiInfo.removeDoubleQuotes(config.SSID))
+                                && result.BSSID.equals(mLastBssid)) {
+                            scanResult = result;
+                            break;
+                        }
+                    }
+                }
             }
 
             final ProvisioningConfiguration prov;

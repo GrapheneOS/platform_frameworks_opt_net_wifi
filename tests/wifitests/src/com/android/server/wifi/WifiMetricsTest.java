@@ -4361,4 +4361,41 @@ public class WifiMetricsTest extends WifiBaseTest {
         dumpProtoAndDeserialize();
         assertEquals(true, mDecodedProto.isExternalWifiScorerOn);
     }
+
+    /*
+     * Test the logging of Wi-Fi off
+     */
+    @Test
+    public void testWifiOff() throws Exception {
+        // if not deferred, timeout and duration should be ignored.
+        mWifiMetrics.noteWifiOff(false, false, 0);
+        mWifiMetrics.noteWifiOff(false, true, 999);
+
+        // deferred, not timed out
+        mWifiMetrics.noteWifiOff(true, false, 0);
+        mWifiMetrics.noteWifiOff(true, false, 1000);
+
+        // deferred and timed out
+        mWifiMetrics.noteWifiOff(true, true, 2000);
+        mWifiMetrics.noteWifiOff(true, true, 2000);
+        mWifiMetrics.noteWifiOff(true, true, 4000);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(7,
+                mDecodedProto.wifiOffMetrics.numWifiOff);
+        assertEquals(5,
+                mDecodedProto.wifiOffMetrics.numWifiOffDeferring);
+        assertEquals(3,
+                mDecodedProto.wifiOffMetrics.numWifiOffDeferringTimeout);
+
+        Int32Count[] expectedHistogram = {
+                buildInt32Count(0, 1),
+                buildInt32Count(1000, 1),
+                buildInt32Count(2000, 2),
+                buildInt32Count(4000, 1),
+        };
+        assertKeyCountsEqual(expectedHistogram,
+                mDecodedProto.wifiOffMetrics.wifiOffDeferringTimeHistogram);
+    }
 }

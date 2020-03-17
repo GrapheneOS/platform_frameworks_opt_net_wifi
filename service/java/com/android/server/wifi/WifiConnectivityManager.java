@@ -29,9 +29,11 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.DeviceMobilityState;
+import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiScanner.PnoSettings;
 import android.net.wifi.WifiScanner.ScanSettings;
+import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.Process;
@@ -120,7 +122,6 @@ public class WifiConnectivityManager {
     // Max number of connection attempts in the above time interval.
     public static final int MAX_CONNECTION_ATTEMPTS_RATE = 6;
     private static final int TEMP_BSSID_BLOCK_DURATION = 10 * 1000; // 10 seconds
-
     // ClientModeImpl has a bunch of states. From the
     // WifiConnectivityManager's perspective it only cares
     // if it is in Connected state, Disconnected state or in
@@ -176,6 +177,7 @@ public class WifiConnectivityManager {
     private int mTotalConnectivityAttemptsRateLimited = 0;
     private String mLastConnectionAttemptBssid = null;
     private long mLastPeriodicSingleScanTimeStamp = RESET_TIME_STAMP;
+    private long mLastNetworkSelectionTimeStamp = RESET_TIME_STAMP;
     private boolean mPnoScanStarted = false;
     private boolean mPeriodicScanTimerSet = false;
     private boolean mDelayedPartialScanTimerSet = false;
@@ -320,6 +322,7 @@ public class WifiConnectivityManager {
         }
 
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
+        mLastNetworkSelectionTimeStamp = mClock.getElapsedSinceBootMillis();
         mWifiLastResortWatchdog.updateAvailableNetworks(
                 mNetworkSelector.getConnectableScanDetails());
         mWifiMetrics.countScanResults(scanDetails);
@@ -1006,10 +1009,22 @@ public class WifiConnectivityManager {
         boolean isScanNeeded = true;
         boolean isFullBandScan = true;
 
-        // If current network link quality is sufficient or has active stream,
-        // skip scan (with firmware roaming) or do partial scan only (without firmware roaming).
-        if (mWifiState == WIFI_STATE_CONNECTED && (
-                mNetworkSelector.isNetworkSufficient(mWifiInfo)
+        boolean isShortTimeSinceLastNetworkSelection =
+                ((currentTimeStamp - mLastNetworkSelectionTimeStamp)
+                <= 1000 * mContext.getResources().getInteger(
+                R.integer.config_wifiConnectedHighRssiScanMinimumWindowSizeSec));
+
+        boolean isGoodLinkAndShortTimeSinceLastNetworkSelection =
+                mNetworkSelector.hasSufficientLinkQuality(mWifiInfo)
+                && isShortTimeSinceLastNetworkSelection;
+        // Check it is one of following conditions to skip scan (with firmware roaming)
+        // or do partial scan only (without firmware roaming).
+        // 1) Network is sufficient
+        // 2) link is good and it is a short time since last network selection
+        // 3) There is active stream such that scan will be likely disruptive
+        if (mWifiState == WIFI_STATE_CONNECTED
+                && (mNetworkSelector.isNetworkSufficient(mWifiInfo)
+                || isGoodLinkAndShortTimeSinceLastNetworkSelection
                 || mNetworkSelector.hasActiveStream(mWifiInfo))) {
             // If only partial scan is proposed and firmware roaming control is supported,
             // we will not issue any scan because firmware roaming will take care of
@@ -1490,18 +1505,52 @@ public class WifiConnectivityManager {
 
     /**
      * Check if Single saved network schedule should be used
-     * This is true if the following is satisfied:
-     * 1. Device is in connected state (this method is only called in this state)
-     * 2. Device has a single saved network
-     * 3. The connected network is the saved network
+     * This is true if the one of the following is satisfied:
+     * 1. Device has a total of 1 network whether saved, passpoint, or suggestion.
+     * 2. The device is connected to that network.
      */
     private boolean useSingleSavedNetworkSchedule() {
         List<WifiConfiguration> savedNetworks =
                 mConfigManager.getSavedNetworks(Process.WIFI_UID);
+        // If we have multiple saved networks, then no need to proceed
+        if (savedNetworks.size() > 1) {
+            return false;
+        }
 
-        // return true if there is a single saved network which is the currently connected network
-        return (savedNetworks.size() == 1
-                && savedNetworks.get(0).status == WifiConfiguration.Status.CURRENT);
+        List<PasspointConfiguration> passpointNetworks =
+                mWifiInjector.getPasspointManager().getProviderConfigs(Process.WIFI_UID, true);
+        // If we have multiple networks (saved + passpoint), then no need to proceed
+        if (passpointNetworks.size() + savedNetworks.size() > 1) {
+            return false;
+        }
+
+        Set<WifiNetworkSuggestion> suggestionsNetworks =
+                mWifiInjector.getWifiNetworkSuggestionsManager().getAllNetworkSuggestions();
+        // If total size not equal to 1, then no need to proceed
+        if (passpointNetworks.size() + savedNetworks.size() + suggestionsNetworks.size() != 1) {
+            return false;
+        }
+
+        // Next verify that this network is the one device is connected to
+        int currentNetworkId = mStateMachine.getCurrentWifiConfiguration().networkId;
+
+        // If we have a single saved network, and we are connected to it, return true.
+        if (savedNetworks.size() == 1) {
+            return (savedNetworks.get(0).networkId == currentNetworkId);
+        }
+
+        // If we have a single passpoint network, and we are connected to it, return true.
+        if (passpointNetworks.size() == 1) {
+            String passpointKey = passpointNetworks.get(0).getUniqueId();
+            WifiConfiguration config = mConfigManager.getConfiguredNetwork(passpointKey);
+            return (config != null && config.networkId == currentNetworkId);
+        }
+
+        // If we have a single suggestion network, and we are connected to it, return true.
+        WifiNetworkSuggestion network = suggestionsNetworks.iterator().next();
+        String suggestionKey = network.getWifiConfiguration().getKey();
+        WifiConfiguration config = mConfigManager.getConfiguredNetwork(suggestionKey);
+        return (config != null && config.networkId == currentNetworkId);
     }
 
     private int[] initSingleSavedNetworkSchedule() {
