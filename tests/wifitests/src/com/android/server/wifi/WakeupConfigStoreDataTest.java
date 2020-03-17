@@ -92,8 +92,7 @@ public class WakeupConfigStoreDataTest extends WifiBaseTest {
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mWakeupConfigData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class),
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                mock(WifiConfigStoreEncryptionUtil.class));
     }
 
     /**
@@ -184,8 +183,7 @@ public class WakeupConfigStoreDataTest extends WifiBaseTest {
     public void hasBeenReadIsTrueWhenUserStoreIsLoaded() throws Exception {
         mWakeupConfigData.deserializeData(null /* in */, 0 /* outerTagDepth */,
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class),
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                mock(WifiConfigStoreEncryptionUtil.class));
         assertTrue(mWakeupConfigData.hasBeenRead());
     }
 
