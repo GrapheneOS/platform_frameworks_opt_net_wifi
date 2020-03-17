@@ -21,6 +21,7 @@ import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_
 
 import static com.android.server.wifi.ClientModeImpl.CMD_PRE_DHCP_ACTION;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -3415,8 +3416,8 @@ public class ClientModeImplTest {
         assertEquals(expectedWifiNetworkAgentSpecifier, wifiNetworkAgentSpecifier);
 
         assertEquals(mConnectedNetwork.creatorUid, networkCapabilities.getOwnerUid());
-        assertEquals(
-                Arrays.asList(mConnectedNetwork.creatorUid),
+        assertArrayEquals(
+                new int[] {mConnectedNetwork.creatorUid},
                 networkCapabilities.getAdministratorUids());
     }
 
