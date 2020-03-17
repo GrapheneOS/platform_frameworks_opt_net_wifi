@@ -481,6 +481,10 @@ public class WifiMetrics {
                 sb.append(", mAuthPhase2Method=" + mRouterFingerPrintProto.authPhase2Method);
                 sb.append(", mOcspType=" + mRouterFingerPrintProto.ocspType);
                 sb.append(", mPmkCache=" + mRouterFingerPrintProto.pmkCacheEnabled);
+                sb.append(", mMaxSupportedTxLinkSpeedMbps=" + mRouterFingerPrintProto
+                        .maxSupportedTxLinkSpeedMbps);
+                sb.append(", mMaxSupportedRxLinkSpeedMbps=" + mRouterFingerPrintProto
+                        .maxSupportedRxLinkSpeedMbps);
             }
             return sb.toString();
         }
@@ -537,6 +541,14 @@ public class WifiMetrics {
         public void setPmkCache(boolean isEnabled) {
             synchronized (mLock) {
                 mRouterFingerPrintProto.pmkCacheEnabled = isEnabled;
+            }
+        }
+
+        public void setMaxSupportedLinkSpeedMbps(int maxSupportedTxLinkSpeedMbps,
+                int maxSupportedRxLinkSpeedMbps) {
+            synchronized (mLock) {
+                mRouterFingerPrintProto.maxSupportedTxLinkSpeedMbps = maxSupportedTxLinkSpeedMbps;
+                mRouterFingerPrintProto.maxSupportedRxLinkSpeedMbps = maxSupportedRxLinkSpeedMbps;
             }
         }
     }
@@ -1356,6 +1368,19 @@ public class WifiMetrics {
         synchronized (mLock) {
             if (mCurrentConnectionEvent != null) {
                 mCurrentConnectionEvent.mRouterFingerPrint.setPmkCache(isEnabled);
+            }
+        }
+    }
+
+    /**
+     * Set the max link speed supported by current network
+     */
+    public void setConnectionMaxSupportedLinkSpeedMbps(int maxSupportedTxLinkSpeedMbps,
+            int maxSupportedRxLinkSpeedMbps) {
+        synchronized (mLock) {
+            if (mCurrentConnectionEvent != null) {
+                mCurrentConnectionEvent.mRouterFingerPrint.setMaxSupportedLinkSpeedMbps(
+                        maxSupportedTxLinkSpeedMbps, maxSupportedRxLinkSpeedMbps);
             }
         }
     }
