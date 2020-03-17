@@ -52,20 +52,16 @@ java_library {
     // java_api_finder must accompany `srcs`
     plugins: ["java_api_finder"],
 
-    // TODO(b/140299412) should be "system_server_current" since Wifi module is not allowed to use
-    // @CorePlatformApi's
-    sdk_version: "core_platform",
+    sdk_version: "system_server_current",
     libs: [
         "error_prone_annotations",
         "jsr305",
         "framework-annotations-lib",
-        "services-stubs", // TODO(b/140299412): remove
         // load the resources from the resources APK.
         "wifi-service-resources",
         // need pre-jarjar symbols so that wifi-service can reference the original class names at
         // compile time
         "framework-wifi-pre-jarjar",
-        "android_module_lib_stubs_current", // TODO(b/140299412): remove
         "framework-statsd-stubs-module_libs_api",
         "framework-telephony-stubs",
         "unsupportedappusage",
@@ -111,14 +107,9 @@ java_library {
     // need to include `libs` so that Soong doesn't complain about missing classes after jarjaring
     libs: [
         "framework-wifi",
-        "android_module_lib_stubs_current",
-        "services-stubs",
-        "framework-telephony-stubs",
     ],
 
-    // TODO(b/140299412) should be "core_current" since Wifi module is not allowed to use
-    // @CorePlatformApi's
-    sdk_version: "core_platform",
+    sdk_version: "system_server_current",
 
     jarjar_rules: ":wifi-jarjar-rules",
     optimize: {
