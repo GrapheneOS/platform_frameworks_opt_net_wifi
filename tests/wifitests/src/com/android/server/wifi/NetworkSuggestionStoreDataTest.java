@@ -266,8 +266,7 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mNetworkSuggestionStoreData.deserializeData(in, in.getDepth(),
-                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null,
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
     }
 
     /**

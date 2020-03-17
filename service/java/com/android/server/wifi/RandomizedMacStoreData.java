@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.util.Log;
 
@@ -57,8 +56,7 @@ public class RandomizedMacStoreData implements WifiConfigStore.StoreData {
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
-            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         // Ignore empty reads.
         if (in == null) {

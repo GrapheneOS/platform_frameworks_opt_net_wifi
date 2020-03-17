@@ -154,8 +154,7 @@ public class WakeupControllerTest extends WifiBaseTest {
         try {
             mWakeupConfigStoreData.deserializeData(null, 0,
                     WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                    mock(WifiConfigStoreEncryptionUtil.class),
-                    mock(WifiConfigStoreMigrationDataHolder.class));
+                    mock(WifiConfigStoreEncryptionUtil.class));
         } catch (XmlPullParserException | IOException e) {
             // unreachable
         }
