@@ -308,7 +308,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         }
         mLastBugReportTime = currentTime;
         BugreportManager bugreportManager = mContext.getSystemService(BugreportManager.class);
-        BugreportParams params = new BugreportParams(BugreportParams.BUGREPORT_MODE_WIFI);
+        BugreportParams params = new BugreportParams(BugreportParams.BUGREPORT_MODE_FULL);
         try {
             bugreportManager.requestBugreport(params, bugTitle, bugDetail);
         } catch (RuntimeException e) {

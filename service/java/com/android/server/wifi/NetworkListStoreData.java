@@ -18,7 +18,6 @@ package com.android.server.wifi;
 
 import static com.android.server.wifi.WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION;
 
-import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.net.IpConfiguration;
@@ -82,18 +81,8 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
-            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
-        // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
-        List<WifiConfiguration> oemMigratedConfigurations =
-                storeMigrationDataHolder.getUserSavedNetworks();
-        if (oemMigratedConfigurations != null) {
-            Log.i(TAG, "Loading data from OEM migration hook");
-            mConfigurations = oemMigratedConfigurations;
-            return;
-        }
-
         // Ignore empty reads.
         if (in == null) {
             return;

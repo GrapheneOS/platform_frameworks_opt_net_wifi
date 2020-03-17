@@ -266,8 +266,7 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mNetworkSuggestionStoreData.deserializeData(in, in.getDepth(),
-                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null,
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
     }
 
     /**
@@ -292,7 +291,7 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         configuration.enterpriseConfig =
                 WifiConfigurationTestUtil.createPEAPWifiEnterpriseConfigWithGTCPhase2();
         WifiNetworkSuggestion networkSuggestion =
-                new WifiNetworkSuggestion(configuration, null, false, false, true, true, false);
+                new WifiNetworkSuggestion(configuration, null, false, false, true, true);
         appInfo.hasUserApproved = false;
         appInfo.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
@@ -321,8 +320,7 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo1 = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_NAME_1, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
-                false);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
         appInfo1.hasUserApproved = false;
         appInfo1.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion1, appInfo1, true));
@@ -330,8 +328,7 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo2 = new PerAppInfo(TEST_UID_2, TEST_PACKAGE_NAME_2, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
-                false);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
         appInfo2.hasUserApproved = true;
         appInfo2.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion2, appInfo2, true));
@@ -349,11 +346,9 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo1 = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_NAME_1, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true,
-                false);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
-                true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
         appInfo1.hasUserApproved = true;
         appInfo1.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion1, appInfo1, true));
@@ -363,11 +358,9 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo2 = new PerAppInfo(TEST_UID_2, TEST_PACKAGE_NAME_2, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion3 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
-                false);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
         WifiNetworkSuggestion networkSuggestion4 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true,
-                true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true);
         appInfo2.hasUserApproved = true;
         appInfo2.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion3, appInfo2, true));

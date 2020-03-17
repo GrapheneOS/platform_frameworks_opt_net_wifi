@@ -1090,7 +1090,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
             PerAppInfo perAppInfo = new PerAppInfo(uids[i], packageNames[i], null);
             WifiNetworkSuggestion suggestion =
                     new WifiNetworkSuggestion(configs[i], null, appInteractions[i], false,
-                            shareWithUser[i], true, false);
+                            shareWithUser[i], true);
             suggestions[i] = new ExtendedWifiNetworkSuggestion(suggestion, perAppInfo, autojoin[i]);
         }
         return suggestions;

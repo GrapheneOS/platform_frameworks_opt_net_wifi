@@ -154,8 +154,7 @@ public class WakeupControllerTest extends WifiBaseTest {
         try {
             mWakeupConfigStoreData.deserializeData(null, 0,
                     WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                    mock(WifiConfigStoreEncryptionUtil.class),
-                    mock(WifiConfigStoreMigrationDataHolder.class));
+                    mock(WifiConfigStoreEncryptionUtil.class));
         } catch (XmlPullParserException | IOException e) {
             // unreachable
         }
@@ -369,10 +368,10 @@ public class WakeupControllerTest extends WifiBaseTest {
         // suggestions
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork(quotedSsid);
         WifiNetworkSuggestion openNetworkSuggestion =
-                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true, false);
+                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true);
         WifiConfiguration wepNetwork = WifiConfigurationTestUtil.createWepNetwork();
         WifiNetworkSuggestion wepNetworkSuggestion =
-                new WifiNetworkSuggestion(wepNetwork, null, false, false, true, true, false);
+                new WifiNetworkSuggestion(wepNetwork, null, false, false, true, true);
         when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
                 .thenReturn(new HashSet<>(Arrays.asList(
                         openNetworkSuggestion, wepNetworkSuggestion)));
@@ -414,7 +413,7 @@ public class WakeupControllerTest extends WifiBaseTest {
 
         WifiConfiguration oweNetwork = WifiConfigurationTestUtil.createOweNetwork(quotedSsid2);
         WifiNetworkSuggestion oweNetworkSuggestion =
-                new WifiNetworkSuggestion(oweNetwork, null, false, false, true, true, false);
+                new WifiNetworkSuggestion(oweNetwork, null, false, false, true, true);
         when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
                 .thenReturn(new HashSet<>(Arrays.asList(oweNetworkSuggestion)));
 
@@ -512,7 +511,7 @@ public class WakeupControllerTest extends WifiBaseTest {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil
                 .createOpenNetwork(ScanResultUtil.createQuotedSSID(SAVED_SSID));
         WifiNetworkSuggestion openNetworkSuggestion =
-                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true, false);
+                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true);
         when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
                 .thenReturn(new HashSet<>(Collections.singletonList(openNetworkSuggestion)));
 

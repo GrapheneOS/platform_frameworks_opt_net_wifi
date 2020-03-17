@@ -440,6 +440,9 @@ public class WifiMetrics {
     // Connection duration stats collected while link layer stats reports are on
     private final ConnectionDurationStats mConnectionDurationStats = new ConnectionDurationStats();
 
+    // Wi-Fi off metrics
+    private final WifiOffMetrics mWifiOffMetrics = new WifiOffMetrics();
+
     @VisibleForTesting
     static class NetworkSelectionExperimentResults {
         public static final int MAX_CHOICES = 10;
@@ -940,6 +943,44 @@ public class WifiMetrics {
                         break;
                 }
             }
+            return sb.toString();
+        }
+    }
+
+    class WifiOffMetrics {
+        public int numWifiOff = 0;
+        public int numWifiOffDeferring = 0;
+        public int numWifiOffDeferringTimeout = 0;
+        public final IntCounter wifiOffDeferringTimeHistogram = new IntCounter();
+
+        public WifiMetricsProto.WifiOffMetrics toProto() {
+            WifiMetricsProto.WifiOffMetrics proto =
+                    new WifiMetricsProto.WifiOffMetrics();
+            proto.numWifiOff = numWifiOff;
+            proto.numWifiOffDeferring = numWifiOffDeferring;
+            proto.numWifiOffDeferringTimeout = numWifiOffDeferringTimeout;
+            proto.wifiOffDeferringTimeHistogram = wifiOffDeferringTimeHistogram.toProto();
+            return proto;
+        }
+
+        public void clear() {
+            numWifiOff = 0;
+            numWifiOffDeferring = 0;
+            numWifiOffDeferringTimeout = 0;
+            wifiOffDeferringTimeHistogram.clear();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("numWifiOff=")
+                    .append(numWifiOff)
+                    .append(", numWifiOffDeferring=")
+                    .append(numWifiOffDeferring)
+                    .append(", numWifiOffDeferringTimeout=")
+                    .append(numWifiOffDeferringTimeout)
+                    .append(", wifiOffDeferringTimeHistogram=")
+                    .append(wifiOffDeferringTimeHistogram);
             return sb.toString();
         }
     }
@@ -3143,6 +3184,8 @@ public class WifiMetrics {
                         + mConnectionDurationStats.toString());
                 pw.println("mWifiLogProto.isExternalWifiScorerOn="
                         + mWifiLogProto.isExternalWifiScorerOn);
+                pw.println("mWifiLogProto.wifiOffMetrics="
+                        + mWifiOffMetrics.toString());
             }
         }
     }
@@ -3712,6 +3755,7 @@ public class WifiMetrics {
             }
             mWifiLogProto.bssidBlocklistStats = mBssidBlocklistStats.toProto();
             mWifiLogProto.connectionDurationStats = mConnectionDurationStats.toProto();
+            mWifiLogProto.wifiOffMetrics = mWifiOffMetrics.toProto();
         }
     }
 
@@ -3909,6 +3953,7 @@ public class WifiMetrics {
             mBssidBlocklistStats = new BssidBlocklistStats();
             mConnectionDurationStats.clear();
             mWifiLogProto.isExternalWifiScorerOn = false;
+            mWifiOffMetrics.clear();
 
         }
     }
@@ -5500,6 +5545,22 @@ public class WifiMetrics {
     public void setIsExternalWifiScorerOn(boolean value) {
         synchronized (mLock) {
             mWifiLogProto.isExternalWifiScorerOn = value;
+        }
+    }
+
+    /**
+     * Note Wi-Fi off metrics
+     */
+    public void noteWifiOff(boolean isDeferred, boolean isTimeout, int duration) {
+        synchronized (mLock) {
+            mWifiOffMetrics.numWifiOff++;
+            if (isDeferred) {
+                mWifiOffMetrics.numWifiOffDeferring++;
+                if (isTimeout) {
+                    mWifiOffMetrics.numWifiOffDeferringTimeout++;
+                }
+                mWifiOffMetrics.wifiOffDeferringTimeHistogram.increment(duration);
+            }
         }
     }
 }

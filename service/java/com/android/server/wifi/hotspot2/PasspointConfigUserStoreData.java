@@ -16,14 +16,12 @@
 
 package com.android.server.wifi.hotspot2;
 
-import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.server.wifi.WifiConfigStore;
-import com.android.server.wifi.WifiConfigStoreMigrationDataHolder;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
@@ -118,8 +116,7 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
-            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         // Ignore empty reads.
         if (in == null) {

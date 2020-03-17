@@ -206,7 +206,7 @@ public class WifiNetworkSelector {
      * @param wifiInfo info of currently connected network
      * @return true if current link quality is sufficient, false otherwise.
      */
-    private boolean hasSufficientLinkQuality(WifiInfo wifiInfo) {
+    public boolean hasSufficientLinkQuality(WifiInfo wifiInfo) {
         int currentRssi = wifiInfo.getRssi();
         return currentRssi >= mScoringParams.getSufficientRssi(wifiInfo.getFrequency());
     }
