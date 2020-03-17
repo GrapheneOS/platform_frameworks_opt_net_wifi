@@ -452,6 +452,8 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final boolean IS_MAC_RANDOMIZATION_ON = true;
     private static final int NUM_LINK_SPEED_LEVELS_TO_INCREMENT = 30;
     private static final int TEST_RSSI_LEVEL = -80;
+    private static final int MAX_SUPPORTED_TX_LINK_SPEED_MBPS = 144;
+    private static final int MAX_SUPPORTED_RX_LINK_SPEED_MBPS = 190;
 
     private ScanDetail buildMockScanDetail(boolean hidden, NetworkDetail.HSRelease hSRelease,
             String capabilities) {
@@ -2511,6 +2513,26 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
         dumpProtoAndDeserialize();
         assertEquals(true, mDecodedProto.connectionEvent[0].routerFingerprint.pmkCacheEnabled);
+    }
+
+    /**
+     * Check max supported link speed
+     */
+    @Test
+    public void testConnectionMaxSupportedLinkSpeed() throws Exception {
+        mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
+        mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(MAX_SUPPORTED_TX_LINK_SPEED_MBPS,
+                MAX_SUPPORTED_RX_LINK_SPEED_MBPS);
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_NONE,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        dumpProtoAndDeserialize();
+        assertEquals(MAX_SUPPORTED_TX_LINK_SPEED_MBPS, mDecodedProto.connectionEvent[0]
+                .routerFingerprint.maxSupportedTxLinkSpeedMbps);
+        assertEquals(MAX_SUPPORTED_RX_LINK_SPEED_MBPS, mDecodedProto.connectionEvent[0]
+                .routerFingerprint.maxSupportedRxLinkSpeedMbps);
     }
 
     /**
