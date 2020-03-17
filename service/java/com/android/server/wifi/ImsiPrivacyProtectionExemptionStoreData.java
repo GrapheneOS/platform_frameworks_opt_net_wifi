@@ -88,8 +88,7 @@ public class ImsiPrivacyProtectionExemptionStoreData implements WifiConfigStore.
 
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth, int version,
-            WifiConfigStoreEncryptionUtil encryptionUtil,
-            WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+            WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         // Ignore empty reads.
         if (in == null) {

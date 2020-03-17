@@ -190,7 +190,6 @@ public class WifiConfigStore {
      */
     private final Clock mClock;
     private final WifiMetrics mWifiMetrics;
-    private final WifiConfigStoreMigrationDataHolder mStoreMigrationDataHolder;
     /**
      * Shared config store file instance. There are 2 shared store files:
      * {@link #STORE_FILE_NAME_SHARED_GENERAL} & {@link #STORE_FILE_NAME_SHARED_SOFTAP}.
@@ -236,20 +235,17 @@ public class WifiConfigStore {
      * @param handler     handler instance to post alarm timeouts to.
      * @param clock       clock instance to retrieve timestamps for alarms.
      * @param wifiMetrics Metrics instance.
-     * @param storeMigrationDataHolder Needed for migration data out of OEM stores.
      * @param sharedStores List of {@link StoreFile} instances pointing to the shared store files.
      *                     This should be retrieved using {@link #createSharedFiles(boolean)}
      *                     method.
      */
     public WifiConfigStore(Context context, Handler handler, Clock clock, WifiMetrics wifiMetrics,
-            WifiConfigStoreMigrationDataHolder storeMigrationDataHolder,
             List<StoreFile> sharedStores) {
 
         mAlarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         mEventHandler = handler;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
-        mStoreMigrationDataHolder = storeMigrationDataHolder;
         mStoreDataList = new ArrayList<>();
 
         // Initialize the store files.
@@ -572,8 +568,6 @@ public class WifiConfigStore {
         } catch (ArithmeticException e) {
             // Silently ignore on any overflow errors.
         }
-        // Read is complete, go ahead and remove any OEM config stores.
-        mStoreMigrationDataHolder.removeStoreIfPresent();
         Log.d(TAG, "Reading from all stores completed in " + readTime + " ms.");
     }
 
@@ -622,7 +616,7 @@ public class WifiConfigStore {
             @Version int version, @NonNull WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
         for (StoreData storeData : storeDataSet) {
-            storeData.deserializeData(null, 0, version, encryptionUtil, mStoreMigrationDataHolder);
+            storeData.deserializeData(null, 0, version, encryptionUtil);
         }
     }
 
@@ -677,7 +671,7 @@ public class WifiConfigStore {
                 continue;
             }
             storeData.deserializeData(in, rootTagDepth + 1, version,
-                    storeFile.getEncryptionUtil(), mStoreMigrationDataHolder);
+                    storeFile.getEncryptionUtil());
             storeDatasInvoked.add(storeData);
         }
         // Inform all the other registered store data clients that there is nothing in the store
@@ -877,14 +871,12 @@ public class WifiConfigStore {
          * @param outerTagDepth The depth of the outer tag in the XML document
          * @param version Version of config store file.
          * @param encryptionUtil Utility to help decrypt any credential data.
-         * @param storeMigrationDataHolder Needed for migration data out of OEM stores.
          *
          * Note: This will be invoked every time a store file is read, even if there is nothing
          *                      in the store for them.
          */
         void deserializeData(@Nullable XmlPullParser in, int outerTagDepth, @Version int version,
-                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
-                @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
                 throws XmlPullParserException, IOException;
 
         /**

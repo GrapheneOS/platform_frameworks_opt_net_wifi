@@ -81,8 +81,7 @@ public class RandomizedMacStoreDataTest extends WifiBaseTest {
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mRandomizedMacStoreData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class),
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                mock(WifiConfigStoreEncryptionUtil.class));
         return mRandomizedMacStoreData.getMacMapping();
     }
 

@@ -37,7 +37,6 @@ import androidx.test.filters.SmallTest;
 import com.android.internal.util.FastXmlSerializer;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiConfigStore;
-import com.android.server.wifi.WifiConfigStoreMigrationDataHolder;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
@@ -238,8 +237,7 @@ public class PasspointConfigUserStoreDataTest extends WifiBaseTest {
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mConfigStoreData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class),
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                mock(WifiConfigStoreEncryptionUtil.class));
     }
 
     /**

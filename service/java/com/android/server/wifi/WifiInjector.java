@@ -157,7 +157,6 @@ public class WifiInjector {
     private final ThroughputPredictor mThroughputPredictor;
     private NetdWrapper mNetdWrapper;
     private final WifiHealthMonitor mWifiHealthMonitor;
-    private final WifiConfigStoreMigrationDataHolder mOemConfigStoreMigrationDataHolder;
     private final WifiSettingsConfigStore mSettingsConfigStore;
     private final WifiScanAlwaysAvailableSettingsCompatibility
             mWifiScanAlwaysAvailableSettingsCompatibility;
@@ -248,9 +247,7 @@ public class WifiInjector {
         mKeyStore = keyStore;
         mWifiKeyStore = new WifiKeyStore(mKeyStore);
         // New config store
-        mOemConfigStoreMigrationDataHolder = new WifiConfigStoreMigrationDataHolder();
         mWifiConfigStore = new WifiConfigStore(mContext, wifiHandler, mClock, mWifiMetrics,
-                mOemConfigStoreMigrationDataHolder,
                 WifiConfigStore.createSharedFiles(mFrameworkFacade.isNiapModeOn(mContext)));
         SubscriptionManager subscriptionManager =
                 mContext.getSystemService(SubscriptionManager.class);
