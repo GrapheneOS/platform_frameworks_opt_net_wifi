@@ -2642,6 +2642,8 @@ public class ClientModeImpl extends StateMachine {
         mWifiInfo.setWifiStandard(capabilities.wifiStandard);
         mWifiInfo.setMaxSupportedTxLinkSpeedMbps(maxTxLinkSpeedMbps);
         mWifiInfo.setMaxSupportedRxLinkSpeedMbps(maxRxLinkSpeedMbps);
+        mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(
+                maxTxLinkSpeedMbps, maxRxLinkSpeedMbps);
         mWifiDataStall.setConnectionCapabilities(capabilities);
         if (mVerboseLoggingEnabled) {
             StringBuilder sb = new StringBuilder();
