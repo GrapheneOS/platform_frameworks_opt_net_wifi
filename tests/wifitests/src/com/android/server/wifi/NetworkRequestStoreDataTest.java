@@ -95,8 +95,7 @@ public class NetworkRequestStoreDataTest extends WifiBaseTest {
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
         mNetworkRequestStoreData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                mock(WifiConfigStoreEncryptionUtil.class),
-                mock(WifiConfigStoreMigrationDataHolder.class));
+                mock(WifiConfigStoreEncryptionUtil.class));
     }
 
     /**

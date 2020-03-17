@@ -327,8 +327,7 @@ public class WifiSettingsConfigStore {
         @Override
         public void deserializeData(XmlPullParser in, int outerTagDepth,
                 @WifiConfigStore.Version int version,
-                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
-                @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
                 throws XmlPullParserException, IOException {
             if (in == null) {
                 // Empty read triggers the migration since it indicates that there is no settings
