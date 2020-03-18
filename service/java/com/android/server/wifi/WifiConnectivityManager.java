@@ -1510,6 +1510,11 @@ public class WifiConnectivityManager {
      * 2. The device is connected to that network.
      */
     private boolean useSingleSavedNetworkSchedule() {
+        WifiConfiguration currentNetwork = mStateMachine.getCurrentWifiConfiguration();
+        if (currentNetwork == null) {
+            localLog("Current network is missing, may caused by remove network and disconnecting ");
+            return false;
+        }
         List<WifiConfiguration> savedNetworks =
                 mConfigManager.getSavedNetworks(Process.WIFI_UID);
         // If we have multiple saved networks, then no need to proceed
@@ -1532,7 +1537,7 @@ public class WifiConnectivityManager {
         }
 
         // Next verify that this network is the one device is connected to
-        int currentNetworkId = mStateMachine.getCurrentWifiConfiguration().networkId;
+        int currentNetworkId = currentNetwork.networkId;
 
         // If we have a single saved network, and we are connected to it, return true.
         if (savedNetworks.size() == 1) {
