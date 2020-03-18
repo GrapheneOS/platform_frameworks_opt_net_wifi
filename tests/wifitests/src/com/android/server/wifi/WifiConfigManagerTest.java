@@ -4736,6 +4736,33 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
     }
 
+    @Test
+    public void testUserAddPasspointNetworkEnableNetwork() {
+        WifiConfiguration passpointNetwork = WifiConfigurationTestUtil.createPasspointNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(passpointNetwork);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+        // Add new passpoint network will enable the network.
+        NetworkUpdateResult result = addNetworkToWifiConfigManager(passpointNetwork);
+        assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
+        assertTrue(result.isNewNetwork());
+
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+        // Update a existing passpoint network will not enable network.
+        result = addNetworkToWifiConfigManager(passpointNetwork);
+        assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
+        assertFalse(result.isNewNetwork());
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+    }
+
     private void verifyExpiryOfTimeout(WifiConfiguration config) {
         // Disable the ephemeral network.
         long disableTimeMs = 546643L;
