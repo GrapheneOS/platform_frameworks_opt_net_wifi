@@ -2642,6 +2642,8 @@ public class ClientModeImpl extends StateMachine {
         mWifiInfo.setWifiStandard(capabilities.wifiStandard);
         mWifiInfo.setMaxSupportedTxLinkSpeedMbps(maxTxLinkSpeedMbps);
         mWifiInfo.setMaxSupportedRxLinkSpeedMbps(maxRxLinkSpeedMbps);
+        mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(
+                maxTxLinkSpeedMbps, maxRxLinkSpeedMbps);
         mWifiDataStall.setConnectionCapabilities(capabilities);
         if (mVerboseLoggingEnabled) {
             StringBuilder sb = new StringBuilder();
@@ -3894,7 +3896,12 @@ public class ClientModeImpl extends StateMachine {
                         // Pair<identity, encrypted identity>
                         Pair<String, String> identityPair = mTelephonyUtil
                                 .getSimIdentity(mTargetWifiConfiguration);
-                        Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=" + identityPair);
+                        Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=["
+                                + ((identityPair.first.length() >= 7)
+                                ? identityPair.first.substring(0, 7 /* Prefix+PLMN ID */) + "****"
+                                : identityPair.first) + ", "
+                                + (!TextUtils.isEmpty(identityPair.second) ? identityPair.second
+                                : "<NONE>") + "]");
                         if (identityPair != null && identityPair.first != null) {
                             mWifiNative.simIdentityResponse(mInterfaceName, identityPair.first,
                                     identityPair.second);
@@ -4341,6 +4348,7 @@ public class ClientModeImpl extends StateMachine {
         }
 
         result.setOwnerUid(currentWifiConfiguration.creatorUid);
+        result.setAdministratorUids(Arrays.asList(currentWifiConfiguration.creatorUid));
 
         if (!WifiConfiguration.isMetered(currentWifiConfiguration, mWifiInfo)) {
             result.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
@@ -6326,6 +6334,15 @@ public class ClientModeImpl extends StateMachine {
         }
     }
 
+    private void setConfigurationsPriorToIpClientProvisioning(WifiConfiguration config) {
+        mIpClient.setHttpProxy(config.getHttpProxy());
+        if (!TextUtils.isEmpty(mContext.getResources().getString(
+                R.string.config_wifi_tcp_buffers))) {
+            mIpClient.setTcpBufferSizes(mContext.getResources().getString(
+                    R.string.config_wifi_tcp_buffers));
+        }
+    }
+
     private boolean startIpClient(WifiConfiguration config, boolean isFilsConnection) {
         if (mIpClient == null) {
             return false;
@@ -6348,6 +6365,7 @@ public class ClientModeImpl extends StateMachine {
                 mWifiNative.flushAllHlp(mInterfaceName);
                 return false;
             }
+            setConfigurationsPriorToIpClientProvisioning(config);
             final ProvisioningConfiguration prov =
                     new ProvisioningConfiguration.Builder()
                     .withPreDhcpAction()
@@ -6372,14 +6390,7 @@ public class ClientModeImpl extends StateMachine {
             // connectivity APIs such as getActiveNetworkInfo should not return
             // CONNECTED.
             stopDhcpSetup();
-
-            mIpClient.setHttpProxy(config.getHttpProxy());
-            if (!TextUtils.isEmpty(mContext.getResources().getString(
-                    R.string.config_wifi_tcp_buffers))) {
-                mIpClient.setTcpBufferSizes(mContext.getResources().getString(
-                        R.string.config_wifi_tcp_buffers));
-            }
-
+            setConfigurationsPriorToIpClientProvisioning(config);
             ScanDetailCache scanDetailCache =
                     mWifiConfigManager.getScanDetailCacheForNetwork(config.networkId);
             ScanResult scanResult = null;
