@@ -1563,6 +1563,50 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Remove network will trigger update scan and meet single network requirement.
+     * Verify before disconnect finished, will not trigger single network scan schedule.
+     */
+    @Test
+    public void checkScanScheduleForCurrentConnectedNetworkIsNull() {
+        long currentTimeStamp = CURRENT_SYSTEM_TIME_MS;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
+
+        // Set screen to ON
+        mWifiConnectivityManager.handleScreenStateChanged(true);
+
+        // Wait for max scanning interval so that any impact triggered
+        // by screen state change can settle
+        currentTimeStamp += MAX_SCAN_INTERVAL_IN_SCHEDULE_SEC * 1000;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
+
+        mResources.setIntArray(
+                R.array.config_wifiSingleSavedNetworkConnectedScanIntervalScheduleSec,
+                VALID_CONNECTED_SINGLE_SAVED_NETWORK_SCHEDULE_SEC);
+
+        // Set firmware roaming to enabled
+        when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
+
+        // Set up single saved network
+        WifiConfiguration wifiConfiguration = new WifiConfiguration();
+        wifiConfiguration.networkId = TEST_CONNECTED_NETWORK_ID;
+        List<WifiConfiguration> wifiConfigurationList = new ArrayList<WifiConfiguration>();
+        wifiConfigurationList.add(wifiConfiguration);
+        when(mWifiConfigManager.getSavedNetworks(anyInt())).thenReturn(wifiConfigurationList);
+
+        // Set WiFi to connected state.
+        setWifiStateConnected();
+        // Simulate remove network, disconnect not finished.
+        when(mClientModeImpl.getCurrentWifiConfiguration()).thenReturn(null);
+        mNetworkUpdateListenerCaptor.getValue().onNetworkRemoved(null);
+
+        // Get the first periodic scan interval
+        long firstIntervalMs = mAlarmManager
+                .getTriggerTimeMillis(WifiConnectivityManager.PERIODIC_SCAN_TIMER_TAG)
+                - currentTimeStamp;
+        assertEquals(VALID_CONNECTED_SINGLE_SCAN_SCHEDULE_SEC[0] * 1000, firstIntervalMs);
+    }
+
+    /**
      *  When screen on trigger a disconnected state change event then a connected state
      *  change event back to back to verify that the minium scan interval is enforced.
      *
