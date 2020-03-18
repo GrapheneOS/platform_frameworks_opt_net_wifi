@@ -56,6 +56,7 @@ import org.mockito.MockitoAnnotations;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -135,7 +136,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     /**
      * Helper method to create and verify actions for the ApConfigStore used in the following tests.
      */
-    private WifiApConfigStore createWifiApConfigStore(File legacyFile) {
+    private WifiApConfigStore createWifiApConfigStore(File legacyFile) throws Exception {
         WifiApConfigStore store;
         if (legacyFile == null) {
             store = new WifiApConfigStore(
@@ -144,7 +145,8 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         } else {
             store = new WifiApConfigStore(
                     mContext, mWifiInjector, mHandler, mBackupManagerProxy,
-                    mWifiConfigStore, mWifiConfigManager, mActiveModeWarden, legacyFile);
+                    mWifiConfigStore, mWifiConfigManager, mActiveModeWarden,
+                    new FileInputStream(legacyFile));
         }
 
         verify(mWifiConfigStore).registerStoreData(any());
@@ -156,7 +158,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         return store;
     }
 
-    private WifiApConfigStore createWifiApConfigStore() {
+    private WifiApConfigStore createWifiApConfigStore() throws Exception {
         return createWifiApConfigStore(null);
     }
 
@@ -337,9 +339,6 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         // a) On reading the legacy file (new config store not ready yet)
         // b) When the new config store is ready.
         verify(mWifiConfigManager, times(2)).saveToStore(true);
-
-        // The temporary legacy AP config file should be removed after migration.
-        assertFalse(mLegacyApConfigFile.exists());
     }
 
     /**
@@ -555,7 +554,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      * Verify a proper SoftApConfiguration is generate by getDefaultApConfiguration().
      */
     @Test
-    public void getDefaultApConfigurationIsValid() {
+    public void getDefaultApConfigurationIsValid() throws Exception {
         WifiApConfigStore store = createWifiApConfigStore();
         SoftApConfiguration config = store.getApConfiguration();
         assertTrue(WifiApConfigStore.validateApWifiConfiguration(config));
@@ -603,7 +602,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     @Test
-    public void randomizeBssid_randomizesWhenEnabled() {
+    public void randomizeBssid_randomizesWhenEnabled() throws Exception {
         mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, true);
         SoftApConfiguration baseConfig = new SoftApConfiguration.Builder().build();
 
@@ -614,7 +613,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     @Test
-    public void randomizeBssid_usesFactoryMacWhenRandomizationOff() {
+    public void randomizeBssid_usesFactoryMacWhenRandomizationOff() throws Exception {
         mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, false);
         SoftApConfiguration baseConfig = new SoftApConfiguration.Builder().build();
 
@@ -625,7 +624,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     @Test
-    public void randomizeBssid_forwardsCustomMac() {
+    public void randomizeBssid_forwardsCustomMac() throws Exception {
         mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, true);
         Builder baseConfigBuilder = new SoftApConfiguration.Builder();
         baseConfigBuilder.setBssid(MacAddress.fromString("11:22:33:44:55:66"));
@@ -738,7 +737,8 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      * Verify the default configuration security when SAE support.
      */
     @Test
-    public void testDefaultConfigurationSecurityTypeIsWpa3SaeTransitionWhenSupport() {
+    public void testDefaultConfigurationSecurityTypeIsWpa3SaeTransitionWhenSupport()
+            throws Exception {
         mResources.setBoolean(R.bool.config_wifi_softap_sae_supported, true);
         WifiApConfigStore store = createWifiApConfigStore();
         verifyDefaultApConfig(store.getApConfiguration(), TEST_DEFAULT_AP_SSID, true);
@@ -761,7 +761,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     }
 
     @Test
-    public void testResetToDefaultForUnsupportedConfig() {
+    public void testResetToDefaultForUnsupportedConfig() throws Exception {
         mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, false);
         mResources.setBoolean(R.bool.config_wifi_softap_sae_supported, false);
         SoftApConfiguration sae_config = new SoftApConfiguration.Builder()

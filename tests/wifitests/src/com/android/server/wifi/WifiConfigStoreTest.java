@@ -24,12 +24,15 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiMigration;
 import android.net.wifi.util.HexEncoding;
 import android.os.Handler;
+import android.os.UserHandle;
 import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiConfigStore.StoreData;
 import com.android.server.wifi.WifiConfigStore.StoreFile;
 import com.android.server.wifi.util.ArrayUtils;
@@ -42,6 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
@@ -163,6 +167,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     private List<StoreFile> mUserStores = new ArrayList<StoreFile>();
     private MockStoreData mSharedStoreData;
     private MockStoreData mUserStoreData;
+    private MockitoSession mSession;
 
     /**
      * Test instance of WifiConfigStore.
@@ -193,6 +198,12 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         mSharedStoreData = new MockStoreData(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         mUserStoreData = new MockStoreData(WifiConfigStore.STORE_FILE_USER_GENERAL);
+
+        mSession = ExtendedMockito.mockitoSession()
+                .mockStatic(WifiMigration.class, withSettings().lenient())
+                .startMocking();
+        when(WifiMigration.convertAndRetrieveSharedConfigStoreFile(anyInt())).thenReturn(null);
+        when(WifiMigration.convertAndRetrieveUserConfigStoreFile(anyInt(), any())).thenReturn(null);
     }
 
     /**
@@ -214,6 +225,9 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     @After
     public void cleanup() {
         validateMockitoUsage();
+        if (mSession != null) {
+            mSession.finishMocking();
+        }
     }
 
     /**
@@ -841,7 +855,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         private boolean mStoreWritten;
 
         MockStoreFile(@WifiConfigStore.StoreFileId int fileId) {
-            super(new File("MockStoreFile"), fileId, mEncryptionUtil);
+            super(new File("MockStoreFile"), fileId, UserHandle.ALL, mEncryptionUtil);
         }
 
         @Override
