@@ -222,16 +222,29 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .thenReturn("blah");
 
         // setup resource strings for IMSI protection notification.
-        when(mResources.getString(eq(R.string.wifi_suggestion_imsi_privacy_title)))
-                .thenReturn("blah");
-        when(mResources.getString(eq(R.string.wifi_suggestion_imsi_privacy_content), anyString()))
+        when(mResources.getString(eq(R.string.wifi_suggestion_imsi_privacy_title), anyString()))
                 .thenAnswer(s -> "blah" + s.getArguments()[1]);
+        when(mResources.getString(eq(R.string.wifi_suggestion_imsi_privacy_content)))
+                .thenReturn("blah");
         when(mResources.getText(
                 eq(R.string.wifi_suggestion_action_allow_imsi_privacy_exemption_carrier)))
                 .thenReturn("blah");
         when(mResources.getText(
                 eq(R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier)))
                 .thenReturn("blah");
+        when(mResources.getString(
+                eq(R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_title)))
+                .thenReturn("blah");
+        when(mResources.getString(
+                eq(R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_content),
+                anyString())).thenAnswer(s -> "blah" + s.getArguments()[1]);
+        when(mResources.getText(
+                eq(R.string.wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation)))
+                .thenReturn("blah");
+        when(mResources.getText(
+                eq(R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation)))
+                .thenReturn("blah");
+
 
         // Our app Info. Needed for notification builder.
         ApplicationInfo ourAppInfo = new ApplicationInfo();
@@ -2719,12 +2732,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         verify(mNotificationManger, atLeastOnce()).notify(
                 eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
                 eq(mNotification));
-        ArgumentCaptor<Notification.BigTextStyle> contentCaptor =
-                ArgumentCaptor.forClass(Notification.BigTextStyle.class);
-        verify(mNotificationBuilder, atLeastOnce()).setStyle(contentCaptor.capture());
-        Notification.BigTextStyle content = contentCaptor.getValue();
+        ArgumentCaptor<CharSequence> contentCaptor =
+                ArgumentCaptor.forClass(CharSequence.class);
+        verify(mNotificationBuilder, atLeastOnce()).setContentTitle(contentCaptor.capture());
+        CharSequence content = contentCaptor.getValue();
         assertNotNull(content);
-        assertTrue(content.getBigText().toString().contains(carrierName));
+        assertTrue(content.toString().contains(carrierName));
     }
 
     private void validateUserApprovalDialog(String... anyOfExpectedAppNames) {
@@ -3398,7 +3411,19 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
                 TEST_CARRIER_NAME, TEST_CARRIER_ID);
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        validateUserApprovalDialog(TEST_CARRIER_NAME);
 
+        // Simulate user clicking on allow in the dialog.
+        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setPositiveButton(
+                any(), clickListenerCaptor.capture());
+        assertNotNull(clickListenerCaptor.getValue());
+        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
+        mLooper.dispatchAll();
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mContext).sendBroadcast(intentCaptor.capture());
+        assertEquals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS, intentCaptor.getValue().getAction());
         verify(mWifiConfigManager, times(2)).saveToStore(true);
         assertTrue(mImsiDataSource.hasNewDataToSerialize());
         matchedSuggestion = mWifiNetworkSuggestionsManager
