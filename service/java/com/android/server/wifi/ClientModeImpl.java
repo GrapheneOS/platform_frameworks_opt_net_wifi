@@ -2642,6 +2642,8 @@ public class ClientModeImpl extends StateMachine {
         mWifiInfo.setWifiStandard(capabilities.wifiStandard);
         mWifiInfo.setMaxSupportedTxLinkSpeedMbps(maxTxLinkSpeedMbps);
         mWifiInfo.setMaxSupportedRxLinkSpeedMbps(maxRxLinkSpeedMbps);
+        mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(
+                maxTxLinkSpeedMbps, maxRxLinkSpeedMbps);
         mWifiDataStall.setConnectionCapabilities(capabilities);
         if (mVerboseLoggingEnabled) {
             StringBuilder sb = new StringBuilder();
@@ -3894,7 +3896,12 @@ public class ClientModeImpl extends StateMachine {
                         // Pair<identity, encrypted identity>
                         Pair<String, String> identityPair = mTelephonyUtil
                                 .getSimIdentity(mTargetWifiConfiguration);
-                        Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=" + identityPair);
+                        Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=["
+                                + ((identityPair.first.length() >= 7)
+                                ? identityPair.first.substring(0, 7 /* Prefix+PLMN ID */) + "****"
+                                : identityPair.first) + ", "
+                                + (!TextUtils.isEmpty(identityPair.second) ? identityPair.second
+                                : "<NONE>") + "]");
                         if (identityPair != null && identityPair.first != null) {
                             mWifiNative.simIdentityResponse(mInterfaceName, identityPair.first,
                                     identityPair.second);

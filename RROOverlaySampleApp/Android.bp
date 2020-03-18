@@ -20,6 +20,5 @@ android_app {
         "res",
     ],
     manifest: "AndroidManifest.xml",
-    sdk_version: "current",
-    product_specific: true
+    sdk_version: "current"
 }

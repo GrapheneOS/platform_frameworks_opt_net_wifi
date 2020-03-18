@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.net.MacAddress;
@@ -143,18 +142,8 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
     @Override
     public void deserializeData(XmlPullParser in, int outerTagDepth,
             @WifiConfigStore.Version int version,
-            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil,
-            @NonNull WifiConfigStoreMigrationDataHolder storeMigrationDataHolder)
+            @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
-        // Check if we have data to migrate from OEM, if yes skip loading the section from the file.
-        SoftApConfiguration oemMigratedConfiguration =
-                storeMigrationDataHolder.getUserSoftApConfiguration();
-        if (oemMigratedConfiguration != null) {
-            Log.i(TAG, "Loading data from OEM migration hook");
-            mDataSource.fromDeserialized(oemMigratedConfiguration);
-            return;
-        }
-
         // Ignore empty reads.
         if (in == null) {
             return;
