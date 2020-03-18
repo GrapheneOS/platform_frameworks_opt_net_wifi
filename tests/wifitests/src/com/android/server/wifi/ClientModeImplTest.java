@@ -3558,6 +3558,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertNull(networkCapabilities.getNetworkSpecifier());
 
         assertEquals(mConnectedNetwork.creatorUid, networkCapabilities.getOwnerUid());
+        assertEquals(
+                Arrays.asList(mConnectedNetwork.creatorUid),
+                networkCapabilities.getAdministratorUids());
 
         // Should set bandwidth correctly
         assertEquals(-42, mCmi.getWifiInfo().getRssi());
