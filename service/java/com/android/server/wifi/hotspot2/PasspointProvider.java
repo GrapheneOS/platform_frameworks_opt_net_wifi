@@ -95,6 +95,7 @@ public class PasspointProvider {
 
     private boolean mHasEverConnected;
     private boolean mIsShared;
+    private boolean mVerboseLoggingEnabled;
 
     /**
      * This is a flag to indicate if the Provider is created temporarily.
@@ -327,39 +328,53 @@ public class PasspointProvider {
      * Return the matching status with the given AP, based on the ANQP elements from the AP.
      *
      * @param anqpElements ANQP elements from the AP
-     * @param roamingConsortium Roaming Consortium information element from the AP
+     * @param roamingConsortiumFromAp Roaming Consortium information element from the AP
      * @return {@link PasspointMatch}
      */
     public PasspointMatch match(Map<ANQPElementType, ANQPElement> anqpElements,
-            RoamingConsortium roamingConsortium) {
-        PasspointMatch providerMatch = matchProviderExceptFor3GPP(anqpElements, roamingConsortium);
+            RoamingConsortium roamingConsortiumFromAp) {
+        // Match FQDN for Home provider or RCOI(s) for Roaming provider
+        // For SIM credential, the FQDN is in the format of wlan.mnc*.mcc*.3gppnetwork.org
+        PasspointMatch providerMatch = matchFqdnAndRcoi(anqpElements, roamingConsortiumFromAp);
 
         // 3GPP Network matching.
         if (providerMatch == PasspointMatch.None && ANQPMatcher.matchThreeGPPNetwork(
                 (ThreeGPPNetworkElement) anqpElements.get(ANQPElementType.ANQP3GPPNetwork),
                 mImsiParameter, mMatchingSIMImsiList)) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Final RoamingProvider match with "
+                        + anqpElements.get(ANQPElementType.ANQP3GPPNetwork));
+            }
             return PasspointMatch.RoamingProvider;
         }
 
-        // Perform authentication match against the NAI Realm.
-        int authMatch = ANQPMatcher.matchNAIRealm(
+        // Perform NAI Realm matching
+        boolean realmMatch = ANQPMatcher.matchNAIRealm(
                 (NAIRealmElement) anqpElements.get(ANQPElementType.ANQPNAIRealm),
-                mConfig.getCredential().getRealm(), mEAPMethodID, mAuthParam);
-
-        // In case of Auth mismatch, demote provider match.
-        if (authMatch == AuthMatch.NONE) {
-            return PasspointMatch.None;
-        }
+                mConfig.getCredential().getRealm());
 
         // In case of no realm match, return provider match as is.
-        if ((authMatch & AuthMatch.REALM) == 0) {
+        if (!realmMatch) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "No NAI realm match, final match: " + providerMatch);
+            }
             return providerMatch;
         }
 
-        // Promote the provider match to roaming provider if provider match is not found, but NAI
+        if (mVerboseLoggingEnabled) {
+            Log.d(TAG, "NAI realm match with " + mConfig.getCredential().getRealm());
+        }
+
+        // Promote the provider match to RoamingProvider if provider match is not found, but NAI
         // realm is matched.
-        return providerMatch == PasspointMatch.None ? PasspointMatch.RoamingProvider
-                : providerMatch;
+        if (providerMatch == PasspointMatch.None) {
+            providerMatch = PasspointMatch.RoamingProvider;
+        }
+
+        if (mVerboseLoggingEnabled) {
+            Log.d(TAG, "Final match: " + providerMatch);
+        }
+        return providerMatch;
     }
 
     /**
@@ -570,42 +585,129 @@ public class PasspointProvider {
     }
 
     /**
+     * Match given OIs to the Roaming Consortium OIs
+     *
+     * @param providerOis Provider OIs to match against
+     * @param roamingConsortiumElement RCOIs in the ANQP element
+     * @param roamingConsortiumFromAp RCOIs in the AP scan results
+     * @param matchAll Indicates if all providerOis must match the RCOIs elements
+     * @return {@code true} if there is a match, {@code false} otherwise.
+     */
+    private boolean matchOis(long[] providerOis,
+            RoamingConsortiumElement roamingConsortiumElement,
+            RoamingConsortium roamingConsortiumFromAp,
+            boolean matchAll) {
+
+
+        // ANQP Roaming Consortium OI matching.
+        if (ANQPMatcher.matchRoamingConsortium(roamingConsortiumElement, providerOis, matchAll)) {
+            if (mVerboseLoggingEnabled) {
+                Log.e(TAG, "ANQP RCOI match " + roamingConsortiumElement);
+            }
+            return true;
+        }
+
+        // AP Roaming Consortium OI matching.
+        long[] apRoamingConsortiums = roamingConsortiumFromAp.getRoamingConsortiums();
+        if (apRoamingConsortiums == null || providerOis == null) {
+            return false;
+        }
+        // Roaming Consortium OI information element matching.
+        for (long apOi: apRoamingConsortiums) {
+            boolean matched = false;
+            for (long providerOi: providerOis) {
+                if (apOi == providerOi) {
+                    if (mVerboseLoggingEnabled) {
+                        Log.e(TAG, "AP RCOI match: " + apOi);
+                    }
+                    if (!matchAll) {
+                        return true;
+                    } else {
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            if (matchAll && !matched) {
+                return false;
+            }
+        }
+        return matchAll;
+    }
+
+    /**
      * Perform a provider match based on the given ANQP elements except for matching 3GPP Network.
      *
      * @param anqpElements List of ANQP elements
-     * @param roamingConsortium Roaming Consortium information element from the AP
+     * @param roamingConsortiumFromAp Roaming Consortium information element from the AP
      * @return {@link PasspointMatch}
      */
-    private PasspointMatch matchProviderExceptFor3GPP(
+    private PasspointMatch matchFqdnAndRcoi(
             Map<ANQPElementType, ANQPElement> anqpElements,
-            RoamingConsortium roamingConsortium) {
+            RoamingConsortium roamingConsortiumFromAp) {
         // Domain name matching.
         if (ANQPMatcher.matchDomainName(
                 (DomainNameElement) anqpElements.get(ANQPElementType.ANQPDomName),
                 mConfig.getHomeSp().getFqdn(), mImsiParameter, mMatchingSIMImsiList)) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Domain name " + mConfig.getHomeSp().getFqdn()
+                        + " match: HomeProvider");
+            }
             return PasspointMatch.HomeProvider;
         }
 
-        // ANQP Roaming Consortium OI matching.
-        long[] providerOIs = mConfig.getHomeSp().getRoamingConsortiumOis();
-        if (ANQPMatcher.matchRoamingConsortium(
-                (RoamingConsortiumElement) anqpElements.get(ANQPElementType.ANQPRoamingConsortium),
-                providerOIs)) {
-            return PasspointMatch.RoamingProvider;
-        }
-
-        long[] roamingConsortiums = roamingConsortium.getRoamingConsortiums();
-        // Roaming Consortium OI information element matching.
-        if (roamingConsortiums != null && providerOIs != null) {
-            for (long sta_oi: roamingConsortiums) {
-                for (long ap_oi: providerOIs) {
-                    if (sta_oi == ap_oi) {
-                        return PasspointMatch.RoamingProvider;
+        // Other Home Partners matching.
+        if (mConfig.getHomeSp().getOtherHomePartners() != null) {
+            for (String otherHomePartner : mConfig.getHomeSp().getOtherHomePartners()) {
+                if (ANQPMatcher.matchDomainName(
+                        (DomainNameElement) anqpElements.get(ANQPElementType.ANQPDomName),
+                        otherHomePartner, null, null)) {
+                    if (mVerboseLoggingEnabled) {
+                        Log.d(TAG, "Other Home Partner " + otherHomePartner
+                                + " match: HomeProvider");
                     }
+                    return PasspointMatch.HomeProvider;
                 }
             }
         }
 
+        // HomeOI matching
+        if (mConfig.getHomeSp().getMatchAllOis() != null) {
+            // Ensure that every HomeOI whose corresponding HomeOIRequired value is true shall match
+            // an OI in the Roaming Consortium advertised by the hotspot operator.
+            if (matchOis(mConfig.getHomeSp().getMatchAllOis(), (RoamingConsortiumElement)
+                            anqpElements.get(ANQPElementType.ANQPRoamingConsortium),
+                    roamingConsortiumFromAp, true)) {
+                if (mVerboseLoggingEnabled) {
+                    Log.e(TAG, "All HomeOI RCOI match: HomeProvider");
+                }
+                return PasspointMatch.HomeProvider;
+            }
+        } else if (mConfig.getHomeSp().getMatchAnyOis() != null) {
+            // Ensure that any HomeOI whose corresponding HomeOIRequired value is false shall match
+            // an OI in the Roaming Consortium advertised by the hotspot operator.
+            if (matchOis(mConfig.getHomeSp().getMatchAnyOis(), (RoamingConsortiumElement)
+                            anqpElements.get(ANQPElementType.ANQPRoamingConsortium),
+                    roamingConsortiumFromAp, false)) {
+                if (mVerboseLoggingEnabled) {
+                    Log.e(TAG, "Any HomeOI RCOI match: HomeProvider");
+                }
+                return PasspointMatch.HomeProvider;
+            }
+        }
+
+        // Roaming Consortium OI matching.
+        if (matchOis(mConfig.getHomeSp().getRoamingConsortiumOis(), (RoamingConsortiumElement)
+                        anqpElements.get(ANQPElementType.ANQPRoamingConsortium),
+                roamingConsortiumFromAp, false)) {
+            if (mVerboseLoggingEnabled) {
+                Log.e(TAG, "ANQP RCOI match: RoamingProvider");
+            }
+            return PasspointMatch.RoamingProvider;
+        }
+        if (mVerboseLoggingEnabled) {
+            Log.e(TAG, "No domain name or RCOI match");
+        }
         return PasspointMatch.None;
     }
 
@@ -767,5 +869,13 @@ public class PasspointProvider {
         simCredential.setImsi(config.getPlmn());
         simCredential.setEapType(eapType);
         return simCredential;
+    }
+
+    /**
+     * Enable verbose logging
+     * @param verbose more than 0 enables verbose logging
+     */
+    public void enableVerboseLogging(int verbose) {
+        mVerboseLoggingEnabled = (verbose > 0) ? true : false;
     }
 }
