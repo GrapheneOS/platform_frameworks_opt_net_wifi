@@ -21,6 +21,7 @@ import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED
 
 import static com.android.server.wifi.ClientModeImpl.CMD_PRE_DHCP_ACTION;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -3558,8 +3559,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertNull(networkCapabilities.getNetworkSpecifier());
 
         assertEquals(mConnectedNetwork.creatorUid, networkCapabilities.getOwnerUid());
-        assertEquals(
-                Arrays.asList(mConnectedNetwork.creatorUid),
+        assertArrayEquals(
+                new int[] {mConnectedNetwork.creatorUid},
                 networkCapabilities.getAdministratorUids());
 
         // Should set bandwidth correctly
