@@ -23,6 +23,7 @@ import android.net.MacAddress;
 import android.net.util.MacAddressUtils;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiMigration;
 import android.os.Handler;
 import android.os.Process;
 import android.text.TextUtils;
@@ -30,15 +31,12 @@ import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.ApConfigUtil;
-import com.android.server.wifi.util.Environment;
 import com.android.wifi.resources.R;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -122,7 +120,8 @@ public class WifiApConfigStore {
             WifiConfigManager wifiConfigManager, ActiveModeWarden activeModeWarden) {
         this(context, wifiInjector, handler, backupManagerProxy, wifiConfigStore,
                 wifiConfigManager, activeModeWarden,
-                new File(Environment.getLegacyWifiSharedDirectory(), LEGACY_AP_CONFIG_FILE));
+                WifiMigration.convertAndRetrieveSharedConfigStoreFile(
+                        WifiMigration.STORE_FILE_SHARED_SOFTAP));
     }
 
     WifiApConfigStore(Context context,
@@ -132,7 +131,7 @@ public class WifiApConfigStore {
             WifiConfigStore wifiConfigStore,
             WifiConfigManager wifiConfigManager,
             ActiveModeWarden activeModeWarden,
-            File apConfigFile) {
+            InputStream legacyApConfigFileStream) {
         mContext = context;
         mHandler = handler;
         mBackupManagerProxy = backupManagerProxy;
@@ -140,20 +139,21 @@ public class WifiApConfigStore {
         mActiveModeWarden = activeModeWarden;
 
         // One time migration from legacy config store.
-        try {
-            File file = apConfigFile;
-            FileInputStream fis = new FileInputStream(apConfigFile);
+        // TODO (b/149418926): softap migration needs to be fixed. Move the logic
+        // below to WifiMigration. This is to allow OEM's who have been supporting some new AOSP R
+        // features like blocklist/allowlist in Q and stored the data using the old key/value
+        // format.
+        if (legacyApConfigFileStream != null) {
             /* Load AP configuration from persistent storage. */
-            SoftApConfiguration config = loadApConfigurationFromLegacyFile(fis);
+            SoftApConfiguration config =
+                    loadApConfigurationFromLegacyFile(legacyApConfigFileStream);
             if (config != null) {
                 // Persist in the new store.
                 persistConfigAndTriggerBackupManagerProxy(config);
-                Log.i(TAG, "Migrated data out of legacy store file " + apConfigFile);
-                // delete the legacy file.
-                file.delete();
+                Log.i(TAG, "Migrated data out of legacy store file");
+                WifiMigration.removeSharedConfigStoreFile(
+                        WifiMigration.STORE_FILE_SHARED_SOFTAP);
             }
-        } catch (FileNotFoundException e) {
-            // Expected on further reboots after the first reboot.
         }
 
         // Register store data listener
@@ -271,7 +271,7 @@ public class WifiApConfigStore {
      * Load AP configuration from legacy persistent storage.
      * Note: This is deprecated and only used for migrating data once on reboot.
      */
-    private static SoftApConfiguration loadApConfigurationFromLegacyFile(FileInputStream fis) {
+    private static SoftApConfiguration loadApConfigurationFromLegacyFile(InputStream fis) {
         SoftApConfiguration config = null;
         DataInputStream in = null;
         try {
