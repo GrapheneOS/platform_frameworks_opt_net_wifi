@@ -2132,6 +2132,27 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the aggressive randomization whitelist works for passpoints. (by checking FQDN)
+     */
+    @Test
+    public void testShouldUseAggressiveRandomizationPasspoint() {
+        WifiConfiguration c = WifiConfigurationTestUtil.createPasspointNetwork();
+        // Adds SSID to the whitelist.
+        Set<String> ssidList = new HashSet<>();
+        ssidList.add(c.SSID);
+        when(mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist())
+                .thenReturn(ssidList);
+
+        // Verify that if for passpoint networks we don't check for the SSID to be in the whitelist
+        assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+
+        // instead we check for the FQDN
+        ssidList.clear();
+        ssidList.add(c.FQDN);
+        assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+    }
+
+    /**
      * Verifies that getRandomizedMacAndUpdateIfNeeded updates the randomized MAC address and
      * |randomizedMacExpirationTimeMs| correctly.
      *

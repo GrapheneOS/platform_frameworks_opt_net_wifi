@@ -404,7 +404,7 @@ public class WifiConfigManager {
 
     /**
      * Determine if the framework should perform "aggressive" MAC randomization when connecting
-     * to the SSID in the input WifiConfiguration.
+     * to the SSID or FQDN in the input WifiConfiguration.
      * @param config
      * @return
      */
@@ -416,20 +416,24 @@ public class WifiConfigManager {
         if (config.getIpConfiguration().getIpAssignment() == IpConfiguration.IpAssignment.STATIC) {
             return false;
         }
-        return isSsidOptInForAggressiveRandomization(config.SSID);
+        if (config.isPasspoint()) {
+            return isNetworkOptInForAggressiveRandomization(config.FQDN);
+        } else {
+            return isNetworkOptInForAggressiveRandomization(config.SSID);
+        }
     }
 
-    private boolean isSsidOptInForAggressiveRandomization(String ssid) {
+    private boolean isNetworkOptInForAggressiveRandomization(String ssidOrFqdn) {
         Set<String> perDeviceSsidBlocklist = new ArraySet<>(mContext.getResources().getStringArray(
                 R.array.config_wifi_aggressive_randomization_ssid_blocklist));
-        if (mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist().contains(ssid)
-                || perDeviceSsidBlocklist.contains(ssid)) {
+        if (mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist().contains(ssidOrFqdn)
+                || perDeviceSsidBlocklist.contains(ssidOrFqdn)) {
             return false;
         }
         Set<String> perDeviceSsidAllowlist = new ArraySet<>(mContext.getResources().getStringArray(
                 R.array.config_wifi_aggressive_randomization_ssid_allowlist));
-        return mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist().contains(ssid)
-                || perDeviceSsidAllowlist.contains(ssid);
+        return mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist().contains(ssidOrFqdn)
+                || perDeviceSsidAllowlist.contains(ssidOrFqdn);
     }
 
     @VisibleForTesting
