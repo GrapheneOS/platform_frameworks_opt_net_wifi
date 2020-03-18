@@ -22,6 +22,7 @@ import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.app.admin.DevicePolicyManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -121,7 +122,8 @@ public class FrameworkFacade {
      * Returns whether the device is in NIAP mode or not.
      */
     public boolean isNiapModeOn(Context context) {
-        return getIntegerSetting(context, Settings.Global.COMMON_CRITERIA_MODE, 0) == 1;
+        return context.getSystemService(DevicePolicyManager.class)
+                .isCommonCriteriaModeEnabled(null);
     }
 
     /**
