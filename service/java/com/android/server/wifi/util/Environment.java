@@ -33,42 +33,6 @@ public class Environment {
     private static final String WIFI_APEX_NAME = "com.android.wifi";
 
     /**
-     * Directory to store the wifi config store / shared preference files under.
-     */
-    private static final String LEGACY_WIFI_STORE_DIRECTORY_NAME = "wifi";
-
-    /**
-     * Get data/misc directory
-     */
-    public static File getDataMiscDirectory() {
-        return new File(android.os.Environment.getDataDirectory(), "misc");
-    }
-
-    /**
-     * Get data/misc_ce/<userId> directory
-     */
-    public static File getDataMiscCeDirectory(int userId) {
-        return buildPath(android.os.Environment.getDataDirectory(), "misc_ce",
-                String.valueOf(userId));
-    }
-
-    /**
-     * Append path segments to given base path, returning result.
-     */
-    public static File buildPath(File base, String... segments) {
-        File cur = base;
-        for (String segment : segments) {
-            if (cur == null) {
-                cur = new File(segment);
-            } else {
-                cur = new File(cur, segment);
-            }
-        }
-        return cur;
-    }
-
-
-    /**
      * Wifi shared folder.
      */
     public static File getWifiSharedDirectory() {
@@ -81,20 +45,5 @@ public class Environment {
     public static File getWifiUserDirectory(int userId) {
         return ApexEnvironment.getApexEnvironment(WIFI_APEX_NAME)
                 .getCredentialProtectedDataDirForUser(UserHandle.of(userId));
-    }
-
-
-    /**
-     * Pre apex wifi shared folder.
-     */
-    public static File getLegacyWifiSharedDirectory() {
-        return new File(getDataMiscDirectory(), LEGACY_WIFI_STORE_DIRECTORY_NAME);
-    }
-
-    /**
-     * Pre apex wifi user folder.
-     */
-    public static File getLegacyWifiUserDirectory(int userId) {
-        return new File(getDataMiscCeDirectory(userId), LEGACY_WIFI_STORE_DIRECTORY_NAME);
     }
 }
