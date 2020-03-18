@@ -485,6 +485,18 @@ public class WifiNetworkSuggestionsManager {
         mUserApprovalUiActive = false;
     }
 
+    private void handleUserAllowCarrierExemptionAction(String carrierName, int carrierId) {
+        Log.i(TAG, "User clicked to allow carrier:" + carrierName);
+        setHasUserApprovedImsiPrivacyExemptionForCarrier(true, carrierId);
+        mUserApprovalUiActive = false;
+    }
+
+    private void handleUserDisallowCarrierExemptionAction(String carrierName, int carrierId) {
+        Log.i(TAG, "User clicked to disallow carrier:" + carrierName);
+        setHasUserApprovedImsiPrivacyExemptionForCarrier(false, carrierId);
+        mUserApprovalUiActive = false;
+    }
+
     private final BroadcastReceiver mBroadcastReceiver =
             new BroadcastReceiver() {
                 @Override
@@ -515,17 +527,16 @@ public class WifiNetworkSuggestionsManager {
                                 return;
                             }
                             Log.i(TAG, "User clicked to allow carrier");
-                            setHasUserApprovedImsiPrivacyExemptionForCarrier(true, carrierId);
-                            mUserApprovalUiActive = false;
+                            sendImsiPrivacyConfirmationDialog(carrierName, carrierId);
+                            // Collapse the notification bar
+                            mContext.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
                             break;
                         case NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION:
                             if (carrierName == null || carrierId == -1) {
                                 Log.e(TAG, "No carrier name or carrier id found in intent");
                                 return;
                             }
-                            Log.i(TAG, "User clicked to disallow carrier");
-                            setHasUserApprovedImsiPrivacyExemptionForCarrier(false, carrierId);
-                            mUserApprovalUiActive = false;
+                            handleUserDisallowCarrierExemptionAction(carrierName, carrierId);
                             break;
                         case NOTIFICATION_USER_DISMISSED_INTENT_ACTION:
                             handleUserDismissAction();
@@ -1318,11 +1329,13 @@ public class WifiNetworkSuggestionsManager {
                 mContext, WifiService.NOTIFICATION_NETWORK_STATUS)
                 .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
-                .setTicker(mResources.getString(R.string.wifi_suggestion_imsi_privacy_title))
-                .setContentTitle(mResources.getString(R.string.wifi_suggestion_imsi_privacy_title))
+                .setTicker(mResources.getString(
+                        R.string.wifi_suggestion_imsi_privacy_title, carrierName))
+                .setContentTitle(mResources.getString(
+                        R.string.wifi_suggestion_imsi_privacy_title, carrierName))
                 .setStyle(new Notification.BigTextStyle()
-                        .bigText(mResources.getString(R.string.wifi_suggestion_imsi_privacy_content,
-                                carrierName)))
+                        .bigText(mResources.getString(
+                                R.string.wifi_suggestion_imsi_privacy_content)))
                 .setDeleteIntent(getPrivateBroadcast(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
                         Pair.create(EXTRA_CARRIER_NAME, carrierName),
                         Pair.create(EXTRA_CARRIER_ID, carrierId)))
@@ -1330,8 +1343,8 @@ public class WifiNetworkSuggestionsManager {
                 .setLocalOnly(true)
                 .setColor(mResources.getColor(android.R.color.system_notification_accent_color,
                         mContext.getTheme()))
-                .addAction(userAllowAppNotificationAction)
                 .addAction(userDisallowAppNotificationAction)
+                .addAction(userAllowAppNotificationAction)
                 .build();
 
         // Post the notification.
@@ -1339,6 +1352,37 @@ public class WifiNetworkSuggestionsManager {
                 SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE, notification);
         mUserApprovalUiActive = true;
     }
+
+    private void sendImsiPrivacyConfirmationDialog(@NonNull String carrierName, int carrierId) {
+        AlertDialog dialog = mFrameworkFacade.makeAlertDialogBuilder(mContext)
+                .setTitle(mResources.getString(
+                        R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_title))
+                .setMessage(mResources.getString(
+                        R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_content,
+                        carrierName))
+                .setPositiveButton(mResources.getText(
+                        R.string.wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation),
+                        (d, which) -> mHandler.post(
+                                () -> handleUserAllowCarrierExemptionAction(
+                                        carrierName, carrierId)))
+                .setNegativeButton(mResources.getText(
+                        R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation),
+                        (d, which) -> mHandler.post(
+                                () -> handleUserDisallowCarrierExemptionAction(
+                                        carrierName, carrierId)))
+                .setOnDismissListener(
+                        (d) -> mHandler.post(this::handleUserDismissAction))
+                .setOnCancelListener(
+                        (d) -> mHandler.post(this::handleUserDismissAction))
+                .create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        dialog.getWindow().addSystemFlags(
+                WindowManager.LayoutParams.SYSTEM_FLAG_SHOW_FOR_ALL_USERS);
+        dialog.show();
+        mUserApprovalUiActive = true;
+    }
+
 
     /**
      * Send user approval notification if the app is not approved
