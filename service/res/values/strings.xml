@@ -122,9 +122,8 @@
 
 
     <!-- A notification is shown when softap auto shutdown timeout expired. It should be overridden by carrier-specific overlays. -->
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title">Mobile Hotspot disabled</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary">Mobile hotspot has been disabled</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail">Mobile hotspot has been disabled due to inactivity timeout expiration.</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title">Hotspot turned off</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary">No devices connected. Tap to modify.</string>
 
     <!-- A notification is shown when eap-sim/aka/aka' wifi network is disconnected due to sim removal -->
     <string name="wifi_sim_required_title">Wi\u2011Fi disconnected</string>
