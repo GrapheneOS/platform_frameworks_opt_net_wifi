@@ -25,6 +25,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.internal.annotations.GuardedBy;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
@@ -85,6 +86,7 @@ public class WifiSettingsConfigStore {
 
     private final Context mContext;
     private final Handler mHandler;
+    private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     private final WifiConfigManager mWifiConfigManager;
 
     private final Object mLock = new Object();
@@ -112,10 +114,12 @@ public class WifiSettingsConfigStore {
     }
 
     public WifiSettingsConfigStore(@NonNull Context context, @NonNull Handler handler,
+            @NonNull SettingsMigrationDataHolder settingsMigrationDataHolder,
             @NonNull WifiConfigManager wifiConfigManager,
             @NonNull WifiConfigStore wifiConfigStore) {
         mContext = context;
         mHandler = handler;
+        mSettingsMigrationDataHolder = settingsMigrationDataHolder;
         mWifiConfigManager = wifiConfigManager;
 
         // Register our data store.
@@ -176,7 +180,7 @@ public class WifiSettingsConfigStore {
     private void migrateFromSettingsIfNeeded() {
         if (!mSettings.isEmpty()) return; // already migrated.
 
-        mCachedMigrationData = WifiMigration.loadFromSettings(mContext);
+        mCachedMigrationData = mSettingsMigrationDataHolder.retrieveData();
         if (mCachedMigrationData == null) {
             Log.e(TAG, "No settings data to migrate");
             return;
