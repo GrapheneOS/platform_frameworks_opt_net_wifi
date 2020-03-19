@@ -1269,8 +1269,10 @@ public class WifiConfigManager {
             Log.e(TAG, "Failed to add network to config map", e);
             return new NetworkUpdateResult(WifiConfiguration.INVALID_NETWORK_ID);
         }
-        // Add or update user saved network or saved passpoint network will re-enable network.
-        if (!newInternalConfig.fromWifiNetworkSuggestion) {
+        // Only re-enable network: 1. add or update user saved network; 2. add or update a user
+        // saved passpoint network framework consider it is a new network.
+        if (!newInternalConfig.fromWifiNetworkSuggestion
+                && (!newInternalConfig.isPasspoint() || newNetwork)) {
             userEnabledNetwork(newInternalConfig.networkId);
         }
 
