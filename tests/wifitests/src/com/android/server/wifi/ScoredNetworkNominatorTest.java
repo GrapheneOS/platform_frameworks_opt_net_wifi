@@ -29,7 +29,6 @@ import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
-import android.net.NetworkScorerAppData;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -63,8 +62,6 @@ import java.util.List;
 public class ScoredNetworkNominatorTest extends WifiBaseTest {
     private static final String TEST_PACKAGE_NAME = "name.package.test";
     private static final int TEST_UID = 12345;
-    private static final NetworkScorerAppData TEST_APP_DATA = new NetworkScorerAppData(
-            TEST_UID, null, null, null, null);
     private ContentObserver mContentObserver;
     private int mThresholdQualifiedRssi2G;
     private int mThresholdQualifiedRssi5G;
@@ -95,8 +92,10 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
                 .thenReturn("test");
         ApplicationInfo appInfo = new ApplicationInfo();
         appInfo.uid = TEST_UID;
-        when(mPackageManager.getApplicationInfo(any(), anyInt()))
+        when(mPackageManager.getApplicationInfo(eq(TEST_PACKAGE_NAME), anyInt()))
                 .thenReturn(appInfo);
+        when(mNetworkScoreManager.getActiveScorerPackage())
+                .thenReturn(TEST_PACKAGE_NAME);
 
         ArgumentCaptor<ContentObserver> observerCaptor =
                 ArgumentCaptor.forClass(ContentObserver.class);
@@ -108,12 +107,6 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
         verify(mFrameworkFacade).registerContentObserver(eq(mContext), any(Uri.class), eq(false),
                 observerCaptor.capture());
         mContentObserver = observerCaptor.getValue();
-
-        reset(mNetworkScoreManager);
-        when(mNetworkScoreManager.getActiveScorer())
-                .thenReturn(TEST_APP_DATA);
-        when(mNetworkScoreManager.getActiveScorerPackage())
-                .thenReturn(TEST_PACKAGE_NAME);
 
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime());
     }
@@ -307,7 +300,7 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
         when(mWifiConfigManager.getConfiguredNetworkForScanDetailAndCache(any(ScanDetail.class)))
                 .thenReturn(null);
         // But when we create one, this is should be it.
-        when(mWifiConfigManager.addOrUpdateNetwork(any(), anyInt()))
+        when(mWifiConfigManager.addOrUpdateNetwork(any(), eq(TEST_UID), eq(TEST_PACKAGE_NAME)))
                 .thenReturn(new NetworkUpdateResult(1));
         // Untrusted networks allowed.
         mScoredNetworkNominator.nominateNetworks(scanDetails,
