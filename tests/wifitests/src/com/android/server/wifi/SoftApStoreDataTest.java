@@ -26,7 +26,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 import android.content.Context;
 import android.net.MacAddress;
@@ -37,8 +36,8 @@ import android.util.Xml;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.util.FastXmlSerializer;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 
 import org.junit.After;
@@ -47,8 +46,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoSession;
-import org.mockito.quality.Strictness;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlSerializer;
 
@@ -187,21 +184,17 @@ public class SoftApStoreDataTest extends WifiBaseTest {
     @Mock private Context mContext;
     @Mock SoftApStoreData.DataSource mDataSource;
     @Mock private WifiMigration.SettingsMigrationData mOemMigrationData;
-    MockitoSession mSession;
+    @Mock private SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     SoftApStoreData mSoftApStoreData;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mSession = ExtendedMockito.mockitoSession()
-                .mockStatic(WifiMigration.class, withSettings().lenient())
-                .strictness(Strictness.LENIENT)
-                .startMocking();
-        when(WifiMigration.loadFromSettings(any(Context.class)))
+        when(mSettingsMigrationDataHolder.retrieveData())
                 .thenReturn(mOemMigrationData);
         when(mOemMigrationData.isSoftApTimeoutEnabled()).thenReturn(true);
 
-        mSoftApStoreData = new SoftApStoreData(mContext, mDataSource);
+        mSoftApStoreData = new SoftApStoreData(mContext, mSettingsMigrationDataHolder, mDataSource);
         TEST_BLOCKEDLIST.add(MacAddress.fromString(TEST_BLOCKED_CLIENT));
         TEST_ALLOWEDLIST.add(MacAddress.fromString(TEST_ALLOWED_CLIENT));
     }
@@ -213,7 +206,6 @@ public class SoftApStoreDataTest extends WifiBaseTest {
     public void cleanup() {
         TEST_BLOCKEDLIST.clear();
         TEST_ALLOWEDLIST.clear();
-        mSession.finishMocking();
     }
 
     /**
