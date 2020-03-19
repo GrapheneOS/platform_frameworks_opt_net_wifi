@@ -603,6 +603,40 @@ message WifiLog {
 
   // Metrics related to Wi-Fi off
   optional WifiOffMetrics wifi_off_metrics = 166;
+
+  // Total number of scan results for MBO supported networks
+  optional int32 num_mbo_supported_network_scan_results = 167;
+
+  // Total number of scan results for MBO cellular data aware networks
+  optional int32 num_mbo_cellular_data_aware_network_scan_results = 168;
+
+  // Total number of scan results for OCE supported networks
+  optional int32 num_oce_supported_network_scan_results = 169;
+
+  // Total number of scan results for FILS supported networks
+  optional int32 num_fils_supported_network_scan_results = 170;
+
+  // Total number of bssids filtered from network selection due to mbo association
+  // disallowed indication
+  optional int32 num_bssid_filtered_due_to_mbo_assoc_disallow_ind = 171;
+
+  // Total number of connection to network supporting MBO
+  optional int32 num_connect_to_network_supporting_mbo = 172;
+
+  // Total number of connection to network supporting OCE
+  optional int32 num_connect_to_network_supporting_oce = 173;
+
+  // Total number of scans triggered due to steering request from AP
+  optional int32 num_force_scan_due_to_steering_request = 174;
+
+  // Total number of cellular switch requests from MBO supported AP
+  optional int32 num_mbo_cellular_switch_request = 175;
+
+  // Total number of connect request to AP adding FILS AKM
+  optional int32 num_connect_request_with_fils_akm = 176;
+
+  // Total number of successful L2 connection through FILS authentication
+  optional int32 num_l2_connection_through_fils_authentication = 177;
 }
 
 // Information that gets logged for every WiFi connection.
