@@ -407,6 +407,8 @@ public class WifiNetworkSelector {
             if (networkDetail != null) {
                 if (networkDetail.getMboAssociationDisallowedReasonCode()
                         != MboOceConstants.MBO_OCE_ATTRIBUTE_NOT_PRESENT) {
+                    mWifiMetrics
+                            .incrementNetworkSelectionFilteredBssidCountDueToMboAssocDisallowInd();
                     mboAssociationDisallowedBssid.append(scanId).append("(")
                             .append(networkDetail.getMboAssociationDisallowedReasonCode())
                             .append(")").append(" / ");
