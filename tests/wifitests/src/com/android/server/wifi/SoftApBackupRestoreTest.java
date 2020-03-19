@@ -30,16 +30,14 @@ import android.util.BackupUtils;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.util.ApConfigUtil;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoSession;
-import org.mockito.quality.Strictness;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -55,6 +53,7 @@ import java.util.List;
 public class SoftApBackupRestoreTest extends WifiBaseTest {
 
     @Mock private Context mContext;
+    @Mock private SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     @Mock private WifiMigration.SettingsMigrationData mOemMigrationData;
     private SoftApBackupRestore mSoftApBackupRestore;
     private final ArrayList<MacAddress> mTestBlockedList = new ArrayList<>();
@@ -71,8 +70,6 @@ public class SoftApBackupRestoreTest extends WifiBaseTest {
     private static final int TEST_BAND = SoftApConfiguration.BAND_5GHZ;
     private static final int TEST_CHANNEL = 40;
     private static final boolean TEST_HIDDEN = false;
-
-    MockitoSession mSession;
 
     /**
      * Asserts that the WifiConfigurations equal to SoftApConfiguration.
@@ -100,20 +97,14 @@ public class SoftApBackupRestoreTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        mSession = ExtendedMockito.mockitoSession()
-                .mockStatic(WifiMigration.class, withSettings().lenient())
-                .strictness(Strictness.LENIENT)
-                .startMocking();
-        when(WifiMigration.loadFromSettings(any(Context.class)))
-                .thenReturn(mOemMigrationData);
+        when(mSettingsMigrationDataHolder.retrieveData()).thenReturn(mOemMigrationData);
         when(mOemMigrationData.isSoftApTimeoutEnabled()).thenReturn(true);
 
-        mSoftApBackupRestore = new SoftApBackupRestore(mContext);
+        mSoftApBackupRestore = new SoftApBackupRestore(mContext, mSettingsMigrationDataHolder);
     }
 
     @After
     public void tearDown() throws Exception {
-        mSession.finishMocking();
     }
 
     /**

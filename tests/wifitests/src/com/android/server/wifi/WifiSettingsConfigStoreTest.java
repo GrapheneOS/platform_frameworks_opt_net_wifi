@@ -25,8 +25,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.net.wifi.WifiMigration;
 import android.os.Handler;
 import android.os.test.TestLooper;
 import android.util.Xml;
@@ -35,6 +37,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
 import com.android.server.wifi.WifiSettingsConfigStore.Key;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.XmlUtil;
 
 import org.junit.After;
@@ -61,6 +64,8 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
     @Mock
     private Context mContext;
     @Mock
+    private SettingsMigrationDataHolder mSettingsMigrationDataHolder;
+    @Mock
     private WifiConfigStore mWifiConfigStore;
     @Mock
     private WifiConfigManager mWifiConfigManager;
@@ -75,7 +80,7 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
         mLooper = new TestLooper();
         mWifiSettingsConfigStore =
                 new WifiSettingsConfigStore(mContext, new Handler(mLooper.getLooper()),
-                        mWifiConfigManager, mWifiConfigStore);
+                        mSettingsMigrationDataHolder, mWifiConfigManager, mWifiConfigStore);
     }
 
     /**
@@ -124,6 +129,30 @@ public class WifiSettingsConfigStoreTest extends WifiBaseTest {
         storeDataCaptor.getValue().deserializeData(in, in.getDepth(), -1, null);
 
         assertTrue(mWifiSettingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
+        // verify that we did not trigger migration.
+        verifyNoMoreInteractions(mSettingsMigrationDataHolder);
+    }
+
+    @Test
+    public void testLoadFromMigration() throws Exception {
+        ArgumentCaptor<WifiConfigStore.StoreData> storeDataCaptor = ArgumentCaptor.forClass(
+                WifiConfigStore.StoreData.class);
+        verify(mWifiConfigStore).registerStoreData(storeDataCaptor.capture());
+        assertNotNull(storeDataCaptor.getValue());
+
+        WifiMigration.SettingsMigrationData migrationData = mock(
+                WifiMigration.SettingsMigrationData.class);
+        when(mSettingsMigrationDataHolder.retrieveData()).thenReturn(migrationData);
+        when(migrationData.isVerboseLoggingEnabled()).thenReturn(true);
+
+        // indicate that there is not data in the store file to trigger migration.
+        storeDataCaptor.getValue().resetData();
+        storeDataCaptor.getValue().deserializeData(null, -1, -1, null);
+        mLooper.dispatchAll();
+
+        assertTrue(mWifiSettingsConfigStore.get(WIFI_VERBOSE_LOGGING_ENABLED));
+        // Trigger store file write after migration.
+        verify(mWifiConfigManager).saveToStore(true);
     }
 
     private XmlPullParser createSettingsTestXmlForParsing(Key key, Object value)
