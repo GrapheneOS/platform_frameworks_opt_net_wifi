@@ -4163,7 +4163,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         MboOceController.BtmFrameData btmFrmData = new MboOceController.BtmFrameData();
 
         btmFrmData.mStatus = MboOceConstants.BTM_RESPONSE_STATUS_REJECT_UNSPECIFIED;
-        btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT;
+        btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT
+                | MboOceConstants.BTM_DATA_FLAG_MBO_CELL_DATA_CONNECTION_PREFERENCE_INCLUDED;
         btmFrmData.mBlackListDurationMs = 0;
 
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
@@ -4172,6 +4173,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(sBSSID, sSSID,
                 MboOceConstants.DEFAULT_BLACKLIST_DURATION_MS);
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
+        verify(mWifiMetrics, times(1)).incrementMboCellularSwitchRequestCount();
+        verify(mWifiMetrics, times(1))
+                .incrementForceScanCountDueToSteeringRequest();
+
     }
 
     /**
@@ -4735,8 +4740,12 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         prepareFilsHlpPktAndSendStartConnect();
 
+        verify(mWifiMetrics, times(1)).incrementConnectRequestWithFilsAkmCount();
+
         mCmi.sendMessage(WifiMonitor.FILS_NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
+
+        verify(mWifiMetrics, times(1)).incrementL2ConnectionThroughFilsAuthCount();
 
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(0, WifiSsid.createFromAsciiEncoded(sFilsSsid),
