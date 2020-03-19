@@ -263,6 +263,8 @@ public class WifiApConfigStore {
             configBuilder = new SoftApConfiguration.Builder(customConfig);
         } else {
             configBuilder = new SoftApConfiguration.Builder();
+            // Default to disable the auto shutdown
+            configBuilder.setAutoShutdownEnabled(false);
         }
 
         configBuilder.setBand(apBand);
