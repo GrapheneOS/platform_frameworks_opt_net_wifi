@@ -178,7 +178,7 @@ public class ApConfigUtil {
             case WifiConfiguration.AP_BAND_ANY:
                 return SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ;
             default:
-                return -1;
+                return SoftApConfiguration.BAND_2GHZ;
         }
     }
 

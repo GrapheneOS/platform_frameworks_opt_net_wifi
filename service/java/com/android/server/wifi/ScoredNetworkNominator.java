@@ -26,11 +26,11 @@ import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.os.Handler;
-import android.os.Process;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.LocalLog;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -113,20 +113,26 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
         }
     }
 
-    private boolean activeScorerAllowedtoSeeScanResults() {
+    private Pair<Integer, String> getActiveScorerUidAndPackage() {
         String packageName = mNetworkScoreManager.getActiveScorerPackage();
-        if (packageName == null) return false;
+        if (packageName == null) return null;
         int uid = -1;
         try {
             uid = mPackageManager.getApplicationInfo(packageName, 0).uid;
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Failed to retrieve package uid", e);
-            return false;
+            return null;
         }
+        return Pair.create(uid, packageName);
+    }
+
+    private boolean activeScorerAllowedtoSeeScanResults() {
+        Pair<Integer, String> scorerUidAndPackage = getActiveScorerUidAndPackage();
+        if (scorerUidAndPackage == null) return false;
         try {
             // TODO moltmann: Can we set a featureID here instead of null?
-            mWifiPermissionsUtil.enforceCanAccessScanResults(packageName, null, uid,
-                    null);
+            mWifiPermissionsUtil.enforceCanAccessScanResults(
+                    scorerUidAndPackage.second, null, scorerUidAndPackage.first, null);
             return true;
         } catch (SecurityException e) {
             return false;
@@ -299,6 +305,11 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
                                 mEphemeralConfig.meteredHint));
                         break;
                     }
+                    Pair<Integer, String> scorerUidAndPackage = getActiveScorerUidAndPackage();
+                    if (scorerUidAndPackage == null) {
+                        mLocalLog.log("Can't find active scorer uid and package");
+                        break;
+                    }
 
                     mEphemeralConfig =
                             ScanResultUtil.createNetworkFromScanResult(mScanResultCandidate);
@@ -309,7 +320,7 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
                     mEphemeralConfig.meteredHint = mScoreCache.getMeteredHint(mScanResultCandidate);
                     NetworkUpdateResult result =
                             mWifiConfigManager.addOrUpdateNetwork(mEphemeralConfig,
-                                    Process.WIFI_UID);
+                                    scorerUidAndPackage.first, scorerUidAndPackage.second);
                     if (!result.isSuccess()) {
                         mLocalLog.log("Failed to add ephemeral network");
                         break;

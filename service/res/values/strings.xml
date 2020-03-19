@@ -49,13 +49,23 @@
     <string name="wifi_suggestion_action_disallow_app">No thanks</string>
 
     <!-- Notification title for a connection to a SIM-based carrier network without IMSI privacy protection. -->
-    <string name="wifi_suggestion_imsi_privacy_title">Privacy warning for IMSI protection</string>
+    <string name="wifi_suggestion_imsi_privacy_title"><xliff:g id="carrierName" example="xxxMobile">%s</xliff:g> wants to auto\u2011connect</string>
     <!-- Notification content for a connection to a SIM-based carrier network without IMSI privacy protection.-->
-    <string name="wifi_suggestion_imsi_privacy_content"><xliff:g id="carrierName" example="xxxMobile">%s</xliff:g> suggested networks using your SIM card info without without privacy protection, allow network to be connected automatically? </string>
+    <string name="wifi_suggestion_imsi_privacy_content">These networks receive a unique ID that can be used to track device location</string>
     <!-- Notification action for allowing carrier specified in the notification body.-->
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier">Allow</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier">Connect anyway</string>
     <!-- Notification action for disallowing carrier specified in the notification body.-->
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier">Disallow</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier">Don\u0027t connect</string>
+    <!-- Confirmation dialog title for a connection to a SIM-based carrier network without IMSI privacy protection. -->
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title">Confirm connection?</string>
+    <!-- Confirmation dialog content for a connection to a SIM-based carrier network without IMSI privacy protection. -->
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content">If you connect, <xliff:g id="carrierName" example="xxxMobile">%s</xliff:g> Wi\u2011Fi networks may access or share a unique ID associated with your SIM. This may allow your device\u0027s location to be tracked.</string>
+    <!-- Confirmation dialog action for allowing carrier specified in the dialog body -->
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation">Connect</string>
+    <!-- Confirmation dialog action for disallowing carrier specified in the dialog body -->
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation">Don\u0027t connect</string>
+
+
 
     <!--Notification title for Wi-Fi Wake onboarding. This is displayed the first time a user disables Wi-Fi with the feature enabled. -->
     <string name="wifi_wakeup_onboarding_title">Wi\u2011Fi will turn on automatically</string>
@@ -122,9 +132,8 @@
 
 
     <!-- A notification is shown when softap auto shutdown timeout expired. It should be overridden by carrier-specific overlays. -->
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title">Mobile Hotspot disabled</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary">Mobile hotspot has been disabled</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail">Mobile hotspot has been disabled due to inactivity timeout expiration.</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title">Hotspot turned off</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary">No devices connected. Tap to modify.</string>
 
     <!-- A notification is shown when eap-sim/aka/aka' wifi network is disconnected due to sim removal -->
     <string name="wifi_sim_required_title">Wi\u2011Fi disconnected</string>

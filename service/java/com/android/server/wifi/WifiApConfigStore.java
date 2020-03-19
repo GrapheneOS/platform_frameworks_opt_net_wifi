@@ -22,7 +22,6 @@ import android.content.IntentFilter;
 import android.net.MacAddress;
 import android.net.util.MacAddressUtils;
 import android.net.wifi.SoftApConfiguration;
-import android.net.wifi.WifiConfiguration;
 import android.os.Handler;
 import android.os.Process;
 import android.text.TextUtils;
@@ -30,15 +29,8 @@ import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.ApConfigUtil;
-import com.android.server.wifi.util.Environment;
 import com.android.wifi.resources.R;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -56,13 +48,6 @@ public class WifiApConfigStore {
             "com.android.server.wifi.WifiApConfigStoreUtil.HOTSPOT_CONFIG_USER_TAPPED_CONTENT";
 
     private static final String TAG = "WifiApConfigStore";
-
-    // Note: This is the legacy Softap config file. This is only used for migrating data out
-    // of this file on first reboot.
-    private static final String LEGACY_AP_CONFIG_FILE = "softap.conf";
-
-    @VisibleForTesting
-    public static final int AP_CONFIG_FILE_VERSION = 3;
 
     private static final int RAND_SSID_INT_MIN = 1000;
     private static final int RAND_SSID_INT_MAX = 9999;
@@ -102,27 +87,12 @@ public class WifiApConfigStore {
         }
 
         public void reset() {
-            if (mPersistentWifiApConfig != null) {
-                // Note: Reset is invoked when WifiConfigStore.read() is invoked on boot completed.
-                // If we had migrated data from the legacy store before that (which is most likely
-                // true because we read the legacy file in the constructor here, whereas
-                // WifiConfigStore.read() is only triggered on boot completed), trigger a write to
-                // persist the migrated data.
-                mHandler.post(() -> mWifiConfigManager.saveToStore(true));
-            }
+            mPersistentWifiApConfig = null;
         }
 
         public boolean hasNewDataToSerialize() {
             return mHasNewDataToSerialize;
         }
-    }
-
-    WifiApConfigStore(Context context, WifiInjector wifiInjector, Handler handler,
-            BackupManagerProxy backupManagerProxy, WifiConfigStore wifiConfigStore,
-            WifiConfigManager wifiConfigManager, ActiveModeWarden activeModeWarden) {
-        this(context, wifiInjector, handler, backupManagerProxy, wifiConfigStore,
-                wifiConfigManager, activeModeWarden,
-                new File(Environment.getLegacyWifiSharedDirectory(), LEGACY_AP_CONFIG_FILE));
     }
 
     WifiApConfigStore(Context context,
@@ -131,30 +101,12 @@ public class WifiApConfigStore {
             BackupManagerProxy backupManagerProxy,
             WifiConfigStore wifiConfigStore,
             WifiConfigManager wifiConfigManager,
-            ActiveModeWarden activeModeWarden,
-            File apConfigFile) {
+            ActiveModeWarden activeModeWarden) {
         mContext = context;
         mHandler = handler;
         mBackupManagerProxy = backupManagerProxy;
         mWifiConfigManager = wifiConfigManager;
         mActiveModeWarden = activeModeWarden;
-
-        // One time migration from legacy config store.
-        try {
-            File file = apConfigFile;
-            FileInputStream fis = new FileInputStream(apConfigFile);
-            /* Load AP configuration from persistent storage. */
-            SoftApConfiguration config = loadApConfigurationFromLegacyFile(fis);
-            if (config != null) {
-                // Persist in the new store.
-                persistConfigAndTriggerBackupManagerProxy(config);
-                Log.i(TAG, "Migrated data out of legacy store file " + apConfigFile);
-                // delete the legacy file.
-                file.delete();
-            }
-        } catch (FileNotFoundException e) {
-            // Expected on further reboots after the first reboot.
-        }
 
         // Register store data listener
         wifiConfigStore.registerStoreData(
@@ -268,65 +220,6 @@ public class WifiApConfigStore {
     }
 
     /**
-     * Load AP configuration from legacy persistent storage.
-     * Note: This is deprecated and only used for migrating data once on reboot.
-     */
-    private static SoftApConfiguration loadApConfigurationFromLegacyFile(FileInputStream fis) {
-        SoftApConfiguration config = null;
-        DataInputStream in = null;
-        try {
-            SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder();
-            in = new DataInputStream(new BufferedInputStream(fis));
-
-            int version = in.readInt();
-            if (version < 1 || version > AP_CONFIG_FILE_VERSION) {
-                Log.e(TAG, "Bad version on hotspot configuration file");
-                return null;
-            }
-            configBuilder.setSsid(in.readUTF());
-
-            if (version >= 2) {
-                int band = in.readInt();
-                int channel = in.readInt();
-
-                if (channel == 0) {
-                    configBuilder.setBand(
-                            ApConfigUtil.convertWifiConfigBandToSoftApConfigBand(band));
-                } else {
-                    configBuilder.setChannel(channel,
-                            ApConfigUtil.convertWifiConfigBandToSoftApConfigBand(band));
-                }
-            }
-
-            if (version >= 3) {
-                configBuilder.setHiddenSsid(in.readBoolean());
-            }
-
-            int authType = in.readInt();
-            if (authType == WifiConfiguration.KeyMgmt.WPA2_PSK) {
-                configBuilder.setPassphrase(in.readUTF(),
-                        SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
-            }
-            config = configBuilder.build();
-        } catch (IOException e) {
-            Log.e(TAG, "Error reading hotspot configuration " + e);
-            config = null;
-        } catch (IllegalArgumentException ie) {
-            Log.e(TAG, "Invalid hotspot configuration " + ie);
-            config = null;
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "Error closing hotspot configuration during read" + e);
-                }
-            }
-        }
-        return config;
-    }
-
-    /**
      * Generate a default WPA3 SAE transition (if supported) or WPA2 based
      * configuration with a random password.
      * We are changing the Wifi Ap configuration storage from secure settings to a
@@ -370,6 +263,8 @@ public class WifiApConfigStore {
             configBuilder = new SoftApConfiguration.Builder(customConfig);
         } else {
             configBuilder = new SoftApConfiguration.Builder();
+            // Default to disable the auto shutdown
+            configBuilder.setAutoShutdownEnabled(false);
         }
 
         configBuilder.setBand(apBand);

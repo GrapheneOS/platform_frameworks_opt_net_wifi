@@ -1471,6 +1471,8 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
                 scanDetails, blacklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
+        verify(mWifiMetrics, times(1))
+                .incrementNetworkSelectionFilteredBssidCountDueToMboAssocDisallowInd();
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
     }

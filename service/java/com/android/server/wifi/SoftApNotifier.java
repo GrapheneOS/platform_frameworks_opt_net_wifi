@@ -69,13 +69,10 @@ public class SoftApNotifier {
     }
 
     private Notification buildSoftApShutDownTimeoutExpiredNotification() {
-        // TODO: b/146571220 Check UI wording
         String title = mContext.getResources().getString(
                 R.string.wifi_softap_auto_shutdown_timeout_expired_title);
         String contentSummary = mContext.getResources().getString(
                 R.string.wifi_softap_auto_shutdown_timeout_expired_summary);
-        String content = mContext.getResources().getString(
-                R.string.wifi_softap_auto_shutdown_timeout_expired_detail);
 
         return mFrameworkFacade.makeNotificationBuilder(mContext,
                 WifiService.NOTIFICATION_NETWORK_STATUS)
@@ -89,10 +86,6 @@ public class SoftApNotifier {
                 .setLocalOnly(true)
                 .setColor(mContext.getResources().getColor(
                         android.R.color.system_notification_accent_color, mContext.getTheme()))
-                .setStyle(new Notification.BigTextStyle()
-                        .bigText(content)
-                        .setBigContentTitle(title)
-                        .setSummaryText(contentSummary))
                 .setAutoCancel(true)
                 .build();
     }

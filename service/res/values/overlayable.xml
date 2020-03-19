@@ -144,6 +144,10 @@
           <item type="string" name="wifi_suggestion_imsi_privacy_content" />
           <item type="string" name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" />
           <item type="string" name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" />
+          <item type="string" name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" />
+          <item type="string" name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" />
+          <item type="string" name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" />
+          <item type="string" name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" />
           <item type="string" name="wifi_wakeup_onboarding_title" />
           <item type="string" name="wifi_wakeup_onboarding_subtext" />
           <item type="string" name="wifi_wakeup_onboarding_action_disable" />
