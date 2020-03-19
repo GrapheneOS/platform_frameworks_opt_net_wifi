@@ -22,11 +22,13 @@ import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
@@ -43,6 +45,7 @@ import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
+import android.view.WindowManager;
 
 import com.android.internal.R;
 import com.android.internal.annotations.VisibleForTesting;
@@ -108,6 +111,7 @@ public class WifiNetworkSuggestionsManager {
     private final WifiMetrics mWifiMetrics;
     private final WifiInjector mWifiInjector;
     private final FrameworkFacade mFrameworkFacade;
+    private AlertDialog mAlertDialog;
 
     /**
      * Per app meta data to store network suggestions, status, etc for each app providing network
@@ -775,6 +779,49 @@ public class WifiNetworkSuggestionsManager {
     }
 
     private void sendUserApprovalNotification(@NonNull String packageName, int uid) {
+        boolean isTV = mPackageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+                  || mPackageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION);
+        if(isTV){
+            if(mAlertDialog!=null){
+                mAlertDialog.dismiss();
+                mAlertDialog = null;
+            }
+            DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which){
+                    case DialogInterface.BUTTON_POSITIVE:
+                        //Yes button clicked
+                        Log.i(TAG, "User clicked to allow app");
+                        // Set the user approved flag.
+                        setHasUserApprovedForApp(true, packageName);
+                        break;
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        //No button clicked
+                        Log.i(TAG, "User clicked to disallow app");
+                        // Set the user approved flag.
+                        setHasUserApprovedForApp(false, packageName);
+                        // Take away CHANGE_WIFI_STATE app-ops from the app.
+                        mAppOps.setMode(AppOpsManager.OP_CHANGE_WIFI_STATE, uid, packageName,
+                                MODE_IGNORED);
+                        break;
+                    }
+                }
+            };
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            CharSequence appName = getAppName(packageName, uid);
+            builder.setMessage(mResources.getString(R.string.wifi_suggestion_title)
+                +"\n"+mResources.getString(R.string.wifi_suggestion_content, appName))
+                .setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener);
+            mAlertDialog = builder.create();
+            mAlertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            Log.i(TAG, "TV sendUserApprovalNotification");
+            mAlertDialog.show();
+            return;
+        }
+
         Notification.Action userAllowAppNotificationAction =
                 new Notification.Action.Builder(null,
                         mResources.getText(R.string.wifi_suggestion_action_allow_app),
