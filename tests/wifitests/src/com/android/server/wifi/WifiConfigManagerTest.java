@@ -2132,6 +2132,27 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the aggressive randomization whitelist works for passpoints. (by checking FQDN)
+     */
+    @Test
+    public void testShouldUseAggressiveRandomizationPasspoint() {
+        WifiConfiguration c = WifiConfigurationTestUtil.createPasspointNetwork();
+        // Adds SSID to the whitelist.
+        Set<String> ssidList = new HashSet<>();
+        ssidList.add(c.SSID);
+        when(mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist())
+                .thenReturn(ssidList);
+
+        // Verify that if for passpoint networks we don't check for the SSID to be in the whitelist
+        assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+
+        // instead we check for the FQDN
+        ssidList.clear();
+        ssidList.add(c.FQDN);
+        assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+    }
+
+    /**
      * Verifies that getRandomizedMacAndUpdateIfNeeded updates the randomized MAC address and
      * |randomizedMacExpirationTimeMs| correctly.
      *
@@ -4713,6 +4734,33 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 networks, retrievedNetworks);
         assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
+    }
+
+    @Test
+    public void testUserAddPasspointNetworkEnableNetwork() {
+        WifiConfiguration passpointNetwork = WifiConfigurationTestUtil.createPasspointNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(passpointNetwork);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+        // Add new passpoint network will enable the network.
+        NetworkUpdateResult result = addNetworkToWifiConfigManager(passpointNetwork);
+        assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
+        assertTrue(result.isNewNetwork());
+
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
+        // Update a existing passpoint network will not enable network.
+        result = addNetworkToWifiConfigManager(passpointNetwork);
+        assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
+        assertFalse(result.isNewNetwork());
+        assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
     }
 
     private void verifyExpiryOfTimeout(WifiConfiguration config) {
