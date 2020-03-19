@@ -3415,6 +3415,9 @@ public class ClientModeImplTest {
         assertEquals(expectedWifiNetworkAgentSpecifier, wifiNetworkAgentSpecifier);
 
         assertEquals(mConnectedNetwork.creatorUid, networkCapabilities.getOwnerUid());
+        assertEquals(
+                Arrays.asList(mConnectedNetwork.creatorUid),
+                networkCapabilities.getAdministratorUids());
     }
 
     /**
