@@ -379,7 +379,7 @@ public class WifiConfigStore {
     private List<StoreData> retrieveStoreDataListForStoreFile(@NonNull StoreFile storeFile) {
         return mStoreDataList
                 .stream()
-                .filter(s -> s.getStoreFileId() == storeFile.mFileId)
+                .filter(s -> s.getStoreFileId() == storeFile.getFileId())
                 .collect(Collectors.toList());
     }
 
@@ -553,8 +553,7 @@ public class WifiConfigStore {
             case STORE_FILE_SHARED_GENERAL:
                 return WifiMigration.STORE_FILE_SHARED_GENERAL;
             case STORE_FILE_SHARED_SOFTAP:
-                // TODO (b/149418926): softap migration needs to be fixed.
-                return null;
+                return WifiMigration.STORE_FILE_SHARED_SOFTAP;
             case STORE_FILE_USER_GENERAL:
                 return WifiMigration.STORE_FILE_USER_GENERAL;
             case STORE_FILE_USER_NETWORK_SUGGESTIONS:
@@ -592,12 +591,14 @@ public class WifiConfigStore {
      */
     private void readFromSharedStoreFiles() throws XmlPullParserException, IOException {
         for (StoreFile sharedStoreFile : mSharedStores) {
-            byte[] sharedDataBytes = readDataFromMigrationSharedStoreFile(sharedStoreFile.mFileId);
+            byte[] sharedDataBytes =
+                    readDataFromMigrationSharedStoreFile(sharedStoreFile.getFileId());
             if (sharedDataBytes == null) {
+                // nothing to migrate, do normal read.
                 sharedDataBytes = sharedStoreFile.readRawData();
             } else {
                 Log.i(TAG, "Read data out of shared migration store file: "
-                        + sharedStoreFile.mAtomicFile.getBaseFile().getName());
+                        + sharedStoreFile.getName());
                 // Save the migrated file contents to the regular store file and delete the
                 // migrated stored file.
                 sharedStoreFile.storeRawDataToWrite(sharedDataBytes);
@@ -605,7 +606,7 @@ public class WifiConfigStore {
                 // Note: If the migrated store file is at the same location as the store file,
                 // then the OEM implementation should ignore this remove.
                 WifiMigration.removeSharedConfigStoreFile(
-                        getMigrationStoreFileId(sharedStoreFile.mFileId));
+                        getMigrationStoreFileId(sharedStoreFile.getFileId()));
             }
             deserializeData(sharedDataBytes, sharedStoreFile);
         }
@@ -619,12 +620,13 @@ public class WifiConfigStore {
     private void readFromUserStoreFiles() throws XmlPullParserException, IOException {
         for (StoreFile userStoreFile : mUserStores) {
             byte[] userDataBytes = readDataFromMigrationUserStoreFile(
-                    userStoreFile.mFileId, userStoreFile.mUserHandle);
+                    userStoreFile.getFileId(), userStoreFile.mUserHandle);
             if (userDataBytes == null) {
+                // nothing to migrate, do normal read.
                 userDataBytes = userStoreFile.readRawData();
             } else {
                 Log.i(TAG, "Read data out of user migration store file: "
-                        + userStoreFile.mAtomicFile.getBaseFile().getName());
+                        + userStoreFile.getName());
                 // Save the migrated file contents to the regular store file and delete the
                 // migrated stored file.
                 userStoreFile.storeRawDataToWrite(userDataBytes);
@@ -632,7 +634,7 @@ public class WifiConfigStore {
                 // Note: If the migrated store file is at the same location as the store file,
                 // then the OEM implementation should ignore this remove.
                 WifiMigration.removeUserConfigStoreFile(
-                        getMigrationStoreFileId(userStoreFile.mFileId),
+                        getMigrationStoreFileId(userStoreFile.getFileId()),
                         userStoreFile.mUserHandle);
             }
             deserializeData(userDataBytes, userStoreFile);
@@ -876,6 +878,14 @@ public class WifiConfigStore {
             mFileId = fileId;
             mUserHandle = userHandle;
             mEncryptionUtil = encryptionUtil;
+        }
+
+        public String getName() {
+            return mAtomicFile.getBaseFile().getName();
+        }
+
+        public @StoreFileId int getFileId() {
+            return mFileId;
         }
 
         /**
