@@ -199,6 +199,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
             assertEquals(SECURITY_TYPE_WPA2_PSK, config.getSecurityType());
         }
         assertEquals(15, config.getPassphrase().length());
+        assertFalse(config.isAutoShutdownEnabled());
     }
 
     private void verifyDefaultLocalOnlyApConfig(SoftApConfiguration config, String expectedSsid,
