@@ -4016,6 +4016,7 @@ public class ClientModeImpl extends StateMachine {
                     connectToNetwork(config);
                     break;
                 case CMD_START_FILS_CONNECTION:
+                    mWifiMetrics.incrementConnectRequestWithFilsAkmCount();
                     List<Layer2PacketParcelable> packets;
                     packets = (List<Layer2PacketParcelable>) message.obj;
                     if (mVerboseLoggingEnabled) {
@@ -4095,6 +4096,7 @@ public class ClientModeImpl extends StateMachine {
                     handleStatus = NOT_HANDLED;
                     break;
                 case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
+                    mWifiMetrics.incrementL2ConnectionThroughFilsAuthCount();
                     mSentHLPs = true;
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                     if (mVerboseLoggingEnabled) log("Network connection established");
@@ -6157,6 +6159,12 @@ public class ClientModeImpl extends StateMachine {
                 | MboOceConstants.BTM_DATA_FLAG_BSS_TERMINATION_INCLUDED
                 | MboOceConstants.BTM_DATA_FLAG_ESS_DISASSOCIATION_IMMINENT)) != 0;
 
+        if ((frameData.mBssTmDataFlagsMask
+                & MboOceConstants.BTM_DATA_FLAG_MBO_CELL_DATA_CONNECTION_PREFERENCE_INCLUDED)
+                != 0) {
+            mWifiMetrics.incrementMboCellularSwitchRequestCount();
+        }
+
 
         if (isImminentBit) {
             long duration = frameData.mBlackListDurationMs;
@@ -6174,6 +6182,7 @@ public class ClientModeImpl extends StateMachine {
 
         if (frameData.mStatus != MboOceConstants.BTM_RESPONSE_STATUS_ACCEPT) {
             // Trigger the network selection and re-connect to new network if available.
+            mWifiMetrics.incrementForceScanCountDueToSteeringRequest();
             mWifiConnectivityManager.forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
         }
     }
