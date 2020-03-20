@@ -162,4 +162,7 @@
 
     <!-- Status message of OSU Provider on completing provisioning. [CHAR LIMIT=NONE] -->
     <string name="osu_sign_up_complete">Sign-up complete. Connecting\u2026</string>
+
+    <!-- IMSI protection warning for non-protection network [CHAR LIMIT=NONE] -->
+    <string name="imsi_protection_warning">This network receives a unique ID that can be used to track device location. Learn more</string>
 </resources>

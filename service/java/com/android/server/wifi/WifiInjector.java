@@ -54,6 +54,7 @@ import com.android.server.wifi.p2p.WifiP2pMonitor;
 import com.android.server.wifi.p2p.WifiP2pNative;
 import com.android.server.wifi.rtt.RttMetrics;
 import com.android.server.wifi.util.NetdWrapper;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -160,6 +161,7 @@ public class WifiInjector {
     private final WifiSettingsConfigStore mSettingsConfigStore;
     private final WifiScanAlwaysAvailableSettingsCompatibility
             mWifiScanAlwaysAvailableSettingsCompatibility;
+    private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
 
     public WifiInjector(Context context) {
         if (context == null) {
@@ -185,6 +187,7 @@ public class WifiInjector {
         mFrameworkFacade = new FrameworkFacade();
         mMacAddressUtil = new MacAddressUtil();
         mContext = context;
+        mSettingsMigrationDataHolder = new SettingsMigrationDataHolder(mContext);
         mConnectionFailureNotificationBuilder = new ConnectionFailureNotificationBuilder(
                 mContext, getWifiStackPackageName(), mFrameworkFacade);
         mBatteryStats = context.getSystemService(BatteryStatsManager.class);
@@ -198,7 +201,7 @@ public class WifiInjector {
         mWifiPermissionsUtil = new WifiPermissionsUtil(mWifiPermissionsWrapper, mContext,
                 mUserManager, this);
         mWifiBackupRestore = new WifiBackupRestore(mWifiPermissionsUtil);
-        mSoftApBackupRestore = new SoftApBackupRestore(mContext);
+        mSoftApBackupRestore = new SoftApBackupRestore(mContext, mSettingsMigrationDataHolder);
         mWifiStateTracker = new WifiStateTracker(mBatteryStats);
         mWifiThreadRunner = new WifiThreadRunner(wifiHandler);
         mWifiP2pServiceHandlerThread = new HandlerThread("WifiP2pService");
@@ -264,8 +267,8 @@ public class WifiInjector {
                 new NetworkListUserStoreData(mContext),
                 new RandomizedMacStoreData(), mFrameworkFacade, wifiHandler, mDeviceConfigFacade,
                 mWifiScoreCard);
-        mSettingsConfigStore = new WifiSettingsConfigStore(context, wifiHandler, mWifiConfigManager,
-                mWifiConfigStore);
+        mSettingsConfigStore = new WifiSettingsConfigStore(context, wifiHandler,
+                mSettingsMigrationDataHolder, mWifiConfigManager, mWifiConfigStore);
         mSettingsStore = new WifiSettingsStore(mContext, mSettingsConfigStore);
         mWifiMetrics.setWifiConfigManager(mWifiConfigManager);
 
@@ -679,7 +682,7 @@ public class WifiInjector {
      */
     public SoftApStoreData makeSoftApStoreData(
             SoftApStoreData.DataSource dataSource) {
-        return new SoftApStoreData(mContext, dataSource);
+        return new SoftApStoreData(mContext, mSettingsMigrationDataHolder, dataSource);
     }
 
     public WifiPermissionsUtil getWifiPermissionsUtil() {

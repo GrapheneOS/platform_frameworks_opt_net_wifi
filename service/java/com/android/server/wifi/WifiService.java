@@ -94,7 +94,7 @@ public final class WifiService extends SystemService {
                 ctx.getResources().getString(
                         com.android.wifi.resources.R.string.notification_channel_network_alerts),
                 NotificationManager.IMPORTANCE_HIGH);
-        networkAlertsChannel.setBlockableSystem(true);
+        networkAlertsChannel.setBlockable(true);
         channelsList.add(networkAlertsChannel);
 
         final NotificationChannel networkAvailable = new NotificationChannel(
@@ -102,7 +102,7 @@ public final class WifiService extends SystemService {
                 ctx.getResources().getString(
                         com.android.wifi.resources.R.string.notification_channel_network_available),
                 NotificationManager.IMPORTANCE_LOW);
-        networkAvailable.setBlockableSystem(true);
+        networkAvailable.setBlockable(true);
         channelsList.add(networkAvailable);
 
         nm.createNotificationChannels(channelsList);

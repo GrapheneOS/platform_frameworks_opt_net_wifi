@@ -105,7 +105,6 @@ import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ISoftApCallback;
 import android.net.wifi.ISuggestionConnectionStatusListener;
 import android.net.wifi.ITrafficStateCallback;
-import android.net.wifi.ITxPacketCountListener;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApConfiguration;
@@ -3475,24 +3474,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that the PKT_CNT_FETCH message received from an app without
-     * CHANGE_WIFI_STATE} permission is rejected with a security exception.
-     */
-    @Test
-    public void testTxPacketCountFetchWithoutChangePermission() throws Exception {
-        doThrow(new SecurityException()).when(mContext).enforceCallingOrSelfPermission(
-                android.Manifest.permission.CHANGE_WIFI_STATE, "WifiService");
-        try {
-            mWifiServiceImpl.getTxPacketCount(TEST_PACKAGE_NAME, mock(Binder.class),
-                    mock(ITxPacketCountListener.class), 0);
-            fail();
-        } catch (SecurityException e) {
-            verify(mClientModeImpl, never()).getTxPacketCount(any(Binder.class),
-                    any(ITxPacketCountListener.class), anyInt(), anyInt());
-        }
-    }
-
-    /**
      * Verify that the CONNECT_NETWORK message received from an app with
      * one of the privileged permission is forwarded to ClientModeImpl.
      */
@@ -3534,19 +3515,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mClientModeImpl).forget(anyInt(), any(Binder.class),
                 any(IActionListener.class), anyInt(), anyInt());
     }
-
-    /**
-     * Verify that the RSSI_PKTCNT_FETCH message received from an app with
-     * one of the privileged permission is forwarded to ClientModeImpl.
-     */
-    @Test
-    public void testRssiPktcntFetchWithChangePermission() throws Exception {
-        mWifiServiceImpl.getTxPacketCount(TEST_PACKAGE_NAME, mock(Binder.class),
-                mock(ITxPacketCountListener.class), 0);
-        verify(mClientModeImpl).getTxPacketCount(any(Binder.class),
-                any(ITxPacketCountListener.class), anyInt(), anyInt());
-    }
-
 
     /**
      * Tests the scenario when a scan request arrives while the device is idle. In this case
