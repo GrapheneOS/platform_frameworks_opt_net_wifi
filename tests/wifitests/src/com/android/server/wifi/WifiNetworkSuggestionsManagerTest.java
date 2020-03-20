@@ -102,6 +102,7 @@ public class WifiNetworkSuggestionsManagerTest {
     private @Mock NetworkSuggestionStoreData mNetworkSuggestionStoreData;
     private @Mock ClientModeImpl mClientModeImpl;
     private @Mock WifiMetrics mWifiMetrics;
+    private @Mock WifiKeyStore mWifiKeyStore;
     private TestLooper mLooper;
     private ArgumentCaptor<AppOpsManager.OnOpChangedListener> mAppOpChangedListenerCaptor =
             ArgumentCaptor.forClass(AppOpsManager.OnOpChangedListener.class);
@@ -161,7 +162,7 @@ public class WifiNetworkSuggestionsManagerTest {
         mWifiNetworkSuggestionsManager =
                 new WifiNetworkSuggestionsManager(mContext, new Handler(mLooper.getLooper()),
                         mWifiInjector, mWifiPermissionsUtil, mWifiConfigManager, mWifiConfigStore,
-                        mWifiMetrics);
+                        mWifiMetrics, mWifiKeyStore);
         verify(mContext).getResources();
         verify(mContext).getSystemService(Context.APP_OPS_SERVICE);
         verify(mContext).getSystemService(Context.NOTIFICATION_SERVICE);
@@ -308,6 +309,40 @@ public class WifiNetworkSuggestionsManagerTest {
         assertTrue(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions().isEmpty());
     }
 
+    @Test
+    public void testAddRemoveEnterpriseNetworkSuggestion() {
+        WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), false, false, TEST_UID_1,
+                TEST_PACKAGE_1);
+        WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), false, false, TEST_UID_2,
+                TEST_PACKAGE_2);
+
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion1);
+                    add(networkSuggestion2);
+                }};
+        when(mWifiKeyStore.updateNetworkKeys(eq(networkSuggestion1.wifiConfiguration), any()))
+                .thenReturn(true);
+        when(mWifiKeyStore.updateNetworkKeys(eq(networkSuggestion2.wifiConfiguration), any()))
+                .thenReturn(false);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1));
+
+        Set<WifiNetworkSuggestion> allNetworkSuggestions =
+                mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
+        assertEquals(1, allNetworkSuggestions.size());
+        WifiNetworkSuggestion removingSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), false, false, TEST_UID_1,
+                TEST_PACKAGE_1);
+        removingSuggestion.wifiConfiguration.SSID = networkSuggestion1.wifiConfiguration.SSID;
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.remove(new ArrayList<>(),
+                        TEST_UID_1, TEST_PACKAGE_1));
+        verify(mWifiKeyStore).removeKeys(any());
+    }
     /**
      * Verify successful replace (add,remove, add) of network suggestions.
      */

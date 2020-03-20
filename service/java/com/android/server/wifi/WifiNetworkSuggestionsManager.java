@@ -111,6 +111,7 @@ public class WifiNetworkSuggestionsManager {
     private final WifiMetrics mWifiMetrics;
     private final WifiInjector mWifiInjector;
     private final FrameworkFacade mFrameworkFacade;
+    private final WifiKeyStore mWifiKeyStore;
     private AlertDialog mAlertDialog;
 
     /**
@@ -170,6 +171,10 @@ public class WifiNetworkSuggestionsManager {
                                              @NonNull PerAppInfo perAppInfo) {
             this.wns = wns;
             this.perAppInfo = perAppInfo;
+            this.wns.wifiConfiguration.fromWifiNetworkSuggestion = true;
+            this.wns.wifiConfiguration.ephemeral = true;
+            this.wns.wifiConfiguration.creatorName = perAppInfo.packageName;
+            this.wns.wifiConfiguration.creatorUid = wns.suggestorUid;
         }
 
         @Override
@@ -388,7 +393,8 @@ public class WifiNetworkSuggestionsManager {
                                          WifiPermissionsUtil wifiPermissionsUtil,
                                          WifiConfigManager wifiConfigManager,
                                          WifiConfigStore wifiConfigStore,
-                                         WifiMetrics wifiMetrics) {
+                                         WifiMetrics wifiMetrics,
+                                         WifiKeyStore keyStore) {
         mContext = context;
         mResources = context.getResources();
         mHandler = handler;
@@ -401,6 +407,7 @@ public class WifiNetworkSuggestionsManager {
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mWifiConfigManager = wifiConfigManager;
         mWifiMetrics = wifiMetrics;
+        mWifiKeyStore = keyStore;
 
         // register the data store for serializing/deserializing data.
         wifiConfigStore.registerStoreData(
@@ -599,6 +606,19 @@ public class WifiNetworkSuggestionsManager {
             // Start tracking app-op changes from the app if they have active suggestions.
             startTrackingAppOpsChange(packageName, uid);
         }
+        Iterator<ExtendedWifiNetworkSuggestion> iterator = extNetworkSuggestions.iterator();
+        // Install enterprise network suggestion catificate.
+        while (iterator.hasNext()) {
+            WifiConfiguration config = iterator.next().wns.wifiConfiguration;
+            if (!config.isEnterprise()) {
+                continue;
+            }
+            if (!mWifiKeyStore.updateNetworkKeys(config, null)) {
+                Log.e(TAG, "Enterprise network install failure for SSID: "
+                        + config.SSID);
+                iterator.remove();
+            }
+        }
         perAppInfo.extNetworkSuggestions.addAll(extNetworkSuggestions);
         // Update the max size for this app.
         perAppInfo.maxSize = Math.max(perAppInfo.extNetworkSuggestions.size(), perAppInfo.maxSize);
@@ -623,11 +643,15 @@ public class WifiNetworkSuggestionsManager {
             @NonNull Collection<ExtendedWifiNetworkSuggestion> extNetworkSuggestions,
             @NonNull String packageName,
             @NonNull PerAppInfo perAppInfo) {
+        // Get internal suggestions
+        Set<ExtendedWifiNetworkSuggestion> removingSuggestions =
+                new HashSet<>(perAppInfo.extNetworkSuggestions);
         if (!extNetworkSuggestions.isEmpty()) {
+            // Keep the internal suggestions need to remove.
+            removingSuggestions.retainAll(extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.removeAll(extNetworkSuggestions);
         } else {
             // empty list is used to clear everything for the app. Store a copy for use below.
-            extNetworkSuggestions = new HashSet<>(perAppInfo.extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.clear();
         }
         if (perAppInfo.extNetworkSuggestions.isEmpty()) {
@@ -638,8 +662,16 @@ public class WifiNetworkSuggestionsManager {
             // Stop tracking app-op changes from the app if they don't have active suggestions.
             stopTrackingAppOpsChange(packageName);
         }
+        // Clean the enterprise certifiacte.
+        for (ExtendedWifiNetworkSuggestion ewns : removingSuggestions) {
+            WifiConfiguration config = ewns.wns.wifiConfiguration;
+            if (!config.isEnterprise()) {
+                continue;
+            }
+            mWifiKeyStore.removeKeys(config.enterpriseConfig);
+        }
         // Clear the scan cache.
-        removeFromScanResultMatchInfoMap(extNetworkSuggestions);
+        removeFromScanResultMatchInfoMap(removingSuggestions);
     }
 
     /**
