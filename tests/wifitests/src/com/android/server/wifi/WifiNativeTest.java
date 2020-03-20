@@ -130,8 +130,6 @@ public class WifiNativeTest extends WifiBaseTest {
     };
     private static final WifiNl80211Manager.SignalPollResult SIGNAL_POLL_RESULT =
             new WifiNl80211Manager.SignalPollResult(-60, 12, 6, 5240);
-    private static final WifiNl80211Manager.TxPacketCounters PACKET_COUNTERS_RESULT =
-            new WifiNl80211Manager.TxPacketCounters(2000, 120);
 
     private static final Set<Integer> SCAN_FREQ_SET =
             new HashSet<Integer>() {{
@@ -716,18 +714,6 @@ public class WifiNativeTest extends WifiBaseTest {
         assertEquals(SIGNAL_POLL_RESULT.rxBitrateMbps, pollResult.rxBitrateMbps);
 
         verify(mWificondControl).signalPoll(WIFI_IFACE_NAME);
-    }
-
-    /**
-     * Verifies that getTxPacketCounters() calls underlying WificondControl.
-     */
-    @Test
-    public void testGetTxPacketCounters() throws Exception {
-        when(mWificondControl.getTxPacketCounters(WIFI_IFACE_NAME))
-                .thenReturn(PACKET_COUNTERS_RESULT);
-
-        assertEquals(PACKET_COUNTERS_RESULT, mWifiNative.getTxPacketCounters(WIFI_IFACE_NAME));
-        verify(mWificondControl).getTxPacketCounters(WIFI_IFACE_NAME);
     }
 
     /**
