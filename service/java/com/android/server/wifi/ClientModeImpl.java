@@ -4641,7 +4641,8 @@ public class ClientModeImpl extends StateMachine {
             clearTargetBssid("L2ConnectedState");
             mCountryCode.setReadyForChange(false);
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_ASSOCIATED);
-            mWifiScoreCard.noteNetworkAgentCreated(mWifiInfo, mNetworkAgent.getNetwork().netId);
+            mWifiScoreCard.noteNetworkAgentCreated(mWifiInfo,
+                    mNetworkAgent.getNetwork().getNetId());
             mBssidBlocklistMonitor.handleBssidConnectionSuccess(mLastBssid, mWifiInfo.getSSID());
         }
 
@@ -5232,7 +5233,7 @@ public class ClientModeImpl extends StateMachine {
             //Inform WifiLockManager
             WifiLockManager wifiLockManager = mWifiInjector.getWifiLockManager();
             wifiLockManager.updateWifiClientConnected(true);
-            mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().netId);
+            mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().getNetId());
         }
         @Override
         public boolean processMessage(Message message) {
