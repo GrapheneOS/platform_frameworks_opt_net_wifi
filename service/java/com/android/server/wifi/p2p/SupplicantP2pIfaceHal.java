@@ -106,7 +106,7 @@ public class SupplicantP2pIfaceHal {
             };
     private final DeathRecipient mSupplicantDeathRecipient =
             cookie -> {
-                Log.w(TAG, "ISupplicant/ISupplicantStaIface died: cookie=" + cookie);
+                Log.w(TAG, "ISupplicant/ISupplicantP2pIface died: cookie=" + cookie);
                 synchronized (mLock) {
                     supplicantServiceDiedHandler();
                 }
@@ -446,7 +446,7 @@ public class SupplicantP2pIfaceHal {
         synchronized (mLock) {
             try {
                 return android.hardware.wifi.supplicant.V1_1.ISupplicant.castFrom(
-                        ISupplicant.getService());
+                        mISupplicant);
             } catch (NoSuchElementException e) {
                 Log.e(TAG, "Failed to get ISupplicant", e);
                 return null;
