@@ -66,16 +66,15 @@ public class WifiCandidatesTest extends WifiBaseTest {
         mWifiCandidates = new WifiCandidates(mWifiScoreCard, mContext);
         mConfig1 = WifiConfigurationTestUtil.createOpenNetwork();
 
-        mScanResult1 = new ScanResult() {{
-                SSID = removeEnclosingQuotes(mConfig1.SSID);
-                capabilities = "[ESS]";
-                BSSID = "00:00:00:00:00:01";
-            }};
+        mScanResult1 = new ScanResult();
+        mScanResult1.SSID = removeEnclosingQuotes(mConfig1.SSID);
+        mScanResult1.capabilities = "[ESS]";
+        mScanResult1.BSSID = "00:00:00:00:00:01";
+
         mConfig2 = WifiConfigurationTestUtil.createEphemeralNetwork();
-        mScanResult2 = new ScanResult() {{
-                SSID = removeEnclosingQuotes(mConfig2.SSID);
-                capabilities = "[ESS]";
-            }};
+        mScanResult2 = new ScanResult();
+        mScanResult2.SSID = removeEnclosingQuotes(mConfig2.SSID);
+        mScanResult2.capabilities = "[ESS]";
 
         doReturn(mScanResult1).when(mScanDetail1).getScanResult();
         doReturn(mScanResult2).when(mScanDetail2).getScanResult();
