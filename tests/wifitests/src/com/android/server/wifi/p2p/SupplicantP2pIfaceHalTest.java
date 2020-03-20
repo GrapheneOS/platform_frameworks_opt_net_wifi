@@ -92,6 +92,7 @@ public class SupplicantP2pIfaceHalTest extends WifiBaseTest {
     ISupplicant.IfaceInfo mStaIface;
     ISupplicant.IfaceInfo mP2pIface;
     ArrayList<ISupplicant.IfaceInfo> mIfaceInfoList;
+    private IHwBinder.DeathRecipient mDeathRecipient = null;
 
     final String mIfaceName = "virtual_interface_name";
     final String mSsid = "\"SSID\"";
@@ -167,8 +168,7 @@ public class SupplicantP2pIfaceHalTest extends WifiBaseTest {
         }
 
         @Override
-        protected android.hardware.wifi.supplicant.V1_1.ISupplicant getSupplicantMockableV1_1()
-                throws RemoteException {
+        protected android.hardware.wifi.supplicant.V1_1.ISupplicant getSupplicantMockableV1_1() {
             return mISupplicantMockV1_1;
         }
 
@@ -319,6 +319,25 @@ public class SupplicantP2pIfaceHalTest extends WifiBaseTest {
     public void testInvalidTeardownInterfaceV1_1_Fails() throws Exception {
         assertFalse(mDut.teardownIface(mIfaceName));
         verifyNoMoreInteractions(mISupplicantMock);
+    }
+
+    /**
+     * Verify misorder supplicant death case.
+     */
+    @Test
+    public void testMisorderSupplicantDeathHandlingV1_1() throws Exception {
+        mISupplicantMockV1_1 = mock(android.hardware.wifi.supplicant.V1_1.ISupplicant.class);
+        doAnswer(new AnswerWithArguments() {
+            public boolean answer(IHwBinder.DeathRecipient cb, long cookie) throws RemoteException {
+                mDeathRecipient = cb;
+                return true;
+            }
+        }).when(mISupplicantMock).linkToDeath(any(IHwBinder.DeathRecipient.class),
+                anyLong());
+
+        executeAndValidateInitializationSequenceV1_1(false, false);
+        mDeathRecipient.serviceDied(0L);
+        assertFalse(mDut.teardownIface(mIfaceName));
     }
 
     /**
