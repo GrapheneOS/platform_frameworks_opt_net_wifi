@@ -68,7 +68,6 @@ import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
 import android.net.util.NetUtils;
 import android.net.wifi.IActionListener;
 import android.net.wifi.INetworkRequestMatchCallback;
-import android.net.wifi.ITxPacketCountListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiAnnotations.WifiStandard;
@@ -454,7 +453,6 @@ public class ClientModeImpl extends StateMachine {
     private final NetworkCapabilities mNetworkCapabilitiesFilter = new NetworkCapabilities();
 
     private final ExternalCallbackTracker<IActionListener> mProcessingActionListeners;
-    private final ExternalCallbackTracker<ITxPacketCountListener> mProcessingTxPacketCountListeners;
 
     /* The base for wifi message types */
     static final int BASE = Protocol.BASE_WIFI;
@@ -627,7 +625,6 @@ public class ClientModeImpl extends StateMachine {
 
     private static final int CMD_CONNECT_NETWORK                        = BASE + 258;
     private static final int CMD_SAVE_NETWORK                           = BASE + 259;
-    private static final int CMD_PKT_CNT_FETCH                          = BASE + 261;
 
     /* Start connection to FILS AP*/
     static final int CMD_START_FILS_CONNECTION                          = BASE + 262;
@@ -835,7 +832,6 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiNetworkSuggestionsManager = mWifiInjector.getWifiNetworkSuggestionsManager();
         mProcessingActionListeners = new ExternalCallbackTracker<>(getHandler());
-        mProcessingTxPacketCountListeners = new ExternalCallbackTracker<>(getHandler());
         mWifiHealthMonitor = mWifiInjector.getWifiHealthMonitor();
 
         IntentFilter filter = new IntentFilter();
@@ -1994,7 +1990,6 @@ public class ClientModeImpl extends StateMachine {
             case CMD_RSSI_POLL:
             case CMD_ONESHOT_RSSI_POLL:
             case CMD_UNWANTED_NETWORK:
-            case CMD_PKT_CNT_FETCH:
                 sb.append(" ");
                 sb.append(Integer.toString(msg.arg1));
                 sb.append(" ");
@@ -2257,9 +2252,6 @@ public class ClientModeImpl extends StateMachine {
                 break;
             case WifiP2pServiceImpl.BLOCK_DISCOVERY:
                 s = "BLOCK_DISCOVERY";
-                break;
-            case CMD_PKT_CNT_FETCH:
-                s = "CMD_PKT_CNT_FETCH";
                 break;
             default:
                 s = "what:" + Integer.toString(what);
@@ -3394,10 +3386,6 @@ public class ClientModeImpl extends StateMachine {
                     // wifi off, nothing more to do here.
                     callbackIdentifier = message.arg2;
                     sendActionListenerSuccess(callbackIdentifier);
-                    break;
-                case CMD_PKT_CNT_FETCH:
-                    callbackIdentifier = message.arg2;
-                    sendTxPacketCountListenerFailure(callbackIdentifier, WifiManager.BUSY);
                     break;
                 case CMD_GET_SUPPORTED_FEATURES:
                     long featureSet = (mWifiNative.getSupportedFeatureSet(mInterfaceName));
@@ -4847,17 +4835,6 @@ public class ClientModeImpl extends StateMachine {
                                 getPollRssiIntervalMsecs());
                     }
                     break;
-                case CMD_PKT_CNT_FETCH:
-                    callbackIdentifier = message.arg2;
-                    WifiNl80211Manager.TxPacketCounters counters =
-                            mWifiNative.getTxPacketCounters(mInterfaceName);
-                    if (counters != null) {
-                        sendTxPacketCountListenerSuccess(callbackIdentifier,
-                                counters.txPacketSucceeded + counters.txPacketFailed);
-                    } else {
-                        sendTxPacketCountListenerSuccess(callbackIdentifier, WifiManager.ERROR);
-                    }
-                    break;
                 case WifiMonitor.ASSOCIATED_BSSID_EVENT:
                     if ((String) message.obj == null) {
                         logw("Associated command w/o BSSID");
@@ -5978,40 +5955,12 @@ public class ClientModeImpl extends StateMachine {
 
     private void sendActionListenerSuccess(int callbackIdentifier) {
         IActionListener actionListener;
-        synchronized (mProcessingTxPacketCountListeners) {
+        synchronized (mProcessingActionListeners) {
             actionListener = mProcessingActionListeners.remove(callbackIdentifier);
         }
         if (actionListener != null) {
             try {
                 actionListener.onSuccess();
-            } catch (RemoteException e) {
-                // no-op (client may be dead, nothing to be done)
-            }
-        }
-    }
-
-    private void sendTxPacketCountListenerFailure(int callbackIdentifier, int reason) {
-        ITxPacketCountListener txPacketCountListener;
-        synchronized (mProcessingTxPacketCountListeners) {
-            txPacketCountListener = mProcessingTxPacketCountListeners.remove(callbackIdentifier);
-        }
-        if (txPacketCountListener != null) {
-            try {
-                txPacketCountListener.onFailure(reason);
-            } catch (RemoteException e) {
-                // no-op (client may be dead, nothing to be done)
-            }
-        }
-    }
-
-    private void sendTxPacketCountListenerSuccess(int callbackIdentifier, int count) {
-        ITxPacketCountListener txPacketCountListener;
-        synchronized (mProcessingActionListeners) {
-            txPacketCountListener = mProcessingTxPacketCountListeners.remove(callbackIdentifier);
-        }
-        if (txPacketCountListener != null) {
-            try {
-                txPacketCountListener.onSuccess(count);
             } catch (RemoteException e) {
                 // no-op (client may be dead, nothing to be done)
             }
@@ -6120,20 +6069,6 @@ public class ClientModeImpl extends StateMachine {
             }
             sendActionListenerSuccess(callbackIdentifier);
             broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_FORGOT, null);
-        });
-    }
-
-    /**
-     * Retrieve tx packet count and provide status via the provided callback.
-     */
-    public void getTxPacketCount(IBinder binder, @NonNull ITxPacketCountListener callback,
-            int callbackIdentifier, int callingUid) {
-        mWifiInjector.getWifiThreadRunner().post(() -> {
-            mProcessingTxPacketCountListeners.add(binder, callback, callbackIdentifier);
-
-            Message message = obtainMessage(CMD_PKT_CNT_FETCH, -1, callbackIdentifier, null);
-            message.sendingUid = callingUid;
-            sendMessage(message);
         });
     }
 
