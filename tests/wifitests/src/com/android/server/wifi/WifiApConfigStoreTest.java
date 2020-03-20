@@ -24,7 +24,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -36,15 +35,12 @@ import android.content.pm.ApplicationInfo;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiConfiguration.KeyMgmt;
 import android.os.Build;
 import android.os.Handler;
 import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.util.ApConfigUtil;
 import com.android.wifi.resources.R;
 
 import org.junit.Before;
@@ -53,12 +49,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
@@ -71,11 +61,9 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
 
     private static final String TAG = "WifiApConfigStoreTest";
 
-    private static final String TEST_AP_CONFIG_FILE_PREFIX = "APConfig_";
     private static final String TEST_DEFAULT_2G_CHANNEL_LIST = "1,2,3,4,5,6";
     private static final String TEST_DEFAULT_AP_SSID = "TestAP";
     private static final String TEST_DEFAULT_HOTSPOT_SSID = "TestShare";
-    private static final String TEST_DEFAULT_HOTSPOT_PSK = "TestPassword";
     private static final int RAND_SSID_INT_MIN = 1000;
     private static final int RAND_SSID_INT_MAX = 9999;
     private static final String TEST_CHAR_SET_AS_STRING = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -96,7 +84,6 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     @Mock private WifiConfigStore mWifiConfigStore;
     @Mock private WifiConfigManager mWifiConfigManager;
     @Mock private ActiveModeWarden mActiveModeWarden;
-    private File mLegacyApConfigFile;
     private Random mRandom;
     private MockResources mResources;
     @Mock private ApplicationInfo mMockApplInfo;
@@ -136,19 +123,10 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     /**
      * Helper method to create and verify actions for the ApConfigStore used in the following tests.
      */
-    private WifiApConfigStore createWifiApConfigStore(File legacyFile) throws Exception {
-        WifiApConfigStore store;
-        if (legacyFile == null) {
-            store = new WifiApConfigStore(
-                    mContext, mWifiInjector, mHandler, mBackupManagerProxy,
-                    mWifiConfigStore, mWifiConfigManager, mActiveModeWarden);
-        } else {
-            store = new WifiApConfigStore(
-                    mContext, mWifiInjector, mHandler, mBackupManagerProxy,
-                    mWifiConfigStore, mWifiConfigManager, mActiveModeWarden,
-                    new FileInputStream(legacyFile));
-        }
-
+    private WifiApConfigStore createWifiApConfigStore() throws Exception {
+        WifiApConfigStore store = new WifiApConfigStore(
+                mContext, mWifiInjector, mHandler, mBackupManagerProxy,
+                mWifiConfigStore, mWifiConfigManager, mActiveModeWarden);
         verify(mWifiConfigStore).registerStoreData(any());
         ArgumentCaptor<SoftApStoreData.DataSource> dataStoreSourceArgumentCaptor =
                 ArgumentCaptor.forClass(SoftApStoreData.DataSource.class);
@@ -156,10 +134,6 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         mDataStoreSource = dataStoreSourceArgumentCaptor.getValue();
 
         return store;
-    }
-
-    private WifiApConfigStore createWifiApConfigStore() throws Exception {
-        return createWifiApConfigStore(null);
     }
 
     /**
@@ -178,62 +152,6 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         }
         configBuilder.setHiddenSsid(hiddenSSID);
         return configBuilder.build();
-    }
-
-    /**
-     * Generate a WifiConfiguration based on the specified parameters.
-     */
-    private WifiConfiguration setupWifiConfigurationApConfig(
-            String ssid, String preSharedKey, int keyManagement, int band, int channel,
-            boolean hiddenSSID) {
-        WifiConfiguration config = new WifiConfiguration();
-        config.SSID = ssid;
-        config.preSharedKey = preSharedKey;
-        config.allowedKeyManagement.set(keyManagement);
-        config.apBand = band;
-        config.apChannel = channel;
-        config.hiddenSSID = hiddenSSID;
-        return config;
-    }
-
-    private void writeLegacyApConfigFile(WifiConfiguration config) throws Exception {
-        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
-                new FileOutputStream(mLegacyApConfigFile)))) {
-            out.writeInt(WifiApConfigStore.AP_CONFIG_FILE_VERSION);
-            out.writeUTF(config.SSID);
-            out.writeInt(config.apBand);
-            out.writeInt(config.apChannel);
-            out.writeBoolean(config.hiddenSSID);
-            int authType = config.getAuthType();
-            out.writeInt(authType);
-            if (authType != KeyMgmt.NONE) {
-                out.writeUTF(config.preSharedKey);
-            }
-        } catch (IOException e) {
-            fail("Error writing hotspot configuration" + e);
-        }
-    }
-
-    /**
-     * Asserts that the WifiConfigurations equal to SoftApConfiguration.
-     * This only compares the elements saved
-     * for softAp used.
-     */
-    public static void assertWifiConfigurationEqualSoftApConfiguration(
-            WifiConfiguration backup, SoftApConfiguration restore) {
-        assertEquals(backup.SSID, restore.getSsid());
-        assertEquals(backup.BSSID, restore.getBssid());
-        assertEquals(ApConfigUtil.convertWifiConfigBandToSoftApConfigBand(backup.apBand),
-                restore.getBand());
-        assertEquals(backup.apChannel, restore.getChannel());
-        assertEquals(backup.preSharedKey, restore.getPassphrase());
-        int authType = backup.getAuthType();
-        if (backup.getAuthType() == WifiConfiguration.KeyMgmt.WPA2_PSK) {
-            assertEquals(SoftApConfiguration.SECURITY_TYPE_WPA2_PSK, restore.getSecurityType());
-        } else {
-            assertEquals(SoftApConfiguration.SECURITY_TYPE_OPEN, restore.getSecurityType());
-        }
-        assertEquals(backup.hiddenSSID, restore.isHiddenSsid());
     }
 
     private void verifyApConfig(SoftApConfiguration config1, SoftApConfiguration config2) {
@@ -281,6 +199,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
             assertEquals(SECURITY_TYPE_WPA2_PSK, config.getSecurityType());
         }
         assertEquals(15, config.getPassphrase().length());
+        assertFalse(config.isAutoShutdownEnabled());
     }
 
     private void verifyDefaultLocalOnlyApConfig(SoftApConfiguration config, String expectedSsid,
@@ -299,47 +218,6 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         verify(mWifiConfigManager).saveToStore(true);
     }
 
-    /**
-     * Verify WifiApConfigStore can correctly load the existing configuration
-     * from the legacy config file and migrate it to the new config store.
-     */
-    @Test
-    public void initWithExistingConfigurationInLegacyFile() throws Exception {
-        WifiConfiguration backupConfig = setupWifiConfigurationApConfig(
-                "ConfiguredAP",    /* SSID */
-                "randomKey",       /* preshared key */
-                KeyMgmt.WPA2_PSK,   /* key management */
-                1,                 /* AP band (5GHz) */
-                40,                /* AP channel */
-                true               /* Hidden SSID */);
-
-        /* Create a temporary file for AP config file storage. */
-        mLegacyApConfigFile = File.createTempFile(TEST_AP_CONFIG_FILE_PREFIX, "");
-
-        SoftApConfiguration expectedConfig = setupApConfig(
-                "ConfiguredAP",           /* SSID */
-                "randomKey",              /* preshared key */
-                SECURITY_TYPE_WPA2_PSK,   /* security type */
-                SoftApConfiguration.BAND_5GHZ, /* AP band (5GHz) */
-                40,                       /* AP channel */
-                true                      /* Hidden SSID */);
-
-        assertWifiConfigurationEqualSoftApConfiguration(backupConfig, expectedConfig);
-
-        writeLegacyApConfigFile(backupConfig);
-        WifiApConfigStore store = createWifiApConfigStore(mLegacyApConfigFile);
-        verify(mWifiConfigManager).saveToStore(true);
-        verify(mBackupManagerProxy).notifyDataChanged();
-        verifyApConfig(expectedConfig, store.getApConfiguration());
-        verifyApConfig(expectedConfig, mDataStoreSource.toSerialize());
-        // Simulate the config store read to trigger the write to new config store.
-        mDataStoreSource.reset();
-        mLooper.dispatchAll();
-        // Triggers write twice:
-        // a) On reading the legacy file (new config store not ready yet)
-        // b) When the new config store is ready.
-        verify(mWifiConfigManager, times(2)).saveToStore(true);
-    }
 
     /**
      * Verify the handling of setting a null ap configuration.

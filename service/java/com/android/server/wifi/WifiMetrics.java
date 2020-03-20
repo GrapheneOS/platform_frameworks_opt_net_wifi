@@ -1495,6 +1495,13 @@ public class WifiMetrics {
         }
         mCurrentConnectionEvent.mRouterFingerPrint.mRouterFingerPrintProto
                 .routerTechnology = connectionWifiMode;
+
+        if (networkDetail.isMboSupported()) {
+            mWifiLogProto.numConnectToNetworkSupportingMbo++;
+            if (networkDetail.isOceSupported()) {
+                mWifiLogProto.numConnectToNetworkSupportingOce++;
+            }
+        }
     }
 
     /**
@@ -2047,6 +2054,10 @@ public class WifiMetrics {
         int wpa3EnterpriseNetworks = 0;
         int wapiPersonalNetworks = 0;
         int wapiEnterpriseNetworks = 0;
+        int mboSupportedNetworks = 0;
+        int mboCellularDataAwareNetworks = 0;
+        int oceSupportedNetworks = 0;
+        int filsSupportedNetworks = 0;
 
         for (ScanDetail scanDetail : scanDetails) {
             NetworkDetail networkDetail = scanDetail.getNetworkDetail();
@@ -2063,8 +2074,21 @@ public class WifiMetrics {
                         hotspot2r2Networks++;
                     }
                 }
+                if (networkDetail.isMboSupported()) {
+                    mboSupportedNetworks++;
+                    if (networkDetail.isMboCellularDataAware()) {
+                        mboCellularDataAwareNetworks++;
+                    }
+                    if (networkDetail.isOceSupported()) {
+                        oceSupportedNetworks++;
+                    }
+                }
             }
             if (scanResult != null && scanResult.capabilities != null) {
+                if (ScanResultUtil.isScanResultForFilsSha256Network(scanResult)
+                        || ScanResultUtil.isScanResultForFilsSha384Network(scanResult)) {
+                    filsSupportedNetworks++;
+                }
                 if (ScanResultUtil.isScanResultForEapSuiteBNetwork(scanResult)) {
                     wpa3EnterpriseNetworks++;
                 } else if (ScanResultUtil.isScanResultForWapiPskNetwork(scanResult)) {
@@ -2098,6 +2122,10 @@ public class WifiMetrics {
             mWifiLogProto.numHiddenNetworkScanResults += hiddenNetworks;
             mWifiLogProto.numHotspot2R1NetworkScanResults += hotspot2r1Networks;
             mWifiLogProto.numHotspot2R2NetworkScanResults += hotspot2r2Networks;
+            mWifiLogProto.numMboSupportedNetworkScanResults += mboSupportedNetworks;
+            mWifiLogProto.numMboCellularDataAwareNetworkScanResults += mboCellularDataAwareNetworks;
+            mWifiLogProto.numOceSupportedNetworkScanResults += oceSupportedNetworks;
+            mWifiLogProto.numFilsSupportedNetworkScanResults += filsSupportedNetworks;
             mWifiLogProto.numScans++;
         }
     }
@@ -2876,6 +2904,29 @@ public class WifiMetrics {
                         + mWifiLogProto.numHotspot2R1NetworkScanResults);
                 pw.println("mWifiLogProto.numHotspot2R2NetworkScanResults="
                         + mWifiLogProto.numHotspot2R2NetworkScanResults);
+                pw.println("mWifiLogProto.numMboSupportedNetworkScanResults="
+                        + mWifiLogProto.numMboSupportedNetworkScanResults);
+                pw.println("mWifiLogProto.numMboCellularDataAwareNetworkScanResults="
+                        + mWifiLogProto.numMboCellularDataAwareNetworkScanResults);
+                pw.println("mWifiLogProto.numOceSupportedNetworkScanResults="
+                        + mWifiLogProto.numOceSupportedNetworkScanResults);
+                pw.println("mWifiLogProto.numFilsSupportedNetworkScanResults="
+                        + mWifiLogProto.numFilsSupportedNetworkScanResults);
+                pw.println("mWifiLogProto.numBssidFilteredDueToMboAssocDisallowInd="
+                        + mWifiLogProto.numBssidFilteredDueToMboAssocDisallowInd);
+                pw.println("mWifiLogProto.numConnectToNetworkSupportingMbo="
+                        + mWifiLogProto.numConnectToNetworkSupportingMbo);
+                pw.println("mWifiLogProto.numConnectToNetworkSupportingOce="
+                        + mWifiLogProto.numConnectToNetworkSupportingOce);
+                pw.println("mWifiLogProto.numForceScanDueToSteeringRequest="
+                        + mWifiLogProto.numForceScanDueToSteeringRequest);
+                pw.println("mWifiLogProto.numMboCellularSwitchRequest="
+                        + mWifiLogProto.numMboCellularSwitchRequest);
+                pw.println("mWifiLogProto.numConnectRequestWithFilsAkm="
+                        + mWifiLogProto.numConnectRequestWithFilsAkm);
+                pw.println("mWifiLogProto.numL2ConnectionThroughFilsAuthentication="
+                        + mWifiLogProto.numL2ConnectionThroughFilsAuthentication);
+
                 pw.println("mWifiLogProto.numScans=" + mWifiLogProto.numScans);
                 pw.println("mWifiLogProto.WifiScoreCount: [" + MIN_WIFI_SCORE + ", "
                         + MAX_WIFI_SCORE + "]");
@@ -5586,6 +5637,55 @@ public class WifiMetrics {
                 }
                 mWifiOffMetrics.wifiOffDeferringTimeHistogram.increment(duration);
             }
+        }
+    }
+
+    /**
+     * Increment number of BSSIDs filtered out from network selection due to MBO Association
+     * disallowed indication.
+     */
+    public void incrementNetworkSelectionFilteredBssidCountDueToMboAssocDisallowInd() {
+        synchronized (mLock) {
+            mWifiLogProto.numBssidFilteredDueToMboAssocDisallowInd++;
+        }
+    }
+
+    /**
+     * Increment number of times force scan is triggered due to a
+     * BSS transition management request frame from AP.
+     */
+    public void incrementForceScanCountDueToSteeringRequest() {
+        synchronized (mLock) {
+            mWifiLogProto.numForceScanDueToSteeringRequest++;
+        }
+    }
+
+    /**
+     * Increment number of times STA received cellular switch
+     * request from MBO supported AP.
+     */
+    public void incrementMboCellularSwitchRequestCount() {
+        synchronized (mLock) {
+            mWifiLogProto.numMboCellularSwitchRequest++;
+        }
+    }
+
+    /**
+     * Increment number of connect request to AP adding FILS AKM.
+     */
+    public void incrementConnectRequestWithFilsAkmCount() {
+        synchronized (mLock) {
+            mWifiLogProto.numConnectRequestWithFilsAkm++;
+        }
+    }
+
+    /**
+     * Increment number of times STA connected through FILS
+     * authentication.
+     */
+    public void incrementL2ConnectionThroughFilsAuthCount() {
+        synchronized (mLock) {
+            mWifiLogProto.numL2ConnectionThroughFilsAuthentication++;
         }
     }
 }

@@ -25,6 +25,7 @@ import android.util.BackupUtils;
 import android.util.Log;
 
 import com.android.server.wifi.util.ApConfigUtil;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -54,9 +55,12 @@ public class SoftApBackupRestore {
     private static final int ETHER_ADDR_LEN = 6; // Byte array size of MacAddress
 
     private final Context mContext;
+    private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
 
-    public SoftApBackupRestore(Context context) {
+    public SoftApBackupRestore(Context context,
+            SettingsMigrationDataHolder settingsMigrationDataHolder) {
         mContext = context;
+        mSettingsMigrationDataHolder = settingsMigrationDataHolder;
     }
 
     /**
@@ -163,7 +167,7 @@ public class SoftApBackupRestore {
             } else {
                 // Migrate data out of settings.
                 WifiMigration.SettingsMigrationData migrationData =
-                        WifiMigration.loadFromSettings(mContext);
+                        mSettingsMigrationDataHolder.retrieveData();
                 if (migrationData == null) {
                     Log.e(TAG, "No migration data present");
                 } else {

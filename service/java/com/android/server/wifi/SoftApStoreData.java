@@ -25,6 +25,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.server.wifi.util.ApConfigUtil;
+import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
@@ -59,6 +60,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
     private static final String XML_TAG_ALLOWED_CLIENT_LIST = "AllowedClientList";
 
     private final Context mContext;
+    private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     private final DataSource mDataSource;
 
     /**
@@ -95,8 +97,10 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
      *
      * @param dataSource The DataSource that implements the update and retrieval of the SSID set.
      */
-    SoftApStoreData(Context context, DataSource dataSource) {
+    SoftApStoreData(Context context, SettingsMigrationDataHolder settingsMigrationDataHolder,
+            DataSource dataSource) {
         mContext = context;
+        mSettingsMigrationDataHolder = settingsMigrationDataHolder;
         mDataSource = dataSource;
     }
 
@@ -265,7 +269,7 @@ public class SoftApStoreData implements WifiConfigStore.StoreData {
             if (!autoShutdownEnabledTagPresent) {
                 // Migrate data out of settings.
                 WifiMigration.SettingsMigrationData migrationData =
-                        WifiMigration.loadFromSettings(mContext);
+                        mSettingsMigrationDataHolder.retrieveData();
                 if (migrationData == null) {
                     Log.e(TAG, "No migration data present");
                 } else {

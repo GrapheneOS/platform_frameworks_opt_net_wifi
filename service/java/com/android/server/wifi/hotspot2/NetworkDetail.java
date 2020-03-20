@@ -126,6 +126,9 @@ public class NetworkDetail {
      * and is set to -1 if association disallowed attribute is not present in the element.
      */
     private final int mMboAssociationDisallowedReasonCode;
+    private final boolean mMboSupported;
+    private final boolean mMboCellularDataAware;
+    private final boolean mOceSupported;
 
     public NetworkDetail(String bssid, ScanResult.InformationElement[] infoElements,
             List<String> anqpLines, int freq) {
@@ -287,6 +290,9 @@ public class NetworkDetail {
         mInternet = interworking.internet;
         mHSRelease = vsa.hsRelease;
         mAnqpDomainID = vsa.anqpDomainID;
+        mMboSupported = vsa.IsMboCapable;
+        mMboCellularDataAware = vsa.IsMboApCellularDataAware;
+        mOceSupported = vsa.IsOceCapable;
         mMboAssociationDisallowedReasonCode = vsa.mboAssociationDisallowedReasonCode;
         mAnqpOICount = roamingConsortium.anqpOICount;
         mRoamingConsortiums = roamingConsortium.getRoamingConsortiums();
@@ -417,6 +423,9 @@ public class NetworkDetail {
         mWifiMode = base.mWifiMode;
         mMaxRate = base.mMaxRate;
         mMaxNumberSpatialStreams = base.mMaxNumberSpatialStreams;
+        mMboSupported = base.mMboSupported;
+        mMboCellularDataAware = base.mMboCellularDataAware;
+        mOceSupported = base.mOceSupported;
         mMboAssociationDisallowedReasonCode = base.mMboAssociationDisallowedReasonCode;
     }
 
@@ -624,5 +633,17 @@ public class NetworkDetail {
 
     public int getMboAssociationDisallowedReasonCode() {
         return mMboAssociationDisallowedReasonCode;
+    }
+
+    public boolean isMboSupported() {
+        return mMboSupported;
+    }
+
+    public boolean isMboCellularDataAware() {
+        return mMboCellularDataAware;
+    }
+
+    public boolean isOceSupported() {
+        return mOceSupported;
     }
 }

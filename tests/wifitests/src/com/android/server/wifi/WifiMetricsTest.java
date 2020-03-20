@@ -455,8 +455,24 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int MAX_SUPPORTED_TX_LINK_SPEED_MBPS = 144;
     private static final int MAX_SUPPORTED_RX_LINK_SPEED_MBPS = 190;
 
+    private static final long NUM_MBO_SUPPORTED_NETWORKS_SCAN_RESULTS = 4;
+    private static final long NUM_MBO_CELL_DATA_AWARE_NETWORKS_SCAN_RESULTS = 2;
+    private static final long NUM_OCE_SUPPORTED_NETWORKS_SCAN_RESULTS = 2;
+    private static final long NUM_FILS_SUPPORTED_NETWORKS_SCAN_RESULTS = 2;
+    private static final long NUM_BSSID_FILTERED_DUE_TO_MBO_ASSOC_DISALLOW_IND = 3;
+    private static final long NUM_CONNECT_TO_MBO_SUPPORTED_NETWORKS = 4;
+    private static final long NUM_CONNECT_TO_OCE_SUPPORTED_NETWORKS = 3;
+    private static final long NUM_FORCE_SCAN_DUE_TO_STEERING_REQUEST = 2;
+    private static final long NUM_MBO_CELLULAR_SWITCH_REQUEST = 3;
+    private static final long NUM_CONNECT_REQUEST_WITH_FILS_AKM = 4;
+    private static final long NUM_L2_CONNECTION_THROUGH_FILS_AUTHENTICATION = 3;
+
+    public static final int FEATURE_MBO = 1 << 0;
+    public static final int FEATURE_MBO_CELL_DATA_AWARE = 1 << 1;
+    public static final int FEATURE_OCE = 1 << 2;
+
     private ScanDetail buildMockScanDetail(boolean hidden, NetworkDetail.HSRelease hSRelease,
-            String capabilities) {
+            String capabilities, int supportedFeatures) {
         ScanDetail mockScanDetail = mock(ScanDetail.class);
         NetworkDetail mockNetworkDetail = mock(NetworkDetail.class);
         ScanResult mockScanResult = mock(ScanResult.class);
@@ -465,6 +481,15 @@ public class WifiMetricsTest extends WifiBaseTest {
         when(mockNetworkDetail.isHiddenBeaconFrame()).thenReturn(hidden);
         when(mockNetworkDetail.getHSRelease()).thenReturn(hSRelease);
         mockScanResult.capabilities = capabilities;
+        if ((supportedFeatures & FEATURE_MBO) != 0) {
+            when(mockNetworkDetail.isMboSupported()).thenReturn(true);
+        }
+        if ((supportedFeatures & FEATURE_MBO_CELL_DATA_AWARE) != 0) {
+            when(mockNetworkDetail.isMboCellularDataAware()).thenReturn(true);
+        }
+        if ((supportedFeatures & FEATURE_OCE) != 0) {
+            when(mockNetworkDetail.isOceSupported()).thenReturn(true);
+        }
         return mockScanDetail;
     }
 
@@ -513,24 +538,26 @@ public class WifiMetricsTest extends WifiBaseTest {
 
     private List<ScanDetail> buildMockScanDetailList() {
         List<ScanDetail> mockScanDetails = new ArrayList<ScanDetail>();
-        mockScanDetails.add(buildMockScanDetail(true, null, "[ESS]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-PSK-CCMP][ESS]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WEP]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-OWE-CCMP]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-EAP-SUITE-B-192]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-PSK-SMS4-SMS4]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]"));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]"));
+        mockScanDetails.add(buildMockScanDetail(true, null, "[ESS]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-PSK-CCMP][ESS]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]", FEATURE_MBO));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WEP]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]",
+                FEATURE_MBO | FEATURE_MBO_CELL_DATA_AWARE));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-OWE-CCMP]",
+                FEATURE_MBO | FEATURE_MBO_CELL_DATA_AWARE | FEATURE_OCE));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-EAP-SUITE-B-192]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-PSK-SMS4-SMS4]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]", 0));
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R2,
-                "[WPA-EAP-CCMP]"));
+                "[WPA-EAP-CCMP+FILS-SHA256-CCMP]", FEATURE_MBO | FEATURE_OCE));
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R2,
-                "[WPA2-EAP+FT/EAP-CCMP]"));
+                "[WPA2-EAP+FT/EAP-CCMP+FILS-SHA256-CCMP]", 0));
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R1,
-                "[WPA-EAP-CCMP]"));
+                "[WPA-EAP-CCMP]", 0));
         return mockScanDetails;
     }
 
@@ -919,6 +946,22 @@ public class WifiMetricsTest extends WifiBaseTest {
                 DATA_STALL_MIN_TX_BAD_SETTING);
         mResources.setInteger(R.integer.config_wifiDataStallMinTxSuccessWithoutRx,
                 DATA_STALL_MIN_TX_SUCCESS_WITHOUT_RX_SETTING);
+
+        for (int i = 0; i < NUM_BSSID_FILTERED_DUE_TO_MBO_ASSOC_DISALLOW_IND; i++) {
+            mWifiMetrics.incrementNetworkSelectionFilteredBssidCountDueToMboAssocDisallowInd();
+        }
+        for (int i = 0; i < NUM_FORCE_SCAN_DUE_TO_STEERING_REQUEST; i++) {
+            mWifiMetrics.incrementForceScanCountDueToSteeringRequest();
+        }
+        for (int i = 0; i < NUM_MBO_CELLULAR_SWITCH_REQUEST; i++) {
+            mWifiMetrics.incrementMboCellularSwitchRequestCount();
+        }
+        for (int i = 0; i < NUM_CONNECT_REQUEST_WITH_FILS_AKM; i++) {
+            mWifiMetrics.incrementConnectRequestWithFilsAkmCount();
+        }
+        for (int i = 0; i < NUM_L2_CONNECTION_THROUGH_FILS_AUTHENTICATION; i++) {
+            mWifiMetrics.incrementL2ConnectionThroughFilsAuthCount();
+        }
     }
 
     private void addWifiPowerMetrics() {
@@ -1114,6 +1157,15 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.numHotspot2R1NetworkScanResults);
         assertEquals(NUM_HOTSPOT2_R2_NETWORK_SCAN_RESULTS * NUM_SCANS,
                 mDecodedProto.numHotspot2R2NetworkScanResults);
+
+        assertEquals(NUM_MBO_SUPPORTED_NETWORKS_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.numMboSupportedNetworkScanResults);
+        assertEquals(NUM_MBO_CELL_DATA_AWARE_NETWORKS_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.numMboCellularDataAwareNetworkScanResults);
+        assertEquals(NUM_OCE_SUPPORTED_NETWORKS_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.numOceSupportedNetworkScanResults);
+        assertEquals(NUM_FILS_SUPPORTED_NETWORKS_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.numFilsSupportedNetworkScanResults);
         assertEquals(NUM_SCANS,
                 mDecodedProto.numScans);
         assertEquals(NUM_CONNECTIVITY_ONESHOT_SCAN_EVENT,
@@ -1277,6 +1329,17 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.healthMonitorMetrics.numNetworkSufficientRecentStatsOnly);
         assertEquals(NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS,
                 mDecodedProto.healthMonitorMetrics.numNetworkSufficientRecentPrevStats);
+        assertEquals(NUM_BSSID_FILTERED_DUE_TO_MBO_ASSOC_DISALLOW_IND,
+                mDecodedProto.numBssidFilteredDueToMboAssocDisallowInd);
+        assertEquals(NUM_FORCE_SCAN_DUE_TO_STEERING_REQUEST,
+                mDecodedProto.numForceScanDueToSteeringRequest);
+        assertEquals(NUM_MBO_CELLULAR_SWITCH_REQUEST,
+                mDecodedProto.numMboCellularSwitchRequest);
+        assertEquals(NUM_CONNECT_REQUEST_WITH_FILS_AKM,
+                mDecodedProto.numConnectRequestWithFilsAkm);
+        assertEquals(NUM_L2_CONNECTION_THROUGH_FILS_AUTHENTICATION,
+                mDecodedProto.numL2ConnectionThroughFilsAuthentication);
+
     }
 
     /**
@@ -1446,6 +1509,8 @@ public class WifiMetricsTest extends WifiBaseTest {
         ScanDetail scanDetail = mock(ScanDetail.class);
         when(scanDetail.getNetworkDetail()).thenReturn(networkDetail);
         when(scanDetail.getScanResult()).thenReturn(scanResult);
+        when(networkDetail.isMboSupported()).thenReturn(true);
+        when(networkDetail.isOceSupported()).thenReturn(true);
 
         config.networkId = TEST_NETWORK_ID;
         mWifiMetrics.setNominatorForNetwork(TEST_NETWORK_ID,
@@ -1502,6 +1567,8 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertFalse(mDecodedProto.connectionEvent[1].useRandomizedMac);
         assertEquals(WifiMetricsProto.ConnectionEvent.NOMINATOR_MANUAL,
                 mDecodedProto.connectionEvent[0].connectionNominator);
+        assertEquals(1, mDecodedProto.numConnectToNetworkSupportingMbo);
+        assertEquals(1, mDecodedProto.numConnectToNetworkSupportingOce);
     }
 
     /**
