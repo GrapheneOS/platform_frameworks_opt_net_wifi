@@ -1053,9 +1053,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testSetSoftApConfigurationNotSavedWithoutPermission() throws Exception {
-        doThrow(new SecurityException()).when(mContext)
-                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
-                        eq("WifiService"));
         SoftApConfiguration apConfig = createValidSoftApConfiguration();
         try {
             mWifiServiceImpl.setSoftApConfiguration(apConfig, TEST_PACKAGE_NAME);
@@ -1067,18 +1064,30 @@ public class WifiServiceImplTest extends WifiBaseTest {
      * Ensure softap config is written when the caller has the correct permission.
      */
     @Test
-    public void testSetSoftApConfigurationSuccess() throws Exception {
-        doNothing().when(mContext)
-                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
-                        eq("WifiService"));
+    public void testSetSoftApConfigurationSuccessWithSettingPermission() throws Exception {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         SoftApConfiguration apConfig = createValidSoftApConfiguration();
 
         assertTrue(mWifiServiceImpl.setSoftApConfiguration(apConfig, TEST_PACKAGE_NAME));
         mLooper.dispatchAll();
         verify(mWifiApConfigStore).setApConfiguration(eq(apConfig));
         verify(mActiveModeWarden).updateSoftApConfiguration(apConfig);
-        verify(mContext).enforceCallingOrSelfPermission(
-                eq(android.Manifest.permission.NETWORK_SETTINGS), eq("WifiService"));
+        verify(mWifiPermissionsUtil).checkNetworkSettingsPermission(anyInt());
+    }
+
+    /**
+     * Ensure softap config is written when the caller has the correct permission.
+     */
+    @Test
+    public void testSetSoftApConfigurationSuccessWithOverridePermission() throws Exception {
+        when(mWifiPermissionsUtil.checkConfigOverridePermission(anyInt())).thenReturn(true);
+        SoftApConfiguration apConfig = createValidSoftApConfiguration();
+
+        assertTrue(mWifiServiceImpl.setSoftApConfiguration(apConfig, TEST_PACKAGE_NAME));
+        mLooper.dispatchAll();
+        verify(mWifiApConfigStore).setApConfiguration(eq(apConfig));
+        verify(mActiveModeWarden).updateSoftApConfiguration(apConfig);
+        verify(mWifiPermissionsUtil).checkConfigOverridePermission(anyInt());
     }
 
     /**
@@ -1086,14 +1095,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testSetSoftApConfigurationNullConfigNotSaved() throws Exception {
-        doNothing().when(mContext)
-                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
-                        eq("WifiService"));
+        when(mWifiPermissionsUtil.checkConfigOverridePermission(anyInt())).thenReturn(true);
         assertFalse(mWifiServiceImpl.setSoftApConfiguration(null, TEST_PACKAGE_NAME));
         verify(mWifiApConfigStore, never()).setApConfiguration(isNull(SoftApConfiguration.class));
         verify(mActiveModeWarden, never()).updateSoftApConfiguration(any());
-        verify(mContext).enforceCallingOrSelfPermission(
-                eq(android.Manifest.permission.NETWORK_SETTINGS), eq("WifiService"));
+        verify(mWifiPermissionsUtil).checkConfigOverridePermission(anyInt());
     }
 
     /**
@@ -1101,14 +1107,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testSetSoftApConfigurationWithInvalidConfigNotSaved() throws Exception {
-        doNothing().when(mContext)
-                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
-                        eq("WifiService"));
+        when(mWifiPermissionsUtil.checkConfigOverridePermission(anyInt())).thenReturn(true);
         assertFalse(mWifiServiceImpl.setSoftApConfiguration(
                 new SoftApConfiguration.Builder().build(), TEST_PACKAGE_NAME));
         verify(mWifiApConfigStore, never()).setApConfiguration(any());
-        verify(mContext).enforceCallingOrSelfPermission(
-                eq(android.Manifest.permission.NETWORK_SETTINGS), eq("WifiService"));
+        verify(mWifiPermissionsUtil).checkConfigOverridePermission(anyInt());
     }
 
     /**
@@ -1116,9 +1119,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testGetSoftApConfigurationNotReturnedWithoutPermission() throws Exception {
-        doThrow(new SecurityException()).when(mContext)
-                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
-                        eq("WifiService"));
         try {
             mWifiServiceImpl.getSoftApConfiguration();
             fail("Expected a SecurityException");
@@ -1132,9 +1132,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testGetSoftApConfigurationSuccess() throws Exception {
         when(mSettingsStore.isWifiToggleEnabled()).thenReturn(false);
-        doNothing().when(mContext)
-                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
-                        eq("WifiService"));
+        when(mWifiPermissionsUtil.checkConfigOverridePermission(anyInt())).thenReturn(true);
         SoftApConfiguration apConfig = createValidSoftApConfiguration();
         when(mWifiApConfigStore.getApConfiguration()).thenReturn(apConfig);
 
