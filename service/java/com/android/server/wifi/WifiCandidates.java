@@ -91,6 +91,10 @@ public class WifiCandidates {
          */
         boolean isTrusted();
         /**
+         * Returns true if suggestion came from a carrier or privileged app.
+         */
+        boolean isCarrierOrPrivileged();
+        /**
          * Returns true for a metered network.
          */
         boolean isMetered();
@@ -151,6 +155,7 @@ public class WifiCandidates {
         private final boolean mPasspoint;
         private final boolean mEphemeral;
         private final boolean mTrusted;
+        private final boolean mCarrierOrPrivileged;
         private final int mPredictedThroughputMbps;
 
         CandidateImpl(Key key, WifiConfiguration config,
@@ -162,6 +167,7 @@ public class WifiCandidates {
                 boolean isCurrentNetwork,
                 boolean isCurrentBssid,
                 boolean isMetered,
+                boolean isCarrierOrPrivileged,
                 int predictedThroughputMbps) {
             this.mKey = key;
             this.mNominatorId = nominatorId;
@@ -174,8 +180,9 @@ public class WifiCandidates {
             this.mIsMetered = isMetered;
             this.mIsOpenNetwork = WifiConfigurationUtil.isConfigForOpenNetwork(config);
             this.mPasspoint = config.isPasspoint();
-            this.mEphemeral = config.ephemeral;
+            this.mEphemeral = config.isEphemeral();
             this.mTrusted = config.trusted;
+            this.mCarrierOrPrivileged = isCarrierOrPrivileged;
             this.mPredictedThroughputMbps = predictedThroughputMbps;
         }
 
@@ -207,6 +214,11 @@ public class WifiCandidates {
         @Override
         public boolean isTrusted() {
             return mTrusted;
+        }
+
+        @Override
+        public boolean isCarrierOrPrivileged() {
+            return mCarrierOrPrivileged;
         }
 
         @Override
@@ -253,8 +265,7 @@ public class WifiCandidates {
          * Accesses statistical information from the score card
          */
         @Override
-        public WifiScoreCardProto.Signal
-                getEventStatistics(WifiScoreCardProto.Event event) {
+        public WifiScoreCardProto.Signal getEventStatistics(WifiScoreCardProto.Event event) {
             if (mPerBssid == null) return null;
             WifiScoreCard.PerSignal perSignal = mPerBssid.lookupSignal(event, getFrequency());
             if (perSignal == null) return null;
@@ -283,6 +294,7 @@ public class WifiCandidates {
                     + (isCurrentNetwork() ? "current, " : "")
                     + (isEphemeral() ? "ephemeral" : "saved") + ", "
                     + (isTrusted() ? "trusted, " : "")
+                    + (isCarrierOrPrivileged() ? "priv, " : "")
                     + (isMetered() ? "metered, " : "")
                     + (isPasspoint() ? "passpoint, " : "")
                     + (isOpenNetwork() ? "open" : "secure") + " }";
@@ -405,6 +417,7 @@ public class WifiCandidates {
                 scanDetail.getScanResult().frequency,
                 lastSelectionWeightBetweenZeroAndOne,
                 isMetered,
+                false,
                 predictedThroughputMbps);
     }
 
@@ -431,6 +444,7 @@ public class WifiCandidates {
             int frequency,
             double lastSelectionWeightBetweenZeroAndOne,
             boolean isMetered,
+            boolean isCarrierOrPrivileged,
             int predictedThroughputMbps) {
         Candidate old = mCandidates.get(key);
         if (old != null) {
@@ -451,6 +465,7 @@ public class WifiCandidates {
                 config.networkId == mCurrentNetworkId,
                 key.bssid.equals(mCurrentBssid),
                 isMetered,
+                isCarrierOrPrivileged,
                 predictedThroughputMbps);
         mCandidates.put(key, candidate);
         return true;
@@ -600,5 +615,4 @@ public class WifiCandidates {
     private boolean mPicky = false;
     private RuntimeException mLastFault = null;
     private int mFaultCount = 0;
-
 }
