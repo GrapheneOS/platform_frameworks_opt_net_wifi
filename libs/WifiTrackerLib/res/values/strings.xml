@@ -67,6 +67,9 @@
     <!-- Status message of Wi-Fi when it is connected by a app (via suggestion or network request). [CHAR LIMIT=NONE] -->
     <string name="connected_via_app">Connected via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
 
+    <!-- Summary for a network suggested by an app. [CHAR LIMIT=NONE] -->
+    <string name="available_via_app">Available via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
+
     <!-- Status message of Wi-Fi when it is automatically connected by a network recommendation provider. [CHAR LIMIT=NONE] -->
     <string name="connected_via_network_scorer">Automatically connected via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
 
