@@ -65,7 +65,7 @@ final class BubbleFunScorer implements WifiCandidates.CandidateScorer {
         double score = shapeFunction(rssi) - shapeFunction(rssiEntryThreshold);
 
         // If we are below the entry threshold, make the score more negative
-        if (score < 0.0) score *= 10.0;
+        if (score < 0.0) score *= 2.0;
 
         // The gain is approximately the derivative of shapeFunction at the given rssi
         // This is used to estimate the error
