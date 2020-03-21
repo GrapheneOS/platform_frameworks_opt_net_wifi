@@ -589,7 +589,11 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    /**
+     * @deprecated was only used by CTS test, now fully removed. Please also remove
+     * ITxPacketCountListener.aidl when removing this method.
+     */
+    @Deprecated
     public void getTxPacketCount(String packageName, IBinder binder,
             ITxPacketCountListener callback, int callbackIdentifier) {
         throw new UnsupportedOperationException();

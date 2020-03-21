@@ -104,7 +104,8 @@ public class WifiAwareDataPathStateManager {
     private final WifiAwareStateManager mMgr;
     private final Clock mClock;
     public NetworkInterfaceWrapper mNiWrapper = new NetworkInterfaceWrapper();
-    private static final NetworkCapabilities sNetworkCapabilitiesFilter = new NetworkCapabilities();
+    private static final NetworkCapabilities sNetworkCapabilitiesFilter =
+            makeNetworkCapabilitiesFilter();
     private final Set<String> mInterfaces = new HashSet<>();
     private final Map<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation>
             mNetworkRequestsCache = new ArrayMap<>();
@@ -125,6 +126,23 @@ public class WifiAwareDataPathStateManager {
         mClock = clock;
     }
 
+    private static NetworkCapabilities makeNetworkCapabilitiesFilter() {
+        return new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED)
+                .setNetworkSpecifier(new MatchAllNetworkSpecifier())
+                .setLinkUpstreamBandwidthKbps(NETWORK_FACTORY_BANDWIDTH_AVAIL)
+                .setLinkDownstreamBandwidthKbps(NETWORK_FACTORY_BANDWIDTH_AVAIL)
+                .setSignalStrength(NETWORK_FACTORY_SIGNAL_STRENGTH_AVAIL)
+                .build();
+    }
+
     /**
      * Initialize the Aware data-path state manager. Specifically register the network factory with
      * connectivity service.
@@ -142,19 +160,6 @@ public class WifiAwareDataPathStateManager {
         mLooper = looper;
         mHandler = new Handler(mLooper);
 
-        sNetworkCapabilitiesFilter.clearAll();
-        sNetworkCapabilitiesFilter.addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE);
-        sNetworkCapabilitiesFilter
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
-        sNetworkCapabilitiesFilter.setNetworkSpecifier(new MatchAllNetworkSpecifier());
-        sNetworkCapabilitiesFilter.setLinkUpstreamBandwidthKbps(NETWORK_FACTORY_BANDWIDTH_AVAIL);
-        sNetworkCapabilitiesFilter.setLinkDownstreamBandwidthKbps(NETWORK_FACTORY_BANDWIDTH_AVAIL);
-        sNetworkCapabilitiesFilter.setSignalStrength(NETWORK_FACTORY_SIGNAL_STRENGTH_AVAIL);
 
         mNetworkFactory = new WifiAwareNetworkFactory(looper, context, sNetworkCapabilitiesFilter);
         mNetworkFactory.setScoreFilter(NETWORK_FACTORY_SCORE_AVAIL);
@@ -556,7 +561,7 @@ public class WifiAwareDataPathStateManager {
             nnri.peerDataMac = mac;
             nnri.channelInfo = channelInfo;
 
-            NetworkCapabilities networkCapabilities = new NetworkCapabilities(
+            final NetworkCapabilities.Builder ncBuilder = new NetworkCapabilities.Builder(
                     sNetworkCapabilitiesFilter);
             LinkProperties linkProperties = new LinkProperties();
 
@@ -625,17 +630,16 @@ public class WifiAwareDataPathStateManager {
             }
 
             if (nnri.peerIpv6 != null) {
-                networkCapabilities.setTransportInfo(
-                        new WifiAwareNetworkInfo(nnri.peerIpv6, nnri.peerPort,
-                                nnri.peerTransportProtocol));
-            }
-            if (VDBG) {
-                Log.v(TAG, "onDataPathConfirm: AwareNetworkInfo="
-                        + networkCapabilities.getTransportInfo());
+                final WifiAwareNetworkInfo ni = new WifiAwareNetworkInfo(
+                        nnri.peerIpv6, nnri.peerPort, nnri.peerTransportProtocol);
+                ncBuilder.setTransportInfo(ni);
+                if (VDBG) {
+                    Log.v(TAG, "onDataPathConfirm: AwareNetworkInfo=" + ni);
+                }
             }
 
             if (!mNiWrapper.configureAgentProperties(nnri, nnri.equivalentRequests, ndpId,
-                    networkCapabilities, linkProperties)) {
+                    ncBuilder, linkProperties)) {
                 declareUnfullfillableAndEndDp(nnri, ndpId);
                 return networkSpecifier;
             }
@@ -646,8 +650,8 @@ public class WifiAwareDataPathStateManager {
                     .build();
 
             nnri.networkAgent = new WifiAwareNetworkAgent(mLooper, mContext,
-                    AGENT_TAG_PREFIX + nnri.ndpId,
-                    networkCapabilities, linkProperties, NETWORK_FACTORY_SCORE_AVAIL,
+                    AGENT_TAG_PREFIX + nnri.ndpId, ncBuilder.build(),
+                    linkProperties, NETWORK_FACTORY_SCORE_AVAIL,
                     naConfig, mNetworkFactory.getProvider(), nnri);
             nnri.startValidationTimestamp = mClock.getElapsedSinceBootMillis();
             handleAddressValidation(nnri, linkProperties, ndpId, networkSpecifier.isOutOfBand());
@@ -1206,16 +1210,17 @@ public class WifiAwareDataPathStateManager {
         }
 
         private NetworkCapabilities getNetworkCapabilities() {
-            NetworkCapabilities nc = new NetworkCapabilities(sNetworkCapabilitiesFilter);
-            nc.setNetworkSpecifier(new WifiAwareAgentNetworkSpecifier(
+            final NetworkCapabilities.Builder builder =
+                    new NetworkCapabilities.Builder(sNetworkCapabilitiesFilter);
+            builder.setNetworkSpecifier(new WifiAwareAgentNetworkSpecifier(
                     equivalentRequests.stream()
                             .map(NetworkRequest::getNetworkSpecifier)
                             .toArray(WifiAwareNetworkSpecifier[]::new)));
             if (peerIpv6 != null) {
-                nc.setTransportInfo(
+                builder.setTransportInfo(
                         new WifiAwareNetworkInfo(peerIpv6, peerPort, peerTransportProtocol));
             }
-            return nc;
+            return builder.build();
         }
 
         /**
@@ -1471,7 +1476,7 @@ public class WifiAwareDataPathStateManager {
          */
         public boolean configureAgentProperties(AwareNetworkRequestInformation nnri,
                 Set<NetworkRequest> networkRequests, int ndpId,
-                NetworkCapabilities networkCapabilities, LinkProperties linkProperties) {
+                NetworkCapabilities.Builder ncBuilder, LinkProperties linkProperties) {
             // find link-local address
             InetAddress linkLocal = null;
             NetworkInterface ni;
@@ -1507,9 +1512,9 @@ public class WifiAwareDataPathStateManager {
                 return false;
             }
 
-            networkCapabilities.setRequestorUid(nnri.uid);
-            networkCapabilities.setRequestorPackageName(nnri.packageName);
-            networkCapabilities.setNetworkSpecifier(new WifiAwareAgentNetworkSpecifier(
+            ncBuilder.setRequestorUid(nnri.uid);
+            ncBuilder.setRequestorPackageName(nnri.packageName);
+            ncBuilder.setNetworkSpecifier(new WifiAwareAgentNetworkSpecifier(
                     networkRequests.stream()
                             .map(NetworkRequest::getNetworkSpecifier)
                             .toArray(WifiAwareNetworkSpecifier[]::new)));

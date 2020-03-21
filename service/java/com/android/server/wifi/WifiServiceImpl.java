@@ -62,7 +62,6 @@ import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ISoftApCallback;
 import android.net.wifi.ISuggestionConnectionStatusListener;
 import android.net.wifi.ITrafficStateCallback;
-import android.net.wifi.ITxPacketCountListener;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
@@ -4080,27 +4079,6 @@ public class WifiServiceImpl extends BaseWifiService {
         mLog.info("forget uid=%").c(Binder.getCallingUid()).flush();
         mClientModeImpl.forget(
                 netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
-    }
-
-    /**
-     * see {@link android.net.wifi.WifiManager#getTxPacketCount(WifiManager.TxPacketCountListener)}
-     */
-    @Override
-    public void getTxPacketCount(String packageName, IBinder binder,
-            @NonNull ITxPacketCountListener callback, int callbackIdentifier) {
-        // verify arguments
-        if (binder == null) {
-            throw new IllegalArgumentException("Binder must not be null");
-        }
-        if (callback == null) {
-            throw new IllegalArgumentException("Callback must not be null");
-        }
-        enforceChangePermission(packageName);
-        if (mVerboseLoggingEnabled) {
-            mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        }
-        mClientModeImpl.getTxPacketCount(
-                binder, callback, callbackIdentifier, Binder.getCallingUid());
     }
 
     /**
