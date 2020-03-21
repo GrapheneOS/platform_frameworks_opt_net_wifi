@@ -38,7 +38,7 @@
           <item type="integer" name="config_wifiFrameworkUnmeteredNetworkBonus" />
           <item type="integer" name="config_wifiFrameworkCurrentNetworkBonus" />
           <item type="integer" name="config_wifiFrameworkSecureNetworkBonus" />
-          <item type="integer" name="config_wifiFrameworkLastSelectionBonus" />
+          <item type="integer" name="config_wifiFrameworkLastSelectionMinutes" />
           <item type="integer" name="config_wifiFrameworkMinPacketPerSecondActiveTraffic" />
           <item type="integer" name="config_wifiFrameworkMinPacketPerSecondHighTraffic" />
           <item type="integer" name="config_wifi_framework_wifi_score_bad_rssi_threshold_5GHz" />

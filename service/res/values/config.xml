@@ -93,9 +93,8 @@
     <integer translatable="false" name="config_wifiFrameworkCurrentNetworkBonus">20</integer>
     <integer translatable="false" name="config_wifiFrameworkSecureNetworkBonus">10</integer>
 
-    <!-- The bonus for the last-selected network starts out very large to override the category
-         boundaries. -->
-    <integer translatable="false" name="config_wifiFrameworkLastSelectionBonus">1999</integer>
+    <!-- The duration in minutes to strongly favor the last-selected network over other options. -->
+    <integer translatable="false" name="config_wifiFrameworkLastSelectionMinutes">480</integer>
 
     <!-- Integer specifying the min packet Tx/Rx rates in packets per second to be considered
          active traffic so that network selection and scan could be skipped-->

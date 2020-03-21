@@ -94,7 +94,9 @@ public class ScoringParams {
         public int unmeteredNetworkBonus = 1000;
         public int currentNetworkBonus = 20;
         public int secureNetworkBonus = 10;
-        public int lastSelectionBonus = 1999;
+        public int lastSelectionMinutes = 480;
+        public static final int MIN_MINUTES = 1;
+        public static final int MAX_MINUTES = Integer.MAX_VALUE / (60 * 1000);
 
         Values() {
         }
@@ -125,6 +127,7 @@ public class ScoringParams {
             validateRange(horizon, MIN_HORIZON, MAX_HORIZON);
             validateRange(nud, MIN_NUD, MAX_NUD);
             validateRange(expid, MIN_EXPID, MAX_EXPID);
+            validateRange(lastSelectionMinutes, MIN_MINUTES, MAX_MINUTES);
         }
 
         private void validateRssiArray(int[] rssi) throws IllegalArgumentException {
@@ -276,8 +279,8 @@ public class ScoringParams {
                 R.integer.config_wifiFrameworkCurrentNetworkBonus);
         mVal.secureNetworkBonus = context.getResources().getInteger(
                 R.integer.config_wifiFrameworkSecureNetworkBonus);
-        mVal.lastSelectionBonus = context.getResources().getInteger(
-                R.integer.config_wifiFrameworkLastSelectionBonus);
+        mVal.lastSelectionMinutes = context.getResources().getInteger(
+                R.integer.config_wifiFrameworkLastSelectionMinutes);
         mVal.pps[ACTIVE_TRAFFIC] = context.getResources().getInteger(
                 R.integer.config_wifiFrameworkMinPacketPerSecondActiveTraffic);
         mVal.pps[HIGH_TRAFFIC] = context.getResources().getInteger(
@@ -464,11 +467,11 @@ public class ScoringParams {
     }
 
     /*
-     * Returns the bonus for the network selection candidate score
-     * for a recently selected network.
+     * Returns the duration in minutes for a recently selected network
+     * to be strongly favored.
      */
-    public int getLastSelectionBonus() {
-        return mVal.lastSelectionBonus;
+    public int getLastSelectionMinutes() {
+        return mVal.lastSelectionMinutes;
     }
 
     /**
