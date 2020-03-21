@@ -30,7 +30,8 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     private boolean mIsCurrentBssid;
     private boolean mIsPasspoint;
     private boolean mIsEphemeral;
-    private boolean mIsTrusted;
+    private boolean mIsTrusted = true;
+    private boolean mCarrierOrPrivileged;
     private boolean mIsMetered;
     private int mNominatorId = -1;
     private double mLastSelectionWeight;
@@ -53,6 +54,7 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
         mIsPasspoint = candidate.isPasspoint();
         mIsEphemeral = candidate.isEphemeral();
         mIsTrusted = candidate.isTrusted();
+        mCarrierOrPrivileged = candidate.isCarrierOrPrivileged();
         mIsMetered = candidate.isMetered();
         mNominatorId = candidate.getNominatorId();
         mLastSelectionWeight = candidate.getLastSelectionWeight();
@@ -125,6 +127,16 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     @Override
     public boolean isTrusted() {
         return mIsTrusted;
+    }
+
+    public ConcreteCandidate setCarrierOrPrivileged(boolean carrierOrPrivileged) {
+        mCarrierOrPrivileged = carrierOrPrivileged;
+        return this;
+    }
+
+    @Override
+    public boolean isCarrierOrPrivileged() {
+        return mCarrierOrPrivileged;
     }
 
     public ConcreteCandidate setMetered(boolean isMetered) {
