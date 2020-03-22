@@ -67,6 +67,9 @@
     <!-- Status message of Wi-Fi when it is connected by a app (via suggestion or network request). [CHAR LIMIT=NONE] -->
     <string name="connected_via_app">Connected via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
 
+    <!-- Summary for a network suggested by an app. [CHAR LIMIT=NONE] -->
+    <string name="available_via_app">Available via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
+
     <!-- Status message of Wi-Fi when it is automatically connected by a network recommendation provider. [CHAR LIMIT=NONE] -->
     <string name="connected_via_network_scorer">Automatically connected via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
 
@@ -148,6 +151,9 @@
     <!-- Status message of OSU Provider network when not connected. [CHAR LIMIT=NONE] -->
     <string name="tap_to_sign_up">Tap to sign up</string>
 
+    <!-- Status message of OSU Provider network when existing profile is expired. [CHAR LIMIT=NONE] -->
+    <string name="tap_to_renew_subscription_and_connect">Tap to renew subscription and connect</string>
+
     <!-- Status message of OSU Provider upon initiating provisioning flow [CHAR LIMIT=NONE] -->
     <string name="osu_opening_provider">Opening <xliff:g id="passpointProvider" example="Passpoint Provider">%1$s</xliff:g></string>
 
@@ -164,5 +170,5 @@
     <string name="osu_sign_up_complete">Sign-up complete. Connecting\u2026</string>
 
     <!-- IMSI protection warning for non-protection network [CHAR LIMIT=NONE] -->
-    <string name="imsi_protection_warning">This network receives a unique ID that can be used to track device location. Learn more</string>
+    <string name="imsi_protection_warning">This network receives a unique ID that can be used to track device location.\n<annotation id="url">Learn more</annotation></string>
 </resources>

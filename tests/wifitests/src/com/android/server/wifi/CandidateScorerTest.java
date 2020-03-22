@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -178,6 +179,27 @@ public class CandidateScorerTest extends WifiBaseTest {
     }
 
     /**
+     * Prefer to switch with a larger rssi difference.
+     */
+    @Test
+    public void testSwitchWithLargerDifference() throws Exception {
+        assertThat(evaluate(mCandidate1.setScanRssi(-80)
+                                       .setCurrentNetwork(true)),
+                lessThan(evaluate(mCandidate2.setScanRssi(-60))));
+    }
+
+    /**
+     * Stay on recently selected network.
+     */
+    @Test
+    public void testStayOnRecentlySelected() throws Exception {
+        assertThat(evaluate(mCandidate1.setScanRssi(-80)
+                                       .setCurrentNetwork(true)
+                                       .setLastSelectionWeight(0.25)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-60))));
+    }
+
+    /**
      * Above saturation, don't switch from current even with a large rssi difference.
      */
     @Test
@@ -189,7 +211,7 @@ public class CandidateScorerTest extends WifiBaseTest {
     }
 
     /**
-     * Prefer high throughput network
+     * Prefer high throughput network.
      */
     @Test
     public void testPreferHighThroughputNetwork() throws Exception {
@@ -200,4 +222,59 @@ public class CandidateScorerTest extends WifiBaseTest {
                             .setPredictedThroughputMbps(50))));
         }
     }
+
+    /**
+     * Prefer saved over suggestion.
+     */
+    @Test
+    public void testPreferSavedOverSuggestion() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-77).setEphemeral(false)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                                                .setEphemeral(true)
+                                                .setPredictedThroughputMbps(1000))));
+    }
+
+    /**
+     * Prefer metered saved over unmetered suggestion.
+     */
+    @Test
+    public void testPreferMeteredSavedOverUnmeteredSuggestion() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-77).setEphemeral(false).setMetered(false)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                                                .setEphemeral(true)
+                                                .setMetered(true)
+                                                .setPredictedThroughputMbps(1000))));
+    }
+
+    /**
+     * Prefer trusted metered suggestion over privileged untrusted.
+     */
+    @Test
+    public void testPreferTrustedOverUntrusted() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-77).setEphemeral(true).setMetered(true)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                                                .setEphemeral(true)
+                                                .setPredictedThroughputMbps(1000)
+                                                .setTrusted(false)
+                                                .setCarrierOrPrivileged(true))));
+    }
+
+    /**
+     * Prefer carrier untrusted over other untrusted.
+     */
+    @Test
+    public void testPreferCarrierUntrustedOverOtherUntrusted() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-77)
+                                       .setEphemeral(true)
+                                       .setMetered(true)
+                                       .setCarrierOrPrivileged(true)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                                                .setPredictedThroughputMbps(1000)
+                                                .setTrusted(false))));
+    }
+
 }

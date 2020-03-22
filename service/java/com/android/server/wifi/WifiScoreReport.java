@@ -358,7 +358,7 @@ public class WifiScoreReport {
         if (mNetworkAgent != null) {
             final Network network = mNetworkAgent.getNetwork();
             if (network != null) {
-                netId = network.netId;
+                netId = network.getNetId();
             }
         }
 

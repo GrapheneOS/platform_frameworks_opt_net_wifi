@@ -66,16 +66,15 @@ public class WifiCandidatesTest extends WifiBaseTest {
         mWifiCandidates = new WifiCandidates(mWifiScoreCard, mContext);
         mConfig1 = WifiConfigurationTestUtil.createOpenNetwork();
 
-        mScanResult1 = new ScanResult() {{
-                SSID = removeEnclosingQuotes(mConfig1.SSID);
-                capabilities = "[ESS]";
-                BSSID = "00:00:00:00:00:01";
-            }};
+        mScanResult1 = new ScanResult();
+        mScanResult1.SSID = removeEnclosingQuotes(mConfig1.SSID);
+        mScanResult1.capabilities = "[ESS]";
+        mScanResult1.BSSID = "00:00:00:00:00:01";
+
         mConfig2 = WifiConfigurationTestUtil.createEphemeralNetwork();
-        mScanResult2 = new ScanResult() {{
-                SSID = removeEnclosingQuotes(mConfig2.SSID);
-                capabilities = "[ESS]";
-            }};
+        mScanResult2 = new ScanResult();
+        mScanResult2.SSID = removeEnclosingQuotes(mConfig2.SSID);
+        mScanResult2.capabilities = "[ESS]";
 
         doReturn(mScanResult1).when(mScanDetail1).getScanResult();
         doReturn(mScanResult2).when(mScanDetail2).getScanResult();
@@ -348,5 +347,25 @@ public class WifiCandidatesTest extends WifiBaseTest {
         // Both should survive and no faults.
         assertEquals(2, mWifiCandidates.size());
         assertEquals(0, mWifiCandidates.getFaultCount());
+    }
+
+    /**
+     * Verify CarrierOrPrivileged bit is remembered.
+     */
+    @Test
+    public void testAddCarrierOrPrivilegedCandidate() {
+        WifiCandidates.Key key = mWifiCandidates
+                .keyFromScanDetailAndConfig(mScanDetail1, mConfig1);
+        WifiCandidates.Candidate candidate;
+        // Make sure the CarrierOrPrivileged false is remembered
+        assertTrue(mWifiCandidates.add(key, mConfig1, 0, -50, 2412, 0.0, false, false, 100));
+        candidate = mWifiCandidates.getCandidates().get(0);
+        assertFalse(candidate.isCarrierOrPrivileged());
+        mWifiCandidates.remove(candidate);
+        // Make sure the CarrierOrPrivileged true is remembered
+        assertTrue(mWifiCandidates.add(key, mConfig1, 0, -50, 2412, 0.0, false, true, 100));
+        candidate = mWifiCandidates.getCandidates().get(0);
+        assertTrue(candidate.isCarrierOrPrivileged());
+        mWifiCandidates.remove(candidate);
     }
 }

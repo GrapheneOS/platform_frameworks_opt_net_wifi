@@ -450,7 +450,7 @@ public class ClientModeImpl extends StateMachine {
     private byte[] mRssiRanges;
 
     // Used to filter out requests we couldn't possibly satisfy.
-    private final NetworkCapabilities mNetworkCapabilitiesFilter = new NetworkCapabilities();
+    private final NetworkCapabilities mNetworkCapabilitiesFilter;
 
     private final ExternalCallbackTracker<IActionListener> mProcessingActionListeners;
 
@@ -810,16 +810,18 @@ public class ClientModeImpl extends StateMachine {
                 mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor,
                 mWifiInjector.getWifiThreadRunner());
 
-        mNetworkCapabilitiesFilter.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
-        mNetworkCapabilitiesFilter.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-        mNetworkCapabilitiesFilter.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
-        mNetworkCapabilitiesFilter.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING);
-        mNetworkCapabilitiesFilter.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED);
-        mNetworkCapabilitiesFilter.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED);
-        // TODO - needs to be a bit more dynamic
-        mNetworkCapabilitiesFilter.setLinkUpstreamBandwidthKbps(1024 * 1024);
-        mNetworkCapabilitiesFilter.setLinkDownstreamBandwidthKbps(1024 * 1024);
-        mNetworkCapabilitiesFilter.setNetworkSpecifier(new MatchAllNetworkSpecifier());
+        mNetworkCapabilitiesFilter = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                // TODO - needs to be a bit more dynamic
+                .setLinkUpstreamBandwidthKbps(1024 * 1024)
+                .setLinkDownstreamBandwidthKbps(1024 * 1024)
+                .setNetworkSpecifier(new MatchAllNetworkSpecifier())
+                .build();
         // Make the network factories.
         mNetworkFactory = mWifiInjector.makeWifiNetworkFactory(
                 mNetworkCapabilitiesFilter, mWifiConnectivityManager);
@@ -1362,7 +1364,7 @@ public class ClientModeImpl extends StateMachine {
             throws InvalidPacketException {
         try {
             InetAddress gateway = NetUtils.selectBestRoute(
-                    mLinkProperties.getRoutes(), packetData.dstAddress).getGateway();
+                    mLinkProperties.getRoutes(), packetData.getDstAddress()).getGateway();
             String dstMacStr = macAddressFromRoute(gateway.getHostAddress());
             return NativeUtil.macAddressToByteArray(dstMacStr);
         } catch (NullPointerException | IllegalArgumentException e) {
@@ -1372,9 +1374,9 @@ public class ClientModeImpl extends StateMachine {
 
     private static int getEtherProtoForKeepalive(KeepalivePacketData packetData)
             throws InvalidPacketException {
-        if (packetData.dstAddress instanceof Inet4Address) {
+        if (packetData.getDstAddress() instanceof Inet4Address) {
             return OsConstants.ETH_P_IP;
-        } else if (packetData.dstAddress instanceof Inet6Address) {
+        } else if (packetData.getDstAddress() instanceof Inet6Address) {
             return OsConstants.ETH_P_IPV6;
         } else {
             throw new InvalidPacketException(InvalidPacketException.ERROR_INVALID_IP_ADDRESS);
@@ -1392,7 +1394,7 @@ public class ClientModeImpl extends StateMachine {
             dstMac = getDstMacForKeepalive(packetData);
             proto = getEtherProtoForKeepalive(packetData);
         } catch (InvalidPacketException e) {
-            return e.error;
+            return e.getError();
         }
 
         int ret = mWifiNative.startSendingOffloadedPacket(
@@ -4323,43 +4325,42 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private NetworkCapabilities getCapabilities(WifiConfiguration currentWifiConfiguration) {
-        final NetworkCapabilities result = new NetworkCapabilities(mNetworkCapabilitiesFilter);
+        final NetworkCapabilities.Builder builder =
+                new NetworkCapabilities.Builder(mNetworkCapabilitiesFilter);
         // MatchAllNetworkSpecifier set in the mNetworkCapabilitiesFilter should never be set in the
         // agent's specifier.
-        result.setNetworkSpecifier(null);
+        builder.setNetworkSpecifier(null);
         if (currentWifiConfiguration == null) {
-            return result;
+            return builder.build();
         }
 
-        if (!mWifiInfo.isTrusted()) {
-            result.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
+        if (mWifiInfo.isTrusted()) {
+            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
         } else {
-            result.addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
         }
 
-        result.setOwnerUid(currentWifiConfiguration.creatorUid);
-        result.setAdministratorUids(new int[] {currentWifiConfiguration.creatorUid});
+        builder.setOwnerUid(currentWifiConfiguration.creatorUid);
+        builder.setAdministratorUids(new int[] {currentWifiConfiguration.creatorUid});
 
         if (!WifiConfiguration.isMetered(currentWifiConfiguration, mWifiInfo)) {
-            result.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
+            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
         } else {
-            result.removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
         }
 
         if (mWifiInfo.getRssi() != WifiInfo.INVALID_RSSI) {
-            result.setSignalStrength(mWifiInfo.getRssi());
+            builder.setSignalStrength(mWifiInfo.getRssi());
         } else {
-            result.setSignalStrength(NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED);
+            builder.setSignalStrength(NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED);
         }
 
         if (currentWifiConfiguration.osu) {
-            result.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
         }
 
         if (!mWifiInfo.getSSID().equals(WifiManager.UNKNOWN_SSID)) {
-            result.setSSID(mWifiInfo.getSSID());
-        } else {
-            result.setSSID(null);
+            builder.setSsid(mWifiInfo.getSSID());
         }
         Pair<Integer, String> specificRequestUidAndPackageName =
                 mNetworkFactory.getSpecificNetworkRequestUidAndPackageName(
@@ -4367,19 +4368,19 @@ public class ClientModeImpl extends StateMachine {
         // There is an active specific request.
         if (specificRequestUidAndPackageName.first != Process.INVALID_UID) {
             // Remove internet capability.
-            result.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
             // Fill up the uid/packageName for this connection.
-            result.setRequestorUid(specificRequestUidAndPackageName.first);
-            result.setRequestorPackageName(specificRequestUidAndPackageName.second);
+            builder.setRequestorUid(specificRequestUidAndPackageName.first);
+            builder.setRequestorPackageName(specificRequestUidAndPackageName.second);
             // Fill up the network agent specifier for this connection.
-            result.setNetworkSpecifier(createNetworkAgentSpecifier(
+            builder.setNetworkSpecifier(createNetworkAgentSpecifier(
                     currentWifiConfiguration, getCurrentBSSID()));
         }
-        updateLinkBandwidth(result);
-        return result;
+        updateLinkBandwidth(builder);
+        return builder.build();
     }
 
-    private void updateLinkBandwidth(NetworkCapabilities networkCapabilities) {
+    private void updateLinkBandwidth(NetworkCapabilities.Builder networkCapabilitiesBuilder) {
         int rssiDbm = mWifiInfo.getRssi();
         int txTputKbps = INVALID_THROUGHPUT;
         int rxTputKbps = INVALID_THROUGHPUT;
@@ -4407,10 +4408,10 @@ public class ClientModeImpl extends StateMachine {
             logd("rx tput in kbps: " + rxTputKbps);
         }
         if (txTputKbps > 0) {
-            networkCapabilities.setLinkUpstreamBandwidthKbps(txTputKbps);
+            networkCapabilitiesBuilder.setLinkUpstreamBandwidthKbps(txTputKbps);
         }
         if (rxTputKbps > 0) {
-            networkCapabilities.setLinkDownstreamBandwidthKbps(rxTputKbps);
+            networkCapabilitiesBuilder.setLinkDownstreamBandwidthKbps(rxTputKbps);
         }
     }
 
@@ -4640,7 +4641,8 @@ public class ClientModeImpl extends StateMachine {
             clearTargetBssid("L2ConnectedState");
             mCountryCode.setReadyForChange(false);
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_ASSOCIATED);
-            mWifiScoreCard.noteNetworkAgentCreated(mWifiInfo, mNetworkAgent.getNetwork().netId);
+            mWifiScoreCard.noteNetworkAgentCreated(mWifiInfo,
+                    mNetworkAgent.getNetwork().getNetId());
             mBssidBlocklistMonitor.handleBssidConnectionSuccess(mLastBssid, mWifiInfo.getSSID());
         }
 
@@ -5231,7 +5233,7 @@ public class ClientModeImpl extends StateMachine {
             //Inform WifiLockManager
             WifiLockManager wifiLockManager = mWifiInjector.getWifiLockManager();
             wifiLockManager.updateWifiClientConnected(true);
-            mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().netId);
+            mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().getNetId());
         }
         @Override
         public boolean processMessage(Message message) {
