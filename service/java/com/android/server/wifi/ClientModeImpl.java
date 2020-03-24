@@ -2599,8 +2599,12 @@ public class ClientModeImpl extends StateMachine {
         // SSID might have been updated, so call updateCapabilities
         updateCapabilities();
 
-        final WifiConfiguration config = getCurrentWifiConfiguration();
-        if (config != null) {
+        WifiConfiguration config = getCurrentWifiConfiguration();
+        if (config == null) {
+            // If not connected, this should be non-null.
+            config = getTargetWifiConfiguration();
+        }
+        if (config != null && config.networkId == mWifiInfo.getNetworkId()) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
             mWifiInfo.setOsuAp(config.osu);
