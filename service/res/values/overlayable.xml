@@ -117,6 +117,7 @@
           <item type="bool" name="config_wifiLinkSpeedMetricsEnabled" />
           <item type="bool" name="config_wifiPnoFrequencyCullingEnabled" />
           <item type="bool" name="config_wifiPnoRecencySortingEnabled" />
+          <item type="integer" name="config_wifiMaxPnoSsidCount" />
           <item type="bool" name="config_wifiSuspendOptimizationsEnabled" />
           <item type="bool" name="config_wifiHighMovementNetworkSelectionOptimizationEnabled" />
           <item type="integer" name="config_wifiHighMovementNetworkSelectionOptimizationScanDelayMs" />

@@ -66,4 +66,30 @@ public class LruListTest extends WifiBaseTest {
         mLruList.add(null);
         assertEquals(0, mLruList.size());
     }
+
+    @Test
+    public void getIndex() {
+        for (int i = 0; i < TEST_MAX_SIZE; i++) {
+            mLruList.add(i);
+        }
+        for (int i = 0; i < TEST_MAX_SIZE; i++) {
+            assertEquals(i, mLruList.indexOf(TEST_MAX_SIZE - i - 1));
+        }
+        // Verify not in the list will return -1.
+        assertEquals(-1, mLruList.indexOf(3));
+        mLruList.add(3);
+        // Verify add more elements more than list size, will remove oldest one.
+        assertEquals(0, mLruList.indexOf(3));
+        assertEquals(-1, mLruList.indexOf(0));
+        // Verify add an element in the list will make it the most recently one.
+        mLruList.add(1);
+        assertEquals(0, mLruList.indexOf(1));
+        assertEquals(1, mLruList.indexOf(3));
+        assertEquals(2, mLruList.indexOf(2));
+        // Verify remove one element in the list, all element behind it index should decrease 1.
+        mLruList.remove(1);
+        assertEquals(-1, mLruList.indexOf(1));
+        assertEquals(0, mLruList.indexOf(3));
+        assertEquals(1, mLruList.indexOf(2));
+    }
 }
