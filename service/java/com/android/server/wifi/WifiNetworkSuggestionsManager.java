@@ -57,6 +57,7 @@ import android.view.WindowManager;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
 import com.android.server.wifi.util.ExternalCallbackTracker;
+import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
@@ -139,6 +140,8 @@ public class WifiNetworkSuggestionsManager {
     private final FrameworkFacade mFrameworkFacade;
     private final TelephonyUtil mTelephonyUtil;
     private final WifiKeyStore mWifiKeyStore;
+    // Keep order of network connection.
+    private final LruConnectionTracker mLruConnectionTracker;
 
     /**
      * Per app meta data to store network suggestions, status, etc for each app providing network
@@ -391,6 +394,17 @@ public class WifiNetworkSuggestionsManager {
     private class NetworkSuggestionDataSource implements NetworkSuggestionStoreData.DataSource {
         @Override
         public Map<String, PerAppInfo> toSerialize() {
+            for (Map.Entry<String, PerAppInfo> entry : mActiveNetworkSuggestionsPerApp.entrySet()) {
+                Set<ExtendedWifiNetworkSuggestion> extNetworkSuggestions =
+                        entry.getValue().extNetworkSuggestions;
+                for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
+                    if (ewns.wns.passpointConfiguration != null) {
+                        continue;
+                    }
+                    ewns.wns.wifiConfiguration.isMostRecentlyConnected = mLruConnectionTracker
+                            .isMostRecentlyConnected(ewns.createInternalWifiConfiguration());
+                }
+            }
             // Clear the flag after writing to disk.
             // TODO(b/115504887): Don't reset the flag on write failure.
             mHasNewDataToSerialize = false;
@@ -414,6 +428,10 @@ public class WifiNetworkSuggestionsManager {
                     if (ewns.wns.passpointConfiguration != null) {
                         addToPasspointInfoMap(ewns);
                     } else {
+                        if (ewns.wns.wifiConfiguration.isMostRecentlyConnected) {
+                            mLruConnectionTracker
+                                    .addNetwork(ewns.createInternalWifiConfiguration());
+                        }
                         addToScanResultMatchInfoMap(ewns);
                     }
                 }
@@ -551,13 +569,10 @@ public class WifiNetworkSuggestionsManager {
             };
 
     public WifiNetworkSuggestionsManager(Context context, Handler handler,
-                                         WifiInjector wifiInjector,
-                                         WifiPermissionsUtil wifiPermissionsUtil,
-                                         WifiConfigManager wifiConfigManager,
-                                         WifiConfigStore wifiConfigStore,
-                                         WifiMetrics wifiMetrics,
-                                         TelephonyUtil telephonyUtil,
-                                         WifiKeyStore keyStore) {
+            WifiInjector wifiInjector, WifiPermissionsUtil wifiPermissionsUtil,
+            WifiConfigManager wifiConfigManager, WifiConfigStore wifiConfigStore,
+            WifiMetrics wifiMetrics, TelephonyUtil telephonyUtil,
+            WifiKeyStore keyStore, LruConnectionTracker lruConnectionTracker) {
         mContext = context;
         mResources = context.getResources();
         mHandler = handler;
@@ -589,6 +604,7 @@ public class WifiNetworkSuggestionsManager {
         mIntentFilter.addAction(NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION);
 
         mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, null, handler);
+        mLruConnectionTracker = lruConnectionTracker;
     }
 
     /**
@@ -662,6 +678,8 @@ public class WifiNetworkSuggestionsManager {
                 mActiveScanResultMatchInfoWithBssid.remove(lookupPair);
                 if (!mActiveScanResultMatchInfoWithNoBssid.containsKey(scanResultMatchInfo)) {
                     removeNetworkFromScoreCard(extNetworkSuggestion.wns.wifiConfiguration);
+                    mLruConnectionTracker.removeNetwork(
+                            extNetworkSuggestion.wns.wifiConfiguration);
                 }
             }
         } else {
@@ -678,6 +696,8 @@ public class WifiNetworkSuggestionsManager {
             if (extNetworkSuggestionsForScanResultMatchInfo.isEmpty()) {
                 mActiveScanResultMatchInfoWithNoBssid.remove(scanResultMatchInfo);
                 removeNetworkFromScoreCard(extNetworkSuggestion.wns.wifiConfiguration);
+                mLruConnectionTracker.removeNetwork(
+                        extNetworkSuggestion.wns.wifiConfiguration);
             }
         }
     }
@@ -1716,7 +1736,6 @@ public class WifiNetworkSuggestionsManager {
         if (!(connectedNetwork.fromWifiNetworkSuggestion || connectedNetwork.isOpenNetwork())) {
             return;
         }
-
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestions =
                     getNetworkSuggestionsForWifiConfiguration(connectedNetwork, connectedBssid);
 
