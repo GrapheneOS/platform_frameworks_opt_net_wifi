@@ -4771,4 +4771,38 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertTrue(WifiSsid.createFromAsciiEncoded(sFilsSsid).equals(wifiInfo.getWifiSsid()));
         assertEquals("ConnectedState", getCurrentState().getName());
     }
+
+    /**
+     * Tests the wifi info is updated correctly for connecting network.
+     */
+    @Test
+    public void testWifiInfoOnConnectingNextNetwork() throws Exception {
+
+        mConnectedNetwork.ephemeral = true;
+        mConnectedNetwork.trusted = true;
+        mConnectedNetwork.osu = true;
+
+        triggerConnect();
+        when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
+                .thenReturn(mScanDetailCache);
+
+        when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
+        when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
+
+        // before the fist success connection, there is no valid wifi info.
+        assertEquals(WifiConfiguration.INVALID_NETWORK_ID, mCmi.getWifiInfo().getNetworkId());
+
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(FRAMEWORK_NETWORK_ID,
+                    sWifiSsid, sBSSID, SupplicantState.ASSOCIATED));
+        mLooper.dispatchAll();
+
+        // retrieve correct wifi info on receiving the supplicant state change event.
+        assertEquals(FRAMEWORK_NETWORK_ID, mCmi.getWifiInfo().getNetworkId());
+        assertEquals(mConnectedNetwork.ephemeral, mCmi.getWifiInfo().isEphemeral());
+        assertEquals(mConnectedNetwork.trusted, mCmi.getWifiInfo().isTrusted());
+        assertEquals(mConnectedNetwork.osu, mCmi.getWifiInfo().isOsuAp());
+    }
 }
