@@ -99,7 +99,7 @@ java_library {
 // wifi-service static library
 // ============================================================
 java_library {
-    name: "wifi-service",
+    name: "service-wifi",
     defaults: ["wifi-service-common"],
     installable: true,
     static_libs: ["wifi-service-pre-jarjar"],
@@ -146,6 +146,7 @@ genrule {
 // TODO: This should be signed by a wifi specific certificate.
 // ============================================================
 android_app {
+    // TODO: Rename to service-wifi-resources? What about b/151678653?
     name: "wifi-service-resources",
     defaults: ["wifi-service-common"],
     resource_dirs: [

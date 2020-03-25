@@ -54,6 +54,8 @@ $(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/framework/wifi-service.jar)
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/priv-app/wifi-service-resources)
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/lib64/libwifi-jni.so)
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/lib/libwifi-jni.so)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/apex/com.android.wifi.apex)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/apex/com.android.wifi)
 # ************************************************
 # NEWER CLEAN STEPS MUST BE AT THE END OF THE LIST
 # ************************************************
