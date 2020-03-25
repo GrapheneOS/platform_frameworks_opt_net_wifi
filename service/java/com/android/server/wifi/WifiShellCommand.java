@@ -16,18 +16,32 @@
 
 package com.android.server.wifi;
 
+import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
+
 import android.content.Context;
+import android.content.pm.ParceledListSlice;
+import android.net.wifi.IActionListener;
+import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApConfiguration;
+import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BasicShellCommandHandler;
 import android.os.Binder;
+import android.os.RemoteException;
+import android.os.SystemClock;
+import android.text.TextUtils;
 
 import com.android.server.wifi.util.ApConfigUtil;
+import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -374,8 +388,138 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         pw.println("wifi_softap_wpa3_sae_supported");
                     }
                     break;
-                case "wifi-settings-reset":
+                case "settings-reset":
                     mWifiService.factoryReset(SHELL_PACKAGE_NAME);
+                    break;
+                case "list-scan-results":
+                    List<ScanResult> scanResults =
+                            mWifiService.getScanResults(SHELL_PACKAGE_NAME, null);
+                    if (scanResults.isEmpty()) {
+                        pw.println("No scan results");
+                    } else {
+                        ScanResultUtil.dumpScanResults(pw, scanResults,
+                                SystemClock.elapsedRealtime());
+                    }
+                    break;
+                case "start-scan":
+                    mWifiService.startScan(SHELL_PACKAGE_NAME, null);
+                    break;
+                case "list-networks":
+                    ParceledListSlice<WifiConfiguration> networks =
+                            mWifiService.getConfiguredNetworks(SHELL_PACKAGE_NAME, null);
+                    if (networks == null || networks.getList().isEmpty()) {
+                        pw.println("No networks");
+                    } else {
+                        pw.println("Network Id      SSID                         Security type");
+                        for (WifiConfiguration network : networks.getList()) {
+                            String securityType = null;
+                            if (WifiConfigurationUtil.isConfigForSaeNetwork(network)) {
+                                securityType = "wpa3";
+                            } else if (WifiConfigurationUtil.isConfigForPskNetwork(network)) {
+                                securityType = "wpa2";
+                            } else if (WifiConfigurationUtil.isConfigForEapNetwork(network)) {
+                                securityType = "eap";
+                            } else if (WifiConfigurationUtil.isConfigForOweNetwork(network)) {
+                                securityType = "owe";
+                            } else if (WifiConfigurationUtil.isConfigForOpenNetwork(network)) {
+                                securityType = "open";
+                            }
+                            pw.println(String.format("%-12d %-32s %-4s",
+                                    network.networkId, WifiInfo.sanitizeSsid(network.SSID),
+                                    securityType));
+                        }
+                    }
+                    break;
+                case "connect-network": {
+                    String ssid = getNextArgRequired();
+                    String type = getNextArgRequired();
+                    String optionalPassphrase = getNextArg();
+                    WifiConfiguration configuration = new WifiConfiguration();
+                    configuration.SSID = "\"" + ssid + "\"";
+                    if (TextUtils.equals(type, "wpa3")) {
+                        configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+                    } else if (TextUtils.equals(type, "wpa2")) {
+                        configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+                    } else if (TextUtils.equals(type, "owe")) {
+                        configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+                    } else if (TextUtils.equals(type, "open")) {
+                        configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+                    }
+                    if (optionalPassphrase != null) {
+                        configuration.preSharedKey = "\"" + optionalPassphrase + "\"";
+                    }
+                    CountDownLatch countDownLatch = new CountDownLatch(1);
+                    IActionListener.Stub actionListener = new IActionListener.Stub() {
+                        @Override
+                        public void onSuccess() throws RemoteException {
+                            pw.println("Connection initiated ");
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onFailure(int i) throws RemoteException {
+                            pw.println("Connection failed");
+                            countDownLatch.countDown();
+                        }
+                    };
+                    mWifiService.connect(
+                            configuration, -1, new Binder(), actionListener,
+                            actionListener.hashCode());
+                    // wait for status.
+                    countDownLatch.await(500, TimeUnit.MILLISECONDS);
+                    break;
+                }
+                case "forget-network": {
+                    String networkId = getNextArgRequired();
+                    CountDownLatch countDownLatch = new CountDownLatch(1);
+                    IActionListener.Stub actionListener = new IActionListener.Stub() {
+                        @Override
+                        public void onSuccess() throws RemoteException {
+                            pw.println("Forget successful");
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onFailure(int i) throws RemoteException {
+                            pw.println("Forget failed");
+                            countDownLatch.countDown();
+                        }
+                    };
+                    mWifiService.forget(
+                            Integer.parseInt(networkId), new Binder(), actionListener,
+                            actionListener.hashCode());
+                    // wait for status.
+                    countDownLatch.await(500, TimeUnit.MILLISECONDS);
+                    break;
+                }
+                case "status":
+                    boolean wifiEnabled = mWifiService.getWifiEnabledState() == WIFI_STATE_ENABLED;
+                    pw.println("Wifi is " + (wifiEnabled ? "enabled" : "disabled"));
+                    WifiInfo info =
+                            mWifiService.getConnectionInfo(SHELL_PACKAGE_NAME, null);
+                    if (wifiEnabled) {
+                        if (info.getSupplicantState() == SupplicantState.COMPLETED) {
+                            pw.println("Wifi is connected to " + info.getSSID());
+                            pw.println("Connection Details: " + info);
+                        } else {
+                            pw.println("Wifi is not connected");
+                        }
+                    }
+                    break;
+                case "set-verbose-logging":
+                    boolean enabled;
+                    String nextArg = getNextArgRequired();
+                    if ("enabled".equals(nextArg)) {
+                        enabled = true;
+                    } else if ("disabled".equals(nextArg)) {
+                        enabled = false;
+                    } else {
+                        pw.println(
+                                "Invalid argument to 'set-verbose-logging' - must be 'enabled'"
+                                        + " or 'disabled'");
+                        return -1;
+                    }
+                    mWifiService.enableVerboseLogging(enabled ? 1 : 0);
                     break;
                 default:
                     return handleDefaultCommands(cmd);
@@ -499,8 +643,31 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  get-softap-supported-features");
         pw.println("    Gets softap supported features. Will print 'wifi_softap_acs_supported'");
         pw.println("    and/or 'wifi_softap_wpa3_sae_supported', each on a separate line.");
-        pw.println("  wifi-settings-reset");
-        pw.println("    Initiates wifi settings reset'");
+        pw.println("  settings-reset");
+        pw.println("    Initiates wifi settings reset");
+        pw.println("  list-scan-results");
+        pw.println("    Lists the latest scan results");
+        pw.println("  start-scan");
+        pw.println("    Start a new scan");
+        pw.println("  list-networks");
+        pw.println("    Lists the saved networks");
+        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
+        pw.println("    Connect to a network with provided params and save");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  forget-network <networkId>");
+        pw.println("    Remove the network mentioned by <networkId>");
+        pw.println("        - Use list-networks to retrieve <networkId> for the network");
+        pw.println("  status");
+        pw.println("    Current wifi status");
+        pw.println("  set-verbose-logging enabled|disabled ");
+        pw.println("    Set the verbose logging enabled or disabled");
         pw.println();
     }
 }
