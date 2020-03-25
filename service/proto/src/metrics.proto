@@ -637,6 +637,9 @@ message WifiLog {
 
   // Total number of successful L2 connection through FILS authentication
   optional int32 num_l2_connection_through_fils_authentication = 177;
+
+  // Metrics related to limitation in soft ap config
+  optional SoftApConfigLimitationMetrics soft_ap_config_limitation_metrics = 178;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -1091,6 +1094,9 @@ message SoftApReturnCodeCount {
 
     // SoftAp failed to start due to NO_CHANNEL error
     SOFT_AP_FAILED_NO_CHANNEL = 3;
+
+    // SoftAp failed to start due to unsupported configuration error
+    SOFT_AP_FAILED_UNSUPPORTED_CONFIGURATION = 4;
   }
 
   // Historical, no longer used for writing as of 01/2017.
@@ -1711,6 +1717,21 @@ message SoftApConnectedClientsEvent {
 
   // Channel bandwidth used for Soft AP
   optional ChannelBandwidth channel_bandwidth = 5;
+
+  // Maximum number of client setting in SoftApConfiguration
+  optional int32 max_num_clients_setting_in_softap_configuration = 6;
+
+  // Maximum number of client setting in SoftApCapability
+  optional int32 max_num_clients_setting_in_softap_capability = 7;
+
+  // Auto shutdown timeout setting in SoftApConfiguration
+  optional int64 shutdown_timeout_setting_in_softap_configuration = 8;
+
+  // Framework default auto shutdown timeout setting
+  optional int64 default_shutdown_timeout_setting = 9;
+
+  // Indicates if user enabled the client_control
+  optional bool client_control_is_enabled = 10;
 }
 
 // Wps connection metrics
@@ -3014,4 +3035,23 @@ message WifiOffMetrics {
 
   // Histogram of wifi off deferring time
   repeated Int32Count wifi_off_deferring_time_histogram = 4;
+}
+
+// SoftAp Config  Limitation Metrics
+message SoftApConfigLimitationMetrics {
+  // Total number of softap security configuration reset to default because
+  // hardware limitation when restore configuration from cloud
+  optional int32 num_security_type_reset_to_default = 1;
+
+  // Total number of softap max client setting reset to default because
+  // hardware limitation when restore configuration from cloud
+  optional int32 num_max_client_setting_reset_to_default = 2;
+
+  // Total number of softap client control by user reset to default because
+  // hardware limitation when restore configuration from cloud
+  optional int32 num_client_control_by_user_reset_to_default = 3;
+
+  // Histogram of max client count when client connection fail because
+  // setting limitation
+  repeated Int32Count max_client_setting_when_reach_histogram = 4;
 }
