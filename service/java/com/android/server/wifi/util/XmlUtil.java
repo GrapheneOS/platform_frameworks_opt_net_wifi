@@ -355,6 +355,7 @@ public class XmlUtil {
         public static final String XML_TAG_CARRIER_ID = "CarrierId";
         public static final String XML_TAG_IS_AUTO_JOIN = "AutoJoinEnabled";
         public static final String XML_TAG_IS_TRUSTED = "Trusted";
+        private static final String XML_TAG_IS_MOST_RECENTLY_CONNECTED = "IsMostRecentlyConnected";
 
         /**
          * Write WepKeys to the XML stream.
@@ -520,6 +521,8 @@ public class XmlUtil {
             XmlUtil.writeNextValue(out, XML_TAG_MAC_RANDOMIZATION_SETTING,
                     configuration.macRandomizationSetting);
             XmlUtil.writeNextValue(out, XML_TAG_CARRIER_ID, configuration.carrierId);
+            XmlUtil.writeNextValue(out, XML_TAG_IS_MOST_RECENTLY_CONNECTED,
+                    configuration.isMostRecentlyConnected);
         }
 
         /**
@@ -712,6 +715,9 @@ public class XmlUtil {
                             break;
                         case XML_TAG_IS_TRUSTED:
                             configuration.trusted = (boolean) value;
+                            break;
+                        case XML_TAG_IS_MOST_RECENTLY_CONNECTED:
+                            configuration.isMostRecentlyConnected = (boolean) value;
                             break;
                         default:
                             Log.w(TAG, "Ignoring unknown value name found: " + valueName[0]);
