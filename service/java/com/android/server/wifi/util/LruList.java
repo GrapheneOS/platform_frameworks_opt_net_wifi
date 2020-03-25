@@ -62,6 +62,20 @@ public class LruList<E> {
     }
 
     /**
+     * Remove an entry from list.
+     */
+    public void remove(@NonNull E entry) {
+        if (entry == null) {
+            return;
+        }
+        int index = mLinkedList.indexOf(entry);
+        if (index < 0) {
+            return;
+        }
+        mLinkedList.remove(index);
+    }
+
+    /**
      * Returns the list of entries sorted by most recently added entries first.
      * @return
      */
@@ -74,5 +88,14 @@ public class LruList<E> {
      */
     public int size() {
         return mLinkedList.size();
+    }
+
+    /**
+     * Get the index in the list of the input entry.
+     * If not in the list will return -1.
+     * If in the list, smaller index is more recently added.
+     */
+    public int indexOf(E entry) {
+        return mLinkedList.indexOf(entry);
     }
 }

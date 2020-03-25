@@ -50,6 +50,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
+import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -140,6 +141,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock private WifiScoreCard mWifiScoreCard;
     @Mock private PerNetwork mPerNetwork;
+    @Mock private LruConnectionTracker mLruConnectionTracker;
 
     private MockResources mResources;
     private InOrder mContextConfigStoreMockOrder;
@@ -149,6 +151,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private TestLooper mLooper = new TestLooper();
     private MockitoSession mSession;
     private TelephonyUtil mTelephonyUtil;
+
 
     /**
      * Setup the mocks and an instance of WifiConfigManager before each test.
@@ -4843,7 +4846,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                         mNetworkListSharedStoreData, mNetworkListUserStoreData,
                         mRandomizedMacStoreData,
                         mFrameworkFacade, new Handler(mLooper.getLooper()), mDeviceConfigFacade,
-                        mWifiScoreCard);
+                        mWifiScoreCard, mLruConnectionTracker);
         mWifiConfigManager.enableVerboseLogging(1);
     }
 
@@ -5313,6 +5316,10 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Verify if the config store write was triggered without this new configuration.
         verifyNetworkNotInConfigStoreData(configuration);
         verify(mBssidBlocklistMonitor, atLeastOnce()).handleNetworkRemoved(configuration.SSID);
+        ArgumentCaptor<WifiConfiguration> captor = ArgumentCaptor.forClass(WifiConfiguration.class);
+        verify(mLruConnectionTracker).removeNetwork(captor.capture());
+        assertEquals(configuration.networkId, captor.getValue().networkId);
+        reset(mLruConnectionTracker);
     }
 
     /**
@@ -5508,6 +5515,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(networkId);
         assertTrue("hasEverConnected expected to be true after connection.",
                 retrievedNetwork.getNetworkSelectionStatus().hasEverConnected());
+        ArgumentCaptor<WifiConfiguration> captor = ArgumentCaptor.forClass(WifiConfiguration.class);
+        verify(mLruConnectionTracker).addNetwork(captor.capture());
+        assertEquals(networkId, captor.getValue().networkId);
     }
 
     /**
@@ -5631,5 +5641,24 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mClock.getWallClockMillis()).thenReturn(TEST_WALLCLOCK_CREATION_TIME_MILLIS + 15000);
         assertEquals(mWifiConfigManager.findScanRssi(result.getNetworkId(), 5000),
                 WifiInfo.INVALID_RSSI);
+    }
+
+    /**
+     * Verify when save to store, isMostRecentlyConnected flag will be set.
+     */
+    @Test
+    public void testMostRecentlyConnectedNetwork() {
+        WifiConfiguration testNetwork1 = WifiConfigurationTestUtil.createOpenNetwork();
+        verifyAddNetworkToWifiConfigManager(testNetwork1);
+        WifiConfiguration testNetwork2 = WifiConfigurationTestUtil.createOpenNetwork();
+        verifyAddNetworkToWifiConfigManager(testNetwork2);
+        when(mLruConnectionTracker.isMostRecentlyConnected(any()))
+                .thenReturn(false).thenReturn(true);
+        mWifiConfigManager.saveToStore(true);
+        Pair<List<WifiConfiguration>, List<WifiConfiguration>> networkStoreData =
+                captureWriteNetworksListStoreData();
+        List<WifiConfiguration> sharedNetwork = networkStoreData.first;
+        assertFalse(sharedNetwork.get(0).isMostRecentlyConnected);
+        assertTrue(sharedNetwork.get(1).isMostRecentlyConnected);
     }
 }
