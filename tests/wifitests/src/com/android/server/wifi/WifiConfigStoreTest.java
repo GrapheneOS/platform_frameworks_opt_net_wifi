@@ -118,6 +118,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<string name=\"RandomizedMacAddress\">%s</string>\n"
                     + "<int name=\"MacRandomizationSetting\" value=\"1\" />\n"
                     + "<int name=\"CarrierId\" value=\"-1\" />\n"
+                    + "<boolean name=\"IsMostRecentlyConnected\" value=\"false\" />\n"
                     + "</WifiConfiguration>\n"
                     + "<NetworkStatus>\n"
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
