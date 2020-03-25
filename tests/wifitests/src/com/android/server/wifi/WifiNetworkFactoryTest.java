@@ -1178,6 +1178,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
 
         mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
         mSelectedNetwork.SSID = "\"" + mTestScanDatas[0].getResults()[0].SSID + "\"";
+        mSelectedNetwork.shared = false;
 
         // Have a saved network with the same configuration.
         WifiConfiguration matchingSavedNetwork = new WifiConfiguration(mSelectedNetwork);
@@ -2874,6 +2875,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         WifiConfigMatcher(WifiConfiguration config) {
             assertNotNull(config);
             mConfig = config;
+            mConfig.shared = false;
         }
 
         @Override
@@ -2913,6 +2915,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         expectedWifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         expectedWifiConfiguration.BSSID = bssid;
         expectedWifiConfiguration.ephemeral = true;
+        expectedWifiConfiguration.shared = false;
         expectedWifiConfiguration.fromWifiNetworkSpecifier = true;
         WifiConfigurationTestUtil.assertConfigurationEqual(expectedWifiConfiguration, network);
     }
