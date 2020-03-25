@@ -340,20 +340,21 @@ public class PasspointWifiEntry extends WifiEntry {
 
     @Override
     public boolean canSetPrivacy() {
-        // TODO(b/70983952): Fill this method in
-        return false;
+        return true;
     }
 
     @Override
     @Privacy
     public int getPrivacy() {
-        // TODO(b/70983952): Fill this method in
-        return PRIVACY_UNKNOWN;
+        return mPasspointConfig.isMacRandomizationEnabled()
+                ? PRIVACY_RANDOMIZED_MAC : PRIVACY_DEVICE_MAC;
     }
 
     @Override
     public void setPrivacy(int privacy) {
-        // TODO(b/70983952): Fill this method in
+        mWifiManager.setMacRandomizationSettingPasspointEnabled(
+                mPasspointConfig.getHomeSp().getFqdn(),
+                privacy == PRIVACY_DEVICE_MAC ? false : true);
     }
 
     @Override
