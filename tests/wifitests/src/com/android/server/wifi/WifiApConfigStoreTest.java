@@ -78,6 +78,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
 
     @Mock private Context mContext;
     @Mock private WifiInjector mWifiInjector;
+    @Mock private WifiMetrics mWifiMetrics;
     private TestLooper mLooper;
     private Handler mHandler;
     @Mock private BackupManagerProxy mBackupManagerProxy;
@@ -126,7 +127,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     private WifiApConfigStore createWifiApConfigStore() throws Exception {
         WifiApConfigStore store = new WifiApConfigStore(
                 mContext, mWifiInjector, mHandler, mBackupManagerProxy,
-                mWifiConfigStore, mWifiConfigManager, mActiveModeWarden);
+                mWifiConfigStore, mWifiConfigManager, mActiveModeWarden, mWifiMetrics);
         verify(mWifiConfigStore).registerStoreData(any());
         ArgumentCaptor<SoftApStoreData.DataSource> dataStoreSourceArgumentCaptor =
                 ArgumentCaptor.forClass(SoftApStoreData.DataSource.class);
@@ -652,5 +653,6 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         SoftApConfiguration resetedConfig = store.resetToDefaultForUnsupportedConfig(sae_config);
         assertEquals(resetedConfig.getMaxNumberOfClients(), 0);
         assertFalse(resetedConfig.isClientControlByUserEnabled());
+        verify(mWifiMetrics).noteSoftApConfigReset(sae_config, resetedConfig);
     }
 }

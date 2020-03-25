@@ -348,7 +348,7 @@ public class WifiInjector {
                         mSettingsStore, mActiveModeWarden, mFrameworkFacade);
         mWifiApConfigStore = new WifiApConfigStore(
                 mContext, this, wifiHandler, mBackupManagerProxy,
-                mWifiConfigStore, mWifiConfigManager, mActiveModeWarden);
+                mWifiConfigStore, mWifiConfigManager, mActiveModeWarden, mWifiMetrics);
         WakeupNotificationFactory wakeupNotificationFactory =
                 new WakeupNotificationFactory(mContext, this, mFrameworkFacade);
         WakeupOnboarding wakeupOnboarding = new WakeupOnboarding(mContext, mWifiConfigManager,
