@@ -55,6 +55,8 @@ import android.content.Context;
 import android.net.wifi.EAPConstants;
 import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SoftApCapability;
+import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -449,6 +451,11 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_SOFT_AP_ASSOCIATED_STATIONS = 3;
     private static final int SOFT_AP_CHANNEL_FREQUENCY = 2437;
     private static final int SOFT_AP_CHANNEL_BANDWIDTH = SoftApConnectedClientsEvent.BANDWIDTH_20;
+    private static final int SOFT_AP_MAX_CLIENT_SETTING = 10;
+    private static final int SOFT_AP_MAX_CLIENT_CAPABILITY = 16;
+    private static final long SOFT_AP_SHUTDOWN_TIMEOUT_SETTING = 10_000;
+    private static final long SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING = 600_000;
+    private static final boolean SOFT_AP_CLIENT_CONTROL_ENABLE = true;
     private static final boolean IS_MAC_RANDOMIZATION_ON = true;
     private static final int NUM_LINK_SPEED_LEVELS_TO_INCREMENT = 30;
     private static final int TEST_RSSI_LEVEL = -80;
@@ -985,21 +992,39 @@ public class WifiMetricsTest extends WifiBaseTest {
     private void addSoftApEventsToMetrics() {
         // Total number of events recorded is NUM_SOFT_AP_EVENT_ENTRIES in both modes
 
-        mWifiMetrics.addSoftApUpChangedEvent(true, WifiManager.IFACE_IP_MODE_TETHERED);
+        mWifiMetrics.addSoftApUpChangedEvent(true, WifiManager.IFACE_IP_MODE_TETHERED,
+                SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING);
         mWifiMetrics.addSoftApNumAssociatedStationsChangedEvent(NUM_SOFT_AP_ASSOCIATED_STATIONS,
                 WifiManager.IFACE_IP_MODE_TETHERED);
         mWifiMetrics.addSoftApNumAssociatedStationsChangedEvent(NUM_SOFT_AP_ASSOCIATED_STATIONS,
                 WifiManager.IFACE_IP_MODE_UNSPECIFIED);  // Should be dropped.
-        mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_TETHERED);
+        mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_TETHERED,
+                SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING);
         // Channel switch info should be added to the last Soft AP UP event in the list
         mWifiMetrics.addSoftApChannelSwitchedEvent(SOFT_AP_CHANNEL_FREQUENCY,
                 SOFT_AP_CHANNEL_BANDWIDTH, WifiManager.IFACE_IP_MODE_TETHERED);
-        mWifiMetrics.addSoftApUpChangedEvent(true, WifiManager.IFACE_IP_MODE_LOCAL_ONLY);
+        SoftApConfiguration testSoftApConfig = new SoftApConfiguration.Builder()
+                .setSsid("Test_Metric_SSID")
+                .setMaxNumberOfClients(SOFT_AP_MAX_CLIENT_SETTING)
+                .setShutdownTimeoutMillis(SOFT_AP_SHUTDOWN_TIMEOUT_SETTING)
+                .setClientControlByUserEnabled(SOFT_AP_CLIENT_CONTROL_ENABLE)
+                .build();
+        mWifiMetrics.updateSoftApConfiguration(testSoftApConfig,
+                WifiManager.IFACE_IP_MODE_TETHERED);
+        SoftApCapability testSoftApCapability = new SoftApCapability(0);
+        testSoftApCapability.setMaxSupportedClients(SOFT_AP_MAX_CLIENT_CAPABILITY);
+        mWifiMetrics.updateSoftApCapability(testSoftApCapability,
+                WifiManager.IFACE_IP_MODE_TETHERED);
+
+        mWifiMetrics.addSoftApUpChangedEvent(true, WifiManager.IFACE_IP_MODE_LOCAL_ONLY,
+                SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING);
         mWifiMetrics.addSoftApNumAssociatedStationsChangedEvent(NUM_SOFT_AP_ASSOCIATED_STATIONS,
                 WifiManager.IFACE_IP_MODE_LOCAL_ONLY);
         // Should be dropped.
-        mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_CONFIGURATION_ERROR);
-        mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_LOCAL_ONLY);
+        mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_CONFIGURATION_ERROR,
+                SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING);
+        mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_LOCAL_ONLY,
+                SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING);
     }
 
     private void verifySoftApEventsStoredInProto() {
@@ -1012,6 +1037,21 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.softApConnectedClientsEventsTethered[0].channelFrequency);
         assertEquals(SOFT_AP_CHANNEL_BANDWIDTH,
                 mDecodedProto.softApConnectedClientsEventsTethered[0].channelBandwidth);
+        assertEquals(SOFT_AP_MAX_CLIENT_SETTING,
+                mDecodedProto.softApConnectedClientsEventsTethered[0]
+                .maxNumClientsSettingInSoftapConfiguration);
+        assertEquals(SOFT_AP_MAX_CLIENT_CAPABILITY,
+                mDecodedProto.softApConnectedClientsEventsTethered[0]
+                .maxNumClientsSettingInSoftapCapability);
+        assertEquals(SOFT_AP_SHUTDOWN_TIMEOUT_SETTING,
+                mDecodedProto.softApConnectedClientsEventsTethered[0]
+                .shutdownTimeoutSettingInSoftapConfiguration);
+        assertEquals(SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING,
+                mDecodedProto.softApConnectedClientsEventsTethered[0]
+                .defaultShutdownTimeoutSetting);
+        assertEquals(SOFT_AP_CLIENT_CONTROL_ENABLE,
+                mDecodedProto.softApConnectedClientsEventsTethered[0].clientControlIsEnabled);
+
         assertEquals(SoftApConnectedClientsEvent.NUM_CLIENTS_CHANGED,
                 mDecodedProto.softApConnectedClientsEventsTethered[1].eventType);
         assertEquals(NUM_SOFT_AP_ASSOCIATED_STATIONS,
@@ -4487,4 +4527,41 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertKeyCountsEqual(expectedHistogram,
                 mDecodedProto.wifiOffMetrics.wifiOffDeferringTimeHistogram);
     }
+
+    /*
+     * Test the logging of Wi-Fi off
+     */
+    @Test
+    public void testSoftApConfigLimitationMetrics() throws Exception {
+        SoftApConfiguration originalConfig = new SoftApConfiguration.Builder()
+                .setSsid("TestSSID").build();
+        SoftApConfiguration needToResetCongig = new SoftApConfiguration.Builder(originalConfig)
+                .setPassphrase("TestPassphreas", SoftApConfiguration.SECURITY_TYPE_WPA3_SAE)
+                .setClientControlByUserEnabled(true)
+                .setMaxNumberOfClients(10)
+                .build();
+        mWifiMetrics.noteSoftApConfigReset(originalConfig, needToResetCongig);
+
+        mWifiMetrics.noteSoftApClientBlocked(5);
+        mWifiMetrics.noteSoftApClientBlocked(5);
+        mWifiMetrics.noteSoftApClientBlocked(5);
+        mWifiMetrics.noteSoftApClientBlocked(8);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(1,
+                mDecodedProto.softApConfigLimitationMetrics.numSecurityTypeResetToDefault);
+        assertEquals(1,
+                mDecodedProto.softApConfigLimitationMetrics.numMaxClientSettingResetToDefault);
+        assertEquals(1,
+                mDecodedProto.softApConfigLimitationMetrics.numClientControlByUserResetToDefault);
+
+        Int32Count[] expectedHistogram = {
+                buildInt32Count(5, 3),
+                buildInt32Count(8, 1),
+        };
+        assertKeyCountsEqual(expectedHistogram,
+                mDecodedProto.softApConfigLimitationMetrics.maxClientSettingWhenReachHistogram);
+    }
+
 }

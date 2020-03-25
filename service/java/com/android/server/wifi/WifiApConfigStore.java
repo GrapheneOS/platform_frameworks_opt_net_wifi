@@ -65,6 +65,7 @@ public class WifiApConfigStore {
 
     private final Context mContext;
     private final Handler mHandler;
+    private final WifiMetrics mWifiMetrics;
     private final BackupManagerProxy mBackupManagerProxy;
     private final MacAddressUtil mMacAddressUtil;
     private final Mac mMac;
@@ -101,12 +102,14 @@ public class WifiApConfigStore {
             BackupManagerProxy backupManagerProxy,
             WifiConfigStore wifiConfigStore,
             WifiConfigManager wifiConfigManager,
-            ActiveModeWarden activeModeWarden) {
+            ActiveModeWarden activeModeWarden,
+            WifiMetrics wifiMetrics) {
         mContext = context;
         mHandler = handler;
         mBackupManagerProxy = backupManagerProxy;
         mWifiConfigManager = wifiConfigManager;
         mActiveModeWarden = activeModeWarden;
+        mWifiMetrics = wifiMetrics;
 
         // Register store data listener
         wifiConfigStore.registerStoreData(
@@ -187,7 +190,7 @@ public class WifiApConfigStore {
                     SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
             Log.e(TAG, "Device doesn't support WPA3-SAE, reset config to WPA2");
         }
-
+        mWifiMetrics.noteSoftApConfigReset(config, configBuilder.build());
         return configBuilder.build();
     }
 
