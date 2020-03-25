@@ -112,7 +112,6 @@ public class WifiScoreCard {
     static final int SUFFICIENT_RECENT_STATS_ONLY = 1;
     static final int SUFFICIENT_RECENT_PREV_STATS = 2;
 
-    private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int MAX_FREQUENCIES_PER_SSID = 10;
 
     private final Clock mClock;
@@ -888,15 +887,12 @@ public class WifiScoreCard {
                     < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
                 // don't have enough historical data,
                 // so only detect high failure stats without relying on mStatsPrevBuild.
-                // Increase low threshold so that mStatsPrevBuild is always below it
-                // statsHigh only depends on mRecentStats.
-                FailureStats statsDummy = new FailureStats();
-                statsDeltaDetectionConnection(statsDummy, statsHigh, ONE_HUNDRED_PERCENT);
+                recentStatsHighDetectionConnection(statsHigh);
                 return SUFFICIENT_RECENT_STATS_ONLY;
             } else {
                 // mStatsPrevBuild has enough updates,
-                // detect improvement or degradation with normal threshold values.
-                statsDeltaDetectionConnection(statsDec, statsInc, /* thresholdLowOffset */ 0);
+                // detect improvement or degradation
+                statsDeltaDetectionConnection(statsDec, statsInc);
                 return SUFFICIENT_RECENT_PREV_STATS;
             }
         }
@@ -910,77 +906,122 @@ public class WifiScoreCard {
             }
             if (mStatsPrevBuild.getCount(CNT_DISCONNECTION)
                     < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
-                FailureStats statsDummy = new FailureStats();
-                statsDeltaDetectionDisconnection(statsDummy, statsHigh, ONE_HUNDRED_PERCENT);
+                recentStatsHighDetectionDisconnection(statsHigh);
             } else {
-                statsDeltaDetectionDisconnection(statsDec, statsInc, /* thrLowOffset */ 0);
+                statsDeltaDetectionDisconnection(statsDec, statsInc);
             }
         }
 
         private void statsDeltaDetectionConnection(FailureStats statsDec,
-                FailureStats statsInc, int thrLowOffset) {
+                FailureStats statsInc) {
             statsDeltaDetection(statsDec, statsInc, CNT_CONNECTION_FAILURE,
                     REASON_CONNECTION_FAILURE,
-                    mDeviceConfigFacade.getConnectionFailureHighThrPercent(),
-                    mDeviceConfigFacade.getConnectionFailureLowThrPercent() + thrLowOffset,
+                    mDeviceConfigFacade.getConnectionFailureCountMin(),
                     CNT_CONNECTION_ATTEMPT);
             statsDeltaDetection(statsDec, statsInc, CNT_AUTHENTICATION_FAILURE,
                     REASON_AUTH_FAILURE,
-                    mDeviceConfigFacade.getAuthFailureHighThrPercent(),
-                    mDeviceConfigFacade.getAuthFailureLowThrPercent() + thrLowOffset,
+                    mDeviceConfigFacade.getAuthFailureCountMin(),
                     CNT_CONNECTION_ATTEMPT);
             statsDeltaDetection(statsDec, statsInc, CNT_ASSOCIATION_REJECTION,
                     REASON_ASSOC_REJECTION,
-                    mDeviceConfigFacade.getAssocRejectionHighThrPercent(),
-                    mDeviceConfigFacade.getAssocRejectionLowThrPercent() + thrLowOffset,
+                    mDeviceConfigFacade.getAssocRejectionCountMin(),
                     CNT_CONNECTION_ATTEMPT);
             statsDeltaDetection(statsDec, statsInc, CNT_ASSOCIATION_TIMEOUT,
                     REASON_ASSOC_TIMEOUT,
+                    mDeviceConfigFacade.getAssocTimeoutCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+        }
+
+        private void recentStatsHighDetectionConnection(FailureStats statsHigh) {
+            recentStatsHighDetection(statsHigh, CNT_CONNECTION_FAILURE,
+                    REASON_CONNECTION_FAILURE,
+                    mDeviceConfigFacade.getConnectionFailureHighThrPercent(),
+                    mDeviceConfigFacade.getConnectionFailureCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+            recentStatsHighDetection(statsHigh, CNT_AUTHENTICATION_FAILURE,
+                    REASON_AUTH_FAILURE,
+                    mDeviceConfigFacade.getAuthFailureHighThrPercent(),
+                    mDeviceConfigFacade.getAuthFailureCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+            recentStatsHighDetection(statsHigh, CNT_ASSOCIATION_REJECTION,
+                    REASON_ASSOC_REJECTION,
+                    mDeviceConfigFacade.getAssocRejectionHighThrPercent(),
+                    mDeviceConfigFacade.getAssocRejectionCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+            recentStatsHighDetection(statsHigh, CNT_ASSOCIATION_TIMEOUT,
+                    REASON_ASSOC_TIMEOUT,
                     mDeviceConfigFacade.getAssocTimeoutHighThrPercent(),
-                    mDeviceConfigFacade.getAssocTimeoutLowThrPercent() + thrLowOffset,
+                    mDeviceConfigFacade.getAssocTimeoutCountMin(),
                     CNT_CONNECTION_ATTEMPT);
         }
 
         private void statsDeltaDetectionDisconnection(FailureStats statsDec,
-                FailureStats statsInc, int thrLowOffset) {
+                FailureStats statsInc) {
             statsDeltaDetection(statsDec, statsInc, CNT_SHORT_CONNECTION_NONLOCAL,
                     REASON_SHORT_CONNECTION_NONLOCAL,
-                    mDeviceConfigFacade.getShortConnectionNonlocalHighThrPercent(),
-                    mDeviceConfigFacade.getShortConnectionNonlocalLowThrPercent() + thrLowOffset,
+                    mDeviceConfigFacade.getShortConnectionNonlocalCountMin(),
                     CNT_DISCONNECTION);
             statsDeltaDetection(statsDec, statsInc, CNT_DISCONNECTION_NONLOCAL,
                     REASON_DISCONNECTION_NONLOCAL,
+                    mDeviceConfigFacade.getDisconnectionNonlocalCountMin(),
+                    CNT_DISCONNECTION);
+        }
+
+        private void recentStatsHighDetectionDisconnection(FailureStats statsHigh) {
+            recentStatsHighDetection(statsHigh, CNT_SHORT_CONNECTION_NONLOCAL,
+                    REASON_SHORT_CONNECTION_NONLOCAL,
+                    mDeviceConfigFacade.getShortConnectionNonlocalHighThrPercent(),
+                    mDeviceConfigFacade.getShortConnectionNonlocalCountMin(),
+                    CNT_DISCONNECTION);
+            recentStatsHighDetection(statsHigh, CNT_DISCONNECTION_NONLOCAL,
+                    REASON_DISCONNECTION_NONLOCAL,
                     mDeviceConfigFacade.getDisconnectionNonlocalHighThrPercent(),
-                    mDeviceConfigFacade.getDisconnectionNonlocalLowThrPercent() + thrLowOffset,
+                    mDeviceConfigFacade.getDisconnectionNonlocalCountMin(),
                     CNT_DISCONNECTION);
         }
 
         private boolean statsDeltaDetection(FailureStats statsDec,
                 FailureStats statsInc, int countCode, int reasonCode,
-                int highThreshold, int lowThreshold, int refCountCode) {
-            if (isRateBelowThreshold(mStatsPrevBuild, countCode, lowThreshold, refCountCode)
-                    && isRateAboveThreshold(mRecentStats, countCode, highThreshold, refCountCode)) {
+                int minCount, int refCountCode) {
+            if (isRatioAboveThreshold(mRecentStats, mStatsPrevBuild, countCode, refCountCode)
+                    && mRecentStats.getCount(countCode) >= minCount) {
                 statsInc.incrementCount(reasonCode);
                 return true;
             }
-            if (isRateAboveThreshold(mStatsPrevBuild, countCode, highThreshold, refCountCode)
-                    && isRateBelowThreshold(mRecentStats, countCode, lowThreshold, refCountCode)) {
+
+            if (isRatioAboveThreshold(mStatsPrevBuild, mRecentStats, countCode, refCountCode)
+                    && mStatsPrevBuild.getCount(countCode) >= minCount) {
                 statsDec.incrementCount(reasonCode);
                 return true;
             }
             return false;
         }
 
-        private boolean isRateAboveThreshold(NetworkConnectionStats stats,
-                @ConnectionCountCode int countCode, int threshold, int refCountCode) {
-            return (stats.getCount(countCode) * ONE_HUNDRED_PERCENT)
-                    >= (threshold * stats.getCount(refCountCode));
+        private boolean recentStatsHighDetection(FailureStats statsHigh, int countCode,
+                int reasonCode, int highThresholdPercent, int minCount, int refCountCode) {
+            // Use Laplace's rule of succession, useful especially for a small
+            // connection attempt count
+            // R = (f+1)/(n+2) with a pseudo count of 2 (one for f and one for s)
+            if ((((mRecentStats.getCount(countCode) + 1) * 100)
+                    >= (highThresholdPercent * (mRecentStats.getCount(refCountCode) + 2)))
+                    && (mRecentStats.getCount(countCode) >= minCount)) {
+                statsHigh.incrementCount(reasonCode);
+                return true;
+            }
+            return false;
         }
 
-        private boolean isRateBelowThreshold(NetworkConnectionStats stats,
-                @ConnectionCountCode int countCode, int threshold, int refCountCode) {
-            return (stats.getCount(countCode) * ONE_HUNDRED_PERCENT)
-                    <= (threshold * stats.getCount(refCountCode));
+        private boolean isRatioAboveThreshold(NetworkConnectionStats stats1,
+                NetworkConnectionStats stats2,
+                @ConnectionCountCode int countCode, int refCountCode) {
+            // Also with Laplace's rule of succession discussed above
+            // R1 = (stats1(countCode) + 1) / (stats1(refCountCode) + 2)
+            // R2 = (stats2(countCode) + 1) / (stats2(refCountCode) + 2)
+            // Check R1 / R2 >= ratioThr
+            return ((stats1.getCount(countCode) + 1) * (stats2.getCount(refCountCode) + 2)
+                    * mDeviceConfigFacade.HEALTH_MONITOR_RATIO_THR_DENOMINATOR)
+                    >= ((stats1.getCount(refCountCode) + 1) * (stats2.getCount(countCode) + 2)
+                    * mDeviceConfigFacade.getHealthMonitorRatioThrNumerator());
         }
 
         private boolean isRecentConnectionStatsSufficient() {
