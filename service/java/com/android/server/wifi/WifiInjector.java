@@ -53,6 +53,7 @@ import com.android.server.wifi.p2p.WifiP2pMetrics;
 import com.android.server.wifi.p2p.WifiP2pMonitor;
 import com.android.server.wifi.p2p.WifiP2pNative;
 import com.android.server.wifi.rtt.RttMetrics;
+import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.TelephonyUtil;
@@ -75,6 +76,10 @@ import java.util.Random;
 public class WifiInjector {
     private static final String TAG = "WifiInjector";
     private static final String BOOT_DEFAULT_WIFI_COUNTRY_CODE = "ro.boot.wificountrycode";
+    /**
+     * Maximum number in-memory store network connection order;
+     */
+    private static final int MAX_RECENTLY_CONNECTED_NETWORK = 100;
 
     static WifiInjector sWifiInjector = null;
 
@@ -162,6 +167,7 @@ public class WifiInjector {
     private final WifiScanAlwaysAvailableSettingsCompatibility
             mWifiScanAlwaysAvailableSettingsCompatibility;
     private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
+    private final LruConnectionTracker mLruConnectionTracker;
 
     public WifiInjector(Context context) {
         if (context == null) {
@@ -258,6 +264,8 @@ public class WifiInjector {
                 mFrameworkFacade, mContext, wifiHandler);
         String l2KeySeed = Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID);
         mWifiScoreCard = new WifiScoreCard(mClock, l2KeySeed, mDeviceConfigFacade);
+        mLruConnectionTracker = new LruConnectionTracker(MAX_RECENTLY_CONNECTED_NETWORK,
+                mContext);
         // Config Manager
         mWifiConfigManager = new WifiConfigManager(mContext, mClock,
                 mUserManager, mTelephonyUtil,
@@ -266,7 +274,7 @@ public class WifiInjector {
                 new NetworkListSharedStoreData(mContext),
                 new NetworkListUserStoreData(mContext),
                 new RandomizedMacStoreData(), mFrameworkFacade, wifiHandler, mDeviceConfigFacade,
-                mWifiScoreCard);
+                mWifiScoreCard, mLruConnectionTracker);
         mSettingsConfigStore = new WifiSettingsConfigStore(context, wifiHandler,
                 mSettingsMigrationDataHolder, mWifiConfigManager, mWifiConfigStore);
         mSettingsStore = new WifiSettingsStore(mContext, mSettingsConfigStore);
@@ -292,7 +300,7 @@ public class WifiInjector {
         mWifiMetrics.setWifiNetworkSelector(mWifiNetworkSelector);
         mWifiNetworkSuggestionsManager = new WifiNetworkSuggestionsManager(mContext, wifiHandler,
                 this, mWifiPermissionsUtil, mWifiConfigManager, mWifiConfigStore, mWifiMetrics,
-                mTelephonyUtil, mWifiKeyStore);
+                mTelephonyUtil, mWifiKeyStore, mLruConnectionTracker);
         mPasspointManager = new PasspointManager(mContext, this,
                 wifiHandler, mWifiNative, mWifiKeyStore, mClock, new PasspointObjectFactory(),
                 mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mTelephonyUtil);
