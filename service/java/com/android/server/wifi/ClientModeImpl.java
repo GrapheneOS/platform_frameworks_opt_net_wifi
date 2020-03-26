@@ -6095,11 +6095,6 @@ public class ClientModeImpl extends StateMachine {
             return;
         }
 
-        boolean isImminentBit = (frameData.mBssTmDataFlagsMask
-                & (MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT
-                | MboOceConstants.BTM_DATA_FLAG_BSS_TERMINATION_INCLUDED
-                | MboOceConstants.BTM_DATA_FLAG_ESS_DISASSOCIATION_IMMINENT)) != 0;
-
         if ((frameData.mBssTmDataFlagsMask
                 & MboOceConstants.BTM_DATA_FLAG_MBO_CELL_DATA_CONNECTION_PREFERENCE_INCLUDED)
                 != 0) {
@@ -6107,12 +6102,13 @@ public class ClientModeImpl extends StateMachine {
         }
 
 
-        if (isImminentBit) {
+        if ((frameData.mBssTmDataFlagsMask
+                & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED)
+                != 0) {
             long duration = frameData.mBlackListDurationMs;
             if (duration == 0) {
                 /*
-                 * When AP sets one of the imminent bits and disassociation timer / BSS termination
-                 * duration / MBO assoc retry delay is set to zero(reserved as per spec),
+                 * When MBO assoc retry delay is set to zero(reserved as per spec),
                  * blacklist the BSS for sometime to avoid AP rejecting the re-connect request.
                  */
                 duration = MboOceConstants.DEFAULT_BLACKLIST_DURATION_MS;
