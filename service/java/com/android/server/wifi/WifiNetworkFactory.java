@@ -790,6 +790,9 @@ public class WifiNetworkFactory extends NetworkFactory {
         // Set the WifiConfiguration.BSSID field to prevent roaming.
         networkToConnect.BSSID = findBestBssidFromActiveMatchedScanResultsForNetwork(network);
         networkToConnect.ephemeral = true;
+        // Mark it user private to avoid conflicting with any saved networks the user might have.
+        // TODO (b/142035508): Use a more generic mechanism to fix this.
+        networkToConnect.shared = false;
         networkToConnect.fromWifiNetworkSpecifier = true;
 
         // Store the user selected network.
