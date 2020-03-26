@@ -77,6 +77,7 @@ import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
 import com.android.server.wifi.WifiNetworkSuggestionsManager.ExtendedWifiNetworkSuggestion;
 import com.android.server.wifi.WifiNetworkSuggestionsManager.PerAppInfo;
 import com.android.server.wifi.hotspot2.PasspointManager;
+import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
@@ -91,6 +92,7 @@ import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,6 +148,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     private @Mock AlertDialog mAlertDialog;
     private @Mock Notification.Builder mNotificationBuilder;
     private @Mock Notification mNotification;
+    private @Mock LruConnectionTracker mLruConnectionTracker;
     private TestLooper mLooper;
     private ArgumentCaptor<AppOpsManager.OnOpChangedListener> mAppOpChangedListenerCaptor =
             ArgumentCaptor.forClass(AppOpsManager.OnOpChangedListener.class);
@@ -266,7 +269,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mWifiNetworkSuggestionsManager =
                 new WifiNetworkSuggestionsManager(mContext, new Handler(mLooper.getLooper()),
                         mWifiInjector, mWifiPermissionsUtil, mWifiConfigManager, mWifiConfigStore,
-                        mWifiMetrics, mTelephonyUtil, mWifiKeyStore);
+                        mWifiMetrics, mTelephonyUtil, mWifiKeyStore, mLruConnectionTracker);
         verify(mContext).getResources();
         verify(mContext).getSystemService(Context.APP_OPS_SERVICE);
         verify(mContext).getSystemService(Context.NOTIFICATION_SERVICE);
@@ -382,6 +385,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         verify(mPasspointManager).removeProvider(eq(TEST_UID_2), eq(false),
                 eq(passpointConfiguration.getUniqueId()), isNull());
         verify(mWifiScoreCard).removeNetwork(anyString());
+        verify(mLruConnectionTracker).removeNetwork(any());
 
         assertTrue(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions().isEmpty());
 
@@ -426,6 +430,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_UID_1, TEST_PACKAGE_1));
         // Make sure remove the keyStore with the internal config
         verify(mWifiKeyStore).removeKeys(networkSuggestion1.wifiConfiguration.enterpriseConfig);
+        verify(mLruConnectionTracker).removeNetwork(any());
     }
 
     /**
@@ -464,6 +469,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.remove(new ArrayList<>(), TEST_UID_1,
                         TEST_PACKAGE_1));
+        verify(mLruConnectionTracker).removeNetwork(any());
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.remove(new ArrayList<>(), TEST_UID_2,
                         TEST_PACKAGE_2));
@@ -3585,6 +3591,37 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks();
         assertEquals(1, pnoNetwork.size());
         assertEquals(network1.SSID, pnoNetwork.get(0).SSID);
+    }
+
+    /**
+     * Verify if a suggestion is mostRecently connected, flag will be persist.
+     */
+    @Test
+    public void testIsMostRecentlyConnectedSuggestion() {
+        WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiNetworkSuggestion networkSuggestion =
+                new WifiNetworkSuggestion(network, null, false, false, true, true);
+        List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager
+                        .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
+        mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
+        when(mLruConnectionTracker.isMostRecentlyConnected(any())).thenReturn(true);
+        Map<String, PerAppInfo> suggestionStore = mDataSource.toSerialize();
+        PerAppInfo perAppInfo = suggestionStore.get(TEST_PACKAGE_1);
+        ExtendedWifiNetworkSuggestion ewns = perAppInfo.extNetworkSuggestions.iterator().next();
+        assertTrue(ewns.wns.wifiConfiguration.isMostRecentlyConnected);
+        mDataSource.fromDeserialized(suggestionStore);
+        verify(mLruConnectionTracker).addNetwork(any());
+        reset(mLruConnectionTracker);
+
+        when(mLruConnectionTracker.isMostRecentlyConnected(any())).thenReturn(false);
+        suggestionStore = mDataSource.toSerialize();
+        perAppInfo = suggestionStore.get(TEST_PACKAGE_1);
+        ewns = perAppInfo.extNetworkSuggestions.iterator().next();
+        assertFalse(ewns.wns.wifiConfiguration.isMostRecentlyConnected);
+        mDataSource.fromDeserialized(suggestionStore);
+        verify(mLruConnectionTracker, never()).addNetwork(any());
     }
 
     /**

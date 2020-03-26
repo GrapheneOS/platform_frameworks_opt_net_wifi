@@ -65,6 +65,7 @@ public class WifiApConfigStore {
 
     private final Context mContext;
     private final Handler mHandler;
+    private final WifiMetrics mWifiMetrics;
     private final BackupManagerProxy mBackupManagerProxy;
     private final MacAddressUtil mMacAddressUtil;
     private final Mac mMac;
@@ -101,12 +102,14 @@ public class WifiApConfigStore {
             BackupManagerProxy backupManagerProxy,
             WifiConfigStore wifiConfigStore,
             WifiConfigManager wifiConfigManager,
-            ActiveModeWarden activeModeWarden) {
+            ActiveModeWarden activeModeWarden,
+            WifiMetrics wifiMetrics) {
         mContext = context;
         mHandler = handler;
         mBackupManagerProxy = backupManagerProxy;
         mWifiConfigManager = wifiConfigManager;
         mActiveModeWarden = activeModeWarden;
+        mWifiMetrics = wifiMetrics;
 
         // Register store data listener
         wifiConfigStore.registerStoreData(
@@ -187,18 +190,12 @@ public class WifiApConfigStore {
                     SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
             Log.e(TAG, "Device doesn't support WPA3-SAE, reset config to WPA2");
         }
-
+        mWifiMetrics.noteSoftApConfigReset(config, configBuilder.build());
         return configBuilder.build();
     }
 
     private SoftApConfiguration sanitizePersistentApConfig(SoftApConfiguration config) {
         SoftApConfiguration.Builder convertedConfigBuilder = null;
-
-        // Persistent config may not set BSSID.
-        if (config.getBssid() != null) {
-            convertedConfigBuilder = new SoftApConfiguration.Builder(config);
-            convertedConfigBuilder.setBssid(null);
-        }
 
         // some countries are unable to support 5GHz only operation, always allow for 2GHz when
         // config doesn't force channel
@@ -357,13 +354,21 @@ public class WifiApConfigStore {
      * requires a password, was one provided?).
      *
      * @param apConfig {@link SoftApConfiguration} to use for softap mode
+     * @param isPrivileged indicate the caller can pass some fields check or not
      * @return boolean true if the provided config meets the minimum set of details, false
      * otherwise.
      */
-    static boolean validateApWifiConfiguration(@NonNull SoftApConfiguration apConfig) {
+    static boolean validateApWifiConfiguration(@NonNull SoftApConfiguration apConfig,
+            boolean isPrivileged) {
         // first check the SSID
         if (!validateApConfigSsid(apConfig.getSsid())) {
             // failed SSID verificiation checks
+            return false;
+        }
+
+        // BSSID can be set if caller own permission:android.Manifest.permission.NETWORK_SETTINGS.
+        if (apConfig.getBssid() != null && !isPrivileged) {
+            Log.e(TAG, "Config BSSID needs NETWORK_SETTINGS permission");
             return false;
         }
 

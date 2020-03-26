@@ -126,30 +126,32 @@ public class WifiScoreCardTest extends WifiBaseTest {
         mWifiScoreCard.mPersistentHistograms = true; // TODO - remove when ready
         when(mDeviceConfigFacade.getConnectionFailureHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT);
-        when(mDeviceConfigFacade.getConnectionFailureLowThrPercent()).thenReturn(
-                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getConnectionFailureCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_COUNT_MIN);
         when(mDeviceConfigFacade.getAssocRejectionHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT);
-        when(mDeviceConfigFacade.getAssocRejectionLowThrPercent()).thenReturn(
-                DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getAssocRejectionCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_COUNT_MIN);
         when(mDeviceConfigFacade.getAssocTimeoutHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_ASSOC_TIMEOUT_HIGH_THR_PERCENT);
-        when(mDeviceConfigFacade.getAssocTimeoutLowThrPercent()).thenReturn(
-                DeviceConfigFacade.DEFAULT_ASSOC_TIMEOUT_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getAssocTimeoutCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ASSOC_TIMEOUT_COUNT_MIN);
         when(mDeviceConfigFacade.getAuthFailureHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_AUTH_FAILURE_HIGH_THR_PERCENT);
-        when(mDeviceConfigFacade.getAuthFailureLowThrPercent()).thenReturn(
-                DeviceConfigFacade.DEFAULT_AUTH_FAILURE_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getAuthFailureCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_AUTH_FAILURE_COUNT_MIN);
         when(mDeviceConfigFacade.getShortConnectionNonlocalHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_SHORT_CONNECTION_NONLOCAL_HIGH_THR_PERCENT);
-        when(mDeviceConfigFacade.getShortConnectionNonlocalLowThrPercent()).thenReturn(
-                DeviceConfigFacade.DEFAULT_SHORT_CONNECTION_NONLOCAL_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getShortConnectionNonlocalCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_SHORT_CONNECTION_NONLOCAL_COUNT_MIN);
         when(mDeviceConfigFacade.getDisconnectionNonlocalHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_HIGH_THR_PERCENT);
-        when(mDeviceConfigFacade.getDisconnectionNonlocalLowThrPercent()).thenReturn(
-                DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_LOW_THR_PERCENT);
+        when(mDeviceConfigFacade.getDisconnectionNonlocalCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_DISCONNECTION_NONLOCAL_COUNT_MIN);
         when(mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_RSSI_THR_DBM);
+        when(mDeviceConfigFacade.getHealthMonitorRatioThrNumerator()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_RATIO_THR_NUMERATOR);
         when(mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
         mWifiScoreCard.enableVerboseLogging(true);
@@ -1107,22 +1109,32 @@ public class WifiScoreCardTest extends WifiBaseTest {
     }
 
     /**
-     * Run a few days with good connection, followed by a SW build change which results
+     * Run a few days with mostly good connection and some failures,
+     * followed by a SW build change which results
      * in performance regression. Check if the regression is detected properly.
      */
     @Test
     public void testRegressionAfterSwBuildChange() throws Exception {
         PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(mWifiInfo.getSSID());
-        int numGoodConnectionDays = 5;
+        int numGoodConnectionDays = 4;
         for (int i = 0; i < numGoodConnectionDays; i++) {
             makeRecentStatsWithGoodConnection();
             perNetwork.updateAfterDailyDetection();
         }
-
-        perNetwork.updateAfterSwBuildChange();
+        // Extra day with mixed failures
         makeRecentStatsWithShortConnection();
         makeRecentStatsWithAssocTimeOut();
         makeRecentStatsWithAuthFailure();
+        perNetwork.updateAfterDailyDetection();
+
+        perNetwork.updateAfterSwBuildChange();
+        // Add >2x failures after the SW build change
+        int numBadConnectionDays = 4;
+        for (int i = 0; i < numBadConnectionDays; i++) {
+            makeRecentStatsWithShortConnection();
+            makeRecentStatsWithAssocTimeOut();
+            makeRecentStatsWithAuthFailure();
+        }
 
         FailureStats statsDec = new FailureStats();
         FailureStats statsInc = new FailureStats();
@@ -1135,25 +1147,59 @@ public class WifiScoreCardTest extends WifiBaseTest {
     }
 
     /**
+     * Check regression detection is missed due to low failure count
+     */
+    @Test
+    public void testMissRegressionDetectionDuetoLowFailureCnt() throws Exception {
+        PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(mWifiInfo.getSSID());
+        int numGoodConnectionDays = 1;
+        for (int i = 0; i < numGoodConnectionDays; i++) {
+            makeRecentStatsWithGoodConnection();
+            perNetwork.updateAfterDailyDetection();
+        }
+
+        perNetwork.updateAfterSwBuildChange();
+        makeRecentStatsWithGoodConnection();
+        // Add a small number of failures for each failure type after the SW build change
+        for (int i = 0; i < mDeviceConfigFacade.getAuthFailureCountMin() - 1; i++) {
+            makeShortConnectionExample();
+            makeAssocTimeOutExample();
+            makeAuthFailureExample();
+        }
+
+        FailureStats statsDec = new FailureStats();
+        FailureStats statsInc = new FailureStats();
+        FailureStats statsHigh = new FailureStats();
+        int detectionFlag = perNetwork.dailyDetection(statsDec, statsInc, statsHigh);
+        assertEquals(WifiScoreCard.SUFFICIENT_RECENT_PREV_STATS, detectionFlag);
+        checkStatsDeltaExample(statsDec, 0);
+        checkStatsDeltaExample(statsInc, 0);
+        checkStatsDeltaExample(statsHigh, 0);
+    }
+
+    /**
      * Run a few days with bad connections, followed by a SW build change which results
      * in performance improvement. Check if the improvement is detected properly.
      */
     @Test
     public void testImprovementAfterSwBuildChange() throws Exception {
         PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(mWifiInfo.getSSID());
-        makeRecentStatsWithGoodConnection(); // Day 1
-        perNetwork.updateAfterDailyDetection();
-        makeRecentStatsWithAssocTimeOut();   // Day 2
-        perNetwork.updateAfterDailyDetection();
-        makeRecentStatsWithAuthFailure();    // Day 3
-        perNetwork.updateAfterDailyDetection();
-        makeRecentStatsWithShortConnection(); // Day 4
-        perNetwork.updateAfterDailyDetection();
-        makeRecentStatsWithShortConnection(); // Day 5
-        perNetwork.updateAfterDailyDetection();
+        for (int i = 0; i < 2; i++) {
+            makeRecentStatsWithShortConnection();
+            makeRecentStatsWithAssocTimeOut();
+            makeRecentStatsWithAuthFailure();
+            perNetwork.updateAfterDailyDetection();
+        }
 
         perNetwork.updateAfterSwBuildChange();
-        makeRecentStatsWithGoodConnection(); // Day 6
+        // Add <50% failures after the SW build change
+        int numGoodConnectionDays = 4;
+        for (int i = 0; i < numGoodConnectionDays; i++) {
+            makeRecentStatsWithGoodConnection();
+        }
+        makeRecentStatsWithShortConnection();
+        makeRecentStatsWithAssocTimeOut();
+        makeRecentStatsWithAuthFailure();
 
         FailureStats statsDec = new FailureStats();
         FailureStats statsInc = new FailureStats();

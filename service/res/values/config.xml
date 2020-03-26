@@ -369,6 +369,9 @@
     <!-- Enable the PNO frequency culling optimization. -->
     <bool translatable="false" name="config_wifiPnoRecencySortingEnabled">true</bool>
 
+    <!-- Maximum number of SSIDs that can be PNO scanned concurrently-->
+    <integer translatable="false" name="config_wifiMaxPnoSsidCount">16</integer>
+
     <!-- Suspend optimization. -->
     <bool translatable="false" name="config_wifiSuspendOptimizationsEnabled">true</bool>
 

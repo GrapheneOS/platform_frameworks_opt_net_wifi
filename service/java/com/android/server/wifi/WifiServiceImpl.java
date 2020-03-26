@@ -953,14 +953,16 @@ public class WifiServiceImpl extends BaseWifiService {
      * proper permissions beyond the NetworkStack permission.
      */
     private boolean startSoftApInternal(SoftApModeConfiguration apConfig) {
+        int uid = Binder.getCallingUid();
+        boolean privileged = isSettingsOrSuw(Binder.getCallingPid(), uid);
         mLog.trace("startSoftApInternal uid=% mode=%")
-                .c(Binder.getCallingUid()).c(apConfig.getTargetMode()).flush();
+                .c(uid).c(apConfig.getTargetMode()).flush();
 
         // null wifiConfig is a meaningful input for CMD_SET_AP; it means to use the persistent
         // AP config.
         SoftApConfiguration softApConfig = apConfig.getSoftApConfiguration();
         if (softApConfig != null
-                && (!WifiApConfigStore.validateApWifiConfiguration(softApConfig)
+                && (!WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged)
                     || !validateSoftApBand(softApConfig.getBand()))) {
             Log.e(TAG, "Invalid SoftApConfiguration");
             return false;
@@ -1881,7 +1883,7 @@ public class WifiServiceImpl extends BaseWifiService {
         SoftApConfiguration softApConfig = ApConfigUtil.fromWifiConfiguration(wifiConfig);
         if (softApConfig == null) return false;
         if (WifiApConfigStore.validateApWifiConfiguration(
-                softApConfig)) {
+                softApConfig, false)) {
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
         } else {
@@ -1900,15 +1902,16 @@ public class WifiServiceImpl extends BaseWifiService {
     public boolean setSoftApConfiguration(
             @NonNull SoftApConfiguration softApConfig, @NonNull String packageName) {
         int uid = Binder.getCallingUid();
+        boolean privileged = mWifiPermissionsUtil.checkNetworkSettingsPermission(uid);
         if (!mWifiPermissionsUtil.checkConfigOverridePermission(uid)
-                && !mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
+                && !privileged) {
             // random apps should not be allowed to read the user specified config
             throw new SecurityException("App not allowed to read or update stored WiFi Ap config "
                     + "(uid = " + uid + ")");
         }
         mLog.info("setSoftApConfiguration uid=%").c(uid).flush();
         if (softApConfig == null) return false;
-        if (WifiApConfigStore.validateApWifiConfiguration(softApConfig)) {
+        if (WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged)) {
             mActiveModeWarden.updateSoftApConfiguration(softApConfig);
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
