@@ -4130,18 +4130,20 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * Test that handleBssTransitionRequest() blacklist the BSS when
-     * imminent bit is set.
+     * Test that handleBssTransitionRequest() blacklist the BSS upon
+     * receiving BTM request frame that contains MBO-OCE IE with an
+     * association retry delay attribute.
      */
     @Test
-    public void testBtmFrameWithImminentBitBlackListTheBssid() throws Exception {
+    public void testBtmFrameWithMboAssocretryDelayBlackListTheBssid() throws Exception {
         // Connect to network with |sBSSID|, |sFreq|.
         connect();
 
         MboOceController.BtmFrameData btmFrmData = new MboOceController.BtmFrameData();
 
         btmFrmData.mStatus = MboOceConstants.BTM_RESPONSE_STATUS_REJECT_UNSPECIFIED;
-        btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT;
+        btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT
+                | MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED;
         btmFrmData.mBlackListDurationMs = 60000;
 
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
@@ -4164,14 +4166,15 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         btmFrmData.mStatus = MboOceConstants.BTM_RESPONSE_STATUS_REJECT_UNSPECIFIED;
         btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT
+                | MboOceConstants.BTM_DATA_FLAG_BSS_TERMINATION_INCLUDED
                 | MboOceConstants.BTM_DATA_FLAG_MBO_CELL_DATA_CONNECTION_PREFERENCE_INCLUDED;
-        btmFrmData.mBlackListDurationMs = 0;
+        btmFrmData.mBlackListDurationMs = 60000;
 
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
         mLooper.dispatchAll();
 
-        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(sBSSID, sSSID,
-                MboOceConstants.DEFAULT_BLACKLIST_DURATION_MS);
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(sBSSID, sSSID,
+                btmFrmData.mBlackListDurationMs);
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
         verify(mWifiMetrics, times(1)).incrementMboCellularSwitchRequestCount();
         verify(mWifiMetrics, times(1))
