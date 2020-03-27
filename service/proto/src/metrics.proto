@@ -2602,6 +2602,15 @@ message WifiDppLog {
   // Easy Connect (DPP) operation time bucket
   repeated HistogramBucketInt32 dpp_operation_time = 7;
 
+  // Number of Enrollee-Responder peer devices supporting DPP protocol version 1
+  optional int32 num_dpp_r1_capable_enrollee_responder_devices = 8;
+
+  // Number of Enrollee-Responder peer devices supporting DPP protocol version 2
+  optional int32 num_dpp_r2_capable_enrollee_responder_devices = 9;
+
+  // Number of Enrollee-Responder incompatible configurations found in DPP R2 compatibility check.
+  optional int32 num_dpp_r2_enrollee_responder_incompatible_configuration = 10;
+
   // Histogram bucket for Wi-Fi DPP configurator success
   message DppConfiguratorSuccessStatusHistogramBucket {
     // status type defining the bucket
@@ -2626,6 +2635,9 @@ message WifiDppLog {
 
     // Easy Connect Configurator success event: Configuration sent to enrollee
     EASY_CONNECT_EVENT_SUCCESS_CONFIGURATION_SENT = 1;
+
+    // Easy Connect Configurator success event: Configuration applied by enrollee
+    EASY_CONNECT_EVENT_SUCCESS_CONFIGURATION_APPLIED = 2;
   }
 
   enum DppFailureCode {
@@ -2661,6 +2673,15 @@ message WifiDppLog {
     // Easy Connect Failure event: Invalid network provided to Easy Connect configurator.
     // Network must either be WPA3-Personal (SAE) or WPA2-Personal (PSK).
     EASY_CONNECT_EVENT_FAILURE_INVALID_NETWORK = 9;
+
+    // Easy Connect R2 Failure event: Enrollee cannot find the network.
+    EASY_CONNECT_EVENT_FAILURE_CANNOT_FIND_NETWORK = 10;
+
+    // Easy Connect R2 Failure event: Enrollee failed to authenticate with the network.
+    EASY_CONNECT_EVENT_FAILURE_ENROLLEE_AUTHENTICATION = 11;
+
+    // Easy Connect R2 Failure event: Enrollee rejected the configuration.
+    EASY_CONNECT_EVENT_FAILURE_ENROLLEE_REJECTED_CONFIGURATION = 12;
   }
 }
 

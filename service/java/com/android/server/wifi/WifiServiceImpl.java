@@ -115,6 +115,7 @@ import com.android.server.wifi.hotspot2.PasspointProvider;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.RssiUtil;
+import com.android.server.wifi.util.ScanResultUtil;
 import com.android.server.wifi.util.WifiHandler;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
@@ -1035,8 +1036,10 @@ public class WifiServiceImpl extends BaseWifiService {
 
         public boolean setEnablingIfAllowed() {
             synchronized (mLock) {
-                if (mTetheredSoftApState == WIFI_AP_STATE_ENABLING) return false;
-                if (mTetheredSoftApState == WIFI_AP_STATE_ENABLED) return false;
+                if (mTetheredSoftApState != WIFI_AP_STATE_DISABLED
+                        && mTetheredSoftApState != WIFI_AP_STATE_FAILED) {
+                    return false;
+                }
                 mTetheredSoftApState = WIFI_AP_STATE_ENABLING;
                 return true;
             }
@@ -2192,6 +2195,10 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getMatchingPasspointConfigurations uid=%").c(Binder.getCallingUid()).flush();
         }
+        if (!ScanResultUtil.validateScanResultList(scanResults)) {
+            Log.e(TAG, "Attempt to retrieve passpoint with invalid scanResult List");
+            return Collections.emptyMap();
+        }
         return mWifiThreadRunner.call(
             () -> mPasspointManager.getAllMatchingPasspointProfilesForScanResults(scanResults),
                 Collections.emptyMap());
@@ -2211,6 +2218,11 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         if (mVerboseLoggingEnabled) {
             mLog.info("getMatchingOsuProviders uid=%").c(Binder.getCallingUid()).flush();
+        }
+
+        if (!ScanResultUtil.validateScanResultList(scanResults)) {
+            Log.e(TAG, "Attempt to retrieve OsuProviders with invalid scanResult List");
+            return Collections.emptyMap();
         }
         return mWifiThreadRunner.call(
             () -> mPasspointManager.getMatchingOsuProviders(scanResults), Collections.emptyMap());
@@ -2288,8 +2300,8 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("getWifiConfigsForMatchedNetworkSuggestions uid=%").c(
                     Binder.getCallingUid()).flush();
         }
-        if (scanResults == null) {
-            Log.e(TAG, "Attempt to retrieve WifiConfiguration with null scanResult List");
+        if (!ScanResultUtil.validateScanResultList(scanResults)) {
+            Log.e(TAG, "Attempt to retrieve WifiConfiguration with invalid scanResult List");
             return new ArrayList<>();
         }
         return mWifiThreadRunner.call(
@@ -2701,7 +2713,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
             return mWifiThreadRunner.call(
                     () -> {
-                        if (scanResults == null || scanResults.isEmpty()) {
+                        if (!ScanResultUtil.validateScanResultList(scanResults)) {
                             return mWifiNetworkSuggestionsManager.getMatchingScanResults(
                                     networkSuggestions, mScanRequestProxy.getScanResults());
                         } else {

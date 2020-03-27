@@ -481,6 +481,7 @@ public class DppManagerTest extends WifiBaseTest {
         dppEventCallback.onSuccess(CONFIGURATION_SENT);
         mLooper.dispatchAll();
         verify(mDppCallback).onSuccess(eq(EASY_CONNECT_EVENT_SUCCESS_CONFIGURATION_SENT));
+        verify(mDppMetrics, times(1)).updateDppR1CapableEnrolleeResponderDevices();
         verify(mDppCallback, never()).onSuccessConfigReceived(anyInt());
         verify(mDppCallback, never()).onFailure(anyInt(), anyString(), anyString(), any());
         verify(mDppMetrics).updateDppConfiguratorInitiatorRequests();
@@ -861,6 +862,7 @@ public class DppManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mDppCallback)
                 .onProgress(eq(EASY_CONNECT_EVENT_PROGRESS_CONFIGURATION_SENT_WAITING_RESPONSE));
+        verify(mDppMetrics, times(1)).updateDppR2CapableEnrolleeResponderDevices();
 
         // Generate an onSuccess callback
         dppEventCallback.onSuccess(CONFIGURATION_APPLIED);
@@ -912,6 +914,10 @@ public class DppManagerTest extends WifiBaseTest {
         verify(mDppMetrics).updateDppConfiguratorInitiatorRequests();
         verify(mDppMetrics).updateDppFailure(eq(appFailure));
         verify(mDppMetrics).updateDppOperationTime(anyInt());
+        if ((internalFailure == CANNOT_FIND_NETWORK)
+                && (appFailure == EASY_CONNECT_EVENT_FAILURE_NOT_COMPATIBLE)) {
+            verify(mDppMetrics, times(1)).updateDppR2EnrolleeResponderIncompatibleConfiguration();
+        }
         verifyNoMoreInteractions(mDppMetrics);
         verifyCleanUpResources();
     }
