@@ -52,7 +52,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -1302,11 +1301,8 @@ public class WifiConnectivityManager {
         if (networks.isEmpty()) {
             return Collections.EMPTY_LIST;
         }
-        Collections.sort(networks, WifiConfigManager.sScanListComparator);
-        if (mContext.getResources().getBoolean(R.bool.config_wifiPnoRecencySortingEnabled)) {
-            // Find the most recently connected network and move it to the front of the list.
-            putMostRecentlyConnectedNetworkAtTop(networks);
-        }
+        Collections.sort(networks, mConfigManager.getScanListComparator());
+
         WifiScoreCard scoreCard = null;
         if (mContext.getResources().getBoolean(R.bool.config_wifiPnoFrequencyCullingEnabled)) {
             scoreCard = mWifiInjector.getWifiScoreCard();
@@ -1332,22 +1328,6 @@ public class WifiConnectivityManager {
                     + Arrays.toString(pnoNetwork.frequencies));
         }
         return pnoList;
-    }
-
-    /**
-     * Find the most recently connected network from a list of networks, and place it at top
-     */
-    private void putMostRecentlyConnectedNetworkAtTop(List<WifiConfiguration> networks) {
-        WifiConfiguration lastConnectedNetwork =
-                networks.stream()
-                        .max(Comparator.comparing(
-                                (WifiConfiguration config) -> config.lastConnected))
-                        .get();
-        if (lastConnectedNetwork.lastConnected != 0) {
-            int lastConnectedNetworkIdx = networks.indexOf(lastConnectedNetwork);
-            networks.remove(lastConnectedNetworkIdx);
-            networks.add(0, lastConnectedNetwork);
-        }
     }
 
     // Stop PNO scan.
