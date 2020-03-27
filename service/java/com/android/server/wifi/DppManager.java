@@ -489,6 +489,7 @@ public class DppManager {
             // Convert from HAL codes to WifiManager/user codes
             switch (dppStatusCode) {
                 case DppSuccessCode.CONFIGURATION_SENT:
+                    mDppMetrics.updateDppR1CapableEnrolleeResponderDevices();
                     dppSuccessCode = EasyConnectStatusCallback
                             .EASY_CONNECT_EVENT_SUCCESS_CONFIGURATION_SENT;
                     break;
@@ -540,6 +541,7 @@ public class DppManager {
                     break;
 
                 case DppProgressCode.CONFIGURATION_SENT_WAITING_RESPONSE:
+                    mDppMetrics.updateDppR2CapableEnrolleeResponderDevices();
                     dppProgressCode = EasyConnectStatusCallback
                             .EASY_CONNECT_EVENT_PROGRESS_CONFIGURATION_SENT_WAITING_RESPONSE;
                     break;
@@ -642,6 +644,7 @@ public class DppManager {
         if (isNetworkInScanCache & !channelMatch) {
             Log.d(TAG, "Update the error code to NOT_COMPATIBLE"
                     + " as enrollee didn't scan network's operating channel");
+            mDppMetrics.updateDppR2EnrolleeResponderIncompatibleConfiguration();
             return false;
         }
         return true;
