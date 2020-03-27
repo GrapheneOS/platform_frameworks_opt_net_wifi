@@ -649,6 +649,24 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify add or remove suggestion list with null object will result error code.
+     */
+    @Test
+    public void testAddRemoveNetworkSuggestionWithNullObject() {
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(Collections.singletonList(null),
+                        TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(Collections.singletonList(networkSuggestion),
+                        TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_REMOVE_INVALID,
+                mWifiNetworkSuggestionsManager.remove(Collections.singletonList(null),
+                        TEST_UID_1, TEST_PACKAGE_1));
+    }
+
+    /**
      * Verify a successful lookup of a single network suggestion matching the provided scan detail.
      */
     @Test
@@ -3292,6 +3310,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         List<ScanResult> allSrList = new ArrayList<>() {{
                 add(passpointScanResult);
                 add(nonPasspointScanResult);
+                add(null);
                 }};
         when(mPasspointManager.getMatchingScanResults(eq(mockPasspoint), eq(allSrList)))
                 .thenReturn(ppSrList);
