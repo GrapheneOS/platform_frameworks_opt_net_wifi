@@ -1035,8 +1035,10 @@ public class WifiServiceImpl extends BaseWifiService {
 
         public boolean setEnablingIfAllowed() {
             synchronized (mLock) {
-                if (mTetheredSoftApState == WIFI_AP_STATE_ENABLING) return false;
-                if (mTetheredSoftApState == WIFI_AP_STATE_ENABLED) return false;
+                if (mTetheredSoftApState != WIFI_AP_STATE_DISABLED
+                        && mTetheredSoftApState != WIFI_AP_STATE_FAILED) {
+                    return false;
+                }
                 mTetheredSoftApState = WIFI_AP_STATE_ENABLING;
                 return true;
             }
