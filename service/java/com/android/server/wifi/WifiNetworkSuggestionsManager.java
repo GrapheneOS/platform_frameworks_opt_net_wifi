@@ -1991,11 +1991,12 @@ public class WifiNetworkSuggestionsManager {
                 continue;
             }
             if (carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
-                Log.v(TAG, "Carrier privilege revoked for " + appInfo.packageName);
+                Log.i(TAG, "Carrier privilege revoked for " + appInfo.packageName);
                 removeInternal(Collections.EMPTY_LIST, appInfo.packageName, appInfo);
                 mActiveNetworkSuggestionsPerApp.remove(appInfo.packageName);
                 continue;
             }
+            Log.i(TAG, "Carrier privilege granted for " + appInfo.packageName);
             appInfo.carrierId = carrierId;
             for (ExtendedWifiNetworkSuggestion ewns : appInfo.extNetworkSuggestions) {
                 ewns.wns.wifiConfiguration.carrierId = carrierId;
