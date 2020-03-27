@@ -31,7 +31,9 @@ import com.android.server.wifi.WifiBaseTest;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Unit tests for {@link com.android.server.wifi.util.ScanResultUtil}.
@@ -241,6 +243,26 @@ public class ScanResultUtilTest extends WifiBaseTest {
         };
 
         assertTrue(ScanResultUtil.isScanResultForFilsSha384Network(input));
+    }
+
+    /**
+     * Verify ScanResultList validation.
+     */
+    @Test
+    public void testValidateScanResultList() {
+        List<ScanResult> scanResults = new ArrayList<>();
+        assertFalse(ScanResultUtil.validateScanResultList(null));
+        assertFalse(ScanResultUtil.validateScanResultList(scanResults));
+        scanResults.add(null);
+        assertFalse(ScanResultUtil.validateScanResultList(scanResults));
+        ScanResult scanResult = new ScanResult();
+        scanResults.clear();
+        scanResults.add(scanResult);
+        assertFalse(ScanResultUtil.validateScanResultList(scanResults));
+        scanResult.SSID = "test";
+        scanResult.capabilities = "[RSN-PSK-CCMP]";
+        scanResult.BSSID = "ab:cd:01:ef:45:89";
+        assertTrue(ScanResultUtil.validateScanResultList(scanResults));
     }
 
     private static InformationElement createIE(int id, byte[] bytes) {
