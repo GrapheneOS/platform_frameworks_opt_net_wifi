@@ -133,6 +133,7 @@ import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -4803,10 +4804,10 @@ public class ClientModeImpl extends StateMachine {
         }
 
         @Override
-        public void onStartSocketKeepalive(int slot, int intervalSeconds,
+        public void onStartSocketKeepalive(int slot, @NonNull Duration interval,
                 @NonNull KeepalivePacketData packet) {
             ClientModeImpl.this.sendMessage(
-                    CMD_START_IP_PACKET_OFFLOAD, slot, intervalSeconds, packet);
+                    CMD_START_IP_PACKET_OFFLOAD, slot, (int) interval.getSeconds(), packet);
         }
 
         @Override
@@ -5505,7 +5506,7 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private void sendConnectedState() {
-        mNetworkAgent.setConnected();
+        mNetworkAgent.markConnected();
         sendNetworkChangeBroadcast(DetailedState.CONNECTED);
     }
 
