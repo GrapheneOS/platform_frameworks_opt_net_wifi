@@ -1286,7 +1286,7 @@ public class ClientModeImpl extends StateMachine {
             throws InvalidPacketException {
         try {
             InetAddress gateway = NetUtils.selectBestRoute(
-                    mLinkProperties.getRoutes(), packetData.dstAddress).getGateway();
+                    mLinkProperties.getRoutes(), packetData.getDstAddress()).getGateway();
             String dstMacStr = macAddressFromRoute(gateway.getHostAddress());
             return NativeUtil.macAddressToByteArray(dstMacStr);
         } catch (NullPointerException | IllegalArgumentException e) {
@@ -1296,9 +1296,9 @@ public class ClientModeImpl extends StateMachine {
 
     private static int getEtherProtoForKeepalive(KeepalivePacketData packetData)
             throws InvalidPacketException {
-        if (packetData.dstAddress instanceof Inet4Address) {
+        if (packetData.getDstAddress() instanceof Inet4Address) {
             return OsConstants.ETH_P_IP;
-        } else if (packetData.dstAddress instanceof Inet6Address) {
+        } else if (packetData.getDstAddress() instanceof Inet6Address) {
             return OsConstants.ETH_P_IPV6;
         } else {
             throw new InvalidPacketException(InvalidPacketException.ERROR_INVALID_IP_ADDRESS);
@@ -1316,7 +1316,7 @@ public class ClientModeImpl extends StateMachine {
             dstMac = getDstMacForKeepalive(packetData);
             proto = getEtherProtoForKeepalive(packetData);
         } catch (InvalidPacketException e) {
-            return e.error;
+            return e.getError();
         }
 
         int ret = mWifiNative.startSendingOffloadedPacket(
