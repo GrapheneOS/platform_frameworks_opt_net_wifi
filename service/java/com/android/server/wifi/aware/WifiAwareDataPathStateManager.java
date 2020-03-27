@@ -1554,7 +1554,7 @@ public class WifiAwareDataPathStateManager {
          * Tell the network agent the network is now connected.
          */
         public void setConnected(WifiAwareNetworkAgent networkAgent) {
-            networkAgent.setConnected();
+            networkAgent.markConnected();
         }
     }
 
