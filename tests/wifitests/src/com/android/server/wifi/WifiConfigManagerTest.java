@@ -71,6 +71,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -141,7 +142,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock private WifiScoreCard mWifiScoreCard;
     @Mock private PerNetwork mPerNetwork;
-    @Mock private LruConnectionTracker mLruConnectionTracker;
+    private LruConnectionTracker mLruConnectionTracker;
 
     private MockResources mResources;
     private InOrder mContextConfigStoreMockOrder;
@@ -175,6 +176,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 R.integer.config_wifi_framework_associated_partial_scan_max_num_active_channels,
                 TEST_MAX_NUM_ACTIVE_CHANNELS_FOR_PARTIAL_SCAN);
         mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, true);
+        mResources.setInteger(R.integer.config_wifiMaxPnoSsidCount, 16);
         when(mContext.getResources()).thenReturn(mResources);
 
         // Setup UserManager profiles for the default user.
@@ -225,6 +227,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         mTelephonyUtil = new TelephonyUtil(mTelephonyManager, mSubscriptionManager,
                 mock(FrameworkFacade.class), mock(Context.class), mock(Handler.class));
+        mLruConnectionTracker = new LruConnectionTracker(100, mContext);
         createWifiConfigManager();
         mWifiConfigManager.addOnNetworkUpdateListener(mWcmListener);
         // static mocking
@@ -3992,25 +3995,20 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(network1);
         verifyAddNetworkToWifiConfigManager(network2);
         verifyAddNetworkToWifiConfigManager(network3);
+        mWifiConfigManager.updateNetworkAfterConnect(network3.networkId);
 
-        // Now set scan results in 2 of them to set the corresponding
+        // Now set scan results of network2 to set the corresponding
         // {@link NetworkSelectionStatus#mSeenInLastQualifiedNetworkSelection} field.
-        assertTrue(mWifiConfigManager.setNetworkCandidateScanResult(
-                network1.networkId, createScanDetailForNetwork(network1).getScanResult(), 54));
-        assertTrue(mWifiConfigManager.setNetworkCandidateScanResult(
-                network3.networkId, createScanDetailForNetwork(network3).getScanResult(), 54));
-
-        // Now increment |network3|'s association count. This should ensure that this network
-        // is preferred over |network1|.
-        assertTrue(mWifiConfigManager.updateNetworkAfterConnect(network3.networkId));
+        assertTrue(mWifiConfigManager.setNetworkCandidateScanResult(network2.networkId,
+                createScanDetailForNetwork(network2).getScanResult(), 54));
 
         // Retrieve the hidden network list & verify the order of the networks returned.
         List<WifiScanner.ScanSettings.HiddenNetwork> hiddenNetworks =
                 mWifiConfigManager.retrieveHiddenNetworkList();
         assertEquals(3, hiddenNetworks.size());
         assertEquals(network3.SSID, hiddenNetworks.get(0).ssid);
-        assertEquals(network1.SSID, hiddenNetworks.get(1).ssid);
-        assertEquals(network2.SSID, hiddenNetworks.get(2).ssid);
+        assertEquals(network2.SSID, hiddenNetworks.get(1).ssid);
+        assertEquals(network1.SSID, hiddenNetworks.get(2).ssid);
     }
 
     /**
@@ -5316,10 +5314,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Verify if the config store write was triggered without this new configuration.
         verifyNetworkNotInConfigStoreData(configuration);
         verify(mBssidBlocklistMonitor, atLeastOnce()).handleNetworkRemoved(configuration.SSID);
-        ArgumentCaptor<WifiConfiguration> captor = ArgumentCaptor.forClass(WifiConfiguration.class);
-        verify(mLruConnectionTracker).removeNetwork(captor.capture());
-        assertEquals(configuration.networkId, captor.getValue().networkId);
-        reset(mLruConnectionTracker);
     }
 
     /**
@@ -5515,9 +5509,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(networkId);
         assertTrue("hasEverConnected expected to be true after connection.",
                 retrievedNetwork.getNetworkSelectionStatus().hasEverConnected());
-        ArgumentCaptor<WifiConfiguration> captor = ArgumentCaptor.forClass(WifiConfiguration.class);
-        verify(mLruConnectionTracker).addNetwork(captor.capture());
-        assertEquals(networkId, captor.getValue().networkId);
+        assertEquals(0, mLruConnectionTracker.getAgeIndexOfNetwork(retrievedNetwork));
     }
 
     /**
@@ -5652,13 +5644,47 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(testNetwork1);
         WifiConfiguration testNetwork2 = WifiConfigurationTestUtil.createOpenNetwork();
         verifyAddNetworkToWifiConfigManager(testNetwork2);
-        when(mLruConnectionTracker.isMostRecentlyConnected(any()))
-                .thenReturn(false).thenReturn(true);
+        mWifiConfigManager.updateNetworkAfterConnect(testNetwork2.networkId);
         mWifiConfigManager.saveToStore(true);
         Pair<List<WifiConfiguration>, List<WifiConfiguration>> networkStoreData =
                 captureWriteNetworksListStoreData();
         List<WifiConfiguration> sharedNetwork = networkStoreData.first;
         assertFalse(sharedNetwork.get(0).isMostRecentlyConnected);
         assertTrue(sharedNetwork.get(1).isMostRecentlyConnected);
+    }
+
+    /**
+     * Verify scan comparator gives the most recently connected network highest priority
+     */
+    @Test
+    public void testScanComparator() {
+        WifiConfiguration network1 = WifiConfigurationTestUtil.createOpenNetwork();
+        verifyAddNetworkToWifiConfigManager(network1);
+        WifiConfiguration network2 = WifiConfigurationTestUtil.createOpenNetwork();
+        verifyAddNetworkToWifiConfigManager(network2);
+        WifiConfiguration network3 = WifiConfigurationTestUtil.createOpenNetwork();
+        verifyAddNetworkToWifiConfigManager(network3);
+        WifiConfiguration network4 = WifiConfigurationTestUtil.createOpenNetwork();
+        verifyAddNetworkToWifiConfigManager(network4);
+
+        // Connect two network in order, network3 --> network2
+        verifyUpdateNetworkAfterConnectHasEverConnectedTrue(network3.networkId);
+        verifyUpdateNetworkAfterConnectHasEverConnectedTrue(network2.networkId);
+        // Set network4 {@link NetworkSelectionStatus#mSeenInLastQualifiedNetworkSelection} to true.
+        assertTrue(mWifiConfigManager.setNetworkCandidateScanResult(network4.networkId,
+                createScanDetailForNetwork(network4).getScanResult(), 54));
+        List<WifiConfiguration> networkList = mWifiConfigManager.getConfiguredNetworks();
+        // Expected order should be based on connection order and last qualified selection.
+        Collections.sort(networkList, mWifiConfigManager.getScanListComparator());
+        assertEquals(network2.SSID, networkList.get(0).SSID);
+        assertEquals(network3.SSID, networkList.get(1).SSID);
+        assertEquals(network4.SSID, networkList.get(2).SSID);
+        assertEquals(network1.SSID, networkList.get(3).SSID);
+        // Remove network to check the age index changes.
+        mWifiConfigManager.removeNetwork(network3.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME);
+        assertEquals(Integer.MAX_VALUE, mLruConnectionTracker.getAgeIndexOfNetwork(network3));
+        assertEquals(0, mLruConnectionTracker.getAgeIndexOfNetwork(network2));
+        mWifiConfigManager.removeNetwork(network2.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME);
+        assertEquals(Integer.MAX_VALUE, mLruConnectionTracker.getAgeIndexOfNetwork(network2));
     }
 }
