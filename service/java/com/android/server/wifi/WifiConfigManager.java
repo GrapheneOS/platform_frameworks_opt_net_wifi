@@ -198,16 +198,19 @@ public class WifiConfigManager {
 
     /**
      * General sorting algorithm of all networks for scanning purposes:
-     * Place the configurations in descending order of their |numAssociation| values. If networks
-     * have the same |numAssociation|, place the configurations with
+     * Place the configurations in ascending order of their AgeIndex. AgeIndex is based on most
+     * recently connected order. The lower the more recently connected.
+     * If networks have the same AgeIndex, place the configurations with
      * |lastSeenInQualifiedNetworkSelection| set first.
      */
-    public static final WifiConfigurationUtil.WifiConfigurationComparator sScanListComparator =
+    private final WifiConfigurationUtil.WifiConfigurationComparator mScanListComparator =
             new WifiConfigurationUtil.WifiConfigurationComparator() {
                 @Override
                 public int compareNetworksWithSameStatus(WifiConfiguration a, WifiConfiguration b) {
-                    if (a.numAssociation != b.numAssociation) {
-                        return Long.compare(b.numAssociation, a.numAssociation);
+                    int indexA = mLruConnectionTracker.getAgeIndexOfNetwork(a);
+                    int indexB = mLruConnectionTracker.getAgeIndexOfNetwork(b);
+                    if (indexA != indexB) {
+                        return Integer.compare(indexA, indexB);
                     } else {
                         boolean isConfigALastSeen =
                                 a.getNetworkSelectionStatus()
@@ -2634,22 +2637,6 @@ public class WifiConfigManager {
     }
 
     /**
-     * Find the most recently connected network from a list of networks, and place it at top
-     */
-    private void putMostRecentlyConnectedNetworkAtTop(List<WifiConfiguration> networks) {
-        WifiConfiguration lastConnectedNetwork =
-                networks.stream()
-                        .max(Comparator.comparing(
-                                (WifiConfiguration config) -> config.lastConnected))
-                        .get();
-        if (lastConnectedNetwork.lastConnected != 0) {
-            int lastConnectedNetworkIdx = networks.indexOf(lastConnectedNetwork);
-            networks.remove(lastConnectedNetworkIdx);
-            networks.add(0, lastConnectedNetwork);
-        }
-    }
-
-    /**
      * Retrieves a list of channels for partial single scans
      *
      * @param ageInMillis only consider scan details whose timestamps are more recent than this.
@@ -2675,10 +2662,7 @@ public class WifiConfigManager {
         }
 
         // Sort the networks with the most frequent ones at the front of the network list.
-        Collections.sort(networks, sScanListComparator);
-
-        // Find the most recently connected network and move it to the front of the network list.
-        putMostRecentlyConnectedNetworkAtTop(networks);
+        Collections.sort(networks, mScanListComparator);
 
         Set<Integer> channelSet = new HashSet<>();
         long nowInMillis = mClock.getWallClockMillis();
@@ -2793,7 +2777,7 @@ public class WifiConfigManager {
         List<WifiConfiguration> networks = getConfiguredNetworks();
         // Remove any non hidden networks.
         networks.removeIf(config -> !config.hiddenSSID);
-        networks.sort(sScanListComparator);
+        networks.sort(mScanListComparator);
         // The most frequently connected network has the highest priority now.
         for (WifiConfiguration config : networks) {
             hiddenList.add(new WifiScanner.ScanSettings.HiddenNetwork(config.SSID));
@@ -3446,5 +3430,9 @@ public class WifiConfigManager {
             }
         }
         return scanMaxRssi;
+    }
+
+    public Comparator<WifiConfiguration> getScanListComparator() {
+        return mScanListComparator;
     }
 }
