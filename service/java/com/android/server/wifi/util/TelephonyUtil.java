@@ -1143,6 +1143,7 @@ public class TelephonyUtil {
     public int getCarrierIdForPackageWithCarrierPrivileges(String packageName) {
         List<SubscriptionInfo> subInfoList = mSubscriptionManager.getActiveSubscriptionInfoList();
         if (subInfoList == null || subInfoList.isEmpty()) {
+            if (mVerboseLogEnabled) Log.v(TAG, "No subs for carrier privilege check");
             return TelephonyManager.UNKNOWN_CARRIER_ID;
         }
         for (SubscriptionInfo info : subInfoList) {
