@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Jaringan yang disarankan <xliff:g id="NAME">%s</xliff:g>. Perangkat dapat terhubung secara otomatis."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Izinkan"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Lain kali"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Peringatan privasi untuk perlindungan IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> menyarankan jaringan menggunakan info kartu SIM tanpa perlindungan privasi, izinkan jaringan untuk terhubung otomatis?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Izinkan"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Larang"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ingin terhubung otomatis"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Jaringan berikut menerima ID unik yang dapat digunakan untuk melacak lokasi perangkat"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Tetap hubungkan"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Jangan hubungkan"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Konfirmasi koneksi?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Jika Anda menghubungkan, jaringan Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> mungkin mengakses atau membagikan ID unik terkait dengan SIM Anda. Ini memungkinkan lokasi perangkat Anda untuk dilacak."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Ikuti"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Jangan hubungkan"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi akan aktif otomatis"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Saat berada di dekat jaringan berkualitas tinggi yang tersimpan"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Jangan aktifkan kembali"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Tidak dapat terhubung ke <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Ketuk untuk mengubah setelan privasi dan coba lagi"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Ubah setelan privasi?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> mungkin ingin terhubung menggunakan alamat MAC perangkat Anda, yaitu ID unik. Alamat ini memungkinkan lokasi perangkat dilacak oleh perangkat di sekitar. \n\nJika Anda melanjutkan, <xliff:g id="SSID_1">%1$s</xliff:g> akan mengubah setelan privasi dan mencoba terhubung lagi."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Untuk terhubung, <xliff:g id="SSID">%1$s</xliff:g> perlu menggunakan alamat MAC perangkat, yaitu ID unik. Saat ini, setelan privasi untuk jaringan ini menggunakan ID yang diacak. \n\nPerubahan ini memungkinkan lokasi perangkat dilacak oleh perangkat di sekitar."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Ganti setelan"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Setelan diperbarui. Coba hubungkan lagi."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Setelan diperbarui. Coba hubungkan lagi."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Tidak dapat mengubah setelan privasi"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Jaringan tidak ditemukan"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : Error autentikasi EAP 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : Error autentikasi EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : Error autentikasi EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : Error autentikasi EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Seluler Hotspot dinonaktifkan"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Hotspot seluler telah dinonaktifkan"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Hotspot seluler telah dinonaktifkan karena habisnya waktu tunggu tanpa aktivitas."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Hotspot dinonaktifkan"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Tidak ada perangkat yang terhubung. Ketuk untuk mengubah."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi tidak tersambung"</string>
-    <string name="wifi_sim_required_message" msgid="8337512370882674437">"Untuk terhubung ke <xliff:g id="SSID">%1$s</xliff:g> masukkan SIM <xliff:g id="CARRIER_NAME">%2$s</xliff:g>."</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Untuk terhubung ke <xliff:g id="SSID">%1$s</xliff:g>, masukkan SIM <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
 </resources>

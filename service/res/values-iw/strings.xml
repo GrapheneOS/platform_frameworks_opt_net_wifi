@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"הצעות לרשתות <xliff:g id="NAME">%s</xliff:g>. ייתכן שחיבור המכשיר ייעשה באופן אוטומטי."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"אישור"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"לא תודה"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"‏אזהרה לגבי פרטיות להגנת IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"‏קיבלת הצעה מהספק <xliff:g id="CARRIERNAME">%s</xliff:g> לרשתות שמשתמשות במידע מכרטיס ה-SIM שלך ללא הגנה על הפרטיות. האם לאפשר לרשתות להתחבר באופן אוטומטי?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"אישור"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"לא לאפשר"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> רוצה להתחבר אוטומטית"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"רשתות אלה מקבלות מזהה ייחודי שבו ניתן להשתמש למעקב אחר מיקום של מכשיר"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"יש להתחבר בכל זאת"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"אין להתחבר"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"לאשר את ההתחברות?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"‏אם תתבצע התחברות, ייתכן שרשתות Wi‑Fi של <xliff:g id="CARRIERNAME">%s</xliff:g> יקבלו גישה או ישתפו מזהה ייחודי שמשויך לכרטיס ה-SUM שלך. בעקבות זאת, ייתכן שניתן יהיה לעקוב אחר מיקום המכשיר שלך."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"התחברות"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"אין להתחבר"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"‏ה-Wi-Fi יופעל אוטומטית"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"כשתימצאו בקרבת רשת באיכות גבוהה ששמרתם"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"אל תפעיל שוב"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"לא ניתן להתחבר אל <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"יש להקיש כדי לשנות את הגדרות הפרטיות ולנסות שוב"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"לשנות את הגדרות הפרטיות?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"‏ייתכן שיידרש ל-<xliff:g id="SSID_0">%1$s</xliff:g> חיבור באמצעות כתובת ה-MAC של המכשיר, מזהה ייחודי. כך, מכשירים בקרבת מקום עשויים לקבל הרשאה לעקוב אחר מיקום המכשיר שלך. \n\nהמשך הפעולה יאפשר ל-<xliff:g id="SSID_1">%1$s</xliff:g> לשנות את הגדרות הפרטיות ולנסות להתחבר שוב."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"‏כדי לחבר, עליך לאפשר ל-<xliff:g id="SSID">%1$s</xliff:g> להשתמש בכתובת ה-MAC של המכשיר, מזהה ייחודי. הגדרת הפרטיות לרשת זו משתמשת כרגע במזהה רנדומלי. \n\nשינוי זה עשוי לאפשר למכשירים בקרבת מקום לעקוב אחר מיקום המכשיר שלך."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"שינוי ההגדרות"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"ההגדרה עודכנה. יש לנסות להתחבר שוב."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"ההגדרה עודכנה. אפשר לנסות שוב להתחבר."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"לא ניתן לשנות את הגדרות הפרטיות"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"הרשת לא נמצאה"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"‏<xliff:g id="SSID">%1$s</xliff:g> : שגיאה 32760 באימות EAP"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"‏<xliff:g id="SSID">%1$s</xliff:g> : שגיאה 32764 באימות EAP"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"‏<xliff:g id="SSID">%1$s</xliff:g> : שגיאה 32765 באימות EAP"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"‏<xliff:g id="SSID">%1$s</xliff:g> : שגיאה 32766 באימות EAP"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"הנקודה לשיתוף אינטרנט בנייד מושבתת"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"הנקודה לשיתוף אינטרנט בנייד הושבתה"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"הנקודה לשיתוף אינטרנט בנייד הושבתה מפני שחלף פרק הזמן הקצוב לתפוגה עקב אי פעילות."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"נקודה לשיתוף אינטרנט נכבתה"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"אין מכשירים מחוברים. יש להקיש כדי לשנות."</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"‏Wi-Fi מנותק"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"‏יש להכניס SIM של <xliff:g id="CARRIER_NAME">%2$s</xliff:g> כדי להתחבר אל <xliff:g id="SSID">%1$s</xliff:g>"</string>
 </resources>
