@@ -243,4 +243,24 @@ public class ScanResultUtil {
             }
         }
     }
+
+    /**
+     * Check if ScarResult list is valid.
+     */
+    public static boolean validateScanResultList(List<ScanResult> scanResults) {
+        if (scanResults == null || scanResults.isEmpty()) {
+            return false;
+        }
+        for (ScanResult scanResult : scanResults) {
+            if (!validate(scanResult)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean validate(ScanResult scanResult) {
+        return scanResult != null && scanResult.SSID != null
+                && scanResult.capabilities != null && scanResult.BSSID != null;
+    }
 }

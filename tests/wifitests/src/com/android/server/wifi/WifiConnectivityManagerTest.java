@@ -54,6 +54,7 @@ import android.util.LocalLog;
 import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.hotspot2.PasspointManager;
+import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.ScanResultUtil;
 import com.android.wifi.resources.R;
 
@@ -73,6 +74,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -127,6 +129,10 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mMinPacketRateActiveTraffic = mResources.getInteger(
                 R.integer.config_wifiFrameworkMinPacketPerSecondActiveTraffic);
         when(mWifiLastResortWatchdog.shouldIgnoreBssidUpdate(anyString())).thenReturn(false);
+        mLruConnectionTracker = new LruConnectionTracker(100, mContext);
+        Comparator<WifiConfiguration> comparator =
+                Comparator.comparingInt(mLruConnectionTracker::getAgeIndexOfNetwork);
+        when(mWifiConfigManager.getScanListComparator()).thenReturn(comparator);
     }
 
     private void setUpResources(MockResources resources) {
@@ -175,6 +181,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private WifiConfigManager mWifiConfigManager;
     private WifiInfo mWifiInfo;
     private LocalLog mLocalLog;
+    private LruConnectionTracker mLruConnectionTracker;
     @Mock private WifiInjector mWifiInjector;
     @Mock private NetworkScoreManager mNetworkScoreManager;
     @Mock private Clock mClock;
@@ -2910,6 +2917,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         networkList.add(network1);
         networkList.add(network2);
         networkList.add(network3);
+        mLruConnectionTracker.addNetwork(network3);
+        mLruConnectionTracker.addNetwork(network2);
+        mLruConnectionTracker.addNetwork(network1);
         when(mWifiConfigManager.getSavedNetworks(anyInt())).thenReturn(networkList);
         // Retrieve the Pno network list & verify.
         List<WifiScanner.PnoSettings.PnoNetwork> pnoNetworks =
@@ -2950,8 +2960,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         List<WifiConfiguration> networkList = new ArrayList<>();
         networkList.add(network1);
         networkList.add(network2);
+        mLruConnectionTracker.addNetwork(network2);
+        mLruConnectionTracker.addNetwork(network1);
         when(mWifiConfigManager.getSavedNetworks(anyInt())).thenReturn(networkList);
-
         // Retrieve the Pno network list and verify.
         // Frequencies should be empty since no scan results have been received yet.
         List<WifiScanner.PnoSettings.PnoNetwork> pnoNetworks =
@@ -3006,35 +3017,15 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         WifiConfiguration network1 = WifiConfigurationTestUtil.createEapNetwork();
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         WifiConfiguration network3 = WifiConfigurationTestUtil.createOpenHiddenNetwork();
+        mLruConnectionTracker.addNetwork(network1);
+        mLruConnectionTracker.addNetwork(network2);
+        mLruConnectionTracker.addNetwork(network3);
         List<WifiConfiguration> networkList = new ArrayList<>();
         networkList.add(network1);
         networkList.add(network2);
         networkList.add(network3);
         when(mWifiConfigManager.getSavedNetworks(anyInt())).thenReturn(networkList);
-        // Set up network as:
-        // Network2 has the highest association number.
-        // Network3 is most recently connected.
-        // Network1 the second for both association number and most recently.
-        long firstConnectionTimeMillis = 45677;
-        long secondConnectionTimeMillis = firstConnectionTimeMillis + 45;
-        network1.numAssociation = 2;
-        network2.numAssociation = 3;
-        network3.numAssociation = 1;
-        network1.lastConnected = firstConnectionTimeMillis;
-        network3.lastConnected = secondConnectionTimeMillis;
-        //When config_wifiPnoRecencySortingEnabled is false, will prefer most connected network.
-        mResources.setBoolean(R.bool.config_wifiPnoRecencySortingEnabled, false);
         List<WifiScanner.PnoSettings.PnoNetwork> pnoNetworks =
-                mWifiConnectivityManager.retrievePnoNetworkList();
-        assertEquals(3, pnoNetworks.size());
-        assertEquals(network2.SSID, pnoNetworks.get(0).ssid);
-        assertEquals(network1.SSID, pnoNetworks.get(1).ssid);
-        assertEquals(network3.SSID, pnoNetworks.get(2).ssid);
-
-        //When config_wifiPnoRecencySortingEnabled is true, after prefer most connected network.
-        //The most recently connected network will move the first.
-        mResources.setBoolean(R.bool.config_wifiPnoRecencySortingEnabled, true);
-        pnoNetworks =
                 mWifiConnectivityManager.retrievePnoNetworkList();
         assertEquals(3, pnoNetworks.size());
         assertEquals(network3.SSID, pnoNetworks.get(0).ssid);
