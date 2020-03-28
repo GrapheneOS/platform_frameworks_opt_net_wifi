@@ -141,6 +141,7 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                 IpConfigurationXmlUtil.XML_TAG_PROXY_PAC_FILE,
             }));
 
+    @Override
     public List<WifiConfiguration> parseNetworkConfigurationsFromXml(XmlPullParser in,
             int outerTagDepth, int minorVersion) throws XmlPullParserException, IOException {
         // clamp down the minorVersion to the highest one that this parser version supports
@@ -163,6 +164,11 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
             }
         }
         return configurations;
+    }
+
+    @Override
+    public int getHighestSupportedMinorVersion() {
+        return HIGHEST_SUPPORTED_MINOR_VERSION;
     }
 
     /**
@@ -349,6 +355,9 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                     break;
                 case WifiConfigurationXmlUtil.XML_TAG_METERED_OVERRIDE:
                     configuration.meteredOverride = (int) value;
+                    break;
+                case WifiConfigurationXmlUtil.XML_TAG_IS_AUTO_JOIN:
+                    configuration.allowAutojoin = (boolean) value;
                     break;
                 default:
                     // should never happen, since other tags are filtered out earlier
