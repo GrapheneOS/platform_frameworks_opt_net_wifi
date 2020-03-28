@@ -31,10 +31,22 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> సూచించిన నెట్‌వర్క్‌లు. పరికరం ఆటోమేటిక్‌గా కనెక్ట్ అవచ్చు."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"అనుమతించు"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"వద్దు"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI రక్షణకు సంబంధించి గోప్యతా హెచ్చరిక"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> గోప్యతా రక్షణ లేకుండా మీ SIM కార్డ్ సమాచారాన్ని ఉపయోగించి నెట్‌వర్క్‌లను సూచించింది, ఆటోమేటిక్‌గా కనెక్ట్ అయ్యేలా నెట్‌వర్క్‌ను అనుమతించాలా?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"అనుమతించు"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"అనుమతించవద్దు"</string>
+    <!-- no translation found for wifi_suggestion_imsi_privacy_title (2915915091404141470) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_imsi_privacy_content (2964867545127220548) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_carrier (4510014692570591616) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier (1466870675651864648) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_imsi_privacy_exemption_confirmation_title (3252889810011175876) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_imsi_privacy_exemption_confirmation_content (1665277613133133730) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation (3102046304611708608) -->
+    <skip />
+    <!-- no translation found for wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation (8467281276632253246) -->
+    <skip />
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi స్వయంచాలకంగా ఆన్ అవుతుంది"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"మీరు అధిక నాణ్యత గల సేవ్ చేసిన నెట్‌వర్క్‌కు సమీపంగా ఉన్నప్పుడు"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"తిరిగి ఆన్ చేయవద్దు"</string>
@@ -61,9 +73,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g>కు కనెక్ట్ చేయడం సాధ్యపడదు"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"మీ గోప్యతా సెట్టింగ్‌లను మార్చడానికి నొక్కి, మళ్లీ ప్రయత్నించండి"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"గోప్యతా సెట్టింగ్‌ను మార్చాలా?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> అనేది ప్రత్యేకమైన ఐడెంటిఫయర్ అయిన మీ డివైజ్ MAC చిరునామాను ఉపయోగించి కనెక్ట్ చేయాలనుకోవచ్చు. అలా చేయడం వలన మీ లొకేషన్‌ను ట్రాక్ చేయడానికి సమీప పరికరాలకు అనుమతి లభించవచ్చు. \n\nఒకవేళ మీరు కొనసాగితే, మీ గోప్యతా సెట్టింగ్‌ను <xliff:g id="SSID_1">%1$s</xliff:g> మారుస్తుంది, అప్పుడు తిరిగి కనెక్ట్ చేయడానికి ప్రయత్నిస్తుంది."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"కనెక్ట్ చేయడానికి, <xliff:g id="SSID">%1$s</xliff:g> అనేది ప్రత్యేకమైన ఐడెంటిఫయర్ అయిన మీ పరికరం యొక్క MAC చిరునామాను ఉపయోగించాల్సి ఉంటుంది. ప్రస్తుతం, ఈ నెట్‌వర్క్ కోసం మీ గోప్యతా సెట్టింగ్ యాదృచ్ఛిక ఐడెంటిఫయర్‌ను ఉపయోగిస్తుంది. \n\nఈ మార్పు వలన మీ పరికర లొకేషన్‌ను ట్రాక్ చేయడానికి సమీప పరికరాలకు అనుమతి లభించవచ్చు."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"సెట్టింగ్‌ను మార్చండి"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"సెట్టింగ్ అప్‌డేట్ చేయబడింది. మళ్లీ కనెక్ట్ చేయడాన్ని ప్రయత్నించండి."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"సెట్టింగ్ అప్‌డేట్ చేయబడింది. మళ్లీ కనెక్ట్ చేయడానికి ట్రై చేయండి."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"గోప్యతా సెట్టింగ్‌లను మార్చడం సాధ్యం కాదు"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"నెట్‌వర్క్ కనుగొనబడలేదు"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ప్రామాణీకరణ ఎర్రర్ 32760"</string>
@@ -73,11 +85,10 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ప్రామాణీకరణ ఎర్రర్ 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ప్రామాణీకరణ ఎర్రర్ 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ప్రామాణీకరణ ఎర్రర్ 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"మొబైల్ హాట్‌స్పాట్ డిజేబుల్ అయింది"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"మొబైల్ హాట్‌స్పాట్ డిజేబుల్ చేయబడింది"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"ఇన్‌యాక్టివిటీ గడువు సమయం ముగిసిన కారణంగా మొబైల్ హాట్‌స్పాట్ డిజేబుల్ చేయబడింది."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <!-- no translation found for wifi_softap_auto_shutdown_timeout_expired_title (3145323037688670043) -->
     <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <!-- no translation found for wifi_softap_auto_shutdown_timeout_expired_summary (5136282560556465701) -->
     <skip />
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wifi డిస్‌కనెక్ట్ చేయబడింది"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g>కి కనెక్ట్ చేయడానికి, <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIMను చొప్పించండి"</string>
 </resources>
