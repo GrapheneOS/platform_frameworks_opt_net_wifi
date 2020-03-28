@@ -456,8 +456,6 @@ public class XmlUtil {
                     configuration.allowedSuiteBCiphers.toByteArray());
             XmlUtil.writeNextValue(out, XML_TAG_SHARED, configuration.shared);
             XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN, configuration.allowAutojoin);
-            XmlUtil.writeNextValue(out, XML_TAG_IS_TRUSTED, configuration.trusted);
-
         }
 
         /**
@@ -487,6 +485,7 @@ public class XmlUtil {
                 @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
                 throws XmlPullParserException, IOException {
             writeCommonElementsToXml(out, configuration, encryptionUtil);
+            XmlUtil.writeNextValue(out, XML_TAG_IS_TRUSTED, configuration.trusted);
             XmlUtil.writeNextValue(out, XML_TAG_BSSID, configuration.BSSID);
             XmlUtil.writeNextValue(out, XML_TAG_STATUS, configuration.status);
             XmlUtil.writeNextValue(out, XML_TAG_FQDN, configuration.FQDN);
