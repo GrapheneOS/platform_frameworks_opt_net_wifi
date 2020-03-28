@@ -81,7 +81,7 @@ public class WifiBackupRestore {
      * Note that bumping up only the minor version will still allow restoring the backup set to
      * lower versions of SDK_INT.
      */
-    private static final float CURRENT_BACKUP_DATA_VERSION = 1.1f;
+    private static final int CURRENT_BACKUP_DATA_MAJOR_VERSION = 1;
 
     /** This list of older versions will be used to restore data from older backups. */
     /**
@@ -134,6 +134,29 @@ public class WifiBackupRestore {
     }
 
     /**
+     * Retrieve the version for serialization.
+     */
+    private Float getVersion() {
+        WifiBackupDataParser parser =
+                getWifiBackupDataParser(CURRENT_BACKUP_DATA_MAJOR_VERSION);
+        if (parser == null) {
+            Log.e(TAG, "Major version of backup data is unknown to this Android"
+                    + " version; not backing up");
+            return null;
+        }
+        int minorVersion = parser.getHighestSupportedMinorVersion();
+        Float version;
+        try {
+            version = Float.valueOf(
+                    CURRENT_BACKUP_DATA_MAJOR_VERSION + "." + minorVersion);
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "Failed to generate version", e);
+            return null;
+        }
+        return version;
+    }
+
+    /**
      * Retrieve an XML byte stream representing the data that needs to be backed up from the
      * provided configurations.
      *
@@ -154,7 +177,9 @@ public class WifiBackupRestore {
             // Start writing the XML stream.
             XmlUtil.writeDocumentStart(out, XML_TAG_DOCUMENT_HEADER);
 
-            XmlUtil.writeNextValue(out, XML_TAG_VERSION, CURRENT_BACKUP_DATA_VERSION);
+            Float version = getVersion();
+            if (version == null) return null;
+            XmlUtil.writeNextValue(out, XML_TAG_VERSION, version.floatValue());
 
             writeNetworkConfigurationsToXml(out, configurations);
 
