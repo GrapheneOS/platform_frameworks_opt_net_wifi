@@ -19,7 +19,7 @@
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
     <string name="auto_connect_disable" msgid="1078319396240632542">"ఆటో-కనెక్ట్ ఆఫ్‌లో ఉంది"</string>
     <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g> ద్వారా సేవ్ చేయబడింది"</string>
-    <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"స్వయంచాలకంగా కనెక్ట్ కాదు"</string>
+    <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"ఆటోమేటిక్‌గా కనెక్ట్ కాదు"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"ఇంటర్నెట్ యాక్సెస్ లేదు"</string>
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"ప్రామాణీకరణ సమస్య"</string>
     <string name="wifi_check_password_try_again" msgid="2643230209986217827">"పాస్‌వర్డ్‌ను తనిఖీ చేసి, మళ్లీ ప్రయత్నించండి"</string>
@@ -31,11 +31,23 @@
     <string name="wifi_metered_label" msgid="1362621600006544014">"గణించబడుతోంది"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"గణించబడటం లేదు"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> ద్వారా కనెక్ట్ చేయబడింది"</string>
-    <string name="connected_via_network_scorer" msgid="8081366798449871179">"%1$s ద్వారా స్వయంచాలకంగా కనెక్ట్ చేయబడింది"</string>
+    <!-- no translation found for available_via_app (9110324040292242769) -->
+    <skip />
+    <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> ద్వారా ఆటోమేటిక్‌గా కనెక్ట్ చేయబడింది"</string>
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"నెట్‌వర్క్ రేటింగ్ ప్రదాత ద్వారా స్వయంచాలకంగా కనెక్ట్ చేయబడింది"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"పరిమిత కనెక్షన్"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"ప్రైవేట్ DNS సర్వర్‌ను యాక్సెస్ చేయడం సాధ్యపడదు"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"ఇంటర్నెట్ లేదు"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"ఏదీ లేదు"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"గడువు ముగిసింది"</string>
+    <string name="tap_to_sign_up" msgid="2409214576606918295">"సైన్ అప్ చేయడానికి ట్యాప్ చేయండి"</string>
+    <!-- no translation found for tap_to_renew_subscription_and_connect (375976298920840105) -->
+    <skip />
+    <string name="osu_opening_provider" msgid="5633521771769175139">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> తెరవబడుతోంది"</string>
+    <string name="osu_connect_failed" msgid="8503501619299851793">"కనెక్ట్ చేయడం సాధ్యపడలేదు"</string>
+    <string name="osu_completing_sign_up" msgid="7188493241442946231">"సైన్ అప్ పూర్తవుతోంది…"</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"సైన్ అప్‌ను పూర్తి చేయడం సాధ్యపడలేదు. మళ్ళీ ప్రయత్నించడానికి ట్యాప్ చేయండి."</string>
+    <string name="osu_sign_up_complete" msgid="7013805426618985953">"సైన్ అప్ పూర్తయింది. కనెక్ట్ చేయబడుతోంది…"</string>
+    <!-- no translation found for imsi_protection_warning (3771878632537231149) -->
+    <skip />
 </resources>

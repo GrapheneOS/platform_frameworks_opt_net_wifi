@@ -30,11 +30,13 @@ import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BasicShellCommandHandler;
 import android.os.Binder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
 import com.android.server.wifi.util.ApConfigUtil;
+import com.android.server.wifi.util.ArrayUtils;
 import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
@@ -60,6 +62,19 @@ import java.util.concurrent.TimeUnit;
  */
 public class WifiShellCommand extends BasicShellCommandHandler {
     private static String SHELL_PACKAGE_NAME = "com.android.shell";
+    // These don't require root access.
+    // However, these do perform permission checks in the corresponding WifiService methods.
+    private static final String[] NON_PRIVILEGED_COMMANDS = {
+            "connect-network",
+            "forget-network",
+            "list-scan-results",
+            "list-networks",
+            "set-verbose-logging",
+            "set-wifi-enabled",
+            "start-scan",
+            "status",
+    };
+
     private final ClientModeImpl mClientModeImpl;
     private final WifiLockManager mWifiLockManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
@@ -89,8 +104,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         // Explicit exclusion from root permission
         // Do not require root permission to maintain backwards compatibility with
         // `svc wifi [enable|disable]`.
-        if (!"set-wifi-enabled".equals(cmd)) {
-            checkRootPermission();
+        if (ArrayUtils.indexOf(NON_PRIVILEGED_COMMANDS, cmd) == -1) {
+            final int uid = Binder.getCallingUid();
+            if (uid != Process.ROOT_UID) {
+                throw new SecurityException(
+                        "Uid " + uid + " does not have access to " + cmd + " wifi command");
+            }
         }
 
         final PrintWriter pw = getOutPrintWriter();
@@ -358,12 +377,6 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     return 0;
                 }
                 case "set-wifi-enabled": {
-                    // This command is explicitly exempted from checkRootPermission() (see beginning
-                    // of this method).
-                    // Do not require root permission to maintain backwards compatibility with
-                    // `svc wifi [enable|disable]`.
-                    // However, setWifiEnabled() does perform its own check for the
-                    // android.Manifest.permission.CHANGE_WIFI_STATE permission.
                     boolean enabled;
                     String nextArg = getNextArgRequired();
                     if ("enabled".equals(nextArg)) {
@@ -581,15 +594,6 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 || Arrays.binarySearch(allowed5gFreq, apChannelMHz) >= 0
                 || Arrays.binarySearch(allowed5gDfsFreq, apChannelMHz) >= 0)
                 || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0;
-    }
-
-    private void checkRootPermission() {
-        final int uid = Binder.getCallingUid();
-        if (uid == 0) {
-            // Root can do anything.
-            return;
-        }
-        throw new SecurityException("Uid " + uid + " does not have access to wifi commands");
     }
 
     @Override

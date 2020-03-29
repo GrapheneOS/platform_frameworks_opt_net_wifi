@@ -19,7 +19,7 @@
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
     <string name="auto_connect_disable" msgid="1078319396240632542">"ავტომატური დაკავშირება გამორთულია"</string>
     <string name="saved_network" msgid="6241977554502802914">"შენახული <xliff:g id="NAME">%1$s</xliff:g>-ის მიერ"</string>
-    <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"ავტომატურად დაკავშირება ვერ მოხერხდება"</string>
+    <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"ავტომატურად დაკავშირება ვერ ხერხდება"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"ინტერნეტ-კავშირი არ არის"</string>
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"ავთენტიკაციის პრობლემა"</string>
     <string name="wifi_check_password_try_again" msgid="2643230209986217827">"გადაამოწმეთ პაროლი და ხელახლა ცადეთ"</string>
@@ -31,11 +31,20 @@
     <string name="wifi_metered_label" msgid="1362621600006544014">"ლიმიტირებული"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"არალიმიტირებული"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"დაკავშირებულია <xliff:g id="NAME">%1$s</xliff:g>-ით"</string>
-    <string name="connected_via_network_scorer" msgid="8081366798449871179">"ავტომატურად დაკავშირდა %1$s-ის მეშვეობით"</string>
+    <string name="available_via_app" msgid="9110324040292242769">"ხელმისაწვდომია <xliff:g id="NAME">%1$s</xliff:g>-ის მეშვეობით"</string>
+    <string name="connected_via_network_scorer" msgid="209764314005159012">"ავტომატურად დაკავშირებულია <xliff:g id="NAME">%1$s</xliff:g>-ით"</string>
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"ავტომატურად დაკავშირდა ქსელის ხარისხის შეფასების პროვაიდერის მეშვეობით"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"შეზღუდული კავშირი"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"პირად DNS სერვერზე წვდომა შეუძლებელია"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"ინტერნეტ-კავშირი არ არის"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"არცერთი"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"ვადაგასულია"</string>
+    <string name="tap_to_sign_up" msgid="2409214576606918295">"შეეხეთ რეგისტრაციისთვის"</string>
+    <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"შეეხეთ, რათა გაანაახლოთ გამოწერა და დაუკავშირდეთ"</string>
+    <string name="osu_opening_provider" msgid="5633521771769175139">"მიმდინარეობს <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>-ის გახსნა"</string>
+    <string name="osu_connect_failed" msgid="8503501619299851793">"დაკავშირება ვერ მოხერხდა"</string>
+    <string name="osu_completing_sign_up" msgid="7188493241442946231">"მიმდინარეობს რეგისტრაციის დასრულება…"</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"რეგისტრაციის დასრულება ვერ მოხერხდა. შეეხეთ ხელახლა საცდელად."</string>
+    <string name="osu_sign_up_complete" msgid="7013805426618985953">"რეგისტრაცია დასრულდა. მიმდინარეობს დაკავშირება…"</string>
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"ეს ქსელი მიიღებს უნიკალურ ID-ს, რომლის მეშვეობითაც შესაძლებელია მოწყობილობის მდებარეობის აღნუსხვა.\n"<annotation id="url">"შეიტყვეთ მეტი"</annotation></string>
 </resources>
