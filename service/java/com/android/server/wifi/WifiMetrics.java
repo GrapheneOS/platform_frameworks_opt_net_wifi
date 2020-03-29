@@ -442,6 +442,26 @@ public class WifiMetrics {
     // Connection duration stats collected while link layer stats reports are on
     private final ConnectionDurationStats mConnectionDurationStats = new ConnectionDurationStats();
 
+    private static final int[] CHANNEL_UTILIZATION_BUCKETS =
+            {25, 50, 75, 100, 125, 150, 175, 200, 225};
+
+    private final IntHistogram mChannelUtilizationHistogram2G =
+            new IntHistogram(CHANNEL_UTILIZATION_BUCKETS);
+
+    private final IntHistogram mChannelUtilizationHistogramAbove2G =
+            new IntHistogram(CHANNEL_UTILIZATION_BUCKETS);
+
+    private static final int[] THROUGHPUT_MBPS_BUCKETS =
+            {1, 5, 10, 15, 25, 50, 100, 150, 200, 300, 450, 600, 800, 1200, 1600};
+    private final IntHistogram mTxThroughputMbpsHistogram2G =
+            new IntHistogram(THROUGHPUT_MBPS_BUCKETS);
+    private final IntHistogram mRxThroughputMbpsHistogram2G =
+            new IntHistogram(THROUGHPUT_MBPS_BUCKETS);
+    private final IntHistogram mTxThroughputMbpsHistogramAbove2G =
+            new IntHistogram(THROUGHPUT_MBPS_BUCKETS);
+    private final IntHistogram mRxThroughputMbpsHistogramAbove2G =
+            new IntHistogram(THROUGHPUT_MBPS_BUCKETS);
+
     // Wi-Fi off metrics
     private final WifiOffMetrics mWifiOffMetrics = new WifiOffMetrics();
 
@@ -2039,6 +2059,54 @@ public class WifiMetrics {
     }
 
     /**
+     * Increment occurrence count of channel utilization
+     * @param channelUtilization Channel utilization of current network
+     * @param frequency Channel frequency of current network
+     */
+    @VisibleForTesting
+    public void incrementChannelUtilizationCount(int channelUtilization, int frequency) {
+        if (channelUtilization < InformationElementUtil.BssLoad.MIN_CHANNEL_UTILIZATION
+                || channelUtilization > InformationElementUtil.BssLoad.MAX_CHANNEL_UTILIZATION) {
+            return;
+        }
+        synchronized (mLock) {
+            if (frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+                mChannelUtilizationHistogram2G.increment(channelUtilization);
+            } else {
+                mChannelUtilizationHistogramAbove2G.increment(channelUtilization);
+            }
+        }
+    }
+
+    /**
+     * Increment occurrence count of Tx and Rx throughput
+     * @param txThroughputKbps Tx throughput of current network in Kbps
+     * @param rxThroughputKbps Rx throughput of current network in Kbps
+     * @param frequency Channel frequency of current network in MHz
+     */
+    @VisibleForTesting
+    public void incrementThroughputKbpsCount(int txThroughputKbps, int rxThroughputKbps,
+            int frequency) {
+        synchronized (mLock) {
+            if (frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+                if (txThroughputKbps >= 0) {
+                    mTxThroughputMbpsHistogram2G.increment(txThroughputKbps / 1000);
+                }
+                if (rxThroughputKbps >= 0) {
+                    mRxThroughputMbpsHistogram2G.increment(rxThroughputKbps / 1000);
+                }
+            } else {
+                if (txThroughputKbps >= 0) {
+                    mTxThroughputMbpsHistogramAbove2G.increment(txThroughputKbps / 1000);
+                }
+                if (rxThroughputKbps >= 0) {
+                    mRxThroughputMbpsHistogramAbove2G.increment(rxThroughputKbps / 1000);
+                }
+            }
+        }
+    }
+
+    /**
      * Increment count of Watchdog successes.
      */
     public void incrementNumLastResortWatchdogSuccesses() {
@@ -3403,6 +3471,18 @@ public class WifiMetrics {
                         + mWifiOffMetrics.toString());
                 pw.println("mWifiLogProto.softApConfigLimitationMetrics="
                         + mSoftApConfigLimitationMetrics.toString());
+                pw.println("mChannelUtilizationHistogram2G:\n"
+                        + mChannelUtilizationHistogram2G);
+                pw.println("mChannelUtilizationHistogramAbove2G:\n"
+                        + mChannelUtilizationHistogramAbove2G);
+                pw.println("mTxThroughputMbpsHistogram2G:\n"
+                        + mTxThroughputMbpsHistogram2G);
+                pw.println("mRxThroughputMbpsHistogram2G:\n"
+                        + mRxThroughputMbpsHistogram2G);
+                pw.println("mTxThroughputMbpsHistogramAbove2G:\n"
+                        + mTxThroughputMbpsHistogramAbove2G);
+                pw.println("mRxThroughputMbpsHistogramAbove2G:\n"
+                        + mRxThroughputMbpsHistogramAbove2G);
             }
         }
     }
@@ -3974,6 +4054,22 @@ public class WifiMetrics {
             mWifiLogProto.connectionDurationStats = mConnectionDurationStats.toProto();
             mWifiLogProto.wifiOffMetrics = mWifiOffMetrics.toProto();
             mWifiLogProto.softApConfigLimitationMetrics = mSoftApConfigLimitationMetrics.toProto();
+            mWifiLogProto.channelUtilizationHistogram =
+                    new WifiMetricsProto.ChannelUtilizationHistogram();
+            mWifiLogProto.channelUtilizationHistogram.utilization2G =
+                    mChannelUtilizationHistogram2G.toProto();
+            mWifiLogProto.channelUtilizationHistogram.utilizationAbove2G =
+                    mChannelUtilizationHistogramAbove2G.toProto();
+            mWifiLogProto.throughputMbpsHistogram =
+                    new WifiMetricsProto.ThroughputMbpsHistogram();
+            mWifiLogProto.throughputMbpsHistogram.tx2G =
+                    mTxThroughputMbpsHistogram2G.toProto();
+            mWifiLogProto.throughputMbpsHistogram.txAbove2G =
+                    mTxThroughputMbpsHistogramAbove2G.toProto();
+            mWifiLogProto.throughputMbpsHistogram.rx2G =
+                    mRxThroughputMbpsHistogram2G.toProto();
+            mWifiLogProto.throughputMbpsHistogram.rxAbove2G =
+                    mRxThroughputMbpsHistogramAbove2G.toProto();
         }
     }
 
@@ -4166,6 +4262,12 @@ public class WifiMetrics {
             mWifiLockLowLatencyActiveSessionDurationSecHistogram.clear();
             mWifiLockStats.clear();
             mWifiToggleStats.clear();
+            mChannelUtilizationHistogram2G.clear();
+            mChannelUtilizationHistogramAbove2G.clear();
+            mTxThroughputMbpsHistogram2G.clear();
+            mRxThroughputMbpsHistogram2G.clear();
+            mTxThroughputMbpsHistogramAbove2G.clear();
+            mRxThroughputMbpsHistogramAbove2G.clear();
             mPasspointProvisionFailureCounts.clear();
             mNumProvisionSuccess = 0;
             mBssidBlocklistStats = new BssidBlocklistStats();
