@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ले सिफारिस गरेका नेटवर्कहरू। यन्त्र स्वतः जडान हुन सक्छ।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"अनुमति दिनुहोस्"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"पर्दैन, धन्यवाद"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> स्वतः जोडिन चाहन्छ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"यी नेटवर्कहरूले यन्त्रको स्थान पहिल्याउन प्रयोग गर्न सकिने एउटा अद्वित्तीय ID प्राप्त गर्छन्"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"जुनसुकै तरिकाले भए पनि जोड्नुहोस्"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"नजोड्नुहोस्"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"जोडिने हो?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"तपाईं जोडिनुभयो भने <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi नेटवर्कहरूले तपाईंको SIM सँग सम्बद्ध अद्वित्तीय ID प्रयोग गर्न वा उक्त ID आदान प्रदान गर्न सक्छ। उक्त ID प्रयोग गरी तपाईंको यन्त्रको स्थान पहिल्याउन सकिन्छ।"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"जोड्नुहोस्"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"नजोड्नुहोस्"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI सुरक्षाको गोपनीयतासम्बन्धी चेतावनी"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> ले गोपनीयताको सुरक्षाविनै तपाईंको SIM कार्डको जानकारी प्रयोग गरेर कुनै नेटवर्क सिफारिस गऱ्यो। नेटवर्कलाई स्वतः जोडिने अनुमति दिने हो?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"अनुमति दिनुहोस्"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"अनुमति नदिनुहोस्"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi स्वतः सक्रिय हुनेछ"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"तपाईं कुनै सुरक्षित गरिएको उच्च गुणस्तरीय नेटवर्कको नजिक हुनुभएको अवस्थामा"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"फेरि सक्रिय नगर्नुहोला"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> मा जडान गर्न सकिएन"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"गोपनीयता सेटिङ परिवर्तन गर्न ट्याप गरेर फेरि प्रयास गर्नुहोस्"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"गोपनीयतासम्बन्धी सेटिङ परिवर्तन गर्ने हो?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"जोड्नका लागि <xliff:g id="SSID">%1$s</xliff:g> ले तपाईंको यन्त्रको MAC ठेगाना अर्थात् एउटा अद्वितीय पहिचानकर्ता प्रयोग गर्नु पर्ने हुन्छ। हाल, यो नेटवर्कमा लागू हुने तपाईंको गोपनीयतासम्बन्धी सेटिङले अनियमित पहिचानकर्ताको प्रयोग गर्छ। \n\nयो परिवर्तन गर्नाले वरपरका यन्त्रहरूलाई तपाईंको यन्त्रको स्थान ट्र्याक गर्न दिने सम्भावना हुन्छ।"</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> ले तपाईंका यन्त्रको MAC ठेगाना अर्थात् अद्वितीय पहिचानकर्ता प्रयोग गरेर सम्पर्क गर्न सक्ने सम्भावना छ। यसो गर्नाले तपाईंका यन्त्रको स्थान वरपरका यन्त्रहरूले ट्र्याक गर्न सक्ने सम्भावना छ। \n\nतपाईंले यो कार्य जारी राख्नुभएमा, <xliff:g id="SSID_1">%1$s</xliff:g> ले तपाईंको गोपनीयता सेटिङ परिवर्तन गरेर फेरि जोडिन प्रयास गर्ने छ।"</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"सेटिङ परिवर्तन गर्नुहोस्"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"सेटिङ अद्यावधिक गरियो। फेरि जोडी हेर्नुहोस्।"</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"सेटिङ अद्यावधिक गरियो। फेरि जोडी हेर्नुहोस्।"</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"गोपनीयता सेटिङ परिवर्तन गर्न सकिँदैन"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"नेटवर्क फेला परेन"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP प्रमाणीकरणसम्बन्धी त्रुटि ३२७६०"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP प्रमाणीकरणसम्बन्धी त्रुटि ३२७६४"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP प्रमाणीकरणसम्बन्धी त्रुटि ३२७६५"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP प्रमाणीकरणसम्बन्धी त्रुटि ३२७६६"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"हटस्पट निष्क्रिय पारिएको छ"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"कुनै यन्त्र जोडिएको छैन। परिमार्जन गर्न ट्याप गर्नुहोस्।"</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi विच्छेद गरियो।"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> मा जोडिन <xliff:g id="CARRIER_NAME">%2$s</xliff:g> को SIM सम्मिलित गर्नुहोस्"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"मोबाइल हटस्पट असक्षम पारियो"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"मोबाइल हटस्पट असक्षम पारिएको छ"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"मोबाइल हटस्पटलाई निष्क्रिय स्थितिमा रहने समयसीमाको म्याद सकिएको कारणले गर्दा असक्षम पारिएको छ।"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

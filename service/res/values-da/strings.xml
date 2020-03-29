@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Netværk foreslået af <xliff:g id="NAME">%s</xliff:g>. Enheden opretter muligvis forbindelse automatisk."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Tillad"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Nej tak"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> vil gerne oprette forbindelse automatisk"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Disse netværk modtager et unikt id, der kan bruges til at spore enhedens placering"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Opret forbindelse alligevel"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Opret ikke forbindelse"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Vil du bekræfte forbindelsen?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Hvis du opretter forbindelse, kan Wi-Fi-netværk fra <xliff:g id="CARRIERNAME">%s</xliff:g> få adgang til eller dele et unikt id, der er knyttet til dit SIM-kort. Derved kan din enheds placering muligvis spores."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Opret forbindelse"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Opret ikke forbindelse"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Advarsel om privatlivsbeskyttelse for IMSI-beskyttelse"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> har foreslået netværk, der anvender oplysninger om dit SIM-kort uden privatlivsbeskyttelse. Vil du tillade, at der oprettes automatisk forbindelse til netværket?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Tillad"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Tillad ikke"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi aktiveres automatisk"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Når du er i nærheden af et gemt netværk af høj kvalitet"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Aktivér ikke igen"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Der kan ikke oprettes forbindelse til <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Tryk for at ændre privatlivsindstillingerne, og prøv igen"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Vil du ændre privatlivsindstillingen?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"<xliff:g id="SSID">%1$s</xliff:g> skal bruge din enheds MAC-adresse (som er et unikt id), for at oprette forbindelse. I øjeblikket bruges et tilfældigt id i henhold til dine privatlivsindstillinger for dette netværk. \n\nDenne ændring kan gøre det muligt for enheder i nærheden spore din enheds placering."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> vil muligvis gerne oprette forbindelse via din enheds MAC-adresse, som er et unikt id. Dette kan give enheder i nærheden tilladelse til at spore din enheds placering. \n\nHvis du fortsætter, ændrer <xliff:g id="SSID_1">%1$s</xliff:g> din privatlivsindstilling, og den prøver at oprette forbindelse igen."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Skift indstilling"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Indstillingen blev opdateret. Prøv at oprette forbindelse igen."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Indstillingen er opdateret. Prøv at oprette forbindelse igen."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Privatlivsindstillingen kan ikke ændres"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Netværket blev ikke fundet"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: EAP-godkendelsesfejl 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: EAP-godkendelsesfejl 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: EAP-godkendelsesfejl 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: EAP-godkendelsesfejl 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Hotspot er slået fra"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Der er ikke tilsluttet nogen enheder. Tryk for at ændre."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi-forbindelsen er afbrudt"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Indsæt et SIM-kort fra <xliff:g id="CARRIER_NAME">%2$s</xliff:g> for at oprette forbindelse til <xliff:g id="SSID">%1$s</xliff:g>."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobilhotspottet er deaktiveret"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Mobilhotspottet er blevet deaktiveret"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Mobilhotspottet er blevet deaktiveret, da det har været inaktivt for længe."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

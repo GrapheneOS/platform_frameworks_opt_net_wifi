@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ପ୍ରସ୍ତାବିତ ନେଟ୍‌ୱାର୍କଗୁଡ଼ିକ। ଡିଭାଇସ୍ ହୁଏତ ସ୍ୱଚାଳିତ ଭାବେ ସଂଯୋଗ ହୋଇପାରେ।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ଅନୁମତି ଦିଅନ୍ତୁ"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"ନାହିଁ, ଥାଉ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ସ୍ୱତଃ-ସଂଯୋଗ କରିବାକୁ ଚାହେଁ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"ଏହି ନେଟୱାର୍କଗୁଡ଼ିକ ଏକ ସ୍ଵତନ୍ତ୍ର ID ପାଇଥାଏ ଯାହାକୁ ଡିଭାଇସର ଲୋକେସନ୍ ଟ୍ରାକ୍ କରିବାକୁ ବ୍ୟବହାର କରାଯାଇପାରେ"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"ଯେ କୌଣସି ମତେ ସଂଯୋଗ କରନ୍ତୁ"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"ସଂଯୋଗ କରନ୍ତୁ ନାହିଁ"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"ସଂଯୋଗ ସୁନିଶ୍ଚିତ କରିବେ?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"ଯଦି ଆପଣ ସଂଯୋଗ କରିବେ, ତେବେ <xliff:g id="CARRIERNAME">%s</xliff:g> ୱାଇ-ଫାଇ ନେଟୱାର୍କଗୁଡ଼ିକ ଆପଣଙ୍କ SIM ସମ୍ବନ୍ଧିତ ଏକ ସ୍ଵତନ୍ତ୍ର ID ଆକ୍ସେସ୍ କିମ୍ବା ସେୟାର୍ କରିପାରେ। ଏହା ଆପଣଙ୍କ ଡିଭାଇସର ଲୋକେସନ୍ ଟ୍ରାକ୍ କରିବାକୁ ଅନୁମତି ଦେଇପାରେ।"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"ସଂଯୋଗ କରନ୍ତୁ"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"ସଂଯୋଗ କରନ୍ତୁ ନାହିଁ"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI ସୁରକ୍ଷା ପାଇଁ ଗୋପନୀୟତା ଚେତାବନୀ"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"ଗୋପନୀୟତା ସୁରକ୍ଷା ବିନା ଆପଣଙ୍କର SIM କାର୍ଡ ସୂଚନା ବ୍ୟବହାର କରିବା ପାଇଁ <xliff:g id="CARRIERNAME">%s</xliff:g> ନେଟୱାର୍କଗୁଡ଼ିକୁ ପରାମର୍ଶ ଦେଇଛି, ନେଟୱାର୍କଗୁଡ଼ିକୁ ସ୍ୱଚାଳିତ ଭାବେ ସଂଯୁକ୍ତ ହେବା ପାଇଁ ଅନୁମତି ଦେବେ କି?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"ଅନୁମତି ଦିଅନ୍ତୁ"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"ଅନୁମତି ଦିଅନ୍ତୁ ନାହିଁ"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"ୱାଇ-ଫାଇ ସ୍ୱଚାଳିତ ଭାବେ ଅନ୍ ହେବ"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"ଆପଣ ଏକ ଉଚ୍ଚ-କ୍ୱାଲିଟୀ ବିଶିଷ୍ଟ ସେଭ୍‌ କରାଯାଇଥିବା ନେଟ୍‌ୱର୍କ ପାଖରେ ଥିବା ସମୟରେ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"ପୁଣି ଅନ୍‍ କରନ୍ତୁ ନାହିଁ"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> ସହିତ ସଂଯୋଗ କରାଯାଇପାରିବ ନାହିଁ"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"ଗୋପନୀୟତା ସେଟିଂସ୍ ବଦଳେଇବାକୁ ଟାପ୍ କରନ୍ତୁ ଏବଂ ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"ଗୋପନୀୟତା ସେଟିଂ ବଦଳେଇବେ?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"ସଂଯୋଗ କରିବାକୁ <xliff:g id="SSID">%1$s</xliff:g> ଆପଣଙ୍କ ଡିଭାଇସର ଏକ ସ୍ୱତନ୍ତ୍ର ଚିହ୍ନଟକାରୀ ଭାବେ MAC ଠିକଣା ଆବଶ୍ୟକ କରେ। ବର୍ତ୍ତମାନ, ଏହି ନେଟୱାର୍କ ପାଇଁ ଆପଣଙ୍କ ଗୋପନୀୟତା ସେଟିଂ ଏକ ରେଣ୍ଡମାଇଜ୍ ଚିହ୍ନଟକାରୀ ବ୍ୟବହାର କରେ। \n\nଏହି ପରିବର୍ତ୍ତନ ଫଳରେ ଆଖପାଖର ଡିଭାଇସଗୁଡ଼ିକୁ ଆପଣଙ୍କ ଡିଭାଇସର ଲୋକେସନକୁ ଟ୍ରାକ୍ କରିବାକୁ ଅନୁମତି ଦେଇପାରେ।"</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> ଆପଣଙ୍କ ଡିଭାଇସ୍‌ର ଏକ ସ୍ୱତନ୍ତ୍ର ଚିହ୍ନଟକାରୀ MAC ଠିକଣା ବ୍ୟବହାର କରି ସଂଯୋଗ କରିବାକୁ ଚାହିଁପାରେ। ଏହା ଆପଣଙ୍କର ଡିଭାଇସ୍‌ର ଲୋକେସନ୍‌କୁ ଟ୍ରାକ୍ କରିବାକୁ ଆଖପାଖର ଡିଭାଇସ୍‌ଗୁଡ଼ିକୁ ଅନୁମତି ଦେଇପାରେ। \n\nଯଦି ଆପଣ ଜାରି ରଖନ୍ତି, ତେବେ <xliff:g id="SSID_1">%1$s</xliff:g> ଆପଣଙ୍କର ଗୋପନୀୟତା ସେଟିଂକୁ ବଦଳାଇ ପୁଣି ସଂଯୋଗ କରିବାକୁ ଚେଷ୍ଟା କରିବ।"</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"ସେଟିଂକୁ ବଦଳାନ୍ତୁ"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"ସେଟିଂକୁ ଅପଡେଟ୍ କରାଯାଇଛି। ପୁଣି ସଂଯୋଗ କରିବାକୁ ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"ସେଟିଂକୁ ଅପ୍‌ଡେଟ୍ କରାଯାଇଛି। ପୁଣି ସଂଯୋଗ କରିବାକୁ ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"ଗୋପନୀୟତା ସେଟିଂ ବଦଳିପାରିବ ନାହିଁ"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"ନେଟ୍‌ୱାର୍କ ମିଳିଲା ନାହିଁ"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ପ୍ରମାଣିକତାରେ ତ୍ରୁଟି 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ପ୍ରମାଣିକତାରେ ତ୍ରୁଟି 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ପ୍ରମାଣିକତାରେ ତ୍ରୁଟି 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ପ୍ରମାଣିକତାରେ ତ୍ରୁଟି 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"ହଟସ୍ପଟ୍ ବନ୍ଦ କରାଯାଇଛି"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"କୌଣସି ଡିଭାଇସ୍ ସଂଯୁକ୍ତ ନାହିଁ। ପରିବର୍ତ୍ତନ କରିବାକୁ ଟାପ୍ କରନ୍ତୁ।"</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"ୱାଇ-ଫାଇ ସଂଯୋଗ ବିଚ୍ଛିନ୍ନ ହୋଇଛି"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g>କୁ ସଂଯୋଗ କରିବା ପାଇଁ ଏକ <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM ଭର୍ତ୍ତି କରନ୍ତୁ"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"ମୋବାଇଲ୍ ହଟସ୍ପଟ ଅକ୍ଷମ ହୋଇଯାଇଛି"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"ମୋବାଇଲ୍ ହଟସ୍ପଟକୁ ଅକ୍ଷମ କରାଯାଇଛି"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"ନିଷ୍କ୍ରିୟ ସମୟ ସୀମା ସମାପ୍ତ ହୋଇଥିବା ଯୋଗୁଁ ମୋବାଇଲ୍ ହଟସ୍ପଟ୍ ଅକ୍ଷମ କରାଯାଇଛି।"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

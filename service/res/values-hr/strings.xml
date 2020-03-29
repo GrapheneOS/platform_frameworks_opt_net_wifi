@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Mreže koje predlaže aplikacija <xliff:g id="NAME">%s</xliff:g>. Uređaji se mogu povezati automatski."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Dopusti"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ne, hvala"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> se želi automatski povezati"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Te mreže primaju jedinstveni ID koji se može upotrijebiti za praćenje lokacije uređaja"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Svejedno poveži"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Nemoj povezati"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Želite li potvrditi povezivanje?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Ako se povežete, Wifi mreže operatera <xliff:g id="CARRIERNAME">%s</xliff:g> mogu pristupiti jedinstvenom ID-ju povezanom s vašim SIM-om ili ga podijeliti. To može omogućiti praćenje lokacije vašeg uređaja."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Poveži"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Nemoj povezati"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Upozorenje o privatnosti za IMSI zaštitu"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"Mobilni operater <xliff:g id="CARRIERNAME">%s</xliff:g> predložio je mreže na temelju podataka o vašoj SIM kartici bez zaštite privatnosti. Želite li dopustiti automatsko povezivanje s mrežom?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Dopusti"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Nemoj dopustiti"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi će se uključiti automatski"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Kada ste u blizini spremljene mreže visoke kvalitete"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Više ne uključuj"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Povezivanje s mrežom <xliff:g id="SSID">%1$s</xliff:g> nije uspjelo"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Dodirnite da biste promijenili postavke privatnosti i pokušajte ponovo"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Želite li promijeniti postavku privatnosti?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Da biste se povezali, <xliff:g id="SSID">%1$s</xliff:g> treba upotrijebiti MAC adresu, jedinstveni identifikator vašeg uređaja. Vaša postavka privatnosti za tu mrežu trenutačno upotrebljava nasumični identifikator. \n\nTo može omogućiti uređajima u blizini da prate lokaciju vašeg uređaja."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Mreža <xliff:g id="SSID_0">%1$s</xliff:g> možda će se htjeti povezati pomoću MAC adrese, jedinstvenog identifikatora, vašeg uređaja. To može omogućiti uređajima u blizini da prate lokaciju vašeg uređaja. \n\nAko nastavite, mreža <xliff:g id="SSID_1">%1$s</xliff:g> promijenit će vašu postavku privatnosti i pokušati se povezati ponovo."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Promijenite postavku"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Postavka je ažurirana. Pokušajte se ponovo povezati."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Postavka je ažurirana. Pokušajte se ponovo povezati."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Promjena postavke privatnosti nije uspjela"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Mreža nije pronađena"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP pogreška autentifikacije 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP pogreška autentifikacije 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP pogreška autentifikacije 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP pogreška autentifikacije 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Žarišna točka je isključena"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Nije povezan nijedan uređaj. Dodirnite za prilagodbu."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi je isključen"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Da biste se povezali s mrežom <xliff:g id="SSID">%1$s</xliff:g> umetnite SIM mobilnog operatera <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobilna žarišna točka onemogućena"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Mobilna je žarišna točka onemogućena"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Mobilna žarišna točka onemogućena je zbog isteka vremena čekanja u neaktivnosti."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

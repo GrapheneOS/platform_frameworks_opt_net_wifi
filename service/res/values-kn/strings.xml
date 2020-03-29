@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ಸೂಚಿಸಿರುವ ನೆಟ್‌ವರ್ಕ್‌ಗಳು. ಸಾಧನಗಳು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಂಪರ್ಕಗೊಳ್ಳಬಹುದು."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ಅನುಮತಿಸಿ"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"ಬೇಡ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g>, ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕನೆಕ್ಟ್ ಮಾಡಲು ಬಯಸುತ್ತದೆ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"ಸಾಧನದ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಬಳಸಬಹುದಾದ ಅನನ್ಯ ಐಡಿಯನ್ನು ಈ ನೆಟ್‌ವರ್ಕ್‌ಗಳು ಸ್ವೀಕರಿಸುತ್ತವೆ"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"ಹೇಗಿದ್ದರೂ ಕನೆಕ್ಟ್ ಮಾಡಿ"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"ಕನೆಕ್ಟ್ ಮಾಡಬೇಡಿ"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"ಕನೆಕ್ಷನ್ ಅನ್ನು ಖಚಿತಪಡಿಸಬೇಕೇ?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"ನೀವು ಕನೆಕ್ಟ್ ಮಾಡಿದರೆ, <xliff:g id="CARRIERNAME">%s</xliff:g> ವೈ-ಫೈ ನೆಟ್‌ವರ್ಕ್‌ಗಳು ನಿಮ್ಮ SIM ಗೆ ಸಂಬಂಧಿಸಿದ ಅನನ್ಯ ಐಡಿಗೆ ಪ್ರವೇಶ ಪಡೆಯಬಹುದು ಅಥವಾ ಅದನ್ನು ಹಂಚಿಕೊಳ್ಳಬಹುದು. ನಿಮ್ಮ ಸಾಧನದ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಇದು ಅವಕಾಶ ನೀಡಬಹುದು."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"ಕನೆಕ್ಟ್ ಮಾಡಿ"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"ಕನೆಕ್ಟ್ ಮಾಡಬೇಡಿ"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI ರಕ್ಷಣೆಗಾಗಿ ಗೌಪ್ಯತಾ ಎಚ್ಚರಿಕೆ"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"ಗೌಪ್ಯತೆ ರಕ್ಷಣೆಯಿಲ್ಲದೆ ನಿಮ್ಮ ಸಿಮ್ ಕಾರ್ಡ್ ಮಾಹಿತಿಯನ್ನು ಬಳಸಿಕೊಂಡು ನೆಟ್‌ವರ್ಕ್‌ಗಳನ್ನು ಅನ್ನು <xliff:g id="CARRIERNAME">%s</xliff:g> ಸೂಚಿಸಿದೆ, ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಂಪರ್ಕಿಸಲು ನೆಟ್‌ವರ್ಕ್ ಅನ್ನು ಅನುಮತಿಸಬೇಕೆ?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"ಅನುಮತಿಸಿ"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"ಅನುಮತಿಸಬೇಡಿ"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"ವೈ‑ಫೈ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಆನ್ ಆಗುತ್ತದೆ"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"ನೀವು ಉಳಿಸಿದ ಅಧಿಕ ಗುಣಮಟ್ಟದ ನೆಟ್‌ವರ್ಕ್‌ ಸಮೀಪದಲ್ಲಿದ್ದಾಗ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"ಮತ್ತೆ ಆನ್ ಮಾಡಲು ಹಿಂತಿರುಗಬೇಡಿ"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> ಗೆ ಕನೆಕ್ಟ್ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಬದಲಾಯಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ ಮತ್ತು ಮರುಪ್ರಯತ್ನಿಸಿ"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ಬದಲಾಯಿಸಬೇಕೆ?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"ಕನೆಕ್ಟ್ ಮಾಡಲು, <xliff:g id="SSID">%1$s</xliff:g> ಗೆ ನಿಮ್ಮ ಸಾಧನದ ಅನನ್ಯ ಗುರುತಿಸುವಿಕೆಯಾದ MAC ವಿಳಾಸವನ್ನು ಬಳಸುವ ಅಗತ್ಯವಿದೆ. ಪ್ರಸ್ತುತವಾಗಿ, ಈ ನೆಟ್‌ವರ್ಕ್‌ಗೆ ಸಂಬಂಧಿಸಿದ ಗೌಪ್ಯತೆಯ ಸೆಟ್ಟಿಂಗ್ \'ಯಾದೃಚ್ಛಿಕ\' ಗುರುತಿಸುವಿಕೆಯನ್ನು ಬಳಸುತ್ತದೆ. \n\nನಿಮ್ಮ ಸಾಧನದ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಸಮೀಪದಲ್ಲಿನ ಸಾಧನಗಳಿಗೆ ಈ ಬದಲಾವಣೆಯು ಅನುಮತಿಸಬಹುದು."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> ನಿಮ್ಮ ಸಾಧನದ MAC ವಿಳಾಸವನ್ನು ಬಳಸಿಕೊಂಡು ಕನೆಕ್ಟ್ ಮಾಡಲು ಬಯಸಬಹುದು, ಅದು ಅನನ್ಯ ಗುರುತಿಸುವಿಕೆಯಾಗಿದೆ. ನಿಮ್ಮ ಸಾಧನದ ಸ್ಥಳವನ್ನು ಪತ್ತೆಹಚ್ಚಲು ಹತ್ತಿರದ ಸಾಧನಗಳಿಗೆ ಇದು ಅನುಮತಿಸಬಹುದು. \n\nನೀವು ಮುಂದುವರಿಸಿದರೆ, <xliff:g id="SSID_1">%1$s</xliff:g> ನಿಮ್ಮ ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ಬದಲಾಯಿಸುತ್ತದೆ ಮತ್ತು ಪುನಃ ಕನೆಕ್ಟ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸುತ್ತದೆ."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"ಸೆಟ್ಟಿಂಗ್‌‌ ಬದಲಾಯಿಸಿ"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ಅಪ್‌ಡೇಟ್ ಮಾಡಲಾಗಿದೆ. ಪುನಃ ಕನೆಕ್ಟ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ಅಪ್‌ಡೇಟ್ ಮಾಡಲಾಗಿದೆ. ಪುನಃ ಕನೆಕ್ಟ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್‌ ಅನ್ನು ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"ನೆಟ್‌ವರ್ಕ್ ಕಂಡುಬಂದಿಲ್ಲ"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ಪ್ರಮಾಣೀಕರಣ ದೋಷ 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ಪ್ರಮಾಣೀಕರಣ ದೋಷ 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ಪ್ರಮಾಣೀಕರಣ ದೋಷ 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ಪ್ರಮಾಣೀಕರಣ ದೋಷ 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"ಹಾಟ್‌ಸ್ಪಾಟ್ ಅನ್ನು ಆಫ್ ಮಾಡಲಾಗಿದೆ"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"ಯಾವುದೇ ಸಾಧನಗಳನ್ನು ಕನೆಕ್ಟ್ ಮಾಡಿಲ್ಲ. ಮಾರ್ಪಡಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"ವೈ-ಫೈ ಕನೆಕ್ಷನ್ ಕಡಿತಗೊಂಡಿದೆ."</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> ಗೆ ಕನೆಕ್ಟ್ ಮಾಡಲು, <xliff:g id="CARRIER_NAME">%2$s</xliff:g> ಸಿಮ್‌ ಅನ್ನು ಸೇರಿಸಿ"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"ಮೊಬೈಲ್ ಹಾಟ್‌ಸ್ಪಾಟ್ ನಿಷ್ಕ್ರಿಯಗೊಂಡಿದೆ"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"ಮೊಬೈಲ್ ಹಾಟ್‌ಸ್ಪಾಟ್ ಅನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"ನಿಷ್ಕ್ರಿಯತೆಯ ಕಾಲಾವಧಿ ಮುಕ್ತಾಯವಾದ ಕಾರಣ ಮೊಬೈಲ್ ಹಾಟ್‌ಸ್ಪಾಟ್ ಅನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g>에서 네트워크를 제안했습니다. 기기가 자동으로 연결될 수 있습니다."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"허용"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"허용 안함"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g>에서 자동 연결을 사용하려고 합니다"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"이 네트워크는 기기 위치를 추적하는 데 사용할 수 있는 고유 ID를 수신합니다."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"무시하고 연결하기"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"연결 안 함"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"연결하시겠습니까?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"연결하면 <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi 네트워크에서 SIM과 연결된 고유 ID에 액세스하거나 고유 ID를 공유할 수 있습니다. 이 경우 내 기기의 위치를 추적할 수도 있습니다."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"연결"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"연결 안 함"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI 보호를 위한 개인정보 보호 경고"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g>에서 개인정보 보호 기능 없이 SIM 카드 정보를 사용하는 네트워크를 제안했습니다. 네트워크가 자동으로 연결되도록 허용하시겠습니까?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"허용"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"허용 안함"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi가 자동으로 사용 설정됨"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"저장된 고품질 네트워크가 가까이 있는 경우"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"다시 사용 설정하지 않음"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g>에 연결할 수 없습니다."</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"탭하여 개인정보 보호 설정을 변경하고 다시 시도하세요."</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"개인정보 보호 설정을 변경하시겠습니까?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"연결하려면 <xliff:g id="SSID">%1$s</xliff:g>에서 기기의 고유 식별자인 MAC 주소를 사용해야 합니다. 현재 이 네트워크의 개인정보 보호 설정에서는 무작위 식별자를 사용합니다. \n\n변경할 경우 근처 기기가 내 기기의 위치 정보를 추적할 수도 있습니다."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g>에서 기기의 고유한 식별자인 MAC 주소를 사용하여 연결을 시도할 수도 있습니다. 이 경우 근처 기기가 내 기기의 위치를 추적할 수도 있습니다. \n\n계속하면 <xliff:g id="SSID_1">%1$s</xliff:g>에서 개인정보 보호 설정을 변경한 다음 연결을 다시 시도합니다."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"설정 변경"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"설정이 업데이트되었습니다. 다시 연결해 보세요."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"설정이 업데이트되었습니다. 연결을 다시 시도합니다."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"개인정보 보호 설정을 변경할 수 없습니다."</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"네트워크를 찾을 수 없습니다."</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP 인증 오류 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP 인증 오류 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP 인증 오류 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP 인증 오류 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"핫스팟이 사용 중지됨"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"연결된 기기가 없습니다. 수정하려면 탭하세요."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi 연결이 끊어졌습니다."</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g>에 연결하려면 <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM을 삽입하세요."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"모바일 핫스팟 사용 중지됨"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"모바일 핫스팟이 사용 중지되었습니다."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"비활성 시간 초과로 인해 모바일 핫스팟이 사용 중지되었습니다."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Rrjet e sugjeruara të <xliff:g id="NAME">%s</xliff:g>. Pajisja mund të lidhet automatikisht."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Lejo"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Jo, faleminderit"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> dëshiron të lidhet automatikisht"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Këto rrjete marrin një ID unike që mund të përdoret për të monitoruar vendndodhjen"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Lidhu gjithsesi"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Mos u lidh"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Të konfirmohet lidhja?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Nëse lidhesh, rrjetet Wi-Fi të <xliff:g id="CARRIERNAME">%s</xliff:g> mund të kenë qasje ose mund të ndajnë një ID unike që lidhet me kartën tënde SIM. Kjo mund të lejojë monitorimin e vendndodhjes sate."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Lidhu"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Mos u lidh"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Paralajmërimi i privatësisë për mbrojtjen e IMSI-së"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> ka sugjeruar rrjete që i përdorin informacionet e kartës sate SIM pa mbrojtjen e privatësisë. Do ta lejosh rrjetin të lidhet automatikisht?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Lejo"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Mos lejo"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi do të aktivizohet automatikisht"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Kur ndodhesh pranë një rrjeti të ruajtur me cilësi të lartë"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Mos e aktivizo përsëri"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Nuk mund të lidhet me <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Trokit për të ndryshuar cilësimet e privatësisë dhe provo përsëri"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Do ta ndryshosh cilësimin e privatësisë?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Për t\'u lidhur, <xliff:g id="SSID">%1$s</xliff:g> ka nevojë të përdorë adresën MAC të pajisjes sate, një identifikues unik. Aktualisht, cilësimi yt i privatësisë për këtë rrjet përdor një identifikues të rastësishëm. \n\nKy ndryshim mund të lejojë monitorimin e vendndodhjes së pajisjes sate nga pajisjet në afërsi."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> mund të dëshirojë të lidhet duke përdorur adresën MAC të pajisjes sate, një identifikues unik. Kjo mund të lejojë monitorimin e vendndodhjes së pajisjes sate nga pajisjet në afërsi. \n\nNëse vazhdon, <xliff:g id="SSID_1">%1$s</xliff:g> do të ndryshojë cilësimin tënd të privatësisë dhe do të provojë të lidhet përsëri."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Ndrysho cilësimin"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Cilësimi u përditësua. Provo të lidhesh përsëri."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Cilësimi u përditësua. Provo ta lidhësh përsëri."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Cilësimi i privatësisë nuk mund të ndryshohet"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Rrjeti nuk u gjet"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : Gabimi i vërtetimit të EAP 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : Gabimi i vërtetimit të EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : Gabimi i vërtetimit të EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : Gabimi i vërtetimit të EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Zona e qasjes për internet është çaktivizuar"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Nuk ka pajisje të lidhura. Trokit për ta modifikuar."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi është i shkëputur"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Për t\'u lidhur me <xliff:g id="SSID">%1$s</xliff:g> fut një kartë SIM nga <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Zona e qasjes celulare për internet e çaktivizuar"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Zona e qasjes celulare për internet është çaktivizuar"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Zona e qasjes celulare për internet është çaktivizuar për shkak të skadimit të kohës së pritjes nga mungesa e aktivitetit"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> သည် ကွန်ရက်များကို အကြံပြုထားသည်။ စက်သည် အလိုအလျောက် ချိတ်ဆက်နိုင်သည်။"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ခွင့်ပြုရန်"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"မလိုပါ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> က အလိုအလျောက် ချိတ်ဆက်လိုသည်"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"ဤကွန်ရက်များက စက်တည်နေရာကို ခြေရာခံရန် အသုံးပြုနိုင်သည့် သီးသန့် ID ကို ရရှိပါသည်"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"မည်သို့ပင်ဖြစ်စေ ချိတ်ဆက်ရန်"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"မချိတ်ဆက်ပါနှင့်"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"ချိတ်ဆက်မှု အတည်ပြုမလား။"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"သင်ချိတ်ဆက်ပါက <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi ကွန်ရက်များက သင့်ဆင်းမ်ကတ်နှင့် ဆက်စပ်နေသည့် သီးသန့် ID ကို သုံးခြင်း သို့မဟုတ် မျှဝေခြင်းတို့ ပြုလုပ်နိုင်သည်။ ၎င်းက သင့်စက်၏တည်နေရာကို ခြေရာခံခွင့် ပြုနိုင်သည်။"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"ချိတ်ဆက်ပါ"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"မချိတ်ဆက်ပါနှင့်"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI အကာအကွယ်အတွက် ကိုယ်ရေးလုံခြုံမှု သတိပေးချက်"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"သင့်ဆင်းမ်ကတ်အချက်အလက်ကို သုံး၍ အကြံပြုသော ကွန်ရက် <xliff:g id="CARRIERNAME">%s</xliff:g> တွင် ကိုယ်ရေးလုံခြုံမှု အကာအကွယ် မပါရှိဘဲ ကွန်ရက်ကို အလိုအလျောက် ချိတ်ဆက်ရန် ခွင့်ပြုမလား။"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"ခွင့်ပြုရန်"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"ခွင့်မပြုရန်"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi ကို အလိုအလျောက်​ ပြန်ဖွင့်ပေးလိမ့်ပါမည်"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"သိမ်းဆည်းထားသည့် အရည်အသွေးမြင့်ကွန်ရက်များအနီးသို့ ရောက်ရှိသည့်အခါ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"ပြန်မဖွင့်ပါနှင့်"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> နှင့် ချိတ်ဆက်၍မရပါ။"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"ကိုယ်ရေးလုံခြုံမှုဆက်တင်ကို ပြောင်းရန် တို့ပြီးနောက် ပြန်စမ်းကြည့်ပါ"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"ကိုယ်ရေးလုံခြုံမှုဆက်တင်ကို ပြောင်းမလား။"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"ချိတ်ဆက်ရန်အတွက် <xliff:g id="SSID">%1$s</xliff:g> သည် သင့်စက်၏ သီးသန့်သတ်မှတ်မှုစနစ် ဖြစ်သည့် MAC လိပ်စာကို အသုံးပြုရန်လိုသည်။ လက်ရှိတွင် ဤကွန်ရက်အတွက် သင်၏ကိုယ်ရေးလုံခြုံမှုဆက်တင်က ကျပန်းသတ်မှတ်မှုစနစ်ကို အသုံးပြုပါသည်။ \n\nဤအပြောင်းအလဲက သင့်စက်၏တည်နေရာကို ခြေရာခံရန် အနီးတစ်ဝိုက်ရှိ စက်များအား ခွင့်ပြုနိုင်သည်။"</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> သည် သင့်စက်ပစ္စည်း၏ သီးသန့်သတ်မှတ်မှုစနစ် ဖြစ်သည့် MAC လိပ်စာကို အသုံးပြု၍ ချိတ်ဆက်လိုသည်။ ဤသို့လုပ်ခြင်းဖြင့် သင့်စက်ပစ္စည်း၏ တည်နေရာကို ခြေရာခံရန် အနီးတစ်ဝိုက်ရှိ စက်ပစ္စည်းများအား ခွင့်ပြုနိုင်သည်။ \n\n သင် ရှေ့ဆက်လုပ်ပါက <xliff:g id="SSID_1">%1$s</xliff:g> သည် သင်၏ ကိုယ်ရေးလုံခြုံမှုဆက်တင်ကို ပြောင်းပြီး ပြန်လည်ချိတ်ဆက်ရန် ကြိုးစားလိမ့်မည်။"</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"ဆက်တင် ပြောင်းရန်"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"ဆက်တင် အပ်ဒိတ်လုပ်ပြီးပြီ။ ထပ်ချိတ်ဆက်ကြည့်ပါ။"</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"ဆက်တင်ကို အပ်ဒိတ်လုပ်ပြီးပါပြီ။ ထပ်ချိတ်ဆက်ကြည့်ပါ။"</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"ကိုယ်ရေးလုံခြုံမှုဆက်တင်ကို ပြောင်းလဲ၍မရပါ"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"ကွန်ရက်ကို ရှာမတွေ့ပါ"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> - EAP အထောက်အထားစိစစ်ခြင်း အမှား 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> - EAP အထောက်အထားစိစစ်ခြင်း အမှား 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> - EAP အထောက်အထားစိစစ်ခြင်း အမှား 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> - EAP အထောက်အထားစိစစ်ခြင်း အမှား 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"ဟော့စပေါ့ ပိတ်ထားသည်"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"ချိတ်ဆက်ထားသောစက် မရှိပါ။ ပြင်ဆင်ရန် တို့ပါ။"</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi ချိတ်ဆက်မှု မရှိပါ"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> နှင့် ချိတ်ဆက်ရန် <xliff:g id="CARRIER_NAME">%2$s</xliff:g> ဆင်းမ်ကတ် ထည့်ပါ။"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"မိုဘိုင်းဟော့စပေါ့ ပိတ်ထားသည်"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"မိုဘိုင်းဟော့စပေါ့ကို ပိတ်လိုက်ပါပြီ"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"အသုံးမပြုသဖြင့် အချိန်ကုန်သွားခြင်းကြောင့် မိုဘိုင်းဟော့စပေါ့ကို ပိတ်လိုက်ပါပြီ။"</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

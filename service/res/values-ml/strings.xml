@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> നിർദ്ദേശിച്ച നെറ്റ്‌വർക്കുകൾ. ഉപകരണം സ്വയമേവ കണക്‌റ്റ് ചെയ്‌തേക്കാം."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"അനുവദിക്കുക"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"വേണ്ട"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> സ്വയമേവ കണക്റ്റ് ചെയ്യാൻ താൽപ്പര്യപ്പെടുന്നു"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"ഉപകരണ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ ഉപയോഗിക്കാവുന്ന തനത് ഐഡി ഈ നെറ്റ്‌വർക്കുകൾക്ക് ലഭിക്കും"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"എന്തായാലും കണക്‌റ്റ് ചെയ്യുക"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"കണക്റ്റ് ചെയ്യരുത്"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"കണക്ഷൻ സ്ഥിരീകരിക്കണോ?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"നിങ്ങൾ കണക്റ്റ് ചെയ്യുകയാണെങ്കിൽ, സിമ്മുമായി ബന്ധപ്പെട്ട തനത് ഐഡി <xliff:g id="CARRIERNAME">%s</xliff:g> വൈഫൈ നെറ്റ്‌വർക്കുകൾ ആക്സസ് ചെയ്യുകയോ പങ്കിടുകയോ ചെയ്തേക്കാം. നിങ്ങളുടെ ഉപകരണ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ ഇത് അനുവദിച്ചേക്കാം."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"കണക്റ്റ് ചെയ്യുക"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"കണക്റ്റ് ചെയ്യരുത്"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI പരിരക്ഷയുമായി ബന്ധപ്പെട്ട സ്വകാര്യതാ മുന്നറിയിപ്പ്"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> നിർദ്ദേശിച്ച നെറ്റ്‌വർക്കുകൾ സ്വകാര്യതാ പരിരക്ഷ ഇല്ലാതെ നിങ്ങളുടെ സിം കാർഡ് ഉപയോഗിക്കുന്നു, സ്വയമേവ കണക്റ്റ് ചെയ്യാൻ നെറ്റ്‌വർക്കിനെ അനുവദിക്കണോ?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"അനുവദിക്കുക"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"അനുവദിക്കരുത്"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"വൈഫൈ സ്വമേധയാ ഓണാകും"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"നിങ്ങൾ ഉയർന്ന നിലവാരമുള്ള സംരക്ഷിക്കപ്പെട്ട നെറ്റ്‌വർക്കിനരികിലെത്തുമ്പോൾ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"തിരികെ ഓണാക്കരുത്"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g>-ലേക്ക് കണക്‌റ്റ് ചെയ്യാനാവുന്നില്ല"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"സ്വകാര്യതാ ക്രമീകരണം മാറ്റാൻ ടാപ്പ് ചെയ്യുക, വീണ്ടും ശ്രമിക്കുക"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"സ്വകാര്യതാ ക്രമീകരണം മാറ്റണോ?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"കണക്‌റ്റ് ചെയ്യാൻ, തനത് ഐഡന്റിഫയറായ MAC വിലാസം <xliff:g id="SSID">%1$s</xliff:g> ഉപയോഗിക്കിക്കേണ്ടതുണ്ട്. നിലവിൽ, ക്രമരഹിതമാക്കിയ ഐഡന്റിഫയർ ആണ് ഈ നെറ്റ്‌വർക്കിന്റെ സ്വകാര്യതാ ക്രമീകരണം ഉപയോഗിക്കുന്നത്. \n\nനിങ്ങളുടെ ഉപകരണത്തിന്റെ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ സമീപത്തുള്ള ഉപകരണങ്ങളെ ഈ മാറ്റം അനുവദിച്ചേക്കാം."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"ഒരു തനത് ഐഡന്റിഫയറായ നിങ്ങളുടെ ഉപകരണ MAC വിലാസം ഉപയോഗിച്ച് കണക്റ്റ് ചെയ്യാൻ <xliff:g id="SSID_0">%1$s</xliff:g> താൽപ്പര്യപ്പെട്ടേക്കാം. നിങ്ങളുടെ ഉപകരണത്തിന്റെ സ്ഥാനം ട്രാക്ക് ചെയ്യാൻ സമീപത്തുള്ള ഉപകരണങ്ങളെ ഇത് അനുവദിച്ചേക്കാം. \n\nനിങ്ങൾ തുടരുന്നെങ്കിൽ, <xliff:g id="SSID_1">%1$s</xliff:g> നിങ്ങളുടെ സ്വകാര്യത ക്രമീകരണം മാറ്റി വീണ്ടും ബന്ധിപ്പിക്കാൻ ശ്രമിക്കും."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"ക്രമീകരണം മാറ്റുക"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"ക്രമീകരണം അപ്‌ഡേറ്റ് ചെയ്തു. വീണ്ടും കണക്‌റ്റ് ചെയ്യാൻ ശ്രമിക്കുക."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"ക്രമീകരണം അപ്‌ഡേറ്റ് ചെയ്തു. വീണ്ടും കണക്‌റ്റ് ചെയ്യാൻ ശ്രമിക്കുക."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"സ്വകാര്യതാ ക്രമീകരണം മാറ്റാനാവില്ല"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"നെറ്റ്‌വർക്ക് കണ്ടെത്തിയില്ല"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP പരിശോധിച്ചുറപ്പിക്കുന്നതിലെ പ്രശ്നം 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP പരിശോധിച്ചുറപ്പിക്കുന്നതിലെ പ്രശ്നം 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP പരിശോധിച്ചുറപ്പിക്കുന്നതിലെ പ്രശ്നം 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP പരിശോധിച്ചുറപ്പിക്കുന്നതിലെ പ്രശ്നം 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"ഹോട്ട്‌സ്‌പോട്ട് ഓഫാക്കി"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"ഉപകരണങ്ങളൊന്നും കണക്‌റ്റ് ചെയ്തിട്ടില്ല. പരിഷ്‌കരിക്കാൻ ടാപ്പ് ചെയ്യുക."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"വൈഫൈ വിച്ഛേദിച്ചു"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> എന്നതിലേക്ക് കണക്‌റ്റ് ചെയ്യാൻ <xliff:g id="CARRIER_NAME">%2$s</xliff:g> സിം ഇടുക"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"മൊബൈൽ ഹോട്ട്‌സ്‌പോട്ട് പ്രവർത്തനരഹിതമാക്കി"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"മൊബൈൽ ഹോട്ട്‌സ്‌പോട്ട് പ്രവർത്തനരഹിതമാക്കി"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"നിഷ്‌ക്രിയ ടൈംഔട്ട് കാലഹരണപ്പെടൽ കാരണം മൊബൈൽ ഹോട്ട്‌സ്‌പോട്ട് പ്രവർത്തനരഹിതമാക്കി."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>
