@@ -2861,9 +2861,8 @@ public class WifiConfigManager {
     }
 
     /**
-     * Clear all deleted ephemeral networks.
+     * Clear all user temporarily disabled networks.
      */
-    @VisibleForTesting
     public void clearUserTemporarilyDisabledList() {
         mUserTemporarilyDisabledList.clear();
     }
