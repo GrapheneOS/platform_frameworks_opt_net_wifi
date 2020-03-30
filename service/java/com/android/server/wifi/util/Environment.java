@@ -17,6 +17,7 @@
 package com.android.server.wifi.util;
 
 import android.content.ApexEnvironment;
+import android.content.pm.ApplicationInfo;
 import android.os.UserHandle;
 
 import java.io.File;
@@ -33,6 +34,13 @@ public class Environment {
     private static final String WIFI_APEX_NAME = "com.android.wifi";
 
     /**
+     * The path where the Wifi apex is mounted.
+     * Current value = "/apex/com.android.wifi"
+     */
+    private static final String WIFI_APEX_PATH =
+            new File("/apex", WIFI_APEX_NAME).getAbsolutePath();
+
+    /**
      * Wifi shared folder.
      */
     public static File getWifiSharedDirectory() {
@@ -45,5 +53,13 @@ public class Environment {
     public static File getWifiUserDirectory(int userId) {
         return ApexEnvironment.getApexEnvironment(WIFI_APEX_NAME)
                 .getCredentialProtectedDataDirForUser(UserHandle.of(userId));
+    }
+
+    /**
+     * Returns true if the app is in the Wifi apex, false otherwise.
+     * Checks if the app's path starts with "/apex/com.android.wifi".
+     */
+    public static boolean isAppInWifiApex(ApplicationInfo appInfo) {
+        return appInfo.sourceDir.startsWith(WIFI_APEX_PATH);
     }
 }
