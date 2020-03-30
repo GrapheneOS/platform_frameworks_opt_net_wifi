@@ -83,7 +83,7 @@ public class WifiInjector {
 
     static WifiInjector sWifiInjector = null;
 
-    private final Context mContext;
+    private final WifiContext mContext;
     private final BatteryStatsManager mBatteryStats;
     private final FrameworkFacade mFrameworkFacade;
     private final DeviceConfigFacade mDeviceConfigFacade;
@@ -169,7 +169,7 @@ public class WifiInjector {
     private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     private final LruConnectionTracker mLruConnectionTracker;
 
-    public WifiInjector(Context context) {
+    public WifiInjector(WifiContext context) {
         if (context == null) {
             throw new IllegalStateException(
                     "WifiInjector should not be initialized with a null Context.");

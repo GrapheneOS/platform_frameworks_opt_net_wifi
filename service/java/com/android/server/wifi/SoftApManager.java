@@ -22,7 +22,6 @@ import static com.android.server.wifi.util.ApConfigUtil.ERROR_UNSUPPORTED_CONFIG
 import static com.android.server.wifi.util.ApConfigUtil.SUCCESS;
 
 import android.annotation.NonNull;
-import android.content.Context;
 import android.content.Intent;
 import android.net.MacAddress;
 import android.net.wifi.ScanResult;
@@ -74,7 +73,7 @@ public class SoftApManager implements ActiveModeManager {
     public static final String SOFT_AP_SEND_MESSAGE_TIMEOUT_TAG = TAG
             + " Soft AP Send Message Timeout";
 
-    private final Context mContext;
+    private final WifiContext mContext;
     private final FrameworkFacade mFrameworkFacade;
     private final WifiNative mWifiNative;
 
@@ -158,7 +157,7 @@ public class SoftApManager implements ActiveModeManager {
         }
     };
 
-    public SoftApManager(@NonNull Context context,
+    public SoftApManager(@NonNull WifiContext context,
                          @NonNull Looper looper,
                          @NonNull FrameworkFacade framework,
                          @NonNull WifiNative wifiNative,

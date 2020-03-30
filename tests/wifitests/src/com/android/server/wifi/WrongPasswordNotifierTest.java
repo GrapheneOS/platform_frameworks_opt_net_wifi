@@ -42,7 +42,7 @@ import org.mockito.MockitoAnnotations;
 public class WrongPasswordNotifierTest extends WifiBaseTest {
     private static final String TEST_SSID = "Test SSID";
 
-    @Mock Context mContext;
+    @Mock WifiContext mContext;
     @Mock Resources mResources;
     @Mock NotificationManager mNotificationManager;
     @Mock FrameworkFacade mFrameworkFacade;
@@ -58,8 +58,8 @@ public class WrongPasswordNotifierTest extends WifiBaseTest {
         when(mContext.getSystemService(Context.NOTIFICATION_SERVICE))
                 .thenReturn(mNotificationManager);
         when(mContext.getResources()).thenReturn(mResources);
-        mWrongPassNotifier =
-                new WrongPasswordNotifier(mContext, mFrameworkFacade);
+        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
+        mWrongPassNotifier = new WrongPasswordNotifier(mContext, mFrameworkFacade);
     }
 
     /**

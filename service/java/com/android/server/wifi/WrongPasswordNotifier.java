@@ -42,11 +42,11 @@ public class WrongPasswordNotifier {
     // Flag indicating if a wrong password error is detected for the current connection.
     private boolean mWrongPasswordDetected;
 
-    private final Context mContext;
+    private final WifiContext mContext;
     private final NotificationManager mNotificationManager;
     private final FrameworkFacade mFrameworkFacade;
 
-    public WrongPasswordNotifier(Context context, FrameworkFacade frameworkFacade) {
+    public WrongPasswordNotifier(WifiContext context, FrameworkFacade frameworkFacade) {
         mContext = context;
         mFrameworkFacade = frameworkFacade;
         mNotificationManager =
@@ -86,7 +86,7 @@ public class WrongPasswordNotifier {
                 .setAutoCancel(true)
                 .setTimeoutAfter(CANCEL_TIMEOUT_MILLISECONDS)
                 // TODO(zqiu): consider creating a new icon.
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setContentTitle(mContext.getString(
                         com.android.wifi.resources.R.string.wifi_available_title_failed_to_connect))
