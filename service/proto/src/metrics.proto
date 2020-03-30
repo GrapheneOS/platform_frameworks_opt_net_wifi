@@ -640,6 +640,12 @@ message WifiLog {
 
   // Metrics related to limitation in soft ap config
   optional SoftApConfigLimitationMetrics soft_ap_config_limitation_metrics = 178;
+
+  // WiFi channel utilization histogram of various RF bands
+  optional ChannelUtilizationHistogram channel_utilization_histogram = 179;
+
+  // WiFi Tx and Rx throughput histogram at various RF bands
+  optional ThroughputMbpsHistogram throughput_mbps_histogram = 180;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -3075,4 +3081,26 @@ message SoftApConfigLimitationMetrics {
   // Histogram of max client count when client connection fail because
   // setting limitation
   repeated Int32Count max_client_setting_when_reach_histogram = 4;
+}
+
+// Channel utilization histogram
+// The valid utilization range is between 0 and 255 corresponding to
+// utilization ratio between 0 and 1
+message ChannelUtilizationHistogram {
+  // Histogram at 2G
+  repeated HistogramBucketInt32 utilization_2g = 1;
+  // Histogram above 2G
+  repeated HistogramBucketInt32 utilization_above_2g = 2;
+}
+
+// Throughput histogram
+message ThroughputMbpsHistogram {
+  // Tx histogram at 2G
+  repeated HistogramBucketInt32 tx_2g = 1;
+  // Tx histogram above 2G
+  repeated HistogramBucketInt32 tx_above_2g = 2;
+  // Rx histogram at 2G
+  repeated HistogramBucketInt32 rx_2g = 3;
+  // Rx histogram above 2G
+  repeated HistogramBucketInt32 rx_above_2g = 4;
 }

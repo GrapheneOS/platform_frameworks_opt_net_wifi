@@ -204,17 +204,21 @@ public class WifiDataStallTest extends WifiBaseTest {
     }
 
     /**
-     * Verify throughtput when Rx link speed is unavailable
+     * Verify throughtput when Rx link speed is unavailable.
+     * Also verify the logging of channel utilization and throughput.
      */
     @Test
     public void verifyThroughputNoRxLinkSpeed() throws Exception {
         mWifiDataStall.checkDataStallAndThroughputSufficiency(null, mNewLlStats, mWifiInfo);
+        verify(mWifiMetrics).incrementChannelUtilizationCount(10, 5850);
+        verify(mWifiMetrics).incrementThroughputKbpsCount(50_000, 150_000, 5850);
         assertEquals(50_000, mWifiDataStall.getTxThroughputKbps());
         assertEquals(150_000, mWifiDataStall.getRxThroughputKbps());
         when(mWifiInfo.getRxLinkSpeedMbps()).thenReturn(-1);
         mWifiDataStall.checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo);
         assertEquals(960, mWifiDataStall.getTxThroughputKbps());
         assertEquals(-1, mWifiDataStall.getRxThroughputKbps());
+        verify(mWifiMetrics).incrementThroughputKbpsCount(960, -1, 5850);
     }
 
     /**
@@ -226,6 +230,7 @@ public class WifiDataStallTest extends WifiBaseTest {
 
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
+        verify(mWifiMetrics).incrementThroughputKbpsCount(960, 9609, 5850);
         verifyUpdateWifiIsUnusableLinkLayerStats();
         when(mClock.getElapsedSinceBootMillis()).thenReturn(
                 10L + DeviceConfigFacade.DEFAULT_DATA_STALL_DURATION_MS);
