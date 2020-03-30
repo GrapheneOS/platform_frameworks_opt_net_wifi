@@ -4564,4 +4564,82 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.softApConfigLimitationMetrics.maxClientSettingWhenReachHistogram);
     }
 
+    /**
+     * Test the logging of channel utilization
+     */
+    @Test
+    public void testChannelUtilization() throws Exception {
+        mWifiMetrics.incrementChannelUtilizationCount(180, 2412);
+        mWifiMetrics.incrementChannelUtilizationCount(150, 2412);
+        mWifiMetrics.incrementChannelUtilizationCount(230, 2412);
+        mWifiMetrics.incrementChannelUtilizationCount(20, 5510);
+        mWifiMetrics.incrementChannelUtilizationCount(50, 5510);
+
+        dumpProtoAndDeserialize();
+
+        HistogramBucketInt32[] expected2GHistogram = {
+                buildHistogramBucketInt32(150, 175, 1),
+                buildHistogramBucketInt32(175, 200, 1),
+                buildHistogramBucketInt32(225, Integer.MAX_VALUE, 1),
+        };
+
+        HistogramBucketInt32[] expectedAbove2GHistogram = {
+                buildHistogramBucketInt32(Integer.MIN_VALUE, 25, 1),
+                buildHistogramBucketInt32(50, 75, 1),
+        };
+
+        assertHistogramBucketsEqual(expected2GHistogram,
+                mDecodedProto.channelUtilizationHistogram.utilization2G);
+        assertHistogramBucketsEqual(expectedAbove2GHistogram,
+                mDecodedProto.channelUtilizationHistogram.utilizationAbove2G);
+    }
+
+    /**
+     * Test the logging of Tx and Rx throughput
+     */
+    @Test
+    public void testThroughput() throws Exception {
+        mWifiMetrics.incrementThroughputKbpsCount(500, 800, 2412);
+        mWifiMetrics.incrementThroughputKbpsCount(5_000, 4_000, 2412);
+        mWifiMetrics.incrementThroughputKbpsCount(54_000, 48_000, 2412);
+        mWifiMetrics.incrementThroughputKbpsCount(50_000, 49_000, 5510);
+        mWifiMetrics.incrementThroughputKbpsCount(801_000, 790_000, 5510);
+        mWifiMetrics.incrementThroughputKbpsCount(1100_000, 1200_000, 5510);
+        mWifiMetrics.incrementThroughputKbpsCount(1599_000, 1800_000, 6120);
+        dumpProtoAndDeserialize();
+
+        HistogramBucketInt32[] expectedTx2GHistogramMbps = {
+                buildHistogramBucketInt32(Integer.MIN_VALUE, 1, 1),
+                buildHistogramBucketInt32(5, 10, 1),
+                buildHistogramBucketInt32(50, 100, 1),
+        };
+
+        HistogramBucketInt32[] expectedRx2GHistogramMbps = {
+                buildHistogramBucketInt32(Integer.MIN_VALUE, 1, 1),
+                buildHistogramBucketInt32(1, 5, 1),
+                buildHistogramBucketInt32(25, 50, 1),
+        };
+
+        HistogramBucketInt32[] expectedTxAbove2GHistogramMbps = {
+                buildHistogramBucketInt32(50, 100, 1),
+                buildHistogramBucketInt32(800, 1200, 2),
+                buildHistogramBucketInt32(1200, 1600, 1),
+        };
+
+        HistogramBucketInt32[] expectedRxAbove2GHistogramMbps = {
+                buildHistogramBucketInt32(25, 50, 1),
+                buildHistogramBucketInt32(600, 800, 1),
+                buildHistogramBucketInt32(1200, 1600, 1),
+                buildHistogramBucketInt32(1600, Integer.MAX_VALUE, 1),
+        };
+
+        assertHistogramBucketsEqual(expectedTx2GHistogramMbps,
+                mDecodedProto.throughputMbpsHistogram.tx2G);
+        assertHistogramBucketsEqual(expectedTxAbove2GHistogramMbps,
+                mDecodedProto.throughputMbpsHistogram.txAbove2G);
+        assertHistogramBucketsEqual(expectedRx2GHistogramMbps,
+                mDecodedProto.throughputMbpsHistogram.rx2G);
+        assertHistogramBucketsEqual(expectedRxAbove2GHistogramMbps,
+                mDecodedProto.throughputMbpsHistogram.rxAbove2G);
+    }
 }
