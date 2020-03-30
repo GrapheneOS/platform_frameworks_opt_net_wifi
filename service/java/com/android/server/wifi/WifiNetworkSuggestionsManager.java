@@ -126,7 +126,7 @@ public class WifiNetworkSuggestionsManager {
      */
     private static final int NUMBER_OF_HIDDEN_NETWORK_FOR_ONE_SCAN = 100;
 
-    private final Context mContext;
+    private final WifiContext mContext;
     private final Resources mResources;
     private final Handler mHandler;
     private final AppOpsManager mAppOps;
@@ -568,7 +568,7 @@ public class WifiNetworkSuggestionsManager {
                 }
             };
 
-    public WifiNetworkSuggestionsManager(Context context, Handler handler,
+    public WifiNetworkSuggestionsManager(WifiContext context, Handler handler,
             WifiInjector wifiInjector, WifiPermissionsUtil wifiPermissionsUtil,
             WifiConfigManager wifiConfigManager, WifiConfigStore wifiConfigStore,
             WifiMetrics wifiMetrics, TelephonyUtil telephonyUtil,
@@ -1317,7 +1317,7 @@ public class WifiNetworkSuggestionsManager {
         CharSequence appName = getAppName(packageName, uid);
         Notification notification = mFrameworkFacade.makeNotificationBuilder(
                 mContext, WifiService.NOTIFICATION_NETWORK_STATUS)
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setTicker(mResources.getString(R.string.wifi_suggestion_title))
                 .setContentTitle(mResources.getString(R.string.wifi_suggestion_title))
@@ -1359,7 +1359,7 @@ public class WifiNetworkSuggestionsManager {
 
         Notification notification = mFrameworkFacade.makeNotificationBuilder(
                 mContext, WifiService.NOTIFICATION_NETWORK_STATUS)
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setTicker(mResources.getString(
                         R.string.wifi_suggestion_imsi_privacy_title, carrierName))
