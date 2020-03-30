@@ -48,7 +48,7 @@ public class WifiDataStall {
     // Maximum time that a data stall start time stays valid.
     public static final long VALIDITY_PERIOD_OF_DATA_STALL_START_MS = 30 * 1000; // 0.5 minutes
     // Default Tx packet error rate when there is no Tx attempt
-    public static final int DEFAULT_TX_PACKET_ERROR_RATE = 20;
+    public static final int DEFAULT_TX_PACKET_ERROR_RATE = 5;
     // Default CCA level when CCA stats are not available
     public static final int DEFAULT_CCA_LEVEL_2G = CHANNEL_UTILIZATION_SCALE * 16 / 100;
     public static final int DEFAULT_CCA_LEVEL_ABOVE_2G = CHANNEL_UTILIZATION_SCALE * 6 / 100;
@@ -230,6 +230,7 @@ public class WifiDataStall {
         int currFrequency = wifiInfo.getFrequency();
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(newStats, currFrequency);
         int ccaLevel = mWifiChannelUtilization.getUtilizationRatio(currFrequency);
+        mWifiMetrics.incrementChannelUtilizationCount(ccaLevel, currFrequency);
 
         if (oldStats == null || newStats == null) {
             // First poll after new association
@@ -242,6 +243,7 @@ public class WifiDataStall {
             }
             mIsThroughputSufficient = true;
             mWifiMetrics.resetWifiIsUnusableLinkLayerStats();
+            mWifiMetrics.incrementThroughputKbpsCount(mTxTputKbps, mRxTputKbps, currFrequency);
             return WifiIsUnusableEvent.TYPE_UNKNOWN;
         }
 
@@ -322,6 +324,7 @@ public class WifiDataStall {
         } else {
             mRxTputKbps = INVALID_THROUGHPUT;
         }
+        mWifiMetrics.incrementThroughputKbpsCount(mTxTputKbps, mRxTputKbps, currFrequency);
 
         mIsThroughputSufficient = isThroughputSufficientInternal(mTxTputKbps, mRxTputKbps,
                 isTxTrafficHigh, isRxTrafficHigh, timeDeltaLastTwoPollsMs);
