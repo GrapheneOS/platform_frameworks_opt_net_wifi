@@ -3324,6 +3324,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mIpClient).shutdown();
         verify(mWifiConfigManager).removeAllEphemeralOrPasspointConfiguredNetworks();
+        verify(mWifiConfigManager).clearUserTemporarilyDisabledList();
     }
 
     /**
