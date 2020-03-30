@@ -58,7 +58,7 @@ java_library {
         "jsr305",
         "framework-annotations-lib",
         // load the resources from the resources APK.
-        "wifi-service-resources",
+        "ServiceWifiResources",
         // need pre-jarjar symbols so that wifi-service can reference the original class names at
         // compile time
         "framework-wifi-pre-jarjar",
@@ -143,11 +143,9 @@ genrule {
 }
 
 // APK to hold all the wifi overlayable resources.
-// TODO: This should be signed by a wifi specific certificate.
 // ============================================================
 android_app {
-    // TODO: Rename to service-wifi-resources? What about b/151678653?
-    name: "wifi-service-resources",
+    name: "ServiceWifiResources",
     defaults: ["wifi-service-common"],
     resource_dirs: [
         "res",
@@ -156,6 +154,10 @@ android_app {
     sdk_version: "system_current",
     export_package_resources: true,
     manifest: "AndroidManifest_Resources.xml",
+    apex_available: [
+        "com.android.wifi",
+        "test_com.android.wifi",
+    ],
 }
 
 // Prebuilt for the wifi.rc file.
