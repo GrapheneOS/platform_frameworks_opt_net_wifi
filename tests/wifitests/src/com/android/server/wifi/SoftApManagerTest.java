@@ -117,7 +117,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     private SoftApInfo mTestSoftApInfo;
     private SoftApCapability mTestSoftApCapability;
 
-    @Mock Context mContext;
+    @Mock WifiContext mContext;
     @Mock Resources mResources;
     @Mock WifiNative mWifiNative;
     @Mock WifiManager.SoftApCallback mCallback;
@@ -153,6 +153,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         when(mContext.getResources()).thenReturn(mResources);
         when(mContext.getSystemService(NotificationManager.class))
                 .thenReturn(mNotificationManager);
+        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
 
         when(mResources.getInteger(R.integer.config_wifiFrameworkSoftApShutDownTimeoutMilliseconds))
                 .thenReturn((int) TEST_DEFAULT_SHUTDOWN_TIMEOUT_MILLS);

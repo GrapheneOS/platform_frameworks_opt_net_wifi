@@ -39,12 +39,15 @@ public final class WifiService extends SystemService {
     public static final String NOTIFICATION_NETWORK_ALERTS = "NETWORK_ALERTS";
     public static final String NOTIFICATION_NETWORK_AVAILABLE = "NETWORK_AVAILABLE";
 
-    final WifiServiceImpl mImpl;
+    private final WifiServiceImpl mImpl;
+    private final WifiContext mWifiContext;
 
     public WifiService(Context contextBase) {
-        super(new WifiContext(contextBase));
-        mImpl = new WifiServiceImpl(getContext(), new WifiInjector(getContext()),
-                new WifiAsyncChannel(TAG));
+        super(contextBase);
+        mWifiContext = new WifiContext(contextBase);
+        WifiInjector injector = new WifiInjector(mWifiContext);
+        WifiAsyncChannel channel =  new WifiAsyncChannel(TAG);
+        mImpl = new WifiServiceImpl(mWifiContext, injector, channel);
     }
 
     @Override
@@ -56,7 +59,7 @@ public final class WifiService extends SystemService {
     @Override
     public void onBootPhase(int phase) {
         if (phase == SystemService.PHASE_SYSTEM_SERVICES_READY) {
-            createNotificationChannels(getContext());
+            createNotificationChannels(mWifiContext);
             mImpl.checkAndStartWifi();
         } else if (phase == SystemService.PHASE_BOOT_COMPLETED) {
             mImpl.handleBootCompleted();

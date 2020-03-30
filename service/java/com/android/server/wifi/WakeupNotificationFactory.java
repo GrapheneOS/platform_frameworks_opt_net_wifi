@@ -18,7 +18,6 @@ package com.android.server.wifi;
 
 import android.app.Notification;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
 
@@ -41,11 +40,11 @@ public class WakeupNotificationFactory {
     /** Notification channel ID for onboarding messages. */
     public static final int ONBOARD_ID = SystemMessage.NOTE_WIFI_WAKE_ONBOARD;
 
-    private final Context mContext;
+    private final WifiContext mContext;
     private final WifiInjector mWifiInjector;
     private final FrameworkFacade mFrameworkFacade;
 
-    WakeupNotificationFactory(Context context, WifiInjector wifiInjector,
+    WakeupNotificationFactory(WifiContext context, WifiInjector wifiInjector,
                               FrameworkFacade frameworkFacade) {
         mContext = context;
         mWifiInjector = wifiInjector;
@@ -68,7 +67,7 @@ public class WakeupNotificationFactory {
 
         return mFrameworkFacade.makeNotificationBuilder(mContext,
                 WifiService.NOTIFICATION_NETWORK_STATUS)
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         R.drawable.ic_wifi_settings))
                 .setTicker(title)
                 .setContentTitle(title)

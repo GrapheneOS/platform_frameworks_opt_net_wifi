@@ -26,5 +26,12 @@
         android:defaultToDeviceProtectedStorage="true"
         android:directBootAware="true"
         android:usesCleartextTraffic="true">
+        <!-- This is only used to identify this app by resolving the action.
+             The activity is never actually triggered. -->
+        <activity android:name="android.app.Activity" android:exported="true" android:enabled="true">
+            <intent-filter>
+                <action android:name="com.android.server.wifi.intent.action.SERVICE_WIFI_RESOURCES_APK" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
