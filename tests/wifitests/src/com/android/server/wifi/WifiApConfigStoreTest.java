@@ -23,6 +23,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
@@ -35,6 +37,7 @@ import android.content.pm.ApplicationInfo;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
+import android.net.wifi.WifiInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.test.TestLooper;
@@ -489,6 +492,21 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         SoftApConfiguration config = store.randomizeBssidIfUnset(mContext, baseConfig);
 
         assertEquals(TEST_RANDOMIZED_MAC, config.getBssid());
+    }
+
+    @Test
+    public void randomizeBssid_fallbackPathWhenMacCalculationFails() throws Exception {
+        mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, true);
+        // Setup the MAC calculation to fail.
+        when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(null);
+        SoftApConfiguration baseConfig = new SoftApConfiguration.Builder().build();
+
+        WifiApConfigStore store = createWifiApConfigStore();
+        SoftApConfiguration config = store.randomizeBssidIfUnset(mContext, baseConfig);
+
+        // Verify that some randomized MAC address is still generated
+        assertNotNull(config.getBssid());
+        assertNotEquals(WifiInfo.DEFAULT_MAC_ADDRESS, config.getBssid().toString());
     }
 
     @Test
