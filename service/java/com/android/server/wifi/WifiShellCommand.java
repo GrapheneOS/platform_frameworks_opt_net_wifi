@@ -67,6 +67,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private static final String[] NON_PRIVILEGED_COMMANDS = {
             "connect-network",
             "forget-network",
+            "get-country-code",
+            "help",
+            "-h",
             "list-scan-results",
             "list-networks",
             "set-verbose-logging",
@@ -101,9 +104,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
 
     @Override
     public int onCommand(String cmd) {
+        // Treat no command as help command.
+        if (cmd == null || cmd.equals("")) {
+            cmd = "help";
+        }
         // Explicit exclusion from root permission
-        // Do not require root permission to maintain backwards compatibility with
-        // `svc wifi [enable|disable]`.
         if (ArrayUtils.indexOf(NON_PRIVILEGED_COMMANDS, cmd) == -1) {
             final int uid = Binder.getCallingUid();
             if (uid != Process.ROOT_UID) {
@@ -114,7 +119,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
 
         final PrintWriter pw = getOutPrintWriter();
         try {
-            switch (cmd != null ? cmd : "") {
+            switch (cmd) {
                 case "set-ipreach-disconnect": {
                     boolean enabled;
                     String nextArg = getNextArgRequired();
@@ -596,13 +601,37 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0;
     }
 
-    @Override
-    public void onHelp() {
-        final PrintWriter pw = getOutPrintWriter();
+    private void onHelpNonPrivileged(PrintWriter pw) {
+        pw.println("  get-country-code");
+        pw.println("    Gets country code as a two-letter string");
+        pw.println("  set-wifi-enabled enabled|disabled");
+        pw.println("    Enables/disables Wifi on this device.");
+        pw.println("  list-scan-results");
+        pw.println("    Lists the latest scan results");
+        pw.println("  start-scan");
+        pw.println("    Start a new scan");
+        pw.println("  list-networks");
+        pw.println("    Lists the saved networks");
+        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
+        pw.println("    Connect to a network with provided params and save");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  forget-network <networkId>");
+        pw.println("    Remove the network mentioned by <networkId>");
+        pw.println("        - Use list-networks to retrieve <networkId> for the network");
+        pw.println("  status");
+        pw.println("    Current wifi status");
+        pw.println("  set-verbose-logging enabled|disabled ");
+        pw.println("    Set the verbose logging enabled or disabled");
+    }
 
-        pw.println("Wi-Fi (wifi) commands:");
-        pw.println("  help");
-        pw.println("    Print this help text.");
+    private void onHelpPrivileged(PrintWriter pw) {
         pw.println("  set-ipreach-disconnect enabled|disabled");
         pw.println("    Sets whether CMD_IP_REACHABILITY_LOST events should trigger disconnects.");
         pw.println("  get-ipreach-disconnect");
@@ -636,42 +665,27 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    or left for normal   operation.");
         pw.println("  force-country-code enabled <two-letter code> | disabled ");
         pw.println("    Sets country code to <two-letter code> or left for normal value");
-        pw.println("  get-country-code");
-        pw.println("    Gets country code as a two-letter string");
         pw.println("  set-wifi-watchdog enabled|disabled");
         pw.println("    Sets whether wifi watchdog should trigger recovery");
         pw.println("  get-wifi-watchdog");
         pw.println("    Gets setting of wifi watchdog trigger recovery.");
-        pw.println("  set-wifi-enabled enabled|disabled");
-        pw.println("    Enables/disables Wifi on this device.");
         pw.println("  get-softap-supported-features");
         pw.println("    Gets softap supported features. Will print 'wifi_softap_acs_supported'");
         pw.println("    and/or 'wifi_softap_wpa3_sae_supported', each on a separate line.");
         pw.println("  settings-reset");
         pw.println("    Initiates wifi settings reset");
-        pw.println("  list-scan-results");
-        pw.println("    Lists the latest scan results");
-        pw.println("  start-scan");
-        pw.println("    Start a new scan");
-        pw.println("  list-networks");
-        pw.println("    Lists the saved networks");
-        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
-        pw.println("    Connect to a network with provided params and save");
-        pw.println("    <ssid> - SSID of the network");
-        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
-        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
-        pw.println("           - 'open' - Open networks (Most prevalent)");
-        pw.println("           - 'owe' - Enhanced open networks");
-        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
-        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
-        pw.println("           - 'wpa3' - WPA-3 PSK networks");
-        pw.println("  forget-network <networkId>");
-        pw.println("    Remove the network mentioned by <networkId>");
-        pw.println("        - Use list-networks to retrieve <networkId> for the network");
-        pw.println("  status");
-        pw.println("    Current wifi status");
-        pw.println("  set-verbose-logging enabled|disabled ");
-        pw.println("    Set the verbose logging enabled or disabled");
+    }
+
+    @Override
+    public void onHelp() {
+        final PrintWriter pw = getOutPrintWriter();
+        pw.println("Wi-Fi (wifi) commands:");
+        pw.println("  help or -h");
+        pw.println("    Print this help text.");
+        onHelpNonPrivileged(pw);
+        if (Binder.getCallingUid() == Process.ROOT_UID) {
+            onHelpPrivileged(pw);
+        }
         pw.println();
     }
 }
