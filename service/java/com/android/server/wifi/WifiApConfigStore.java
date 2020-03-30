@@ -36,7 +36,6 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 import javax.annotation.Nullable;
-import javax.crypto.Mac;
 
 /**
  * Provides API for reading/writing soft access point configuration.
@@ -68,7 +67,6 @@ public class WifiApConfigStore {
     private final WifiMetrics mWifiMetrics;
     private final BackupManagerProxy mBackupManagerProxy;
     private final MacAddressUtil mMacAddressUtil;
-    private final Mac mMac;
     private final WifiConfigManager mWifiConfigManager;
     private final ActiveModeWarden mActiveModeWarden;
     private boolean mHasNewDataToSerialize = false;
@@ -118,11 +116,6 @@ public class WifiApConfigStore {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_HOTSPOT_CONFIG_USER_TAPPED_CONTENT);
         mMacAddressUtil = wifiInjector.getMacAddressUtil();
-        mMac = mMacAddressUtil.obtainMacRandHashFunctionForSap(Process.WIFI_UID);
-        if (mMac == null) {
-            Log.wtf(TAG, "Failed to obtain secret for SAP MAC randomization."
-                    + " All randomized MAC addresses are lost!");
-        }
     }
 
     /**
@@ -290,7 +283,8 @@ public class WifiApConfigStore {
         SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder(config);
         if (config.getBssid() == null && context.getResources().getBoolean(
                 R.bool.config_wifi_ap_mac_randomization_supported)) {
-            MacAddress macAddress = mMacAddressUtil.calculatePersistentMac(config.getSsid(), mMac);
+            MacAddress macAddress = mMacAddressUtil.calculatePersistentMac(config.getSsid(),
+                    mMacAddressUtil.obtainMacRandHashFunctionForSap(Process.WIFI_UID));
             if (macAddress == null) {
                 Log.e(TAG, "Failed to calculate MAC from SSID. "
                         + "Generating new random MAC instead.");
