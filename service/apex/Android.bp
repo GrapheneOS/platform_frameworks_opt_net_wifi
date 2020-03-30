@@ -30,8 +30,8 @@ apex_defaults {
     key: "com.android.wifi.key",
     certificate: ":com.android.wifi.certificate",
     apps: [
-        "wifi-service-resources",
         "OsuLogin",
+        "ServiceWifiResources",
     ],
 }
 
