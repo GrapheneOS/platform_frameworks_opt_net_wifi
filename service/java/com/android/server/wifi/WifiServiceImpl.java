@@ -3516,6 +3516,8 @@ public class WifiServiceImpl extends BaseWifiService {
                         }
                         // Enable all networks restored.
                         mWifiConfigManager.enableNetwork(networkId, false, callingUid, null);
+                        // Restore auto-join param.
+                        mWifiConfigManager.allowAutojoin(networkId, configuration.allowAutojoin);
                     }
                 });
     }
