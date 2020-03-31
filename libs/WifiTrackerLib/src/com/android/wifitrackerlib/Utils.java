@@ -245,6 +245,8 @@ class Utils {
                         // no OWE config.
                         if (openInRange && openConfigExists && !oweConfigExists) {
                             continue;
+                        } else {
+                            chosenSecurityTypes.add(SECURITY_OWE);
                         }
                     } else if (isOweTransition) {
                         // Map to OWE if we either
