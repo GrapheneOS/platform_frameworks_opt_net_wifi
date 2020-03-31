@@ -42,7 +42,7 @@ public class EapFailureNotifier {
     private static final String ERROR_MESSAGE_OVERLAY_PREFIX = "wifi_eap_error_message_code_";
 
     private static final long CANCEL_TIMEOUT_MILLISECONDS = 5 * 60 * 1000;
-    private final Context mContext;
+    private final WifiContext mContext;
     private final NotificationManager mNotificationManager;
     private final FrameworkFacade mFrameworkFacade;
     private final TelephonyUtil mTelephonyUtil;
@@ -51,7 +51,7 @@ public class EapFailureNotifier {
     public static final int NOTIFICATION_ID = SystemMessage.NOTE_WIFI_EAP_FAILURE;
     private String mCurrentShownSsid;
 
-    public EapFailureNotifier(Context context, FrameworkFacade frameworkFacade,
+    public EapFailureNotifier(WifiContext context, FrameworkFacade frameworkFacade,
             TelephonyUtil telephonyUtil) {
         mContext = context;
         mFrameworkFacade = frameworkFacade;
@@ -77,7 +77,7 @@ public class EapFailureNotifier {
                 mTelephonyUtil.getBestMatchSubscriptionId(config));
         if (res == null) return;
         int resourceId = res.getIdentifier(ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
-                "string", WifiContext.WIFI_OVERLAY_APK_PKG_NAME);
+                "string", mContext.getWifiOverlayApkPkgName());
 
         if (resourceId == 0) return;
         String errorMessage = res.getString(resourceId, config.SSID);
@@ -96,7 +96,7 @@ public class EapFailureNotifier {
                 WifiService.NOTIFICATION_NETWORK_ALERTS)
                 .setAutoCancel(true)
                 .setTimeoutAfter(CANCEL_TIMEOUT_MILLISECONDS)
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setContentTitle(mContext.getString(
                         com.android.wifi.resources.R.string.wifi_available_title_failed_to_connect))
@@ -114,11 +114,11 @@ public class EapFailureNotifier {
      *  Returns the resources from the given context for the MCC/MNC
      *  associated with the subscription.
      */
-    private Resources getResourcesForSubId(Context context, int subId) {
+    private Resources getResourcesForSubId(WifiContext context, int subId) {
         Context resourceContext = null;
         try {
             resourceContext = context.createPackageContext(
-                    WifiContext.WIFI_OVERLAY_APK_PKG_NAME, 0);
+                    context.getWifiOverlayApkPkgName(), 0);
         } catch (PackageManager.NameNotFoundException ex) {
             return null;
         }

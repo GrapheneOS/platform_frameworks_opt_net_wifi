@@ -18,7 +18,6 @@ package com.android.server.wifi;
 
 import android.app.Notification;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
 import android.net.wifi.ScanResult;
@@ -51,12 +50,12 @@ public class ConnectToNetworkNotificationBuilder {
     public static final String AVAILABLE_NETWORK_NOTIFIER_TAG =
             "com.android.server.wifi.ConnectToNetworkNotification.AVAILABLE_NETWORK_NOTIFIER_TAG";
 
-    private Context mContext;
+    private WifiContext mContext;
     private WifiInjector mWifiInjector;
     private FrameworkFacade mFrameworkFacade;
 
     public ConnectToNetworkNotificationBuilder(
-            Context context,
+            WifiContext context,
             WifiInjector wifiInjector,
             FrameworkFacade framework) {
         mContext = context;
@@ -158,7 +157,7 @@ public class ConnectToNetworkNotificationBuilder {
             CharSequence title, CharSequence content, String extraData) {
         return mFrameworkFacade.makeNotificationBuilder(mContext,
                 WifiService.NOTIFICATION_NETWORK_AVAILABLE)
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setTicker(title)
                 .setContentTitle(title)

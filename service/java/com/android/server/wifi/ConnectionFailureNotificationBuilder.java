@@ -21,7 +21,6 @@ import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
@@ -44,14 +43,14 @@ public class ConnectionFailureNotificationBuilder {
     public static final String RANDOMIZATION_SETTINGS_NETWORK_SSID =
             "com.android.server.wifi.RANDOMIZATION_SETTINGS_NETWORK_SSID";
 
-    private Context mContext;
+    private WifiContext mContext;
     private String mPackageName;
     private FrameworkFacade mFrameworkFacade;
     private WifiConnectivityManager mWifiConnectivityManager;
     private NotificationManager mNotificationManager;
     private Handler mHandler;
 
-    public ConnectionFailureNotificationBuilder(Context context, String packageName,
+    public ConnectionFailureNotificationBuilder(WifiContext context, String packageName,
             FrameworkFacade framework) {
         mContext = context;
         mPackageName = packageName;
@@ -81,7 +80,7 @@ public class ConnectionFailureNotificationBuilder {
 
         return mFrameworkFacade.makeNotificationBuilder(
                 mContext, WifiService.NOTIFICATION_NETWORK_ALERTS)
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setTicker(title)
                 .setContentTitle(title)

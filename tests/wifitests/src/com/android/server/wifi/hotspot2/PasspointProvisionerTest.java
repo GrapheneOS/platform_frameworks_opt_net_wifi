@@ -62,7 +62,6 @@ import android.telephony.TelephonyManager;
 import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.server.wifi.MockResources;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
@@ -80,7 +79,6 @@ import com.android.server.wifi.hotspot2.soap.UpdateResponseMessage;
 import com.android.server.wifi.hotspot2.soap.command.BrowserUri;
 import com.android.server.wifi.hotspot2.soap.command.PpsMoData;
 import com.android.server.wifi.hotspot2.soap.command.SppCommand;
-import com.android.wifi.resources.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -258,16 +256,13 @@ public class PasspointProvisionerTest extends WifiBaseTest {
         when(mOsuServerConnection.exchangeSoapMessage(
                 any(SoapSerializationEnvelope.class))).thenReturn(true);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
-        MockResources mockResources = new MockResources();
-        mockResources.setString(R.string.config_wifiOsuLoginPackage, OSU_APP_PACKAGE);
-        when(mContext.getResources()).thenReturn(mockResources);
         ResolveInfo resolveInfo = new ResolveInfo();
         resolveInfo.activityInfo = new ActivityInfo();
         resolveInfo.activityInfo.applicationInfo = new ApplicationInfo();
         resolveInfo.activityInfo.name = OSU_APP_NAME;
         resolveInfo.activityInfo.applicationInfo.packageName = OSU_APP_PACKAGE;
-        when(mPackageManager.resolveActivity(any(Intent.class),
-                eq(PackageManager.MATCH_DEFAULT_ONLY))).thenReturn(resolveInfo);
+        when(mPackageManager.queryIntentActivities(any(Intent.class), anyInt()))
+                .thenReturn(Arrays.asList(resolveInfo));
 
         Map<String, byte[]> trustCertInfo = new HashMap<>();
         trustCertInfo.put("https://testurl.com", "testData".getBytes());
@@ -632,7 +627,7 @@ public class PasspointProvisionerTest extends WifiBaseTest {
         verifyNoMoreInteractions(mCallback);
     }
 
-   /**
+    /**
      * Verifies that the right provisioning callbacks are invoked as the provisioner connects
      * to OSU AP and OSU server and that invalid server URL generates the right error callback.
      */
@@ -782,8 +777,7 @@ public class PasspointProvisionerTest extends WifiBaseTest {
     @Test
     public void verifyNoOsuActivityFoundFailure() throws RemoteException {
         // There is no activity found for the intent
-        when(mPackageManager.resolveActivity(any(Intent.class),
-                eq(PackageManager.MATCH_DEFAULT_ONLY))).thenReturn(null);
+        when(mPackageManager.queryIntentActivities(any(Intent.class), anyInt())).thenReturn(null);
         stopAfterStep(STEP_SERVER_CONNECT);
 
         // Server validation passed
