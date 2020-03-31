@@ -4636,6 +4636,10 @@ public class ClientModeImpl extends StateMachine {
                     .build();
             final NetworkCapabilities nc = getCapabilities(getCurrentWifiConfiguration());
             synchronized (mNetworkAgentLock) {
+                // This should never happen.
+                if (mNetworkAgent != null) {
+                    Log.wtf(TAG, "mNetworkAgent is not null: " + mNetworkAgent);
+                }
                 mNetworkAgent = new WifiNetworkAgent(mContext, getHandler().getLooper(),
                         "WifiNetworkAgent", nc, mLinkProperties, 60, naConfig,
                         mNetworkFactory.getProvider());
