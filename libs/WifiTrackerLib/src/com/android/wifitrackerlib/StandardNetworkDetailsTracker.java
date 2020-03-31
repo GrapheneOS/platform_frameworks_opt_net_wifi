@@ -45,7 +45,6 @@ import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * Implementation of NetworkDetailsTracker that tracks a single StandardWifiEntry.
@@ -107,7 +106,8 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         checkNotNull(intent, "Intent cannot be null!");
         final WifiConfiguration updatedConfig =
                 (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (updatedConfig != null && TextUtils.equals(
+        if (updatedConfig != null && !updatedConfig.isPasspoint()
+                && !updatedConfig.fromWifiNetworkSuggestion && TextUtils.equals(
                 wifiConfigToStandardWifiEntryKey(updatedConfig), mChosenEntry.getKey())) {
             final int changeReason = intent.getIntExtra(WifiManager.EXTRA_CHANGE_REASON,
                     -1 /* defaultValue*/);
@@ -172,11 +172,15 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
      * null if it does not exist.
      */
     private void conditionallyUpdateConfig() {
-        Optional<WifiConfiguration> optionalConfig = mWifiManager.getConfiguredNetworks()
-                .stream().filter(config -> TextUtils.equals(
-                        wifiConfigToStandardWifiEntryKey(config), mChosenEntry.getKey()))
-                .findAny();
-        mChosenEntry.updateConfig(optionalConfig.orElse(null));
+        WifiConfiguration config = mWifiManager.getConfiguredNetworks().stream()
+                .filter(savedConfig -> TextUtils.equals(
+                        wifiConfigToStandardWifiEntryKey(savedConfig), mChosenEntry.getKey()))
+                .findAny().orElse(mWifiManager.getPrivilegedConfiguredNetworks().stream()
+                        .filter(suggestedConfig -> TextUtils.equals(
+                                wifiConfigToStandardWifiEntryKey(suggestedConfig),
+                                mChosenEntry.getKey()))
+                        .findAny().orElse(null));
+        mChosenEntry.updateConfig(config);
     }
 
     /**
