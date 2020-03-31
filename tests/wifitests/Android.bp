@@ -86,7 +86,7 @@ android_test {
         "jsr305",
         "services",
         // load the resources from the resources APK.
-        "wifi-service-resources",
+        "ServiceWifiResources",
         "unsupportedappusage",
     ],
 
