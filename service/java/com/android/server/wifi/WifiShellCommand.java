@@ -26,6 +26,7 @@ import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BasicShellCommandHandler;
@@ -41,6 +42,7 @@ import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -65,6 +67,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     // These don't require root access.
     // However, these do perform permission checks in the corresponding WifiService methods.
     private static final String[] NON_PRIVILEGED_COMMANDS = {
+            "add-suggestion",
             "connect-network",
             "forget-network",
             "get-country-code",
@@ -72,6 +75,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             "-h",
             "list-scan-results",
             "list-networks",
+            "list-suggestions",
+            "remove-suggestion",
+            "remove-all-suggestions",
             "set-verbose-logging",
             "set-wifi-enabled",
             "start-scan",
@@ -451,20 +457,21 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "connect-network": {
                     String ssid = getNextArgRequired();
                     String type = getNextArgRequired();
-                    String optionalPassphrase = getNextArg();
                     WifiConfiguration configuration = new WifiConfiguration();
                     configuration.SSID = "\"" + ssid + "\"";
                     if (TextUtils.equals(type, "wpa3")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+                        configuration.preSharedKey = "\"" + getNextArgRequired() + "\"";
                     } else if (TextUtils.equals(type, "wpa2")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+                        configuration.preSharedKey = "\"" + getNextArgRequired() + "\"";
                     } else if (TextUtils.equals(type, "owe")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
                     } else if (TextUtils.equals(type, "open")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-                    }
-                    if (optionalPassphrase != null) {
-                        configuration.preSharedKey = "\"" + optionalPassphrase + "\"";
+                    } else {
+                        pw.println("Unknown network type " + type);
+                        return -1;
                     }
                     CountDownLatch countDownLatch = new CountDownLatch(1);
                     IActionListener.Stub actionListener = new IActionListener.Stub() {
@@ -539,6 +546,49 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     }
                     mWifiService.enableVerboseLogging(enabled ? 1 : 0);
                     break;
+                case "add-suggestion":
+                    mWifiService.addNetworkSuggestions(
+                            Arrays.asList(buildSuggestion(pw)), SHELL_PACKAGE_NAME, null);
+                    break;
+                case "remove-suggestion":
+                    mWifiService.removeNetworkSuggestions(
+                            Arrays.asList(buildSuggestion(pw)), SHELL_PACKAGE_NAME);
+                    break;
+                case "remove-all-suggestions":
+                    mWifiService.removeNetworkSuggestions(
+                            Collections.emptyList(), SHELL_PACKAGE_NAME);
+                    break;
+                case "list-suggestions":
+                    List<WifiNetworkSuggestion> suggestions =
+                            mWifiService.getNetworkSuggestions(SHELL_PACKAGE_NAME);
+                    if (suggestions == null || suggestions.isEmpty()) {
+                        pw.println("No suggestions");
+                    } else {
+                        pw.println("SSID                         Security type");
+                        for (WifiNetworkSuggestion suggestion : suggestions) {
+                            String securityType = null;
+                            if (WifiConfigurationUtil.isConfigForSaeNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "wpa3";
+                            } else if (WifiConfigurationUtil.isConfigForPskNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "wpa2";
+                            } else if (WifiConfigurationUtil.isConfigForEapNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "eap";
+                            } else if (WifiConfigurationUtil.isConfigForOweNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "owe";
+                            } else if (WifiConfigurationUtil.isConfigForOpenNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "open";
+                            }
+                            pw.println(String.format("%-32s %-4s",
+                                    WifiInfo.sanitizeSsid(suggestion.getWifiConfiguration().SSID),
+                                    securityType));
+                        }
+                    }
+                    break;
                 default:
                     return handleDefaultCommands(cmd);
             }
@@ -547,6 +597,27 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             e.printStackTrace(pw);
         }
         return -1;
+    }
+
+    private WifiNetworkSuggestion buildSuggestion(PrintWriter pw) {
+        String ssid = getNextArgRequired();
+        String type = getNextArgRequired();
+        WifiNetworkSuggestion.Builder suggestionBuilder =
+                new WifiNetworkSuggestion.Builder();
+        suggestionBuilder.setSsid(ssid);
+        if (TextUtils.equals(type, "wpa3")) {
+            suggestionBuilder.setWpa3Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "wpa2")) {
+            suggestionBuilder.setWpa2Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "owe")) {
+            suggestionBuilder.setIsEnhancedOpen(true);
+        } else if (TextUtils.equals(type, "open")) {
+            // nothing to do.
+        } else {
+            pw.println("Unknown network type " + type);
+            return null;
+        }
+        return suggestionBuilder.build();
     }
 
     private int sendLinkProbe(PrintWriter pw) throws InterruptedException {
@@ -629,6 +700,32 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Current wifi status");
         pw.println("  set-verbose-logging enabled|disabled ");
         pw.println("    Set the verbose logging enabled or disabled");
+        pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
+        pw.println("    Add a network suggestion with provided params");
+        pw.println("    Use 'network-suggestions-set-user-approved " + SHELL_PACKAGE_NAME + " yes'"
+                +  " to approve suggestions added via shell (Needs root access)");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  remove-suggestion <ssid> open|owe|wpa2|wpa3");
+        pw.println("    Remove a network suggestion with provided params");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  remove-all-suggestions");
+        pw.println("    Removes all suggestions added via shell");
+        pw.println("  list-suggestions");
+        pw.println("    Lists the suggested networks added via shell");
     }
 
     private void onHelpPrivileged(PrintWriter pw) {
