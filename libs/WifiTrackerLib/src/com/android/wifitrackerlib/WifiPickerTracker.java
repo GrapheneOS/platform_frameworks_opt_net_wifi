@@ -44,6 +44,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
@@ -91,9 +92,14 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     // Cache containing saved WifiConfigurations mapped by StandardWifiEntry key
     private final Map<String, WifiConfiguration> mWifiConfigCache = new HashMap<>();
+
+    private final Map<String, WifiConfiguration> mSuggestedConfigCache = new HashMap<>();
     // Cache containing visible StandardWifiEntries. Must be accessed only by the worker thread.
     private final Map<String, StandardWifiEntry> mStandardWifiEntryCache = new HashMap<>();
-
+    // Cache containing available suggested StandardWifiEntries. These entries may be already
+    // represented in mStandardWifiEntryCache, so filtering must be done before they are returned in
+    // getWifiEntry() and getConnectedWifiEntry().
+    private final Map<String, StandardWifiEntry> mSuggestedWifiEntryCache = new HashMap<>();
     // Cache containing saved PasspointConfigurations mapped by PasspointWifiEntry key.
     private final Map<String, PasspointConfiguration> mPasspointConfigCache = new HashMap<>();
     // Cache containing visible PasspointWifiEntries. Must be accessed only by the worker thread.
@@ -173,6 +179,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @Override
     protected void handleOnStart() {
         updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
+        updateSuggestedWifiEntryConfigs(mWifiManager.getPrivilegedConfiguredNetworks().stream()
+                .filter(config -> config.fromWifiNetworkSuggestion).collect(toList()));
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
         mScanResultUpdater.update(mWifiManager.getScanResults());
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
@@ -181,6 +189,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateConnectionInfo(wifiInfo, networkInfo);
         // Create a StandardWifiEntry for the current connection if there are no scan results yet.
         conditionallyCreateConnectedStandardWifiEntry(wifiInfo, networkInfo);
+        conditionallyCreateConnectedSuggestedWifiEntry(wifiInfo, networkInfo);
         conditionallyCreateConnectedPasspointWifiEntry(wifiInfo, networkInfo);
         handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(
                 mWifiManager.getCurrentNetwork()));
@@ -213,11 +222,14 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         final WifiConfiguration config =
                 (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (config != null) {
+        if (config != null && !config.isPasspoint() && !config.fromWifiNetworkSuggestion) {
             updateStandardWifiEntryConfig(
                     config, (Integer) intent.getExtra(WifiManager.EXTRA_CHANGE_REASON));
         } else {
             updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
+            updateSuggestedWifiEntryConfigs(mWifiManager.getPrivilegedConfiguredNetworks().stream()
+                    .filter((privilegedConfig) -> privilegedConfig.fromWifiNetworkSuggestion)
+                    .collect(toList()));
         }
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
@@ -240,6 +252,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateConnectionInfo(wifiInfo, networkInfo);
         // Create a StandardWifiEntry for the current connection if there are no scan results yet.
         conditionallyCreateConnectedStandardWifiEntry(wifiInfo, networkInfo);
+        conditionallyCreateConnectedSuggestedWifiEntry(wifiInfo, networkInfo);
         conditionallyCreateConnectedPasspointWifiEntry(wifiInfo, networkInfo);
         updateWifiEntries();
     }
@@ -268,18 +281,18 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void updateWifiEntries() {
         synchronized (mLock) {
-            mWifiEntries.clear();
-            mWifiEntries.addAll(mStandardWifiEntryCache.values().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
-            mWifiEntries.addAll(mPasspointWifiEntryCache.values().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
-            mWifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             mConnectedWifiEntry = mStandardWifiEntryCache.values().stream().filter(entry -> {
                 final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
                 return connectedState == CONNECTED_STATE_CONNECTED
                         || connectedState == CONNECTED_STATE_CONNECTING;
             }).findAny().orElse(null /* other */);
+            if (mConnectedWifiEntry == null) {
+                mConnectedWifiEntry = mSuggestedWifiEntryCache.values().stream().filter(entry -> {
+                    final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
+                    return connectedState == CONNECTED_STATE_CONNECTED
+                            || connectedState == CONNECTED_STATE_CONNECTING;
+                }).findAny().orElse(null /* other */);
+            }
             if (mConnectedWifiEntry == null) {
                 mConnectedWifiEntry = mPasspointWifiEntryCache.values().stream().filter(entry -> {
                     final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
@@ -294,6 +307,32 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             || connectedState == CONNECTED_STATE_CONNECTING;
                 }).findAny().orElse(null /* other */);
             }
+            mWifiEntries.clear();
+            for (String key : mStandardWifiEntryCache.keySet()) {
+                // Continue if we're connected to this network with a non-user-shareable config.
+                if (mConnectedWifiEntry != null
+                        && TextUtils.equals(key, mConnectedWifiEntry.getKey())) {
+                    continue;
+                }
+                StandardWifiEntry entry = mStandardWifiEntryCache.get(key);
+                StandardWifiEntry suggestedEntry = mSuggestedWifiEntryCache.get(key);
+                // Return a user-shareable suggested network to the user if one exists
+                if (!entry.isSaved()
+                        && suggestedEntry != null && suggestedEntry.isUserShareable()) {
+                    if (suggestedEntry.getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+                        mWifiEntries.add(suggestedEntry);
+                    }
+                } else {
+                    if (entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+                        mWifiEntries.add(entry);
+                    }
+                }
+
+            }
+            mWifiEntries.addAll(mPasspointWifiEntryCache.values().stream().filter(entry ->
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
+            mWifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             Collections.sort(mWifiEntries);
             if (isVerboseLoggingEnabled()) {
                 Log.v(TAG, "Connected WifiEntry: " + mConnectedWifiEntry);
@@ -341,6 +380,59 @@ public class WifiPickerTracker extends BaseWifiTracker {
             newEntry.updateConfig(mWifiConfigCache.get(newEntry.getKey()));
             mStandardWifiEntryCache.put(newEntry.getKey(), newEntry);
         }
+    }
+
+    /**
+     * Updates or removes scan results for the corresponding StandardWifiEntries.
+     * New entries will be created for scan results without an existing entry.
+     * Unreachable entries will be removed.
+     *
+     * @param scanResults List of valid scan results to convey as StandardWifiEntries
+     */
+    @WorkerThread
+    private void updateSuggestedWifiEntryScans(@NonNull List<ScanResult> scanResults) {
+        checkNotNull(scanResults, "Scan Result list should not be null!");
+
+        // Group scans by StandardWifiEntry key
+        final Map<String, List<ScanResult>> scanResultsByKey = mapScanResultsToKey(
+                scanResults,
+                true /* chooseSingleSecurity */,
+                mWifiConfigCache,
+                mWifiManager.isWpa3SaeSupported(),
+                mWifiManager.isWpa3SuiteBSupported(),
+                mWifiManager.isEnhancedOpenSupported());
+
+        Map<String, WifiConfiguration> userSharedConfigsByKey =
+                mWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(scanResults)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                StandardWifiEntry::wifiConfigToStandardWifiEntryKey,
+                                Function.identity()));
+
+        Set<String> seenKeys = new TreeSet<>();
+        for (String key : userSharedConfigsByKey.keySet()) {
+            seenKeys.add(key);
+            if (!mSuggestedWifiEntryCache.containsKey(key)) {
+                mSuggestedWifiEntryCache.put(key, new StandardWifiEntry(mContext, mMainHandler, key,
+                        userSharedConfigsByKey.get(key), mWifiManager,
+                        false /* forSavedNetworksPage */));
+            }
+            final StandardWifiEntry entry = mSuggestedWifiEntryCache.get(key);
+            entry.setUserShareable(true);
+            entry.updateScanResultInfo(scanResultsByKey.get(key));
+        }
+
+        // Remove entries without configs
+        mSuggestedWifiEntryCache.entrySet()
+                .removeIf(entry -> {
+                    StandardWifiEntry wifiEntry = entry.getValue();
+                    String key = entry.getKey();
+                    if (!seenKeys.contains(key)) {
+                        wifiEntry.updateConfig(mSuggestedConfigCache.get(key));
+                        wifiEntry.setUserShareable(false);
+                    }
+                    return !wifiEntry.isSaved();
+                });
     }
 
     @WorkerThread
@@ -415,6 +507,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             updateStandardWifiEntryScans(Collections.emptyList());
+            updateSuggestedWifiEntryScans(Collections.emptyList());
             updatePasspointWifiEntryScans(Collections.emptyList());
             updateOsuWifiEntryScans(Collections.emptyList());
             return;
@@ -432,6 +525,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         List<ScanResult> scanResults = mScanResultUpdater.getScanResults(scanAgeWindow);
         updateStandardWifiEntryScans(scanResults);
+        updateSuggestedWifiEntryScans(scanResults);
         updatePasspointWifiEntryScans(scanResults);
         updateOsuWifiEntryScans(scanResults);
     }
@@ -483,12 +577,33 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     @WorkerThread
+    private void updateSuggestedWifiEntryConfigs(@NonNull List<WifiConfiguration> configs) {
+        checkNotNull(configs, "Config list should not be null!");
+        mSuggestedConfigCache.clear();
+        mSuggestedConfigCache.putAll(configs.stream().collect(Collectors.toMap(
+                StandardWifiEntry::wifiConfigToStandardWifiEntryKey,
+                Function.identity())));
+
+        // Iterate through current entries and update each entry's config
+        mSuggestedWifiEntryCache.entrySet().removeIf((entry) -> {
+            final StandardWifiEntry wifiEntry = entry.getValue();
+            final String key = wifiEntry.getKey();
+            final WifiConfiguration cachedConfig = mSuggestedConfigCache.get(key);
+            if (cachedConfig != null) {
+                wifiEntry.updateConfig(cachedConfig);
+                return false;
+            } else {
+                return true;
+            }
+        });
+    }
+
+    @WorkerThread
     private void updatePasspointWifiEntryConfigs(@NonNull List<PasspointConfiguration> configs) {
         checkNotNull(configs, "Config list should not be null!");
-
         mPasspointConfigCache.clear();
         mPasspointConfigCache.putAll(configs.stream().collect(
-                toMap((config) -> uniqueIdToPasspointWifiEntryKey(
+                toMap(config -> uniqueIdToPasspointWifiEntryKey(
                         config.getUniqueId()), Function.identity())));
 
         // Iterate through current entries and update each entry's config or remove if no config
@@ -517,6 +632,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (WifiEntry entry : mStandardWifiEntryCache.values()) {
             entry.updateConnectionInfo(wifiInfo, networkInfo);
         }
+        for (WifiEntry entry : mSuggestedWifiEntryCache.values()) {
+            entry.updateConnectionInfo(wifiInfo, networkInfo);
+        }
         for (WifiEntry entry : mPasspointWifiEntryCache.values()) {
             entry.updateConnectionInfo(wifiInfo, networkInfo);
         }
@@ -534,7 +652,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void conditionallyCreateConnectedStandardWifiEntry(@Nullable WifiInfo wifiInfo,
             @Nullable NetworkInfo networkInfo) {
-        if (wifiInfo.isPasspointAp()) {
+        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return;
         }
 
@@ -554,7 +672,37 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     /**
-     * Creates and caches a StandardWifiEntry representing the current connection using the current
+     * Creates and caches a suggested StandardWifiEntry representing the current connection using
+     * the current WifiInfo and NetworkInfo if there are no scans results available for the network
+     * yet.
+     * @param wifiInfo WifiInfo of the current connection
+     * @param networkInfo NetworkInfo of the current connection
+     */
+    @WorkerThread
+    private void conditionallyCreateConnectedSuggestedWifiEntry(@Nullable WifiInfo wifiInfo,
+            @Nullable NetworkInfo networkInfo) {
+        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
+            return;
+        }
+
+        mSuggestedConfigCache.values().stream()
+                .filter(config ->
+                        TextUtils.equals(config.SSID, wifiInfo.getSSID())
+                                && !mSuggestedWifiEntryCache.containsKey(
+                                        wifiConfigToStandardWifiEntryKey(config)))
+                .findAny().ifPresent(config -> {
+                    final StandardWifiEntry connectedEntry =
+                            new StandardWifiEntry(mContext, mMainHandler,
+                                    wifiConfigToStandardWifiEntryKey(config), config, mWifiManager,
+                                    false /* forSavedNetworksPage */);
+                    connectedEntry.updateConnectionInfo(wifiInfo, networkInfo);
+                    mSuggestedWifiEntryCache.put(connectedEntry.getKey(), connectedEntry);
+                });
+    }
+
+
+    /**
+     * Creates and caches a PasspointWifiEntry representing the current connection using the current
      * WifiInfo and NetworkInfo if there are no scans results available for the network yet.
      * @param wifiInfo WifiInfo of the current connection
      * @param networkInfo NetworkInfo of the current connection
