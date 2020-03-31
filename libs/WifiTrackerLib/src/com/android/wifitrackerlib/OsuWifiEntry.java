@@ -35,6 +35,7 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Pair;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
@@ -50,6 +51,9 @@ import java.util.Map;
 class OsuWifiEntry extends WifiEntry {
     static final String KEY_PREFIX = "OsuWifiEntry:";
 
+    private final Object mLock = new Object();
+    // Scan result list must be thread safe for generating the verbose scan summary
+    @GuardedBy("mLock")
     @NonNull private final List<ScanResult> mCurrentScanResults = new ArrayList<>();
 
     @NonNull private final String mKey;
@@ -265,10 +269,12 @@ class OsuWifiEntry extends WifiEntry {
             throws IllegalArgumentException {
         if (scanResults == null) scanResults = new ArrayList<>();
 
-        mCurrentScanResults.clear();
-        mCurrentScanResults.addAll(scanResults);
+        synchronized (mLock) {
+            mCurrentScanResults.clear();
+            mCurrentScanResults.addAll(scanResults);
+        }
 
-        final ScanResult bestScanResult = getBestScanResultByLevel(mCurrentScanResults);
+        final ScanResult bestScanResult = getBestScanResultByLevel(scanResults);
         if (bestScanResult == null) {
             mLevel = WIFI_LEVEL_UNREACHABLE;
         } else {
