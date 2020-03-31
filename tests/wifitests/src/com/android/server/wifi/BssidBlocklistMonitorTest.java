@@ -628,14 +628,15 @@ public class BssidBlocklistMonitorTest {
         when(mClock.getWallClockMillis()).thenReturn(0L);
         long testDuration = 5500L;
         mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration);
+        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
-        // Verify that the BSSID is not removed from blocklist dispite of regular "clear" calls.
-        when(mClock.getWallClockMillis()).thenReturn(testDuration);
-        mBssidBlocklistMonitor.clearBssidBlocklist();
+        // Verify that the BSSID is removed from blocklist by clearBssidBlocklistForSsid
         mBssidBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
-        Set<String> bssidList = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
-        assertEquals(1, bssidList.size());
-        assertTrue(bssidList.contains(TEST_BSSID_1));
+        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+
+        // Add the BSSID to blocklist again.
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration);
+        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that the BSSID is removed from blocklist once the specified duration is over.
         when(mClock.getWallClockMillis()).thenReturn(testDuration + 1);
