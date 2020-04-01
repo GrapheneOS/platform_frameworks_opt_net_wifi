@@ -27,6 +27,7 @@ import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_TIMEOUT;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_AUTH_FAILURE;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_CONNECTION_FAILURE;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_DISCONNECTION_NONLOCAL;
+import static com.android.server.wifi.WifiHealthMonitor.REASON_NO_FAILURE;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_SHORT_CONNECTION_NONLOCAL;
 
 import android.annotation.IntDef;
@@ -103,10 +104,6 @@ public class WifiScoreCard {
     // Maximum interval between last RSSI poll and disconnection to qualify
     // disconnection stats collection.
     private static final int LAST_RSSI_POLL_MAX_INTERVAL_MS = 3_100;
-
-    // Minimum number of connection attempts to qualify abnormal auth detection
-    static final int MIN_NUM_CONNECTION_ATTEMPT_ABNORMAL_AUTH_FAILURE = 5;
-    static final int FAILURE_PERCENT_THRESHOLD_ABNORMAL_AUTH_FAILURE = 80;
 
     static final int INSUFFICIENT_RECENT_STATS = 0;
     static final int SUFFICIENT_RECENT_STATS_ONLY = 1;
@@ -258,7 +255,7 @@ public class WifiScoreCard {
      * Handle network disconnection or shutdown event
      */
     public void resetConnectionState() {
-        String ssidDisconnected = (mAttemptingSwitch) ? mSsidPrev : mSsidCurr;
+        String ssidDisconnected = mAttemptingSwitch ? mSsidPrev : mSsidCurr;
         updatePerNetwork(Event.DISCONNECTION, ssidDisconnected, INVALID_RSSI, LINK_SPEED_UNKNOWN,
                 UNKNOWN_REASON);
         if (mVerboseLoggingEnabled && mTsConnectionAttemptStart > TS_NONE && !mAttemptingSwitch) {
@@ -565,20 +562,90 @@ public class WifiScoreCard {
     }
 
     /**
-     * Detect abnormal authentication failure at high RSSI with enough connection attempts
-     * and high failure rate
-     * @return true if abnormal auth failure is detected, false otherwise
+     * Detect abnormal disconnection at high RSSI with a high rate
      */
-    public boolean detectAbnormalAuthFailure(String ssid) {
+    public int detectAbnormalDisconnection() {
+        String ssid = mAttemptingSwitch ? mSsidPrev : mSsidCurr;
         PerNetwork perNetwork = lookupNetwork(ssid);
         NetworkConnectionStats recentStats = perNetwork.getRecentStats();
-        logd("detectAbnormalAuthFailure: " + recentStats.toString());
-        int numAuthFailure = recentStats.getCount(CNT_AUTHENTICATION_FAILURE);
-        int numAttempt = recentStats.getCount(CNT_CONNECTION_ATTEMPT);
-        boolean hasEnoughAttempt = numAttempt >=  MIN_NUM_CONNECTION_ATTEMPT_ABNORMAL_AUTH_FAILURE;
-        boolean isAuthFailureRateHigh = (numAuthFailure * 100)
-                >= (numAttempt * FAILURE_PERCENT_THRESHOLD_ABNORMAL_AUTH_FAILURE);
-        return hasEnoughAttempt && isAuthFailureRateHigh;
+        if (recentStats.getRecentCountCode() == CNT_SHORT_CONNECTION_NONLOCAL) {
+            return detectAbnormalFailureReason(recentStats, CNT_SHORT_CONNECTION_NONLOCAL,
+                    REASON_SHORT_CONNECTION_NONLOCAL,
+                    mDeviceConfigFacade.getShortConnectionNonlocalHighThrPercent(),
+                    mDeviceConfigFacade.getShortConnectionNonlocalCountMin(),
+                    CNT_DISCONNECTION);
+        } else if (recentStats.getRecentCountCode() == CNT_DISCONNECTION_NONLOCAL) {
+            return detectAbnormalFailureReason(recentStats, CNT_DISCONNECTION_NONLOCAL,
+                    REASON_DISCONNECTION_NONLOCAL,
+                    mDeviceConfigFacade.getDisconnectionNonlocalHighThrPercent(),
+                    mDeviceConfigFacade.getDisconnectionNonlocalCountMin(),
+                    CNT_DISCONNECTION);
+        } else {
+            return REASON_NO_FAILURE;
+        }
+    }
+
+    /**
+     * Detect abnormal connection failure at high RSSI with a high rate
+     */
+    public int detectAbnormalConnectionFailure(String ssid) {
+        PerNetwork perNetwork = lookupNetwork(ssid);
+        NetworkConnectionStats recentStats = perNetwork.getRecentStats();
+        int recentCountCode = recentStats.getRecentCountCode();
+        if (recentCountCode == CNT_AUTHENTICATION_FAILURE) {
+            return detectAbnormalFailureReason(recentStats, CNT_AUTHENTICATION_FAILURE,
+                    REASON_AUTH_FAILURE,
+                    mDeviceConfigFacade.getAuthFailureHighThrPercent(),
+                    mDeviceConfigFacade.getAuthFailureCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+        } else if (recentCountCode == CNT_ASSOCIATION_REJECTION) {
+            return detectAbnormalFailureReason(recentStats, CNT_ASSOCIATION_REJECTION,
+                    REASON_ASSOC_REJECTION,
+                    mDeviceConfigFacade.getAssocRejectionHighThrPercent(),
+                    mDeviceConfigFacade.getAssocRejectionCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+        } else if (recentCountCode == CNT_ASSOCIATION_TIMEOUT) {
+            return detectAbnormalFailureReason(recentStats, CNT_ASSOCIATION_TIMEOUT,
+                    REASON_ASSOC_TIMEOUT,
+                    mDeviceConfigFacade.getAssocTimeoutHighThrPercent(),
+                    mDeviceConfigFacade.getAssocTimeoutCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+        } else if (recentCountCode == CNT_CONNECTION_FAILURE) {
+            return detectAbnormalFailureReason(recentStats, CNT_CONNECTION_FAILURE,
+                    REASON_CONNECTION_FAILURE,
+                    mDeviceConfigFacade.getConnectionFailureHighThrPercent(),
+                    mDeviceConfigFacade.getConnectionFailureCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+        } else {
+            return REASON_NO_FAILURE;
+        }
+    }
+
+    private int detectAbnormalFailureReason(NetworkConnectionStats stats, int countCode,
+            int reasonCode, int highThresholdPercent, int minCount, int refCountCode) {
+        // To detect abnormal failure which may trigger bugReport,
+        // increase the detection threshold by thresholdRatio
+        int thresholdRatio =
+                mDeviceConfigFacade.getBugReportThresholdExtraRatio();
+        if (isHighPercentageAndEnoughCount(stats, countCode, reasonCode,
+                highThresholdPercent * thresholdRatio,
+                minCount * thresholdRatio,
+                refCountCode)) {
+            return reasonCode;
+        } else {
+            return REASON_NO_FAILURE;
+        }
+    }
+
+    private boolean isHighPercentageAndEnoughCount(NetworkConnectionStats stats, int countCode,
+            int reasonCode, int highThresholdPercent, int minCount, int refCountCode) {
+        highThresholdPercent = Math.min(highThresholdPercent, 100);
+        // Use Laplace's rule of succession, useful especially for a small
+        // connection attempt count
+        // R = (f+1)/(n+2) with a pseudo count of 2 (one for f and one for s)
+        return ((stats.getCount(countCode) >= minCount)
+                && ((stats.getCount(countCode) + 1) * 100)
+                >= (highThresholdPercent * (stats.getCount(refCountCode) + 2)));
     }
 
     final class PerBssid extends MemoryStoreAccessBase {
@@ -999,12 +1066,8 @@ public class WifiScoreCard {
 
         private boolean recentStatsHighDetection(FailureStats statsHigh, int countCode,
                 int reasonCode, int highThresholdPercent, int minCount, int refCountCode) {
-            // Use Laplace's rule of succession, useful especially for a small
-            // connection attempt count
-            // R = (f+1)/(n+2) with a pseudo count of 2 (one for f and one for s)
-            if ((((mRecentStats.getCount(countCode) + 1) * 100)
-                    >= (highThresholdPercent * (mRecentStats.getCount(refCountCode) + 2)))
-                    && (mRecentStats.getCount(countCode) >= minCount)) {
+            if (isHighPercentageAndEnoughCount(mRecentStats, countCode, reasonCode,
+                    highThresholdPercent, minCount, refCountCode)) {
                 statsHigh.incrementCount(reasonCode);
                 return true;
             }
@@ -1152,6 +1215,7 @@ public class WifiScoreCard {
     }
 
     // Codes for various connection related counts
+    public static final int CNT_INVALID = -1;
     public static final int CNT_CONNECTION_ATTEMPT = 0;
     public static final int CNT_CONNECTION_FAILURE = 1;
     public static final int CNT_CONNECTION_DURATION_SEC = 2;
@@ -1194,7 +1258,7 @@ public class WifiScoreCard {
      */
     public static class NetworkConnectionStats {
         private final int[] mCount = new int[NUMBER_CONNECTION_CNT_CODE];
-
+        private int mRecentCountCode = CNT_INVALID;
         /**
          * Copy all values
          * @param src is the source of copy
@@ -1203,6 +1267,7 @@ public class WifiScoreCard {
             for (int i = 0; i < NUMBER_CONNECTION_CNT_CODE; i++) {
                 mCount[i] = src.getCount(i);
             }
+            mRecentCountCode = src.mRecentCountCode;
         }
 
         /**
@@ -1212,6 +1277,7 @@ public class WifiScoreCard {
             for (int i = 0; i < NUMBER_CONNECTION_CNT_CODE; i++) {
                 mCount[i] = 0;
             }
+            mRecentCountCode = CNT_INVALID;
         }
 
         /**
@@ -1224,12 +1290,13 @@ public class WifiScoreCard {
         }
 
         /**
-         * Set counterer value
+         * Set counter value
          * @param countCode is the selected counter
          * @param cnt is the value set to the selected counter
          */
         public void setCount(@ConnectionCountCode int countCode, int cnt) {
             mCount[countCode] = cnt;
+            mRecentCountCode = countCode;
         }
 
         /**
@@ -1238,6 +1305,14 @@ public class WifiScoreCard {
          */
         public void incrementCount(@ConnectionCountCode int countCode) {
             mCount[countCode]++;
+            mRecentCountCode = countCode;
+        }
+
+        /**
+         * Got the recent count code
+         */
+        public int getRecentCountCode() {
+            return mRecentCountCode;
         }
 
         /**

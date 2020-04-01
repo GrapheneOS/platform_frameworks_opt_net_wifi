@@ -108,7 +108,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     public static final long MIN_DUMP_TIME_WINDOW_MILLIS = 10 * 60 * 1000; // 10 mins
 
     private long mLastBugReportTime;
-    static final long MIN_BUG_REPORT_TIME_WINDOW_MILLIS = 60 * 60 * 1000; // 60 mins
 
     @VisibleForTesting public static final String FIRMWARE_DUMP_SECTION_HEADER =
             "FW Memory dump";
@@ -302,7 +301,8 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
             return;
         }
         long currentTime = mClock.getWallClockMillis();
-        if ((currentTime - mLastBugReportTime) < MIN_BUG_REPORT_TIME_WINDOW_MILLIS
+        if ((currentTime - mLastBugReportTime)
+                < mWifiInjector.getDeviceConfigFacade().getBugReportMinWindowMs()
                 && mLastBugReportTime > 0) {
             return;
         }
