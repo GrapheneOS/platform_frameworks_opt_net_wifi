@@ -16,16 +16,21 @@
 
 package com.android.server.wifi;
 
+import static android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET;
+import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
 import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
 
 import android.content.Context;
 import android.content.pm.ParceledListSlice;
+import android.net.ConnectivityManager;
+import android.net.NetworkRequest;
 import android.net.wifi.IActionListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
@@ -35,6 +40,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Pair;
 
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
@@ -44,7 +50,9 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -84,6 +92,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             "status",
     };
 
+    private static final Map<String, Pair<NetworkRequest, ConnectivityManager.NetworkCallback>>
+            sActiveRequests = new ConcurrentHashMap<>();
+
     private final ClientModeImpl mClientModeImpl;
     private final WifiLockManager mWifiLockManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
@@ -94,6 +105,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final WifiLastResortWatchdog mWifiLastResortWatchdog;
     private final WifiServiceImpl mWifiService;
     private final Context mContext;
+    private final ConnectivityManager mConnectivityManager;
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context) {
         mClientModeImpl = wifiInjector.getClientModeImpl();
@@ -106,6 +118,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         mWifiLastResortWatchdog = wifiInjector.getWifiLastResortWatchdog();
         mWifiService = wifiService;
         mContext = context;
+        mConnectivityManager = context.getSystemService(ConnectivityManager.class);
     }
 
     @Override
@@ -589,6 +602,53 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         }
                     }
                     break;
+                case "add-request": {
+                    NetworkRequest networkRequest = buildNetworkRequest(pw);
+                    ConnectivityManager.NetworkCallback networkCallback =
+                            new ConnectivityManager.NetworkCallback();
+                    pw.println("Adding request: " + networkRequest);
+                    mConnectivityManager.requestNetwork(networkRequest, networkCallback);
+                    String ssid = getAllArgs()[1];
+                    sActiveRequests.put(ssid, Pair.create(networkRequest, networkCallback));
+                    break;
+                }
+                case "remove-request": {
+                    String ssid = getNextArgRequired();
+                    Pair<NetworkRequest, ConnectivityManager.NetworkCallback> nrAndNc =
+                            sActiveRequests.remove(ssid);
+                    if (nrAndNc == null) {
+                        pw.println("No matching request to remove");
+                        return -1;
+                    }
+                    pw.println("Removing request: " + nrAndNc.first);
+                    mConnectivityManager.unregisterNetworkCallback(nrAndNc.second);
+                    break;
+                }
+                case "remove-all-requests":
+                    if (sActiveRequests.isEmpty()) {
+                        pw.println("No active requests");
+                        return -1;
+                    }
+                    for (Pair<NetworkRequest, ConnectivityManager.NetworkCallback> nrAndNc
+                            : sActiveRequests.values()) {
+                        pw.println("Removing request: " + nrAndNc.first);
+                        mConnectivityManager.unregisterNetworkCallback(nrAndNc.second);
+                    }
+                    sActiveRequests.clear();
+                    break;
+                case "list-requests":
+                    if (sActiveRequests.isEmpty()) {
+                        pw.println("No active requests");
+                    } else {
+                        pw.println("SSID                         NetworkRequest");
+                        for (Map.Entry<String,
+                                Pair<NetworkRequest, ConnectivityManager.NetworkCallback>> entry :
+                                sActiveRequests.entrySet()) {
+                            pw.println(String.format("%-32s %-4s",
+                                    entry.getKey(), entry.getValue().first));
+                        }
+                    }
+                    break;
                 default:
                     return handleDefaultCommands(cmd);
             }
@@ -618,6 +678,31 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             return null;
         }
         return suggestionBuilder.build();
+    }
+
+    private NetworkRequest buildNetworkRequest(PrintWriter pw) {
+        String ssid = getNextArgRequired();
+        String type = getNextArgRequired();
+        WifiNetworkSpecifier.Builder specifierBuilder =
+                new WifiNetworkSpecifier.Builder();
+        specifierBuilder.setSsid(ssid);
+        if (TextUtils.equals(type, "wpa3")) {
+            specifierBuilder.setWpa3Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "wpa2")) {
+            specifierBuilder.setWpa2Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "owe")) {
+            specifierBuilder.setIsEnhancedOpen(true);
+        } else if (TextUtils.equals(type, "open")) {
+            // nothing to do.
+        } else {
+            pw.println("Unknown network type " + type);
+            return null;
+        }
+        return new NetworkRequest.Builder()
+                .addTransportType(TRANSPORT_WIFI)
+                .removeCapability(NET_CAPABILITY_INTERNET)
+                .setNetworkSpecifier(specifierBuilder.build())
+                .build();
     }
 
     private int sendLinkProbe(PrintWriter pw) throws InterruptedException {
@@ -771,6 +856,22 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    and/or 'wifi_softap_wpa3_sae_supported', each on a separate line.");
         pw.println("  settings-reset");
         pw.println("    Initiates wifi settings reset");
+        pw.println("  add-request <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
+        pw.println("    Add a network request with provided params");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  remove-request <ssid>");
+        pw.println("    Remove a network request with provided SSID of the network");
+        pw.println("  remove-all-requests");
+        pw.println("    Removes all active requests added via shell");
+        pw.println("  list-requests");
+        pw.println("    Lists the requested networks added via shell");
     }
 
     @Override
