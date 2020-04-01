@@ -1583,6 +1583,32 @@ public class ClientModeImpl extends StateMachine {
         sendMessageAtFrontOfQueue(CMD_SET_OPERATIONAL_MODE);
     }
 
+    private void checkAbnormalConnectionFailureAndTakeBugReport(String ssid) {
+        if (mWifiInjector.getDeviceConfigFacade()
+                .isAbnormalConnectionFailureBugreportEnabled()) {
+            int reasonCode = mWifiScoreCard.detectAbnormalConnectionFailure(ssid);
+            if (reasonCode != WifiHealthMonitor.REASON_NO_FAILURE) {
+                String bugTitle = "Wi-Fi BugReport";
+                String bugDetail = "Detect abnormal "
+                        + WifiHealthMonitor.FAILURE_REASON_NAME[reasonCode];
+                takeBugReport(bugTitle, bugDetail);
+            }
+        }
+    }
+
+    private void checkAbnormalDisconnectionAndTakeBugReport() {
+        if (mWifiInjector.getDeviceConfigFacade()
+                .isAbnormalDisconnectionBugreportEnabled()) {
+            int reasonCode = mWifiScoreCard.detectAbnormalDisconnection();
+            if (reasonCode != WifiHealthMonitor.REASON_NO_FAILURE) {
+                String bugTitle = "Wi-Fi BugReport";
+                String bugDetail = "Detect abnormal "
+                        + WifiHealthMonitor.FAILURE_REASON_NAME[reasonCode];
+                takeBugReport(bugTitle, bugDetail);
+            }
+        }
+    }
+
     /**
      * Initiates a system-level bugreport, in a non-blocking fashion.
      */
@@ -2731,6 +2757,7 @@ public class ClientModeImpl extends StateMachine {
         mLastNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
+        checkAbnormalDisconnectionAndTakeBugReport();
         mWifiScoreCard.resetConnectionState();
         mWifiDataStall.reset();
         updateL2KeyAndGroupHint();
@@ -2901,18 +2928,7 @@ public class ClientModeImpl extends StateMachine {
                         : configuration.networkId;
                 int scanRssi = mWifiConfigManager.findScanRssi(networkId, SCAN_RSSI_VALID_TIME_MS);
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, scanRssi, ssid, blocklistReason);
-                boolean isNonWrongPwdAuthFailure =
-                        blocklistReason == BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE
-                        || blocklistReason == BssidBlocklistMonitor.REASON_EAP_FAILURE;
-                boolean isEnterpriseNetwork = configuration != null && configuration.isEnterprise();
-                if (isNonWrongPwdAuthFailure && isEnterpriseNetwork && mWifiInjector
-                        .getDeviceConfigFacade().isAbnormalEapAuthFailureBugreportEnabled()
-                        && mWifiScoreCard.detectAbnormalAuthFailure(ssid)) {
-                    String bugTitle = "Wi-Fi BugReport";
-                    String bugDetail = "Abnormal authentication failure with enterprise network";
-                    mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
-                }
-
+                checkAbnormalConnectionFailureAndTakeBugReport(ssid);
                 boolean isLowRssi = false;
                 int sufficientRssi = getSufficientRssi(networkId, bssid);
                 if (scanRssi != WifiInfo.INVALID_RSSI && sufficientRssi != WifiInfo.INVALID_RSSI) {
