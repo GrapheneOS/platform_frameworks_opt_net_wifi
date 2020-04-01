@@ -646,6 +646,9 @@ message WifiLog {
 
   // WiFi Tx and Rx throughput histogram at various RF bands
   optional ThroughputMbpsHistogram throughput_mbps_histogram = 180;
+
+  // Total number of steering requests which include MBO assoc retry delay
+  optional int32 num_steering_request_including_mbo_assoc_retry_delay = 181;
 }
 
 // Information that gets logged for every WiFi connection.
