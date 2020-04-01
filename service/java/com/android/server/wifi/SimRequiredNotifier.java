@@ -19,7 +19,6 @@ package com.android.server.wifi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
 import android.net.wifi.WifiConfiguration;
@@ -33,11 +32,11 @@ import com.android.wifi.resources.R;
  */
 public class SimRequiredNotifier {
 
-    private final Context mContext;
+    private final WifiContext mContext;
     private final FrameworkFacade mFrameworkFacade;
     private final NotificationManager mNotificationManager;
 
-    public SimRequiredNotifier(Context context, FrameworkFacade framework) {
+    public SimRequiredNotifier(WifiContext context, FrameworkFacade framework) {
         mContext = context;
         mFrameworkFacade = framework;
         mNotificationManager =
@@ -84,7 +83,7 @@ public class SimRequiredNotifier {
                 .setTicker(title)
                 .setContentText(message)
                 .setStyle(new Notification.BigTextStyle().bigText(message))
-                .setSmallIcon(Icon.createWithResource(WifiContext.WIFI_OVERLAY_APK_PKG_NAME,
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
                         R.drawable.stat_notify_wifi_in_range))
                 .setContentIntent(launchWirelessSettings())
                 .build();

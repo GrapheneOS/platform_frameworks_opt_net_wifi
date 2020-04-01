@@ -128,6 +128,7 @@ public class WifiBackupRestore {
     private byte[] mDebugLastBackupDataRetrieved;
     private byte[] mDebugLastBackupDataRestored;
     private byte[] mDebugLastSupplicantBackupDataRestored;
+    private byte[] mDebugLastIpConfigBackupDataRestored;
 
     public WifiBackupRestore(WifiPermissionsUtil wifiPermissionsUtil) {
         mWifiPermissionsUtil = wifiPermissionsUtil;
@@ -367,6 +368,7 @@ public class WifiBackupRestore {
 
         if (mVerboseLoggingEnabled) {
             mDebugLastSupplicantBackupDataRestored = supplicantData;
+            mDebugLastIpConfigBackupDataRestored = ipConfigData;
         }
 
         SupplicantBackupMigration.SupplicantNetworks supplicantNetworks =
@@ -419,6 +421,7 @@ public class WifiBackupRestore {
             mDebugLastBackupDataRetrieved = null;
             mDebugLastBackupDataRestored = null;
             mDebugLastSupplicantBackupDataRestored = null;
+            mDebugLastIpConfigBackupDataRestored = null;
         }
     }
 
@@ -440,9 +443,13 @@ public class WifiBackupRestore {
                     + createLogFromBackupData(mDebugLastBackupDataRestored));
         }
         if (mDebugLastSupplicantBackupDataRestored != null) {
-            pw.println("Last old backup data restored: "
+            pw.println("Last old supplicant backup data restored: "
                     + SupplicantBackupMigration.createLogFromBackupData(
                             mDebugLastSupplicantBackupDataRestored));
+        }
+        if (mDebugLastIpConfigBackupDataRestored != null) {
+            pw.println("Last old ipconfig backup data restored: "
+                    + mDebugLastIpConfigBackupDataRestored);
         }
     }
 

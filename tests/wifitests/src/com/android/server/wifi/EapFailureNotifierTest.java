@@ -16,13 +16,14 @@
 
 package com.android.server.wifi;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.wifi.WifiConfiguration;
@@ -31,10 +32,6 @@ import android.service.notification.StatusBarNotification;
 import android.telephony.SubscriptionManager;
 
 import androidx.test.filters.SmallTest;
-
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
-
-import static org.mockito.Mockito.lenient;
 
 import com.android.server.wifi.util.TelephonyUtil;
 
@@ -52,7 +49,7 @@ import org.mockito.MockitoSession;
  */
 @SmallTest
 public class EapFailureNotifierTest extends WifiBaseTest {
-    @Mock Context mContext;
+    @Mock WifiContext mContext;
     @Mock Resources mResources;
     @Mock NotificationManager mNotificationManager;
     @Mock FrameworkFacade mFrameworkFacade;
@@ -93,6 +90,7 @@ public class EapFailureNotifierTest extends WifiBaseTest {
         when(mResources.getString(eq(0), anyString())).thenReturn(null);
         when(mResources.getString(eq(1), anyString())).thenReturn("Error Message");
         when(mContext.createPackageContext(anyString(), eq(0))).thenReturn(mContext);
+        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
         mEapFailureNotifier =
                 new EapFailureNotifier(mContext, mFrameworkFacade, mTelephonyUtil);
     }

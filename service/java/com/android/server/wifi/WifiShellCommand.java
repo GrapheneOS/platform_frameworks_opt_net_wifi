@@ -26,6 +26,7 @@ import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BasicShellCommandHandler;
@@ -41,6 +42,7 @@ import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -65,10 +67,17 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     // These don't require root access.
     // However, these do perform permission checks in the corresponding WifiService methods.
     private static final String[] NON_PRIVILEGED_COMMANDS = {
+            "add-suggestion",
             "connect-network",
             "forget-network",
+            "get-country-code",
+            "help",
+            "-h",
             "list-scan-results",
             "list-networks",
+            "list-suggestions",
+            "remove-suggestion",
+            "remove-all-suggestions",
             "set-verbose-logging",
             "set-wifi-enabled",
             "start-scan",
@@ -101,9 +110,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
 
     @Override
     public int onCommand(String cmd) {
+        // Treat no command as help command.
+        if (cmd == null || cmd.equals("")) {
+            cmd = "help";
+        }
         // Explicit exclusion from root permission
-        // Do not require root permission to maintain backwards compatibility with
-        // `svc wifi [enable|disable]`.
         if (ArrayUtils.indexOf(NON_PRIVILEGED_COMMANDS, cmd) == -1) {
             final int uid = Binder.getCallingUid();
             if (uid != Process.ROOT_UID) {
@@ -114,7 +125,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
 
         final PrintWriter pw = getOutPrintWriter();
         try {
-            switch (cmd != null ? cmd : "") {
+            switch (cmd) {
                 case "set-ipreach-disconnect": {
                     boolean enabled;
                     String nextArg = getNextArgRequired();
@@ -446,20 +457,21 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "connect-network": {
                     String ssid = getNextArgRequired();
                     String type = getNextArgRequired();
-                    String optionalPassphrase = getNextArg();
                     WifiConfiguration configuration = new WifiConfiguration();
                     configuration.SSID = "\"" + ssid + "\"";
                     if (TextUtils.equals(type, "wpa3")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+                        configuration.preSharedKey = "\"" + getNextArgRequired() + "\"";
                     } else if (TextUtils.equals(type, "wpa2")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+                        configuration.preSharedKey = "\"" + getNextArgRequired() + "\"";
                     } else if (TextUtils.equals(type, "owe")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
                     } else if (TextUtils.equals(type, "open")) {
                         configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-                    }
-                    if (optionalPassphrase != null) {
-                        configuration.preSharedKey = "\"" + optionalPassphrase + "\"";
+                    } else {
+                        pw.println("Unknown network type " + type);
+                        return -1;
                     }
                     CountDownLatch countDownLatch = new CountDownLatch(1);
                     IActionListener.Stub actionListener = new IActionListener.Stub() {
@@ -534,6 +546,49 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     }
                     mWifiService.enableVerboseLogging(enabled ? 1 : 0);
                     break;
+                case "add-suggestion":
+                    mWifiService.addNetworkSuggestions(
+                            Arrays.asList(buildSuggestion(pw)), SHELL_PACKAGE_NAME, null);
+                    break;
+                case "remove-suggestion":
+                    mWifiService.removeNetworkSuggestions(
+                            Arrays.asList(buildSuggestion(pw)), SHELL_PACKAGE_NAME);
+                    break;
+                case "remove-all-suggestions":
+                    mWifiService.removeNetworkSuggestions(
+                            Collections.emptyList(), SHELL_PACKAGE_NAME);
+                    break;
+                case "list-suggestions":
+                    List<WifiNetworkSuggestion> suggestions =
+                            mWifiService.getNetworkSuggestions(SHELL_PACKAGE_NAME);
+                    if (suggestions == null || suggestions.isEmpty()) {
+                        pw.println("No suggestions");
+                    } else {
+                        pw.println("SSID                         Security type");
+                        for (WifiNetworkSuggestion suggestion : suggestions) {
+                            String securityType = null;
+                            if (WifiConfigurationUtil.isConfigForSaeNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "wpa3";
+                            } else if (WifiConfigurationUtil.isConfigForPskNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "wpa2";
+                            } else if (WifiConfigurationUtil.isConfigForEapNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "eap";
+                            } else if (WifiConfigurationUtil.isConfigForOweNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "owe";
+                            } else if (WifiConfigurationUtil.isConfigForOpenNetwork(
+                                    suggestion.getWifiConfiguration())) {
+                                securityType = "open";
+                            }
+                            pw.println(String.format("%-32s %-4s",
+                                    WifiInfo.sanitizeSsid(suggestion.getWifiConfiguration().SSID),
+                                    securityType));
+                        }
+                    }
+                    break;
                 default:
                     return handleDefaultCommands(cmd);
             }
@@ -542,6 +597,27 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             e.printStackTrace(pw);
         }
         return -1;
+    }
+
+    private WifiNetworkSuggestion buildSuggestion(PrintWriter pw) {
+        String ssid = getNextArgRequired();
+        String type = getNextArgRequired();
+        WifiNetworkSuggestion.Builder suggestionBuilder =
+                new WifiNetworkSuggestion.Builder();
+        suggestionBuilder.setSsid(ssid);
+        if (TextUtils.equals(type, "wpa3")) {
+            suggestionBuilder.setWpa3Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "wpa2")) {
+            suggestionBuilder.setWpa2Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "owe")) {
+            suggestionBuilder.setIsEnhancedOpen(true);
+        } else if (TextUtils.equals(type, "open")) {
+            // nothing to do.
+        } else {
+            pw.println("Unknown network type " + type);
+            return null;
+        }
+        return suggestionBuilder.build();
     }
 
     private int sendLinkProbe(PrintWriter pw) throws InterruptedException {
@@ -596,13 +672,63 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0;
     }
 
-    @Override
-    public void onHelp() {
-        final PrintWriter pw = getOutPrintWriter();
+    private void onHelpNonPrivileged(PrintWriter pw) {
+        pw.println("  get-country-code");
+        pw.println("    Gets country code as a two-letter string");
+        pw.println("  set-wifi-enabled enabled|disabled");
+        pw.println("    Enables/disables Wifi on this device.");
+        pw.println("  list-scan-results");
+        pw.println("    Lists the latest scan results");
+        pw.println("  start-scan");
+        pw.println("    Start a new scan");
+        pw.println("  list-networks");
+        pw.println("    Lists the saved networks");
+        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
+        pw.println("    Connect to a network with provided params and save");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  forget-network <networkId>");
+        pw.println("    Remove the network mentioned by <networkId>");
+        pw.println("        - Use list-networks to retrieve <networkId> for the network");
+        pw.println("  status");
+        pw.println("    Current wifi status");
+        pw.println("  set-verbose-logging enabled|disabled ");
+        pw.println("    Set the verbose logging enabled or disabled");
+        pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
+        pw.println("    Add a network suggestion with provided params");
+        pw.println("    Use 'network-suggestions-set-user-approved " + SHELL_PACKAGE_NAME + " yes'"
+                +  " to approve suggestions added via shell (Needs root access)");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  remove-suggestion <ssid> open|owe|wpa2|wpa3");
+        pw.println("    Remove a network suggestion with provided params");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("  remove-all-suggestions");
+        pw.println("    Removes all suggestions added via shell");
+        pw.println("  list-suggestions");
+        pw.println("    Lists the suggested networks added via shell");
+    }
 
-        pw.println("Wi-Fi (wifi) commands:");
-        pw.println("  help");
-        pw.println("    Print this help text.");
+    private void onHelpPrivileged(PrintWriter pw) {
         pw.println("  set-ipreach-disconnect enabled|disabled");
         pw.println("    Sets whether CMD_IP_REACHABILITY_LOST events should trigger disconnects.");
         pw.println("  get-ipreach-disconnect");
@@ -636,42 +762,27 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    or left for normal   operation.");
         pw.println("  force-country-code enabled <two-letter code> | disabled ");
         pw.println("    Sets country code to <two-letter code> or left for normal value");
-        pw.println("  get-country-code");
-        pw.println("    Gets country code as a two-letter string");
         pw.println("  set-wifi-watchdog enabled|disabled");
         pw.println("    Sets whether wifi watchdog should trigger recovery");
         pw.println("  get-wifi-watchdog");
         pw.println("    Gets setting of wifi watchdog trigger recovery.");
-        pw.println("  set-wifi-enabled enabled|disabled");
-        pw.println("    Enables/disables Wifi on this device.");
         pw.println("  get-softap-supported-features");
         pw.println("    Gets softap supported features. Will print 'wifi_softap_acs_supported'");
         pw.println("    and/or 'wifi_softap_wpa3_sae_supported', each on a separate line.");
         pw.println("  settings-reset");
         pw.println("    Initiates wifi settings reset");
-        pw.println("  list-scan-results");
-        pw.println("    Lists the latest scan results");
-        pw.println("  start-scan");
-        pw.println("    Start a new scan");
-        pw.println("  list-networks");
-        pw.println("    Lists the saved networks");
-        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>]");
-        pw.println("    Connect to a network with provided params and save");
-        pw.println("    <ssid> - SSID of the network");
-        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
-        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
-        pw.println("           - 'open' - Open networks (Most prevalent)");
-        pw.println("           - 'owe' - Enhanced open networks");
-        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
-        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
-        pw.println("           - 'wpa3' - WPA-3 PSK networks");
-        pw.println("  forget-network <networkId>");
-        pw.println("    Remove the network mentioned by <networkId>");
-        pw.println("        - Use list-networks to retrieve <networkId> for the network");
-        pw.println("  status");
-        pw.println("    Current wifi status");
-        pw.println("  set-verbose-logging enabled|disabled ");
-        pw.println("    Set the verbose logging enabled or disabled");
+    }
+
+    @Override
+    public void onHelp() {
+        final PrintWriter pw = getOutPrintWriter();
+        pw.println("Wi-Fi (wifi) commands:");
+        pw.println("  help or -h");
+        pw.println("    Print this help text.");
+        onHelpNonPrivileged(pw);
+        if (Binder.getCallingUid() == Process.ROOT_UID) {
+            onHelpPrivileged(pw);
+        }
         pw.println();
     }
 }

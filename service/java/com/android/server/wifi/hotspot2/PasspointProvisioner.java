@@ -20,6 +20,8 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Network;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -53,7 +55,7 @@ import com.android.server.wifi.hotspot2.soap.UpdateResponseMessage;
 import com.android.server.wifi.hotspot2.soap.command.BrowserUri;
 import com.android.server.wifi.hotspot2.soap.command.PpsMoData;
 import com.android.server.wifi.hotspot2.soap.command.SppCommand;
-import com.android.wifi.resources.R;
+import com.android.server.wifi.util.Environment;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -781,24 +783,43 @@ public class PasspointProvisioner {
             }
 
             Intent intent = new Intent(WifiManager.ACTION_PASSPOINT_LAUNCH_OSU_VIEW);
-            intent.setPackage(mContext.getResources()
-                    .getString(R.string.config_wifiOsuLoginPackage));
             intent.putExtra(WifiManager.EXTRA_OSU_NETWORK, mNetwork);
             intent.putExtra(WifiManager.EXTRA_URL, mWebUrl);
+            intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT | Intent.FLAG_ACTIVITY_NEW_TASK);
 
-            intent.setFlags(
-                    Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT | Intent.FLAG_ACTIVITY_NEW_TASK);
-
-            // Verify that the intent will resolve to an activity
-            if (intent.resolveActivity(mContext.getPackageManager()) != null) {
-                mContext.startActivityAsUser(intent, UserHandle.CURRENT);
-                invokeProvisioningCallback(PROVISIONING_STATUS,
-                        ProvisioningCallback.OSU_STATUS_WAITING_FOR_REDIRECT_RESPONSE);
-                changeState(STATE_WAITING_FOR_REDIRECT_RESPONSE);
-            } else {
+            List<ResolveInfo> resolveInfos = mContext.getPackageManager()
+                    .queryIntentActivities(
+                            intent,
+                            PackageManager.MATCH_DEFAULT_ONLY | PackageManager.MATCH_SYSTEM_ONLY);
+            if (resolveInfos == null || resolveInfos.isEmpty()) {
                 Log.e(TAG, "can't resolve the activity for the intent");
                 resetStateMachineForFailure(ProvisioningCallback.OSU_FAILURE_NO_OSU_ACTIVITY_FOUND);
+                return;
             }
+
+            if (resolveInfos.size() > 1) {
+                if (mVerboseLoggingEnabled) {
+                    Log.i(TAG, "Multiple OsuLogin apps found: "
+                            + resolveInfos.stream()
+                                    .map(info -> info.activityInfo.applicationInfo.packageName)
+                                    .collect(Collectors.joining(", ")));
+                }
+
+                // if multiple apps are found, filter out the default implementation supplied
+                // in the Wifi apex and let other implementations override.
+                resolveInfos.removeIf(info ->
+                        Environment.isAppInWifiApex(info.activityInfo.applicationInfo));
+            }
+            // forcefully resolve to the first one
+            String packageName = resolveInfos.get(0).activityInfo.applicationInfo.packageName;
+            intent.setPackage(packageName);
+            if (mVerboseLoggingEnabled) {
+                Log.i(TAG, "Opening OsuLogin app: " + packageName);
+            }
+            mContext.startActivityAsUser(intent, UserHandle.CURRENT);
+            invokeProvisioningCallback(PROVISIONING_STATUS,
+                    ProvisioningCallback.OSU_STATUS_WAITING_FOR_REDIRECT_RESPONSE);
+            changeState(STATE_WAITING_FOR_REDIRECT_RESPONSE);
         }
 
         /**

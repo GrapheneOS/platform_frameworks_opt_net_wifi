@@ -45,7 +45,7 @@ import org.mockito.MockitoAnnotations;
 public class SoftApNotifierTest extends WifiBaseTest {
     private static final String TEST_SSID = "Test SSID";
 
-    @Mock Context mContext;
+    @Mock WifiContext mContext;
     @Mock Resources mResources;
     @Mock NotificationManager mNotificationManager;
     @Mock FrameworkFacade mFrameworkFacade;
@@ -61,8 +61,8 @@ public class SoftApNotifierTest extends WifiBaseTest {
         when(mContext.getSystemService(NotificationManager.class))
                 .thenReturn(mNotificationManager);
         when(mContext.getResources()).thenReturn(mResources);
-        mSoftApNotifier =
-                new SoftApNotifier(mContext, mFrameworkFacade);
+        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
+        mSoftApNotifier = new SoftApNotifier(mContext, mFrameworkFacade);
     }
 
     /**
