@@ -53,6 +53,7 @@ import android.net.NetworkUtils;
 import android.net.SocketKeepalive;
 import android.net.StaticIpConfiguration;
 import android.net.TcpKeepalivePacketData;
+import android.net.Uri;
 import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientManager;
@@ -4775,7 +4776,7 @@ public class ClientModeImpl extends StateMachine {
         }
 
         @Override
-        public void onValidationStatus(int status, @Nullable String redirectUrl) {
+        public void onValidationStatus(int status, @Nullable Uri redirectUri) {
             if (this != mNetworkAgent) return;
             if (status == mLastNetworkStatus) return;
             mLastNetworkStatus = status;
