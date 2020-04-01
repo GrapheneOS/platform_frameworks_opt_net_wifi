@@ -524,6 +524,7 @@ public class WifiHealthMonitor {
         mWifiSystemInfoStats.clearAll();
     }
 
+    public static final int REASON_NO_FAILURE = -1;
     public static final int REASON_ASSOC_REJECTION = 0;
     public static final int REASON_ASSOC_TIMEOUT = 1;
     public static final int REASON_AUTH_FAILURE = 2;
@@ -531,7 +532,16 @@ public class WifiHealthMonitor {
     public static final int REASON_DISCONNECTION_NONLOCAL = 4;
     public static final int REASON_SHORT_CONNECTION_NONLOCAL = 5;
     public static final int NUMBER_FAILURE_REASON_CODE = 6;
+    public static final String[] FAILURE_REASON_NAME = {
+            "association rejection failure",
+            "association timeout failure",
+            "authentication failure",
+            "connection failure",
+            "disconnection",
+            "short connection"
+    };
     @IntDef(prefix = { "REASON_" }, value = {
+        REASON_NO_FAILURE,
         REASON_ASSOC_REJECTION,
         REASON_ASSOC_TIMEOUT,
         REASON_AUTH_FAILURE,
