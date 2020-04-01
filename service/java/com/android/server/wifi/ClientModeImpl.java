@@ -6129,6 +6129,7 @@ public class ClientModeImpl extends StateMachine {
                 & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED)
                 != 0) {
             long duration = frameData.mBlackListDurationMs;
+            mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
             if (duration == 0) {
                 /*
                  * When MBO assoc retry delay is set to zero(reserved as per spec),
