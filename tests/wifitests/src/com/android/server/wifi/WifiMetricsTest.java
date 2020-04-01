@@ -471,6 +471,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final long NUM_CONNECT_TO_OCE_SUPPORTED_NETWORKS = 3;
     private static final long NUM_FORCE_SCAN_DUE_TO_STEERING_REQUEST = 2;
     private static final long NUM_MBO_CELLULAR_SWITCH_REQUEST = 3;
+    private static final long NUM_STEERING_REQUEST_INCLUDING_MBO_ASSOC_RETRY_DELAY = 3;
     private static final long NUM_CONNECT_REQUEST_WITH_FILS_AKM = 4;
     private static final long NUM_L2_CONNECTION_THROUGH_FILS_AUTHENTICATION = 3;
 
@@ -963,6 +964,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         for (int i = 0; i < NUM_MBO_CELLULAR_SWITCH_REQUEST; i++) {
             mWifiMetrics.incrementMboCellularSwitchRequestCount();
         }
+        for (int i = 0; i < NUM_STEERING_REQUEST_INCLUDING_MBO_ASSOC_RETRY_DELAY; i++) {
+            mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
+        }
         for (int i = 0; i < NUM_CONNECT_REQUEST_WITH_FILS_AKM; i++) {
             mWifiMetrics.incrementConnectRequestWithFilsAkmCount();
         }
@@ -1375,6 +1379,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.numForceScanDueToSteeringRequest);
         assertEquals(NUM_MBO_CELLULAR_SWITCH_REQUEST,
                 mDecodedProto.numMboCellularSwitchRequest);
+        assertEquals(NUM_STEERING_REQUEST_INCLUDING_MBO_ASSOC_RETRY_DELAY,
+                mDecodedProto.numSteeringRequestIncludingMboAssocRetryDelay);
         assertEquals(NUM_CONNECT_REQUEST_WITH_FILS_AKM,
                 mDecodedProto.numConnectRequestWithFilsAkm);
         assertEquals(NUM_L2_CONNECTION_THROUGH_FILS_AUTHENTICATION,

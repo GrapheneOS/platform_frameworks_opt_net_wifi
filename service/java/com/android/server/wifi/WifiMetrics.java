@@ -3107,6 +3107,8 @@ public class WifiMetrics {
                         + mWifiLogProto.numForceScanDueToSteeringRequest);
                 pw.println("mWifiLogProto.numMboCellularSwitchRequest="
                         + mWifiLogProto.numMboCellularSwitchRequest);
+                pw.println("mWifiLogProto.numSteeringRequestIncludingMboAssocRetryDelay="
+                        + mWifiLogProto.numSteeringRequestIncludingMboAssocRetryDelay);
                 pw.println("mWifiLogProto.numConnectRequestWithFilsAkm="
                         + mWifiLogProto.numConnectRequestWithFilsAkm);
                 pw.println("mWifiLogProto.numL2ConnectionThroughFilsAuthentication="
@@ -5912,6 +5914,16 @@ public class WifiMetrics {
     public void incrementMboCellularSwitchRequestCount() {
         synchronized (mLock) {
             mWifiLogProto.numMboCellularSwitchRequest++;
+        }
+    }
+
+    /**
+     * Increment number of times STA received steering request
+     * including MBO association retry delay.
+     */
+    public void incrementSteeringRequestCountIncludingMboAssocRetryDelay() {
+        synchronized (mLock) {
+            mWifiLogProto.numSteeringRequestIncludingMboAssocRetryDelay++;
         }
     }
 
