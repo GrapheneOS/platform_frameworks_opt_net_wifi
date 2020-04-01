@@ -5895,6 +5895,22 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
+     * Approve all access points from {@link WifiNetworkFactory} for the provided package.
+     * Used by shell commands.
+     */
+    public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) {
+        mNetworkFactory.setUserApprovedApp(packageName, approved);
+    }
+
+    /**
+     * Whether all access points are approved for the specified app.
+     * Used by shell commands.
+     */
+    public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
+        return mNetworkFactory.hasUserApprovedApp(packageName);
+    }
+
+    /**
      * Remove all approved access points from {@link WifiNetworkFactory} for the provided package.
      */
     public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) {
