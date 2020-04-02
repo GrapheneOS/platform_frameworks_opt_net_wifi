@@ -87,6 +87,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             "list-suggestions",
             "remove-suggestion",
             "remove-all-suggestions",
+            "set-scan-always-available",
             "set-verbose-logging",
             "set-wifi-enabled",
             "start-scan",
@@ -331,6 +332,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.setWifiEnabled(SHELL_PACKAGE_NAME, enabled);
                     return 0;
                 }
+                case "set-scan-always-available": {
+                    boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
+                    mWifiService.setScanAlwaysAvailable(enabled);
+                    return 0;
+                }
                 case "get-softap-supported-features":
                     // This command is used for vts to check softap supported features.
                     if (ApConfigUtil.isAcsSupported(mContext)) {
@@ -430,6 +436,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "status":
                     boolean wifiEnabled = mWifiService.getWifiEnabledState() == WIFI_STATE_ENABLED;
                     pw.println("Wifi is " + (wifiEnabled ? "enabled" : "disabled"));
+                    pw.println("Wifi scanning is "
+                            + (mWifiService.isScanAlwaysAvailable()
+                            ? "always available" : "only available when wifi is enabled"));
                     WifiInfo info =
                             mWifiService.getConnectionInfo(SHELL_PACKAGE_NAME, null);
                     if (wifiEnabled) {
@@ -744,6 +753,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Gets country code as a two-letter string");
         pw.println("  set-wifi-enabled enabled|disabled");
         pw.println("    Enables/disables Wifi on this device.");
+        pw.println("  set-scan-always-available enabled|disabled");
+        pw.println("    Sets whether scanning should be available even when wifi is off.");
         pw.println("  list-scan-results");
         pw.println("    Lists the latest scan results");
         pw.println("  start-scan");
