@@ -46,6 +46,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -98,7 +99,10 @@ public class StandardWifiEntry extends WifiEntry {
     private static final int PSK_WPA_WPA2 = 2;
     private static final int PSK_UNKNOWN = 3;
 
-    private final List<ScanResult> mCurrentScanResults = new ArrayList<>();
+    private final Object mLock = new Object();
+    // Scan result list must be thread safe for generating the verbose scan summary
+    @GuardedBy("mLock")
+    @NonNull private final List<ScanResult> mCurrentScanResults = new ArrayList<>();
 
     @NonNull private final String mKey;
     @NonNull private final String mSsid;
@@ -617,10 +621,12 @@ public class StandardWifiEntry extends WifiEntry {
             }
         }
 
-        mCurrentScanResults.clear();
-        mCurrentScanResults.addAll(scanResults);
+        synchronized (mLock) {
+            mCurrentScanResults.clear();
+            mCurrentScanResults.addAll(scanResults);
+        }
 
-        final ScanResult bestScanResult = getBestScanResultByLevel(mCurrentScanResults);
+        final ScanResult bestScanResult = getBestScanResultByLevel(scanResults);
         if (bestScanResult == null) {
             mLevel = WIFI_LEVEL_UNREACHABLE;
         } else {
@@ -757,8 +763,10 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     String getScanResultDescription() {
-        if (mCurrentScanResults.size() == 0) {
-            return "";
+        synchronized (mLock) {
+            if (mCurrentScanResults.size() == 0) {
+                return "";
+            }
         }
 
         final StringBuilder description = new StringBuilder();
@@ -771,11 +779,14 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     private String getScanResultDescription(int minFrequency, int maxFrequency) {
-        final List<ScanResult> scanResults = mCurrentScanResults.stream()
-                .filter(scanResult -> scanResult.frequency >= minFrequency
-                        && scanResult.frequency <= maxFrequency)
-                .sorted(Comparator.comparingInt(scanResult -> -1 * scanResult.level))
-                .collect(Collectors.toList());
+        final List<ScanResult> scanResults;
+        synchronized (mLock) {
+            scanResults = mCurrentScanResults.stream()
+                    .filter(scanResult -> scanResult.frequency >= minFrequency
+                            && scanResult.frequency <= maxFrequency)
+                    .sorted(Comparator.comparingInt(scanResult -> -1 * scanResult.level))
+                    .collect(Collectors.toList());
+        }
 
         final int scanResultCount = scanResults.size();
         if (scanResultCount == 0) {

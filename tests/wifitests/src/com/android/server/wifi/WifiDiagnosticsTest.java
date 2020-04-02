@@ -64,6 +64,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Mock BuildProperties mBuildProperties;
     @Mock Context mContext;
     @Mock WifiInjector mWifiInjector;
+    @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Spy FakeWifiLog mLog;
     @Mock LastMileLogger mLastMileLogger;
     @Mock Runtime mJavaRuntime;
@@ -86,6 +87,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     private static final int[] FATAL_FW_ALERT_LIST = {256, 257, 258};
     /** Mock a non fatal firmware alert */
     private static final int NON_FATAL_FW_ALERT = 0;
+    private static final int BUG_REPORT_MIN_WINDOW_MS = 3600_000;
 
     private WifiNative.RingBufferStatus mFakeRbs;
     /**
@@ -131,7 +133,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         when(mWifiInjector.makeLog(anyString())).thenReturn(mLog);
         when(mWifiInjector.getJavaRuntime()).thenReturn(mJavaRuntime);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
-
+        when(mWifiInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
+        when(mDeviceConfigFacade.getBugReportMinWindowMs()).thenReturn(BUG_REPORT_MIN_WINDOW_MS);
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
         mWifiNative.enableVerboseLogging(0);
@@ -888,7 +891,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.takeBugReport("", "");
         verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
         // 2nd attempt should fail
-        when(mClock.getWallClockMillis()).thenReturn(1000_000L);
+        when(mClock.getWallClockMillis()).thenReturn(BUG_REPORT_MIN_WINDOW_MS - 20L);
         mWifiDiagnostics.takeBugReport("", "");
         verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
     }

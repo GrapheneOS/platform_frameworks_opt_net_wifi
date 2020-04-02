@@ -1583,6 +1583,32 @@ public class ClientModeImpl extends StateMachine {
         sendMessageAtFrontOfQueue(CMD_SET_OPERATIONAL_MODE);
     }
 
+    private void checkAbnormalConnectionFailureAndTakeBugReport(String ssid) {
+        if (mWifiInjector.getDeviceConfigFacade()
+                .isAbnormalConnectionFailureBugreportEnabled()) {
+            int reasonCode = mWifiScoreCard.detectAbnormalConnectionFailure(ssid);
+            if (reasonCode != WifiHealthMonitor.REASON_NO_FAILURE) {
+                String bugTitle = "Wi-Fi BugReport";
+                String bugDetail = "Detect abnormal "
+                        + WifiHealthMonitor.FAILURE_REASON_NAME[reasonCode];
+                takeBugReport(bugTitle, bugDetail);
+            }
+        }
+    }
+
+    private void checkAbnormalDisconnectionAndTakeBugReport() {
+        if (mWifiInjector.getDeviceConfigFacade()
+                .isAbnormalDisconnectionBugreportEnabled()) {
+            int reasonCode = mWifiScoreCard.detectAbnormalDisconnection();
+            if (reasonCode != WifiHealthMonitor.REASON_NO_FAILURE) {
+                String bugTitle = "Wi-Fi BugReport";
+                String bugDetail = "Detect abnormal "
+                        + WifiHealthMonitor.FAILURE_REASON_NAME[reasonCode];
+                takeBugReport(bugTitle, bugDetail);
+            }
+        }
+    }
+
     /**
      * Initiates a system-level bugreport, in a non-blocking fashion.
      */
@@ -2731,6 +2757,7 @@ public class ClientModeImpl extends StateMachine {
         mLastNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
+        checkAbnormalDisconnectionAndTakeBugReport();
         mWifiScoreCard.resetConnectionState();
         mWifiDataStall.reset();
         updateL2KeyAndGroupHint();
@@ -2901,18 +2928,7 @@ public class ClientModeImpl extends StateMachine {
                         : configuration.networkId;
                 int scanRssi = mWifiConfigManager.findScanRssi(networkId, SCAN_RSSI_VALID_TIME_MS);
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, scanRssi, ssid, blocklistReason);
-                boolean isNonWrongPwdAuthFailure =
-                        blocklistReason == BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE
-                        || blocklistReason == BssidBlocklistMonitor.REASON_EAP_FAILURE;
-                boolean isEnterpriseNetwork = configuration != null && configuration.isEnterprise();
-                if (isNonWrongPwdAuthFailure && isEnterpriseNetwork && mWifiInjector
-                        .getDeviceConfigFacade().isAbnormalEapAuthFailureBugreportEnabled()
-                        && mWifiScoreCard.detectAbnormalAuthFailure(ssid)) {
-                    String bugTitle = "Wi-Fi BugReport";
-                    String bugDetail = "Abnormal authentication failure with enterprise network";
-                    mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
-                }
-
+                checkAbnormalConnectionFailureAndTakeBugReport(ssid);
                 boolean isLowRssi = false;
                 int sufficientRssi = getSufficientRssi(networkId, bssid);
                 if (scanRssi != WifiInfo.INVALID_RSSI && sufficientRssi != WifiInfo.INVALID_RSSI) {
@@ -5895,6 +5911,22 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
+     * Approve all access points from {@link WifiNetworkFactory} for the provided package.
+     * Used by shell commands.
+     */
+    public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) {
+        mNetworkFactory.setUserApprovedApp(packageName, approved);
+    }
+
+    /**
+     * Whether all access points are approved for the specified app.
+     * Used by shell commands.
+     */
+    public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
+        return mNetworkFactory.hasUserApprovedApp(packageName);
+    }
+
+    /**
      * Remove all approved access points from {@link WifiNetworkFactory} for the provided package.
      */
     public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) {
@@ -6113,6 +6145,7 @@ public class ClientModeImpl extends StateMachine {
                 & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED)
                 != 0) {
             long duration = frameData.mBlackListDurationMs;
+            mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
             if (duration == 0) {
                 /*
                  * When MBO assoc retry delay is set to zero(reserved as per spec),

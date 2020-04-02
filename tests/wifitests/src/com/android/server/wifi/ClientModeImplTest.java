@@ -551,7 +551,12 @@ public class ClientModeImplTest extends WifiBaseTest {
         mConnectedNetwork = spy(WifiConfigurationTestUtil.createOpenNetwork());
         when(mNullAsyncChannel.sendMessageSynchronously(any())).thenReturn(null);
         when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(new Pair<>(null, null));
-        when(mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled()).thenReturn(true);
+        when(mDeviceConfigFacade.isAbnormalDisconnectionBugreportEnabled()).thenReturn(true);
+        when(mDeviceConfigFacade.isAbnormalConnectionFailureBugreportEnabled()).thenReturn(true);
+        when(mWifiScoreCard.detectAbnormalConnectionFailure(anyString()))
+                .thenReturn(WifiHealthMonitor.REASON_NO_FAILURE);
+        when(mWifiScoreCard.detectAbnormalDisconnection())
+                .thenReturn(WifiHealthMonitor.REASON_NO_FAILURE);
         when(mThroughputPredictor.predictMaxTxThroughput(any())).thenReturn(90);
         when(mThroughputPredictor.predictMaxRxThroughput(any())).thenReturn(80);
     }
@@ -1724,8 +1729,6 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiConfigManager).updateNetworkSelectionStatus(anyInt(),
                 eq(WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD));
-        verify(mWifiScoreCard, never()).detectAbnormalAuthFailure(any());
-
         assertEquals("DisconnectedState", getCurrentState().getName());
     }
 
@@ -1757,6 +1760,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .startMocking();
         when(SubscriptionManager.getDefaultDataSubscriptionId()).thenReturn(DATA_SUBID);
         when(SubscriptionManager.isValidSubscriptionId(anyInt())).thenReturn(true);
+        when(mWifiScoreCard.detectAbnormalConnectionFailure(anyString()))
+                .thenReturn(WifiHealthMonitor.REASON_AUTH_FAILURE);
 
         mCmi.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
                 WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE,
@@ -1767,8 +1772,9 @@ public class ClientModeImplTest extends WifiBaseTest {
                 WifiNative.EAP_SIM_VENDOR_SPECIFIC_CERT_EXPIRED, config);
         verify(mDataTelephonyManager).resetCarrierKeysForImsiEncryption();
         mockSession.finishMocking();
-        verify(mWifiScoreCard).detectAbnormalAuthFailure(anyString());
-        verify(mDeviceConfigFacade).isAbnormalEapAuthFailureBugreportEnabled();
+        verify(mDeviceConfigFacade).isAbnormalConnectionFailureBugreportEnabled();
+        verify(mWifiScoreCard).detectAbnormalConnectionFailure(anyString());
+        verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
     }
 
     /**
@@ -1799,8 +1805,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mDataTelephonyManager, never()).resetCarrierKeysForImsiEncryption();
-        verify(mWifiScoreCard).detectAbnormalAuthFailure(null);
-        verify(mDeviceConfigFacade).isAbnormalEapAuthFailureBugreportEnabled();
     }
 
     /**
@@ -1828,8 +1832,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).updateNetworkSelectionStatus(anyInt(),
                 eq(WifiConfiguration.NetworkSelectionStatus
                         .DISABLED_AUTHENTICATION_NO_SUBSCRIPTION));
-        verify(mWifiScoreCard, never()).detectAbnormalAuthFailure(null);
-        verify(mDeviceConfigFacade, never()).isAbnormalEapAuthFailureBugreportEnabled();
     }
 
     @Test
@@ -1851,6 +1853,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertEquals("DisconnectedState", getCurrentState().getName());
+        verify(mWifiDiagnostics, never()).takeBugReport(anyString(), anyString());
     }
 
 
@@ -1865,6 +1868,8 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void disconnect() throws Exception {
+        when(mWifiScoreCard.detectAbnormalDisconnection())
+                .thenReturn(WifiHealthMonitor.REASON_SHORT_CONNECTION_NONLOCAL);
         InOrder inOrderWifiLockManager = inOrder(mWifiLockManager);
         connect();
         inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(true);
@@ -1879,6 +1884,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNetworkSuggestionsManager).handleDisconnect(any(), any());
         assertEquals("DisconnectedState", getCurrentState().getName());
         inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(false);
+        verify(mWifiScoreCard).detectAbnormalDisconnection();
+        verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
     }
 
     /**
@@ -4150,6 +4157,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
         mLooper.dispatchAll();
 
+        verify(mWifiMetrics, times(1)).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(sBSSID, sSSID,
                 btmFrmData.mBlackListDurationMs);
     }
