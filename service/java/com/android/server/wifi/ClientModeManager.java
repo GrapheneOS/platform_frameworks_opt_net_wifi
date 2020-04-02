@@ -505,8 +505,8 @@ public class ClientModeManager implements ActiveModeManager {
                 Log.d(TAG, "entering ScanOnlyModeState");
                 mClientModeImpl.setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
                         mClientInterfaceName);
-                mModeListener.onStarted();
                 mRole = ROLE_CLIENT_SCAN_ONLY;
+                mModeListener.onStarted();
 
                 // Inform sar manager that scan only is being enabled
                 mSarManager.setScanOnlyWifiState(WifiManager.WIFI_STATE_ENABLED);
@@ -551,8 +551,12 @@ public class ClientModeManager implements ActiveModeManager {
             public boolean processMessage(Message message) {
                 switch (message.what) {
                     case CMD_SWITCH_TO_CONNECT_MODE:
-                        mRole = message.arg1;
-                        // Already in connect mode, ignore this command.
+                        int newRole = message.arg1;
+                        // Already in connect mode, only switching the connectivity roles.
+                        if (newRole != mRole) {
+                            mRole = newRole;
+                            mModeListener.onStarted();
+                        }
                         break;
                     case CMD_SWITCH_TO_SCAN_ONLY_MODE:
                         updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
