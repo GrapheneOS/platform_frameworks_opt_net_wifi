@@ -33,31 +33,20 @@ public final class FileUtils {
     private static final String TAG = "FileUtils";
 
     /**
-     * Set owner and mode of of given path.
+     * Change the mode of a file.
      *
+     * @param path path of the file
      * @param mode to apply through {@code chmod}
-     * @param uid to apply through {@code chown}, or -1 to leave unchanged
-     * @param gid to apply through {@code chown}, or -1 to leave unchanged
      * @return 0 on success, otherwise errno.
      */
-    public static int setPermissions(String path, int mode, int uid, int gid) {
+    public static int chmod(String path, int mode) {
         try {
             Os.chmod(path, mode);
+            return 0;
         } catch (ErrnoException e) {
-            Log.w(TAG, "Failed to chmod(" + path + "): " + e);
+            Log.w(TAG, "Failed to chmod(" + path + ", " + mode + "): ", e);
             return e.errno;
         }
-
-        if (uid >= 0 || gid >= 0) {
-            try {
-                Os.chown(path, uid, gid);
-            } catch (ErrnoException e) {
-                Log.w(TAG, "Failed to chown(" + path + "): " + e);
-                return e.errno;
-            }
-        }
-
-        return 0;
     }
 
     /**
@@ -80,5 +69,4 @@ public final class FileUtils {
     public static void stringToFile(String filename, String string) throws IOException {
         bytesToFile(filename, string.getBytes(StandardCharsets.UTF_8));
     }
-
 }
