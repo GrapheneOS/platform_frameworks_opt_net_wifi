@@ -838,6 +838,7 @@ public class WifiScoreCard {
                     if (rssi >= mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()) {
                         if (failureReason != BssidBlocklistMonitor.REASON_WRONG_PASSWORD) {
                             mRecentStats.incrementCount(CNT_CONNECTION_FAILURE);
+                            mRecentStats.incrementCount(CNT_CONSECUTIVE_CONNECTION_FAILURE);
                         }
                         switch (failureReason) {
                             case BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA:
@@ -904,6 +905,9 @@ public class WifiScoreCard {
                     }
                 }
             }
+            // Reset CNT_CONSECUTIVE_CONNECTION_FAILURE here so that it can report the correct
+            // failure count after a connection success
+            mRecentStats.clearCount(CNT_CONSECUTIVE_CONNECTION_FAILURE);
             mConnectionSessionStartTimeMs = TS_NONE;
             mLastRssiPollTimeMs = TS_NONE;
         }
@@ -1225,8 +1229,9 @@ public class WifiScoreCard {
     public static final int CNT_SHORT_CONNECTION_NONLOCAL = 6;
     public static final int CNT_DISCONNECTION_NONLOCAL = 7;
     public static final int CNT_DISCONNECTION = 8;
+    public static final int CNT_CONSECUTIVE_CONNECTION_FAILURE = 9;
     // Constant being used to keep track of how many counter there are.
-    public static final int NUMBER_CONNECTION_CNT_CODE = 9;
+    public static final int NUMBER_CONNECTION_CNT_CODE = 10;
     private static final String[] CONNECTION_CNT_NAME = {
         " ConnectAttempt: ",
         " ConnectFailure: ",
@@ -1236,7 +1241,8 @@ public class WifiScoreCard {
         " AuthFailure: ",
         " ShortDiscNonlocal: ",
         " DisconnectNonlocal: ",
-        " Disconnect: "
+        " Disconnect: ",
+        " ConsecutiveConnectFailure: "
     };
 
     @IntDef(prefix = { "CNT_" }, value = {
@@ -1248,7 +1254,8 @@ public class WifiScoreCard {
         CNT_AUTHENTICATION_FAILURE,
         CNT_SHORT_CONNECTION_NONLOCAL,
         CNT_DISCONNECTION_NONLOCAL,
-        CNT_DISCONNECTION
+        CNT_DISCONNECTION,
+        CNT_CONSECUTIVE_CONNECTION_FAILURE
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ConnectionCountCode {}
@@ -1290,13 +1297,11 @@ public class WifiScoreCard {
         }
 
         /**
-         * Set counter value
-         * @param countCode is the selected counter
-         * @param cnt is the value set to the selected counter
+         * Clear counter value
+         * @param countCode is the selected counter to be cleared
          */
-        public void setCount(@ConnectionCountCode int countCode, int cnt) {
-            mCount[countCode] = cnt;
-            mRecentCountCode = countCode;
+        public void clearCount(@ConnectionCountCode int countCode) {
+            mCount[countCode] = 0;
         }
 
         /**
@@ -1309,7 +1314,7 @@ public class WifiScoreCard {
         }
 
         /**
-         * Got the recent count code
+         * Got the recent incremented count code
          */
         public int getRecentCountCode() {
             return mRecentCountCode;

@@ -44,6 +44,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -164,6 +165,10 @@ public class WifiMetricsTest extends WifiBaseTest {
     @Mock ExternalCallbackTracker<IOnWifiUsabilityStatsListener> mListenerTracker;
     @Mock WifiP2pMetrics mWifiP2pMetrics;
     @Mock DppMetrics mDppMetrics;
+    @Mock WifiScoreCard mWifiScoreCard;
+    @Mock WifiScoreCard.PerNetwork mPerNetwork;
+    @Mock WifiScoreCard.NetworkConnectionStats mNetworkConnectionStats;
+    @Mock WifiConfiguration mWifiConfig;
 
     @Before
     public void setUp() throws Exception {
@@ -183,6 +188,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.setWifiNetworkSelector(mWns);
         mWifiMetrics.setWifiDataStall(mWifiDataStall);
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
+        mWifiMetrics.setWifiScoreCard(mWifiScoreCard);
+        when(mWifiScoreCard.lookupNetwork(anyString())).thenReturn(mPerNetwork);
+        when(mPerNetwork.getRecentStats()).thenReturn(mNetworkConnectionStats);
     }
 
     /**
@@ -2629,10 +2637,13 @@ public class WifiMetricsTest extends WifiBaseTest {
     }
 
     /**
-     * Check max supported link speed
+     * Check max supported link speed and consecutive connection failure count
      */
     @Test
-    public void testConnectionMaxSupportedLinkSpeed() throws Exception {
+    public void testConnectionMaxSupportedLinkSpeedConsecutiveFailureCnt() throws Exception {
+        mWifiMetrics.setScreenState(true);
+        when(mNetworkConnectionStats.getCount(WifiScoreCard.CNT_CONSECUTIVE_CONNECTION_FAILURE))
+                .thenReturn(2);
         mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
                 WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
         mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(MAX_SUPPORTED_TX_LINK_SPEED_MBPS,
@@ -2646,6 +2657,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 .routerFingerprint.maxSupportedTxLinkSpeedMbps);
         assertEquals(MAX_SUPPORTED_RX_LINK_SPEED_MBPS, mDecodedProto.connectionEvent[0]
                 .routerFingerprint.maxSupportedRxLinkSpeedMbps);
+        assertEquals(2, mDecodedProto.connectionEvent[0].numConsecutiveConnectionFailure);
+        assertEquals(true, mDecodedProto.connectionEvent[0].screenOn);
     }
 
     /**
@@ -2765,6 +2778,7 @@ public class WifiMetricsTest extends WifiBaseTest {
 
     private WifiConfiguration createComplexWifiConfig() {
         WifiConfiguration config = new WifiConfiguration();
+        config.SSID = SSID;
         config.allowedKeyManagement = intToBitSet(TEST_ALLOWED_KEY_MANAGEMENT);
         config.allowedProtocols = intToBitSet(TEST_ALLOWED_PROTOCOLS);
         config.allowedAuthAlgorithms = intToBitSet(TEST_ALLOWED_AUTH_ALGORITHMS);
