@@ -1198,4 +1198,24 @@ public class ClientModeManagerTest extends WifiBaseTest {
         assertNull(mImsMmTelManagerRegistrationCallback);
         verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
     }
+
+    /**
+     * ClientMode starts up in connect mode and then change connectivity roles.
+     */
+    @Test
+    public void clientInConnectModeChangeRoles() throws Exception {
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mListener);
+
+        // Set the same role again, no-op.
+        assertEquals(ActiveModeManager.ROLE_CLIENT_PRIMARY, mClientModeManager.getRole());
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+        verify(mListener, never()).onStarted(); // no callback sent.
+
+        // Change the connectivity role.
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SECONDARY);
+        mLooper.dispatchAll();
+        verify(mListener).onStarted(); // callback sent.
+    }
 }
