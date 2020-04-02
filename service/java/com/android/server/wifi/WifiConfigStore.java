@@ -936,7 +936,7 @@ public class WifiConfigStore {
             FileOutputStream out = null;
             try {
                 out = mAtomicFile.startWrite();
-                FileUtils.setPermissions(mFileName, FILE_MODE, -1, -1);
+                FileUtils.chmod(mFileName, FILE_MODE);
                 out.write(mWriteData);
                 mAtomicFile.finishWrite(out);
             } catch (IOException e) {
