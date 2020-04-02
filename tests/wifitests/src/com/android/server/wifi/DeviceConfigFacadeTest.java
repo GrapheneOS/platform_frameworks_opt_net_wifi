@@ -170,9 +170,12 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist());
         assertEquals(Collections.emptySet(),
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist());
-        assertEquals(false, mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled());
+        assertEquals(false, mDeviceConfigFacade.isAbnormalConnectionFailureBugreportEnabled());
+        assertEquals(false, mDeviceConfigFacade.isAbnormalDisconnectionBugreportEnabled());
         assertEquals(DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT,
                 mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
+        assertEquals(DeviceConfigFacade.DEFAULT_BUG_REPORT_MIN_WINDOW_MS,
+                mDeviceConfigFacade.getBugReportMinWindowMs());
     }
 
     /**
@@ -242,10 +245,15 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyString())).thenReturn(testSsidList);
         when(DeviceConfig.getString(anyString(), eq("aggressive_randomization_ssid_blocklist"),
                 anyString())).thenReturn(testSsidList);
-        when(DeviceConfig.getBoolean(anyString(), eq("abnormal_eap_auth_failure_bugreport_enabled"),
+        when(DeviceConfig.getBoolean(anyString(),
+                eq("abnormal_connection_failure_bugreport_enabled"),
+                anyBoolean())).thenReturn(true);
+        when(DeviceConfig.getBoolean(anyString(), eq("abnormal_disconnection_bugreport_enabled"),
                 anyBoolean())).thenReturn(true);
         when(DeviceConfig.getInt(anyString(), eq("health_monitor_min_num_connection_attempt"),
                 anyInt())).thenReturn(20);
+        when(DeviceConfig.getInt(anyString(), eq("bug_report_min_window_ms"),
+                anyInt())).thenReturn(1000);
 
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
@@ -285,7 +293,9 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist());
         assertEquals(testSsidSet,
                 mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist());
-        assertEquals(true, mDeviceConfigFacade.isAbnormalEapAuthFailureBugreportEnabled());
+        assertEquals(true, mDeviceConfigFacade.isAbnormalConnectionFailureBugreportEnabled());
+        assertEquals(true, mDeviceConfigFacade.isAbnormalDisconnectionBugreportEnabled());
         assertEquals(20, mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
+        assertEquals(1000, mDeviceConfigFacade.getBugReportMinWindowMs());
     }
 }

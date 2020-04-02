@@ -400,6 +400,16 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
         return false;
     };
 
+    /**
+     * Return the URI string value of help, if it is not null, WifiPicker may show
+     * help icon and route the user to help page specified by the URI string.
+     * see {@link Intent#parseUri}
+     */
+    @Nullable
+    public String getHelpUriString() {
+        return null;
+    }
+
     /** Allows the user to manage their subscription via an external flow */
     public void manageSubscription() {
         // Subclasses should implement this method.

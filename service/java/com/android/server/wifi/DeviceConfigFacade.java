@@ -67,12 +67,12 @@ public class DeviceConfigFacade {
     public static final int DEFAULT_RX_PACKET_PER_SECOND_THR = 1;
     // Default high threshold values for various connection/disconnection cases
     // All of them are in percent with respect to connection attempts
-    static final int DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT = 30;
-    static final int DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT = 20;
-    static final int DEFAULT_ASSOC_TIMEOUT_HIGH_THR_PERCENT = 20;
-    static final int DEFAULT_AUTH_FAILURE_HIGH_THR_PERCENT = 20;
-    static final int DEFAULT_SHORT_CONNECTION_NONLOCAL_HIGH_THR_PERCENT = 15;
-    static final int DEFAULT_DISCONNECTION_NONLOCAL_HIGH_THR_PERCENT = 20;
+    static final int DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT = 40;
+    static final int DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT = 30;
+    static final int DEFAULT_ASSOC_TIMEOUT_HIGH_THR_PERCENT = 30;
+    static final int DEFAULT_AUTH_FAILURE_HIGH_THR_PERCENT = 30;
+    static final int DEFAULT_SHORT_CONNECTION_NONLOCAL_HIGH_THR_PERCENT = 20;
+    static final int DEFAULT_DISCONNECTION_NONLOCAL_HIGH_THR_PERCENT = 25;
     // Default health monitor abnormal count minimum for various cases
     static final int DEFAULT_CONNECTION_FAILURE_COUNT_MIN = 6;
     static final int DEFAULT_ASSOC_REJECTION_COUNT_MIN  = 3;
@@ -90,6 +90,11 @@ public class DeviceConfigFacade {
     static final int DEFAULT_HEALTH_MONITOR_MIN_RSSI_THR_DBM = -68;
     // Default minimum number of connection attempts to qualify daily detection
     static final int DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT = 10;
+    // Default minimum wait time between two bug report captures
+    static final int DEFAULT_BUG_REPORT_MIN_WINDOW_MS = 3_600_000;
+    // Default report-high threshold to take-bug-report threshold ratio.
+    // It should be larger than 1 since the bar to take bugreport should be higher.
+    static final int DEFAULT_BUG_REPORT_THRESHOLD_EXTRA_RATIO = 2;
 
     // Cached values of fields updated via updateDeviceConfigFlags()
     private boolean mIsAbnormalConnectionBugreportEnabled;
@@ -122,8 +127,11 @@ public class DeviceConfigFacade {
     private Set<String> mRandomizationFlakySsidHotlist;
     private Set<String> mAggressiveMacRandomizationSsidAllowlist;
     private Set<String> mAggressiveMacRandomizationSsidBlocklist;
-    private boolean mIsAbnormalEapAuthFailureBugreportEnabled;
+    private boolean mIsAbnormalConnectionFailureBugreportEnabled;
+    private boolean mIsAbnormalDisconnectionBugreportEnabled;
     private int mHealthMonitorMinNumConnectionAttempt;
+    private int mBugReportMinWindowMs;
+    private int mBugReportThresholdExtraRatio;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -224,11 +232,19 @@ public class DeviceConfigFacade {
         mAggressiveMacRandomizationSsidBlocklist =
                 getUnmodifiableSetQuoted("aggressive_randomization_ssid_blocklist");
 
-        mIsAbnormalEapAuthFailureBugreportEnabled = DeviceConfig.getBoolean(NAMESPACE,
-                "abnormal_eap_auth_failure_bugreport_enabled", false);
+        mIsAbnormalConnectionFailureBugreportEnabled = DeviceConfig.getBoolean(NAMESPACE,
+                "abnormal_connection_failure_bugreport_enabled", false);
+        mIsAbnormalDisconnectionBugreportEnabled = DeviceConfig.getBoolean(NAMESPACE,
+                "abnormal_disconnection_bugreport_enabled", false);
         mHealthMonitorMinNumConnectionAttempt = DeviceConfig.getInt(NAMESPACE,
                 "health_monitor_min_num_connection_attempt",
                 DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
+        mBugReportMinWindowMs = DeviceConfig.getInt(NAMESPACE,
+                "bug_report_min_window_ms",
+                DEFAULT_BUG_REPORT_MIN_WINDOW_MS);
+        mBugReportThresholdExtraRatio = DeviceConfig.getInt(NAMESPACE,
+                "report_bug_report_threshold_extra_ratio",
+                DEFAULT_BUG_REPORT_THRESHOLD_EXTRA_RATIO);
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -458,12 +474,18 @@ public class DeviceConfigFacade {
     public Set<String> getAggressiveMacRandomizationSsidBlocklist() {
         return mAggressiveMacRandomizationSsidBlocklist;
     }
+    /**
+     * Gets the feature flag for reporting abnormal connection failure.
+     */
+    public boolean isAbnormalConnectionFailureBugreportEnabled() {
+        return mIsAbnormalConnectionFailureBugreportEnabled;
+    }
 
     /**
-     * Gets the feature flag for reporting abnormal EAP authentication failure.
+     * Gets the feature flag for reporting abnormal disconnection.
      */
-    public boolean isAbnormalEapAuthFailureBugreportEnabled() {
-        return mIsAbnormalEapAuthFailureBugreportEnabled;
+    public boolean isAbnormalDisconnectionBugreportEnabled() {
+        return mIsAbnormalDisconnectionBugreportEnabled;
     }
 
     /**
@@ -471,5 +493,19 @@ public class DeviceConfigFacade {
      */
     public int getHealthMonitorMinNumConnectionAttempt() {
         return mHealthMonitorMinNumConnectionAttempt;
+    }
+
+    /**
+     * Gets minimum wait time between two bug report captures
+     */
+    public int getBugReportMinWindowMs() {
+        return mBugReportMinWindowMs;
+    }
+
+    /**
+     * Gets the extra ratio of threshold to trigger bug report.
+     */
+    public int getBugReportThresholdExtraRatio() {
+        return mBugReportThresholdExtraRatio;
     }
 }
