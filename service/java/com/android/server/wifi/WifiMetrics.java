@@ -4948,8 +4948,17 @@ public class WifiMetrics {
      */
     public void updateWifiUsabilityStatsEntries(WifiInfo info, WifiLinkLayerStats stats) {
         synchronized (mLock) {
-            if (info == null || stats == null) {
+            if (info == null) {
                 return;
+            }
+            if (stats == null) {
+                // For devices lacking vendor hal, fill in the parts that we can
+                stats = new WifiLinkLayerStats();
+                stats.timeStampInMs = mClock.getElapsedSinceBootMillis();
+                stats.txmpdu_be = info.txSuccess;
+                stats.retries_be = info.txRetries;
+                stats.lostmpdu_be = info.txBad;
+                stats.rxmpdu_be = info.rxSuccess;
             }
             WifiUsabilityStatsEntry wifiUsabilityStatsEntry =
                     mWifiUsabilityStatsEntriesList.size()
