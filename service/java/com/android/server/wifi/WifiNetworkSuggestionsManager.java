@@ -1208,7 +1208,7 @@ public class WifiNetworkSuggestionsManager {
     /**
      * Get all user approved, non-passpoint networks from suggestion.
      */
-    public List<WifiConfiguration> getAllPnoAvailableSuggestionNetworks() {
+    public List<WifiConfiguration> getAllScanOptimizationSuggestionNetworks() {
         List<WifiConfiguration> networks = new ArrayList<>();
         for (PerAppInfo info : mActiveNetworkSuggestionsPerApp.values()) {
             if (!info.hasUserApproved && info.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {

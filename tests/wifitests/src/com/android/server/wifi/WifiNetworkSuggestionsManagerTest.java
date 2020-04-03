@@ -3582,7 +3582,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verify getAllPnoAvailableSuggestionNetworks will only return user approved,
+     * Verify getAllScanOptimizationSuggestionNetworks will only return user approved,
      * non-passpoint network.
      */
     @Test
@@ -3605,10 +3605,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager
                         .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
-        assertTrue(mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks().isEmpty());
+        assertTrue(mWifiNetworkSuggestionsManager
+                .getAllScanOptimizationSuggestionNetworks().isEmpty());
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         List<WifiConfiguration> pnoNetwork =
-                mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks();
+                mWifiNetworkSuggestionsManager.getAllScanOptimizationSuggestionNetworks();
         assertEquals(1, pnoNetwork.size());
         assertEquals(network1.SSID, pnoNetwork.get(0).SSID);
     }

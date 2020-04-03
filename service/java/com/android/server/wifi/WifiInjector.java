@@ -623,7 +623,7 @@ public class WifiInjector {
                 mWifiNetworkSelector, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mWifiHandlerThread.getLooper()),
-                mClock, mConnectivityLocalLog);
+                mClock, mConnectivityLocalLog, mWifiScoreCard);
     }
 
     /**
