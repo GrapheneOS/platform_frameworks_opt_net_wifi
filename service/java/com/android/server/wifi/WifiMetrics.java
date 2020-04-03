@@ -204,6 +204,7 @@ public class WifiMetrics {
     private WifiDataStall mWifiDataStall;
     private WifiLinkLayerStats mLastLinkLayerStats;
     private WifiHealthMonitor mWifiHealthMonitor;
+    private WifiScoreCard mWifiScoreCard;
     private String mLastBssid;
     private int mLastFrequency = -1;
     private int mSeqNumInsideFramework = 0;
@@ -979,6 +980,8 @@ public class WifiMetrics {
                         sb.append("CREATOR_CARRIER");
                         break;
                 }
+                sb.append(", numConsecutiveConnectionFailure="
+                        + mConnectionEvent.numConsecutiveConnectionFailure);
             }
             return sb.toString();
         }
@@ -1132,6 +1135,11 @@ public class WifiMetrics {
     /** Sets internal WifiHealthMonitor member */
     public void setWifiHealthMonitor(WifiHealthMonitor wifiHealthMonitor) {
         mWifiHealthMonitor = wifiHealthMonitor;
+    }
+
+    /** Sets internal WifiScoreCard member */
+    public void setWifiScoreCard(WifiScoreCard wifiScoreCard) {
+        mWifiScoreCard = wifiScoreCard;
     }
 
     /**
@@ -1392,6 +1400,14 @@ public class WifiMetrics {
                 } else {
                     mCurrentConnectionEvent.mConnectionEvent.networkCreator =
                             WifiMetricsProto.ConnectionEvent.CREATOR_UNKNOWN;
+                }
+
+                mCurrentConnectionEvent.mConnectionEvent.screenOn = mScreenOn;
+                if (mCurrentConnectionEvent.mConfigSsid != null) {
+                    WifiScoreCard.NetworkConnectionStats recentStats = mWifiScoreCard.lookupNetwork(
+                            mCurrentConnectionEvent.mConfigSsid).getRecentStats();
+                    mCurrentConnectionEvent.mConnectionEvent.numConsecutiveConnectionFailure =
+                            recentStats.getCount(WifiScoreCard.CNT_CONSECUTIVE_CONNECTION_FAILURE);
                 }
             }
         }
@@ -4948,8 +4964,17 @@ public class WifiMetrics {
      */
     public void updateWifiUsabilityStatsEntries(WifiInfo info, WifiLinkLayerStats stats) {
         synchronized (mLock) {
-            if (info == null || stats == null) {
+            if (info == null) {
                 return;
+            }
+            if (stats == null) {
+                // For devices lacking vendor hal, fill in the parts that we can
+                stats = new WifiLinkLayerStats();
+                stats.timeStampInMs = mClock.getElapsedSinceBootMillis();
+                stats.txmpdu_be = info.txSuccess;
+                stats.retries_be = info.txRetries;
+                stats.lostmpdu_be = info.txBad;
+                stats.rxmpdu_be = info.rxSuccess;
             }
             WifiUsabilityStatsEntry wifiUsabilityStatsEntry =
                     mWifiUsabilityStatsEntriesList.size()

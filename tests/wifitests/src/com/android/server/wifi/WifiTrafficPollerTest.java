@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.net.wifi.ITrafficStateCallback;
@@ -29,8 +30,6 @@ import android.os.RemoteException;
 import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
-
-import com.android.server.wifi.util.ExternalCallbackTracker;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -50,10 +49,13 @@ public class WifiTrafficPollerTest extends WifiBaseTest {
     private final static long TX_PACKET_COUNT = 40;
     private final static long RX_PACKET_COUNT = 50;
     private static final int TEST_TRAFFIC_STATE_CALLBACK_IDENTIFIER = 14;
+    private static final int TEST_TRAFFIC_STATE_CALLBACK_IDENTIFIER2 = 42;
 
     @Mock IBinder mAppBinder;
     @Mock ITrafficStateCallback mTrafficStateCallback;
-    @Mock ExternalCallbackTracker<ITrafficStateCallback> mCallbackTracker;
+
+    @Mock IBinder mAppBinder2;
+    @Mock ITrafficStateCallback mTrafficStateCallback2;
 
     /**
      * Called before each test
@@ -147,5 +149,65 @@ public class WifiTrafficPollerTest extends WifiBaseTest {
 
         // Client should not get any message callback add failed.
         verify(mTrafficStateCallback, never()).onStateChanged(anyInt());
+    }
+
+    /** Test that if the data activity didn't change, the client is not notified. */
+    @Test
+    public void unchangedDataActivityNotNotified() throws Exception {
+        mWifiTrafficPoller.addCallback(
+                mAppBinder, mTrafficStateCallback, TEST_TRAFFIC_STATE_CALLBACK_IDENTIFIER);
+        mWifiTrafficPoller.notifyOnDataActivity(TX_PACKET_COUNT, RX_PACKET_COUNT);
+
+        verify(mTrafficStateCallback).onStateChanged(
+                WifiManager.TrafficStateCallback.DATA_ACTIVITY_INOUT);
+
+        // since TX and RX both increased, should still be INOUT. But since it's the same data
+        // activity as before, the callback should not be triggered again.
+        mWifiTrafficPoller.notifyOnDataActivity(TX_PACKET_COUNT + 1, RX_PACKET_COUNT + 1);
+
+        // still only called once
+        verify(mTrafficStateCallback).onStateChanged(anyInt());
+    }
+
+    /**
+     * If there are 2 callbacks, but the data activity only changed for one of them, only that
+     * callback should be triggered.
+     */
+    @Test
+    public void multipleCallbacksOnlyChangedNotified() throws Exception {
+        mWifiTrafficPoller.addCallback(
+                mAppBinder, mTrafficStateCallback, TEST_TRAFFIC_STATE_CALLBACK_IDENTIFIER);
+        mWifiTrafficPoller.notifyOnDataActivity(TX_PACKET_COUNT, RX_PACKET_COUNT);
+
+        verify(mTrafficStateCallback).onStateChanged(
+                WifiManager.TrafficStateCallback.DATA_ACTIVITY_INOUT);
+        verify(mTrafficStateCallback2, never()).onStateChanged(anyInt());
+
+        mWifiTrafficPoller.addCallback(
+                mAppBinder2, mTrafficStateCallback2, TEST_TRAFFIC_STATE_CALLBACK_IDENTIFIER2);
+        mWifiTrafficPoller.notifyOnDataActivity(TX_PACKET_COUNT + 1, RX_PACKET_COUNT + 1);
+
+        // still only called once
+        verify(mTrafficStateCallback).onStateChanged(anyInt());
+        // called for the first time with INOUT
+        verify(mTrafficStateCallback2)
+                .onStateChanged(WifiManager.TrafficStateCallback.DATA_ACTIVITY_INOUT);
+        // not called with anything else
+        verify(mTrafficStateCallback2).onStateChanged(anyInt());
+
+        // now only TX increased
+        mWifiTrafficPoller.notifyOnDataActivity(TX_PACKET_COUNT + 2, RX_PACKET_COUNT + 1);
+
+        // called once with OUT
+        verify(mTrafficStateCallback)
+                .onStateChanged(WifiManager.TrafficStateCallback.DATA_ACTIVITY_OUT);
+        // called twice total
+        verify(mTrafficStateCallback, times(2)).onStateChanged(anyInt());
+
+        // called once with OUT
+        verify(mTrafficStateCallback2)
+                .onStateChanged(WifiManager.TrafficStateCallback.DATA_ACTIVITY_OUT);
+        // called twice total
+        verify(mTrafficStateCallback2, times(2)).onStateChanged(anyInt());
     }
 }

@@ -1016,6 +1016,15 @@ message ConnectionEvent {
 
   // UID of the app that created this network.
   optional NetworkCreator network_creator = 17;
+
+  // Whether the screen is on when the connection event starts
+  optional bool screen_on = 18;
+
+  // Number of consecutive connection failures with the same SSID at high RSSI
+  // before current connection event. Any connection failure at low RSSI in the
+  // middle won't break the streak count. The count is cleared after
+  // a network disconnection event.
+  optional int32 num_consecutive_connection_failure = 19 [default = -1];
 }
 
 // Number of occurrences of a specific RSSI poll rssi value
