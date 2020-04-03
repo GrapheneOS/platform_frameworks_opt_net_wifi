@@ -159,7 +159,7 @@
     <!-- Boolean indicating performing a partial initial scan is enabled -->
     <bool translatable="false" name="config_wifiEnablePartialInitialScan">false</bool>
 
-    <!-- Integer for maximum number of channels to use in initial partial scan -->
+    <!-- Integer for maximum number of channels to use in initial partial scan. If equals to 0, means add all available channels for networks -->
     <integer translatable="false" name="config_wifiInitialPartialScanChannelMaxCount">10</integer>
 
     <!-- Integer for maximum age for scan results used to identify channels for partial initial
