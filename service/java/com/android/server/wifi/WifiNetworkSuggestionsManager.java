@@ -1615,6 +1615,8 @@ public class WifiNetworkSuggestionsManager {
      */
     public @NonNull List<WifiConfiguration> getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(
             List<ScanResult> scanResults) {
+        // Create a HashSet to avoid return multiple result for duplicate ScanResult.
+        Set<String> networkKeys = new HashSet<>();
         List<WifiConfiguration> sharedWifiConfigs = new ArrayList<>();
         for (ScanResult scanResult : scanResults) {
             ScanResultMatchInfo scanResultMatchInfo =
@@ -1648,7 +1650,9 @@ public class WifiNetworkSuggestionsManager {
             if (existingConfig == null || !existingConfig.fromWifiNetworkSuggestion) {
                 continue;
             }
-            sharedWifiConfigs.add(existingConfig);
+            if (networkKeys.add(existingConfig.getKey())) {
+                sharedWifiConfigs.add(existingConfig);
+            }
         }
         return sharedWifiConfigs;
     }
