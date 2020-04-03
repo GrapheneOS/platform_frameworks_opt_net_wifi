@@ -29,6 +29,7 @@ import static com.android.server.wifi.WifiScoreCard.CNT_AUTHENTICATION_FAILURE;
 import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_ATTEMPT;
 import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_DURATION_SEC;
 import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_FAILURE;
+import static com.android.server.wifi.WifiScoreCard.CNT_CONSECUTIVE_CONNECTION_FAILURE;
 import static com.android.server.wifi.WifiScoreCard.CNT_DISCONNECTION_NONLOCAL;
 import static com.android.server.wifi.WifiScoreCard.CNT_SHORT_CONNECTION_NONLOCAL;
 import static com.android.server.wifi.util.NativeUtil.hexStringFromByteArray;
@@ -758,6 +759,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(1, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
         assertEquals(0, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
+        assertEquals(1, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
     }
 
     private void makeAuthFailureAndWrongPassword() {
@@ -794,6 +796,10 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
         assertEquals(1, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
+        assertEquals(1, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
+
+        makeNormalConnectionExample();
+        assertEquals(0, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
     }
 
     /**
@@ -878,6 +884,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(0, stats.getCount(CNT_AUTHENTICATION_FAILURE));
         assertEquals(1 * scale, stats.getCount(CNT_SHORT_CONNECTION_NONLOCAL));
         assertEquals(1 * scale, stats.getCount(CNT_DISCONNECTION_NONLOCAL));
+        assertEquals(0, stats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
     }
 
     private void makeShortConnectionOldRssiPollingExample() {
