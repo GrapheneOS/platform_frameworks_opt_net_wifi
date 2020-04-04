@@ -965,7 +965,7 @@ public class WifiHealthMonitor {
         }
 
         @Override
-        public void onNetworkUpdated(WifiConfiguration config) {
+        public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
         }
     }
 

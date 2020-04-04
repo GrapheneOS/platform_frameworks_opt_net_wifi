@@ -264,6 +264,17 @@ public class WifiNetworkSuggestionsManager {
                     && TextUtils.equals(perAppInfo.packageName, other.perAppInfo.packageName);
         }
 
+        /**
+         * Helper method to set the carrier Id.
+         */
+        public void setCarrierId(int carrierId) {
+            if (wns.passpointConfiguration == null) {
+                wns.wifiConfiguration.carrierId = carrierId;
+            } else {
+                wns.passpointConfiguration.setCarrierId(carrierId);
+            }
+        }
+
         @Override
         public String toString() {
             return new StringBuilder(wns.toString())
@@ -794,6 +805,29 @@ public class WifiNetworkSuggestionsManager {
                         Collectors.toSet()));
     }
 
+    private void updateWifiConfigInWcmIfPresent(
+            WifiConfiguration newConfig, int uid, String packageName) {
+        WifiConfiguration configInWcm =
+                mWifiConfigManager.getConfiguredNetwork(newConfig.getKey());
+        if (configInWcm == null) return;
+        // !suggestion
+        if (!configInWcm.fromWifiNetworkSuggestion) return;
+        // is suggestion from same app.
+        if (configInWcm.creatorUid != uid
+                || !TextUtils.equals(configInWcm.creatorName, packageName)) {
+            return;
+        }
+        NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
+                newConfig, uid, packageName);
+        if (!result.isSuccess()) {
+            Log.e(TAG, "Failed to update config in WifiConfigManager");
+        } else {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "Updated config in WifiConfigManager");
+            }
+        }
+    }
+
     /**
      * Add the provided list of network suggestions from the corresponding app's active list.
      */
@@ -862,10 +896,20 @@ public class WifiNetworkSuggestionsManager {
         }
 
         for (ExtendedWifiNetworkSuggestion ewns: extNetworkSuggestions) {
-            if (ewns.wns.passpointConfiguration == null) {
-                if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
-                    ewns.wns.wifiConfiguration.carrierId = carrierId;
+            if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+                ewns.setCarrierId(carrierId);
+            }
+            // If network has no IMSI protection and user didn't approve exemption, make it initial
+            // auto join disabled
+            if (isSimBasedSuggestion(ewns)) {
+                int subId = mTelephonyUtil.getMatchingSubId(getCarrierIdFromSuggestion(ewns));
+                if (!(mTelephonyUtil.requiresImsiEncryption(subId)
+                        || hasUserApprovedImsiPrivacyExemptionForCarrier(
+                        getCarrierIdFromSuggestion(ewns)))) {
+                    ewns.isAutojoinEnabled = false;
                 }
+            }
+            if (ewns.wns.passpointConfiguration == null) {
                 if (ewns.wns.wifiConfiguration.isEnterprise()) {
                     if (!mWifiKeyStore.updateNetworkKeys(ewns.wns.wifiConfiguration, null)) {
                         Log.e(TAG, "Enterprise network install failure for SSID: "
@@ -873,11 +917,13 @@ public class WifiNetworkSuggestionsManager {
                         continue;
                     }
                 }
+                // If we have a config in WifiConfigManager for this suggestion, update
+                // WifiConfigManager with the latest WifiConfig.
+                // Note: Similar logic is present in PasspointManager for passpoint networks.
+                updateWifiConfigInWcmIfPresent(
+                        ewns.createInternalWifiConfiguration(), uid, packageName);
                 addToScanResultMatchInfoMap(ewns);
             } else {
-                if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
-                    ewns.wns.passpointConfiguration.setCarrierId(carrierId);
-                }
                 ewns.wns.passpointConfiguration.setAutojoinEnabled(ewns.isAutojoinEnabled);
                 // Install Passpoint config, if failure, ignore that suggestion
                 if (!mWifiInjector.getPasspointManager().addOrUpdateProvider(
@@ -888,16 +934,6 @@ public class WifiNetworkSuggestionsManager {
                     continue;
                 }
                 addToPasspointInfoMap(ewns);
-            }
-            // If network has no IMSI protection and user didn't approve exemption, make it initial
-            // auto join disabled
-            if (isSimBasedSuggestion(ewns)) {
-                int subId = mTelephonyUtil.getMatchingSubId(getCarrierIdFromSuggestion(ewns));
-                if (!(mTelephonyUtil.requiresImsiEncryption(subId)
-                        || hasUserApprovedImsiPrivacyExemptionForCarrier(
-                                getCarrierIdFromSuggestion(ewns)))) {
-                    ewns.isAutojoinEnabled = false;
-                }
             }
             perAppInfo.extNetworkSuggestions.remove(ewns);
             perAppInfo.extNetworkSuggestions.add(ewns);

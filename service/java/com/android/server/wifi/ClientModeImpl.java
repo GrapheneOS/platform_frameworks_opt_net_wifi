@@ -1105,12 +1105,31 @@ public class ClientModeImpl extends StateMachine {
             mWifiNative.removeNetworkCachedData(config.networkId);
         }
 
-
         @Override
-        public void onNetworkUpdated(WifiConfiguration config) {
-            // User might have changed meteredOverride, so update capabilities
-            if (config.networkId == mLastNetworkId) {
-                updateCapabilities();
+        public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
+            // Check if user/app change meteredOverride for connected network.
+            if (newConfig.networkId != mLastNetworkId
+                    || newConfig.meteredOverride == oldConfig.meteredOverride) {
+                // nothing to do.
+                return;
+            }
+            boolean isMetered = WifiConfiguration.isMetered(newConfig, mWifiInfo);
+            boolean wasMetered = WifiConfiguration.isMetered(oldConfig, mWifiInfo);
+            if (isMetered == wasMetered) {
+                // no meteredness change, nothing to do.
+                if (mVerboseLoggingEnabled) {
+                    Log.v(TAG, "User/app changed meteredOverride, but no change in meteredness");
+                }
+                return;
+            }
+            // If unmetered->metered trigger a disconnect.
+            // If metered->unmetered update capabilities.
+            if (isMetered) {
+                Log.w(TAG, "Network marked metered, triggering disconnect");
+                sendMessage(CMD_DISCONNECT);
+            } else {
+                Log.i(TAG, "Network marked unmetered, triggering capabilities update");
+                updateCapabilities(newConfig);
             }
         }
 
@@ -4446,10 +4465,14 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private void updateCapabilities(WifiConfiguration currentWifiConfiguration) {
+        updateCapabilities(getCapabilities(currentWifiConfiguration));
+    }
+
+    private void updateCapabilities(NetworkCapabilities networkCapabilities) {
         if (mNetworkAgent == null) {
             return;
         }
-        mNetworkAgent.sendNetworkCapabilities(getCapabilities(currentWifiConfiguration));
+        mNetworkAgent.sendNetworkCapabilities(networkCapabilities);
     }
 
     private void handleEapAuthFailure(int networkId, int errorCode) {
