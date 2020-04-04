@@ -203,7 +203,6 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 }
                 case "imsi-protection-exemption-set-user-approved-for-carrier": {
                     String arg1 = getNextArgRequired();
-                    String arg2 = getNextArgRequired();
                     int carrierId = -1;
                     try {
                         carrierId = Integer.parseInt(arg1);
