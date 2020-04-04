@@ -5284,6 +5284,7 @@ public class ClientModeImpl extends StateMachine {
             WifiLockManager wifiLockManager = mWifiInjector.getWifiLockManager();
             wifiLockManager.updateWifiClientConnected(true);
             mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().getNetId());
+            updateLinkLayerStatsRssiAndScoreReport();
         }
         @Override
         public boolean processMessage(Message message) {
