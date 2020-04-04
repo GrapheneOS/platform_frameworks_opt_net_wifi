@@ -25,6 +25,8 @@ import android.content.Context;
 import android.content.pm.ParceledListSlice;
 import android.net.ConnectivityManager;
 import android.net.MacAddress;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.IActionListener;
 import android.net.wifi.ScanResult;
@@ -77,6 +79,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     // However, these do perform permission checks in the corresponding WifiService methods.
     private static final String[] NON_PRIVILEGED_COMMANDS = {
             "add-suggestion",
+            "add-network",
             "connect-network",
             "forget-network",
             "get-country-code",
@@ -409,6 +412,28 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
                     break;
                 }
+                case "add-network": {
+                    CountDownLatch countDownLatch = new CountDownLatch(1);
+                    IActionListener.Stub actionListener = new IActionListener.Stub() {
+                        @Override
+                        public void onSuccess() throws RemoteException {
+                            pw.println("Save successful");
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onFailure(int i) throws RemoteException {
+                            pw.println("Save failed");
+                            countDownLatch.countDown();
+                        }
+                    };
+                    mWifiService.save(
+                            buildWifiConfiguration(pw), new Binder(), actionListener,
+                            actionListener.hashCode());
+                    // wait for status.
+                    countDownLatch.await(500, TimeUnit.MILLISECONDS);
+                    break;
+                }
                 case "forget-network": {
                     String networkId = getNextArgRequired();
                     CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -443,7 +468,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     if (wifiEnabled) {
                         if (info.getSupplicantState() == SupplicantState.COMPLETED) {
                             pw.println("Wifi is connected to " + info.getSSID());
-                            pw.println("Connection Details: " + info);
+                            pw.println("WifiInfo: " + info);
+                            Network network = mWifiService.getCurrentNetwork();
+                            NetworkCapabilities capabilities =
+                                    mConnectivityManager.getNetworkCapabilities(network);
+                            pw.println("NetworkCapabilities: " + capabilities);
                         } else {
                             pw.println("Wifi is not connected");
                         }
@@ -761,7 +790,18 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  list-networks");
         pw.println("    Lists the saved networks");
         pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-m]");
-        pw.println("    Connect to a network with provided params and save");
+        pw.println("    Connect to a network with provided params and add to saved networks list");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
+        pw.println("        - Use 'open' or 'owe' for networks with no passphrase");
+        pw.println("           - 'open' - Open networks (Most prevalent)");
+        pw.println("           - 'owe' - Enhanced open networks");
+        pw.println("        - Use 'wpa2' or 'wpa3' for networks with passphrase");
+        pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
+        pw.println("           - 'wpa3' - WPA-3 PSK networks");
+        pw.println("    -m - Mark the network metered.");
+        pw.println("  add-network <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-m]");
+        pw.println("    Add/update saved network with provided params");
         pw.println("    <ssid> - SSID of the network");
         pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
         pw.println("        - Use 'open' or 'owe' for networks with no passphrase");

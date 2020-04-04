@@ -106,6 +106,7 @@ import java.util.stream.Collectors;
  */
 @SmallTest
 public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
+
     private static final String TEST_PACKAGE_1 = "com.test12345";
     private static final String TEST_PACKAGE_2 = "com.test54321";
     private static final String TEST_APP_NAME_1 = "test12345";
@@ -516,7 +517,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      * Verify that modify networks that are already active is allowed.
      */
     @Test
-    public void testAddNetworkSuggestionsSuccessOnInPlaceModification() {
+    public void testAddNetworkSuggestionsSuccessOnInPlaceModificationWhenNotInWcm() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
@@ -528,7 +529,15 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
 
-        // Modify the original suggestion.
+        // Assert that the original config was not metered.
+        assertEquals(WifiConfiguration.METERED_OVERRIDE_NONE,
+                networkSuggestion.wifiConfiguration.meteredOverride);
+
+        // Nothing in WCM.
+        when(mWifiConfigManager.getConfiguredNetwork(networkSuggestion.wifiConfiguration.getKey()))
+                .thenReturn(null);
+
+        // Modify the original suggestion to mark it metered.
         networkSuggestion.wifiConfiguration.meteredOverride =
                 WifiConfiguration.METERED_OVERRIDE_METERED;
 
@@ -539,6 +548,61 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiConfiguration.METERED_OVERRIDE_METERED,
                 mWifiNetworkSuggestionsManager
                         .get(TEST_PACKAGE_1).get(0).wifiConfiguration.meteredOverride);
+        // Verify we did not update config in WCM.
+        verify(mWifiConfigManager, never()).addOrUpdateNetwork(any(), anyInt(), any());
+    }
+
+    /**
+     * Verify that modify networks that are already active and is cached in WifiConfigManager is
+     * allowed and also updates the cache in WifiConfigManager.
+     */
+    @Test
+    public void testAddNetworkSuggestionsSuccessOnInPlaceModificationWhenInWcm() {
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+        List<WifiNetworkSuggestion> networkSuggestionList1 =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion);
+                }};
+
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        // Assert that the original config was not metered.
+        assertEquals(WifiConfiguration.METERED_OVERRIDE_NONE,
+                networkSuggestion.wifiConfiguration.meteredOverride);
+
+        // Store the original WifiConfiguration from WifiConfigManager.
+        WifiConfiguration configInWcm =
+                new WifiConfiguration(networkSuggestion.wifiConfiguration);
+        configInWcm.creatorUid = TEST_UID_1;
+        configInWcm.creatorName = TEST_PACKAGE_1;
+        configInWcm.fromWifiNetworkSuggestion = true;
+        setupGetConfiguredNetworksFromWcm(configInWcm);
+
+        // Modify the original suggestion to mark it metered.
+        networkSuggestion.wifiConfiguration.meteredOverride =
+                WifiConfiguration.METERED_OVERRIDE_METERED;
+
+        when(mWifiConfigManager.addOrUpdateNetwork(any(), eq(TEST_UID_1), eq(TEST_PACKAGE_1)))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
+        // Replace attempt should success.
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        assertEquals(WifiConfiguration.METERED_OVERRIDE_METERED,
+                mWifiNetworkSuggestionsManager
+                        .get(TEST_PACKAGE_1).get(0).wifiConfiguration.meteredOverride);
+
+        // Verify we did update config in WCM.
+        ArgumentCaptor<WifiConfiguration> configCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        verify(mWifiConfigManager).addOrUpdateNetwork(
+                configCaptor.capture(), eq(TEST_UID_1), eq(TEST_PACKAGE_1));
+        assertNotNull(configCaptor.getValue());
+        assertEquals(WifiConfiguration.METERED_OVERRIDE_METERED,
+                configCaptor.getValue().meteredOverride);
     }
 
     /**
@@ -3011,11 +3075,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                     add(networkSuggestion2);
                     add(networkSuggestion3);
                 }};
-        setupAddToWifiConfigManager(networkSuggestion1.wifiConfiguration,
-                networkSuggestion2.wifiConfiguration, networkSuggestion3.wifiConfiguration);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
+        setupGetConfiguredNetworksFromWcm(networkSuggestion1.wifiConfiguration,
+                networkSuggestion2.wifiConfiguration, networkSuggestion3.wifiConfiguration);
         // When app is not approved, empty list will be returned
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(false, TEST_PACKAGE_1);
         List<WifiConfiguration> wifiConfigurationList = mWifiNetworkSuggestionsManager
@@ -3037,20 +3101,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(expectedSuggestions, actualSuggestions);
     }
 
-    private void setupAddToWifiConfigManager(WifiConfiguration...configs) {
+    private void setupGetConfiguredNetworksFromWcm(WifiConfiguration...configs) {
         for (int i = 0; i < configs.length; i++) {
             WifiConfiguration config = configs[i];
-            config.fromWifiNetworkSuggestion = true;
-            config.ephemeral = true;
-            // setup & verify the WifiConfigmanager interactions for adding/enabling the network.
-            when(mWifiConfigManager.addOrUpdateNetwork(
-                    eq(config), anyInt(), anyString()))
-                    .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID + i));
-            when(mWifiConfigManager.updateNetworkSelectionStatus(eq(TEST_NETWORK_ID + i), anyInt()))
-                    .thenReturn(true);
-            config.networkId = TEST_NETWORK_ID + i;
-            when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID + i))
-                    .thenReturn(config);
             when(mWifiConfigManager.getConfiguredNetwork(config.getKey())).thenReturn(config);
         }
     }
