@@ -507,7 +507,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Now change BSSID for the network.
         assertAndSetNetworkBSSID(openNetwork, TEST_BSSID);
         // Change the trusted bit.
-        openNetwork.trusted = true;
+        openNetwork.trusted = false;
         verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(openNetwork);
 
         // Now verify that the modification has been effective.
@@ -515,8 +515,16 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 networks, retrievedNetworks);
-        verify(mWcmListener).onNetworkUpdated(wifiConfigCaptor.capture());
-        assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        verify(mWcmListener).onNetworkUpdated(
+                wifiConfigCaptor.capture(), wifiConfigCaptor.capture());
+        WifiConfiguration newConfig = wifiConfigCaptor.getAllValues().get(1);
+        WifiConfiguration oldConfig = wifiConfigCaptor.getAllValues().get(0);
+        assertEquals(openNetwork.networkId, newConfig.networkId);
+        assertFalse(newConfig.trusted);
+        assertEquals(TEST_BSSID, newConfig.BSSID);
+        assertEquals(openNetwork.networkId, oldConfig.networkId);
+        assertTrue(oldConfig.trusted);
+        assertNull(oldConfig.BSSID);
     }
 
     /**

@@ -16,6 +16,9 @@
 
 package com.android.server.wifi;
 
+import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
+import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_NONE;
+import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_NOT_METERED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_NONE;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY;
 
@@ -47,6 +50,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
@@ -155,7 +159,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -2418,11 +2421,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertFalse(mCmi.shouldEvaluateWhetherToSendExplicitlySelected(currentConfig));
     }
 
-    private void expectRegisterNetworkAgent() {
-        expectRegisterNetworkAgent((config) -> { });
-    }
-
-    private void expectRegisterNetworkAgent(Consumer<NetworkAgentConfig> configChecker) {
+    private void expectRegisterNetworkAgent(Consumer<NetworkAgentConfig> configChecker,
+            Consumer<NetworkCapabilities> networkCapabilitiesChecker) {
         // Expects that the code calls registerNetworkAgent and provides a way for the test to
         // verify the messages sent through the NetworkAgent to ConnectivityService.
         // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
@@ -2430,23 +2430,34 @@ public class ClientModeImplTest extends WifiBaseTest {
         ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
         ArgumentCaptor<NetworkAgentConfig> configCaptor =
                 ArgumentCaptor.forClass(NetworkAgentConfig.class);
+        ArgumentCaptor<NetworkCapabilities> networkCapabilitiesCaptor =
+                ArgumentCaptor.forClass(NetworkCapabilities.class);
         verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
-                any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
+                any(NetworkInfo.class), any(LinkProperties.class),
+                networkCapabilitiesCaptor.capture(),
                 anyInt(), configCaptor.capture(), anyInt());
 
         registerAsyncChannel((x) -> {
             mNetworkAgentAsyncChannel = x;
         }, messengerCaptor.getValue(), mNetworkAgentHandler);
         configChecker.accept(configCaptor.getValue());
+        networkCapabilitiesChecker.accept(networkCapabilitiesCaptor.getValue());
 
         mNetworkAgentAsyncChannel.sendMessage(AsyncChannel.CMD_CHANNEL_FULL_CONNECTION);
         mLooper.dispatchAll();
     }
 
-    private void expectNetworkAgentMessage(int what, int arg1, int arg2, Object obj) {
-        verify(mNetworkAgentHandler).handleMessage(argThat(msg ->
-                what == msg.what && arg1 == msg.arg1 && arg2 == msg.arg2
-                && Objects.equals(obj, msg.obj)));
+    private void expectNetworkAgentUpdateCapabilities(
+            Consumer<NetworkCapabilities> networkCapabilitiesChecker) {
+        // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
+        // TODO (b/134538181): consider exposing WifiNetworkAgent and using mocks.
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        mLooper.dispatchAll();
+        verify(mNetworkAgentHandler).handleMessage(messageCaptor.capture());
+        Message message = messageCaptor.getValue();
+        assertNotNull(message);
+        assertEquals(NetworkAgent.EVENT_NETWORK_CAPABILITIES_CHANGED, message.what);
+        networkCapabilitiesChecker.accept((NetworkCapabilities) message.obj);
     }
 
     /**
@@ -2466,7 +2477,7 @@ public class ClientModeImplTest extends WifiBaseTest {
             assertTrue(agentConfig.explicitlySelected);
             assertFalse(agentConfig.acceptUnvalidated);
             assertFalse(agentConfig.acceptPartialConnectivity);
-        });
+        }, (cap) -> { });
     }
 
     /**
@@ -2486,7 +2497,7 @@ public class ClientModeImplTest extends WifiBaseTest {
             assertFalse(agentConfig.explicitlySelected);
             assertFalse(agentConfig.acceptUnvalidated);
             assertTrue(agentConfig.acceptPartialConnectivity);
-        });
+        }, (cap) -> { });
     }
 
     /**
@@ -2506,7 +2517,7 @@ public class ClientModeImplTest extends WifiBaseTest {
             assertTrue(agentConfig.explicitlySelected);
             assertTrue(agentConfig.acceptUnvalidated);
             assertTrue(agentConfig.acceptPartialConnectivity);
-        });
+        }, (cap) -> { });
     }
 
     /**
@@ -4816,5 +4827,156 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(mConnectedNetwork.ephemeral, mCmi.getWifiInfo().isEphemeral());
         assertEquals(mConnectedNetwork.trusted, mCmi.getWifiInfo().isTrusted());
         assertEquals(mConnectedNetwork.osu, mCmi.getWifiInfo().isOsuAp());
+    }
+
+    /**
+     * Verify that we disconnect when we mark a previous unmetered network metered.
+     */
+    @Test
+    public void verifyDisconnectOnMarkingNetworkMetered() throws Exception {
+        connect();
+        expectRegisterNetworkAgent((config) -> { }, (cap) -> {
+            assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_METERED;
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        assertEquals("DisconnectingState", getCurrentState().getName());
+    }
+
+    /**
+     * Verify that we only update capabilites when we mark a previous unmetered network metered.
+     */
+    @Test
+    public void verifyUpdateCapabilitiesOnMarkingNetworkUnmetered() throws Exception {
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_METERED;
+        connect();
+        expectRegisterNetworkAgent((config) -> { }, (cap) -> {
+            assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+        reset(mNetworkAgentHandler);
+
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NOT_METERED;
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        assertEquals("ConnectedState", getCurrentState().getName());
+
+        expectNetworkAgentUpdateCapabilities((cap) -> {
+            assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+    }
+
+
+    /**
+     * Verify that we disconnect when we mark a previous unmetered network metered.
+     */
+    @Test
+    public void verifyDisconnectOnMarkingNetworkAutoMeteredWithMeteredHint() throws Exception {
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NOT_METERED;
+        connect();
+        expectRegisterNetworkAgent((config) -> { }, (cap) -> {
+            assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+        reset(mNetworkAgentHandler);
+
+        // Mark network metered none.
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NONE;
+
+        // Set metered hint in WifiInfo (either via DHCP or ScanResult IE).
+        WifiInfo wifiInfo = mCmi.getWifiInfo();
+        wifiInfo.setMeteredHint(true);
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        assertEquals("DisconnectingState", getCurrentState().getName());
+    }
+
+    /**
+     * Verify that we only update capabilites when we mark a previous unmetered network metered.
+     */
+    @Test
+    public void verifyUpdateCapabilitiesOnMarkingNetworkAutoMeteredWithoutMeteredHint()
+            throws Exception {
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_METERED;
+        connect();
+        expectRegisterNetworkAgent((config) -> { }, (cap) -> {
+            assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+        reset(mNetworkAgentHandler);
+
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NONE;
+
+        // Reset metered hint in WifiInfo.
+        WifiInfo wifiInfo = mCmi.getWifiInfo();
+        wifiInfo.setMeteredHint(false);
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        assertEquals("ConnectedState", getCurrentState().getName());
+
+        expectNetworkAgentUpdateCapabilities((cap) -> {
+            assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+    }
+
+    /**
+     * Verify that we do nothing on no metered change.
+     */
+    @Test
+    public void verifyDoNothingMarkingNetworkAutoMeteredWithMeteredHint() throws Exception {
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_METERED;
+        connect();
+        expectRegisterNetworkAgent((config) -> { }, (cap) -> {
+            assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+        reset(mNetworkAgentHandler);
+
+        // Mark network metered none.
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NONE;
+
+        // Set metered hint in WifiInfo (either via DHCP or ScanResult IE).
+        WifiInfo wifiInfo = mCmi.getWifiInfo();
+        wifiInfo.setMeteredHint(true);
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        assertEquals("ConnectedState", getCurrentState().getName());
+
+        verifyNoMoreInteractions(mNetworkAgentHandler);
+    }
+
+    /**
+     * Verify that we do nothing on no metered change.
+     */
+    @Test
+    public void verifyDoNothingMarkingNetworkAutoMeteredWithoutMeteredHint() throws Exception {
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NOT_METERED;
+        connect();
+        expectRegisterNetworkAgent((config) -> { }, (cap) -> {
+            assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+        });
+        reset(mNetworkAgentHandler);
+
+        // Mark network metered none.
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NONE;
+
+        // Reset metered hint in WifiInfo.
+        WifiInfo wifiInfo = mCmi.getWifiInfo();
+        wifiInfo.setMeteredHint(false);
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        assertEquals("ConnectedState", getCurrentState().getName());
+
+        verifyNoMoreInteractions(mNetworkAgentHandler);
     }
 }

@@ -470,11 +470,6 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager)
                 .getConfiguredNetwork(suggestions[0].wns.wifiConfiguration.getKey());
-        verify(mWifiConfigManager).addOrUpdateNetwork(
-                argThat(new WifiConfigMatcher(suggestions[0].wns.wifiConfiguration)),
-                eq(suggestions[0].perAppInfo.uid), eq(suggestions[0].perAppInfo.packageName));
-        verify(mWifiConfigManager).getConfiguredNetwork(
-                suggestions[0].wns.wifiConfiguration.networkId);
         // Verify we did not try to add any new networks or other interactions with
         // WifiConfigManager.
         verifyNoMoreInteractions(mWifiConfigManager);
@@ -586,11 +581,6 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager).getConfiguredNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.getKey()));
-        verify(mWifiConfigManager).addOrUpdateNetwork(
-                argThat(new WifiConfigMatcher(suggestions[0].wns.wifiConfiguration)),
-                eq(suggestions[0].perAppInfo.uid), eq(suggestions[0].perAppInfo.packageName));
-        verify(mWifiConfigManager).getConfiguredNetwork(
-                suggestions[0].wns.wifiConfiguration.networkId);
         verify(mWifiConfigManager).tryEnableNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.networkId));
         // Verify we did not try to add any new networks or other interactions with
@@ -655,11 +645,6 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager).getConfiguredNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.getKey()));
-        verify(mWifiConfigManager).addOrUpdateNetwork(
-                argThat(new WifiConfigMatcher(suggestions[0].wns.wifiConfiguration)),
-                eq(suggestions[0].perAppInfo.uid), eq(suggestions[0].perAppInfo.packageName));
-        verify(mWifiConfigManager).getConfiguredNetwork(
-                suggestions[0].wns.wifiConfiguration.networkId);
         verify(mWifiConfigManager).tryEnableNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.networkId));
         // Verify we did not try to add any new networks or other interactions with
