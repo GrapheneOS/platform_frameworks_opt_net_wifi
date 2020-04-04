@@ -202,6 +202,8 @@ public class PasspointNetworkNominateHelper {
         }
 
         // Add or update with the newly created WifiConfiguration to WifiConfigManager.
+        // NOTE: if existingNetwork != null, this update is a no-op in most cases if the SSID is the
+        // same (since we update the cached config in PasspointManager#addOrUpdateProvider().
         NetworkUpdateResult result;
         if (config.fromWifiNetworkSuggestion) {
             result = mWifiConfigManager.addOrUpdateNetwork(

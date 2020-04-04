@@ -51,6 +51,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.server.wifi.Clock;
+import com.android.server.wifi.NetworkUpdateResult;
 import com.android.server.wifi.WifiConfigManager;
 import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.WifiInjector;
@@ -375,6 +376,30 @@ public class PasspointManager {
         }
     }
 
+    private void updateWifiConfigInWcmIfPresent(
+            WifiConfiguration newConfig, int uid, String packageName, boolean isFromSuggestion) {
+        WifiConfiguration configInWcm =
+                mWifiConfigManager.getConfiguredNetwork(newConfig.getKey());
+        if (configInWcm == null) return;
+        // suggestion != saved
+        if (isFromSuggestion != configInWcm.fromWifiNetworkSuggestion) return;
+        // is suggestion from same app.
+        if (isFromSuggestion
+                && (configInWcm.creatorUid != uid
+                || !TextUtils.equals(configInWcm.creatorName, packageName))) {
+            return;
+        }
+        NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
+                newConfig, uid, packageName);
+        if (!result.isSuccess()) {
+            Log.e(TAG, "Failed to update config in WifiConfigManager");
+        } else {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "Updated config in WifiConfigManager");
+            }
+        }
+    }
+
     /**
      * Add or update a Passpoint provider with the given configuration.
      *
@@ -423,7 +448,7 @@ public class PasspointManager {
         if (mProviders.containsKey(config.getUniqueId())) {
             PasspointProvider old = mProviders.get(config.getUniqueId());
             // If new profile is from suggestion and from a different App, ignore new profile,
-            // return true.
+            // return false.
             // If from same app, update it.
             if (isFromSuggestion && !old.getPackageName().equals(packageName)) {
                 newProvider.uninstallCertsAndKeys();
@@ -437,6 +462,10 @@ public class PasspointManager {
             if (!old.equals(newProvider)) {
                 mWifiConfigManager.removePasspointConfiguredNetwork(
                         newProvider.getWifiConfig().getKey());
+            } else {
+                // If there is a config cached in WifiConfigManager, update it with new info.
+                updateWifiConfigInWcmIfPresent(
+                        newProvider.getWifiConfig(), uid, packageName, isFromSuggestion);
             }
         }
         newProvider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);

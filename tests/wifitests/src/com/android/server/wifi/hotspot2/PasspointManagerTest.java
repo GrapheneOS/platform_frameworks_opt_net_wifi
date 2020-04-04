@@ -32,6 +32,7 @@ import static android.net.wifi.WifiManager.EXTRA_SUBSCRIPTION_REMEDIATION_METHOD
 import static android.net.wifi.WifiManager.EXTRA_URL;
 
 import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_EAP;
+import static com.android.server.wifi.WifiConfigurationTestUtil.TEST_NETWORK_ID;
 
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -39,6 +40,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
@@ -88,6 +90,7 @@ import com.android.server.wifi.ClientModeImpl;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.FakeKeys;
 import com.android.server.wifi.FrameworkFacade;
+import com.android.server.wifi.NetworkUpdateResult;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiConfigManager;
 import com.android.server.wifi.WifiConfigStore;
@@ -887,6 +890,27 @@ public class PasspointManagerTest extends WifiBaseTest {
         assertEquals(origConfig, origProviders.get(0).getConfig());
         assertEquals(1, mSharedDataSource.getProviderIndex());
 
+        // Add same provider as existing suggestion provider
+        // This should be no WifiConfig deletion
+        WifiConfiguration origWifiConfig = origProvider.getWifiConfig();
+        when(mWifiConfigManager.getConfiguredNetwork(origWifiConfig.getKey()))
+                .thenReturn(origWifiConfig);
+        when(mWifiConfigManager.addOrUpdateNetwork(
+                origWifiConfig, TEST_CREATOR_UID, TEST_PACKAGE))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
+        assertTrue(mManager.addOrUpdateProvider(origConfig, TEST_CREATOR_UID, TEST_PACKAGE,
+                false, true));
+        verify(mWifiConfigManager, never()).removePasspointConfiguredNetwork(
+                origWifiConfig.getKey());
+        verify(mWifiConfigManager).addOrUpdateNetwork(
+                argThat((c) -> c.FQDN.equals(TEST_FQDN)), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE));
+        verify(mWifiConfigManager).saveToStore(true);
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
+        assertEquals(2, mSharedDataSource.getProviderIndex());
+        reset(mWifiMetrics);
+        reset(mWifiConfigManager);
+
         // Add another provider with the same base domain as the existing provider.
         // This should replace the existing provider with the new configuration.
         PasspointConfiguration newConfig = createTestConfigWithUserCredential(TEST_FQDN,
@@ -895,6 +919,8 @@ public class PasspointManagerTest extends WifiBaseTest {
         when(mObjectFactory.makePasspointProvider(eq(newConfig), eq(mWifiKeyStore),
                 eq(mTelephonyUtil), anyLong(), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE),
                 eq(false))).thenReturn(newProvider);
+        when(mWifiConfigManager.getConfiguredNetwork(origProvider.getWifiConfig().getKey()))
+                .thenReturn(origWifiConfig);
         assertTrue(mManager.addOrUpdateProvider(newConfig, TEST_CREATOR_UID, TEST_PACKAGE,
                 false, true));
 
@@ -913,7 +939,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         assertEquals(2, newProviders.size());
         assertTrue(newConfig.equals(newProviders.get(0).getConfig())
                 || newConfig.equals(newProviders.get(1).getConfig()));
-        assertEquals(2, mSharedDataSource.getProviderIndex());
+        assertEquals(3, mSharedDataSource.getProviderIndex());
     }
 
     /**
@@ -2064,10 +2090,21 @@ public class PasspointManagerTest extends WifiBaseTest {
 
         // Add same provider as existing suggestion provider
         // This should be no WifiConfig deletion
+        WifiConfiguration origWifiConfig = origProvider.getWifiConfig();
+        origWifiConfig.fromWifiNetworkSuggestion = true;
+        origWifiConfig.creatorUid = TEST_CREATOR_UID;
+        origWifiConfig.creatorName = TEST_PACKAGE;
+        when(mWifiConfigManager.getConfiguredNetwork(origWifiConfig.getKey()))
+                .thenReturn(origWifiConfig);
+        when(mWifiConfigManager.addOrUpdateNetwork(
+                origWifiConfig, TEST_CREATOR_UID, TEST_PACKAGE))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
         assertTrue(mManager.addOrUpdateProvider(origConfig, TEST_CREATOR_UID, TEST_PACKAGE,
                 true, true));
         verify(mWifiConfigManager, never()).removePasspointConfiguredNetwork(
-                origProvider.getWifiConfig().getKey());
+                origWifiConfig.getKey());
+        verify(mWifiConfigManager).addOrUpdateNetwork(
+                argThat((c) -> c.FQDN.equals(TEST_FQDN)), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE));
         verify(mWifiConfigManager).saveToStore(true);
         verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
         verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
