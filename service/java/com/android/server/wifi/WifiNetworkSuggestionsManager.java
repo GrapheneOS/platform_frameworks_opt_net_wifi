@@ -1208,7 +1208,7 @@ public class WifiNetworkSuggestionsManager {
     /**
      * Get all user approved, non-passpoint networks from suggestion.
      */
-    public List<WifiConfiguration> getAllPnoAvailableSuggestionNetworks() {
+    public List<WifiConfiguration> getAllScanOptimizationSuggestionNetworks() {
         List<WifiConfiguration> networks = new ArrayList<>();
         for (PerAppInfo info : mActiveNetworkSuggestionsPerApp.values()) {
             if (!info.hasUserApproved && info.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
@@ -1615,6 +1615,8 @@ public class WifiNetworkSuggestionsManager {
      */
     public @NonNull List<WifiConfiguration> getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(
             List<ScanResult> scanResults) {
+        // Create a HashSet to avoid return multiple result for duplicate ScanResult.
+        Set<String> networkKeys = new HashSet<>();
         List<WifiConfiguration> sharedWifiConfigs = new ArrayList<>();
         for (ScanResult scanResult : scanResults) {
             ScanResultMatchInfo scanResultMatchInfo =
@@ -1648,7 +1650,9 @@ public class WifiNetworkSuggestionsManager {
             if (existingConfig == null || !existingConfig.fromWifiNetworkSuggestion) {
                 continue;
             }
-            sharedWifiConfigs.add(existingConfig);
+            if (networkKeys.add(existingConfig.getKey())) {
+                sharedWifiConfigs.add(existingConfig);
+            }
         }
         return sharedWifiConfigs;
     }

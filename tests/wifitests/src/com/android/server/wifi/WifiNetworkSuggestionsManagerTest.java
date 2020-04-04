@@ -2982,6 +2982,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      *  - app without user approval will not be returned.
      *  - open network will not be returned.
      *  - suggestion doesn't allow user manually connect will not be return.
+     *  - Multiple duplicate ScanResults will only return single matched config.
      */
     @Test
     public void testGetWifiConfigForMatchedNetworkSuggestionsSharedWithUser() {
@@ -2996,8 +2997,14 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 createScanDetailForNetwork(networkSuggestion1.wifiConfiguration).getScanResult());
         scanResults.add(
                 createScanDetailForNetwork(networkSuggestion2.wifiConfiguration).getScanResult());
-        scanResults.add(
-                createScanDetailForNetwork(networkSuggestion3.wifiConfiguration).getScanResult());
+
+        // Create two same ScanResult for networkSuggestion3
+        ScanResult scanResult1 = createScanDetailForNetwork(networkSuggestion3.wifiConfiguration)
+                .getScanResult();
+        ScanResult scanResult2 = new ScanResult(scanResult1);
+        scanResults.add(scanResult1);
+        scanResults.add(scanResult2);
+
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
@@ -3018,6 +3025,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         wifiConfigurationList = mWifiNetworkSuggestionsManager
                 .getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(scanResults);
+        assertEquals(1, wifiConfigurationList.size());
         assertEquals(networkSuggestion3.wifiConfiguration, wifiConfigurationList.get(0));
     }
 
@@ -3582,7 +3590,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verify getAllPnoAvailableSuggestionNetworks will only return user approved,
+     * Verify getAllScanOptimizationSuggestionNetworks will only return user approved,
      * non-passpoint network.
      */
     @Test
@@ -3605,10 +3613,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager
                         .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
-        assertTrue(mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks().isEmpty());
+        assertTrue(mWifiNetworkSuggestionsManager
+                .getAllScanOptimizationSuggestionNetworks().isEmpty());
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         List<WifiConfiguration> pnoNetwork =
-                mWifiNetworkSuggestionsManager.getAllPnoAvailableSuggestionNetworks();
+                mWifiNetworkSuggestionsManager.getAllScanOptimizationSuggestionNetworks();
         assertEquals(1, pnoNetwork.size());
         assertEquals(network1.SSID, pnoNetwork.get(0).SSID);
     }
