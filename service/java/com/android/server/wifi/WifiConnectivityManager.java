@@ -159,6 +159,7 @@ public class WifiConnectivityManager {
     private final LinkedList<Long> mConnectionAttemptTimeStamps;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private WifiScanner mScanner;
+    private WifiScoreCard mWifiScoreCard;
 
     private boolean mDbg = false;
     private boolean mWifiEnabled = false;
@@ -709,7 +710,7 @@ public class WifiConnectivityManager {
             updateScan();
         }
         @Override
-        public void onNetworkUpdated(WifiConfiguration config) {
+        public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
             updateScan();
         }
         @Override
@@ -744,7 +745,7 @@ public class WifiConnectivityManager {
             WifiNetworkSelector networkSelector, WifiConnectivityHelper connectivityHelper,
             WifiLastResortWatchdog wifiLastResortWatchdog, OpenNetworkNotifier openNetworkNotifier,
             WifiMetrics wifiMetrics, Handler handler,
-            Clock clock, LocalLog localLog) {
+            Clock clock, LocalLog localLog, WifiScoreCard scoreCard) {
         mContext = context;
         mStateMachine = stateMachine;
         mWifiInjector = injector;
@@ -768,6 +769,7 @@ public class WifiConnectivityManager {
         mBssidBlocklistMonitor = mWifiInjector.getBssidBlocklistMonitor();
         mWifiChannelUtilization = mWifiInjector.getWifiChannelUtilizationScan();
         mNetworkSelector.setWifiChannelUtilization(mWifiChannelUtilization);
+        mWifiScoreCard = scoreCard;
     }
 
     /** Initialize single scanning schedules, and validate them */
@@ -953,10 +955,9 @@ public class WifiConnectivityManager {
                     R.integer.config_wifiInitialPartialScanChannelCacheAgeMins);
             int maxCount = mContext.getResources().getInteger(
                     R.integer.config_wifiInitialPartialScanChannelMaxCount);
-            freqs = mConfigManager.fetchChannelSetForPartialScan(ageInMillis, maxCount);
+            freqs = fetchChannelSetForPartialScan(maxCount);
         } else {
-            freqs = mConfigManager.fetchChannelSetForNetworkForPartialScan(
-                    config.networkId, CHANNEL_LIST_AGE_MS, mWifiInfo.getFrequency());
+            freqs = fetchChannelSetForNetworkForPartialScan(config.networkId);
         }
 
         if (freqs != null && freqs.size() != 0) {
@@ -970,6 +971,72 @@ public class WifiConnectivityManager {
             localLog("No history scan channels found, Perform full band scan");
             return false;
         }
+    }
+
+    /**
+     * Add the channels into the channel set with a size limit.
+     * If maxCount equals to 0, will add all available channels into the set.
+     * @param channelSet Target set for adding channel to.
+     * @param config Network for query channel from WifiScoreCard
+     * @param maxCount Size limit of the set. If equals to 0, means no limit.
+     * @return True if all available channels for this network are added, otherwise false.
+     */
+    private boolean addChannelFromWifiScoreCard(@NonNull Set<Integer> channelSet,
+            @NonNull WifiConfiguration config, int maxCount) {
+        WifiScoreCard.PerNetwork network = mWifiScoreCard.lookupNetwork(config.SSID);
+        List<Integer> channelList = network.getFrequencies();
+        for (Integer channel : channelList) {
+            if (maxCount > 0 && channelSet.size() >= maxCount) {
+                return false;
+            }
+            channelSet.add(channel);
+        }
+        return true;
+    }
+
+    /**
+     * Fetch channel set for target network.
+     */
+    @VisibleForTesting
+    public Set<Integer> fetchChannelSetForNetworkForPartialScan(int networkId) {
+        WifiConfiguration config = mConfigManager.getConfiguredNetwork(networkId);
+        if (config == null) {
+            return null;
+        }
+        final int maxNumActiveChannelsForPartialScans = mContext.getResources().getInteger(
+                R.integer.config_wifi_framework_associated_partial_scan_max_num_active_channels);
+        Set<Integer> channelSet = new HashSet<>();
+        // First add the currently connected network channel.
+        if (mWifiInfo.getFrequency() > 0) {
+            channelSet.add(mWifiInfo.getFrequency());
+        }
+        // Then get channels for the network.
+        addChannelFromWifiScoreCard(channelSet, config, maxNumActiveChannelsForPartialScans);
+        return channelSet;
+    }
+
+    /**
+     * Fetch channel set for all saved and suggestion non-passpoint network for partial scan.
+     */
+    @VisibleForTesting
+    public Set<Integer> fetchChannelSetForPartialScan(int maxCount) {
+        List<WifiConfiguration> networks = getAllScanOptimizationNetworks();
+        if (networks.isEmpty()) {
+            return null;
+        }
+
+        // Sort the networks with the most frequent ones at the front of the network list.
+        Collections.sort(networks, mConfigManager.getScanListComparator());
+
+        Set<Integer> channelSet = new HashSet<>();
+
+        for (WifiConfiguration config : networks) {
+            if (!addChannelFromWifiScoreCard(channelSet, config, maxCount)) {
+                return channelSet;
+            }
+        }
+
+        return channelSet;
     }
 
     // Watchdog timer handler
@@ -1287,26 +1354,29 @@ public class WifiConnectivityManager {
         mWifiMetrics.logPnoScanStart();
     }
 
+    private @NonNull List<WifiConfiguration> getAllScanOptimizationNetworks() {
+        List<WifiConfiguration> networks = mConfigManager.getSavedNetworks(-1);
+        networks.addAll(mWifiInjector.getWifiNetworkSuggestionsManager()
+                .getAllScanOptimizationSuggestionNetworks());
+        // remove all auto-join disabled or network selection disabled network.
+        networks.removeIf(config -> !config.allowAutojoin
+                || !config.getNetworkSelectionStatus().isNetworkEnabled());
+        return networks;
+    }
+
     /**
      * Retrieve the PnoNetworks from Saved and suggestion non-passpoint network.
      */
     @VisibleForTesting
     public List<PnoSettings.PnoNetwork> retrievePnoNetworkList() {
-        List<WifiConfiguration> networks = mConfigManager.getSavedNetworks(-1);
-        networks.addAll(mWifiInjector.getWifiNetworkSuggestionsManager()
-                        .getAllPnoAvailableSuggestionNetworks());
-        // remove all auto-join disabled or network selection disabled network.
-        networks.removeIf(config -> !config.allowAutojoin
-                || !config.getNetworkSelectionStatus().isNetworkEnabled());
+        List<WifiConfiguration> networks = getAllScanOptimizationNetworks();
+
         if (networks.isEmpty()) {
             return Collections.EMPTY_LIST;
         }
         Collections.sort(networks, mConfigManager.getScanListComparator());
-
-        WifiScoreCard scoreCard = null;
-        if (mContext.getResources().getBoolean(R.bool.config_wifiPnoFrequencyCullingEnabled)) {
-            scoreCard = mWifiInjector.getWifiScoreCard();
-        }
+        boolean pnoFrequencyCullingEnabled = mContext.getResources()
+                .getBoolean(R.bool.config_wifiPnoFrequencyCullingEnabled);
 
         List<PnoSettings.PnoNetwork> pnoList = new ArrayList<>();
         Set<WifiScanner.PnoSettings.PnoNetwork> pnoSet = new HashSet<>();
@@ -1318,11 +1388,11 @@ public class WifiConnectivityManager {
             }
             pnoList.add(pnoNetwork);
             pnoSet.add(pnoNetwork);
-            if (scoreCard == null) {
+            if (!pnoFrequencyCullingEnabled) {
                 continue;
             }
-            WifiScoreCard.PerNetwork network = scoreCard.lookupNetwork(config.SSID);
-            List<Integer> channelList = network.getFrequencies();
+            Set<Integer> channelList = new HashSet<>();
+            addChannelFromWifiScoreCard(channelList, config, 0);
             pnoNetwork.frequencies = channelList.stream().mapToInt(Integer::intValue).toArray();
             localLog("retrievePnoNetworkList " + pnoNetwork.ssid + ":"
                     + Arrays.toString(pnoNetwork.frequencies));

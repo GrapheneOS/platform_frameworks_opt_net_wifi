@@ -196,19 +196,6 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 if (matchingExtNetworkSuggestionsFromSamePackage.isEmpty()) {
                     continue;
                 }
-                ExtendedWifiNetworkSuggestion matchingExtNetworkSuggestion =
-                        matchingExtNetworkSuggestionsFromSamePackage.stream().findFirst().get();
-                // Update the WifiConfigManager with the latest WifiConfig
-                WifiConfiguration config =
-                        matchingExtNetworkSuggestion.createInternalWifiConfiguration();
-                NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
-                        config,
-                        matchingExtNetworkSuggestion.perAppInfo.uid,
-                        matchingExtNetworkSuggestion.perAppInfo.packageName);
-                if (result.isSuccess()) {
-                    wCmConfiguredNetwork = mWifiConfigManager.getConfiguredNetwork(
-                            result.getNetworkId());
-                }
                 // If the network is currently blacklisted, ignore.
                 if (!wCmConfiguredNetwork.getNetworkSelectionStatus().isNetworkEnabled()
                         && !mWifiConfigManager.tryEnableNetwork(wCmConfiguredNetwork.networkId)) {

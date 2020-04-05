@@ -71,7 +71,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,6 +106,8 @@ public class WifiConfigManager {
     /**
      * Interface for other modules to listen to the network updated
      * events.
+     * Note: Credentials are masked to avoid accidentally sending credentials outside the stack.
+     * Use WifiConfigManager#getConfiguredNetworkWithPassword() to retrieve credentials.
      */
     public interface OnNetworkUpdateListener {
         /**
@@ -131,8 +132,12 @@ public class WifiConfigManager {
         void onNetworkTemporarilyDisabled(@NonNull WifiConfiguration config, int disableReason);
         /**
          * Invoked on network being updated.
+         *
+         * @param newConfig Updated WifiConfiguration object.
+         * @param oldConfig Prev WifiConfiguration object.
          */
-        void onNetworkUpdated(@NonNull WifiConfiguration config);
+        void onNetworkUpdated(
+                @NonNull WifiConfiguration newConfig, @NonNull WifiConfiguration oldConfig);
     }
     /**
      * Max size of scan details to cache in {@link #mScanDetailCaches}.
@@ -1323,9 +1328,9 @@ public class WifiConfigManager {
             Log.e(TAG, "Cannot add/update network before store is read!");
             return new NetworkUpdateResult(WifiConfiguration.INVALID_NETWORK_ID);
         }
+        WifiConfiguration existingConfig = getInternalConfiguredNetwork(config);
         if (!config.isEphemeral()) {
             // Removes the existing ephemeral network if it exists to add this configuration.
-            WifiConfiguration existingConfig = getConfiguredNetwork(config.getKey());
             if (existingConfig != null && existingConfig.isEphemeral()) {
                 // In this case, new connection for this config won't happen because same
                 // network is already registered as an ephemeral network.
@@ -1352,11 +1357,13 @@ public class WifiConfigManager {
         }
 
         for (OnNetworkUpdateListener listener : mListeners) {
-            WifiConfiguration configForListener = new WifiConfiguration(newConfig);
             if (result.isNewNetwork()) {
-                listener.onNetworkAdded(configForListener);
+                listener.onNetworkAdded(
+                        createExternalWifiConfiguration(newConfig, true, Process.WIFI_UID));
             } else {
-                listener.onNetworkUpdated(configForListener);
+                listener.onNetworkUpdated(
+                        createExternalWifiConfiguration(newConfig, true, Process.WIFI_UID),
+                        createExternalWifiConfiguration(existingConfig, true, Process.WIFI_UID));
             }
         }
         return result;
@@ -1445,8 +1452,8 @@ public class WifiConfigManager {
             saveToStore(true);
         }
         for (OnNetworkUpdateListener listener : mListeners) {
-            WifiConfiguration configForListener = new WifiConfiguration(config);
-            listener.onNetworkRemoved(configForListener);
+            listener.onNetworkRemoved(
+                    createExternalWifiConfiguration(config, true, Process.WIFI_UID));
         }
         return true;
     }
@@ -1606,8 +1613,8 @@ public class WifiConfigManager {
         // Clear out all the disable reason counters.
         status.clearDisableReasonCounter();
         for (OnNetworkUpdateListener listener : mListeners) {
-            WifiConfiguration configForListener = new WifiConfiguration(config);
-            listener.onNetworkEnabled(configForListener);
+            listener.onNetworkEnabled(
+                    createExternalWifiConfiguration(config, true, Process.WIFI_UID));
         }
     }
 
@@ -1623,8 +1630,8 @@ public class WifiConfigManager {
         status.setDisableTime(mClock.getElapsedSinceBootMillis());
         status.setNetworkSelectionDisableReason(disableReason);
         for (OnNetworkUpdateListener listener : mListeners) {
-            WifiConfiguration configForListener = new WifiConfiguration(config);
-            listener.onNetworkTemporarilyDisabled(configForListener, disableReason);
+            listener.onNetworkTemporarilyDisabled(
+                    createExternalWifiConfiguration(config, true, Process.WIFI_UID), disableReason);
         }
     }
 
@@ -1641,7 +1648,8 @@ public class WifiConfigManager {
         status.setNetworkSelectionDisableReason(disableReason);
         for (OnNetworkUpdateListener listener : mListeners) {
             WifiConfiguration configForListener = new WifiConfiguration(config);
-            listener.onNetworkPermanentlyDisabled(configForListener, disableReason);
+            listener.onNetworkPermanentlyDisabled(
+                    createExternalWifiConfiguration(config, true, Process.WIFI_UID), disableReason);
         }
     }
 
@@ -2598,167 +2606,6 @@ public class WifiConfigManager {
                 unlinkNetworks(config, linkConfig);
             }
         }
-    }
-
-    /**
-     * Helper method to fetch list of channels for a network from the associated ScanResult's cache
-     * and add it to the provided channel as long as the size of the set is less than
-     * |maxChannelSetSize|.
-     *
-     * @param channelSet        Channel set holding all the channels for the network.
-     * @param scanDetailCache   ScanDetailCache entry associated with the network.
-     * @param nowInMillis       current timestamp to be used for age comparison.
-     * @param ageInMillis       only consider scan details whose timestamps are earlier than this
-     *                          value.
-     * @param maxChannelSetSize Maximum number of channels to be added to the set.
-     * @return false if the list is full, true otherwise.
-     */
-    private boolean addToChannelSetForNetworkFromScanDetailCache(
-            Set<Integer> channelSet, ScanDetailCache scanDetailCache,
-            long nowInMillis, long ageInMillis, int maxChannelSetSize) {
-        if (scanDetailCache != null && scanDetailCache.size() > 0) {
-            for (ScanDetail scanDetail : scanDetailCache.values()) {
-                ScanResult result = scanDetail.getScanResult();
-                boolean valid = (nowInMillis - result.seen) < ageInMillis;
-                if (mVerboseLoggingEnabled) {
-                    Log.v(TAG, "fetchChannelSetForNetwork has " + result.BSSID + " freq "
-                            + result.frequency + " age " + (nowInMillis - result.seen)
-                            + " ?=" + valid);
-                }
-                if (valid) {
-                    channelSet.add(result.frequency);
-                }
-                if (channelSet.size() >= maxChannelSetSize) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Retrieves a list of channels for partial single scans
-     *
-     * @param ageInMillis only consider scan details whose timestamps are more recent than this.
-     * @param maxCount maximum number of channels in the set
-     * @return Set containing the frequeincies which were used for connection recently.
-     */
-    public Set<Integer> fetchChannelSetForPartialScan(long ageInMillis, int maxCount) {
-        List<WifiConfiguration> networks = getConfiguredNetworks();
-
-        // Remove any permanently or temporarily disabled networks.
-        Iterator<WifiConfiguration> iter = networks.iterator();
-        while (iter.hasNext()) {
-            WifiConfiguration config = iter.next();
-            if (config.ephemeral || config.isPasspoint()
-                    || config.getNetworkSelectionStatus().isNetworkPermanentlyDisabled()
-                    || config.getNetworkSelectionStatus().isNetworkTemporaryDisabled()) {
-                iter.remove();
-            }
-        }
-
-        if (networks.isEmpty()) {
-            return null;
-        }
-
-        // Sort the networks with the most frequent ones at the front of the network list.
-        Collections.sort(networks, mScanListComparator);
-
-        Set<Integer> channelSet = new HashSet<>();
-        long nowInMillis = mClock.getWallClockMillis();
-
-        for (WifiConfiguration config : networks) {
-            ScanDetailCache scanDetailCache = getScanDetailCacheForNetwork(config.networkId);
-            if (scanDetailCache == null) {
-                continue;
-            }
-
-            // Add channels for the network to the output, and exit when it reaches max size
-            if (!addToChannelSetForNetworkFromScanDetailCache(channelSet, scanDetailCache,
-                    nowInMillis, ageInMillis, maxCount)) {
-                break;
-            }
-        }
-
-        return channelSet;
-    }
-
-    /**
-     * Retrieve a set of channels on which AP's for the provided network was seen using the
-     * internal ScanResult's cache {@link #mScanDetailCaches}. This is used for initiating partial
-     * scans for the currently connected network.
-     *
-     * @param networkId       network ID corresponding to the network.
-     * @param ageInMillis     only consider scan details whose timestamps are earlier than this value.
-     * @param homeChannelFreq frequency of the currently connected network.
-     * @return Set containing the frequencies on which this network was found, null if the network
-     * was not found or there are no associated scan details in the cache.
-     */
-    public Set<Integer> fetchChannelSetForNetworkForPartialScan(int networkId, long ageInMillis,
-                                                                int homeChannelFreq) {
-        WifiConfiguration config = getInternalConfiguredNetwork(networkId);
-        if (config == null) {
-            return null;
-        }
-        ScanDetailCache scanDetailCache = getScanDetailCacheForNetwork(networkId);
-        if (scanDetailCache == null && config.linkedConfigurations == null) {
-            Log.i(TAG, "No scan detail and linked configs associated with networkId " + networkId);
-            return null;
-        }
-        final int maxNumActiveChannelsForPartialScans = mContext.getResources().getInteger(
-                R.integer.config_wifi_framework_associated_partial_scan_max_num_active_channels);
-        if (mVerboseLoggingEnabled) {
-            StringBuilder dbg = new StringBuilder();
-            dbg.append("fetchChannelSetForNetworkForPartialScan ageInMillis ")
-                    .append(ageInMillis)
-                    .append(" for ")
-                    .append(config.getKey())
-                    .append(" max ")
-                    .append(maxNumActiveChannelsForPartialScans);
-            if (scanDetailCache != null) {
-                dbg.append(" bssids " + scanDetailCache.size());
-            }
-            if (config.linkedConfigurations != null) {
-                dbg.append(" linked " + config.linkedConfigurations.size());
-            }
-            Log.v(TAG, dbg.toString());
-        }
-        Set<Integer> channelSet = new HashSet<>();
-
-        // First add the currently connected network channel.
-        if (homeChannelFreq > 0) {
-            channelSet.add(homeChannelFreq);
-            if (channelSet.size() >= maxNumActiveChannelsForPartialScans) {
-                return channelSet;
-            }
-        }
-
-        long nowInMillis = mClock.getWallClockMillis();
-
-        // Then get channels for the network.
-        if (!addToChannelSetForNetworkFromScanDetailCache(
-                channelSet, scanDetailCache, nowInMillis, ageInMillis,
-                maxNumActiveChannelsForPartialScans)) {
-            return channelSet;
-        }
-
-        // Lastly get channels for linked networks.
-        if (config.linkedConfigurations != null) {
-            for (String configKey : config.linkedConfigurations.keySet()) {
-                WifiConfiguration linkedConfig = getInternalConfiguredNetwork(configKey);
-                if (linkedConfig == null) {
-                    continue;
-                }
-                ScanDetailCache linkedScanDetailCache =
-                        getScanDetailCacheForNetwork(linkedConfig.networkId);
-                if (!addToChannelSetForNetworkFromScanDetailCache(
-                        channelSet, linkedScanDetailCache, nowInMillis, ageInMillis,
-                        maxNumActiveChannelsForPartialScans)) {
-                    break;
-                }
-            }
-        }
-        return channelSet;
     }
 
     /**
