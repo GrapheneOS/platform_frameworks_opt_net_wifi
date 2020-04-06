@@ -35,6 +35,7 @@ import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.DhcpResults;
+import android.net.DhcpResultsParcelable;
 import android.net.InvalidPacketException;
 import android.net.IpConfiguration;
 import android.net.KeepalivePacketData;
@@ -60,6 +61,7 @@ import android.net.ip.IpClientManager;
 import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
+import android.net.util.DhcpResultsCompatUtil;
 import android.net.util.NetUtils;
 import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.RssiPacketCountInfo;
@@ -1021,9 +1023,10 @@ public class ClientModeImpl extends StateMachine {
         }
 
         @Override
-        public void onNewDhcpResults(DhcpResults dhcpResults) {
+        public void onNewDhcpResults(DhcpResultsParcelable dhcpResults) {
             if (dhcpResults != null) {
-                sendMessage(CMD_IPV4_PROVISIONING_SUCCESS, dhcpResults);
+                sendMessage(CMD_IPV4_PROVISIONING_SUCCESS,
+                        DhcpResultsCompatUtil.fromStableParcelable(dhcpResults));
             } else {
                 sendMessage(CMD_IPV4_PROVISIONING_FAILURE);
             }
