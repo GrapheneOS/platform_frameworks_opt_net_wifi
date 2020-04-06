@@ -63,7 +63,6 @@ java_library {
         // compile time
         "framework-wifi-pre-jarjar",
         "framework-statsd-stubs-module_libs_api",
-        "framework-telephony-stubs",
         "unsupportedappusage",
     ],
 
