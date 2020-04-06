@@ -248,7 +248,7 @@ public class WifiNativeTest extends WifiBaseTest {
         when(mWifiVendorHal.startVendorHal()).thenReturn(true);
         when(mWifiVendorHal.startVendorHalSta()).thenReturn(true);
         when(mWifiVendorHal.startVendorHalAp()).thenReturn(true);
-        when(mWifiVendorHal.createStaIface(anyBoolean(), any())).thenReturn(WIFI_IFACE_NAME);
+        when(mWifiVendorHal.createStaIface(any())).thenReturn(WIFI_IFACE_NAME);
 
         when(mWificondControl.setupInterfaceForClientMode(any(), any(), any(), any())).thenReturn(
                 true);
