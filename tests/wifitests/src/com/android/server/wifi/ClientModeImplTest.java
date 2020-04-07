@@ -65,6 +65,7 @@ import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.net.ConnectivityManager;
 import android.net.DhcpResultsParcelable;
 import android.net.InetAddresses;
+import android.net.Layer2InformationParcelable;
 import android.net.Layer2PacketParcelable;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -3224,7 +3225,12 @@ public class ClientModeImplTest extends WifiBaseTest {
         connect();
         mLooper.dispatchAll();
         verify(mWifiScoreCard).noteIpConfiguration(any());
-        verify(mIpClient).setL2KeyAndGroupHint(eq("Wad"), eq("Gab"));
+        ArgumentCaptor<Layer2InformationParcelable> captor =
+                ArgumentCaptor.forClass(Layer2InformationParcelable.class);
+        verify(mIpClient).updateLayer2Information(captor.capture());
+        final Layer2InformationParcelable info = captor.getValue();
+        assertEquals(info.l2Key, "Wad");
+        assertEquals(info.groupHint, "Gab");
     }
 
     /**
