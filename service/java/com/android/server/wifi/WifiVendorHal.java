@@ -59,6 +59,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.MutableBoolean;
 import android.util.MutableLong;
+import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.HexDump;
@@ -2632,6 +2633,18 @@ public class WifiVendorHal {
 
             // HAL version does not support this api
             return false;
+        }
+    }
+
+    /**
+     * Returns whether STA/AP concurrency is supported or not.
+     */
+    public boolean isStaApConcurrencySupported() {
+        synchronized (sLock) {
+            return mHalDeviceManager.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                    put(IfaceType.STA, 1);
+                    put(IfaceType.AP, 1);
+                }});
         }
     }
 

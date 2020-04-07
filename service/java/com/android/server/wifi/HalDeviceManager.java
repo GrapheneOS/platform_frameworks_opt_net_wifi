@@ -512,6 +512,29 @@ public class HalDeviceManager {
         void onRttControllerDestroyed();
     }
 
+    /**
+     * Returns whether the provided Iface combo can be supported by the device.
+     * Note: This only returns an answer based on the iface combination exposed by the HAL.
+     * The actual iface creation/deletion rules depend on the iface priorities set in
+     * {@link #allowedToDeleteIfaceTypeForRequestedType(int, int, WifiIfaceInfo[][], int)}
+     *
+     * @param ifaceCombo SparseArray keyed in by the iface type to number of ifaces needed.
+     * @return true if the device supports the provided combo, false otherwise.
+     */
+    public boolean canSupportIfaceCombo(SparseArray<Integer> ifaceCombo) {
+        if (VDBG) Log.d(TAG, "canSupportIfaceCombo: ifaceCombo=" + ifaceCombo);
+
+        synchronized (mLock) {
+            int[] ifaceComboArr = new int[IFACE_TYPES_BY_PRIORITY.length];
+            for (int type : IFACE_TYPES_BY_PRIORITY) {
+                ifaceComboArr[type] = ifaceCombo.get(type, 0);
+            }
+            WifiChipInfo[] chipInfos = getAllChipInfo();
+            if (chipInfos == null) return false;
+            return isItPossibleToCreateIfaceCombo(chipInfos, ifaceComboArr);
+        }
+    }
+
     // internal state
 
     /* This "PRIORITY" is not for deciding interface elimination (that is controlled by
@@ -543,6 +566,7 @@ public class HalDeviceManager {
      */
     private final Map<Pair<String, Integer>, InterfaceCacheEntry> mInterfaceInfoCache =
             new HashMap<>();
+    private WifiChipInfo[] mDebugChipsInfo = null;
 
     private class InterfaceCacheEntry {
         public IWifiChip chip;
@@ -1125,6 +1149,7 @@ public class HalDeviceManager {
                     chipInfo.ifaces[IfaceType.NAN] = nanIfaces;
                 }
 
+                if (mDebugChipsInfo == null) mDebugChipsInfo = chipsInfo;
                 return chipsInfo;
             } catch (RemoteException e) {
                 Log.e(TAG, "getAllChipInfoAndValidateCache exception: " + e);
@@ -1771,6 +1796,53 @@ public class HalDeviceManager {
     }
 
     /**
+     * Checks whether the input chip-iface-combo can support the requested interface type.
+     */
+    private boolean canIfaceComboSupportRequestedIfaceCombo(
+            int[] chipIfaceCombo, int[] requestedIfaceCombo) {
+        if (VDBG) {
+            Log.d(TAG, "canIfaceComboSupportRequest: chipIfaceCombo=" + chipIfaceCombo
+                    + ", requestedIfaceCombo=" + requestedIfaceCombo);
+        }
+        for (int ifaceType : IFACE_TYPES_BY_PRIORITY) {
+            if (chipIfaceCombo[ifaceType] < requestedIfaceCombo[ifaceType]) {
+                if (VDBG) Log.d(TAG, "Requested type not supported by combo");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Is it possible to create iface combo just looking at the device capabilities.
+    private boolean isItPossibleToCreateIfaceCombo(WifiChipInfo[] chipInfos, int[] ifaceCombo) {
+        if (VDBG) {
+            Log.d(TAG, "isItPossibleToCreateIfaceCombo: chipInfos=" + Arrays.deepToString(chipInfos)
+                    + ", ifaceType=" + ifaceCombo);
+        }
+
+        for (WifiChipInfo chipInfo: chipInfos) {
+            for (IWifiChip.ChipMode chipMode: chipInfo.availableModes) {
+                for (IWifiChip.ChipIfaceCombination chipIfaceCombo
+                        : chipMode.availableCombinations) {
+                    int[][] expandedIfaceCombos = expandIfaceCombos(chipIfaceCombo);
+                    if (VDBG) {
+                        Log.d(TAG, chipIfaceCombo + " expands to "
+                                + Arrays.deepToString(expandedIfaceCombos));
+                    }
+
+                    for (int[] expandedIfaceCombo: expandedIfaceCombos) {
+                        if (canIfaceComboSupportRequestedIfaceCombo(
+                                expandedIfaceCombo, ifaceCombo)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Performs chip reconfiguration per the input:
      * - Removes the specified interfaces
      * - Reconfigures the chip to the new chip mode (if necessary)
@@ -1952,6 +2024,7 @@ public class HalDeviceManager {
 
         return true;
     }
+
 
     private void dispatchAvailableForRequestListenersForType(int ifaceType,
             WifiChipInfo[] chipInfos) {
@@ -2277,5 +2350,6 @@ public class HalDeviceManager {
         pw.println("  mInterfaceAvailableForRequestListeners: "
                 + mInterfaceAvailableForRequestListeners);
         pw.println("  mInterfaceInfoCache: " + mInterfaceInfoCache);
+        pw.println("  mDebugChipsInfo: " + Arrays.toString(mDebugChipsInfo));
     }
 }
