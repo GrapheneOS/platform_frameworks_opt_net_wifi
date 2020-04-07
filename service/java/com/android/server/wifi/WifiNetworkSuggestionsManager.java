@@ -36,6 +36,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Icon;
 import android.net.MacAddress;
+import android.net.NetworkScoreManager;
 import android.net.wifi.ISuggestionConnectionStatusListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -132,6 +133,7 @@ public class WifiNetworkSuggestionsManager {
     private final AppOpsManager mAppOps;
     private final ActivityManager mActivityManager;
     private final NotificationManager mNotificationManager;
+    private final NetworkScoreManager mNetworkScoreManager;
     private final PackageManager mPackageManager;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
     private final WifiConfigManager mWifiConfigManager;
@@ -190,6 +192,24 @@ public class WifiNetworkSuggestionsManager {
                 this.uid = uid;
             }
             // else ignored.
+        }
+
+        /**
+         * Returns true if this app has the necessary approvals to place network suggestions.
+         */
+        private boolean isApproved(@Nullable String activeScorerPkg) {
+            return hasUserApproved || isExemptFromUserApproval(activeScorerPkg);
+        }
+
+        /**
+         * Returns true if this app can suggest networks without user approval.
+         */
+        private boolean isExemptFromUserApproval(@Nullable String activeScorerPkg) {
+            final boolean isCarrierPrivileged = carrierId != TelephonyManager.UNKNOWN_CARRIER_ID;
+            if (isCarrierPrivileged) {
+                return true;
+            }
+            return packageName.equals(activeScorerPkg);
         }
 
         // This is only needed for comparison in unit tests.
@@ -591,6 +611,7 @@ public class WifiNetworkSuggestionsManager {
         mActivityManager = context.getSystemService(ActivityManager.class);
         mNotificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNetworkScoreManager = context.getSystemService(NetworkScoreManager.class);
         mPackageManager = context.getPackageManager();
         mWifiInjector = wifiInjector;
         mFrameworkFacade = mWifiInjector.getFrameworkFacade();
@@ -851,6 +872,7 @@ public class WifiNetworkSuggestionsManager {
         }
 
         int carrierId = mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(packageName);
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         PerAppInfo perAppInfo = mActiveNetworkSuggestionsPerApp.get(packageName);
         if (perAppInfo == null) {
             perAppInfo = new PerAppInfo(uid, packageName, featureId);
@@ -861,6 +883,10 @@ public class WifiNetworkSuggestionsManager {
             } else if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
                 Log.i(TAG, "Setting the carrier privileged app approved");
                 perAppInfo.carrierId = carrierId;
+            } else if (perAppInfo.packageName.equals(activeScorerPackage)) {
+                Log.i(TAG, "Exempting the active scorer app");
+                // nothing more to do, user approval related checks are done at network selection
+                // time (which also takes care of any dynamic changes in active scorer).
             } else {
                 if (isSuggestionFromForegroundApp(packageName)) {
                     sendUserApprovalDialog(packageName, uid);
@@ -1246,8 +1272,9 @@ public class WifiNetworkSuggestionsManager {
      */
     public List<WifiConfiguration> getAllScanOptimizationSuggestionNetworks() {
         List<WifiConfiguration> networks = new ArrayList<>();
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         for (PerAppInfo info : mActiveNetworkSuggestionsPerApp.values()) {
-            if (!info.hasUserApproved && info.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            if (!info.isApproved(activeScorerPackage)) {
                 continue;
             }
             for (ExtendedWifiNetworkSuggestion ewns : info.extNetworkSuggestions) {
@@ -1534,10 +1561,10 @@ public class WifiNetworkSuggestionsManager {
         if (extNetworkSuggestions == null) {
             return null;
         }
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         Set<ExtendedWifiNetworkSuggestion> approvedExtNetworkSuggestions = new HashSet<>();
         for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
-            if (!ewns.perAppInfo.hasUserApproved
-                    && ewns.perAppInfo.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            if (!ewns.perAppInfo.isApproved(activeScorerPackage)) {
                 sendUserApprovalNotificationIfNotApproved(ewns.perAppInfo.packageName,
                         ewns.perAppInfo.uid);
                 continue;
@@ -1581,10 +1608,10 @@ public class WifiNetworkSuggestionsManager {
         if (extNetworkSuggestions == null) {
             return null;
         }
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         Set<ExtendedWifiNetworkSuggestion> approvedExtNetworkSuggestions = new HashSet<>();
         for (ExtendedWifiNetworkSuggestion ewns : extNetworkSuggestions) {
-            if (!ewns.perAppInfo.hasUserApproved
-                    && ewns.perAppInfo.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            if (!ewns.perAppInfo.isApproved(activeScorerPackage)) {
                 sendUserApprovalNotificationIfNotApproved(ewns.perAppInfo.packageName,
                         ewns.perAppInfo.uid);
                 continue;
@@ -1628,11 +1655,11 @@ public class WifiNetworkSuggestionsManager {
         if (extNetworkSuggestions == null || extNetworkSuggestions.isEmpty()) {
             return null;
         }
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         Set<ExtendedWifiNetworkSuggestion> approvedExtNetworkSuggestions =
                 extNetworkSuggestions
                         .stream()
-                        .filter(n -> n.perAppInfo.hasUserApproved
-                                || n.perAppInfo.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID)
+                        .filter(n -> n.perAppInfo.isApproved(activeScorerPackage))
                         .collect(Collectors.toSet());
         if (approvedExtNetworkSuggestions.isEmpty()) {
             return null;
@@ -2136,6 +2163,7 @@ public class WifiNetworkSuggestionsManager {
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("Dump of WifiNetworkSuggestionsManager");
         pw.println("WifiNetworkSuggestionsManager - Networks Begin ----");
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         for (Map.Entry<String, PerAppInfo> networkSuggestionsEntry
                 : mActiveNetworkSuggestionsPerApp.entrySet()) {
             pw.println("Package Name: " + networkSuggestionsEntry.getKey());
@@ -2143,6 +2171,7 @@ public class WifiNetworkSuggestionsManager {
             pw.println("Has user approved: " + appInfo.hasUserApproved);
             pw.println("Has carrier privileges: "
                     + (appInfo.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID));
+            pw.println("Is active scorer: " + appInfo.packageName.equals(activeScorerPackage));
             for (ExtendedWifiNetworkSuggestion extNetworkSuggestion
                     : appInfo.extNetworkSuggestions) {
                 pw.println("Network: " + extNetworkSuggestion);
