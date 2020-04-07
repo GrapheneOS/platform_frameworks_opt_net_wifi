@@ -56,11 +56,10 @@ public class WifiScoreReport {
 
     // Cache of the last score
     private int mScore = ConnectedScore.WIFI_MAX_SCORE;
-    private int mSessionId = INVALID_SESSION_ID;
 
     private final ScoringParams mScoringParams;
     private final Clock mClock;
-    private int mSessionNumber = 0;
+    private int mSessionNumber = 0; // not to be confused with sessionid, this just counts resets
     private String mInterfaceName;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private long mLastScoreBreachLowTimeMillis = -1;
@@ -75,16 +74,19 @@ public class WifiScoreReport {
     WifiThreadRunner mWifiThreadRunner;
 
     /**
-     * Callback proxy. See {@link WifiManager#ScoreUpdateObserver}.
+     * Callback proxy. See {@link android.net.wifi.WifiManager.ScoreUpdateObserver}.
      */
     private class ScoreUpdateObserverProxy extends IScoreUpdateObserver.Stub {
         @Override
         public void notifyScoreUpdate(int sessionId, int score) {
             mWifiThreadRunner.post(() -> {
-                if (mWifiConnectedNetworkScorerHolder == null) {
-                    return;
-                }
-                if (!validateSessionId(sessionId)) {
+                if (mWifiConnectedNetworkScorerHolder == null
+                        || sessionId == INVALID_SESSION_ID
+                        || sessionId != getCurrentSessionId()) {
+                    Log.w(TAG, "Ignoring stale/invalid external score"
+                             + " sessionId=" + sessionId
+                             + " currentSessionId=" + getCurrentSessionId()
+                             + " score=" + score);
                     return;
                 }
                 if (mNetworkAgent != null) {
@@ -108,21 +110,20 @@ public class WifiScoreReport {
         @Override
         public void triggerUpdateOfWifiUsabilityStats(int sessionId) {
             mWifiThreadRunner.post(() -> {
-                if (mWifiConnectedNetworkScorerHolder == null) {
+                if (mWifiConnectedNetworkScorerHolder == null
+                        || sessionId == INVALID_SESSION_ID
+                        || sessionId != getCurrentSessionId()
+                        || mInterfaceName == null) {
+                    Log.w(TAG, "Ignoring triggerUpdateOfWifiUsabilityStats"
+                             + " sessionId=" + sessionId
+                             + " currentSessionId=" + getCurrentSessionId()
+                             + " interfaceName=" + mInterfaceName);
                     return;
                 }
-                if (!validateSessionId(sessionId)) {
-                    return;
-                }
-                if (mInterfaceName == null) {
-                    Log.e(TAG, "getWifiLinkLayerStats called without an interface");
-                    return;
-                }
-
                 WifiLinkLayerStats stats = mWifiNative.getWifiLinkLayerStats(mInterfaceName);
 
                 // update mWifiInfo
-                // TODO: b/149583741 Better coordinate this class and ClientModeImpl to remove
+                // TODO(b/153075963): Better coordinate this class and ClientModeImpl to remove
                 // redundant codes below and in ClientModeImpl#fetchRssiLinkSpeedAndFrequencyNative.
                 WifiNl80211Manager.SignalPollResult pollResult =
                         mWifiNative.signalPoll(mInterfaceName);
@@ -159,34 +160,19 @@ public class WifiScoreReport {
                     }
                 }
 
+                // TODO(b/153075963): This should not be plumbed through WifiMetrics
                 mWifiMetrics.updateWifiUsabilityStatsEntries(mWifiInfo, stats);
             });
-        }
-
-        private boolean validateSessionId(int sessionId) {
-            if (sessionId == INVALID_SESSION_ID) {
-                Log.e(TAG, "Called with invalid ID");
-                return false;
-            }
-            if (mSessionId == INVALID_SESSION_ID) {
-                if (mVerboseLoggingEnabled) Log.d(TAG, "Called with score after session reset");
-                return false;
-            }
-            if (sessionId != mSessionId) {
-                // This indicates a more serious timing issue
-                Log.w(TAG, "Called with old session ID");
-                return false;
-            }
-            return true;
         }
     }
 
     /**
-     * Container for storing info about external scorer and tracks its death.
+     * Container for storing info about external scorer and tracking its death.
      */
     private final class WifiConnectedNetworkScorerHolder implements IBinder.DeathRecipient {
         private final IBinder mBinder;
         private final IWifiConnectedNetworkScorer mScorer;
+        private int mSessionId = INVALID_SESSION_ID;
 
         WifiConnectedNetworkScorerHolder(IBinder binder, IWifiConnectedNetworkScorer scorer) {
             mBinder = binder;
@@ -209,10 +195,9 @@ public class WifiScoreReport {
         /**
          * App hosting the binder has died.
          */
+        @Override
         public void binderDied() {
-            mWifiThreadRunner.post(() -> {
-                revertAospConnectedScorer();
-            });
+            mWifiThreadRunner.post(() -> revertToDefaultConnectedScorer());
         }
 
         /**
@@ -223,10 +208,39 @@ public class WifiScoreReport {
         }
 
         /**
-         * Get Wi-Fi connected network scorer
+         * Starts a new scoring session.
          */
-        public IWifiConnectedNetworkScorer getScorer() {
-            return mScorer;
+        public void startSession(int sessionId) {
+            if (sessionId == INVALID_SESSION_ID) {
+                throw new IllegalArgumentException();
+            }
+            if (mSessionId != INVALID_SESSION_ID) {
+                // This is not expected to happen, log if it does
+                Log.e(TAG, "Stopping session " + mSessionId + " before starting " + sessionId);
+                stopSession();
+            }
+            // Bail now if the scorer has gone away
+            if (this != mWifiConnectedNetworkScorerHolder) {
+                return;
+            }
+            mSessionId = sessionId;
+            try {
+                mScorer.onStart(sessionId);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Unable to start Wifi connected network scorer " + this, e);
+                revertToDefaultConnectedScorer();
+            }
+        }
+        public void stopSession() {
+            final int sessionId = mSessionId;
+            if (sessionId == INVALID_SESSION_ID) return;
+            mSessionId = INVALID_SESSION_ID;
+            try {
+                mScorer.onStop(sessionId);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Unable to stop Wifi connected network scorer " + this, e);
+                revertToDefaultConnectedScorer();
+            }
         }
     }
 
@@ -353,7 +367,7 @@ public class WifiScoreReport {
         mScore = score;
     }
 
-    private void updateWifiMetrics(long now, int s2, int score) {
+    private int getCurrentNetId() {
         int netId = 0;
         if (mNetworkAgent != null) {
             final Network network = mNetworkAgent.getNetwork();
@@ -361,6 +375,28 @@ public class WifiScoreReport {
                 netId = network.getNetId();
             }
         }
+        return netId;
+    }
+
+    private int getCurrentSessionId() {
+        return sessionIdFromNetId(getCurrentNetId());
+    }
+
+    /**
+     * Encodes a network id into a scoring session id.
+     *
+     * We use a different numeric value for session id and the network id
+     * to make it clear that these are not the same thing. However, for
+     * easier debugging, the network id can be recovered by dropping the
+     * last decimal digit (at least until they get very, very, large).
+     */
+    public static int sessionIdFromNetId(final int netId) {
+        if (netId <= 0) return INVALID_SESSION_ID;
+        return (int) (((long) netId * 10 + (8 - (netId % 9))) % Integer.MAX_VALUE + 1);
+    }
+
+    private void updateWifiMetrics(long now, int s2, int score) {
+        int netId = getCurrentNetId();
 
         mAggressiveConnectedScore.updateUsingWifiInfo(mWifiInfo, now);
         int s1 = mAggressiveConnectedScore.generateScore();
@@ -516,6 +552,7 @@ public class WifiScoreReport {
      */
     public boolean setWifiConnectedNetworkScorer(IBinder binder,
             IWifiConnectedNetworkScorer scorer) {
+        if (binder == null || scorer == null) return false;
         // Enforce that only a single scorer can be set successfully.
         if (mWifiConnectedNetworkScorerHolder != null) {
             Log.e(TAG, "Failed to set current scorer because one scorer is already set");
@@ -532,15 +569,17 @@ public class WifiScoreReport {
             scorer.onSetScoreUpdateObserver(mScoreUpdateObserver);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to set score update observer " + scorer, e);
-            revertAospConnectedScorer();
+            revertToDefaultConnectedScorer();
             return false;
-        }
-        if (mSessionId != INVALID_SESSION_ID) {
-            startConnectedNetworkScorer(mSessionId);
         }
         // Disable AOSP scorer
         mVelocityBasedConnectedScore = null;
         mWifiMetrics.setIsExternalWifiScorerOn(true);
+        // If there is already a connection, start a new session
+        final int netId = getCurrentNetId();
+        if (netId > 0) {
+            startConnectedNetworkScorer(netId);
+        }
         return true;
     }
 
@@ -552,26 +591,25 @@ public class WifiScoreReport {
             return;
         }
         mWifiConnectedNetworkScorerHolder.reset();
-        revertAospConnectedScorer();
+        revertToDefaultConnectedScorer();
     }
 
     /**
      * Start the registered Wi-Fi connected network scorer.
-     * @param sessionId
+     * @param netId identifies the current android.net.Network
      */
-    public void startConnectedNetworkScorer(int sessionId) {
-        mSessionId = sessionId;
-        if (mWifiConnectedNetworkScorerHolder == null) {
+    public void startConnectedNetworkScorer(int netId) {
+        final int sessionId = getCurrentSessionId();
+        if (mWifiConnectedNetworkScorerHolder == null
+                || netId != getCurrentNetId()
+                || sessionId == INVALID_SESSION_ID) {
+            Log.w(TAG, "Cannot start external scoring"
+                    + " netId=" + netId
+                    + " currentNetId=" + getCurrentNetId()
+                    + " sessionId=" + sessionId);
             return;
         }
-        try {
-            IWifiConnectedNetworkScorer scorer = mWifiConnectedNetworkScorerHolder.getScorer();
-            scorer.onStart(sessionId);
-        } catch (RemoteException e) {
-            Log.e(TAG, "Unable to start Wifi connected network scorer "
-                    + mWifiConnectedNetworkScorerHolder, e);
-            revertAospConnectedScorer();
-        }
+        mWifiConnectedNetworkScorerHolder.startSession(sessionId);
         mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
     }
 
@@ -582,15 +620,8 @@ public class WifiScoreReport {
         if (mWifiConnectedNetworkScorerHolder == null) {
             return;
         }
-        try {
-            IWifiConnectedNetworkScorer scorer = mWifiConnectedNetworkScorerHolder.getScorer();
-            scorer.onStop(mSessionId);
-        } catch (RemoteException e) {
-            Log.e(TAG, "Unable to stop Wifi connected network scorer "
-                    + mWifiConnectedNetworkScorerHolder, e);
-        }
+        mWifiConnectedNetworkScorerHolder.stopSession();
 
-        mSessionId = INVALID_SESSION_ID;
         long millis = mClock.getWallClockMillis();
         // Blocklist the current BSS
         if ((mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS)
@@ -605,7 +636,6 @@ public class WifiScoreReport {
 
     /**
      * Set NetworkAgent
-     * @param agent
      */
     public void setNetworkAgent(NetworkAgent agent) {
         mNetworkAgent = agent;
@@ -626,8 +656,8 @@ public class WifiScoreReport {
         mInterfaceName = ifaceName;
     }
 
-    private void revertAospConnectedScorer() {
-        // Create AOSP scorer and null external Wifi connected network scorer
+    private void revertToDefaultConnectedScorer() {
+        Log.d(TAG, "Using VelocityBasedConnectedScore");
         mVelocityBasedConnectedScore = new VelocityBasedConnectedScore(mScoringParams, mClock);
         mWifiConnectedNetworkScorerHolder = null;
         mWifiMetrics.setIsExternalWifiScorerOn(false);
