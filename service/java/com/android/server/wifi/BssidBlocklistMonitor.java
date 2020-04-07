@@ -155,7 +155,7 @@ public class BssidBlocklistMonitor {
     }
 
     private void addToBlocklist(@NonNull BssidStatus entry, long durationMs, String reasonString) {
-        entry.addToBlocklist(durationMs);
+        entry.addToBlocklist(durationMs, reasonString);
         localLog(TAG + " addToBlocklist: bssid=" + entry.bssid + ", ssid=" + entry.ssid
                 + ", durationMs=" + durationMs + ", reason=" + reasonString);
     }
@@ -497,6 +497,7 @@ public class BssidBlocklistMonitor {
         public final String bssid;
         public final String ssid;
         public final int[] failureCount = new int[NUMBER_REASON_CODES];
+        private String mBlockReason = ""; // reason of blocking for logging only
 
         // The following are used to flag how long this BSSID stays in the blocklist.
         public boolean isInBlocklist;
@@ -519,9 +520,10 @@ public class BssidBlocklistMonitor {
          * Add this BSSID to blocklist for the specified duration.
          * @param durationMs
          */
-        public void addToBlocklist(long durationMs) {
+        public void addToBlocklist(long durationMs, String blockReason) {
             isInBlocklist = true;
             blocklistEndTimeMs = mClock.getWallClockMillis() + durationMs;
+            mBlockReason = blockReason;
         }
 
         /**
@@ -530,6 +532,7 @@ public class BssidBlocklistMonitor {
         public void removeFromBlocklist() {
             isInBlocklist = false;
             blocklistEndTimeMs = 0;
+            mBlockReason = "";
             localLog(TAG + " removeFromBlocklist BSSID=" + bssid);
         }
 
@@ -540,6 +543,7 @@ public class BssidBlocklistMonitor {
             sb.append(", SSID=" + ssid);
             sb.append(", isInBlocklist=" + isInBlocklist);
             if (isInBlocklist) {
+                sb.append(", blockReason=" + mBlockReason);
                 mCalendar.setTimeInMillis(blocklistEndTimeMs);
                 sb.append(", blocklistEndTimeMs="
                         + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,
