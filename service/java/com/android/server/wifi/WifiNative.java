@@ -813,10 +813,10 @@ public class WifiNative {
      * For devices which do not the support the HAL, this will bypass HalDeviceManager &
      * teardown any existing iface.
      */
-    private String createStaIface(@NonNull Iface iface, boolean lowPrioritySta) {
+    private String createStaIface(@NonNull Iface iface) {
         synchronized (mLock) {
             if (mWifiVendorHal.isVendorHalSupported()) {
-                return mWifiVendorHal.createStaIface(lowPrioritySta,
+                return mWifiVendorHal.createStaIface(
                         new InterfaceDestoyedListenerInternal(iface.id));
             } else {
                 Log.i(TAG, "Vendor Hal not supported, ignoring createStaIface.");
@@ -1039,7 +1039,7 @@ public class WifiNative {
                 return null;
             }
             iface.externalListener = interfaceCallback;
-            iface.name = createStaIface(iface, /* lowPrioritySta */ false);
+            iface.name = createStaIface(iface);
             if (TextUtils.isEmpty(iface.name)) {
                 Log.e(TAG, "Failed to create STA iface in vendor HAL");
                 mIfaceMgr.removeIface(iface.id);
@@ -1101,7 +1101,7 @@ public class WifiNative {
                 return null;
             }
             iface.externalListener = interfaceCallback;
-            iface.name = createStaIface(iface, /* lowPrioritySta */ false);
+            iface.name = createStaIface(iface);
             if (TextUtils.isEmpty(iface.name)) {
                 Log.e(TAG, "Failed to create iface in vendor HAL");
                 mIfaceMgr.removeIface(iface.id);
@@ -2843,6 +2843,15 @@ public class WifiNative {
      */
     public WifiLinkLayerStats getWifiLinkLayerStats(@NonNull String ifaceName) {
         return mWifiVendorHal.getWifiLinkLayerStats(ifaceName);
+    }
+
+    /**
+     * Returns whether STA/AP concurrency is supported or not.
+     */
+    public boolean isStaApConcurrencySupported() {
+        synchronized (mLock) {
+            return mWifiVendorHal.isStaApConcurrencySupported();
+        }
     }
 
     /**
