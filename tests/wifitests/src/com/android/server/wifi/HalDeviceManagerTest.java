@@ -56,6 +56,7 @@ import android.os.Handler;
 import android.os.IHwBinder;
 import android.os.test.TestLooper;
 import android.util.Log;
+import android.util.SparseArray;
 
 import androidx.test.filters.SmallTest;
 
@@ -1361,6 +1362,66 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         assertEquals(correctResults, results);
     }
 
+    /**
+     * Validate {@link HalDeviceManager#canSupportIfaceCombo(SparseArray)}
+     */
+    @Test
+    public void testCanSupportIfaceComboTestChipV1() throws Exception {
+        final String name = "wlan0";
+
+        TestChipV1 chipMock = new TestChipV1();
+        chipMock.initialize();
+        mInOrder = inOrder(mServiceManagerMock, mWifiMock, chipMock.chip,
+                mManagerStatusListenerMock);
+        executeAndValidateInitializationSequence();
+        executeAndValidateStartupSequence();
+
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.AP, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.P2P, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.P2P, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+
+        assertFalse(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.AP, 1);
+            }}
+        ));
+        assertFalse(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 2);
+            }}
+        ));
+        assertFalse(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.P2P, 1);
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+
+        verifyNoMoreInteractions(mManagerStatusListenerMock);
+    }
+
+
     //////////////////////////////////////////////////////////////////////////////////////
     // TestChipV2 Specific Tests
     //////////////////////////////////////////////////////////////////////////////////////
@@ -1630,6 +1691,91 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         correctResults.add(IfaceType.NAN);
 
         assertEquals(correctResults, results);
+    }
+
+    /**
+     * Validate {@link HalDeviceManager#canSupportIfaceCombo(SparseArray)}
+     */
+    @Test
+    public void testCanSupportIfaceComboTestChipV2() throws Exception {
+        final String name = "wlan0";
+
+        TestChipV2 chipMock = new TestChipV2();
+        chipMock.initialize();
+        mInOrder = inOrder(mServiceManagerMock, mWifiMock, chipMock.chip,
+                mManagerStatusListenerMock);
+        executeAndValidateInitializationSequence();
+        executeAndValidateStartupSequence();
+
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.AP, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.P2P, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.P2P, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.AP, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 2);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.P2P, 1);
+                put(IfaceType.AP, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.P2P, 1);
+                put(IfaceType.AP, 1);
+            }}
+        ));
+        assertTrue(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 1);
+                put(IfaceType.AP, 1);
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+
+        assertFalse(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.P2P, 1);
+                put(IfaceType.NAN, 1);
+            }}
+        ));
+        assertFalse(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.AP, 2);
+            }}
+        ));
+        assertFalse(mDut.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                put(IfaceType.STA, 2);
+                put(IfaceType.AP, 1);
+            }}
+        ));
+
+        verifyNoMoreInteractions(mManagerStatusListenerMock);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
