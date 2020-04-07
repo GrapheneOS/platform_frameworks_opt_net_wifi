@@ -2846,6 +2846,15 @@ public class WifiNative {
     }
 
     /**
+     * Returns whether STA/AP concurrency is supported or not.
+     */
+    public boolean isStaApConcurrencySupported() {
+        synchronized (mLock) {
+            return mWifiVendorHal.isStaApConcurrencySupported();
+        }
+    }
+
+    /**
      * Get the supported features
      *
      * @param ifaceName Name of the interface.
