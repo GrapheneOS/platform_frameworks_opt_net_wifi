@@ -5630,14 +5630,14 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mClientModeImpl.syncGetSupportedFeatures(
                 any())).thenReturn(supportedFeaturesFromClientModeImpl);
 
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(false);
         mLooper.startAutoDispatch();
         assertEquals(supportedFeaturesFromClientModeImpl,
                         mWifiServiceImpl.getSupportedFeatures());
         mLooper.stopAutoDispatchAndIgnoreExceptions();
 
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(true);
         mLooper.startAutoDispatch();
         assertEquals(supportedFeaturesFromClientModeImpl | WifiManager.WIFI_FEATURE_AP_STA,

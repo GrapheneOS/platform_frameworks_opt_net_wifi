@@ -71,6 +71,7 @@ public class ActiveModeWarden {
     private final WifiPermissionsUtil mWifiPermissionsUtil;
     private final BatteryStatsManager mBatteryStatsManager;
     private final ScanRequestProxy mScanRequestProxy;
+    private final WifiNative mWifiNative;
     private final WifiController mWifiController;
 
     private WifiManager.SoftApCallback mSoftApCallback;
@@ -117,6 +118,7 @@ public class ActiveModeWarden {
         mDefaultModeManager = defaultModeManager;
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
+        mWifiNative = wifiNative;
         mWifiController = new WifiController();
 
         wifiNative.registerStatusListener(isReady -> {
@@ -164,22 +166,8 @@ public class ActiveModeWarden {
      * @return Returns whether the device can support at least one concurrent client mode manager &
      * softap manager.
      */
-    public boolean canSupportAtleastOneConcurrentClientAndSoftApManager() {
-        // We already have 1 client mode manager and 1 softap manager active, so yes.
-        if (hasAnyClientModeManager() && hasAnySoftApManager()) {
-            return true;
-        }
-        // We already have 1 client mode manager active, check if we can create a softap manager.
-        if (hasAnyClientModeManager()) {
-            return mCanRequestMoreSoftApManagers;
-        }
-        // We already have 1 softap manager active, check if we can create a client mode manager.
-        if (hasAnySoftApManager()) {
-            return mCanRequestMoreClientModeManagers;
-        }
-        // We don't have any active mode manager, this can happen if wifi is fully off. We return
-        // false here because we cannot retrieve this info from the HAL.
-        return false;
+    public boolean isStaApConcurrencySupported() {
+        return mWifiNative.isStaApConcurrencySupported();
     }
 
     /** Begin listening to broadcasts and start the internal state machine. */

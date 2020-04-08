@@ -2151,41 +2151,11 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     @Test
-    public void canSupportAtleastOneConcurrentClientAndSoftApManager() throws Exception {
-        assertNotNull(mClientIfaceAvailableListener.getValue());
-        assertNotNull(mSoftApIfaceAvailableListener.getValue());
+    public void isStaApConcurrencySupported() throws Exception {
+        when(mWifiNative.isStaApConcurrencySupported()).thenReturn(false);
+        assertFalse(mActiveModeWarden.isStaApConcurrencySupported());
 
-        // No mode manager
-        assertFalse(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager());
-
-        // client mode manager active, but cannot create one more softap manager
-        enterClientModeActiveState();
-        assertFalse(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager());
-
-        // client mode manager active, can create one more softap manager
-        mSoftApIfaceAvailableListener.getValue().onAvailabilityChanged(true);
-        mLooper.dispatchAll();
-        assertTrue(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager());
-
-        // Tear down client mode manager
-        enterStaDisabledMode(false);
-
-        // active softap manager, but cannot create one more client mode manager
-        reset(mSoftApManager, mBatteryStats);
-        enterSoftApActiveMode();
-        assertFalse(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager());
-
-        // active softap manager, can create one more client mode manager
-        mClientIfaceAvailableListener.getValue().onAvailabilityChanged(true);
-        mLooper.dispatchAll();
-        assertTrue(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager());
-
-        // softap manager + client mode manager active, cannot create any more mode managers
-        reset(mClientModeManager, mBatteryStats, mScanRequestProxy);
-        enterClientModeActiveState();
-        mSoftApIfaceAvailableListener.getValue().onAvailabilityChanged(false);
-        mClientIfaceAvailableListener.getValue().onAvailabilityChanged(false);
-        mLooper.dispatchAll();
-        assertTrue(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager());
+        when(mWifiNative.isStaApConcurrencySupported()).thenReturn(true);
+        assertTrue(mActiveModeWarden.isStaApConcurrencySupported());
     }
 }

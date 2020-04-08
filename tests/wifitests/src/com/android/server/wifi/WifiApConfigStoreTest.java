@@ -112,7 +112,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
         mResources.setString(R.string.wifi_localhotspot_configure_ssid_default,
                              TEST_DEFAULT_HOTSPOT_SSID);
         /* Default to device that does not require ap band conversion */
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(false);
         when(mContext.getResources()).thenReturn(mResources);
 
@@ -282,7 +282,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      */
     @Test
     public void convertDevice5GhzToAny() throws Exception {
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(true);
 
         /* Initialize WifiApConfigStore with default configuration. */
@@ -321,7 +321,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      */
     @Test
     public void deviceAnyNotConverted() throws Exception {
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(true);
 
         /* Initialize WifiApConfigStore with default configuration. */
@@ -350,7 +350,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      */
     @Test
     public void deviceWithChannelNotConverted() throws Exception {
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(true);
 
         /* Initialize WifiApConfigStore with default configuration. */
@@ -380,7 +380,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      */
     @Test
     public void device5GhzConvertedToAnyAtRetrieval() throws Exception {
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(true);
 
         SoftApConfiguration persistedConfig = setupApConfig(
@@ -414,7 +414,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
      */
     @Test
     public void deviceNotConvertedAtRetrieval() throws Exception {
-        when(mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager())
+        when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(true);
 
         SoftApConfiguration persistedConfig = setupApConfig(

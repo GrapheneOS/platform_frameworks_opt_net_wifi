@@ -3715,7 +3715,7 @@ public class WifiServiceImpl extends BaseWifiService {
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_RAND_MAC;
         }
         if (mWifiThreadRunner.call(
-                () -> mActiveModeWarden.canSupportAtleastOneConcurrentClientAndSoftApManager(),
+                () -> mActiveModeWarden.isStaApConcurrencySupported(),
                 false)) {
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_STA;
         }
