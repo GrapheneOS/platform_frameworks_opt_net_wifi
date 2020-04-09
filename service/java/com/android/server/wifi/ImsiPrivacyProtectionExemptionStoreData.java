@@ -172,8 +172,7 @@ public class ImsiPrivacyProtectionExemptionStoreData implements WifiConfigStore.
 
     @Override
     public int getStoreFileId() {
-        // Suggestion Store.
-        return WifiConfigStore.STORE_FILE_USER_NETWORK_SUGGESTIONS;
+        // User general store.
+        return WifiConfigStore.STORE_FILE_USER_GENERAL;
     }
-
 }

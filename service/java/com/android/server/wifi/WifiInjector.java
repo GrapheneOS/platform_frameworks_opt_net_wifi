@@ -260,7 +260,8 @@ public class WifiInjector {
         SubscriptionManager subscriptionManager =
                 mContext.getSystemService(SubscriptionManager.class);
         mWifiCarrierInfoManager = new WifiCarrierInfoManager(makeTelephonyManager(),
-                subscriptionManager, mFrameworkFacade, mContext, wifiHandler);
+                subscriptionManager, this, mFrameworkFacade, mContext,
+                mWifiConfigStore, wifiHandler);
         String l2KeySeed = Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID);
         mWifiScoreCard = new WifiScoreCard(mClock, l2KeySeed, mDeviceConfigFacade);
         mWifiMetrics.setWifiScoreCard(mWifiScoreCard);
