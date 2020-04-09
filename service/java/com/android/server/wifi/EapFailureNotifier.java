@@ -32,7 +32,6 @@ import android.text.TextUtils;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
-import com.android.server.wifi.util.TelephonyUtil;
 
 /**
  * This class may be used to launch notifications when EAP failure occurs.
@@ -45,17 +44,17 @@ public class EapFailureNotifier {
     private final WifiContext mContext;
     private final NotificationManager mNotificationManager;
     private final FrameworkFacade mFrameworkFacade;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     // Unique ID associated with the notification.
     public static final int NOTIFICATION_ID = SystemMessage.NOTE_WIFI_EAP_FAILURE;
     private String mCurrentShownSsid;
 
     public EapFailureNotifier(WifiContext context, FrameworkFacade frameworkFacade,
-            TelephonyUtil telephonyUtil) {
+            WifiCarrierInfoManager wifiCarrierInfoManager) {
         mContext = context;
         mFrameworkFacade = frameworkFacade;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mNotificationManager =
                 mContext.getSystemService(NotificationManager.class);
     }
@@ -74,7 +73,7 @@ public class EapFailureNotifier {
             }
         }
         Resources res = getResourcesForSubId(mContext,
-                mTelephonyUtil.getBestMatchSubscriptionId(config));
+                mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
         if (res == null) return;
         int resourceId = res.getIdentifier(ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
                 "string", mContext.getWifiOverlayApkPkgName());

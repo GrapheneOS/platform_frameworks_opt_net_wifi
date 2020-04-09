@@ -52,6 +52,7 @@ import android.util.Pair;
 
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.NetworkUpdateResult;
+import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiConfigManager;
 import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.WifiInjector;
@@ -63,7 +64,6 @@ import com.android.server.wifi.hotspot2.anqp.Constants;
 import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
 import com.android.server.wifi.util.InformationElementUtil;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -118,7 +118,7 @@ public class PasspointManager {
     private final WifiMetrics mWifiMetrics;
     private final PasspointProvisioner mPasspointProvisioner;
     private final AppOpsManager mAppOps;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     /**
      * Map of package name of an app to the app ops changed listener for the app.
@@ -331,7 +331,7 @@ public class PasspointManager {
             PasspointObjectFactory objectFactory, WifiConfigManager wifiConfigManager,
             WifiConfigStore wifiConfigStore,
             WifiMetrics wifiMetrics,
-            TelephonyUtil telephonyUtil) {
+            WifiCarrierInfoManager wifiCarrierInfoManager) {
         mPasspointEventHandler = objectFactory.makePasspointEventHandler(wifiNative,
                 new CallbackHandler(context));
         mWifiInjector = wifiInjector;
@@ -344,9 +344,9 @@ public class PasspointManager {
         mWifiConfigManager = wifiConfigManager;
         mWifiMetrics = wifiMetrics;
         mProviderIndex = 0;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         wifiConfigStore.registerStoreData(objectFactory.makePasspointConfigUserStoreData(
-                mKeyStore, mTelephonyUtil, new UserDataSourceHandler()));
+                mKeyStore, mWifiCarrierInfoManager, new UserDataSourceHandler()));
         wifiConfigStore.registerStoreData(objectFactory.makePasspointConfigSharedStoreData(
                 new SharedDataSourceHandler()));
         mPasspointProvisioner = objectFactory.makePasspointProvisioner(context, wifiNative,
@@ -433,10 +433,10 @@ public class PasspointManager {
             return false;
         }
 
-        mTelephonyUtil.tryUpdateCarrierIdForPasspoint(config);
+        mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(config);
         // Create a provider and install the necessary certificates and keys.
         PasspointProvider newProvider = mObjectFactory.makePasspointProvider(config, mKeyStore,
-                mTelephonyUtil, mProviderIndex++, uid, packageName, isFromSuggestion);
+                mWifiCarrierInfoManager, mProviderIndex++, uid, packageName, isFromSuggestion);
         newProvider.setTrusted(isTrusted);
 
         if (!newProvider.installCertsAndKeys()) {
@@ -1171,7 +1171,7 @@ public class PasspointManager {
         // Note that for legacy configuration, the alias for client private key is the same as the
         // alias for the client certificate.
         PasspointProvider provider = new PasspointProvider(passpointConfig, mKeyStore,
-                mTelephonyUtil,
+                mWifiCarrierInfoManager,
                 mProviderIndex++, wifiConfig.creatorUid, null, false,
                 Arrays.asList(enterpriseConfig.getCaCertificateAlias()),
                 enterpriseConfig.getClientCertificateAlias(), null, false, false);
@@ -1226,7 +1226,7 @@ public class PasspointManager {
             @NonNull PasspointConfiguration passpointConfiguration,
             @NonNull List<ScanResult> scanResults) {
         PasspointProvider provider = mObjectFactory.makePasspointProvider(passpointConfiguration,
-                null, mTelephonyUtil, 0, 0, null, false);
+                null, mWifiCarrierInfoManager, 0, 0, null, false);
         List<ScanResult> filteredScanResults = new ArrayList<>();
         for (ScanResult scanResult : scanResults) {
             PasspointMatch matchInfo = provider.match(getANQPElements(scanResult),

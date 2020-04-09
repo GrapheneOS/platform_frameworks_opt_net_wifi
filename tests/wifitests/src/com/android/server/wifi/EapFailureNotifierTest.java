@@ -33,8 +33,6 @@ import android.telephony.SubscriptionManager;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.util.TelephonyUtil;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +52,8 @@ public class EapFailureNotifierTest extends WifiBaseTest {
     @Mock NotificationManager mNotificationManager;
     @Mock FrameworkFacade mFrameworkFacade;
     @Mock Notification mNotification;
-    @Mock TelephonyUtil mTelephonyUtil;
+    @Mock
+    WifiCarrierInfoManager mWifiCarrierInfoManager;
     @Mock WifiConfiguration mWifiConfiguration;
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS) private Notification.Builder mNotificationBuilder;
@@ -79,7 +78,7 @@ public class EapFailureNotifierTest extends WifiBaseTest {
             .startMocking();
         when(mContext.getSystemService(NotificationManager.class))
                 .thenReturn(mNotificationManager);
-        when(mTelephonyUtil.getBestMatchSubscriptionId(mWifiConfiguration)).thenReturn(0);
+        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(mWifiConfiguration)).thenReturn(0);
         lenient().when(SubscriptionManager.getResourcesForSubId(eq(mContext), anyInt()))
                 .thenReturn(mResources);
         when(mContext.getResources()).thenReturn(mResources);
@@ -92,7 +91,7 @@ public class EapFailureNotifierTest extends WifiBaseTest {
         when(mContext.createPackageContext(anyString(), eq(0))).thenReturn(mContext);
         when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
         mEapFailureNotifier =
-                new EapFailureNotifier(mContext, mFrameworkFacade, mTelephonyUtil);
+                new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager);
     }
 
     @After
