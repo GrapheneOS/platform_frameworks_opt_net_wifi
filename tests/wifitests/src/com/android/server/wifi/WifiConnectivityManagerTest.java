@@ -107,8 +107,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityHelper = mockWifiConnectivityHelper();
         mWifiNS = mockWifiNetworkSelector();
         when(mWifiInjector.getWifiScanner()).thenReturn(mWifiScanner);
-        when(mWifiInjector.getWifiNetworkSuggestionsManager())
-                .thenReturn(mWifiNetworkSuggestionsManager);
         when(mWifiNetworkSuggestionsManager.retrieveHiddenNetworkList())
                 .thenReturn(new ArrayList<>());
         when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
@@ -122,7 +120,10 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
                 .thenReturn(new ArrayList<>());
         mWifiConnectivityManager = createConnectivityManager();
-        verify(mWifiConfigManager).addOnNetworkUpdateListener(anyObject());
+        verify(mWifiConfigManager).addOnNetworkUpdateListener(
+                mNetworkUpdateListenerCaptor.capture());
+        verify(mWifiNetworkSuggestionsManager).addOnSuggestionUpdateListener(
+                mSuggestionUpdateListenerCaptor.capture());
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
         mWifiConnectivityManager.setWifiEnabled(true);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime());
@@ -208,6 +209,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Captor ArgumentCaptor<ArrayList<String>> mSsidWhitelistCaptor;
     @Captor ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener>
             mNetworkUpdateListenerCaptor;
+    @Captor ArgumentCaptor<WifiNetworkSuggestionsManager.OnSuggestionUpdateListener>
+            mSuggestionUpdateListenerCaptor;
     private MockResources mResources;
     private int mMinPacketRateActiveTraffic;
 
@@ -385,8 +388,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         networkList.add(config);
         when(wifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(null);
         when(wifiConfigManager.getSavedNetworks(anyInt())).thenReturn(networkList);
-        doNothing().when(wifiConfigManager).addOnNetworkUpdateListener(
-                mNetworkUpdateListenerCaptor.capture());
 
         return wifiConfigManager;
     }
@@ -394,8 +395,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     WifiConnectivityManager createConnectivityManager() {
         return new WifiConnectivityManager(mContext,
                 mScoringParams,
-                mClientModeImpl, mWifiInjector,
-                mWifiConfigManager, mWifiInfo, mWifiNS, mWifiConnectivityHelper,
+                mClientModeImpl, mWifiInjector, mWifiConfigManager, mWifiNetworkSuggestionsManager,
+                mWifiInfo, mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
                 mLocalLog, mWifiScoreCard);
@@ -3160,5 +3161,32 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 configuration.networkId);
         assertEquals(maxListSize, results.size());
         assertFalse(results.contains(freqs.get(0).get(2)));
+    }
+
+    @Test
+    public void restartPnoScanForNetworkChanges() {
+        mWifiConnectivityManager.setWifiEnabled(true);
+
+        // starts a PNO scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+        mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+
+        InOrder inOrder = inOrder(mWifiScanner);
+
+        inOrder.verify(mWifiScanner).startDisconnectedPnoScan(any(), any(), any(), any());
+
+        // Add or update suggestions.
+        mSuggestionUpdateListenerCaptor.getValue().onSuggestionsAddedOrUpdated(
+                Arrays.asList(mWifiNetworkSuggestion));
+        // Ensure that we restarted PNO.
+        inOrder.verify(mWifiScanner).stopPnoScan(any());
+        inOrder.verify(mWifiScanner).startDisconnectedPnoScan(any(), any(), any(), any());
+
+        // Add saved network
+        mNetworkUpdateListenerCaptor.getValue().onNetworkAdded(new WifiConfiguration());
+        // Ensure that we restarted PNO.
+        inOrder.verify(mWifiScanner).stopPnoScan(any());
+        inOrder.verify(mWifiScanner).startDisconnectedPnoScan(any(), any(), any(), any());
     }
 }
