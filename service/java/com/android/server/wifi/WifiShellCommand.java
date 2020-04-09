@@ -407,11 +407,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                             countDownLatch.countDown();
                         }
                     };
+                    WifiConfiguration config = buildWifiConfiguration(pw);
                     mWifiService.connect(
-                            buildWifiConfiguration(pw), -1, new Binder(), actionListener,
-                            actionListener.hashCode());
+                            config, -1, new Binder(), actionListener, actionListener.hashCode());
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
+                    setAutoJoin(pw, config.SSID, config.allowAutojoin);
                     break;
                 }
                 case "add-network": {
@@ -429,11 +430,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                             countDownLatch.countDown();
                         }
                     };
+                    WifiConfiguration config = buildWifiConfiguration(pw);
                     mWifiService.save(
-                            buildWifiConfiguration(pw), new Binder(), actionListener,
-                            actionListener.hashCode());
+                            config, new Binder(), actionListener, actionListener.hashCode());
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
+                    setAutoJoin(pw, config.SSID, config.allowAutojoin);
                     break;
                 }
                 case "forget-network": {
@@ -489,10 +491,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.enableVerboseLogging(enabled ? 1 : 0);
                     break;
                 }
-                case "add-suggestion":
+                case "add-suggestion": {
+                    WifiNetworkSuggestion suggestion = buildSuggestion(pw);
                     mWifiService.addNetworkSuggestions(
-                            Arrays.asList(buildSuggestion(pw)), SHELL_PACKAGE_NAME, null);
+                            Arrays.asList(suggestion), SHELL_PACKAGE_NAME, null);
                     break;
+                }
                 case "remove-suggestion": {
                     String ssid = getNextArgRequired();
                     List<WifiNetworkSuggestion> suggestions =
@@ -652,6 +656,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         while (option != null) {
             if (option.equals("-m")) {
                 configuration.meteredOverride = METERED_OVERRIDE_METERED;
+            } else if (option.equals("-d")) {
+                configuration.allowAutojoin = false;
             } else {
                 pw.println("Ignoring unknown option " + option);
             }
@@ -685,6 +691,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 suggestionBuilder.setIsMetered(true);
             } else if (option.equals("-s")) {
                 suggestionBuilder.setCredentialSharedWithUser(true);
+            } else if (option.equals("-d")) {
+                suggestionBuilder.setIsInitialAutojoinEnabled(false);
             } else {
                 pw.println("Ignoring unknown option " + option);
             }
@@ -728,6 +736,23 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 .removeCapability(NET_CAPABILITY_INTERNET)
                 .setNetworkSpecifier(specifierBuilder.build())
                 .build();
+    }
+
+    private void setAutoJoin(PrintWriter pw, String ssid, boolean allowAutojoin) {
+        // For suggestions, this will work only if the config has already been added
+        // to WifiConfigManager.
+        WifiConfiguration retrievedConfig =
+                mWifiService.getPrivilegedConfiguredNetworks(SHELL_PACKAGE_NAME, null)
+                        .getList()
+                        .stream()
+                        .filter(n -> n.SSID.equals(ssid))
+                        .findAny()
+                        .orElse(null);
+        if (retrievedConfig == null) {
+            pw.println("Cannot retrieve config, autojoin setting skipped.");
+            return;
+        }
+        mWifiService.allowAutojoin(retrievedConfig.networkId, allowAutojoin);
     }
 
     private int sendLinkProbe(PrintWriter pw) throws InterruptedException {
@@ -795,7 +820,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Start a new scan");
         pw.println("  list-networks");
         pw.println("    Lists the saved networks");
-        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-m]");
+        pw.println("  connect-network <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-m] [-d]");
         pw.println("    Connect to a network with provided params and add to saved networks list");
         pw.println("    <ssid> - SSID of the network");
         pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
@@ -806,7 +831,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
         pw.println("           - 'wpa3' - WPA-3 PSK networks");
         pw.println("    -m - Mark the network metered.");
-        pw.println("  add-network <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-m]");
+        pw.println("    -d - Mark the network autojoin disabled.");
+        pw.println("  add-network <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-m] [-d]");
         pw.println("    Add/update saved network with provided params");
         pw.println("    <ssid> - SSID of the network");
         pw.println("    open|owe|wpa2|wpa3 - Security type of the network.");
@@ -817,6 +843,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("           - 'wpa2' - WPA-2 PSK networks (Most prevalent)");
         pw.println("           - 'wpa3' - WPA-3 PSK networks");
         pw.println("    -m - Mark the network metered.");
+        pw.println("    -d - Mark the network autojoin disabled.");
         pw.println("  forget-network <networkId>");
         pw.println("    Remove the network mentioned by <networkId>");
         pw.println("        - Use list-networks to retrieve <networkId> for the network");
@@ -824,7 +851,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Current wifi status");
         pw.println("  set-verbose-logging enabled|disabled ");
         pw.println("    Set the verbose logging enabled or disabled");
-        pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-m] [-s]");
+        pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-m] [-s] [-d]");
         pw.println("    Add a network suggestion with provided params");
         pw.println("    Use 'network-suggestions-set-user-approved " + SHELL_PACKAGE_NAME + " yes'"
                 +  " to approve suggestions added via shell (Needs root access)");
@@ -839,6 +866,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    -u - Mark the suggestion untrusted.");
         pw.println("    -m - Mark the suggestion metered.");
         pw.println("    -s - Share the suggestion with user.");
+        pw.println("    -d - Mark the suggestion autojoin disabled.");
         pw.println("  remove-suggestion <ssid>");
         pw.println("    Remove a network suggestion with provided SSID of the network");
         pw.println("  remove-all-suggestions");
