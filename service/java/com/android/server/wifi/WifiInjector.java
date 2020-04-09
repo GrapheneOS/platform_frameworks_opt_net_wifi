@@ -619,7 +619,7 @@ public class WifiInjector {
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock);
         return new WifiConnectivityManager(mContext, getScoringParams(),
                 clientModeImpl, this,
-                mWifiConfigManager, clientModeImpl.getWifiInfo(),
+                mWifiConfigManager, mWifiNetworkSuggestionsManager, clientModeImpl.getWifiInfo(),
                 mWifiNetworkSelector, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mWifiHandlerThread.getLooper()),
