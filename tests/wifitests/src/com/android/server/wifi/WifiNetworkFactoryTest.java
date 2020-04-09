@@ -1579,6 +1579,36 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
     }
 
     /**
+     * Verify handling of request release after starting connection to the network.
+     */
+    @Test
+    public void testHandleNetworkReleaseWithSpecifierAfterConnectionStart() throws Exception {
+        sendNetworkRequestAndSetupForConnectionStatus();
+
+        assertNotNull(mSelectedNetwork);
+
+        // Now release the network request.
+        WifiConfiguration wcmNetwork = new WifiConfiguration(mSelectedNetwork);
+        wcmNetwork.networkId = TEST_NETWORK_ID_1;
+        wcmNetwork.creatorUid = TEST_UID_1;
+        wcmNetwork.creatorName = TEST_PACKAGE_NAME_1;
+        wcmNetwork.shared = false;
+        wcmNetwork.fromWifiNetworkSpecifier = true;
+        wcmNetwork.ephemeral = true;
+        when(mWifiConfigManager.getConfiguredNetwork(wcmNetwork.getKey()))
+                .thenReturn(wcmNetwork);
+        mWifiNetworkFactory.releaseNetworkFor(mNetworkRequest);
+        // verify we canceled the timeout alarm.
+        verify(mAlarmManager).cancel(mConnectionTimeoutAlarmListenerArgumentCaptor.getValue());
+        // Verify that we triggered a disconnect.
+        verify(mClientModeImpl, times(2)).disconnectCommand();
+        verify(mWifiConfigManager).removeNetwork(
+                TEST_NETWORK_ID_1, TEST_UID_1, TEST_PACKAGE_NAME_1);
+        // Re-enable connectivity manager .
+        verify(mWifiConnectivityManager).setSpecificNetworkRequestInProgress(false);
+    }
+
+    /**
      * Verify handling of request release after connecting to the network.
      */
     @Test
@@ -1601,9 +1631,10 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         wcmNetwork.networkId = TEST_NETWORK_ID_1;
         wcmNetwork.creatorUid = TEST_UID_1;
         wcmNetwork.creatorName = TEST_PACKAGE_NAME_1;
+        wcmNetwork.shared = false;
         wcmNetwork.fromWifiNetworkSpecifier = true;
         wcmNetwork.ephemeral = true;
-        when(mWifiConfigManager.getConfiguredNetwork(mSelectedNetwork.getKey()))
+        when(mWifiConfigManager.getConfiguredNetwork(wcmNetwork.getKey()))
                 .thenReturn(wcmNetwork);
         mWifiNetworkFactory.releaseNetworkFor(mNetworkRequest);
         // Verify that we triggered a disconnect.
