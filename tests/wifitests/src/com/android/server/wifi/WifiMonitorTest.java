@@ -39,7 +39,6 @@ import androidx.test.filters.SmallTest;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.hotspot2.AnqpEvent;
 import com.android.server.wifi.hotspot2.IconEvent;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -264,8 +263,8 @@ public class WifiMonitorTest extends WifiBaseTest {
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
         assertEquals(WifiMonitor.SUP_REQUEST_SIM_AUTH, messageCaptor.getValue().what);
-        TelephonyUtil.SimAuthRequestData authData =
-                (TelephonyUtil.SimAuthRequestData) messageCaptor.getValue().obj;
+        WifiCarrierInfoManager.SimAuthRequestData authData =
+                (WifiCarrierInfoManager.SimAuthRequestData) messageCaptor.getValue().obj;
         assertEquals(networkId, authData.networkId);
         assertEquals(ssid, authData.ssid);
         assertEquals(WifiEnterpriseConfig.Eap.SIM, authData.protocol);
@@ -288,8 +287,8 @@ public class WifiMonitorTest extends WifiBaseTest {
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
         assertEquals(WifiMonitor.SUP_REQUEST_SIM_AUTH, messageCaptor.getValue().what);
-        TelephonyUtil.SimAuthRequestData authData =
-                (TelephonyUtil.SimAuthRequestData) messageCaptor.getValue().obj;
+        WifiCarrierInfoManager.SimAuthRequestData authData =
+                (WifiCarrierInfoManager.SimAuthRequestData) messageCaptor.getValue().obj;
         assertEquals(networkId, authData.networkId);
         assertEquals(ssid, authData.ssid);
         assertEquals(WifiEnterpriseConfig.Eap.AKA, authData.protocol);

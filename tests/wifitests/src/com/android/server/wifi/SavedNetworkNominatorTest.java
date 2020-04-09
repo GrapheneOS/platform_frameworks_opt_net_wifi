@@ -29,7 +29,6 @@ import android.util.Pair;
 import com.android.server.wifi.WifiNetworkSelector.NetworkNominator.OnConnectableListener;
 import com.android.server.wifi.WifiNetworkSelectorTestUtil.ScanDetailsAndWifiConfigs;
 import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import org.junit.After;
 import org.junit.Before;
@@ -53,9 +52,9 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         MockitoAnnotations.initMocks(this);
         mLocalLog = new LocalLog(512);
         mSavedNetworkNominator = new SavedNetworkNominator(mWifiConfigManager,
-                mPasspointNetworkNominateHelper, mLocalLog, mTelephonyUtil);
-        when(mTelephonyUtil.isSimPresent(anyInt())).thenReturn(true);
-        when(mTelephonyUtil.getBestMatchSubscriptionId(any())).thenReturn(1);
+                mPasspointNetworkNominateHelper, mLocalLog, mWifiCarrierInfoManager);
+        when(mWifiCarrierInfoManager.isSimPresent(anyInt())).thenReturn(true);
+        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(any())).thenReturn(1);
     }
 
     /** Cleans up test. */
@@ -74,7 +73,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
     @Mock private WifiConfigManager mWifiConfigManager;
     @Mock private Clock mClock;
     @Mock private OnConnectableListener mOnConnectableListener;
-    @Mock private TelephonyUtil mTelephonyUtil;
+    @Mock private WifiCarrierInfoManager mWifiCarrierInfoManager;
     @Mock private PasspointNetworkNominateHelper mPasspointNetworkNominateHelper;
     private LocalLog mLocalLog;
 
@@ -122,9 +121,9 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
         savedConfigs[0].carrierId = TEST_CARRIER_ID;
         // SIM is absent
-        when(mTelephonyUtil.getBestMatchSubscriptionId(any(WifiConfiguration.class)))
+        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(any(WifiConfiguration.class)))
                 .thenReturn(INVALID_SUBID);
-        when(mTelephonyUtil.isSimPresent(eq(INVALID_SUBID))).thenReturn(false);
+        when(mWifiCarrierInfoManager.isSimPresent(eq(INVALID_SUBID))).thenReturn(false);
 
         mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
@@ -250,13 +249,13 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
                         freqs, levels, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
-        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
+        when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
                 .thenReturn(false);
         mSavedNetworkNominator.nominateNetworks(scanDetails,
                 null, null, true, false, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
         reset(mOnConnectableListener);
-        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
+        when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
                 .thenReturn(true);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
