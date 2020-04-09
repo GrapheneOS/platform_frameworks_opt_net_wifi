@@ -399,4 +399,9 @@
 
     <!-- Enable WPA2 to WPA3 auto-upgrade offload to capable Driver/Firmware -->
     <bool translatable="false" name="config_wifiSaeUpgradeOffloadEnabled">false</bool>
+
+    <!-- Number of self recoveries to be attempted per hour. Any fatal errors beyond this will
+         cause the wifi stack to turn wifi off and wait for user input.
+         Set to 0 to turn off recovery attempts and always turn off wifi on failures -->
+    <integer translatable="false" name="config_wifiMaxNativeFailureSelfRecoveryPerHour">2</integer>
 </resources>

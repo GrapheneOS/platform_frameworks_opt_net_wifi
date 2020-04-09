@@ -1020,7 +1020,7 @@ public class WifiBackupRestoreTest extends WifiBaseTest {
     @Test
     public void testRestoreFromV1_2BackupData() {
         List<WifiConfiguration> configurations = new ArrayList<>();
-        configurations.add(createNetworkForConfigurationWithV1_1Data());
+        configurations.add(createNetworkForConfigurationWithV1_2Data());
 
         byte[] backupData = WIFI_BACKUP_DATA_V1_2.getBytes();
         List<WifiConfiguration> retrievedConfigurations =
