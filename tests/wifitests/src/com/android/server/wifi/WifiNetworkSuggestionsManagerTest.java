@@ -16,8 +16,6 @@
 
 package com.android.server.wifi;
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_BACKGROUND;
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE;
@@ -3816,6 +3814,32 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertFalse(ewns.wns.wifiConfiguration.isMostRecentlyConnected);
         mDataSource.fromDeserialized(suggestionStore);
         verify(mLruConnectionTracker, never()).addNetwork(any());
+    }
+
+    @Test
+    public void testOnSuggestionUpdateListener() {
+        WifiNetworkSuggestionsManager.OnSuggestionUpdateListener listener =
+                mock(WifiNetworkSuggestionsManager.OnSuggestionUpdateListener.class);
+        mWifiNetworkSuggestionsManager.addOnSuggestionUpdateListener(listener);
+
+        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
+        dummyConfiguration.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+
+        List<WifiNetworkSuggestion> networkSuggestionList1 =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion1);
+                }};
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        verify(listener).onSuggestionsAddedOrUpdated(networkSuggestionList1);
+
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.remove(networkSuggestionList1, TEST_UID_1,
+                        TEST_PACKAGE_1));
+        verify(listener).onSuggestionsRemoved(networkSuggestionList1);
     }
 
     /**
