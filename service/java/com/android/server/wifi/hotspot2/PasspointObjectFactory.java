@@ -20,10 +20,10 @@ import android.content.Context;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 
 import com.android.server.wifi.Clock;
+import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -59,23 +59,24 @@ public class PasspointObjectFactory{
      * @return {@link PasspointProvider}
      */
     public PasspointProvider makePasspointProvider(PasspointConfiguration config,
-            WifiKeyStore keyStore, TelephonyUtil telephonyUtil, long providerId, int creatorUid,
-            String packageName, boolean isFromSuggestion) {
-        return new PasspointProvider(config, keyStore, telephonyUtil, providerId, creatorUid,
-                packageName, isFromSuggestion);
+            WifiKeyStore keyStore, WifiCarrierInfoManager wifiCarrierInfoManager, long providerId,
+            int creatorUid, String packageName, boolean isFromSuggestion) {
+        return new PasspointProvider(config, keyStore, wifiCarrierInfoManager, providerId,
+                creatorUid, packageName, isFromSuggestion);
     }
 
     /**
      * Create a {@link PasspointConfigUserStoreData} instance.
      *
      * @param keyStore Instance of {@link WifiKeyStore}
-     * @param telephonyUtil Instance of {@link TelephonyUtil}
+     * @param wifiCarrierInfoManager Instance of {@link WifiCarrierInfoManager}
      * @param dataSource Passpoint configuration data source
      * @return {@link PasspointConfigUserStoreData}
      */
     public PasspointConfigUserStoreData makePasspointConfigUserStoreData(WifiKeyStore keyStore,
-            TelephonyUtil telephonyUtil, PasspointConfigUserStoreData.DataSource dataSource) {
-        return new PasspointConfigUserStoreData(keyStore, telephonyUtil, dataSource);
+            WifiCarrierInfoManager wifiCarrierInfoManager,
+            PasspointConfigUserStoreData.DataSource dataSource) {
+        return new PasspointConfigUserStoreData(keyStore, wifiCarrierInfoManager, dataSource);
     }
 
     /**
