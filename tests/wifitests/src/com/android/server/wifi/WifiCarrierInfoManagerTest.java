@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.server.wifi.util;
+package com.android.server.wifi;
 
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.when;
+import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION;
+import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION;
+import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_DISMISSED_INTENT_ACTION;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
@@ -42,20 +51,21 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.util.Pair;
+import android.view.Window;
 
 import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.server.wifi.FrameworkFacade;
-import com.android.server.wifi.WifiBaseTest;
-import com.android.server.wifi.WifiConfigurationTestUtil;
-import com.android.server.wifi.util.TelephonyUtil.SimAuthRequestData;
-import com.android.server.wifi.util.TelephonyUtil.SimAuthResponseData;
+import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
+import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
+import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
+import com.android.wifi.resources.R;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
@@ -71,11 +81,11 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 
 /**
- * Unit tests for {@link com.android.server.wifi.util.TelephonyUtil}.
+ * Unit tests for {@link WifiCarrierInfoManager}.
  */
 @SmallTest
-public class TelephonyUtilTest extends WifiBaseTest {
-    private TelephonyUtil mTelephonyUtil;
+public class WifiCarrierInfoManagerTest extends WifiBaseTest {
+    private WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     private static final int DATA_SUBID = 1;
     private static final int NON_DATA_SUBID = 2;
@@ -97,29 +107,34 @@ public class TelephonyUtilTest extends WifiBaseTest {
     private static final String ANONYMOUS_IDENTITY = "anonymous@wlan.mnc456.mcc123.3gppnetwork.org";
     private static final String CARRIER_NAME = "Google";
 
-    @Mock
-    CarrierConfigManager mCarrierConfigManager;
-    @Mock
-    Context mContext;
-    @Mock
-    FrameworkFacade mFrameworkFacade;
-    @Mock
-    TelephonyManager mTelephonyManager;
-    @Mock
-    TelephonyManager mDataTelephonyManager;
-    @Mock
-    TelephonyManager mNonDataTelephonyManager;
-    @Mock
-    SubscriptionManager mSubscriptionManager;
-    @Mock
-    SubscriptionInfo mDataSubscriptionInfo;
-    @Mock
-    SubscriptionInfo mNonDataSubscriptionInfo;
+    @Mock CarrierConfigManager mCarrierConfigManager;
+    @Mock WifiContext mContext;
+    @Mock Resources mResources;
+    @Mock FrameworkFacade mFrameworkFacade;
+    @Mock TelephonyManager mTelephonyManager;
+    @Mock TelephonyManager mDataTelephonyManager;
+    @Mock TelephonyManager mNonDataTelephonyManager;
+    @Mock SubscriptionManager mSubscriptionManager;
+    @Mock SubscriptionInfo mDataSubscriptionInfo;
+    @Mock SubscriptionInfo mNonDataSubscriptionInfo;
+    @Mock WifiConfigStore mWifiConfigStore;
+    @Mock WifiInjector mWifiInjector;
+    @Mock WifiConfigManager mWifiConfigManager;
+    @Mock ImsiPrivacyProtectionExemptionStoreData mImsiPrivacyProtectionExemptionStoreData;
+    @Mock NotificationManager mNotificationManger;
+    @Mock Notification.Builder mNotificationBuilder;
+    @Mock Notification mNotification;
+    @Mock AlertDialog.Builder mAlertDialogBuilder;
+    @Mock AlertDialog mAlertDialog;
+    @Mock WifiCarrierInfoManager.OnUserApproveCarrierListener mListener;
 
     private List<SubscriptionInfo> mSubInfoList;
 
     MockitoSession mMockingSession = null;
     TestLooper mLooper;
+    private ImsiPrivacyProtectionExemptionStoreData.DataSource mImsiDataSource;
+    private ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
+            ArgumentCaptor.forClass(BroadcastReceiver.class);
 
     @Before
     public void setUp() throws Exception {
@@ -127,8 +142,48 @@ public class TelephonyUtilTest extends WifiBaseTest {
         mLooper = new TestLooper();
         when(mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
-        mTelephonyUtil = new TelephonyUtil(mTelephonyManager, mSubscriptionManager,
-                mFrameworkFacade, mContext, new Handler(mLooper.getLooper()));
+        when(mContext.getResources()).thenReturn(mResources);
+        when(mContext.getSystemService(Context.NOTIFICATION_SERVICE))
+                .thenReturn(mNotificationManger);
+        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
+        when(mFrameworkFacade.makeAlertDialogBuilder(any()))
+                .thenReturn(mAlertDialogBuilder);
+        when(mFrameworkFacade.makeNotificationBuilder(any(), anyString()))
+                .thenReturn(mNotificationBuilder);
+        when(mFrameworkFacade.getBroadcast(any(), anyInt(), any(), anyInt()))
+                .thenReturn(mock(PendingIntent.class));
+        when(mAlertDialogBuilder.setTitle(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setMessage(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setPositiveButton(any(), any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setNegativeButton(any(), any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setOnDismissListener(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.setOnCancelListener(any())).thenReturn(mAlertDialogBuilder);
+        when(mAlertDialogBuilder.create()).thenReturn(mAlertDialog);
+        when(mAlertDialog.getWindow()).thenReturn(mock(Window.class));
+        when(mNotificationBuilder.setSmallIcon(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setTicker(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setContentTitle(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setStyle(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setDeleteIntent(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setShowWhen(anyBoolean())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setLocalOnly(anyBoolean())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.setColor(anyInt())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.addAction(any())).thenReturn(mNotificationBuilder);
+        when(mNotificationBuilder.build()).thenReturn(mNotification);
+        when(mWifiInjector.makeImsiProtectionExemptionStoreData(any()))
+                .thenReturn(mImsiPrivacyProtectionExemptionStoreData);
+        when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
+        mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
+                mSubscriptionManager, mWifiInjector, mFrameworkFacade, mContext, mWifiConfigStore,
+                new Handler(mLooper.getLooper()));
+        ArgumentCaptor<ImsiPrivacyProtectionExemptionStoreData.DataSource>
+                imsiDataSourceArgumentCaptor =
+                ArgumentCaptor.forClass(ImsiPrivacyProtectionExemptionStoreData.DataSource.class);
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(), any(), any(), any());
+        verify(mWifiInjector).makeImsiProtectionExemptionStoreData(imsiDataSourceArgumentCaptor
+                .capture());
+        mImsiDataSource = imsiDataSourceArgumentCaptor.getValue();
+        assertNotNull(mImsiDataSource);
         mSubInfoList = new ArrayList<>();
         mSubInfoList.add(mDataSubscriptionInfo);
         mSubInfoList.add(mNonDataSubscriptionInfo);
@@ -163,6 +218,31 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
         when(mSubscriptionManager.getActiveSubscriptionIdList())
                 .thenReturn(new int[]{DATA_SUBID, NON_DATA_SUBID});
+
+        // setup resource strings for IMSI protection notification.
+        when(mResources.getString(eq(R.string.wifi_suggestion_imsi_privacy_title), anyString()))
+                .thenAnswer(s -> "blah" + s.getArguments()[1]);
+        when(mResources.getString(eq(R.string.wifi_suggestion_imsi_privacy_content)))
+                .thenReturn("blah");
+        when(mResources.getText(
+                eq(R.string.wifi_suggestion_action_allow_imsi_privacy_exemption_carrier)))
+                .thenReturn("blah");
+        when(mResources.getText(
+                eq(R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier)))
+                .thenReturn("blah");
+        when(mResources.getString(
+                eq(R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_title)))
+                .thenReturn("blah");
+        when(mResources.getString(
+                eq(R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_content),
+                anyString())).thenAnswer(s -> "blah" + s.getArguments()[1]);
+        when(mResources.getText(
+                eq(R.string.wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation)))
+                .thenReturn("blah");
+        when(mResources.getText(
+                eq(R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation)))
+                .thenReturn("blah");
+        mWifiCarrierInfoManager.addImsiExemptionUserApprovalListener(mListener);
     }
 
     @After
@@ -222,8 +302,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         receiver.getValue().onReceive(mContext,
                 new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
 
-        assertTrue(mTelephonyUtil.requiresImsiEncryption(DATA_SUBID));
-        assertFalse(mTelephonyUtil.requiresImsiEncryption(NON_DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(NON_DATA_SUBID));
     }
 
     /**
@@ -242,8 +322,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         receiver.getValue().onReceive(mContext,
                 new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
 
-        assertTrue(mTelephonyUtil.requiresImsiEncryption(DATA_SUBID));
-        assertTrue(mTelephonyUtil.requiresImsiEncryption(NON_DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.requiresImsiEncryption(NON_DATA_SUBID));
 
         when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
                 .thenReturn(generateTestCarrierConfig(false));
@@ -252,8 +332,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         receiver.getValue().onReceive(mContext,
                 new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
 
-        assertFalse(mTelephonyUtil.requiresImsiEncryption(DATA_SUBID));
-        assertFalse(mTelephonyUtil.requiresImsiEncryption(NON_DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(NON_DATA_SUBID));
     }
 
     /**
@@ -278,16 +358,16 @@ public class TelephonyUtilTest extends WifiBaseTest {
 
         observer.onChange(false);
 
-        assertTrue(mTelephonyUtil.requiresImsiEncryption(DATA_SUBID));
-        assertFalse(mTelephonyUtil.isImsiEncryptionInfoAvailable(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(DATA_SUBID));
 
         when(mDataTelephonyManager.getCarrierInfoForImsiEncryption(TelephonyManager.KEY_TYPE_WLAN))
                 .thenReturn(mock(ImsiEncryptionInfo.class));
 
         observer.onChange(false);
 
-        assertTrue(mTelephonyUtil.requiresImsiEncryption(DATA_SUBID));
-        assertTrue(mTelephonyUtil.isImsiEncryptionInfoAvailable(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(DATA_SUBID));
     }
 
     /**
@@ -313,8 +393,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
 
         observer.onChange(false);
 
-        assertTrue(mTelephonyUtil.isImsiEncryptionInfoAvailable(DATA_SUBID));
-        assertTrue(mTelephonyUtil.isImsiEncryptionInfoAvailable(NON_DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(NON_DATA_SUBID));
 
         when(mDataTelephonyManager.getCarrierInfoForImsiEncryption(TelephonyManager.KEY_TYPE_WLAN))
                 .thenReturn(null);
@@ -323,8 +403,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
 
         observer.onChange(false);
 
-        assertFalse(mTelephonyUtil.isImsiEncryptionInfoAvailable(DATA_SUBID));
-        assertFalse(mTelephonyUtil.isImsiEncryptionInfoAvailable(NON_DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(NON_DATA_SUBID));
     }
 
     @Test
@@ -341,14 +421,14 @@ public class TelephonyUtilTest extends WifiBaseTest {
                         WifiEnterpriseConfig.Phase2.NONE);
         simConfig.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(simConfig));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(simConfig));
 
         WifiConfiguration peapSimConfig =
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.PEAP,
                         WifiEnterpriseConfig.Phase2.SIM);
         peapSimConfig.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(peapSimConfig));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(peapSimConfig));
     }
 
     @Test
@@ -365,14 +445,14 @@ public class TelephonyUtilTest extends WifiBaseTest {
                         WifiEnterpriseConfig.Phase2.NONE);
         akaConfig.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(akaConfig));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(akaConfig));
 
         WifiConfiguration peapAkaConfig =
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.PEAP,
                         WifiEnterpriseConfig.Phase2.AKA);
         peapAkaConfig.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(peapAkaConfig));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(peapAkaConfig));
     }
 
     @Test
@@ -389,14 +469,14 @@ public class TelephonyUtilTest extends WifiBaseTest {
                         WifiEnterpriseConfig.Phase2.NONE);
         akaPConfig.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(akaPConfig));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(akaPConfig));
 
         WifiConfiguration peapAkaPConfig =
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.PEAP,
                         WifiEnterpriseConfig.Phase2.AKA_PRIME);
         peapAkaPConfig.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(peapAkaPConfig));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(peapAkaPConfig));
     }
 
     /**
@@ -434,7 +514,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                             WifiEnterpriseConfig.Phase2.NONE);
             config.carrierId = DATA_CARRIER_ID;
 
-            assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(config));
+            assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(config));
         } finally {
             session.finishMocking();
         }
@@ -470,7 +550,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                             WifiEnterpriseConfig.Phase2.NONE);
             config.carrierId = DATA_CARRIER_ID;
 
-            assertNull(mTelephonyUtil.getSimIdentity(config));
+            assertNull(mWifiCarrierInfoManager.getSimIdentity(config));
         } finally {
             session.finishMocking();
         }
@@ -490,7 +570,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                         WifiEnterpriseConfig.Phase2.NONE);
         config.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(config));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(config));
     }
 
     @Test
@@ -507,7 +587,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                         WifiEnterpriseConfig.Phase2.NONE);
         config.carrierId = DATA_CARRIER_ID;
 
-        assertEquals(expectedIdentity, mTelephonyUtil.getSimIdentity(config));
+        assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(config));
     }
 
     @Test
@@ -517,16 +597,16 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mDataTelephonyManager.getSimOperator()).thenReturn("32156");
 
         assertEquals(null,
-                mTelephonyUtil.getSimIdentity(WifiConfigurationTestUtil.createEapNetwork(
+                mWifiCarrierInfoManager.getSimIdentity(WifiConfigurationTestUtil.createEapNetwork(
                         WifiEnterpriseConfig.Eap.TTLS, WifiEnterpriseConfig.Phase2.SIM)));
         assertEquals(null,
-                mTelephonyUtil.getSimIdentity(WifiConfigurationTestUtil.createEapNetwork(
+                mWifiCarrierInfoManager.getSimIdentity(WifiConfigurationTestUtil.createEapNetwork(
                         WifiEnterpriseConfig.Eap.PEAP, WifiEnterpriseConfig.Phase2.MSCHAPV2)));
         assertEquals(null,
-                mTelephonyUtil.getSimIdentity(WifiConfigurationTestUtil.createEapNetwork(
+                mWifiCarrierInfoManager.getSimIdentity(WifiConfigurationTestUtil.createEapNetwork(
                         WifiEnterpriseConfig.Eap.TLS, WifiEnterpriseConfig.Phase2.NONE)));
         assertEquals(null,
-                mTelephonyUtil.getSimIdentity(new WifiConfiguration()));
+                mWifiCarrierInfoManager.getSimIdentity(new WifiConfiguration()));
     }
 
     /**
@@ -588,7 +668,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals("", mTelephonyUtil.getGsmSimAuthResponse(invalidRequests, config));
+        assertEquals("", mWifiCarrierInfoManager.getGsmSimAuthResponse(invalidRequests, config));
     }
 
     @Test
@@ -599,7 +679,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals(null, mTelephonyUtil.getGsmSimAuthResponse(failedRequests, config));
+        assertEquals(null, mWifiCarrierInfoManager.getGsmSimAuthResponse(failedRequests, config));
     }
 
     @Test
@@ -617,7 +697,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals(":3b4a:1d2c:1234:1111", mTelephonyUtil.getGsmSimAuthResponse(
+        assertEquals(":3b4a:1d2c:1234:1111", mWifiCarrierInfoManager.getGsmSimAuthResponse(
                         new String[] { "1B2B", "0122" }, config));
     }
 
@@ -628,7 +708,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
         assertEquals("",
-                mTelephonyUtil.getGsmSimpleSimAuthResponse(invalidRequests, config));
+                mWifiCarrierInfoManager.getGsmSimpleSimAuthResponse(invalidRequests, config));
     }
 
     @Test
@@ -640,7 +720,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
         assertEquals(null,
-                mTelephonyUtil.getGsmSimpleSimAuthResponse(failedRequests, config));
+                mWifiCarrierInfoManager.getGsmSimpleSimAuthResponse(failedRequests, config));
     }
 
     @Test
@@ -658,7 +738,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals(":3b4a:1d2c:1100:3322", mTelephonyUtil.getGsmSimpleSimAuthResponse(
+        assertEquals(":3b4a:1d2c:1100:3322", mWifiCarrierInfoManager.getGsmSimpleSimAuthResponse(
                         new String[] { "1A2B", "0123" }, config));
     }
 
@@ -668,8 +748,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals("", mTelephonyUtil.getGsmSimpleSimNoLengthAuthResponse(invalidRequests,
-                config));
+        assertEquals("", mWifiCarrierInfoManager.getGsmSimpleSimNoLengthAuthResponse(
+                invalidRequests, config));
     }
 
     @Test
@@ -680,8 +760,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals(null, mTelephonyUtil.getGsmSimpleSimNoLengthAuthResponse(failedRequests,
-                config));
+        assertEquals(null, mWifiCarrierInfoManager.getGsmSimpleSimNoLengthAuthResponse(
+                failedRequests, config));
     }
 
     @Test
@@ -700,7 +780,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
 
         assertEquals(":1a2b3c4d5e6f7a1a:1a2b3c4d:1234567812345678:12345678",
-                mTelephonyUtil.getGsmSimpleSimNoLengthAuthResponse(
+                mWifiCarrierInfoManager.getGsmSimpleSimNoLengthAuthResponse(
                         new String[] { "1A2B", "0123" }, config));
     }
 
@@ -743,9 +823,9 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals(null, mTelephonyUtil.get3GAuthResponse(
+        assertEquals(null, mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"0123"}), config));
-        assertEquals(null, mTelephonyUtil.get3GAuthResponse(
+        assertEquals(null, mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"xyz2", "1234"}),
                 config));
         verifyNoMoreInteractions(mDataTelephonyManager);
@@ -757,7 +837,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                         TelephonyManager.AUTHTYPE_EAP_AKA, "AgEjAkVn")).thenReturn(null);
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
-        SimAuthResponseData response = mTelephonyUtil.get3GAuthResponse(
+        SimAuthResponseData response = mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"0123", "4567"}),
                 config);
 
@@ -771,7 +851,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(Base64.encodeToString(new byte[] {(byte) 0xdc}, Base64.NO_WRAP));
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
-        SimAuthResponseData response = mTelephonyUtil.get3GAuthResponse(
+        SimAuthResponseData response = mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"0123", "4567"}),
                 config);
 
@@ -786,7 +866,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                                 Base64.NO_WRAP));
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
-        SimAuthResponseData response = mTelephonyUtil.get3GAuthResponse(
+        SimAuthResponseData response = mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"0123", "4567"}),
                 config);
 
@@ -801,7 +881,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                                 new byte[] {0x21, 0x22, 0x23}, new byte[] {0x31}));
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
-        SimAuthResponseData response = mTelephonyUtil.get3GAuthResponse(
+        SimAuthResponseData response = mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"0123", "4567"}),
                 config);
 
@@ -817,7 +897,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(create3GSimAuthUmtsAutsResponse(new byte[] {0x22, 0x33}));
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
-        SimAuthResponseData response = mTelephonyUtil.get3GAuthResponse(
+        SimAuthResponseData response = mWifiCarrierInfoManager.get3GAuthResponse(
                 new SimAuthRequestData(0, 0, "SSID", new String[]{"0123", "4567"}),
                 config);
         assertNotNull(response);
@@ -838,7 +918,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
 
         assertEquals(expectedIdentity,
-                mTelephonyUtil.getAnonymousIdentityWith3GppRealm(config));
+                mWifiCarrierInfoManager.getAnonymousIdentityWith3GppRealm(config));
     }
 
     /**
@@ -850,7 +930,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertNull(mTelephonyUtil.getAnonymousIdentityWith3GppRealm(config));
+        assertNull(mWifiCarrierInfoManager.getAnonymousIdentityWith3GppRealm(config));
     }
 
     /**
@@ -864,7 +944,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(subInfo2.getSubscriptionId()).thenReturn(NON_DATA_SUBID);
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Arrays.asList(subInfo1, subInfo2));
-        assertTrue(mTelephonyUtil.isSimPresent(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.isSimPresent(DATA_SUBID));
     }
 
     /**
@@ -875,13 +955,13 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
 
-        assertFalse(mTelephonyUtil.isSimPresent(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.isSimPresent(DATA_SUBID));
 
         SubscriptionInfo subInfo = mock(SubscriptionInfo.class);
         when(subInfo.getSubscriptionId()).thenReturn(NON_DATA_SUBID);
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Arrays.asList(subInfo));
-        assertFalse(mTelephonyUtil.isSimPresent(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.isSimPresent(DATA_SUBID));
     }
 
     /**
@@ -897,7 +977,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(Arrays.asList(subInfo1, subInfo2));
         when(mTelephonyManager.getSimState(anyInt()))
                 .thenReturn(TelephonyManager.SIM_STATE_NETWORK_LOCKED);
-        assertFalse(mTelephonyUtil.isSimPresent(DATA_SUBID));
+        assertFalse(mWifiCarrierInfoManager.isSimPresent(DATA_SUBID));
     }
 
     /**
@@ -910,12 +990,12 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(null);
         when(mSubscriptionManager.getActiveSubscriptionIdList()).thenReturn(new int[0]);
 
-        assertEquals(INVALID_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(INVALID_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
 
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
 
-        assertEquals(INVALID_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(INVALID_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
     }
 
     /**
@@ -926,7 +1006,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
 
-        assertEquals(DATA_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(DATA_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
     }
 
     /**
@@ -937,7 +1017,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
     public void getBestMatchSubscriptionIdForEnterpriseWithoutCarrierIdFieldForNonSimConfig() {
         WifiConfiguration config = new WifiConfiguration();
 
-        assertEquals(INVALID_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(INVALID_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
     }
 
     /**
@@ -950,10 +1030,10 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
         config.carrierId = NON_DATA_CARRIER_ID;
 
-        assertEquals(NON_DATA_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(NON_DATA_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
 
         config.carrierId = DATA_CARRIER_ID;
-        assertEquals(DATA_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(DATA_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
     }
 
     /**
@@ -967,7 +1047,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration spyConfig = spy(config);
         doReturn(true).when(spyConfig).isPasspoint();
 
-        assertEquals(DATA_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(spyConfig));
+        assertEquals(DATA_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(spyConfig));
     }
 
     /**
@@ -980,7 +1060,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         WifiConfiguration spyConfig = spy(config);
         doReturn(true).when(spyConfig).isPasspoint();
 
-        assertEquals(INVALID_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(spyConfig));
+        assertEquals(INVALID_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(spyConfig));
     }
 
     /**
@@ -993,7 +1073,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.AKA, WifiEnterpriseConfig.Phase2.NONE);
         config.carrierId = DEACTIVE_CARRIER_ID;
 
-        assertEquals(INVALID_SUBID, mTelephonyUtil.getBestMatchSubscriptionId(config));
+        assertEquals(INVALID_SUBID, mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
     }
 
     /**
@@ -1004,7 +1084,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
 
-        assertNull(mTelephonyUtil.getMatchingImsi(DEACTIVE_CARRIER_ID));
+        assertNull(mWifiCarrierInfoManager.getMatchingImsi(DEACTIVE_CARRIER_ID));
     }
 
     /**
@@ -1013,7 +1093,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
      */
     @Test
     public void getMatchingImsiCarrierIdWithValidCarrierIdForImsiEncryptionCheck() {
-        TelephonyUtil spyTu = spy(mTelephonyUtil);
+        WifiCarrierInfoManager spyTu = spy(mWifiCarrierInfoManager);
         doReturn(true).when(spyTu).requiresImsiEncryption(DATA_SUBID);
         doReturn(false).when(spyTu).isImsiEncryptionInfoAvailable(DATA_SUBID);
 
@@ -1027,7 +1107,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
     @Test
     public void getMatchingImsiCarrierIdWithValidCarrierId() {
         assertEquals(DATA_FULL_IMSI,
-                mTelephonyUtil.getMatchingImsi(DATA_CARRIER_ID));
+                mWifiCarrierInfoManager.getMatchingImsi(DATA_CARRIER_ID));
     }
 
     /**
@@ -1037,12 +1117,12 @@ public class TelephonyUtilTest extends WifiBaseTest {
     public void getMatchingImsiCarrierIdWithEmptyActiveSubscriptionInfoList() {
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(null);
 
-        assertNull(mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+        assertNull(mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
 
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
 
-        assertNull(mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+        assertNull(mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
     }
 
     /**
@@ -1057,7 +1137,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getCarrierIdFromSimMccMnc()).thenReturn(NON_DATA_CARRIER_ID);
         when(mNonDataTelephonyManager.getSimCarrierId()).thenReturn(NON_DATA_CARRIER_ID);
 
-        assertNull(mTelephonyUtil.getMatchingImsiCarrierId(NO_MATCH_PREFIX_IMSI));
+        assertNull(mWifiCarrierInfoManager.getMatchingImsiCarrierId(NO_MATCH_PREFIX_IMSI));
     }
 
     /**
@@ -1073,7 +1153,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getCarrierIdFromSimMccMnc()).thenReturn(NON_DATA_CARRIER_ID);
         when(mNonDataTelephonyManager.getSimCarrierId()).thenReturn(NON_DATA_CARRIER_ID);
 
-        Pair<String, Integer> ic = mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI);
+        Pair<String, Integer> ic = mWifiCarrierInfoManager
+                .getMatchingImsiCarrierId(MATCH_PREFIX_IMSI);
 
         assertEquals(new Pair<>(DATA_FULL_IMSI, DATA_CARRIER_ID), ic);
 
@@ -1083,7 +1164,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getSimCarrierId()).thenReturn(NON_DATA_CARRIER_ID);
 
         assertEquals(new Pair<>(DATA_FULL_IMSI, DATA_CARRIER_ID),
-                mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+                mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
 
         // non data SIM doesn't match.
         when(mNonDataTelephonyManager.getCarrierIdFromSimMccMnc()).thenReturn(NON_DATA_CARRIER_ID);
@@ -1093,7 +1174,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(NO_MATCH_OPERATOR_NUMERIC);
 
         assertEquals(new Pair<>(DATA_FULL_IMSI, DATA_CARRIER_ID),
-                mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+                mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
     }
 
     /**
@@ -1110,7 +1191,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(PARENT_NON_DATA_CARRIER_ID);
         when(mNonDataTelephonyManager.getSimCarrierId()).thenReturn(NON_DATA_CARRIER_ID);
 
-        Pair<String, Integer> ic = mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI);
+        Pair<String, Integer> ic = mWifiCarrierInfoManager
+                .getMatchingImsiCarrierId(MATCH_PREFIX_IMSI);
 
         assertEquals(new Pair<>(DATA_FULL_IMSI, DATA_CARRIER_ID), ic);
 
@@ -1122,7 +1204,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 .thenReturn(NO_MATCH_OPERATOR_NUMERIC);
 
         assertEquals(new Pair<>(DATA_FULL_IMSI, DATA_CARRIER_ID),
-                mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+                mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
     }
 
     /**
@@ -1139,7 +1221,8 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getSimCarrierId()).thenReturn(NON_DATA_CARRIER_ID);
 
 
-        Pair<String, Integer> ic = mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI);
+        Pair<String, Integer> ic = mWifiCarrierInfoManager
+                .getMatchingImsiCarrierId(MATCH_PREFIX_IMSI);
 
         assertEquals(new Pair<>(NON_DATA_FULL_IMSI, NON_DATA_CARRIER_ID), ic);
 
@@ -1150,7 +1233,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mDataTelephonyManager.getSimOperator()).thenReturn(NO_MATCH_OPERATOR_NUMERIC);
 
         assertEquals(new Pair<>(NON_DATA_FULL_IMSI, NON_DATA_CARRIER_ID),
-                mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+                mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
     }
 
     /**
@@ -1169,7 +1252,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getSimCarrierId()).thenReturn(NON_DATA_CARRIER_ID);
 
         assertEquals(new Pair<>(NON_DATA_FULL_IMSI, NON_DATA_CARRIER_ID),
-                mTelephonyUtil.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
+                mWifiCarrierInfoManager.getMatchingImsiCarrierId(MATCH_PREFIX_IMSI));
     }
 
     /**
@@ -1187,7 +1270,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mNonDataTelephonyManager.getSubscriberId()).thenReturn(NO_MATCH_FULL_IMSI);
         when(mNonDataTelephonyManager.getSimOperator())
                 .thenReturn(NO_MATCH_OPERATOR_NUMERIC);
-        TelephonyUtil spyTu = spy(mTelephonyUtil);
+        WifiCarrierInfoManager spyTu = spy(mWifiCarrierInfoManager);
         doReturn(true).when(spyTu).requiresImsiEncryption(eq(DATA_SUBID));
         doReturn(false).when(spyTu).isImsiEncryptionInfoAvailable(eq(DATA_SUBID));
 
@@ -1203,12 +1286,12 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(config.getCarrierId()).thenReturn(DATA_CARRIER_ID);
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(null);
 
-        assertFalse(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(config));
+        assertFalse(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(config));
 
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
 
-        assertFalse(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(config));
+        assertFalse(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(config));
     }
 
     /**
@@ -1219,7 +1302,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         PasspointConfiguration config = mock(PasspointConfiguration.class);
         when(config.getCarrierId()).thenReturn(DATA_CARRIER_ID);
 
-        assertFalse(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(config));
+        assertFalse(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(config));
     }
 
     /**
@@ -1232,7 +1315,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         doReturn(credential).when(spyConfig).getCredential();
         when(credential.getSimCredential()).thenReturn(null);
 
-        assertFalse(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(spyConfig));
+        assertFalse(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(spyConfig));
     }
 
     /**
@@ -1248,7 +1331,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(credential.getSimCredential()).thenReturn(simCredential);
         when(simCredential.getImsi()).thenReturn(MATCH_PREFIX_IMSI);
 
-        assertFalse(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(spyConfig));
+        assertFalse(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(spyConfig));
     }
 
     /**
@@ -1264,7 +1347,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(credential.getSimCredential()).thenReturn(simCredential);
         when(simCredential.getImsi()).thenReturn(DATA_FULL_IMSI);
 
-        assertTrue(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(spyConfig));
+        assertTrue(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(spyConfig));
         assertEquals(DATA_CARRIER_ID, spyConfig.getCarrierId());
     }
 
@@ -1280,7 +1363,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(credential.getSimCredential()).thenReturn(simCredential);
         when(simCredential.getImsi()).thenReturn(NO_MATCH_PREFIX_IMSI);
 
-        assertFalse(mTelephonyUtil.tryUpdateCarrierIdForPasspoint(spyConfig));
+        assertFalse(mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(spyConfig));
     }
 
     private void testIdentityWithSimAndEapAkaMethodPrefix(int method, String methodStr)
@@ -1296,7 +1379,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         receiver.getValue().onReceive(mContext,
                 new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
 
-        assertTrue(mTelephonyUtil.requiresImsiEncryption(DATA_SUBID));
+        assertTrue(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
 
         String mccmnc = "123456";
         String expectedIdentity = methodStr + ANONYMOUS_IDENTITY;
@@ -1306,7 +1389,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
                 method, WifiEnterpriseConfig.Phase2.NONE);
 
         assertEquals(expectedIdentity,
-                mTelephonyUtil.getAnonymousIdentityWith3GppRealm(config));
+                mWifiCarrierInfoManager.getAnonymousIdentityWith3GppRealm(config));
     }
 
     /**
@@ -1339,11 +1422,11 @@ public class TelephonyUtilTest extends WifiBaseTest {
      */
     @Test
     public void testIsAnonymousAtRealmIdentity() throws Exception {
-        assertTrue(mTelephonyUtil.isAnonymousAtRealmIdentity(ANONYMOUS_IDENTITY));
-        assertTrue(mTelephonyUtil.isAnonymousAtRealmIdentity("0" + ANONYMOUS_IDENTITY));
-        assertTrue(mTelephonyUtil.isAnonymousAtRealmIdentity("1" + ANONYMOUS_IDENTITY));
-        assertTrue(mTelephonyUtil.isAnonymousAtRealmIdentity("6" + ANONYMOUS_IDENTITY));
-        assertFalse(mTelephonyUtil.isAnonymousAtRealmIdentity("AKA" + ANONYMOUS_IDENTITY));
+        assertTrue(mWifiCarrierInfoManager.isAnonymousAtRealmIdentity(ANONYMOUS_IDENTITY));
+        assertTrue(mWifiCarrierInfoManager.isAnonymousAtRealmIdentity("0" + ANONYMOUS_IDENTITY));
+        assertTrue(mWifiCarrierInfoManager.isAnonymousAtRealmIdentity("1" + ANONYMOUS_IDENTITY));
+        assertTrue(mWifiCarrierInfoManager.isAnonymousAtRealmIdentity("6" + ANONYMOUS_IDENTITY));
+        assertFalse(mWifiCarrierInfoManager.isAnonymousAtRealmIdentity("AKA" + ANONYMOUS_IDENTITY));
     }
 
     /**
@@ -1354,12 +1437,12 @@ public class TelephonyUtilTest extends WifiBaseTest {
     public void getCarrierPrivilegeWithNoActiveSubscription() {
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(null);
         assertEquals(TelephonyManager.UNKNOWN_CARRIER_ID,
-                mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
+                mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
 
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
         assertEquals(TelephonyManager.UNKNOWN_CARRIER_ID,
-                mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
+                mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
     }
 
     /**
@@ -1375,7 +1458,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mDataTelephonyManager.checkCarrierPrivilegesForPackage(TEST_PACKAGE))
                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
         assertEquals(TelephonyManager.UNKNOWN_CARRIER_ID,
-                mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
+                mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
     }
 
     /**
@@ -1392,7 +1475,7 @@ public class TelephonyUtilTest extends WifiBaseTest {
         when(mDataTelephonyManager.checkCarrierPrivilegesForPackage(TEST_PACKAGE))
                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
         assertEquals(DATA_CARRIER_ID,
-                mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
+                mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE));
     }
 
     /**
@@ -1400,17 +1483,256 @@ public class TelephonyUtilTest extends WifiBaseTest {
      */
     @Test
     public void getCarrierNameFromSubId() {
-        assertEquals(CARRIER_NAME, mTelephonyUtil.getCarrierNameforSubId(DATA_SUBID));
-        assertNull(mTelephonyUtil.getCarrierNameforSubId(NON_DATA_SUBID));
+        assertEquals(CARRIER_NAME, mWifiCarrierInfoManager.getCarrierNameforSubId(DATA_SUBID));
+        assertNull(mWifiCarrierInfoManager.getCarrierNameforSubId(NON_DATA_SUBID));
     }
 
     @Test
     public void testIsCarrierNetworkFromNonDataSim() {
         WifiConfiguration config = new WifiConfiguration();
-        assertFalse(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config));
+        assertFalse(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config));
         config.carrierId = DATA_CARRIER_ID;
-        assertFalse(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config));
+        assertFalse(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config));
         config.carrierId = NON_DATA_CARRIER_ID;
-        assertTrue(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config));
+        assertTrue(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config));
+    }
+
+    @Test
+    public void testCheckSetClearImsiProtectionExemption() {
+        InOrder inOrder = inOrder(mWifiConfigManager);
+        assertFalse(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        mWifiCarrierInfoManager.setHasUserApprovedImsiPrivacyExemptionForCarrier(true,
+                DATA_CARRIER_ID);
+        verify(mListener).onUserAllowed(DATA_CARRIER_ID);
+        inOrder.verify(mWifiConfigManager).saveToStore(true);
+        assertTrue(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        mWifiCarrierInfoManager.clearImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID);
+        inOrder.verify(mWifiConfigManager).saveToStore(true);
+        assertFalse(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+    }
+
+    @Test
+    public void testSendImsiProtectionExemptionNotificationWithUserAllowed() {
+        // Setup carrier without IMSI privacy protection
+        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
+                .thenReturn(generateTestCarrierConfig(false));
+        ArgumentCaptor<BroadcastReceiver> receiver =
+                ArgumentCaptor.forClass(BroadcastReceiver.class);
+        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
+
+        receiver.getValue().onReceive(mContext,
+                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+        // Simulate user clicking on allow in the notification.
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
+                CARRIER_NAME, DATA_CARRIER_ID);
+        verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        validateUserApprovalDialog(CARRIER_NAME);
+
+        // Simulate user clicking on allow in the dialog.
+        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setPositiveButton(
+                any(), clickListenerCaptor.capture());
+        assertNotNull(clickListenerCaptor.getValue());
+        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
+        mLooper.dispatchAll();
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mContext).sendBroadcast(intentCaptor.capture());
+        assertEquals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS, intentCaptor.getValue().getAction());
+        verify(mWifiConfigManager).saveToStore(true);
+        assertTrue(mImsiDataSource.hasNewDataToSerialize());
+        assertTrue(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        verify(mListener).onUserAllowed(DATA_CARRIER_ID);
+    }
+
+    @Test
+    public void testSendImsiProtectionExemptionNotificationWithUserDisallowed() {
+        // Setup carrier without IMSI privacy protection
+        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
+                .thenReturn(generateTestCarrierConfig(false));
+        ArgumentCaptor<BroadcastReceiver> receiver =
+                ArgumentCaptor.forClass(BroadcastReceiver.class);
+        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
+
+        receiver.getValue().onReceive(mContext,
+                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+        // Simulate user clicking on disallow in the notification.
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION,
+                CARRIER_NAME, DATA_CARRIER_ID);
+        verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        verify(mAlertDialog, never()).show();
+
+        verify(mWifiConfigManager).saveToStore(true);
+        assertTrue(mImsiDataSource.hasNewDataToSerialize());
+        assertFalse(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+    }
+
+    @Test
+    public void testSendImsiProtectionExemptionNotificationWithUserDismissal() {
+        // Setup carrier without IMSI privacy protection
+        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
+                .thenReturn(generateTestCarrierConfig(false));
+        ArgumentCaptor<BroadcastReceiver> receiver =
+                ArgumentCaptor.forClass(BroadcastReceiver.class);
+        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
+
+        receiver.getValue().onReceive(mContext,
+                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+        //Simulate user dismissal the notification
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
+                CARRIER_NAME, DATA_SUBID);
+        reset(mNotificationManger);
+        // No Notification is active, should send notification again.
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+        reset(mNotificationManger);
+
+        // As there is notification is active, should not send notification again.
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
+                CARRIER_NAME, DATA_SUBID);
+        verifyNoMoreInteractions(mNotificationManger);
+        verify(mWifiConfigManager, never()).saveToStore(true);
+        assertFalse(mImsiDataSource.hasNewDataToSerialize());
+        assertFalse(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+    }
+
+    @Test
+    public void testSendImsiProtectionExemptionConfirmationDialogWithUserDisallowed() {
+        // Setup carrier without IMSI privacy protection
+        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
+                .thenReturn(generateTestCarrierConfig(false));
+        ArgumentCaptor<BroadcastReceiver> receiver =
+                ArgumentCaptor.forClass(BroadcastReceiver.class);
+        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
+
+        receiver.getValue().onReceive(mContext,
+                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+        // Simulate user clicking on allow in the notification.
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
+                CARRIER_NAME, DATA_SUBID);
+        verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        validateUserApprovalDialog(CARRIER_NAME);
+
+        // Simulate user clicking on disallow in the dialog.
+        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setNegativeButton(
+                any(), clickListenerCaptor.capture());
+        assertNotNull(clickListenerCaptor.getValue());
+        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
+        mLooper.dispatchAll();
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mContext).sendBroadcast(intentCaptor.capture());
+        assertEquals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS, intentCaptor.getValue().getAction());
+        verify(mWifiConfigManager).saveToStore(true);
+        assertTrue(mImsiDataSource.hasNewDataToSerialize());
+        assertFalse(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+    }
+
+    @Test
+    public void testSendImsiProtectionExemptionConfirmationDialogWithUserDismissal() {
+        // Setup carrier without IMSI privacy protection
+        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
+                .thenReturn(generateTestCarrierConfig(false));
+        ArgumentCaptor<BroadcastReceiver> receiver =
+                ArgumentCaptor.forClass(BroadcastReceiver.class);
+        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
+
+        receiver.getValue().onReceive(mContext,
+                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
+                CARRIER_NAME, DATA_SUBID);
+        verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        validateUserApprovalDialog(CARRIER_NAME);
+
+        // Simulate user clicking on dismissal in the dialog.
+        ArgumentCaptor<DialogInterface.OnDismissListener> dismissListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnDismissListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setOnDismissListener(
+                dismissListenerCaptor.capture());
+        assertNotNull(dismissListenerCaptor.getValue());
+        dismissListenerCaptor.getValue().onDismiss(mAlertDialog);
+        mLooper.dispatchAll();
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mContext).sendBroadcast(intentCaptor.capture());
+        assertEquals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS, intentCaptor.getValue().getAction());
+
+        // As no notification is active, new notification should be sent
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
+
+        verify(mWifiConfigManager, never()).saveToStore(true);
+        assertFalse(mImsiDataSource.hasNewDataToSerialize());
+        assertFalse(mWifiCarrierInfoManager
+                .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
+        verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+    }
+
+    private void validateImsiProtectionNotification(String carrierName) {
+        verify(mNotificationManger, atLeastOnce()).notify(
+                eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
+                eq(mNotification));
+        ArgumentCaptor<CharSequence> contentCaptor =
+                ArgumentCaptor.forClass(CharSequence.class);
+        verify(mNotificationBuilder, atLeastOnce()).setContentTitle(contentCaptor.capture());
+        CharSequence content = contentCaptor.getValue();
+        assertNotNull(content);
+        assertTrue(content.toString().contains(carrierName));
+    }
+
+    private void validateUserApprovalDialog(String... anyOfExpectedAppNames) {
+        verify(mAlertDialog, atLeastOnce()).show();
+        ArgumentCaptor<CharSequence> contentCaptor =
+                ArgumentCaptor.forClass(CharSequence.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setMessage(contentCaptor.capture());
+        CharSequence content = contentCaptor.getValue();
+        assertNotNull(content);
+
+        boolean foundMatch = false;
+        for (int i = 0; i < anyOfExpectedAppNames.length; i++) {
+            foundMatch = content.toString().contains(anyOfExpectedAppNames[i]);
+            if (foundMatch) break;
+        }
+        assertTrue(foundMatch);
+    }
+
+    private void sendBroadcastForUserActionOnImsi(String action, String carrierName,
+            int carrierId) {
+        Intent intent = new Intent()
+                .setAction(action)
+                .putExtra(WifiCarrierInfoManager.EXTRA_CARRIER_NAME, carrierName)
+                .putExtra(WifiCarrierInfoManager.EXTRA_CARRIER_ID, carrierId);
+        assertNotNull(mBroadcastReceiverCaptor.getValue());
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
     }
 }

@@ -54,7 +54,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.MissingCounterTimerLockList;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
@@ -240,7 +239,7 @@ public class WifiConfigManager {
     private final WifiPermissionsWrapper mWifiPermissionsWrapper;
     private final WifiInjector mWifiInjector;
     private final MacAddressUtil mMacAddressUtil;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiScoreCard mWifiScoreCard;
     // Keep order of network connection.
     private final LruConnectionTracker mLruConnectionTracker;
@@ -331,7 +330,7 @@ public class WifiConfigManager {
      */
     WifiConfigManager(
             Context context, Clock clock, UserManager userManager,
-            TelephonyUtil telephonyUtil, WifiKeyStore wifiKeyStore,
+            WifiCarrierInfoManager wifiCarrierInfoManager, WifiKeyStore wifiKeyStore,
             WifiConfigStore wifiConfigStore,
             WifiPermissionsUtil wifiPermissionsUtil,
             WifiPermissionsWrapper wifiPermissionsWrapper,
@@ -346,7 +345,7 @@ public class WifiConfigManager {
         mClock = clock;
         mUserManager = userManager;
         mBackupManagerProxy = new BackupManagerProxy();
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mWifiKeyStore = wifiKeyStore;
         mWifiConfigStore = wifiConfigStore;
         mWifiPermissionsUtil = wifiPermissionsUtil;
@@ -2726,7 +2725,7 @@ public class WifiConfigManager {
             }
             if (config.enterpriseConfig.getEapMethod() == WifiEnterpriseConfig.Eap.PEAP) {
                 Pair<String, String> currentIdentity =
-                        mTelephonyUtil.getSimIdentity(config);
+                        mWifiCarrierInfoManager.getSimIdentity(config);
                 if (mVerboseLoggingEnabled) {
                     Log.d(TAG, "New identity for config " + config + ": " + currentIdentity);
                 }
@@ -2741,7 +2740,7 @@ public class WifiConfigManager {
             } else {
                 // reset identity as well: supplicant will ask us for it
                 config.enterpriseConfig.setIdentity("");
-                if (!TelephonyUtil.isAnonymousAtRealmIdentity(
+                if (!WifiCarrierInfoManager.isAnonymousAtRealmIdentity(
                         config.enterpriseConfig.getAnonymousIdentity())) {
                     config.enterpriseConfig.setAnonymousIdentity("");
                 }
@@ -3194,7 +3193,7 @@ public class WifiConfigManager {
         pw.println("WifiConfigManager - PNO scan recency sorting enabled = "
                 + mContext.getResources().getBoolean(R.bool.config_wifiPnoRecencySortingEnabled));
         mWifiConfigStore.dump(fd, pw, args);
-        mTelephonyUtil.dump(fd, pw, args);
+        mWifiCarrierInfoManager.dump(fd, pw, args);
     }
 
     /**

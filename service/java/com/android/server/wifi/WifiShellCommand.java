@@ -111,6 +111,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final WifiServiceImpl mWifiService;
     private final Context mContext;
     private final ConnectivityManager mConnectivityManager;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context) {
         mClientModeImpl = wifiInjector.getClientModeImpl();
@@ -124,6 +125,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         mWifiService = wifiService;
         mContext = context;
         mConnectivityManager = context.getSystemService(ConnectivityManager.class);
+        mWifiCarrierInfoManager = wifiInjector.getWifiCarrierInfoManager();
     }
 
     @Override
@@ -216,7 +218,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         return -1;
                     }
                     boolean approved = getNextArgRequiredTrueOrFalse("yes", "no");
-                    mWifiNetworkSuggestionsManager
+                    mWifiCarrierInfoManager
                             .setHasUserApprovedImsiPrivacyExemptionForCarrier(approved, carrierId);
                     return 0;
                 }
@@ -231,7 +233,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 + "- 'carrierId' must be an Integer");
                         return -1;
                     }
-                    boolean hasUserApproved = mWifiNetworkSuggestionsManager
+                    boolean hasUserApproved = mWifiCarrierInfoManager
                             .hasUserApprovedImsiPrivacyExemptionForCarrier(carrierId);
                     pw.println(hasUserApproved ? "yes" : "no");
                     return 0;
@@ -247,7 +249,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 + "- 'carrierId' must be an Integer");
                         return -1;
                     }
-                    mWifiNetworkSuggestionsManager.clearImsiPrivacyExemptionForCarrier(carrierId);
+                    mWifiCarrierInfoManager.clearImsiPrivacyExemptionForCarrier(carrierId);
                     return 0;
                 }
                 case "network-requests-remove-user-approved-access-points": {

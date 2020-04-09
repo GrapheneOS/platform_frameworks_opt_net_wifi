@@ -21,9 +21,9 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.WifiKeyStore;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
@@ -77,7 +77,7 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
     private static final String XML_TAG_IS_TRUSTED = "IsTrusted";
 
     private final WifiKeyStore mKeyStore;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final DataSource mDataSource;
 
     /**
@@ -99,10 +99,10 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
         void setProviders(List<PasspointProvider> providers);
     }
 
-    PasspointConfigUserStoreData(WifiKeyStore keyStore, TelephonyUtil telephonyUtil,
-            DataSource dataSource) {
+    PasspointConfigUserStoreData(WifiKeyStore keyStore,
+            WifiCarrierInfoManager wifiCarrierInfoManager, DataSource dataSource) {
         mKeyStore = keyStore;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mDataSource = dataSource;
     }
 
@@ -348,7 +348,8 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
         if (config == null) {
             throw new XmlPullParserException("Missing Passpoint configuration");
         }
-        PasspointProvider provider =  new PasspointProvider(config, mKeyStore, mTelephonyUtil,
+        PasspointProvider provider =  new PasspointProvider(config, mKeyStore,
+                mWifiCarrierInfoManager,
                 providerId, creatorUid, packageName, isFromSuggestion, caCertificateAliases,
                 clientPrivateKeyAndCertificateAlias, remediationCaCertificateAlias,
                 hasEverConnected, shared);
