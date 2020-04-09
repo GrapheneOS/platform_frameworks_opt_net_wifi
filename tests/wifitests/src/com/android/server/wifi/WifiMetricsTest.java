@@ -111,6 +111,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStatsEnt
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WpsMetrics;
 import com.android.server.wifi.rtt.RttMetrics;
 import com.android.server.wifi.util.ExternalCallbackTracker;
+import com.android.server.wifi.util.InformationElementUtil;
 import com.android.wifi.resources.R;
 
 import org.junit.Before;
@@ -474,6 +475,8 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final long NUM_MBO_CELL_DATA_AWARE_NETWORKS_SCAN_RESULTS = 2;
     private static final long NUM_OCE_SUPPORTED_NETWORKS_SCAN_RESULTS = 2;
     private static final long NUM_FILS_SUPPORTED_NETWORKS_SCAN_RESULTS = 2;
+    private static final long NUM_11AX_NETWORKS_SCAN_RESULTS = 3;
+    private static final long NUM_6G_NETWORKS_SCAN_RESULTS = 2;
     private static final long NUM_BSSID_FILTERED_DUE_TO_MBO_ASSOC_DISALLOW_IND = 3;
     private static final long NUM_CONNECT_TO_MBO_SUPPORTED_NETWORKS = 4;
     private static final long NUM_CONNECT_TO_OCE_SUPPORTED_NETWORKS = 3;
@@ -486,6 +489,8 @@ public class WifiMetricsTest extends WifiBaseTest {
     public static final int FEATURE_MBO = 1 << 0;
     public static final int FEATURE_MBO_CELL_DATA_AWARE = 1 << 1;
     public static final int FEATURE_OCE = 1 << 2;
+    public static final int FEATURE_11AX = 1 << 3;
+    public static final int FEATURE_6G = 1 << 4;
 
     private ScanDetail buildMockScanDetail(boolean hidden, NetworkDetail.HSRelease hSRelease,
             String capabilities, int supportedFeatures) {
@@ -505,6 +510,13 @@ public class WifiMetricsTest extends WifiBaseTest {
         }
         if ((supportedFeatures & FEATURE_OCE) != 0) {
             when(mockNetworkDetail.isOceSupported()).thenReturn(true);
+        }
+        if ((supportedFeatures & FEATURE_11AX) != 0) {
+            when(mockNetworkDetail.getWifiMode())
+                    .thenReturn(InformationElementUtil.WifiMode.MODE_11AX);
+        }
+        if ((supportedFeatures & FEATURE_6G) != 0) {
+            when(mockScanResult.is6GHz()).thenReturn(true);
         }
         return mockScanDetail;
     }
@@ -555,16 +567,18 @@ public class WifiMetricsTest extends WifiBaseTest {
     private List<ScanDetail> buildMockScanDetailList() {
         List<ScanDetail> mockScanDetails = new ArrayList<ScanDetail>();
         mockScanDetails.add(buildMockScanDetail(true, null, "[ESS]", 0));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-PSK-CCMP][ESS]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-PSK-CCMP][ESS]", FEATURE_11AX));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]", 0));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]", FEATURE_MBO));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA-PSK-CCMP]",
+                FEATURE_11AX | FEATURE_6G));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WEP]", 0));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-SAE-CCMP]",
                 FEATURE_MBO | FEATURE_MBO_CELL_DATA_AWARE));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-OWE-CCMP]",
                 FEATURE_MBO | FEATURE_MBO_CELL_DATA_AWARE | FEATURE_OCE));
-        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-EAP-SUITE-B-192]", 0));
+        mockScanDetails.add(buildMockScanDetail(false, null, "[WPA2-EAP-SUITE-B-192]",
+                FEATURE_11AX | FEATURE_6G));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-PSK-SMS4-SMS4]", 0));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]", 0));
         mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]", 0));
@@ -1218,6 +1232,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.numOceSupportedNetworkScanResults);
         assertEquals(NUM_FILS_SUPPORTED_NETWORKS_SCAN_RESULTS * NUM_SCANS,
                 mDecodedProto.numFilsSupportedNetworkScanResults);
+        assertEquals(NUM_11AX_NETWORKS_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.num11AxNetworkScanResults);
+        assertEquals(NUM_6G_NETWORKS_SCAN_RESULTS * NUM_SCANS,
+                mDecodedProto.num6GNetworkScanResults);
         assertEquals(NUM_SCANS,
                 mDecodedProto.numScans);
         assertEquals(NUM_CONNECTIVITY_ONESHOT_SCAN_EVENT,
