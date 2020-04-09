@@ -104,8 +104,7 @@ public class WifiConfigManager {
     public static final String PASSWORD_MASK = "*";
 
     /**
-     * Interface for other modules to listen to the network updated
-     * events.
+     * Interface for other modules to listen to the network updated events.
      * Note: Credentials are masked to avoid accidentally sending credentials outside the stack.
      * Use WifiConfigManager#getConfiguredNetworkWithPassword() to retrieve credentials.
      */
@@ -3223,7 +3222,7 @@ public class WifiConfigManager {
     }
 
     /**
-     * Set the network update event listener
+     * Add the network update event listener
      */
     public void addOnNetworkUpdateListener(OnNetworkUpdateListener listener) {
         mListeners.add(listener);

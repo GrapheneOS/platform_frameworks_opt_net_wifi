@@ -365,6 +365,11 @@ public class WifiNetworkSuggestionsManager {
     private final Map<Integer, Boolean> mImsiPrivacyProtectionExemptionMap = new HashMap<>();
 
     /**
+     * Store the suggestion update listeners.
+     */
+    private final List<OnSuggestionUpdateListener> mListeners = new ArrayList<>();
+
+    /**
      * Intent filter for processing notification actions.
      */
     private final IntentFilter mIntentFilter;
@@ -598,6 +603,21 @@ public class WifiNetworkSuggestionsManager {
                     mNotificationManager.cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
                 }
             };
+
+
+    /**
+     * Interface for other modules to listen to the suggestion updated events.
+     */
+    public interface OnSuggestionUpdateListener {
+        /**
+         * Invoked on suggestion being added or updated.
+         */
+        void onSuggestionsAddedOrUpdated(@NonNull List<WifiNetworkSuggestion> addedSuggestions);
+        /**
+         * Invoked on suggestion being removed.
+         */
+        void onSuggestionsRemoved(@NonNull List<WifiNetworkSuggestion> removedSuggestions);
+    }
 
     public WifiNetworkSuggestionsManager(WifiContext context, Handler handler,
             WifiInjector wifiInjector, WifiPermissionsUtil wifiPermissionsUtil,
@@ -964,6 +984,9 @@ public class WifiNetworkSuggestionsManager {
             perAppInfo.extNetworkSuggestions.remove(ewns);
             perAppInfo.extNetworkSuggestions.add(ewns);
         }
+        for (OnSuggestionUpdateListener listener : mListeners) {
+            listener.onSuggestionsAddedOrUpdated(networkSuggestions);
+        }
         // Update the max size for this app.
         perAppInfo.maxSize = Math.max(perAppInfo.extNetworkSuggestions.size(), perAppInfo.maxSize);
         saveToStore();
@@ -1059,11 +1082,11 @@ public class WifiNetworkSuggestionsManager {
             @NonNull String packageName,
             @NonNull PerAppInfo perAppInfo) {
         // Get internal suggestions
-        Set<ExtendedWifiNetworkSuggestion> removingSuggestions =
+        Set<ExtendedWifiNetworkSuggestion> removingExtSuggestions =
                 new HashSet<>(perAppInfo.extNetworkSuggestions);
         if (!extNetworkSuggestions.isEmpty()) {
             // Keep the internal suggestions need to remove.
-            removingSuggestions.retainAll(extNetworkSuggestions);
+            removingExtSuggestions.retainAll(extNetworkSuggestions);
             perAppInfo.extNetworkSuggestions.removeAll(extNetworkSuggestions);
         } else {
             // empty list is used to clear everything for the app. Store a copy for use below.
@@ -1078,7 +1101,8 @@ public class WifiNetworkSuggestionsManager {
             stopTrackingAppOpsChange(packageName);
         }
         // Clear the cache.
-        for (ExtendedWifiNetworkSuggestion ewns : removingSuggestions) {
+        List<WifiNetworkSuggestion> removingSuggestions = new ArrayList<>();
+        for (ExtendedWifiNetworkSuggestion ewns : removingExtSuggestions) {
             if (ewns.wns.passpointConfiguration != null) {
                 // Clear the Passpoint config.
                 mWifiInjector.getPasspointManager().removeProvider(
@@ -1092,9 +1116,13 @@ public class WifiNetworkSuggestionsManager {
                 }
                 removeFromScanResultMatchInfoMapAndRemoveRelatedScoreCard(ewns);
             }
+            removingSuggestions.add(ewns.wns);
+        }
+        for (OnSuggestionUpdateListener listener : mListeners) {
+            listener.onSuggestionsRemoved(removingSuggestions);
         }
         // Disconnect suggested network if connected
-        removeFromConfigManagerIfServingNetworkSuggestionRemoved(removingSuggestions);
+        removeFromConfigManagerIfServingNetworkSuggestionRemoved(removingExtSuggestions);
     }
 
     /**
@@ -2155,6 +2183,13 @@ public class WifiNetworkSuggestionsManager {
         }
 
         return filteredScanResult;
+    }
+
+    /**
+     * Add the suggestion update event listener
+     */
+    public void addOnSuggestionUpdateListener(OnSuggestionUpdateListener listener) {
+        mListeners.add(listener);
     }
 
     /**

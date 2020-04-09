@@ -145,6 +145,7 @@ public class WifiConnectivityManager {
     private final ClientModeImpl mStateMachine;
     private final WifiInjector mWifiInjector;
     private final WifiConfigManager mConfigManager;
+    private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private final WifiInfo mWifiInfo;
     private final WifiConnectivityHelper mConnectivityHelper;
     private final WifiNetworkSelector mNetworkSelector;
@@ -699,40 +700,39 @@ public class WifiConnectivityManager {
             WifiConfigManager.OnNetworkUpdateListener {
         @Override
         public void onNetworkAdded(WifiConfiguration config) {
-            updateScan();
+            triggerScanOnNetworkChanges();
         }
         @Override
         public void onNetworkEnabled(WifiConfiguration config) {
-            updateScan();
+            triggerScanOnNetworkChanges();
         }
         @Override
         public void onNetworkRemoved(WifiConfiguration config) {
-            updateScan();
+            triggerScanOnNetworkChanges();
         }
         @Override
         public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
-            updateScan();
+            triggerScanOnNetworkChanges();
         }
         @Override
         public void onNetworkTemporarilyDisabled(WifiConfiguration config, int disableReason) { }
 
         @Override
         public void onNetworkPermanentlyDisabled(WifiConfiguration config, int disableReason) {
-            updateScan();
+            triggerScanOnNetworkChanges();
         }
-        private void updateScan() {
-            if (mScreenOn) {
-                // Update scanning schedule if needed
-                if (updateSingleScanningSchedule()) {
-                    localLog("Saved networks updated impacting single scan schedule");
-                    startConnectivityScan(false);
-                }
-            } else {
-                // Update the PNO scan network list when screen is off. Here we
-                // rely on startConnectivityScan() to perform all the checks and clean up.
-                localLog("Saved networks updated impacting pno scan");
-                startConnectivityScan(false);
-            }
+    }
+
+    private class OnSuggestionUpdateListener implements
+            WifiNetworkSuggestionsManager.OnSuggestionUpdateListener {
+        @Override
+        public void onSuggestionsAddedOrUpdated(List<WifiNetworkSuggestion> suggestions) {
+            triggerScanOnNetworkChanges();
+        }
+
+        @Override
+        public void onSuggestionsRemoved(List<WifiNetworkSuggestion> suggestions) {
+            triggerScanOnNetworkChanges();
         }
     }
 
@@ -741,7 +741,8 @@ public class WifiConnectivityManager {
      */
     WifiConnectivityManager(Context context, ScoringParams scoringParams,
             ClientModeImpl stateMachine,
-            WifiInjector injector, WifiConfigManager configManager, WifiInfo wifiInfo,
+            WifiInjector injector, WifiConfigManager configManager,
+            WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager, WifiInfo wifiInfo,
             WifiNetworkSelector networkSelector, WifiConnectivityHelper connectivityHelper,
             WifiLastResortWatchdog wifiLastResortWatchdog, OpenNetworkNotifier openNetworkNotifier,
             WifiMetrics wifiMetrics, Handler handler,
@@ -750,6 +751,7 @@ public class WifiConnectivityManager {
         mStateMachine = stateMachine;
         mWifiInjector = injector;
         mConfigManager = configManager;
+        mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiInfo = wifiInfo;
         mNetworkSelector = networkSelector;
         mConnectivityHelper = connectivityHelper;
@@ -766,6 +768,9 @@ public class WifiConnectivityManager {
 
         // Listen to WifiConfigManager network update events
         mConfigManager.addOnNetworkUpdateListener(new OnNetworkUpdateListener());
+        // Listen to WifiNetworkSuggestionsManager suggestion update events
+        mWifiNetworkSuggestionsManager.addOnSuggestionUpdateListener(
+                new OnSuggestionUpdateListener());
         mBssidBlocklistMonitor = mWifiInjector.getBssidBlocklistMonitor();
         mWifiChannelUtilization = mWifiInjector.getWifiChannelUtilizationScan();
         mNetworkSelector.setWifiChannelUtilization(mWifiChannelUtilization);
@@ -1052,6 +1057,21 @@ public class WifiConnectivityManager {
         }
     }
 
+    private void triggerScanOnNetworkChanges() {
+        if (mScreenOn) {
+            // Update scanning schedule if needed
+            if (updateSingleScanningSchedule()) {
+                localLog("Saved networks / suggestions updated impacting single scan schedule");
+                startConnectivityScan(false);
+            }
+        } else {
+            // Update the PNO scan network list when screen is off. Here we
+            // rely on startConnectivityScan() to perform all the checks and clean up.
+            localLog("Saved networks / suggestions updated impacting pno scan");
+            startConnectivityScan(false);
+        }
+    }
+
     // Start a single scan and set up the interval for next single scan.
     private void startPeriodicSingleScan() {
         // Reaching here with scanning schedule is null means this is a false timer alarm
@@ -1230,8 +1250,7 @@ public class WifiConnectivityManager {
         // retrieve the list of hidden network SSIDs from saved network to scan for
         settings.hiddenNetworks.addAll(mConfigManager.retrieveHiddenNetworkList());
         // retrieve the list of hidden network SSIDs from Network suggestion to scan for
-        settings.hiddenNetworks.addAll(
-                mWifiInjector.getWifiNetworkSuggestionsManager().retrieveHiddenNetworkList());
+        settings.hiddenNetworks.addAll(mWifiNetworkSuggestionsManager.retrieveHiddenNetworkList());
 
         SingleScanListener singleScanListener =
                 new SingleScanListener(isFullBandScan);
@@ -1356,8 +1375,7 @@ public class WifiConnectivityManager {
 
     private @NonNull List<WifiConfiguration> getAllScanOptimizationNetworks() {
         List<WifiConfiguration> networks = mConfigManager.getSavedNetworks(-1);
-        networks.addAll(mWifiInjector.getWifiNetworkSuggestionsManager()
-                .getAllScanOptimizationSuggestionNetworks());
+        networks.addAll(mWifiNetworkSuggestionsManager.getAllScanOptimizationSuggestionNetworks());
         // remove all auto-join disabled or network selection disabled network.
         networks.removeIf(config -> !config.allowAutojoin
                 || !config.getNetworkSelectionStatus().isNetworkEnabled());
@@ -1580,7 +1598,7 @@ public class WifiConnectivityManager {
         }
 
         Set<WifiNetworkSuggestion> suggestionsNetworks =
-                mWifiInjector.getWifiNetworkSuggestionsManager().getAllNetworkSuggestions();
+                mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
         // If total size not equal to 1, then no need to proceed
         if (passpointNetworks.size() + savedNetworks.size() + suggestionsNetworks.size() != 1) {
             return false;
