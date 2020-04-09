@@ -198,6 +198,9 @@ public class WifiConfigManager {
 
     @VisibleForTesting
     public static final int SCAN_RESULT_MISSING_COUNT_THRESHOLD = 1;
+    @VisibleForTesting
+    protected static final String ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG =
+            "enhanced_mac_randomization_force_enabled";
 
     /**
      * General sorting algorithm of all networks for scanning purposes:
@@ -422,6 +425,10 @@ public class WifiConfigManager {
         if (!isMacRandomizationSupported()
                 || config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_PERSISTENT) {
             return false;
+        }
+        if (mFrameworkFacade.getIntegerSetting(mContext,
+                ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG, 0) == 1) {
+            return true;
         }
         if (config.getIpConfiguration().getIpAssignment() == IpConfiguration.IpAssignment.STATIC) {
             return false;
