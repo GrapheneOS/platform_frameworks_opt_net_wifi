@@ -59,7 +59,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.LruConnectionTracker;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -140,7 +139,7 @@ public class WifiNetworkSuggestionsManager {
     private final WifiMetrics mWifiMetrics;
     private final WifiInjector mWifiInjector;
     private final FrameworkFacade mFrameworkFacade;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiKeyStore mWifiKeyStore;
     // Keep order of network connection.
     private final LruConnectionTracker mLruConnectionTracker;
@@ -622,7 +621,7 @@ public class WifiNetworkSuggestionsManager {
     public WifiNetworkSuggestionsManager(WifiContext context, Handler handler,
             WifiInjector wifiInjector, WifiPermissionsUtil wifiPermissionsUtil,
             WifiConfigManager wifiConfigManager, WifiConfigStore wifiConfigStore,
-            WifiMetrics wifiMetrics, TelephonyUtil telephonyUtil,
+            WifiMetrics wifiMetrics, WifiCarrierInfoManager wifiCarrierInfoManager,
             WifiKeyStore keyStore, LruConnectionTracker lruConnectionTracker) {
         mContext = context;
         mResources = context.getResources();
@@ -638,7 +637,7 @@ public class WifiNetworkSuggestionsManager {
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mWifiConfigManager = wifiConfigManager;
         mWifiMetrics = wifiMetrics;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mWifiKeyStore = keyStore;
 
         // register the data store for serializing/deserializing data.
@@ -891,7 +890,8 @@ public class WifiNetworkSuggestionsManager {
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_NOT_ALLOWED;
         }
 
-        int carrierId = mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(packageName);
+        int carrierId = mWifiCarrierInfoManager
+                .getCarrierIdForPackageWithCarrierPrivileges(packageName);
         final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
         PerAppInfo perAppInfo = mActiveNetworkSuggestionsPerApp.get(packageName);
         if (perAppInfo == null) {
@@ -948,8 +948,9 @@ public class WifiNetworkSuggestionsManager {
             // If network has no IMSI protection and user didn't approve exemption, make it initial
             // auto join disabled
             if (isSimBasedSuggestion(ewns)) {
-                int subId = mTelephonyUtil.getMatchingSubId(getCarrierIdFromSuggestion(ewns));
-                if (!(mTelephonyUtil.requiresImsiEncryption(subId)
+                int subId = mWifiCarrierInfoManager
+                        .getMatchingSubId(getCarrierIdFromSuggestion(ewns));
+                if (!(mWifiCarrierInfoManager.requiresImsiEncryption(subId)
                         || hasUserApprovedImsiPrivacyExemptionForCarrier(
                         getCarrierIdFromSuggestion(ewns)))) {
                     ewns.isAutojoinEnabled = false;
@@ -1033,7 +1034,7 @@ public class WifiNetworkSuggestionsManager {
     private boolean validateCarrierNetworkSuggestions(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName) {
         if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)
-                || mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(packageName)
+                || mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(packageName)
                 != TelephonyManager.UNKNOWN_CARRIER_ID) {
             return true;
         }
@@ -1535,8 +1536,8 @@ public class WifiNetworkSuggestionsManager {
      * Send notification for exemption of IMSI protection if user never made choice before.
      */
     private void sendImsiProtectionExemptionNotificationIfRequired(int carrierId) {
-        int subId = mTelephonyUtil.getMatchingSubId(carrierId);
-        if (mTelephonyUtil.requiresImsiEncryption(subId)) {
+        int subId = mWifiCarrierInfoManager.getMatchingSubId(carrierId);
+        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)) {
             return;
         }
         if (mImsiPrivacyProtectionExemptionMap.containsKey(carrierId)) {
@@ -1546,7 +1547,8 @@ public class WifiNetworkSuggestionsManager {
             return;
         }
         Log.i(TAG, "Sending IMSI protection notification for " + carrierId);
-        sendImsiPrivacyNotification(mTelephonyUtil.getCarrierNameforSubId(subId), carrierId);
+        sendImsiPrivacyNotification(mWifiCarrierInfoManager.getCarrierNameforSubId(subId),
+                carrierId);
     }
 
     private @Nullable Set<ExtendedWifiNetworkSuggestion>
@@ -1753,7 +1755,7 @@ public class WifiNetworkSuggestionsManager {
      */
     public boolean isPasspointSuggestionSharedWithUser(WifiConfiguration config) {
         if (WifiConfiguration.isMetered(config, null)
-                && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+                && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
             return false;
         }
         Set<ExtendedWifiNetworkSuggestion> extendedWifiNetworkSuggestions =
@@ -2080,7 +2082,7 @@ public class WifiNetworkSuggestionsManager {
     public void resetCarrierPrivilegedApps() {
         Log.w(TAG, "SIM state is changed!");
         for (PerAppInfo appInfo : mActiveNetworkSuggestionsPerApp.values()) {
-            int carrierId = mTelephonyUtil
+            int carrierId = mWifiCarrierInfoManager
                     .getCarrierIdForPackageWithCarrierPrivileges(appInfo.packageName);
             if (carrierId == appInfo.carrierId) {
                 continue;

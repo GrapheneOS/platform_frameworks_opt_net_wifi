@@ -133,7 +133,6 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiIsUnusableEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStats;
 import com.android.server.wifi.util.RssiUtilTest;
 import com.android.server.wifi.util.ScanResultUtil;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
@@ -367,7 +366,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     IpClientCallbacks mIpClientCallback;
     OsuProvider mOsuProvider;
     WifiConfiguration mConnectedNetwork;
-    TelephonyUtil mTelephonyUtil;
+    WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     @Mock WifiScanner mWifiScanner;
     @Mock SupplicantStateTracker mSupplicantStateTracker;
@@ -542,9 +541,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mSubscriptionManager.getActiveSubscriptionIdList())
                 .thenReturn(new int[]{DATA_SUBID});
 
-        TelephonyUtil tu = new TelephonyUtil(mTelephonyManager, mSubscriptionManager,
+        WifiCarrierInfoManager tu = new WifiCarrierInfoManager(mTelephonyManager,
+                mSubscriptionManager,
                 mock(FrameworkFacade.class), mock(Context.class), mock(Handler.class));
-        mTelephonyUtil = spy(tu);
+        mWifiCarrierInfoManager = spy(tu);
         // static mocking
         mSession = ExtendedMockito.mockitoSession().strictness(Strictness.LENIENT)
                 .spyStatic(MacAddress.class)
@@ -605,9 +605,9 @@ public class ClientModeImplTest extends WifiBaseTest {
     private void initializeCmi() throws Exception {
         mCmi = new ClientModeImpl(mContext, mFrameworkFacade, mLooper.getLooper(),
                 mUserManager, mWifiInjector, mBackupManagerProxy, mCountryCode, mWifiNative,
-                mWrongPasswordNotifier, mSarManager, mWifiTrafficPoller,
-                mLinkProbeManager, mBatteryStatsManager, mSupplicantStateTracker,
-                mMboOceController, mTelephonyUtil, mEapFailureNotifier, mSimRequiredNotifier);
+                mWrongPasswordNotifier, mSarManager, mWifiTrafficPoller, mLinkProbeManager,
+                mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
+                mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier);
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
@@ -1051,7 +1051,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mConnectedNetwork = spy(WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE));
         mConnectedNetwork.carrierId = CARRIER_ID_1;
-        doReturn(DATA_SUBID).when(mTelephonyUtil)
+        doReturn(DATA_SUBID).when(mWifiCarrierInfoManager)
                 .getBestMatchSubscriptionId(any(WifiConfiguration.class));
         when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
         when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
@@ -1078,7 +1078,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testResetSimWhenNonConnectedSimRemoved() throws Exception {
         setupEapSimConnection();
-        doReturn(true).when(mTelephonyUtil).isSimPresent(eq(DATA_SUBID));
+        doReturn(true).when(mWifiCarrierInfoManager).isSimPresent(eq(DATA_SUBID));
         mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
                 ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
         mLooper.dispatchAll();
@@ -1095,7 +1095,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testResetSimWhenConnectedSimRemoved() throws Exception {
         setupEapSimConnection();
-        doReturn(false).when(mTelephonyUtil).isSimPresent(eq(DATA_SUBID));
+        doReturn(false).when(mWifiCarrierInfoManager).isSimPresent(eq(DATA_SUBID));
         mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
                 ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
         mLooper.dispatchAll();
@@ -1135,7 +1135,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .mockStatic(SubscriptionManager.class)
                 .startMocking();
         when(SubscriptionManager.getDefaultDataSubscriptionId()).thenReturn(DATA_SUBID);
-        doReturn(true).when(mTelephonyUtil).isImsiEncryptionInfoAvailable(anyInt());
+        doReturn(true).when(mWifiCarrierInfoManager).isImsiEncryptionInfoAvailable(anyInt());
 
         // Initial value should be "not set"
         assertEquals("", mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
@@ -1191,7 +1191,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .mockStatic(SubscriptionManager.class)
                 .startMocking();
         when(SubscriptionManager.getDefaultDataSubscriptionId()).thenReturn(DATA_SUBID);
-        doReturn(true).when(mTelephonyUtil).isImsiEncryptionInfoAvailable(anyInt());
+        doReturn(true).when(mWifiCarrierInfoManager).isImsiEncryptionInfoAvailable(anyInt());
 
         triggerConnect();
 
@@ -1245,7 +1245,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .mockStatic(SubscriptionManager.class)
                 .startMocking();
         when(SubscriptionManager.getDefaultDataSubscriptionId()).thenReturn(DATA_SUBID);
-        doReturn(true).when(mTelephonyUtil).isImsiEncryptionInfoAvailable(anyInt());
+        doReturn(true).when(mWifiCarrierInfoManager).isImsiEncryptionInfoAvailable(anyInt());
 
         triggerConnect();
 

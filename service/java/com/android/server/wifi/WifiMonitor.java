@@ -29,10 +29,10 @@ import android.util.SparseArray;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.Protocol;
 import com.android.server.wifi.MboOceController.BtmFrameData;
+import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.hotspot2.AnqpEvent;
 import com.android.server.wifi.hotspot2.IconEvent;
 import com.android.server.wifi.hotspot2.WnmData;
-import com.android.server.wifi.util.TelephonyUtil.SimAuthRequestData;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -80,7 +80,6 @@ import com.android.server.wifi.WifiNetworkSuggestionsManager.ExtendedWifiNetwork
 import com.android.server.wifi.WifiNetworkSuggestionsManager.PerAppInfo;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.LruConnectionTracker;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -141,7 +140,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     private @Mock NetworkSuggestionStoreData mNetworkSuggestionStoreData;
     private @Mock ImsiPrivacyProtectionExemptionStoreData mImsiPrivacyProtectionExemptionStoreData;
     private @Mock WifiMetrics mWifiMetrics;
-    private @Mock TelephonyUtil mTelephonyUtil;
+    private @Mock
+    WifiCarrierInfoManager mWifiCarrierInfoManager;
     private @Mock PasspointManager mPasspointManager;
     private @Mock ISuggestionConnectionStatusListener mListener;
     private @Mock IBinder mBinder;
@@ -267,7 +267,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mPackageManager.getApplicationInfoAsUser(eq(TEST_PACKAGE_2), eq(0), any()))
             .thenReturn(appInfO2);
         when(mPackageManager.getApplicationLabel(appInfO2)).thenReturn(TEST_APP_NAME_2);
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(any())).thenReturn(
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(any())).thenReturn(
                 TelephonyManager.UNKNOWN_CARRIER_ID);
 
         when(mWifiKeyStore.updateNetworkKeys(any(), any())).thenReturn(true);
@@ -275,7 +275,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mWifiNetworkSuggestionsManager =
                 new WifiNetworkSuggestionsManager(mContext, new Handler(mLooper.getLooper()),
                         mWifiInjector, mWifiPermissionsUtil, mWifiConfigManager, mWifiConfigStore,
-                        mWifiMetrics, mTelephonyUtil, mWifiKeyStore, mLruConnectionTracker);
+                        mWifiMetrics, mWifiCarrierInfoManager, mWifiKeyStore,
+                        mLruConnectionTracker);
         verify(mContext).getResources();
         verify(mContext).getSystemService(Context.APP_OPS_SERVICE);
         verify(mContext).getSystemService(Context.NOTIFICATION_SERVICE);
@@ -1093,7 +1094,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertTrue(mWifiNetworkSuggestionsManager
                 .registerSuggestionConnectionStatusListener(mBinder, mListener,
                         NETWORK_CALLBACK_ID, TEST_PACKAGE_1));
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TEST_CARRIER_ID);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createPskNetwork(), null, true, false, true, true);
@@ -3100,7 +3101,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertTrue(mWifiNetworkSuggestionsManager
                 .isPasspointSuggestionSharedWithUser(dummyConfiguration));
         dummyConfiguration.meteredHint = true;
-        when(mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(dummyConfiguration))
+        when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(dummyConfiguration))
                 .thenReturn(true);
         assertFalse(mWifiNetworkSuggestionsManager
                 .isPasspointSuggestionSharedWithUser(dummyConfiguration));
@@ -3214,7 +3215,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
                 .thenReturn(false);
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TelephonyManager.UNKNOWN_CARRIER_ID);
         int status = mWifiNetworkSuggestionsManager
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
@@ -3237,7 +3238,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
                 .thenReturn(false);
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(VALID_CARRIER_ID);
         int status = mWifiNetworkSuggestionsManager
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
@@ -3260,7 +3261,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
                 .thenReturn(true);
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TelephonyManager.UNKNOWN_CARRIER_ID);
         int status = mWifiNetworkSuggestionsManager
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
@@ -3283,12 +3284,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
                 .thenReturn(false);
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(VALID_CARRIER_ID);
-        when(mTelephonyUtil.getMatchingSubId(VALID_CARRIER_ID)).thenReturn(TEST_SUBID);
-        when(mTelephonyUtil.isSimPresent(TEST_SUBID)).thenReturn(true);
-        when(mTelephonyUtil.requiresImsiEncryption(TEST_SUBID)).thenReturn(true);
-        when(mTelephonyUtil.isImsiEncryptionInfoAvailable(TEST_SUBID)).thenReturn(true);
+        when(mWifiCarrierInfoManager.getMatchingSubId(VALID_CARRIER_ID)).thenReturn(TEST_SUBID);
+        when(mWifiCarrierInfoManager.isSimPresent(TEST_SUBID)).thenReturn(true);
+        when(mWifiCarrierInfoManager.requiresImsiEncryption(TEST_SUBID)).thenReturn(true);
+        when(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(TEST_SUBID)).thenReturn(true);
         ScanDetail scanDetail = createScanDetailForNetwork(config);
         int status = mWifiNetworkSuggestionsManager
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
@@ -3319,13 +3320,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
                 .thenReturn(false);
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(VALID_CARRIER_ID);
         int status = mWifiNetworkSuggestionsManager
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS, status);
         verify(mNotificationManger, never()).notify(anyInt(), any());
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TelephonyManager.UNKNOWN_CARRIER_ID);
         mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
         assertEquals(0,  mWifiNetworkSuggestionsManager.get(TEST_PACKAGE_1).size());
@@ -3564,11 +3565,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      */
     @Test
     public void testSendImsiProtectionNotificationOnUserAllowed() {
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TEST_CARRIER_ID);
-        when(mTelephonyUtil.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(TEST_SUBID);
-        when(mTelephonyUtil.getCarrierNameforSubId(TEST_SUBID)).thenReturn(TEST_CARRIER_NAME);
-        when(mTelephonyUtil.requiresImsiEncryption(TEST_SUBID)).thenReturn(false);
+        when(mWifiCarrierInfoManager.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(TEST_SUBID);
+        when(mWifiCarrierInfoManager.getCarrierNameforSubId(TEST_SUBID))
+                .thenReturn(TEST_CARRIER_NAME);
+        when(mWifiCarrierInfoManager.requiresImsiEncryption(TEST_SUBID)).thenReturn(false);
         WifiConfiguration eapSimConfig = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
@@ -3621,11 +3623,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      */
     @Test
     public void testSendImsiProtectionNotificationOnUserDisallowed() {
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TEST_CARRIER_ID);
-        when(mTelephonyUtil.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(TEST_SUBID);
-        when(mTelephonyUtil.getCarrierNameforSubId(TEST_SUBID)).thenReturn(TEST_CARRIER_NAME);
-        when(mTelephonyUtil.requiresImsiEncryption(TEST_SUBID)).thenReturn(false);
+        when(mWifiCarrierInfoManager.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(TEST_SUBID);
+        when(mWifiCarrierInfoManager.getCarrierNameforSubId(TEST_SUBID))
+                .thenReturn(TEST_CARRIER_NAME);
+        when(mWifiCarrierInfoManager.requiresImsiEncryption(TEST_SUBID)).thenReturn(false);
         WifiConfiguration eapSimConfig = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
@@ -3670,10 +3673,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .setHasUserApprovedImsiPrivacyExemptionForCarrier(false, TEST_CARRIER_ID);
         verifyNoMoreInteractions(mNotificationManger);
         // Now carrier upgrade to support Imsi protection
-        when(mTelephonyUtil.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
+        when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TEST_CARRIER_ID);
-        when(mTelephonyUtil.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(TEST_SUBID);
-        when(mTelephonyUtil.requiresImsiEncryption(TEST_SUBID)).thenReturn(true);
+        when(mWifiCarrierInfoManager.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(TEST_SUBID);
+        when(mWifiCarrierInfoManager.requiresImsiEncryption(TEST_SUBID)).thenReturn(true);
         WifiConfiguration eapSimConfig = WifiConfigurationTestUtil.createEapNetwork(
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(

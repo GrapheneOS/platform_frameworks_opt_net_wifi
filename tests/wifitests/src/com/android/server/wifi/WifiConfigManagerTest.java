@@ -52,7 +52,6 @@ import androidx.test.filters.SmallTest;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.util.LruConnectionTracker;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
@@ -152,7 +151,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private boolean mStoreReadTriggered = false;
     private TestLooper mLooper = new TestLooper();
     private MockitoSession mSession;
-    private TelephonyUtil mTelephonyUtil;
+    private WifiCarrierInfoManager mWifiCarrierInfoManager;
 
 
     /**
@@ -226,8 +225,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(TEST_RANDOMIZED_MAC);
         when(mWifiScoreCard.lookupNetwork(any())).thenReturn(mPerNetwork);
 
-        mTelephonyUtil = new TelephonyUtil(mTelephonyManager, mSubscriptionManager,
-                mock(FrameworkFacade.class), mock(Context.class), mock(Handler.class));
+        mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
+                mSubscriptionManager, mock(FrameworkFacade.class), mock(Context.class),
+                mock(Handler.class));
         mLruConnectionTracker = new LruConnectionTracker(100, mContext);
         createWifiConfigManager();
         mWifiConfigManager.addOnNetworkUpdateListener(mWcmListener);
@@ -4276,7 +4276,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * {@link WifiConfigManager#resetSimNetworks()} should reset all non-PEAP SIM networks, no
-     * matter if {@link TelephonyUtil#getSimIdentity()} returns null or not.
+     * matter if {@link WifiCarrierInfoManager#getSimIdentity()} returns null or not.
      */
     @Test
     public void testResetSimNetworks_getSimIdentityNull_shouldResetAllNonPeapSimIdentities() {
@@ -4583,7 +4583,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private void createWifiConfigManager() {
         mWifiConfigManager =
                 new WifiConfigManager(
-                        mContext, mClock, mUserManager, mTelephonyUtil,
+                        mContext, mClock, mUserManager, mWifiCarrierInfoManager,
                         mWifiKeyStore, mWifiConfigStore,
                         mWifiPermissionsUtil, mWifiPermissionsWrapper, mWifiInjector,
                         mNetworkListSharedStoreData, mNetworkListUserStoreData,

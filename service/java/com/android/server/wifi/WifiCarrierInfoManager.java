@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.server.wifi.util;
+package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.content.BroadcastReceiver;
@@ -41,9 +41,6 @@ import android.util.Pair;
 import android.util.SparseBooleanArray;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.server.wifi.FrameworkFacade;
-import com.android.server.wifi.IMSIParameter;
-import com.android.server.wifi.WifiNative;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -60,12 +57,12 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 /**
- * Utilities for the Wifi Service to interact with telephony.
+ * This class provide APIs to get carrier info from telephony service.
  * TODO(b/132188983): Refactor into TelephonyFacade which owns all instances of
  *  TelephonyManager/SubscriptionManager in Wifi
  */
-public class TelephonyUtil {
-    public static final String TAG = "TelephonyUtil";
+public class WifiCarrierInfoManager {
+    public static final String TAG = "WifiCarrierInfoManager";
     public static final String DEFAULT_EAP_PREFIX = "\0";
 
     public static final int CARRIER_INVALID_TYPE = -1;
@@ -106,12 +103,12 @@ public class TelephonyUtil {
     private SparseBooleanArray mEapMethodPrefixEnable = new SparseBooleanArray();
 
     /**
-     * Gets the instance of TelephonyUtil.
+     * Gets the instance of WifiCarrierInfoManager.
      * @param telephonyManager Instance of {@link TelephonyManager}
      * @param subscriptionManager Instance of {@link SubscriptionManager}
-     * @return The instance of TelephonyUtil
+     * @return The instance of WifiCarrierInfoManager
      */
-    public TelephonyUtil(@NonNull TelephonyManager telephonyManager,
+    public WifiCarrierInfoManager(@NonNull TelephonyManager telephonyManager,
             @NonNull SubscriptionManager subscriptionManager,
             @NonNull FrameworkFacade frameworkFacade,
             @NonNull Context context,
@@ -552,7 +549,7 @@ public class TelephonyUtil {
      */
     public static boolean isAnonymousAtRealmIdentity(String identity) {
         if (TextUtils.isEmpty(identity)) return false;
-        final String anonymousId = TelephonyUtil.ANONYMOUS_IDENTITY + "@";
+        final String anonymousId = WifiCarrierInfoManager.ANONYMOUS_IDENTITY + "@";
         return identity.startsWith(anonymousId)
                 || identity.substring(1).startsWith(anonymousId);
     }

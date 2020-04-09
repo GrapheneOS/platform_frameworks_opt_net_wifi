@@ -39,6 +39,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.FakeKeys;
 import com.android.server.wifi.WifiBaseTest;
+import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.hotspot2.anqp.ANQPElement;
 import com.android.server.wifi.hotspot2.anqp.CellularNetwork;
@@ -53,7 +54,6 @@ import com.android.server.wifi.hotspot2.anqp.eap.EAPMethod;
 import com.android.server.wifi.hotspot2.anqp.eap.NonEAPInnerAuth;
 import com.android.server.wifi.util.ArrayUtils;
 import com.android.server.wifi.util.InformationElementUtil.RoamingConsortium;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -118,7 +118,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     @Mock WifiKeyStore mKeyStore;
-    @Mock TelephonyUtil mTelephonyUtil;
+    @Mock
+    WifiCarrierInfoManager mWifiCarrierInfoManager;
     @Mock RoamingConsortium mRoamingConsortium;
     PasspointProvider mProvider;
     X509Certificate mRemediationCaCertificate;
@@ -152,8 +153,8 @@ public class PasspointProviderTest extends WifiBaseTest {
      * @return {@link com.android.server.wifi.hotspot2.PasspointProvider}
      */
     private PasspointProvider createProvider(PasspointConfiguration config) {
-        return new PasspointProvider(config, mKeyStore, mTelephonyUtil, PROVIDER_ID, CREATOR_UID,
-                CREATOR_PACKAGE, false);
+        return new PasspointProvider(config, mKeyStore, mWifiCarrierInfoManager, PROVIDER_ID,
+                CREATOR_UID, CREATOR_PACKAGE, false);
     }
 
     /**
@@ -704,7 +705,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
-        when(mTelephonyUtil.getMatchingImsiCarrierId(TEST_IMSI))
+        when(mWifiCarrierInfoManager.getMatchingImsiCarrierId(TEST_IMSI))
                 .thenReturn(new Pair<String, Integer>(TEST_IMSI, VALID_CARRIER_ID));
         mProvider = createProvider(config);
 
@@ -729,7 +730,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
-        when(mTelephonyUtil.getMatchingImsiCarrierId(TEST_IMSI))
+        when(mWifiCarrierInfoManager.getMatchingImsiCarrierId(TEST_IMSI))
                 .thenReturn(new Pair<String, Integer>(TEST_IMSI, VALID_CARRIER_ID));
         mProvider = createProvider(config);
 
@@ -758,7 +759,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
         mProvider = createProvider(config);
-        when(mTelephonyUtil.getMatchingImsiCarrierId(
+        when(mWifiCarrierInfoManager.getMatchingImsiCarrierId(
                 eq(config.getCredential().getSimCredential().getImsi())))
                 .thenReturn(new Pair<String, Integer>(TEST_IMSI, VALID_CARRIER_ID));
 
@@ -941,7 +942,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
-        when(mTelephonyUtil.getMatchingImsiCarrierId(TEST_IMSI))
+        when(mWifiCarrierInfoManager.getMatchingImsiCarrierId(TEST_IMSI))
                 .thenReturn(new Pair<String, Integer>(TEST_IMSI, VALID_CARRIER_ID));
         mProvider = createProvider(config);
 
@@ -971,7 +972,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
-        when(mTelephonyUtil.getMatchingImsiCarrierId(TEST_IMSI))
+        when(mWifiCarrierInfoManager.getMatchingImsiCarrierId(TEST_IMSI))
                 .thenReturn(new Pair<String, Integer>(TEST_IMSI, VALID_CARRIER_ID));
         mProvider = createProvider(config);
 
@@ -1001,7 +1002,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
         config.setCarrierId(VALID_CARRIER_ID);
-        when(mTelephonyUtil.getMatchingImsi(eq(VALID_CARRIER_ID)))
+        when(mWifiCarrierInfoManager.getMatchingImsi(eq(VALID_CARRIER_ID)))
                 .thenReturn(null);
         mProvider = createProvider(config);
 
@@ -1029,7 +1030,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
-        when(mTelephonyUtil.getMatchingImsiCarrierId(eq(TEST_IMSI)))
+        when(mWifiCarrierInfoManager.getMatchingImsiCarrierId(eq(TEST_IMSI)))
                 .thenReturn(null);
         mProvider = createProvider(config);
 
