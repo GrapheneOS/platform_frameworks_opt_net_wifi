@@ -307,8 +307,12 @@ class Utils {
 
     static CharSequence getAppLabelForSavedNetwork(@NonNull Context context,
             @NonNull WifiEntry wifiEntry) {
-        final WifiConfiguration config = wifiEntry.getWifiConfiguration();
-        if (context == null || wifiEntry == null || config == null) {
+        return getAppLabelForWifiConfiguration(context, wifiEntry.getWifiConfiguration());
+    }
+
+    static CharSequence getAppLabelForWifiConfiguration(@NonNull Context context,
+            @NonNull WifiConfiguration config) {
+        if (context == null || config == null) {
             return "";
         }
 
