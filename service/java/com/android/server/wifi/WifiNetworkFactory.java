@@ -645,11 +645,11 @@ public class WifiNetworkFactory extends NetworkFactory {
                 return;
             }
             if (Objects.equals(mActiveSpecificNetworkRequest, networkRequest)) {
-                Log.i(TAG, "App released request, cancelling "
+                Log.i(TAG, "App released active request, cancelling "
                         + mActiveSpecificNetworkRequest);
                 teardownForActiveRequest();
             } else if (Objects.equals(mConnectedSpecificNetworkRequest, networkRequest)) {
-                Log.i(TAG, "App released request, cancelling "
+                Log.i(TAG, "App released connected request, cancelling "
                         + mConnectedSpecificNetworkRequest);
                 teardownForConnectedNetwork();
             } else {
@@ -985,6 +985,10 @@ public class WifiNetworkFactory extends NetworkFactory {
 
     // Invoked at the termination of current active request processing.
     private void teardownForActiveRequest() {
+        if (mPendingConnectionSuccess) {
+            Log.i(TAG, "Disconnecting from network on reset");
+            disconnectAndRemoveNetworkFromWifiConfigManager(mUserSelectedNetwork);
+        }
         cleanupActiveRequest();
         // ensure there is no connected request in progress.
         if (mConnectedSpecificNetworkRequest == null) {

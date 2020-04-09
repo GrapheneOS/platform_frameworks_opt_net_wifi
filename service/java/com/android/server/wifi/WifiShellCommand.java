@@ -470,9 +470,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                             pw.println("Wifi is connected to " + info.getSSID());
                             pw.println("WifiInfo: " + info);
                             Network network = mWifiService.getCurrentNetwork();
-                            NetworkCapabilities capabilities =
-                                    mConnectivityManager.getNetworkCapabilities(network);
-                            pw.println("NetworkCapabilities: " + capabilities);
+                            try {
+                                NetworkCapabilities capabilities =
+                                        mConnectivityManager.getNetworkCapabilities(network);
+                                pw.println("NetworkCapabilities: " + capabilities);
+                            } catch (SecurityException e) {
+                                // ignore on unrooted shell.
+                            }
                         } else {
                             pw.println("Wifi is not connected");
                         }
