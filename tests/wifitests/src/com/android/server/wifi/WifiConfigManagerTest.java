@@ -2229,6 +2229,22 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that when DeviceConfigFacade#isEnhancedMacRandomizationEnabled returns true, any
+     * networks that already use randomized MAC use enhanced MAC randomization instead.
+     */
+    @Test
+    public void testEnhanecedMacRandomizationIsEnabledGlobally() {
+        when(mFrameworkFacade.getIntegerSetting(eq(mContext),
+                eq(WifiConfigManager.ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG),
+                anyInt())).thenReturn(1);
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(config));
+
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(config));
+    }
+
+    /**
      * Verifies that getRandomizedMacAndUpdateIfNeeded updates the randomized MAC address and
      * |randomizedMacExpirationTimeMs| correctly.
      *
