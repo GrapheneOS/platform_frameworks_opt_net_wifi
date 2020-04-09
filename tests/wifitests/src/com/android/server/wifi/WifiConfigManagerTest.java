@@ -44,6 +44,7 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Pair;
 
 import androidx.test.filters.SmallTest;
@@ -525,6 +526,67 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertEquals(openNetwork.networkId, oldConfig.networkId);
         assertTrue(oldConfig.trusted);
         assertNull(oldConfig.BSSID);
+    }
+
+    /**
+     * Verifies the modification of a single network will remove its bssid from
+     * the blocklist.
+     */
+    @Test
+    public void testUpdateSingleOpenNetworkInBlockList() {
+        ArgumentCaptor<WifiConfiguration> wifiConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(openNetwork);
+
+        verifyAddNetworkToWifiConfigManager(openNetwork);
+        verify(mWcmListener).onNetworkAdded(wifiConfigCaptor.capture());
+        assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        reset(mWcmListener);
+
+        // mock the simplest bssid block list
+        Map<String, String> mBssidStatusMap = new ArrayMap<>();
+        doAnswer(new AnswerWithArguments() {
+            public void answer(String ssid) {
+                mBssidStatusMap.entrySet().removeIf(e -> e.getValue().equals(ssid));
+            }
+        }).when(mBssidBlocklistMonitor).clearBssidBlocklistForSsid(
+                anyString());
+        doAnswer(new AnswerWithArguments() {
+            public int answer(String ssid) {
+                return (int) mBssidStatusMap.entrySet().stream()
+                        .filter(e -> e.getValue().equals(ssid)).count();
+            }
+        }).when(mBssidBlocklistMonitor).getNumBlockedBssidsForSsid(
+                anyString());
+        // add bssid to the blocklist
+        mBssidStatusMap.put(TEST_BSSID, openNetwork.SSID);
+        mBssidStatusMap.put("aa:bb:cc:dd:ee:ff", openNetwork.SSID);
+
+        // Now change BSSID for the network.
+        assertAndSetNetworkBSSID(openNetwork, TEST_BSSID);
+        // Change the trusted bit.
+        openNetwork.trusted = false;
+        verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(openNetwork);
+
+        // Now verify that the modification has been effective.
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        verify(mWcmListener).onNetworkUpdated(
+                wifiConfigCaptor.capture(), wifiConfigCaptor.capture());
+        WifiConfiguration newConfig = wifiConfigCaptor.getAllValues().get(1);
+        WifiConfiguration oldConfig = wifiConfigCaptor.getAllValues().get(0);
+        assertEquals(openNetwork.networkId, newConfig.networkId);
+        assertFalse(newConfig.trusted);
+        assertEquals(TEST_BSSID, newConfig.BSSID);
+        assertEquals(openNetwork.networkId, oldConfig.networkId);
+        assertTrue(oldConfig.trusted);
+        assertNull(oldConfig.BSSID);
+
+        assertEquals(0, mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(openNetwork.SSID));
     }
 
     /**
