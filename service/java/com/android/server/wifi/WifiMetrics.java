@@ -2190,6 +2190,8 @@ public class WifiMetrics {
         int mboCellularDataAwareNetworks = 0;
         int oceSupportedNetworks = 0;
         int filsSupportedNetworks = 0;
+        int band6gNetworks = 0;
+        int standard11axNetworks = 0;
 
         for (ScanDetail scanDetail : scanDetails) {
             NetworkDetail networkDetail = scanDetail.getNetworkDetail();
@@ -2215,11 +2217,17 @@ public class WifiMetrics {
                         oceSupportedNetworks++;
                     }
                 }
+                if (networkDetail.getWifiMode() == InformationElementUtil.WifiMode.MODE_11AX) {
+                    standard11axNetworks++;
+                }
             }
             if (scanResult != null && scanResult.capabilities != null) {
                 if (ScanResultUtil.isScanResultForFilsSha256Network(scanResult)
                         || ScanResultUtil.isScanResultForFilsSha384Network(scanResult)) {
                     filsSupportedNetworks++;
+                }
+                if (scanResult.is6GHz()) {
+                    band6gNetworks++;
                 }
                 if (ScanResultUtil.isScanResultForEapSuiteBNetwork(scanResult)) {
                     wpa3EnterpriseNetworks++;
@@ -2258,6 +2266,8 @@ public class WifiMetrics {
             mWifiLogProto.numMboCellularDataAwareNetworkScanResults += mboCellularDataAwareNetworks;
             mWifiLogProto.numOceSupportedNetworkScanResults += oceSupportedNetworks;
             mWifiLogProto.numFilsSupportedNetworkScanResults += filsSupportedNetworks;
+            mWifiLogProto.num11AxNetworkScanResults += standard11axNetworks;
+            mWifiLogProto.num6GNetworkScanResults += band6gNetworks;
             mWifiLogProto.numScans++;
         }
     }
@@ -3113,6 +3123,10 @@ public class WifiMetrics {
                         + mWifiLogProto.numOceSupportedNetworkScanResults);
                 pw.println("mWifiLogProto.numFilsSupportedNetworkScanResults="
                         + mWifiLogProto.numFilsSupportedNetworkScanResults);
+                pw.println("mWifiLogProto.num11AxNetworkScanResults="
+                        + mWifiLogProto.num11AxNetworkScanResults);
+                pw.println("mWifiLogProto.num6GNetworkScanResults"
+                        + mWifiLogProto.num6GNetworkScanResults);
                 pw.println("mWifiLogProto.numBssidFilteredDueToMboAssocDisallowInd="
                         + mWifiLogProto.numBssidFilteredDueToMboAssocDisallowInd);
                 pw.println("mWifiLogProto.numConnectToNetworkSupportingMbo="
