@@ -146,8 +146,9 @@ public class WifiCarrierInfoManager {
             mOnUserApproveCarrierListeners =
             new ArrayList<>();
 
-    private boolean mUserApprovalUiActive;
-    private boolean mHasNewDataToSerialize;
+    private boolean mUserApprovalUiActive = false;
+    private boolean mHasNewDataToSerialize = false;
+    private boolean mUserDataLoaded = false;
 
     /**
      * Interface for other modules to listen to the user approve IMSI protection exemption.
@@ -175,11 +176,13 @@ public class WifiCarrierInfoManager {
 
         @Override
         public void fromDeserialized(Map<Integer, Boolean> imsiProtectionExemptionMap) {
+            mUserDataLoaded = true;
             mImsiPrivacyProtectionExemptionMap.putAll(imsiProtectionExemptionMap);
         }
 
         @Override
         public void reset() {
+            mUserDataLoaded = false;
             mImsiPrivacyProtectionExemptionMap.clear();
         }
 
@@ -268,7 +271,6 @@ public class WifiCarrierInfoManager {
         mIntentFilter.addAction(NOTIFICATION_USER_DISMISSED_INTENT_ACTION);
         mIntentFilter.addAction(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION);
         mIntentFilter.addAction(NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION);
-        mUserApprovalUiActive = false;
 
         mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, null, handler);
         configStore.registerStoreData(wifiInjector.makeImsiProtectionExemptionStoreData(
@@ -1341,6 +1343,15 @@ public class WifiCarrierInfoManager {
     }
 
     /**
+     * Get the carrier Id of the default data sim.
+     */
+    public int getDefaultDataSimCarrierId() {
+        int subId = SubscriptionManager.getDefaultDataSubscriptionId();
+        TelephonyManager specifiedTm = mTelephonyManager.createForSubscriptionId(subId);
+        return specifiedTm.getSimCarrierId();
+    }
+
+    /**
      * Add a listener to monitor user approval IMSI protection exemption.
      */
     public void addImsiExemptionUserApprovalListener(
@@ -1463,6 +1474,10 @@ public class WifiCarrierInfoManager {
      */
     public void sendImsiProtectionExemptionNotificationIfRequired(int carrierId) {
         int subId = getMatchingSubId(carrierId);
+        // If user data isn't loaded, don't send notification.
+        if (!mUserDataLoaded) {
+            return;
+        }
         if (requiresImsiEncryption(subId)) {
             return;
         }

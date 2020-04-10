@@ -309,7 +309,8 @@ public class WifiInjector {
                 new PasspointNetworkNominateHelper(mPasspointManager, mWifiConfigManager,
                         mConnectivityLocalLog);
         mSavedNetworkNominator = new SavedNetworkNominator(
-                mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mWifiCarrierInfoManager);
+                mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mWifiCarrierInfoManager,
+                mWifiPermissionsUtil);
         mNetworkSuggestionNominator = new NetworkSuggestionNominator(mWifiNetworkSuggestionsManager,
                 mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mWifiCarrierInfoManager);
         mScoredNetworkNominator = new ScoredNetworkNominator(mContext, wifiHandler,
