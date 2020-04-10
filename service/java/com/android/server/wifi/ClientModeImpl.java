@@ -115,6 +115,8 @@ import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.MboOceController.BtmFrameData;
+import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
+import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
 import com.android.server.wifi.hotspot2.AnqpEvent;
 import com.android.server.wifi.hotspot2.IconEvent;
 import com.android.server.wifi.hotspot2.NetworkDetail;
@@ -130,9 +132,6 @@ import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.NativeUtil;
 import com.android.server.wifi.util.RssiUtil;
 import com.android.server.wifi.util.ScanResultUtil;
-import com.android.server.wifi.util.TelephonyUtil;
-import com.android.server.wifi.util.TelephonyUtil.SimAuthRequestData;
-import com.android.server.wifi.util.TelephonyUtil.SimAuthResponseData;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
@@ -722,7 +721,7 @@ public class ClientModeImpl extends StateMachine {
 
     private final BatteryStatsManager mBatteryStatsManager;
 
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
 
     // Used for debug and stats gathering
@@ -751,7 +750,8 @@ public class ClientModeImpl extends StateMachine {
                             BatteryStatsManager batteryStatsManager,
                             SupplicantStateTracker supplicantStateTracker,
                             MboOceController mboOceController,
-                            TelephonyUtil telephonyUtil, EapFailureNotifier eapFailureNotifier,
+                            WifiCarrierInfoManager wifiCarrierInfoManager,
+                            EapFailureNotifier eapFailureNotifier,
                             SimRequiredNotifier simRequiredNotifier) {
         super(TAG, looper);
         mWifiInjector = wifiInjector;
@@ -771,7 +771,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiTrafficPoller = wifiTrafficPoller;
         mLinkProbeManager = linkProbeManager;
         mMboOceController = mboOceController;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mNetworkAgentState = DetailedState.DISCONNECTED;
 
         mBatteryStatsManager = batteryStatsManager;
@@ -3930,7 +3930,7 @@ public class ClientModeImpl extends StateMachine {
                             && mTargetWifiConfiguration.enterpriseConfig
                                     .isAuthenticationSimBased()) {
                         // Pair<identity, encrypted identity>
-                        Pair<String, String> identityPair = mTelephonyUtil
+                        Pair<String, String> identityPair = mWifiCarrierInfoManager
                                 .getSimIdentity(mTargetWifiConfiguration);
                         Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=["
                                 + ((identityPair.first.length() >= 7)
@@ -4164,15 +4164,15 @@ public class ClientModeImpl extends StateMachine {
                         // We need to get the updated pseudonym from supplicant for EAP-SIM/AKA/AKA'
                         if (config.enterpriseConfig != null
                                 && config.enterpriseConfig.isAuthenticationSimBased()) {
-                            mLastSubId = mTelephonyUtil.getBestMatchSubscriptionId(config);
+                            mLastSubId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
                             mLastSimBasedConnectionCarrierName =
-                                mTelephonyUtil.getCarrierNameforSubId(mLastSubId);
+                                mWifiCarrierInfoManager.getCarrierNameforSubId(mLastSubId);
                             String anonymousIdentity =
                                     mWifiNative.getEapAnonymousIdentity(mInterfaceName);
                             if (!TextUtils.isEmpty(anonymousIdentity)
-                                    && !TelephonyUtil
+                                    && !WifiCarrierInfoManager
                                     .isAnonymousAtRealmIdentity(anonymousIdentity)) {
-                                String decoratedPseudonym = mTelephonyUtil
+                                String decoratedPseudonym = mWifiCarrierInfoManager
                                         .decoratePseudonymWith3GppRealm(config,
                                                 anonymousIdentity);
                                 if (decoratedPseudonym != null) {
@@ -4488,7 +4488,7 @@ public class ClientModeImpl extends StateMachine {
                 case WifiEnterpriseConfig.Eap.AKA:
                 case WifiEnterpriseConfig.Eap.AKA_PRIME:
                     if (errorCode == WifiNative.EAP_SIM_VENDOR_SPECIFIC_CERT_EXPIRED) {
-                        mTelephonyUtil.resetCarrierKeysForImsiEncryption(targetedNetwork);
+                        mWifiCarrierInfoManager.resetCarrierKeysForImsiEncryption(targetedNetwork);
                     }
                     break;
 
@@ -4933,7 +4933,7 @@ public class ClientModeImpl extends StateMachine {
                                 && config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID)
                                 || (config.enterpriseConfig != null
                                         && config.enterpriseConfig.isAuthenticationSimBased()
-                                        && !mTelephonyUtil.isSimPresent(mLastSubId))) {
+                                        && !mWifiCarrierInfoManager.isSimPresent(mLastSubId))) {
                             mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                     StaEvent.DISCONNECT_RESET_SIM_NETWORKS);
                             // remove local PMKSA cache in framework
@@ -5741,15 +5741,15 @@ public class ClientModeImpl extends StateMachine {
          * 3. 3GPP TS 11.11  2G_authentication [RAND]
          *                            [SRES][Cipher Key Kc]
          */
-        String response = mTelephonyUtil
+        String response = mWifiCarrierInfoManager
                 .getGsmSimAuthResponse(requestData.data, mTargetWifiConfiguration);
         if (response == null) {
             // In case of failure, issue may be due to sim type, retry as No.2 case
-            response = mTelephonyUtil
+            response = mWifiCarrierInfoManager
                     .getGsmSimpleSimAuthResponse(requestData.data, mTargetWifiConfiguration);
             if (response == null) {
                 // In case of failure, issue may be due to sim type, retry as No.3 case
-                response = mTelephonyUtil.getGsmSimpleSimNoLengthAuthResponse(
+                response = mWifiCarrierInfoManager.getGsmSimpleSimNoLengthAuthResponse(
                                 requestData.data, mTargetWifiConfiguration);
             }
         }
@@ -5772,7 +5772,7 @@ public class ClientModeImpl extends StateMachine {
             return;
         }
 
-        SimAuthResponseData response = mTelephonyUtil
+        SimAuthResponseData response = mWifiCarrierInfoManager
                 .get3GAuthResponse(requestData, mTargetWifiConfiguration);
         if (response != null) {
             mWifiNative.simAuthResponse(
@@ -6338,10 +6338,10 @@ public class ClientModeImpl extends StateMachine {
 
         if (config.enterpriseConfig != null
                 && config.enterpriseConfig.isAuthenticationSimBased()
-                && mTelephonyUtil.isImsiEncryptionInfoAvailable(
-                mTelephonyUtil.getBestMatchSubscriptionId(config))
+                && mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(
+                mWifiCarrierInfoManager.getBestMatchSubscriptionId(config))
                 && TextUtils.isEmpty(config.enterpriseConfig.getAnonymousIdentity())) {
-            String anonAtRealm = mTelephonyUtil
+            String anonAtRealm = mWifiCarrierInfoManager
                     .getAnonymousIdentityWith3GppRealm(config);
             // Use anonymous@<realm> when pseudonym is not available
             config.enterpriseConfig.setAnonymousIdentity(anonAtRealm);

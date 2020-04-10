@@ -79,7 +79,7 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
      */
     @Test
     public void verifyStoreFileId() throws Exception {
-        assertEquals(WifiConfigStore.STORE_FILE_USER_NETWORK_SUGGESTIONS,
+        assertEquals(WifiConfigStore.STORE_FILE_USER_GENERAL,
                 mImsiPrivacyProtectionExemptionStoreData.getStoreFileId());
     }
 

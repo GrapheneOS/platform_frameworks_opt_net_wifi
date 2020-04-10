@@ -23,7 +23,6 @@ import android.util.LocalLog;
 import android.util.Pair;
 
 import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import java.util.List;
 
@@ -35,16 +34,16 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
     private static final String NAME = "SavedNetworkNominator";
     private final WifiConfigManager mWifiConfigManager;
     private final LocalLog mLocalLog;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final PasspointNetworkNominateHelper mPasspointNetworkNominateHelper;
 
     SavedNetworkNominator(WifiConfigManager configManager,
             PasspointNetworkNominateHelper nominateHelper,
-            LocalLog localLog, TelephonyUtil telephonyUtil) {
+            LocalLog localLog, WifiCarrierInfoManager wifiCarrierInfoManager) {
         mWifiConfigManager = configManager;
         mPasspointNetworkNominateHelper = nominateHelper;
         mLocalLog = localLog;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
     }
 
     private void localLog(String log) {
@@ -138,8 +137,8 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                 continue;
             } else if (network.enterpriseConfig != null
                     && network.enterpriseConfig.isAuthenticationSimBased()) {
-                int subId = mTelephonyUtil.getBestMatchSubscriptionId(network);
-                if (!mTelephonyUtil.isSimPresent(subId)) {
+                int subId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(network);
+                if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
                     // Don't select if security type is EAP SIM/AKA/AKA' when SIM is not present.
                     localLog("No SIM card is good for Network "
                             + WifiNetworkSelector.toNetworkString(network));
@@ -147,7 +146,7 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                 }
                 // Ignore metered network with non-data Sim, ignore.
                 if (WifiConfiguration.isMetered(network, null)
-                        && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(network)) {
+                        && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(network)) {
                     continue;
                 }
             }
@@ -173,7 +172,7 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
             WifiConfiguration config = candidate.second;
             // Ignore metered network with non-data Sim, ignore.
             if (WifiConfiguration.isMetered(config, null)
-                    && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+                    && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
                 continue;
             }
             onConnectableListener.onConnectable(candidate.first, config);

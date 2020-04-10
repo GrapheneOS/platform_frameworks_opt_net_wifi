@@ -34,6 +34,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.server.wifi.IMSIParameter;
+import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.hotspot2.anqp.ANQPElement;
 import com.android.server.wifi.hotspot2.anqp.Constants.ANQPElementType;
@@ -45,7 +46,6 @@ import com.android.server.wifi.hotspot2.anqp.eap.AuthParam;
 import com.android.server.wifi.hotspot2.anqp.eap.NonEAPInnerAuth;
 import com.android.server.wifi.util.ArrayUtils;
 import com.android.server.wifi.util.InformationElementUtil.RoamingConsortium;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -98,7 +98,7 @@ public class PasspointProvider {
 
     private final int mEAPMethodID;
     private final AuthParam mAuthParam;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     private int mBestGuessCarrierId = TelephonyManager.UNKNOWN_CARRIER_ID;
     private boolean mHasEverConnected;
@@ -108,17 +108,16 @@ public class PasspointProvider {
     private boolean mVerboseLoggingEnabled;
 
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
-            TelephonyUtil telephonyUtil, long providerId, int creatorUid, String packageName,
-            boolean isFromSuggestion) {
-        this(config, keyStore, telephonyUtil, providerId, creatorUid, packageName, isFromSuggestion,
-                null, null, null, false, false);
+            WifiCarrierInfoManager wifiCarrierInfoManager, long providerId, int creatorUid,
+            String packageName, boolean isFromSuggestion) {
+        this(config, keyStore, wifiCarrierInfoManager, providerId, creatorUid, packageName,
+                isFromSuggestion, null, null, null, false, false);
     }
 
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
-            TelephonyUtil telephonyUtil, long providerId, int creatorUid, String packageName,
-            boolean isFromSuggestion, List<String> caCertificateAliases,
-            String clientPrivateKeyAndCertificateAlias,
-            String remediationCaCertificateAlias,
+            WifiCarrierInfoManager wifiCarrierInfoManager, long providerId, int creatorUid,
+            String packageName, boolean isFromSuggestion, List<String> caCertificateAliases,
+            String clientPrivateKeyAndCertificateAlias, String remediationCaCertificateAlias,
             boolean hasEverConnected, boolean isShared) {
         // Maintain a copy of the configuration to avoid it being updated by others.
         mConfig = new PasspointConfiguration(config);
@@ -132,7 +131,7 @@ public class PasspointProvider {
         mHasEverConnected = hasEverConnected;
         mIsShared = isShared;
         mIsFromSuggestion = isFromSuggestion;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mIsTrusted = true;
 
         // Setup EAP method and authentication parameter based on the credential.
@@ -351,19 +350,19 @@ public class PasspointProvider {
      * @return true if the carrier ID is updated, otherwise false.
      */
     public boolean tryUpdateCarrierId() {
-        return mTelephonyUtil.tryUpdateCarrierIdForPasspoint(mConfig);
+        return mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(mConfig);
     }
 
     private @Nullable String getMatchingSimImsi() {
         String matchingSIMImsi = null;
         if (mConfig.getCarrierId() != TelephonyManager.UNKNOWN_CARRIER_ID) {
-            matchingSIMImsi = mTelephonyUtil
+            matchingSIMImsi = mWifiCarrierInfoManager
                     .getMatchingImsi(mConfig.getCarrierId());
         } else {
             // Get the IMSI and carrier ID of SIM card which match with the IMSI prefix from
             // passpoint profile
-            Pair<String, Integer> imsiCarrierIdPair = mTelephonyUtil.getMatchingImsiCarrierId(
-                    mConfig.getCredential().getSimCredential().getImsi());
+            Pair<String, Integer> imsiCarrierIdPair = mWifiCarrierInfoManager
+                    .getMatchingImsiCarrierId(mConfig.getCredential().getSimCredential().getImsi());
             if (imsiCarrierIdPair != null) {
                 matchingSIMImsi = imsiCarrierIdPair.first;
                 mBestGuessCarrierId = imsiCarrierIdPair.second;

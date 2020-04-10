@@ -44,6 +44,7 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Pair;
 
 import androidx.test.filters.SmallTest;
@@ -51,7 +52,6 @@ import androidx.test.filters.SmallTest;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.util.LruConnectionTracker;
-import com.android.server.wifi.util.TelephonyUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
@@ -151,7 +151,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private boolean mStoreReadTriggered = false;
     private TestLooper mLooper = new TestLooper();
     private MockitoSession mSession;
-    private TelephonyUtil mTelephonyUtil;
+    private WifiCarrierInfoManager mWifiCarrierInfoManager;
 
 
     /**
@@ -225,8 +225,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(TEST_RANDOMIZED_MAC);
         when(mWifiScoreCard.lookupNetwork(any())).thenReturn(mPerNetwork);
 
-        mTelephonyUtil = new TelephonyUtil(mTelephonyManager, mSubscriptionManager,
-                mock(FrameworkFacade.class), mock(Context.class), mock(Handler.class));
+        mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
+                mSubscriptionManager, mWifiInjector, mock(FrameworkFacade.class),
+                mock(WifiContext.class), mock(WifiConfigStore.class), mock(Handler.class));
         mLruConnectionTracker = new LruConnectionTracker(100, mContext);
         createWifiConfigManager();
         mWifiConfigManager.addOnNetworkUpdateListener(mWcmListener);
@@ -525,6 +526,67 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertEquals(openNetwork.networkId, oldConfig.networkId);
         assertTrue(oldConfig.trusted);
         assertNull(oldConfig.BSSID);
+    }
+
+    /**
+     * Verifies the modification of a single network will remove its bssid from
+     * the blocklist.
+     */
+    @Test
+    public void testUpdateSingleOpenNetworkInBlockList() {
+        ArgumentCaptor<WifiConfiguration> wifiConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(openNetwork);
+
+        verifyAddNetworkToWifiConfigManager(openNetwork);
+        verify(mWcmListener).onNetworkAdded(wifiConfigCaptor.capture());
+        assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        reset(mWcmListener);
+
+        // mock the simplest bssid block list
+        Map<String, String> mBssidStatusMap = new ArrayMap<>();
+        doAnswer(new AnswerWithArguments() {
+            public void answer(String ssid) {
+                mBssidStatusMap.entrySet().removeIf(e -> e.getValue().equals(ssid));
+            }
+        }).when(mBssidBlocklistMonitor).clearBssidBlocklistForSsid(
+                anyString());
+        doAnswer(new AnswerWithArguments() {
+            public int answer(String ssid) {
+                return (int) mBssidStatusMap.entrySet().stream()
+                        .filter(e -> e.getValue().equals(ssid)).count();
+            }
+        }).when(mBssidBlocklistMonitor).getNumBlockedBssidsForSsid(
+                anyString());
+        // add bssid to the blocklist
+        mBssidStatusMap.put(TEST_BSSID, openNetwork.SSID);
+        mBssidStatusMap.put("aa:bb:cc:dd:ee:ff", openNetwork.SSID);
+
+        // Now change BSSID for the network.
+        assertAndSetNetworkBSSID(openNetwork, TEST_BSSID);
+        // Change the trusted bit.
+        openNetwork.trusted = false;
+        verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(openNetwork);
+
+        // Now verify that the modification has been effective.
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        verify(mWcmListener).onNetworkUpdated(
+                wifiConfigCaptor.capture(), wifiConfigCaptor.capture());
+        WifiConfiguration newConfig = wifiConfigCaptor.getAllValues().get(1);
+        WifiConfiguration oldConfig = wifiConfigCaptor.getAllValues().get(0);
+        assertEquals(openNetwork.networkId, newConfig.networkId);
+        assertFalse(newConfig.trusted);
+        assertEquals(TEST_BSSID, newConfig.BSSID);
+        assertEquals(openNetwork.networkId, oldConfig.networkId);
+        assertTrue(oldConfig.trusted);
+        assertNull(oldConfig.BSSID);
+
+        assertEquals(0, mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(openNetwork.SSID));
     }
 
     /**
@@ -2164,6 +2226,22 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         ssidList.clear();
         ssidList.add(c.FQDN);
         assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+    }
+
+    /**
+     * Verify that when DeviceConfigFacade#isEnhancedMacRandomizationEnabled returns true, any
+     * networks that already use randomized MAC use enhanced MAC randomization instead.
+     */
+    @Test
+    public void testEnhanecedMacRandomizationIsEnabledGlobally() {
+        when(mFrameworkFacade.getIntegerSetting(eq(mContext),
+                eq(WifiConfigManager.ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG),
+                anyInt())).thenReturn(1);
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(config));
+
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(config));
     }
 
     /**
@@ -4214,7 +4292,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * {@link WifiConfigManager#resetSimNetworks()} should reset all non-PEAP SIM networks, no
-     * matter if {@link TelephonyUtil#getSimIdentity()} returns null or not.
+     * matter if {@link WifiCarrierInfoManager#getSimIdentity()} returns null or not.
      */
     @Test
     public void testResetSimNetworks_getSimIdentityNull_shouldResetAllNonPeapSimIdentities() {
@@ -4521,7 +4599,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private void createWifiConfigManager() {
         mWifiConfigManager =
                 new WifiConfigManager(
-                        mContext, mClock, mUserManager, mTelephonyUtil,
+                        mContext, mClock, mUserManager, mWifiCarrierInfoManager,
                         mWifiKeyStore, mWifiConfigStore,
                         mWifiPermissionsUtil, mWifiPermissionsWrapper, mWifiInjector,
                         mNetworkListSharedStoreData, mNetworkListUserStoreData,

@@ -24,7 +24,6 @@ import android.util.Pair;
 
 import com.android.server.wifi.WifiNetworkSuggestionsManager.ExtendedWifiNetworkSuggestion;
 import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
-import com.android.server.wifi.util.TelephonyUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,16 +53,16 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     private final WifiConfigManager mWifiConfigManager;
     private final PasspointNetworkNominateHelper mPasspointNetworkNominateHelper;
     private final LocalLog mLocalLog;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     NetworkSuggestionNominator(WifiNetworkSuggestionsManager networkSuggestionsManager,
             WifiConfigManager wifiConfigManager, PasspointNetworkNominateHelper nominateHelper,
-            LocalLog localLog, TelephonyUtil telephonyUtil) {
+            LocalLog localLog, WifiCarrierInfoManager wifiCarrierInfoManager) {
         mWifiNetworkSuggestionsManager = networkSuggestionsManager;
         mWifiConfigManager = wifiConfigManager;
         mPasspointNetworkNominateHelper = nominateHelper;
         mLocalLog = localLog;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
     }
 
     @Override
@@ -111,7 +110,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
 
             if (WifiConfiguration.isMetered(config, null)
-                    && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+                    && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
                 continue;
             }
             if (!isSimBasedNetworkAvailableToAutoConnect(config)) {
@@ -152,7 +151,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                     continue;
                 }
                 if (WifiConfiguration.isMetered(config, null)
-                        && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+                        && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
                     continue;
                 }
                 if (!ewns.isAutojoinEnabled
@@ -214,13 +213,13 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 || !config.enterpriseConfig.isAuthenticationSimBased()) {
             return true;
         }
-        int subId = mTelephonyUtil.getBestMatchSubscriptionId(config);
-        if (!mTelephonyUtil.isSimPresent(subId)) {
+        int subId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+        if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
             mLocalLog.log("SIM is not present for subId: " + subId);
             return false;
         }
-        if (mTelephonyUtil.requiresImsiEncryption(subId)) {
-            return mTelephonyUtil.isImsiEncryptionInfoAvailable(subId);
+        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)) {
+            return mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(subId);
         }
         return true;
     }
