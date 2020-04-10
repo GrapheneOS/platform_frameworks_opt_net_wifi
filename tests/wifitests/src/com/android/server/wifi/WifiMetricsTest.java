@@ -4680,4 +4680,51 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertHistogramBucketsEqual(expectedRxAbove2GHistogramMbps,
                 mDecodedProto.throughputMbpsHistogram.rxAbove2G);
     }
+
+    /**
+     * Test the Initial partial scan statistics
+     */
+    @Test
+    public void testInitPartialScan() throws Exception {
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(4, true);
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(2, false);
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(1, false);
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(7, true);
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(15, false);
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(2, true);
+        mWifiMetrics.incrementInitialPartialScanCount();
+        mWifiMetrics.reportInitialPartialScan(10, true);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(9, mDecodedProto.initPartialScanStats.numScans);
+        assertEquals(4, mDecodedProto.initPartialScanStats.numSuccessScans);
+        assertEquals(3, mDecodedProto.initPartialScanStats.numFailureScans);
+
+        HistogramBucketInt32[] expectedSuccessScanHistogram = {
+                buildHistogramBucketInt32(1, 3, 1),
+                buildHistogramBucketInt32(3, 5, 1),
+                buildHistogramBucketInt32(5, 10, 1),
+                buildHistogramBucketInt32(10, Integer.MAX_VALUE, 1),
+        };
+
+        HistogramBucketInt32[] expectedFailureScanHistogram = {
+                buildHistogramBucketInt32(1, 3, 2),
+                buildHistogramBucketInt32(10, Integer.MAX_VALUE, 1),
+        };
+
+        assertHistogramBucketsEqual(expectedSuccessScanHistogram,
+                mDecodedProto.initPartialScanStats.successfulScanChannelCountHistogram);
+
+        assertHistogramBucketsEqual(expectedFailureScanHistogram,
+                mDecodedProto.initPartialScanStats.failedScanChannelCountHistogram);
+    }
 }

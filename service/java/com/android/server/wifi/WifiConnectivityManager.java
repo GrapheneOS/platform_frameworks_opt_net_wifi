@@ -182,6 +182,11 @@ public class WifiConnectivityManager {
     private boolean mPnoScanStarted = false;
     private boolean mPeriodicScanTimerSet = false;
     private boolean mDelayedPartialScanTimerSet = false;
+
+    // Used for Initial Scan metrics
+    private boolean mFailedInitialPartialScan = false;
+    private int mInitialPartialScanChannelCount;
+
     // Device configs
     private boolean mWaitForFullBandScanResults = false;
 
@@ -522,10 +527,20 @@ public class WifiConnectivityManager {
                     Log.i(TAG, "Connection attempted with the reduced initial scans");
                     schedulePeriodicScanTimer(
                             getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
+                    mWifiMetrics.reportInitialPartialScan(mInitialPartialScanChannelCount, true);
+                    mInitialPartialScanChannelCount = 0;
                 } else {
                     Log.i(TAG, "Connection was not attempted, issuing a full scan");
                     startConnectivityScan(SCAN_IMMEDIATELY);
+                    mFailedInitialPartialScan = true;
                 }
+            } else if (mInitialScanState == INITIAL_SCAN_STATE_COMPLETE) {
+                if (mFailedInitialPartialScan && wasConnectAttempted) {
+                    // Initial scan failed, but following full scan succeeded
+                    mWifiMetrics.reportInitialPartialScan(mInitialPartialScanChannelCount, false);
+                }
+                mFailedInitialPartialScan = false;
+                mInitialPartialScanChannelCount = 0;
             }
         }
 
@@ -1135,6 +1150,7 @@ public class WifiConnectivityManager {
                 // Hence, we verify state before changing to AWIATING_RESPONSE
                 if (mInitialScanState == INITIAL_SCAN_STATE_START) {
                     setInitialScanState(INITIAL_SCAN_STATE_AWAITING_RESPONSE);
+                    mWifiMetrics.incrementInitialPartialScanCount();
                 }
                 // No scheduling for another scan (until we get the results)
                 return;
@@ -1239,6 +1255,8 @@ public class WifiConnectivityManager {
                 isFullBandScan = true;
                 // Skip the initial scan since no channel history available
                 setInitialScanState(INITIAL_SCAN_STATE_COMPLETE);
+            } else {
+                mInitialPartialScanChannelCount = settings.channels.length;
             }
         }
         settings.type = WifiScanner.SCAN_TYPE_HIGH_ACCURACY; // always do high accuracy scans.
