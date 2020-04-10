@@ -1168,9 +1168,19 @@ public class WifiNetworkSuggestionsManager {
     private void restoreInitialAutojoinForCarrierId(int carrierId) {
         for (PerAppInfo appInfo : mActiveNetworkSuggestionsPerApp.values()) {
             for (ExtendedWifiNetworkSuggestion ewns : appInfo.extNetworkSuggestions) {
-                if (isSimBasedSuggestion(ewns)
-                        && getCarrierIdFromSuggestion(ewns) == carrierId) {
-                    ewns.isAutojoinEnabled |= ewns.wns.isInitialAutoJoinEnabled;
+                if (!(isSimBasedSuggestion(ewns)
+                        && getCarrierIdFromSuggestion(ewns) == carrierId)) {
+                    continue;
+                }
+                if (mVerboseLoggingEnabled) {
+                    Log.v(TAG, "Restore auto-join for suggestion: " + ewns);
+                }
+                ewns.isAutojoinEnabled |= ewns.wns.isInitialAutoJoinEnabled;
+                // Restore passpoint provider auto join.
+                if (ewns.wns.passpointConfiguration != null) {
+                    mWifiInjector.getPasspointManager()
+                            .enableAutojoin(ewns.wns.passpointConfiguration.getUniqueId(),
+                                    null, ewns.isAutojoinEnabled);
                 }
             }
         }
