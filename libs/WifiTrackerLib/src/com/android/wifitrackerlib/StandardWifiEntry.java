@@ -22,14 +22,17 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.Utils.getAppLabel;
 import static com.android.wifitrackerlib.Utils.getAppLabelForSavedNetwork;
+import static com.android.wifitrackerlib.Utils.getAppLabelForWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
+import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getCurrentNetworkCapabilitiesInformation;
 import static com.android.wifitrackerlib.Utils.getDisconnectedStateDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getNetworkDetailedState;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
+import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
 import android.content.Context;
@@ -194,8 +197,17 @@ public class StandardWifiEntry extends WifiEntry {
             if (TextUtils.isEmpty(disconnectDescription)) {
                 if (concise) {
                     sj.add(mContext.getString(R.string.wifi_disconnected));
-                } else if (!mForSavedNetworksPage && isSaved()) {
-                    sj.add(mContext.getString(R.string.wifi_remembered));
+                } else if (!mForSavedNetworksPage) {
+                    // Summary for unconnected suggested network
+                    if (mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion) {
+                        String carrierName = getCarrierNameForSubId(mContext,
+                                getSubIdForConfig(mContext, mWifiConfig));
+                        sj.add(mContext.getString(R.string.available_via_app, carrierName != null
+                                ? carrierName
+                                : getAppLabelForWifiConfiguration(mContext, mWifiConfig)));
+                    } else if (isSaved()) {
+                        sj.add(mContext.getString(R.string.wifi_remembered));
+                    }
                 }
             } else {
                 sj.add(disconnectDescription);
@@ -242,8 +254,12 @@ public class StandardWifiEntry extends WifiEntry {
             final String suggestionOrSpecifierPackageName = mWifiInfo != null
                     ? mWifiInfo.getRequestingPackageName() : null;
             if (!TextUtils.isEmpty(suggestionOrSpecifierPackageName)) {
-                return mContext.getString(R.string.connected_via_app,
-                        getAppLabel(mContext, suggestionOrSpecifierPackageName));
+                String carrierName = mWifiConfig != null
+                        ? getCarrierNameForSubId(mContext, getSubIdForConfig(mContext, mWifiConfig))
+                        : null;
+                return mContext.getString(R.string.connected_via_app, carrierName != null
+                        ? carrierName
+                        : getAppLabel(mContext, suggestionOrSpecifierPackageName));
             }
 
             String networkCapabilitiesinformation =

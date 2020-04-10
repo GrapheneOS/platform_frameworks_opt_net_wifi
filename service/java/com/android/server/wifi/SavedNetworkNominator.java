@@ -19,11 +19,12 @@ package com.android.server.wifi;
 import android.annotation.NonNull;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.telephony.TelephonyManager;
 import android.util.LocalLog;
 import android.util.Pair;
 
 import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
-import com.android.server.wifi.util.TelephonyUtil;
+import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import java.util.List;
 
@@ -35,16 +36,19 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
     private static final String NAME = "SavedNetworkNominator";
     private final WifiConfigManager mWifiConfigManager;
     private final LocalLog mLocalLog;
-    private final TelephonyUtil mTelephonyUtil;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final PasspointNetworkNominateHelper mPasspointNetworkNominateHelper;
+    private final WifiPermissionsUtil mWifiPermissionsUtil;
 
     SavedNetworkNominator(WifiConfigManager configManager,
-            PasspointNetworkNominateHelper nominateHelper,
-            LocalLog localLog, TelephonyUtil telephonyUtil) {
+            PasspointNetworkNominateHelper nominateHelper, LocalLog localLog,
+            WifiCarrierInfoManager wifiCarrierInfoManager,
+            WifiPermissionsUtil wifiPermissionsUtil) {
         mWifiConfigManager = configManager;
         mPasspointNetworkNominateHelper = nominateHelper;
         mLocalLog = localLog;
-        mTelephonyUtil = telephonyUtil;
+        mWifiCarrierInfoManager = wifiCarrierInfoManager;
+        mWifiPermissionsUtil = wifiPermissionsUtil;
     }
 
     private void localLog(String log) {
@@ -128,7 +132,8 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
 
             if (!status.isNetworkEnabled()) {
                 continue;
-            } else if (network.BSSID != null &&  !network.BSSID.equals("any")
+            }
+            if (network.BSSID != null &&  !network.BSSID.equals("any")
                     && !network.BSSID.equals(scanResult.BSSID)) {
                 // App has specified the only BSSID to connect for this
                 // configuration. So only the matching ScanResult can be a candidate.
@@ -136,20 +141,9 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                         + " has specified BSSID " + network.BSSID + ". Skip "
                         + scanResult.BSSID);
                 continue;
-            } else if (network.enterpriseConfig != null
-                    && network.enterpriseConfig.isAuthenticationSimBased()) {
-                int subId = mTelephonyUtil.getBestMatchSubscriptionId(network);
-                if (!mTelephonyUtil.isSimPresent(subId)) {
-                    // Don't select if security type is EAP SIM/AKA/AKA' when SIM is not present.
-                    localLog("No SIM card is good for Network "
-                            + WifiNetworkSelector.toNetworkString(network));
-                    continue;
-                }
-                // Ignore metered network with non-data Sim, ignore.
-                if (WifiConfiguration.isMetered(network, null)
-                        && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(network)) {
-                    continue;
-                }
+            }
+            if (isNetworkSimBasedCredential(network) && !isSimBasedNetworkAbleToAutoJoin(network)) {
+                continue;
             }
 
             // If the network is marked to use external scores, or is an open network with
@@ -171,12 +165,60 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
             WifiConfiguration config = candidate.second;
-            // Ignore metered network with non-data Sim, ignore.
-            if (WifiConfiguration.isMetered(config, null)
-                    && mTelephonyUtil.isCarrierNetworkFromNonDefaultDataSim(config)) {
+            if (isNetworkSimBasedCredential(config) && !isSimBasedNetworkAbleToAutoJoin(config)) {
                 continue;
             }
             onConnectableListener.onConnectable(candidate.first, config);
         }
+    }
+
+    private boolean isSimBasedNetworkAbleToAutoJoin(WifiConfiguration network) {
+        int carrierId = network.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID
+                ? mWifiCarrierInfoManager.getDefaultDataSimCarrierId() : network.carrierId;
+        int subId = mWifiCarrierInfoManager.getMatchingSubId(carrierId);
+        // Ignore security type is EAP SIM/AKA/AKA' when SIM is not present.
+        if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
+            localLog("No SIM card is good for Network "
+                    + WifiNetworkSelector.toNetworkString(network));
+            return false;
+        }
+        // Ignore IMSI info not available or protection exemption pending network.
+        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)) {
+            if (!mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(subId)) {
+                localLog("Imsi protection required but not available for Network "
+                        + WifiNetworkSelector.toNetworkString(network));
+                return false;
+            }
+        } else if (isImsiProtectionApprovalNeeded(network.creatorUid, carrierId)) {
+            localLog("Imsi protection exemption needed for Network "
+                    + WifiNetworkSelector.toNetworkString(network));
+            return false;
+        }
+        // Ignore metered network with non-data Sim.
+        if (WifiConfiguration.isMetered(network, null)
+                && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(network)) {
+            localLog("No default SIM is used for metered Network: "
+                    + WifiNetworkSelector.toNetworkString(network));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isNetworkSimBasedCredential(WifiConfiguration network) {
+        return network != null && network.enterpriseConfig != null
+                && network.enterpriseConfig.isAuthenticationSimBased();
+    }
+
+    private boolean isImsiProtectionApprovalNeeded(int creatorUid, int carrierId) {
+        // User saved network got exemption.
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(creatorUid)
+                || mWifiPermissionsUtil.checkNetworkSetupWizardPermission(creatorUid)) {
+            return false;
+        }
+        if (mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(carrierId)) {
+            return false;
+        }
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(carrierId);
+        return true;
     }
 }

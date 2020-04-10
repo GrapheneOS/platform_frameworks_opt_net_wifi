@@ -126,6 +126,7 @@
           <item type="integer" name="config_wifiPollRssiIntervalMilliseconds" />
           <item type="bool" name="config_wifiSaeUpgradeEnabled" />
           <item type="bool" name="config_wifiSaeUpgradeOffloadEnabled" />
+          <item type="integer" name="config_wifiMaxNativeFailureSelfRecoveryPerHour" />
           <!-- Params from config.xml that can be overlayed -->
 
           <!-- Params from strings.xml that can be overlayed -->
