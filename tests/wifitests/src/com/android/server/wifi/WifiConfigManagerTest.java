@@ -1997,7 +1997,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         assertFalse(pskNetwork.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X));
         pskNetwork.allowedKeyManagement.clear();
-        pskNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
+        pskNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        pskNetwork.requirePmf = true;
         verifyUpdateNetworkWithCredentialChangeHasEverConnectedFalse(pskNetwork);
     }
 
@@ -2121,7 +2122,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Test
     public void testUpdateIgnoresMaskedPasswords() {
         WifiConfiguration someRandomNetworkWithAllMaskedFields =
-                WifiConfigurationTestUtil.createEapNetwork();
+                WifiConfigurationTestUtil.createPskNetwork();
         someRandomNetworkWithAllMaskedFields.wepKeys = WifiConfigurationTestUtil.TEST_WEP_KEYS;
         someRandomNetworkWithAllMaskedFields.preSharedKey = WifiConfigurationTestUtil.TEST_PSK;
         someRandomNetworkWithAllMaskedFields.enterpriseConfig.setPassword(
@@ -2457,7 +2458,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     @Test
     public void testGetConfiguredNetworksMasksPasswords() {
-        WifiConfiguration networkWithPasswords = WifiConfigurationTestUtil.createEapNetwork();
+        WifiConfiguration networkWithPasswords = WifiConfigurationTestUtil.createPskNetwork();
         networkWithPasswords.wepKeys = WifiConfigurationTestUtil.TEST_WEP_KEYS;
         networkWithPasswords.preSharedKey = WifiConfigurationTestUtil.TEST_PSK;
         networkWithPasswords.enterpriseConfig.setPassword(
