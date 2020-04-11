@@ -473,6 +473,22 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the validate method fails to validate WifiConfiguration with bad KeyMgmt value.
+     */
+    @Test
+    public void testValidateNegativeCases_InvalidKeyMgmtWithPreSharedKey() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+
+        config.allowedKeyManagement.clear();
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.OSEN);
+        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+        // Verify we reset the KeyMgmt
+        assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK));
+        assertFalse(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OSEN));
+    }
+
+    /**
      * Verify that the validate method fails to validate WifiConfiguration with bad Protocol value.
      */
     @Test
