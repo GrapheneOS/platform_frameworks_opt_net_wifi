@@ -64,6 +64,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotif
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ExperimentValues;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.InitPartialScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.ExperimentProbeCounts;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.LinkProbeFailureReasonCount;
@@ -462,6 +463,17 @@ public class WifiMetrics {
             new IntHistogram(THROUGHPUT_MBPS_BUCKETS);
     private final IntHistogram mRxThroughputMbpsHistogramAbove2G =
             new IntHistogram(THROUGHPUT_MBPS_BUCKETS);
+
+    // Init partial scan metrics
+    private int mInitPartialScanTotalCount;
+    private int mInitPartialScanSuccessCount;
+    private int mInitPartialScanFailureCount;
+    private static final int[] INIT_PARTIAL_SCAN_HISTOGRAM_BUCKETS =
+            {1, 3, 5, 10};
+    private final IntHistogram mInitPartialScanSuccessHistogram =
+            new IntHistogram(INIT_PARTIAL_SCAN_HISTOGRAM_BUCKETS);
+    private final IntHistogram mInitPartialScanFailureHistogram =
+            new IntHistogram(INIT_PARTIAL_SCAN_HISTOGRAM_BUCKETS);
 
     // Wi-Fi off metrics
     private final WifiOffMetrics mWifiOffMetrics = new WifiOffMetrics();
@@ -3515,8 +3527,18 @@ public class WifiMetrics {
                         + mTxThroughputMbpsHistogramAbove2G);
                 pw.println("mRxThroughputMbpsHistogramAbove2G:\n"
                         + mRxThroughputMbpsHistogramAbove2G);
+
+                dumpInitPartialScanMetrics(pw);
             }
         }
+    }
+
+    private void dumpInitPartialScanMetrics(PrintWriter pw) {
+        pw.println("mInitPartialScanTotalCount:\n" + mInitPartialScanTotalCount);
+        pw.println("mInitPartialScanSuccessCount:\n" + mInitPartialScanSuccessCount);
+        pw.println("mInitPartialScanFailureCount:\n" + mInitPartialScanFailureCount);
+        pw.println("mInitPartialScanSuccessHistogram:\n" + mInitPartialScanSuccessHistogram);
+        pw.println("mInitPartialScanFailureHistogram:\n" + mInitPartialScanFailureHistogram);
     }
 
     private void printWifiUsabilityStatsEntry(PrintWriter pw, WifiUsabilityStatsEntry entry) {
@@ -3686,6 +3708,32 @@ public class WifiMetrics {
                 } else {
                     mInstalledPasspointProfileTypeForR1.increment(passpointType);
                 }
+            }
+        }
+    }
+
+    /**
+     * Increment initial partial scan count
+     */
+    public void incrementInitialPartialScanCount() {
+        synchronized (mLock) {
+            mInitPartialScanTotalCount++;
+        }
+    }
+
+    /**
+     * Report of initial partial scan
+     * @param channelCount number of channels used in this scan
+     * @param status true if scan resulted in a network connection attempt, false otherwise
+     */
+    public void reportInitialPartialScan(int channelCount, boolean status) {
+        synchronized (mLock) {
+            if (status) {
+                mInitPartialScanSuccessCount++;
+                mInitPartialScanSuccessHistogram.increment(channelCount);
+            } else {
+                mInitPartialScanFailureCount++;
+                mInitPartialScanFailureHistogram.increment(channelCount);
             }
         }
     }
@@ -4102,6 +4150,16 @@ public class WifiMetrics {
                     mRxThroughputMbpsHistogram2G.toProto();
             mWifiLogProto.throughputMbpsHistogram.rxAbove2G =
                     mRxThroughputMbpsHistogramAbove2G.toProto();
+
+            InitPartialScanStats initialPartialScanStats = new InitPartialScanStats();
+            initialPartialScanStats.numScans = mInitPartialScanTotalCount;
+            initialPartialScanStats.numSuccessScans = mInitPartialScanSuccessCount;
+            initialPartialScanStats.numFailureScans = mInitPartialScanFailureCount;
+            initialPartialScanStats.successfulScanChannelCountHistogram =
+                    mInitPartialScanSuccessHistogram.toProto();
+            initialPartialScanStats.failedScanChannelCountHistogram =
+                    mInitPartialScanFailureHistogram.toProto();
+            mWifiLogProto.initPartialScanStats = initialPartialScanStats;
         }
     }
 
@@ -4307,7 +4365,12 @@ public class WifiMetrics {
             mWifiLogProto.isExternalWifiScorerOn = false;
             mWifiOffMetrics.clear();
             mSoftApConfigLimitationMetrics.clear();
-
+            //Initial partial scan metrics
+            mInitPartialScanTotalCount = 0;
+            mInitPartialScanSuccessCount = 0;
+            mInitPartialScanFailureCount = 0;
+            mInitPartialScanSuccessHistogram.clear();
+            mInitPartialScanFailureHistogram.clear();
         }
     }
 

@@ -75,6 +75,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.crypto.BadPaddingException;
@@ -243,6 +244,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
                 eq(R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation)))
                 .thenReturn("blah");
         mWifiCarrierInfoManager.addImsiExemptionUserApprovalListener(mListener);
+        mImsiDataSource.fromDeserialized(new HashMap<>());
     }
 
     @After
@@ -1696,6 +1698,30 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         assertFalse(mWifiCarrierInfoManager
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
         verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+    }
+
+    @Test
+    public void testUserDataStoreIsNotLoadedNotificationWillNotBeSent() {
+        // reset data source to unloaded state.
+        mImsiDataSource.reset();
+        // Setup carrier without IMSI privacy protection
+        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
+                .thenReturn(generateTestCarrierConfig(false));
+        ArgumentCaptor<BroadcastReceiver> receiver =
+                ArgumentCaptor.forClass(BroadcastReceiver.class);
+        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
+
+        receiver.getValue().onReceive(mContext,
+                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
+
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        verifyNoMoreInteractions(mNotificationManger);
+
+        // Loaded user data store, notification should be sent
+        mImsiDataSource.fromDeserialized(new HashMap<>());
+        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
+        validateImsiProtectionNotification(CARRIER_NAME);
     }
 
     private void validateImsiProtectionNotification(String carrierName) {
