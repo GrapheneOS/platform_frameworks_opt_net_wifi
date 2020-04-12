@@ -92,7 +92,8 @@ public class ScoringParams {
         public int throughputBonusLimit = 200;
         public int savedNetworkBonus = 500;
         public int unmeteredNetworkBonus = 1000;
-        public int currentNetworkBonus = 20;
+        public int currentNetworkBonusMin = 20;
+        public int currentNetworkBonusPercent = 20;
         public int secureNetworkBonus = 10;
         public int lastSelectionMinutes = 480;
         public static final int MIN_MINUTES = 1;
@@ -275,8 +276,10 @@ public class ScoringParams {
                 R.integer.config_wifiFrameworkSavedNetworkBonus);
         mVal.unmeteredNetworkBonus = context.getResources().getInteger(
                 R.integer.config_wifiFrameworkUnmeteredNetworkBonus);
-        mVal.currentNetworkBonus = context.getResources().getInteger(
-                R.integer.config_wifiFrameworkCurrentNetworkBonus);
+        mVal.currentNetworkBonusMin = context.getResources().getInteger(
+                R.integer.config_wifiFrameworkCurrentNetworkBonusMin);
+        mVal.currentNetworkBonusPercent = context.getResources().getInteger(
+            R.integer.config_wifiFrameworkCurrentNetworkBonusPercent);
         mVal.secureNetworkBonus = context.getResources().getInteger(
                 R.integer.config_wifiFrameworkSecureNetworkBonus);
         mVal.lastSelectionMinutes = context.getResources().getInteger(
@@ -451,11 +454,20 @@ public class ScoringParams {
     }
 
     /*
-     * Returns the bonus for the network selection candidate score
+     * Returns the minimum bonus for the network selection candidate score
      * for the currently connected network.
      */
-    public int getCurrentNetworkBonus() {
-        return mVal.currentNetworkBonus;
+    public int getCurrentNetworkBonusMin() {
+        return mVal.currentNetworkBonusMin;
+    }
+
+    /*
+     * Returns the percentage bonus for the network selection candidate score
+     * for the currently connected network. The percent value is applied to rssi score and
+     * throughput score;
+     */
+    public int getCurrentNetworkBonusPercent() {
+        return mVal.currentNetworkBonusPercent;
     }
 
     /*
