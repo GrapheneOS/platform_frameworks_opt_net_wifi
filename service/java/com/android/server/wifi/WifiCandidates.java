@@ -98,6 +98,18 @@ public class WifiCandidates {
          * Returns true for a metered network.
          */
         boolean isMetered();
+
+        /**
+         * Returns true if network doesn't have internet access during last connection
+         */
+        boolean hasNoInternetAccess();
+
+        /**
+         * Returns true if network is expected not to have Internet access
+         * (e.g., a wireless printer, a Chromecast hotspot, etc.).
+         */
+        boolean isNoInternetAccessExpected();
+
         /**
          * Returns the ID of the nominator that provided the candidate.
          */
@@ -151,6 +163,8 @@ public class WifiCandidates {
         private final boolean mIsCurrentNetwork;
         private final boolean mIsCurrentBssid;
         private final boolean mIsMetered;
+        private final boolean mHasNoInternetAccess;
+        private final boolean mIsNoInternetAccessExpected;
         private final boolean mIsOpenNetwork;
         private final boolean mPasspoint;
         private final boolean mEphemeral;
@@ -178,6 +192,8 @@ public class WifiCandidates {
             this.mIsCurrentNetwork = isCurrentNetwork;
             this.mIsCurrentBssid = isCurrentBssid;
             this.mIsMetered = isMetered;
+            this.mHasNoInternetAccess = config.hasNoInternetAccess();
+            this.mIsNoInternetAccessExpected = config.isNoInternetAccessExpected();
             this.mIsOpenNetwork = WifiConfigurationUtil.isConfigForOpenNetwork(config);
             this.mPasspoint = config.isPasspoint();
             this.mEphemeral = config.isEphemeral();
@@ -223,7 +239,17 @@ public class WifiCandidates {
 
         @Override
         public boolean isMetered() {
-            return (mIsMetered);
+            return mIsMetered;
+        }
+
+        @Override
+        public boolean hasNoInternetAccess() {
+            return mHasNoInternetAccess;
+        }
+
+        @Override
+        public boolean isNoInternetAccessExpected() {
+            return mIsNoInternetAccessExpected;
         }
 
         @Override
@@ -296,6 +322,8 @@ public class WifiCandidates {
                     + (isTrusted() ? "trusted, " : "")
                     + (isCarrierOrPrivileged() ? "priv, " : "")
                     + (isMetered() ? "metered, " : "")
+                    + (hasNoInternetAccess() ? "noInternet, " : "")
+                    + (isNoInternetAccessExpected() ? "noInternetExpected, " : "")
                     + (isPasspoint() ? "passpoint, " : "")
                     + (isOpenNetwork() ? "open" : "secure") + " }";
         }
