@@ -16,6 +16,9 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_PSK;
+import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_SAE;
+import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_WAPI_PSK;
 import static com.android.server.wifi.WifiConfigurationTestUtil.generateWifiConfig;
 
 import static org.junit.Assert.*;
@@ -277,7 +280,10 @@ public class WifiNetworkSelectorTestUtil {
 
             configs[index] = generateWifiConfig(id.intValue(), 0, ssids[index], false, true, null,
                     null, securities[index]);
-            configs[index].preSharedKey = "\"PA55W0RD\""; // needed to validate with PSK
+            if (securities[index] == SECURITY_PSK || securities[index] == SECURITY_SAE
+                    || securities[index] == SECURITY_WAPI_PSK) {
+                configs[index].preSharedKey = "\"PA55W0RD\""; // needed to validate with PSK
+            }
             if (!WifiConfigurationUtil.validate(configs[index], true)) {
                 throw new IllegalArgumentException("Invalid generated config: " + configs[index]);
             }

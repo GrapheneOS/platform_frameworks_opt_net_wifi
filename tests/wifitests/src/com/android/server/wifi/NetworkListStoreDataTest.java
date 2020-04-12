@@ -253,6 +253,69 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "</IpConfiguration>\n"
                     + "</Network>\n";
 
+    /**
+     * Repro'es the scenario in b/153435438.
+     * Network has
+     *  - Valid preSharedKey
+     *  - KeyMgmt set to KeyMgmt.OSEN
+     *  - ConfigKey set to "SSID"NONE
+     */
+    private static final String SINGLE_INVALID_NETWORK_DATA_XML_STRING_FORMAT =
+            "<Network>\n"
+                    + "<WifiConfiguration>\n"
+                    + "<string name=\"ConfigKey\">%s</string>\n"
+                    + "<string name=\"SSID\">%s</string>\n"
+                    + "<string name=\"PreSharedKey\">%s</string>\n"
+                    + "<null name=\"WEPKeys\" />\n"
+                    + "<int name=\"WEPTxKeyIndex\" value=\"0\" />\n"
+                    + "<boolean name=\"HiddenSSID\" value=\"false\" />\n"
+                    + "<boolean name=\"RequirePMF\" value=\"false\" />\n"
+                    + "<byte-array name=\"AllowedKeyMgmt\" num=\"1\">20</byte-array>\n"
+                    + "<byte-array name=\"AllowedProtocols\" num=\"0\"></byte-array>\n"
+                    + "<byte-array name=\"AllowedAuthAlgos\" num=\"0\"></byte-array>\n"
+                    + "<byte-array name=\"AllowedGroupCiphers\" num=\"0\"></byte-array>\n"
+                    + "<byte-array name=\"AllowedPairwiseCiphers\" num=\"0\"></byte-array>\n"
+                    + "<byte-array name=\"AllowedGroupMgmtCiphers\" num=\"0\"></byte-array>\n"
+                    + "<byte-array name=\"AllowedSuiteBCiphers\" num=\"0\"></byte-array>\n"
+                    + "<boolean name=\"Shared\" value=\"%s\" />\n"
+                    + "<boolean name=\"AutoJoinEnabled\" value=\"true\" />\n"
+                    + "<boolean name=\"Trusted\" value=\"true\" />\n"
+                    + "<null name=\"BSSID\" />\n"
+                    + "<int name=\"Status\" value=\"2\" />\n"
+                    + "<null name=\"FQDN\" />\n"
+                    + "<null name=\"ProviderFriendlyName\" />\n"
+                    + "<null name=\"LinkedNetworksList\" />\n"
+                    + "<null name=\"DefaultGwMacAddress\" />\n"
+                    + "<boolean name=\"ValidatedInternetAccess\" value=\"false\" />\n"
+                    + "<boolean name=\"NoInternetAccessExpected\" value=\"false\" />\n"
+                    + "<boolean name=\"MeteredHint\" value=\"false\" />\n"
+                    + "<int name=\"MeteredOverride\" value=\"0\" />\n"
+                    + "<boolean name=\"UseExternalScores\" value=\"false\" />\n"
+                    + "<int name=\"NumAssociation\" value=\"0\" />\n"
+                    + "<int name=\"CreatorUid\" value=\"%d\" />\n"
+                    + "<string name=\"CreatorName\">%s</string>\n"
+                    + "<int name=\"LastUpdateUid\" value=\"-1\" />\n"
+                    + "<null name=\"LastUpdateName\" />\n"
+                    + "<int name=\"LastConnectUid\" value=\"0\" />\n"
+                    + "<boolean name=\"IsLegacyPasspointConfig\" value=\"false\" />\n"
+                    + "<long-array name=\"RoamingConsortiumOIs\" num=\"0\" />\n"
+                    + "<string name=\"RandomizedMacAddress\">%s</string>\n"
+                    + "<int name=\"MacRandomizationSetting\" value=\"1\" />\n"
+                    + "<int name=\"CarrierId\" value=\"-1\" />\n"
+                    + "<boolean name=\"IsMostRecentlyConnected\" value=\"false\" />\n"
+                    + "</WifiConfiguration>\n"
+                    + "<NetworkStatus>\n"
+                    + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
+                    + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
+                    + "<null name=\"ConnectChoice\" />\n"
+                    + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
+                    + "</NetworkStatus>\n"
+                    + "<IpConfiguration>\n"
+                    + "<string name=\"IpAssignment\">UNASSIGNED</string>\n"
+                    + "<string name=\"ProxySettings\">UNASSIGNED</string>\n"
+                    + "</IpConfiguration>\n"
+                    + "</Network>\n";
+
     // We use {@link NetworkListSharedStoreData} instance because {@link NetworkListStoreData} is
     // abstract.
     private NetworkListSharedStoreData mNetworkListSharedStoreData;
@@ -713,5 +776,37 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         mNetworkListSharedStoreData.setConfigurations(storedWIfiConfig);
         byte[] output2 = serializeData();
         assertArrayEquals(output2, output1);
+    }
+
+    /**
+     * Verify that we parse out a badly formed WifiConfiguration saved on the device because
+     * our previous validation logic did not catch it.
+     *
+     * See b/153435438#comment26 for the exact problem.
+     */
+    @Test
+    public void parseNetworkWithInvalidConfigKeyAndKeyMmt() throws Exception {
+        // Valid psk network (that we should recreate after deserialization)
+        WifiConfiguration pskNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        pskNetwork.setRandomizedMacAddress(TEST_RANDOMIZED_MAC);
+        pskNetwork.creatorName = TEST_CREATOR_NAME;
+        String invalidConfigKey = pskNetwork.getKey();
+        invalidConfigKey.replace("WPA_PSK", "NONE");
+        // XML data has 2 things that needs to be corrected:
+        // - ConfigKey is set to "SSID"NONE instead of "SSID"WPA_PSK
+        // - KeyMgmt has KeyMgmt.OSEN bit set instead of KeyMgmt.WPA_PSK
+        byte[] xmlData = String.format(SINGLE_INVALID_NETWORK_DATA_XML_STRING_FORMAT,
+                invalidConfigKey,
+                pskNetwork.SSID.replaceAll("\"", "&quot;"),
+                pskNetwork.preSharedKey.replaceAll("\"", "&quot;"),
+                pskNetwork.shared, pskNetwork.creatorUid,
+                pskNetwork.creatorName, pskNetwork.getRandomizedMacAddress())
+                .getBytes(StandardCharsets.UTF_8);
+        List<WifiConfiguration> deserializedNetworks = deserializeData(xmlData);
+        assertEquals(1, deserializedNetworks.size());
+
+        WifiConfiguration deserializedPskNetwork = deserializedNetworks.get(0);
+        WifiConfigurationTestUtil.assertConfigurationEqualForConfigStore(
+                pskNetwork, deserializedPskNetwork);
     }
 }

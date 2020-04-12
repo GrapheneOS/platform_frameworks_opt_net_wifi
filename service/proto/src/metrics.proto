@@ -655,6 +655,9 @@ message WifiLog {
 
   // Total number of scan results from 6GHz band
   optional int32 num_6g_network_scan_results = 183;
+
+  // Initial partial scan stats
+  optional InitPartialScanStats init_partial_scan_stats = 184;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -3121,4 +3124,23 @@ message ThroughputMbpsHistogram {
   repeated HistogramBucketInt32 rx_2g = 3;
   // Rx histogram above 2G
   repeated HistogramBucketInt32 rx_above_2g = 4;
+}
+
+// Initial Partial Scan stats
+message InitPartialScanStats {
+  // Total number of partial scans
+  optional int32 num_scans = 1;
+
+  // Number of instances a partial scan results in finding a network
+  optional int32 num_success_scans = 2;
+
+  // Number of instances a patial scan does not result in finding a network
+  // and a follow up full scan finds a network.
+  optional int32 num_failure_scans = 3;
+
+  // Histogram of number of channels used in a successful partial scan
+  repeated HistogramBucketInt32 successful_scan_channel_count_histogram = 4;
+
+  // Histogram of number of channels used in a failed partial scan
+  repeated HistogramBucketInt32 failed_scan_channel_count_histogram = 5;
 }
