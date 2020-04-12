@@ -36,7 +36,8 @@
           <item type="integer" name="config_wifiFrameworkThroughputBonusLimit" />
           <item type="integer" name="config_wifiFrameworkSavedNetworkBonus" />
           <item type="integer" name="config_wifiFrameworkUnmeteredNetworkBonus" />
-          <item type="integer" name="config_wifiFrameworkCurrentNetworkBonus" />
+          <item type="integer" name="config_wifiFrameworkCurrentNetworkBonusMin" />
+          <item type="integer" name="config_wifiFrameworkCurrentNetworkBonusPercent" />
           <item type="integer" name="config_wifiFrameworkSecureNetworkBonus" />
           <item type="integer" name="config_wifiFrameworkLastSelectionMinutes" />
           <item type="integer" name="config_wifiFrameworkMinPacketPerSecondActiveTraffic" />

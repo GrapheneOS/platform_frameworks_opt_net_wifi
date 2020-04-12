@@ -33,6 +33,8 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     private boolean mIsTrusted = true;
     private boolean mCarrierOrPrivileged;
     private boolean mIsMetered;
+    private boolean mHasNoInternetAccess;
+    private boolean mIsNoInternetAccessExpected;
     private int mNominatorId = -1;
     private double mLastSelectionWeight;
     private int mScanRssi = -127;
@@ -56,6 +58,8 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
         mIsTrusted = candidate.isTrusted();
         mCarrierOrPrivileged = candidate.isCarrierOrPrivileged();
         mIsMetered = candidate.isMetered();
+        mHasNoInternetAccess = candidate.hasNoInternetAccess();
+        mIsNoInternetAccessExpected = candidate.isNoInternetAccessExpected();
         mNominatorId = candidate.getNominatorId();
         mLastSelectionWeight = candidate.getLastSelectionWeight();
         mScanRssi = candidate.getScanRssi();
@@ -147,6 +151,26 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     @Override
     public boolean isMetered() {
         return mIsMetered;
+    }
+
+    public ConcreteCandidate setNoInternetAccess(boolean hasNoInternetAccess) {
+        mHasNoInternetAccess = hasNoInternetAccess;
+        return this;
+    }
+
+    @Override
+    public boolean hasNoInternetAccess() {
+        return mHasNoInternetAccess;
+    }
+
+    public ConcreteCandidate setNoInternetAccessExpected(boolean isNoInternetAccessExpected) {
+        mIsNoInternetAccessExpected = isNoInternetAccessExpected;
+        return this;
+    }
+
+    @Override
+    public boolean isNoInternetAccessExpected() {
+        return mIsNoInternetAccessExpected;
     }
 
     public ConcreteCandidate setNominatorId(int nominatorId) {

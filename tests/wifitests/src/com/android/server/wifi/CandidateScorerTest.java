@@ -174,8 +174,52 @@ public class CandidateScorerTest extends WifiBaseTest {
      */
     @Test
     public void testPreferTheCurrentNetworkEvenIfRssiDifferenceIsSignificant() throws Exception {
-        assertThat(evaluate(mCandidate1.setScanRssi(-74).setCurrentNetwork(true)),
-                greaterThan(evaluate(mCandidate2.setScanRssi(-70))));
+        assertThat(evaluate(mCandidate1.setScanRssi(-65).setCurrentNetwork(true)
+                                    .setPredictedThroughputMbps(433)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-57)
+                                    .setPredictedThroughputMbps(433))));
+    }
+
+    /**
+     * Prefer the current network, even if throughput difference is significant.
+     */
+    @Test
+    public void testPreferTheCurrentNetworkEvenIfTputDifferenceIsSignificant() throws Exception {
+        assertThat(evaluate(mCandidate1.setScanRssi(-57)
+                                    .setCurrentNetwork(true)
+                                    .setPredictedThroughputMbps(433)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-57)
+                                    .setPredictedThroughputMbps(560))));
+    }
+
+    /**
+     * Prefer to switch when current network has low throughput and no internet (unexpected)
+     */
+    @Test
+    public void testSwitchifCurrentNetworkNoInternetUnexpectedAndLowThroughput() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-57)
+                        .setCurrentNetwork(true)
+                        .setPredictedThroughputMbps(433)
+                        .setNoInternetAccess(true)
+                        .setNoInternetAccessExpected(false)),
+                lessThan(evaluate(mCandidate2.setScanRssi(-57)
+                        .setPredictedThroughputMbps(560))));
+    }
+
+    /**
+     * Prefer current network when current network has low throughput and no internet (but expected)
+     */
+    @Test
+    public void testSwitchifCurrentNetworkHasNoInternetExceptedAndLowThroughput() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-57)
+                        .setCurrentNetwork(true)
+                        .setPredictedThroughputMbps(433)
+                        .setNoInternetAccess(true)
+                        .setNoInternetAccessExpected(true)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-57)
+                        .setPredictedThroughputMbps(560))));
     }
 
     /**

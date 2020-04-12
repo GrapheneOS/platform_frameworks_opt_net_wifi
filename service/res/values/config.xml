@@ -89,8 +89,11 @@
          These values can be reduced to allow overlapping between categories. -->
     <integer translatable="false" name="config_wifiFrameworkSavedNetworkBonus">500</integer>
     <integer translatable="false" name="config_wifiFrameworkUnmeteredNetworkBonus">1000</integer>
-
-    <integer translatable="false" name="config_wifiFrameworkCurrentNetworkBonus">20</integer>
+    <!-- Integer specifying the minimum bonus for current network -->
+    <integer translatable="false" name="config_wifiFrameworkCurrentNetworkBonusMin">20</integer>
+    <!-- Integer specifying the percent bonus for current network. The percent is applied to
+         the sum of rssi base score and throughput score-->
+    <integer translatable="false" name="config_wifiFrameworkCurrentNetworkBonusPercent">20</integer>
     <integer translatable="false" name="config_wifiFrameworkSecureNetworkBonus">10</integer>
 
     <!-- The duration in minutes to strongly favor the last-selected network over other options. -->
