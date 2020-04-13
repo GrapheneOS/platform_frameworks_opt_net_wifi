@@ -23,6 +23,8 @@
           <item type="bool" name="config_wifi5ghzSupport" />
           <item type="bool" name="config_wifi6ghzSupport" />
           <item type="bool" name="config_wifi11axSupportOverride" />
+          <item type="bool" name="config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable" />
+          <item type="integer" name="config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue" />
           <item type="bool" name="config_wifi_fast_bss_transition_enabled" />
           <item type="string" name="config_wifi_p2p_device_type" />
           <item type="bool" name="config_wifi_background_scan_support" />
