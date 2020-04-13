@@ -24,16 +24,20 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 
 import androidx.test.filters.SmallTest;
+
+import com.android.wifi.resources.R;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 /**
  * Unit tests for {@link com.android.server.wifi.ThroughputPredictor}.
@@ -41,7 +45,12 @@ import org.mockito.MockitoAnnotations;
 @SmallTest
 public class ThroughputPredictorTest extends WifiBaseTest {
     @Mock private DeviceWiphyCapabilities mDeviceCapabilities;
-
+    @Mock private Context mContext;
+    // For simulating the resources, we use a Spy on a MockResource
+    // (which is really more of a stub than a mock, in spite if its name).
+    // This is so that we get errors on any calls that we have not explicitly set up.
+    @Spy
+    private MockResources mResource = new MockResources();
     ThroughputPredictor mThroughputPredictor;
     WifiNative.ConnectionCapabilities mConnectionCap = new WifiNative.ConnectionCapabilities();
 
@@ -67,7 +76,14 @@ public class ThroughputPredictorTest extends WifiBaseTest {
         when(mDeviceCapabilities.getMaxNumberTxSpatialStreams()).thenReturn(2);
         when(mDeviceCapabilities.getMaxNumberRxSpatialStreams()).thenReturn(2);
 
-        mThroughputPredictor = new ThroughputPredictor();
+        when(mResource.getBoolean(
+                R.bool.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable))
+                .thenReturn(false);
+        when(mResource.getInteger(
+                R.integer.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue))
+                .thenReturn(2);
+        when(mContext.getResources()).thenReturn(mResource);
+        mThroughputPredictor = new ThroughputPredictor(mContext);
     }
 
     /** Cleans up test. */
@@ -113,6 +129,21 @@ public class ThroughputPredictorTest extends WifiBaseTest {
     }
 
     @Test
+    public void verifyHighRssiMinChannelUtilizationAc5g80Mhz2ssOverriddenTo1ss() {
+        when(mResource.getBoolean(
+                R.bool.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable))
+                .thenReturn(true);
+        when(mResource.getInteger(
+                R.integer.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue))
+                .thenReturn(1);
+        int predictedThroughputMbps = mThroughputPredictor.predictThroughput(mDeviceCapabilities,
+                ScanResult.WIFI_STANDARD_11AC, ScanResult.CHANNEL_WIDTH_80MHZ, 0, 5180, 2,
+                MIN_CHANNEL_UTILIZATION, 50, false);
+
+        assertEquals(433, predictedThroughputMbps);
+    }
+
+    @Test
     public void verifyHighRssiMinChannelUtilizationAx5g160Mhz4ss() {
         when(mDeviceCapabilities.isWifiStandardSupported(ScanResult.WIFI_STANDARD_11AX))
                 .thenReturn(true);
@@ -127,6 +158,26 @@ public class ThroughputPredictorTest extends WifiBaseTest {
 
         assertEquals(4803, predictedThroughputMbps);
     }
+
+    @Test
+    public void verifyHighRssiMinChannelUtilizationAx5g160Mhz4ssOverriddenTo2ss() {
+        when(mResource.getBoolean(
+                R.bool.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable))
+                .thenReturn(true);
+        when(mDeviceCapabilities.isWifiStandardSupported(ScanResult.WIFI_STANDARD_11AX))
+                .thenReturn(true);
+        when(mDeviceCapabilities.isChannelWidthSupported(ScanResult.CHANNEL_WIDTH_160MHZ))
+                .thenReturn(true);
+        when(mDeviceCapabilities.getMaxNumberTxSpatialStreams()).thenReturn(4);
+        when(mDeviceCapabilities.getMaxNumberRxSpatialStreams()).thenReturn(4);
+
+        int predictedThroughputMbps = mThroughputPredictor.predictThroughput(mDeviceCapabilities,
+                ScanResult.WIFI_STANDARD_11AX, ScanResult.CHANNEL_WIDTH_160MHZ, 0, 5180, 4,
+                MIN_CHANNEL_UTILIZATION, INVALID, false);
+
+        assertEquals(2401, predictedThroughputMbps);
+    }
+
 
     @Test
     public void verifyMidRssiMinChannelUtilizationAc5g80Mhz2ss() {
