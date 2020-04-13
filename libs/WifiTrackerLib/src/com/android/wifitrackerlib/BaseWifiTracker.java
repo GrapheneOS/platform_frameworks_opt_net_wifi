@@ -109,6 +109,8 @@ public class BaseWifiTracker implements LifecycleObserver {
                 handleConfiguredNetworksChangedAction(intent);
             } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
                 handleNetworkStateChangedAction(intent);
+            } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
+                handleRssiChangedAction();
             }
         }
     };
@@ -199,6 +201,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
         mContext.registerReceiver(mBroadcastReceiver, filter,
                 /* broadcastPermission */ null, mWorkerHandler);
         mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
@@ -275,6 +278,14 @@ public class BaseWifiTracker implements LifecycleObserver {
      */
     @WorkerThread
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle receiving the WifiManager.RSSI_CHANGED_ACTION broadcast
+     */
+    @WorkerThread
+    protected void handleRssiChangedAction() {
         // Do nothing.
     }
 
