@@ -36,6 +36,13 @@
            be checked via NL80211 interface -->
     <bool translatable="false" name="config_wifi11axSupportOverride">false</bool>
 
+    <!-- Indicates whether to enable overriding the max number of spatial stream supported by the device
+         If true, config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue
+         will be used to override the max number of spatial stream supported by the device.
+         If false, it will be left to WifiCond to derive the value from NL80211 interface -->
+    <bool translatable="false" name="config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable">true</bool>
+    <integer translatable="false" name="config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue">2</integer>
+
     <!-- Boolean indicating whether 802.11r Fast BSS Transition is enabled on this platform -->
     <bool translatable="false" name="config_wifi_fast_bss_transition_enabled">false</bool>
 
