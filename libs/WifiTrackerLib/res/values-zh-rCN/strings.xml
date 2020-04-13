@@ -46,5 +46,5 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"正在完成注册…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"无法完成注册。点按即可重试。"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"注册完毕。正在连接…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"此网络会接收可用于设备追踪的唯一 ID。\n"<annotation id="url">"了解详情"</annotation></string>
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"此网络会接收可用于追踪设备位置的唯一 ID。\n"<annotation id="url">"了解详情"</annotation></string>
 </resources>

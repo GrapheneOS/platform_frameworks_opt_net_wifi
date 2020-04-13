@@ -31,8 +31,7 @@
     <string name="wifi_metered_label" msgid="1362621600006544014">"ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"ਗੈਰ-ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> ਰਾਹੀਂ ਕਨੈਕਟ ਕੀਤਾ ਗਿਆ"</string>
-    <!-- no translation found for available_via_app (9110324040292242769) -->
-    <skip />
+    <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> ਰਾਹੀਂ ਉਪਲਬਧ"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> ਰਾਹੀਂ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਕਨੈਕਟ ਕੀਤਾ ਗਿਆ"</string>
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"ਨੈੱਟਵਰਕ ਰੇਟਿੰਗ ਪ੍ਰਦਾਨਕ ਰਾਹੀਂ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਕਨੈਕਟ ਹੋਇਆ"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"ਸੀਮਤ ਕਨੈਕਸ਼ਨ"</string>
@@ -41,13 +40,11 @@
     <string name="wifi_security_none" msgid="6680263031386719053">"ਕੋਈ ਨਹੀਂ"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"ਮਿਆਦ ਮੁੱਕ ਗਈ"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"ਸਾਈਨ-ਅੱਪ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ"</string>
-    <!-- no translation found for tap_to_renew_subscription_and_connect (375976298920840105) -->
-    <skip />
+    <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"ਗਾਹਕੀ ਦੇ ਨਵੀਨੀਕਰਨ ਲਈ ਅਤੇ ਕਨੈਕਟ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> ਨੂੰ ਖੋਲ੍ਹਿਆ ਜਾ ਰਿਹਾ ਹੈ"</string>
     <string name="osu_connect_failed" msgid="8503501619299851793">"ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ"</string>
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਹੋਇਆ। ਕਨੈਕਟ ਹੋ ਰਿਹਾ ਹੈ…"</string>
-    <!-- no translation found for imsi_protection_warning (3771878632537231149) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"ਇਹ ਨੈੱਟਵਰਕ ਇੱਕ ਵਿਲੱਖਣ ਆਈਡੀ ਪ੍ਰਾਪਤ ਕਰਦਾ ਹੈ ਜਿਸ ਨੂੰ ਡੀਵਾਈਸ ਦੇ ਟਿਕਾਣੇ ਨੂੰ ਟਰੈਕ ਕਰਨ ਲਈ ਵਰਤਿਆ ਦਾ ਸਕਦਾ ਹੈ।\n"<annotation id="url">"ਹੋਰ ਜਾਣੋ"</annotation></string>
 </resources>

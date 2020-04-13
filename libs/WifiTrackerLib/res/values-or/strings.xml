@@ -31,8 +31,7 @@
     <string name="wifi_metered_label" msgid="1362621600006544014">"ମପାଯାଉଥିବା"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"ମପାଯାଉନଥିବା"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> ଦ୍ବାରା ସଂଯୋଗ କରାଯାଇଛି"</string>
-    <!-- no translation found for available_via_app (9110324040292242769) -->
-    <skip />
+    <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> ମାଧ୍ୟମରେ ଉପଲବ୍ଧ ଅଛି"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> ମାଧ୍ୟମରେ ସ୍ୱଚାଳିତ ଭାବେ ସଂଯୋଗ କରାଯାଇଛି"</string>
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"ନେଟୱର୍କ ମୂଲ୍ୟାୟନ ପ୍ରଦାତାଙ୍କ ମାଧ୍ୟମରେ ଅଟୋମେଟିକାଲ୍ୟ ସଂଯୁକ୍ତ"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"ସୀମିତ ସଂଯୋଗ"</string>
@@ -41,13 +40,11 @@
     <string name="wifi_security_none" msgid="6680263031386719053">"କିଛି ନାହିଁ"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"ମିଆଦ ଶେଷ ହୋଇଯାଇଛି"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"ସାଇନ୍ ଅପ୍ କରିବାକୁ ଟାପ୍ କରନ୍ତୁ"</string>
-    <!-- no translation found for tap_to_renew_subscription_and_connect (375976298920840105) -->
-    <skip />
+    <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"ସଦସ୍ୟତାକୁ ନବୀକରଣ କରି ସଂଯୋଗ କରିବାକୁ ଟାପ୍ କରନ୍ତୁ"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> ଖୋଲୁଛି"</string>
     <string name="osu_connect_failed" msgid="8503501619299851793">"ସଂଯୋଗ କରିହେଲା ନାହିଁ"</string>
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"ସାଇନ୍ ଅପ୍ ଶେଷ ହେଉଛି…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"ସାଇନ୍ ଅପ୍ ଶେଷ ହୋଇପାରିଲା ନାହିଁ। ପୁଣି ଚେଷ୍ଟା କରିବାକୁ ଟାପ୍ କରନ୍ତୁ।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ସାଇନ୍ ଅପ୍ ଶେଷ ହୋଇଛି। ସଂଯୋଗ କରୁଛି…"</string>
-    <!-- no translation found for imsi_protection_warning (3771878632537231149) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"ଡିଭାଇସର ଲୋକେସନ୍ ଟ୍ରାକ୍ କରିବାକୁ ବ୍ୟବହାର କରାଯାଇପାରୁଥିବା ଏକ ସ୍ୱତନ୍ତ୍ର ID ଏହି ନେଟୱାର୍କ ପାଇଥାଏ।\n"<annotation id="url">"ଅଧିକ ଜାଣନ୍ତୁ"</annotation></string>
 </resources>

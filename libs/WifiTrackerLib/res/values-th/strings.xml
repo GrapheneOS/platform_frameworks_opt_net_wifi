@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
     <string name="auto_connect_disable" msgid="1078319396240632542">"การเชื่อมต่ออัตโนมัติปิดอยู่"</string>
-    <string name="saved_network" msgid="6241977554502802914">"บันทึกโดย <xliff:g id="NAME">%1$s</xliff:g> แล้ว"</string>
+    <string name="saved_network" msgid="6241977554502802914">"บันทึกโดย<xliff:g id="NAME">%1$s</xliff:g> แล้ว"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"จะไม่เชื่อมต่อโดยอัตโนมัติ"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"เข้าถึงอินเทอร์เน็ตไม่ได้"</string>
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"ปัญหาในการตรวจสอบสิทธิ์"</string>
@@ -26,7 +26,7 @@
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"การกำหนดค่า IP ล้มเหลว"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"ปิดอยู่"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"จุดเข้าใช้งานเต็มชั่วคราว"</string>
-    <string name="wifi_disconnected" msgid="3720926757662831062">"เลิกเชื่อมต่อแล้ว"</string>
+    <string name="wifi_disconnected" msgid="3720926757662831062">"ยกเลิกการเชื่อมต่อแล้ว"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"บันทึกแล้ว"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"มีการวัดปริมาณอินเทอร์เน็ต"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"ไม่มีการวัดปริมาณอินเทอร์เน็ต"</string>
