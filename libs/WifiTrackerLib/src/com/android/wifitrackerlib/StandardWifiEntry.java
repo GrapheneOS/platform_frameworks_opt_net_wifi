@@ -643,14 +643,16 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         final ScanResult bestScanResult = getBestScanResultByLevel(scanResults);
-        if (bestScanResult == null) {
-            mLevel = WIFI_LEVEL_UNREACHABLE;
-        } else {
-            mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+        if (bestScanResult != null) {
             updateEapType(bestScanResult);
             updatePskType(bestScanResult);
         }
 
+        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+            mLevel = bestScanResult != null
+                    ? mWifiManager.calculateSignalLevel(bestScanResult.level)
+                    : WIFI_LEVEL_UNREACHABLE;
+        }
         notifyOnUpdated();
     }
 

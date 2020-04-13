@@ -132,6 +132,13 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     @Override
+    protected void handleRssiChangedAction() {
+        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
+                mConnectivityManager.getActiveNetworkInfo());
+    }
+
+    @WorkerThread
+    @Override
     protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
         if (mChosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mChosenEntry.updateLinkProperties(linkProperties);
