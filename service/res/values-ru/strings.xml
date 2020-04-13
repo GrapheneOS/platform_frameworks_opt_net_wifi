@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Приложение \"<xliff:g id="NAME">%s</xliff:g>\" рекомендует сети, к которым устройство может подключаться автоматически."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Разрешить"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Нет, спасибо"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Предупреждение о конфиденциальности"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> предлагает сети без защиты IMSI-кода на основе данных о вашей SIM-карте. Разрешить автоматическое подключение к сетям?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Разрешить"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Запретить"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> запрашивает разрешение на автоподключение"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Эти сети получат доступ к уникальному идентификатору, с помощью которого можно отслеживать местоположение устройства."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Все равно подключиться"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Не подключаться"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Подтвердите подключение"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Если вы установите подключение, Wi‑Fi-сети оператора \"<xliff:g id="CARRIERNAME">%s</xliff:g>\" смогут получать доступ к уникальному идентификатору, связанному с вашей SIM-картой, или делиться им. Это позволит отслеживать местоположение устройства."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Подключиться"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Не подключаться"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi-Fi включится автоматически"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Когда вы будете в зоне действия сохраненной сети с хорошим сигналом."</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Не включать снова"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Не удалось подключиться к устройству \"<xliff:g id="SSID">%1$s</xliff:g>\""</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Нажмите, чтобы изменить настройки конфиденциальности и повторить попытку."</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Изменить настройки конфиденциальности?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Устройство \"<xliff:g id="SSID_0">%1$s</xliff:g>\" может подключиться, используя MAC-адрес вашего устройства (уникальный идентификатор). При этом устройства поблизости смогут отслеживать ваше местоположение. \n\nЕсли вы продолжите, устройство \"<xliff:g id="SSID_1">%1$s</xliff:g>\" изменит настройки конфиденциальности и попробует подключиться ещё раз."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Для подключения сети <xliff:g id="SSID">%1$s</xliff:g> необходим MAC-адрес вашего устройства (уникальный идентификатор). Сейчас ваша настройка конфиденциальности для этой сети использует случайный идентификатор. \n\nЭто изменение может привести к тому, что устройства поблизости смогут отслеживать ваше местоположение."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Изменить настройки"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Настройки сохранены. Попробуйте подключиться ещё раз."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Настройки сохранены. Попробуйте подключиться ещё раз."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Не удается изменить настройки конфиденциальности."</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Сеть не найдена."</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : Ошибка аутентификации EAP 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : Ошибка аутентификации EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : Ошибка аутентификации EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : Ошибка аутентификации EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Мобильная точка доступа отключена"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Мобильная точка доступа отключена"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Мобильная точка доступа отключена из-за превышения времени ожидания."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Точка доступа отключена"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Нет подключенных устройств. Нажмите, чтобы внести изменения."</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Нет подключения к Wi-Fi"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Чтобы подключиться к сети \"<xliff:g id="SSID">%1$s</xliff:g>\", вставьте SIM-карту оператора \"<xliff:g id="CARRIER_NAME">%2$s</xliff:g>\"."</string>
 </resources>
