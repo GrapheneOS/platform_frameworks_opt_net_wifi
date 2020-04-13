@@ -119,6 +119,13 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     @Override
+    protected void handleRssiChangedAction() {
+        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
+                mConnectivityManager.getActiveNetworkInfo());
+    }
+
+    @WorkerThread
+    @Override
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
         mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
