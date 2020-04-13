@@ -727,7 +727,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final String connectedFqdn = wifiInfo.getPasspointFqdn();
         mPasspointConfigCache.values().stream()
                 .filter(config ->
-                        config.getHomeSp().getFqdn() == connectedFqdn
+                        TextUtils.equals(config.getHomeSp().getFqdn(), connectedFqdn)
                                 && !mPasspointWifiEntryCache.containsKey(
                                         uniqueIdToPasspointWifiEntryKey(config.getUniqueId())))
                 .findAny().ifPresent(config -> {
