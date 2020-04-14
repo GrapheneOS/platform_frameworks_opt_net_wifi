@@ -2560,4 +2560,77 @@ public class PasspointManagerTest extends WifiBaseTest {
         // Verify content in the data source.
         assertTrue(mUserDataSource.getProviders().isEmpty());
     }
+
+    /**
+     * Verify that adding a provider with a self signed root CA increments the metrics correctly.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void verifySelfSignRootCaMetrics() throws Exception {
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.FQDN = TEST_FQDN;
+        PasspointConfiguration config =
+                createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
+        PasspointProvider provider = createMockProvider(config, wifiConfig, true);
+        when(mObjectFactory.makePasspointProvider(eq(config), eq(mWifiKeyStore),
+            eq(mWifiCarrierInfoManager), anyLong(), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE),
+            eq(true))).thenReturn(provider);
+        when(provider.getPackageName()).thenReturn(TEST_PACKAGE);
+        assertTrue(mManager.addOrUpdateProvider(
+                config, TEST_CREATOR_UID, TEST_PACKAGE, true, false));
+        verify(mWifiMetrics).incrementNumPasspointProviderWithSelfSignedRootCa();
+        verify(mWifiMetrics, never()).incrementNumPasspointProviderWithNoRootCa();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
+    }
+
+    /**
+     * Verify that adding a provider with no root CA increments the metrics correctly.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void verifyNoRootCaMetrics() throws Exception {
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.FQDN = TEST_FQDN;
+        PasspointConfiguration config =
+                createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
+        config.getCredential().setCaCertificate(null);
+        PasspointProvider provider = createMockProvider(config, wifiConfig, true);
+        when(mObjectFactory.makePasspointProvider(eq(config), eq(mWifiKeyStore),
+            eq(mWifiCarrierInfoManager), anyLong(), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE),
+            eq(true))).thenReturn(provider);
+        when(provider.getPackageName()).thenReturn(TEST_PACKAGE);
+        assertTrue(mManager.addOrUpdateProvider(
+                config, TEST_CREATOR_UID, TEST_PACKAGE, true, false));
+        verify(mWifiMetrics).incrementNumPasspointProviderWithNoRootCa();
+        verify(mWifiMetrics, never()).incrementNumPasspointProviderWithSelfSignedRootCa();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
+    }
+
+    /**
+     * Verify that adding a provider with subscription expiration increments the metrics correctly.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void verifySubscriptionExpirationMetrics() throws Exception {
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.FQDN = TEST_FQDN;
+        PasspointConfiguration config =
+                createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
+        config.setSubscriptionExpirationTimeInMillis(1586228641000L);
+        PasspointProvider provider = createMockProvider(config, wifiConfig, true);
+        when(mObjectFactory.makePasspointProvider(eq(config), eq(mWifiKeyStore),
+            eq(mWifiCarrierInfoManager), anyLong(), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE),
+            eq(true))).thenReturn(provider);
+        when(provider.getPackageName()).thenReturn(TEST_PACKAGE);
+        assertTrue(mManager.addOrUpdateProvider(
+                config, TEST_CREATOR_UID, TEST_PACKAGE, true, false));
+        verify(mWifiMetrics).incrementNumPasspointProviderWithSubscriptionExpiration();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
+        verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
+    }
 }

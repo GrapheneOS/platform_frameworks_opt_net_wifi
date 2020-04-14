@@ -675,6 +675,15 @@ message WifiLog {
   // (SSID, BSSID) tuple depending on AP configuration (in the above priority
   // order).
   repeated NumConnectableNetworksBucket observed_hotspot_r3_ess_in_scan_histogram = 188;
+
+  // Total number of Passpoint providers with no Root CA in their profile.
+  optional int32 num_passpoint_provider_with_no_root_ca = 189;
+
+  // Total number of Passpoint providers with self-signed root CA in their profile.
+  optional int32 num_passpoint_provider_with_self_signed_root_ca = 190;
+
+  // Total number of Passpoint providers with subscription expiration date in their profile.
+  optional int32 num_passpoint_provider_with_subscription_expiration = 191;
 }
 
 // Information that gets logged for every WiFi connection.
