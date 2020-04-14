@@ -29,6 +29,8 @@ import static android.net.wifi.WifiManager.EXTRA_ICON;
 import static android.net.wifi.WifiManager.EXTRA_SUBSCRIPTION_REMEDIATION_METHOD;
 import static android.net.wifi.WifiManager.EXTRA_URL;
 
+import static java.security.cert.PKIXReason.NO_TRUST_ANCHOR;
+
 import android.annotation.NonNull;
 import android.app.AppOpsManager;
 import android.content.Context;
@@ -65,7 +67,16 @@ import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
 import com.android.server.wifi.util.InformationElementUtil;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -439,6 +450,34 @@ public class PasspointManager {
                 mWifiCarrierInfoManager, mProviderIndex++, uid, packageName, isFromSuggestion);
         newProvider.setTrusted(isTrusted);
 
+        boolean metricsNoRootCa = false;
+        boolean metricsSelfSignedRootCa = false;
+        boolean metricsSubscriptionExpiration = false;
+
+        if (config.getCredential().getUserCredential() != null
+                || config.getCredential().getCertCredential() != null) {
+            X509Certificate[] x509Certificates = config.getCredential().getCaCertificates();
+            if (x509Certificates == null) {
+                metricsNoRootCa = true;
+            } else {
+                try {
+                    for (X509Certificate certificate : x509Certificates) {
+                        verifyCaCert(certificate);
+                    }
+                } catch (CertPathValidatorException e) {
+                    // A self signed Root CA will fail path validation checks with NO_TRUST_ANCHOR
+                    if (e.getReason() == NO_TRUST_ANCHOR) {
+                        metricsSelfSignedRootCa = true;
+                    }
+                } catch (Exception e) {
+                    // Other exceptions, fall through, will be handled below
+                }
+            }
+        }
+        if (config.getSubscriptionExpirationTimeMillis() != Long.MIN_VALUE) {
+            metricsSubscriptionExpiration = true;
+        }
+
         if (!newProvider.installCertsAndKeys()) {
             Log.e(TAG, "Failed to install certificates and keys to keystore");
             return false;
@@ -477,6 +516,15 @@ public class PasspointManager {
         Log.d(TAG, "Added/updated Passpoint configuration for FQDN: "
                 + config.getHomeSp().getFqdn() + " with unique ID: " + config.getUniqueId()
                 + " by UID: " + uid);
+        if (metricsNoRootCa) {
+            mWifiMetrics.incrementNumPasspointProviderWithNoRootCa();
+        }
+        if (metricsSelfSignedRootCa) {
+            mWifiMetrics.incrementNumPasspointProviderWithSelfSignedRootCa();
+        }
+        if (metricsSubscriptionExpiration) {
+            mWifiMetrics.incrementNumPasspointProviderWithSubscriptionExpiration();
+        }
         mWifiMetrics.incrementNumPasspointProviderInstallSuccess();
         return true;
     }
@@ -1255,5 +1303,26 @@ public class PasspointManager {
     public void clearAnqpRequestsAndFlushCache() {
         mAnqpRequestManager.clear();
         mAnqpCache.flush();
+    }
+
+    /**
+     * Verify that the given certificate is trusted by one of the pre-loaded public CAs in the
+     * system key store.
+     *
+     * @param caCert The CA Certificate to verify
+     * @throws CertPathValidatorException
+     * @throws Exception
+     */
+    private void verifyCaCert(X509Certificate caCert)
+            throws GeneralSecurityException, IOException {
+        CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        CertPathValidator validator =
+                CertPathValidator.getInstance(CertPathValidator.getDefaultType());
+        CertPath path = factory.generateCertPath(Arrays.asList(caCert));
+        KeyStore ks = KeyStore.getInstance("AndroidCAStore");
+        ks.load(null, null);
+        PKIXParameters params = new PKIXParameters(ks);
+        params.setRevocationEnabled(false);
+        validator.validate(path, params);
     }
 }
