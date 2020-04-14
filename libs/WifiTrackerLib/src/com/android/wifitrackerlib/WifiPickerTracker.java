@@ -187,10 +187,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
         final NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
         updateConnectionInfo(wifiInfo, networkInfo);
-        // Create a StandardWifiEntry for the current connection if there are no scan results yet.
-        conditionallyCreateConnectedStandardWifiEntry(wifiInfo, networkInfo);
-        conditionallyCreateConnectedSuggestedWifiEntry(wifiInfo, networkInfo);
-        conditionallyCreateConnectedPasspointWifiEntry(wifiInfo, networkInfo);
         handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(
                 mWifiManager.getCurrentNetwork()));
         notifyOnNumSavedNetworksChanged();
@@ -222,7 +218,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         final WifiConfiguration config =
                 (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (config != null && !config.isPasspoint() && !config.fromWifiNetworkSuggestion) {
+        if (config != null && !config.isEphemeral() && !config.isPasspoint()) {
             updateStandardWifiEntryConfig(
                     config, (Integer) intent.getExtra(WifiManager.EXTRA_CHANGE_REASON));
         } else {
@@ -250,11 +246,17 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final NetworkInfo networkInfo =
                 (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
         updateConnectionInfo(wifiInfo, networkInfo);
-        // Create a StandardWifiEntry for the current connection if there are no scan results yet.
-        conditionallyCreateConnectedStandardWifiEntry(wifiInfo, networkInfo);
-        conditionallyCreateConnectedSuggestedWifiEntry(wifiInfo, networkInfo);
-        conditionallyCreateConnectedPasspointWifiEntry(wifiInfo, networkInfo);
         updateWifiEntries();
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleRssiChangedAction() {
+        if (mConnectedWifiEntry != null) {
+            final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+            final NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
+            mConnectedWifiEntry.updateConnectionInfo(wifiInfo, networkInfo);
+        }
     }
 
     @WorkerThread
@@ -641,6 +643,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (WifiEntry entry : mOsuWifiEntryCache.values()) {
             entry.updateConnectionInfo(wifiInfo, networkInfo);
         }
+        // Create a StandardWifiEntry for the current connection if there are no scan results yet.
+        conditionallyCreateConnectedStandardWifiEntry(wifiInfo, networkInfo);
+        conditionallyCreateConnectedSuggestedWifiEntry(wifiInfo, networkInfo);
+        conditionallyCreateConnectedPasspointWifiEntry(wifiInfo, networkInfo);
     }
 
     /**
@@ -721,7 +727,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final String connectedFqdn = wifiInfo.getPasspointFqdn();
         mPasspointConfigCache.values().stream()
                 .filter(config ->
-                        config.getHomeSp().getFqdn() == connectedFqdn
+                        TextUtils.equals(config.getHomeSp().getFqdn(), connectedFqdn)
                                 && !mPasspointWifiEntryCache.containsKey(
                                         uniqueIdToPasspointWifiEntryKey(config.getUniqueId())))
                 .findAny().ifPresent(config -> {
