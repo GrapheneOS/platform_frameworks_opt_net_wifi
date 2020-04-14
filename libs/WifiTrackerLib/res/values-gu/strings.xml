@@ -31,8 +31,7 @@
     <string name="wifi_metered_label" msgid="1362621600006544014">"મીટર કરેલ"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"મીટર ન કરેલ"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> દ્વારા કનેક્ટ થયેલ"</string>
-    <!-- no translation found for available_via_app (9110324040292242769) -->
-    <skip />
+    <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> મારફતે ઉપલબ્ધ"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> મારફતે ઑટોમૅટિક રીતે કનેક્ટ કર્યું છે"</string>
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"નેટવર્ક રેટિંગ પ્રદાતા દ્વારા આપમેળે કનેક્ટ થયું"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"મર્યાદિત કનેક્શન"</string>
@@ -41,13 +40,11 @@
     <string name="wifi_security_none" msgid="6680263031386719053">"કોઈ નહીં"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"સમય સમાપ્ત થયો"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"સાઇન અપ કરવા માટે ટૅપ કરો"</string>
-    <!-- no translation found for tap_to_renew_subscription_and_connect (375976298920840105) -->
-    <skip />
+    <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"સબ્સ્ક્રિપ્શનને રિન્યૂ કરવા માટે ટૅપ કરો અને કનેક્ટ કરો"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> ખોલી રહ્યાં છીએ"</string>
     <string name="osu_connect_failed" msgid="8503501619299851793">"કનેક્ટ કરી શક્યા નથી"</string>
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"સાઇન અપ પૂર્ણ કરી રહ્યા છીએ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"સાઇન અપ પૂર્ણ કરી શકાયું નથી. ફરી પ્રયાસ કરવા માટે ટૅપ કરો."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"સાઇન અપ પૂર્ણ. કનેક્ટ કરી રહ્યાં છીએ…"</string>
-    <!-- no translation found for imsi_protection_warning (3771878632537231149) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"આ નેટવર્ક એક અજોડ ID મેળવે છે જેનો ઉપયોગ ડિવાઇસનું સ્થાન ટ્રૅક કરવા માટે થઈ શકે છે.\n"<annotation id="url">"વધુ જાણો"</annotation></string>
 </resources>
