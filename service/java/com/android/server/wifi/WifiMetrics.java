@@ -2657,6 +2657,33 @@ public class WifiMetrics {
     }
 
     /**
+     * Increment number of Passpoint providers with no Root CA in their profile.
+     */
+    public void incrementNumPasspointProviderWithNoRootCa() {
+        synchronized (mLock) {
+            mWifiLogProto.numPasspointProviderWithNoRootCa++;
+        }
+    }
+
+    /**
+     * Increment number of Passpoint providers with a self-signed Root CA in their profile.
+     */
+    public void incrementNumPasspointProviderWithSelfSignedRootCa() {
+        synchronized (mLock) {
+            mWifiLogProto.numPasspointProviderWithSelfSignedRootCa++;
+        }
+    }
+
+    /**
+     * Increment number of Passpoint providers with subscription expiration date in their profile.
+     */
+    public void incrementNumPasspointProviderWithSubscriptionExpiration() {
+        synchronized (mLock) {
+            mWifiLogProto.numPasspointProviderWithSubscriptionExpiration++;
+        }
+    }
+
+    /**
      * Increment number of times we detected a radio mode change to MCC.
      */
     public void incrementNumRadioModeChangeToMcc() {
