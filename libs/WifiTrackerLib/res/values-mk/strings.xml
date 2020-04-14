@@ -33,7 +33,7 @@
     <string name="connected_via_app" msgid="1818040967936972127">"Поврзано преку <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"Достапна преку <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"Автоматски поврзано преку <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Автоматски поврзано преку оператор за оценување мрежа"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Автоматски поврзано преку оценувач на мрежа"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Ограничена врска"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Не може да се пристапи до приватниот DNS-сервер"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Нема интернет"</string>

@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="1078319396240632542">"സ്വയമേവ കണക്റ്റ് ചെയ്യൽ ഓഫാണ്"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"ഓട്ടോ-കണക്റ്റ് ഓഫാണ്"</string>
     <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g> സംരക്ഷിച്ചത്"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"സ്വയമേവ കണക്‌റ്റ് ചെയ്യില്ല"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"ഇന്റർനെറ്റ് ആക്‌സസ് ഇല്ല"</string>
@@ -28,11 +28,10 @@
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"ആക്‌സസ് പോയിന്റ് താൽക്കാലികമായി നിറഞ്ഞിരിക്കുന്നു"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"വിച്ഛേദിച്ചു"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"സംരക്ഷിച്ചു"</string>
-    <string name="wifi_metered_label" msgid="1362621600006544014">"മീറ്റർചെയ്ത"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"മീറ്റർ ചെയ്തത്"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"മീറ്റർമാപകമല്ലാത്തത്"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> മുഖേന കണക്‌റ്റ് ചെയ്‌തു"</string>
-    <!-- no translation found for available_via_app (9110324040292242769) -->
-    <skip />
+    <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> വഴി ലഭ്യമാണ്"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> മുഖേന സ്വയമേവ കണക്‌റ്റ് ചെയ്തിരിക്കുന്നു"</string>
     <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"നെറ്റ്‌വർക്ക് റേറ്റിംഗ് ദാതാവുമായി സ്വയം കണക്‌റ്റുചെയ്‌തു"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"പരിമിത കണക്‌ഷൻ"</string>
@@ -41,13 +40,11 @@
     <string name="wifi_security_none" msgid="6680263031386719053">"ഒന്നുമില്ല"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"കാലഹരണപ്പെട്ടത്"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"സൈൻ അപ്പ് ചെയ്യാൻ ടാപ്പ് ചെയ്യുക"</string>
-    <!-- no translation found for tap_to_renew_subscription_and_connect (375976298920840105) -->
-    <skip />
+    <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"സബ്‌സ്ക്രിപ്ഷൻ പുതുക്കാൻ ടാപ്പ് ചെയ്ത് കണക്റ്റ് ചെയ്യുക"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> തുറക്കുന്നു"</string>
     <string name="osu_connect_failed" msgid="8503501619299851793">"കണക്റ്റ് ചെയ്യാനായില്ല"</string>
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"സൈൻ അപ്പ് പൂർത്തിയാക്കുന്നു…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"സൈൻ അപ്പ് പൂർത്തിയാക്കാനായില്ല. വീണ്ടും ശ്രമിക്കാൻ ടാപ്പ് ചെയ്യുക."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"സൈൻ അപ്പ് പൂർത്തിയായി. കണക്റ്റ് ചെയ്യുന്നു…"</string>
-    <!-- no translation found for imsi_protection_warning (3771878632537231149) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"ഉപകരണ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ ഉപയോഗിക്കാവുന്ന തനത് ഐഡി ഈ നെറ്റ്‌വർക്കിന് ലഭിക്കും.\n"<annotation id="url">"കൂടുതലറിയുക"</annotation></string>
 </resources>

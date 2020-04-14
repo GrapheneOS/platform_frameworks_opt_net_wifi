@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="1078319396240632542">"Az automatikus csatlakozás ki van kapcsolva"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"Automatikus csatlakozás kikapcsolva"</string>
     <string name="saved_network" msgid="6241977554502802914">"Mentette: <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"Nem csatlakozik automatikusan"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"Nincs internet-hozzáférés"</string>

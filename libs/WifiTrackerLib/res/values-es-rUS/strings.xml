@@ -26,7 +26,7 @@
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"Error de configuración de IP"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"Inhabilitada"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"El punto de acceso está completo temporalmente"</string>
-    <string name="wifi_disconnected" msgid="3720926757662831062">"Desconectada"</string>
+    <string name="wifi_disconnected" msgid="3720926757662831062">"Desconectado"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"Guardada"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"Con uso medido"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"Sin tarifa plana"</string>
@@ -46,5 +46,5 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Completando registro…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"No se pudo completar el registro. Presiona para volver a intentarlo."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Se completó el registro. Conectando…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Esta red recibe un ID único que puede utilizarse para realizar el seguimiento de la ubicación del dispositivo.\n"<annotation id="url">"Más información"</annotation></string>
+    <string name="imsi_protection_warning" msgid="3771878632537231149">"Esta red recibe un ID único con el que se puede realizar el seguimiento de la ubicación del dispositivo.\n"<annotation id="url">"Más información"</annotation></string>
 </resources>
