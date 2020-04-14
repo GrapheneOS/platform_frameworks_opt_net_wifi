@@ -20,11 +20,14 @@ import static com.android.server.wifi.util.InformationElementUtil.BssLoad.MAX_CH
 import static com.android.server.wifi.util.InformationElementUtil.BssLoad.MIN_CHANNEL_UTILIZATION;
 
 import android.annotation.NonNull;
+import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations.WifiStandard;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.util.Log;
+
+import com.android.wifi.resources.R;
 
 /**
  * A class that predicts network throughput based on RSSI, channel utilization, channel width,
@@ -96,6 +99,12 @@ public class ThroughputPredictor {
     private static final int MAX_NUM_SPATIAL_STREAM_11AC = 8;
     private static final int MAX_NUM_SPATIAL_STREAM_11N = 4;
     private static final int MAX_NUM_SPATIAL_STREAM_LEGACY = 1;
+
+    private final Context mContext;
+
+    ThroughputPredictor(Context context) {
+        mContext = context;
+    }
 
     /**
      * Enable/Disable verbose logging.
@@ -176,6 +185,12 @@ public class ThroughputPredictor {
 
         int maxNumSpatialStreamDevice = Math.min(deviceCapabilities.getMaxNumberTxSpatialStreams(),
                 deviceCapabilities.getMaxNumberRxSpatialStreams());
+
+        if (mContext.getResources().getBoolean(
+                R.bool.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable)) {
+            maxNumSpatialStreamDevice = mContext.getResources().getInteger(
+                    R.integer.config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue);
+        }
 
         int maxNumSpatialStream = Math.min(maxNumSpatialStreamDevice, maxNumSpatialStreamAp);
 
