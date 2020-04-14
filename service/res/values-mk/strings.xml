@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Предложени мрежи од <xliff:g id="NAME">%s</xliff:g>. Уредот може да се поврзе автоматски."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Дозволи"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Не, фала"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Предупредување за приватноста за IMSI-заштита"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> предложи мрежи користејќи ги информациите за SIM-картичката без заштита на приватноста. Да се дозволи автоматско поврзување на мрежата?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Дозволи"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Не дозволувај"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> сака автоматски да се поврзе"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Мреживе примаат уникатен ID што може да се користи за следење на локацијата на уредот"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Сепак поврзи се"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Не поврзувај"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Да се потврди врската?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Ако се поврзете, Wi‑Fi мрежите на <xliff:g id="CARRIERNAME">%s</xliff:g> може да имаат пристап до уникатен ID поврзан со вашата SIM-картичка или да го споделуваат. Ова може да овозможи следење на локацијата на вашиот уред."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Поврзи"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Не поврзувај"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi ќе се вклучи автоматски"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Кога сте во близина на зачувана мрежа со висок квалитет"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Не вклучувај повторно"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Не може да се поврзе на „<xliff:g id="SSID">%1$s</xliff:g>“"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Допрете за да ги промените поставките за приватност и обидете се повторно"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Да се променат поставките за приватност?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> можно е да сака да се поврзе со MAC-адресата на вашиот уред, којашто е уникатен идентификатор. Ова може да дозволи уреди во близина да ја следат локацијата на вашиот уред. \n\nАко продолжите, „<xliff:g id="SSID_1">%1$s</xliff:g>“ ќе ги промени поставките за приватност и ќе се обиде повторно да се поврзе."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"За да се поврзе, <xliff:g id="SSID">%1$s</xliff:g> треба да ја користи MAC-адресата на вашиот уред, којашто е уникатен идентификатор. Поставките за приватност за мрежава користат рандомизиран идентификатор во моментов. \n\nПроменава може да им дозволи на уредите во близина да ја следат локацијата на вашиот уред."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Променете ги поставките"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Поставките се ажурирани. Обидете се да се поврзете повторно."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Поставките се ажурирани. Обидете се да се поврзете повторно."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Не може да се променат поставките за приватност"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Не е пронајдена мрежа"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: грешка 32760 при проверката со EAP"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: грешка 32764 при проверката со EAP"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: грешка 32765 при проверката со EAP"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: грешка 32766 при проверката со EAP"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Оневозможена мобилна точка на пристап"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Мобилната точка на пристап е оневозможена"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Мобилната точка на пристап е оневозможена поради истекување на времето за неактивност."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Точката на пристап е исклучена"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Нема поврзани уреди. Допрете за да измените."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi е исклучено"</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"За да се поврзете на <xliff:g id="SSID">%1$s</xliff:g>, вметнете SIM-картичка на <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
 </resources>

@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> təklif edilən şəbəkə. Cihaz avtomatik qoşula bilər."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"İcazə verin"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Xeyr, təşəkkürlər"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI qoruması üçün məxfilik xəbərdarlığı"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> tərəfindən təklif edilən şəbəkələr məxfilik qoruması olmadan SIM kart məlumatlarınızı istifadə edir, şəbəkəyə avtomatik qoşulmağa icazə verilsin?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"İcazə verin"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"İcazə verməyin"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> avtomatik qoşulmaq istəyir"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Bu şəbəkələr cihaz məkanını izləmək üçün istifadə edilə biləcək unikal ID qəbul edir"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"İstənilən halda qoşulun"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Qoşulmayın"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Bağlantı təsdiq edilsin?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Qoşulsanız, <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi şəbəkələri SIM kartınızla əlaqəli unikal ID\'ə daxil ola və ya onu paylaşa bilər. Bu, cihazınızın məkanının izlənilməsinə icazə verə bilər."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Qoşulun"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Qoşulmayın"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi avtomatik olaraq aktiv ediləcək"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Yadda saxlanmış yüksək keyfiyyətli şəbəkələr yaxınlıqda olduqda"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Yenidən aktiv etməyin"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> şəbəkəsinə qoşulmaq mümkün deyil"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Toxunaraq məxfilik ayarını dəyişin və yenidən cəhd edin"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Məxfilik ayarı dəyişdirilsin?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> unikal identifikator olan cihazınızın MAC ünvanını istifadə edərək qoşulmaq istəyə bilər. Bu, yaxın cihazların sizin cihazınızın məkanını izləməsinə imkan verə bilər. \n\nDavam etsəniz, <xliff:g id="SSID_1">%1$s</xliff:g> məxfilik ayarınızı dəyişəcək və yenidən qoşulmağa cəhd edəcək."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Qoşulmaq üçün <xliff:g id="SSID">%1$s</xliff:g> unikal identifikator olan cihazınızın MAC ünvanını istifadə etməlidir. Daha doğrusu, bu şəbəkə üçün məxfilik ayarınız təsadüfi identifikator istifadə edir. \n\nBu dəyişiklik yaxın cihazların cihazınızın məkanını izləməsinə imkan verə bilər."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Ayarı dəyişin"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Ayar güncəlləndi. Yenidən qoşulmağa cəhd edin."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Ayar güncəlləndi. Yenidən qoşulmağa çalışın."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Məxfilik ayarını dəyişmək mümkün deyil"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Şəbəkə tapılmadı"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP doğrulama xətası 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP doğrulama xətası 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP doğrulama xətası 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP doğrulama xətası 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobil Hotspot deaktiv edilib"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Mobil hotspot deaktiv edilib"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Mobil hotspot fəaliyyətsizlik vaxt limitinin bitməsinə görə deaktiv edilib."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Hotspot deaktiv edilib"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Heç bir cihaz qoşulmayıb. Dəyişiklik etmək üçün toxunun."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi‑Fi bağlantısı kəsildi"</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> şəbəkəsinə qoşulmaq üçün <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM kartı daxil edin"</string>
 </resources>

@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Mga iminumungkahing network ng <xliff:g id="NAME">%s</xliff:g>. Posibleng awtomatikong kumonekta ang device."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Payagan"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Hindi, salamat na lang"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Babala sa privacy para sa proteksyon ng IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"Nagmungkahi ng mga network ang <xliff:g id="CARRIERNAME">%s</xliff:g> gamit ang impormasyon ng iyong SIM card nang walang proteksyon sa privacy, payagan ang network na awtomatikong kumonekta?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Payagan"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Huwag Payagan"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Gustong awtomatikong kumonekta ng <xliff:g id="CARRIERNAME">%s</xliff:g>"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Makakatanggap ang mga network na ito ng isang natatanging ID na puwedeng gamitin sa pagsusubaybay ng lokasyon ng device"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Kumonekta pa rin"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Huwag kumonekta"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Kumpirmahin ang koneksyon?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Kung kokonekta ka, posibleng ma-access o maging kapareho ng mga Wi-Fi network ng <xliff:g id="CARRIERNAME">%s</xliff:g> ang natatanging ID na nauugnay sa iyong SIM. Baka mapahintulutan nito ang pagsubaybay sa lokasyon ng iyong device."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Ikonekta"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Huwag kumonekta"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Awtomatikong mag-o-on ang Wi‑Fi"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Kapag malapit ka sa naka-save na network na mataas ang kalidad"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Huwag i-on muli"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Hindi makakonekta sa <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"I-tap para baguhin ang mga setting ng privacy at subukan ulit"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Baguhin ang setting ng privacy?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Baka gusto ng <xliff:g id="SSID_0">%1$s</xliff:g> na kumonekta gamit ang MAC address, na isang natatanging pagkakakilanlan, ng iyong device. Dahil dito, baka masubaybayan ng mga kalapit na device ang lokasyon ng iyong device. \n\nKung magpapatuloy ka, babaguhin ng <xliff:g id="SSID_1">%1$s</xliff:g> ang setting ng iyong privacy at susubukan nitong kumonekta ulit."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Para kumonekta, kailangan ng <xliff:g id="SSID">%1$s</xliff:g> ang MAC address ng iyong device, na isang natatanging identifier. Sa kasalukuyan, gumagamit ng naka-randomize na identifier ang mga setting mo sa privacy para sa network na ito. \n\nDahil sa pagbabagong ito, baka mapahintulutan ang mga kalapit na device na subaybayan ang lokasyon ng iyong device."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Baguhin ang setting"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Na-update ang setting. Subukang Kumonekta ulit."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Na-update ang setting. Subukang kumonekta ulit."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Hindi puwedeng baguhin ang setting ng privacy"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Hindi nakita ang network"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : Error sa pag-authenticate ng EAP 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : Error sa pag-authenticate ng EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : Error sa pag-authenticate ng EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : Error sa pag-authenticate ng EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Naka-disable ang Mobile Hotspot"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Na-disable ang mobile hotspot"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Na-disable ang mobile hotspot dahil sa pag-expire na pag-timeout dahil sa kawalan ng aktibidad."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Naka-off ang hotspot"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Walang mga nakakonektang device. I-tap para baguhin."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Nadiskonekta ang Wi‑Fi"</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"Para makakonekta sa <xliff:g id="SSID">%1$s</xliff:g>, maglagay ng <xliff:g id="CARRIER_NAME">%2$s</xliff:g> na SIM"</string>
 </resources>
