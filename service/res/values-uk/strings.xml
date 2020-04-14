@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Мережі, пропоновані додатком <xliff:g id="NAME">%s</xliff:g>. Пристрій може підключитися автоматично."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Дозволити"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ні, дякую"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Застереження про конфіденційність стосовно захисту ідентифікатора IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"Мережі, запропоновані оператором мобільного зв\'язку \"<xliff:g id="CARRIERNAME">%s</xliff:g>\" на основі інформації про вашу SIM-карту, не мають захисту конфіденційності. Дозволити автоматичне підключення до мережі?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Дозволити"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Заборонити"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Оператор \"<xliff:g id="CARRIERNAME">%s</xliff:g>\" хоче підключатися автоматично"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Ці мережі отримують унікальний ідентифікатор, за допомогою якого можна відстежити місцезнаходження пристрою"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Усе одно підключитися"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Не підключатися"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Підтвердити підключення?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Якщо ви під\'єднаєтеся, мережі Wi‑Fi оператора \"<xliff:g id="CARRIERNAME">%s</xliff:g>\" зможуть розкрити унікальний ідентифікатор вашої SIM-карти й відстежити місцезнаходження вашого пристрою."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Підключитися"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Не підключатися"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi-Fi вмикатиметься автоматично"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Коли ви поблизу збереженої мережі високої якості"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Не вмикати знову"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Не вдалося підключитися до мережі \"<xliff:g id="SSID">%1$s</xliff:g>\""</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Натисніть, щоб змінити налаштування конфіденційності й повторити спробу"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Змінити налаштування конфіденційності?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> може підключитися за допомогою унікального ідентифікатора вашого пристрою – його MAC-адреси. Через це пристрої поруч зможуть відстежувати місцеположення вашого пристрою. \n\nЯкщо продовжити, <xliff:g id="SSID_1">%1$s</xliff:g> змінить ваші налаштування конфіденційності й повторить спробу підключення."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Щоб підключитись, <xliff:g id="SSID">%1$s</xliff:g> має використовувати унікальний ідентифікатор пристрою – його MAC-адресу. Згідно з налаштуваннями конфіденційності, ваша мережа зараз використовує випадкові ідентифікатори. \n\nПісля цієї зміни пристрої поруч зможуть відстежувати місцезнаходження вашого пристрою."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Змінити налаштування"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Налаштування оновлено. Спробуйте підключитися знову."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Налаштування оновлено. Спробуйте підключитися знову."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Не вдалося змінити налаштування конфіденційності"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Мережу не знайдено"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: помилка автентифікації за протоколом EAP 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: помилка автентифікації за протоколом EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: помилка автентифікації за протоколом EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: помилка автентифікації за протоколом EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Мобільну точку доступу вимкнено"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Мобільну точку доступу вимкнено"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Часу очікування підключення минув. Мобільну точку доступу вимкнено."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Точку доступу вимкнено"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Немає підключених пристроїв. Натисніть, щоб змінити."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Від\'єднано від мережі Wi-Fi"</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"Щоб підключитися до мережі \"<xliff:g id="SSID">%1$s</xliff:g>\", вставте SIM-карту \"<xliff:g id="CARRIER_NAME">%2$s</xliff:g>\""</string>
 </resources>

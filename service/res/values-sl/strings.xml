@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> – predlagana omrežja. Naprava se lahko poveže samodejno."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Dovoli"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ne, hvala"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Opozorilo glede zasebnosti za varnost IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"Operater <xliff:g id="CARRIERNAME">%s</xliff:g> je na podlagi podatkov o kartici SIM predlagal omrežja brez varovanja zasebnosti. Ali želite dovoliti samodejno vzpostavitev povezave z omrežjem?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Dovoli"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Ne dovoli"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Operater <xliff:g id="CARRIERNAME">%s</xliff:g> se želi samodejno povezati"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Ta omrežja prejmejo enolični ID, s katerim je mogoče spremljati lokacijo naprave."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Vseeno poveži"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ne poveži"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Želite potrditi povezavo?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Če vzpostavite povezavo, lahko omrežja Wi-Fi operaterja <xliff:g id="CARRIERNAME">%s</xliff:g> dostopajo do enoličnega ID-ja, povezanega s kartico SIM, in ga delijo. To lahko omogoči spremljanje lokacije naprave."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Poveži"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Ne poveži"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Povezava Wi‑Fi se bo samodejno vklopila"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Ko ste v bližini zanesljivega shranjenega omrežja"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Ne vklopi znova"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Povezava z omrežjem <xliff:g id="SSID">%1$s</xliff:g> ni mogoča"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Dotaknite se za spremembo nastavitev zasebnosti in poskusite znova"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Želite spremeniti nastavitev zasebnosti?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Omrežje <xliff:g id="SSID_0">%1$s</xliff:g> bo morda za vzpostavitev povezave želelo uporabiti naslov MAC naprave, ki je enolični identifikator. To lahko napravam v bližini omogoči spremljanje lokacije vaše naprave. \n\nČe nadaljujete, bo omrežje <xliff:g id="SSID_1">%1$s</xliff:g> spremenilo nastavitev zasebnosti in se poskušalo znova povezati."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Za vzpostavitev povezave mora omrežje <xliff:g id="SSID">%1$s</xliff:g> uporabiti naslov MAC naprave, ki je enolični identifikator. Nastavitev zasebnosti za to omrežje trenutno uporablja naključno določen identifikator. \n\nTa sprememba lahko napravam v bližini omogoči spremljanje lokacije vaše naprave."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Spremeni nastavitev"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Nastavitev je posodobljena. Poskusite se znova povezati."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Nastavitev je posodobljena. Poskusite se znova povezati."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Nastavitve zasebnosti ni mogoče spremeniti"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Omrežja ni mogoče najti"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: Napaka 32760 pri preverjanju pristnosti EAP"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: Napaka 32764 pri preverjanju pristnosti EAP"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: Napaka 32765 pri preverjanju pristnosti EAP"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: Napaka 32766 pri preverjanju pristnosti EAP"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobilna dostopna točka je onemogočena"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Mobilna dostopna točka je bila onemogočena"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Mobilna dostopna točka je bila onemogočena zaradi pretečene časovne omejitve nedejavnosti."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Dostopna točka je izklopljena"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Nobena naprava ni povezana. Dotaknite se, da spremenite."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Povezava Wi-Fi je prekinjena"</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"Za povezavo z omrežjem <xliff:g id="SSID">%1$s</xliff:g> vstavite kartico SIM operaterja <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
 </resources>

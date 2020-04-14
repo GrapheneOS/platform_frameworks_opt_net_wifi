@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> सुचवलेली नेटवर्क. डिव्हाइस आपोआप कनेक्ट होऊ शकते."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"अनुमती द्या"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"नाही, नको"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI सुरक्षेसंबंधित गोपनीयता चेतावणी"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> ने गोपनीयता सुरक्षेशिवाय तुमच्या सिम कार्डाची माहिती वापरून नेटवर्क सुचवले आहे, नेटवर्क आपोआप कनेक्ट करण्याची अनुमती द्यायची का?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"अनुमती द्या"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"अनुमती देऊ नका"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ला ऑटो‑कनेक्ट करायचे आहे"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"या नेटवर्कना एक युनिक आयडी मिळतो जो डिव्हाइस स्थानाचा मागोवा घेण्यासाठी वापरला जाऊ शकतो"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"तरीही कनेक्ट करा"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"कनेक्ट करू नका"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"कनेक्शन निश्चित करायचे आहे का?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"तुम्ही कनेक्ट केल्यास, <xliff:g id="CARRIERNAME">%s</xliff:g> वाय-फाय नेटवर्क तुमच्या सिम शी संबंधित एक युनिक आयडी अ‍ॅक्सेस किंवा शेअर करू शकतात. यामुळे तुमच्या डिव्हाइस स्थानाचा मागोवा घेतला जाऊ शकतो."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"कनेक्ट करा"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"कनेक्ट करू नका"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"वाय-फाय आपोआप चालू होईल"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"तुम्ही जेव्हा सेव्ह केलेल्या उच्च दर्जाच्या नेटवर्कजवळ असाल तेव्हा"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"पुन्हा चालू करू नका"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> शी कनेक्ट करता आले नाही"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"गोपनीयता सेटिंग्ज बदलण्यासाठी टॅप करा आणि पुन्हा प्रयत्न करा"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"गोपनीयता सेटिंग्ज बदलायची आहे का?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> ला तुमच्या डिव्हाइसला MAC अ‍ॅड्रेस (एक युनिक आयडेंटिफायर) वापरून कदाचित कनेक्ट करायचे आहे. यामुळे तुमच्या डिव्हाइसचे स्थान जवळपासच्या डिव्हाइसद्वारे ट्रॅक करण्यास अनुमती देऊ शकते. \n\nतुम्ही पुढे सुरू ठेवल्यास, <xliff:g id="SSID_1">%1$s</xliff:g> तुमची गोपनीयता सेटिंग्ज बदलेल आणि पुन्हा कनेक्ट करण्याचा प्रयत्न करेल."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"कनेक्ट करण्यासाठी, <xliff:g id="SSID">%1$s</xliff:g> ला तुमच्या डिव्हाइसचा MAC अ‍ॅड्रेस, एक युनिक आयडेंटिफायर वापरणे आवश्यक आहे. सध्या, या नेटवर्कसाठी तुमचे गोपनीयता सेटिंग रँडम आयडेंटिफायर वापरते. \n\nया बदलामुळे जवळपासच्या डिव्हाइसद्वारे तुमच्या डिव्हाइसचे स्थान ट्रॅक करता येऊ शकते."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"सेटिंग बदला"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"सेटिंग अपडेट केले. पुन्हा कनेक्ट करून पाहा."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"सेटिंग अपडेट केले. पुन्हा कनेक्ट करण्याचा प्रयत्न करा."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"गोपनीयता सेटिंग्ज बदलू शकत नाही"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"नेटवर्क मिळाला नाही आहे"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ऑथेंटिकेशन एरर ३२७६०"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ऑथेंटिकेशन एरर ३२७६४"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ऑथेंटिकेशन एरर ३२७६५"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP ऑथेंटिकेशन एरर ३२७६६"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"मोबाईल हॉटस्पॉट बंद केला"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"मोबाईल हॉटस्पॉट बंद केला गेला आहे"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"निष्क्रियता टाइमआउट एक्स्पायर झाल्यामुळे मोबाइल हॉटस्पॉट बंद केला गेला आहे."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"हॉटस्पॉट बंद आहे"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"कोणतीही डिव्हाइस कनेक्ट केलेली नाहीत. सुधारित करण्यासाठी टॅप करा."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"वाय-फाय डिस्कनेक्ट झाले"</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> शी कनेक्ट करण्यासाठी, एक <xliff:g id="CARRIER_NAME">%2$s</xliff:g> सिम घाला"</string>
 </resources>
