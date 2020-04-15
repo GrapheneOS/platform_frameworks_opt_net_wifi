@@ -1413,6 +1413,9 @@ message StaEvent {
 
   // Number of bytes received since device boot.
   optional int64 total_rx_bytes = 23 [default = -1];
+
+  // Whether screen is on when the event happens
+  optional bool screen_on = 24;
 }
 
 // Wi-Fi Aware metrics
