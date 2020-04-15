@@ -77,6 +77,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.PnoScanMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.SoftApConnectedClientsEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent.ConfigInfo;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiIsUnusableEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLinkLayerUsageStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLockStats;
@@ -221,7 +222,9 @@ public class WifiMetrics {
     private long mScoreBreachLowTimeMillis = -1;
 
     public static final int MAX_STA_EVENTS = 768;
+    @VisibleForTesting static final int MAX_USER_ACTION_EVENTS = 200;
     private LinkedList<StaEventWithTime> mStaEventList = new LinkedList<>();
+    private LinkedList<UserActionEventWithTime> mUserActionEventList = new LinkedList<>();
     private int mLastPollRssi = -127;
     private int mLastPollLinkSpeed = -1;
     private int mLastPollRxLinkSpeed = -1;
@@ -722,6 +725,83 @@ public class WifiMetrics {
                     .append(", connectionDurationCellularDataOffMs=")
                     .append(mConnectionDurationCellularDataOffMs);
             return sb.toString();
+        }
+    }
+
+    class UserActionEventWithTime {
+        private UserActionEvent mUserActionEvent;
+        private long mWallClockTimeMs = 0; // wall clock time for debugging only
+
+        UserActionEventWithTime(int eventType, int targetNetId) {
+            mUserActionEvent = new UserActionEvent();
+            mUserActionEvent.eventType = eventType;
+            mUserActionEvent.startTimeMillis = mClock.getElapsedSinceBootMillis();
+            mWallClockTimeMs = mClock.getWallClockMillis();
+            if (targetNetId >= 0) {
+                WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(targetNetId);
+                if (config != null) {
+                    WifiMetricsProto.TargetNetworkInfo networkInfo =
+                            new WifiMetricsProto.TargetNetworkInfo();
+                    networkInfo.isEphemeral = config.isEphemeral();
+                    networkInfo.isPasspoint = config.isPasspoint();
+                    mUserActionEvent.targetNetworkInfo = networkInfo;
+                }
+            }
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis(mWallClockTimeMs);
+            sb.append(String.format("%tm-%td %tH:%tM:%tS.%tL", c, c, c, c, c, c));
+            String eventType = "UNKNOWN";
+            switch (mUserActionEvent.eventType) {
+                case UserActionEvent.EVENT_FORGET_WIFI:
+                    eventType = "EVENT_FORGET_WIFI";
+                    break;
+                case UserActionEvent.EVENT_DISCONNECT_WIFI:
+                    eventType = "EVENT_DISCONNECT_WIFI";
+                    break;
+                case UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_METERED:
+                    eventType = "EVENT_CONFIGURE_METERED_STATUS_METERED";
+                    break;
+                case UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_UNMETERED:
+                    eventType = "EVENT_CONFIGURE_METERED_STATUS_UNMETERED";
+                    break;
+                case UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_ON:
+                    eventType = "EVENT_CONFIGURE_MAC_RANDOMIZATION_ON";
+                    break;
+                case UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF:
+                    eventType = "EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF";
+                    break;
+                case UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON:
+                    eventType = "EVENT_CONFIGURE_AUTO_CONNECT_ON";
+                    break;
+                case UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF:
+                    eventType = "EVENT_CONFIGURE_AUTO_CONNECT_OFF";
+                    break;
+                case UserActionEvent.EVENT_TOGGLE_WIFI_ON:
+                    eventType = "EVENT_TOGGLE_WIFI_ON";
+                    break;
+                case UserActionEvent.EVENT_TOGGLE_WIFI_OFF:
+                    eventType = "EVENT_TOGGLE_WIFI_OFF";
+                    break;
+                case UserActionEvent.EVENT_MANUAL_CONNECT:
+                    eventType = "EVENT_MANUAL_CONNECT";
+                    break;
+            }
+            sb.append(" eventType=").append(eventType);
+            sb.append(" startTimeMillis=").append(mUserActionEvent.startTimeMillis);
+            WifiMetricsProto.TargetNetworkInfo networkInfo = mUserActionEvent.targetNetworkInfo;
+            if (networkInfo != null) {
+                sb.append(" isEphemeral=").append(networkInfo.isEphemeral);
+                sb.append(" isPasspoint=").append(networkInfo.isPasspoint);
+            }
+            return sb.toString();
+        }
+
+        public UserActionEvent toProto() {
+            return mUserActionEvent;
         }
     }
 
@@ -3254,6 +3334,10 @@ public class WifiMetrics {
                 for (StaEventWithTime event : mStaEventList) {
                     pw.println(event);
                 }
+                pw.println("UserActionEvents:");
+                for (UserActionEventWithTime event : mUserActionEventList) {
+                    pw.println(event);
+                }
 
                 pw.println("mWifiLogProto.numPasspointProviders="
                         + mWifiLogProto.numPasspointProviders);
@@ -3937,6 +4021,10 @@ public class WifiMetrics {
             for (int i = 0; i < mStaEventList.size(); i++) {
                 mWifiLogProto.staEventList[i] = mStaEventList.get(i).staEvent;
             }
+            mWifiLogProto.userActionEvents = new UserActionEvent[mUserActionEventList.size()];
+            for (int i = 0; i < mUserActionEventList.size(); i++) {
+                mWifiLogProto.userActionEvents[i] = mUserActionEventList.get(i).toProto();
+            }
             mWifiLogProto.totalSsidsInScanHistogram =
                     makeNumConnectableNetworksBucketArray(mTotalSsidsInScanHistogram);
             mWifiLogProto.totalBssidsInScanHistogram =
@@ -4339,6 +4427,7 @@ public class WifiMetrics {
             mScanResultRssiTimestampMillis = -1;
             mSoftApManagerReturnCodeCounts.clear();
             mStaEventList.clear();
+            mUserActionEventList.clear();
             mWifiAwareMetrics.clear();
             mRttMetrics.clear();
             mTotalSsidsInScanHistogram.clear();
@@ -5005,6 +5094,28 @@ public class WifiMetrics {
             sb.append(" totalTxBytes=").append(event.totalTxBytes);
             sb.append(" totalRxBytes=").append(event.totalRxBytes);
             return sb.toString();
+        }
+    }
+
+    /**
+     * Logs a UserActionEvent without a target network.
+     * @param eventType the type of user action (one of WifiMetricsProto.UserActionEvent.EventType)
+     */
+    public void logUserActionEvent(int eventType) {
+        logUserActionEvent(eventType, -1);
+    }
+
+    /**
+     * Logs a UserActionEvent which has a target network.
+     * @param eventType the type of user action (one of WifiMetricsProto.UserActionEvent.EventType)
+     * @param networkId networkId of the target network.
+     */
+    public void logUserActionEvent(int eventType, int networkId) {
+        synchronized (mLock) {
+            mUserActionEventList.add(new UserActionEventWithTime(eventType, networkId));
+            if (mUserActionEventList.size() > MAX_USER_ACTION_EVENTS) {
+                mUserActionEventList.remove();
+            }
         }
     }
 
