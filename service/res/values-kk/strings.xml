@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ұсынған желілер. Құрылғы автоматты түрде қосылуы мүмкін."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Рұқсат беру"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Жоқ, рақмет"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI қорғау бойынша құпиялылық ескертуі"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> қызметі желілерді құпиялылық қорғау функциясынсыз SIM картасы деректері негізінде ұсынды."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Рұқсат ету"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Тыйым салу"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> автоматты түрде қосылғысы келеді"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Бұл желілер бірегей идентификатор алады, оны құрылғының орналасқан жерін бақылау үшін қолдануға болады."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Бәрібір қосылу"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Қосылмау"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Қосылымды растайсыз ба?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Егер қосылсаңыз, <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi желілері SIM картаңызға байланыстырылған бірегей идентификаторды пайдалана немесе бөлісе алады. Оның көмегімен құрылғыңыздың орнын қадағалауға болады."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Қосу"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Қосылмау"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi автоматты түрде қосылады"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Сақталған жоғары сапалы желіге жақын болғанда"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Қайта қоспау"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> құрылғысына қосылмайды."</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Құпиялылық параметрін өзгерту үшін түртіп, әрекетті қайталаңыз."</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Құпиялылық параметрі өзгертілсін бе?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> бірегей идентификатор болып саналатын құрылғыңыздың MAC мекенжайы арқылы қосылғысы келуі мүмкін. Бұл маңайдағы құрылғыларға құрылғыңыздың орнын қадағалауға мүмкіндік береді. \n\nӘрекетті жалғастырсаңыз, <xliff:g id="SSID_1">%1$s</xliff:g> құпиялылық параметрін өзгертіп, қайта қосылып көреді."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Қосылу үшін <xliff:g id="SSID">%1$s</xliff:g> құрылғыңыздың MAC мекенжайын, бірегей идентификаторын қажет етеді. Қазір желінің құпиялылық параметрі еркін идентификаторды пайдаланады. \n\nБұл өзгеріс маңайдағы құрылғыларға құрылғыңыздың орнын қадағалауға мүмкіндік береді."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Параметрді өзгерту"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Параметр жаңартылды. Желіге қайта қосылып көріңіз."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Параметр жаңартылды. Қайта қосылып көріңіз."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Құпиялылық параметрі өзгертілмейді."</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Желі табылмады"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP аутентификация қатесі 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP аутентификация қатесі 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP аутентификация қатесі 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP аутентификация қатесі 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Мобильдік хот-спот өшірілген"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Мобильдік хот-спот өшірілді"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Күту уақытының аяқталуына байланысты мобильдік хот-спот өшірілді."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Хотспот өшірілді"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Ешқандай құрылғы қосылмаған. Өзгерту үшін түртіңіз."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi ажыратылған."</string>
     <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> желісіне қосылу үшін <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM картасын салыңыз."</string>
 </resources>
