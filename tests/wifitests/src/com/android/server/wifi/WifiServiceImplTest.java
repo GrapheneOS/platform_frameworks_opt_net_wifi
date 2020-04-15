@@ -152,6 +152,7 @@ import com.android.internal.util.AsyncChannel;
 import com.android.server.wifi.WifiServiceImpl.LocalOnlyRequestorCallback;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvisioningTestUtil;
+import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.WifiAsyncChannel;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -3566,9 +3567,14 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testForgetNetworkWithPrivilegedPermission() throws Exception {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
             anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         mWifiServiceImpl.forget(TEST_NETWORK_ID, mock(Binder.class), mock(IActionListener.class),
                 0);
-        verify(mClientModeImpl).forget(anyInt(), any(Binder.class),
+
+        InOrder inOrder = inOrder(mClientModeImpl, mWifiMetrics);
+        inOrder.verify(mWifiMetrics).logUserActionEvent(
+                WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI, TEST_NETWORK_ID);
+        inOrder.verify(mClientModeImpl).forget(anyInt(), any(Binder.class),
                 any(IActionListener.class), anyInt(), anyInt());
     }
 
