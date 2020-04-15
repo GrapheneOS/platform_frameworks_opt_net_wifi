@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
+import static android.content.pm.PackageManager.FEATURE_DEVICE_ADMIN;
 
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -33,6 +34,7 @@ import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
 import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.android.server.wifi.util.WifiAsyncChannel;
@@ -122,8 +124,14 @@ public class FrameworkFacade {
      * Returns whether the device is in NIAP mode or not.
      */
     public boolean isNiapModeOn(Context context) {
-        return context.getSystemService(DevicePolicyManager.class)
-                .isCommonCriteriaModeEnabled(null);
+        DevicePolicyManager devicePolicyManager =
+                context.getSystemService(DevicePolicyManager.class);
+        if (devicePolicyManager == null
+                && context.getPackageManager().hasSystemFeature(FEATURE_DEVICE_ADMIN)) {
+            Log.e(TAG, "Error retrieving DPM service");
+        }
+        if (devicePolicyManager == null) return false;
+        return devicePolicyManager.isCommonCriteriaModeEnabled(null);
     }
 
     /**
