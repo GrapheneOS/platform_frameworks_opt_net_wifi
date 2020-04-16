@@ -635,7 +635,7 @@ public class WifiConfigurationTestUtil {
         assertEquals(expected.meteredHint, actual.meteredHint);
         assertEquals(expected.meteredOverride, actual.meteredOverride);
         assertEquals(expected.useExternalScores, actual.useExternalScores);
-        assertEquals(expected.numAssociation, actual.numAssociation);
+        assertEquals(0, actual.numAssociation);
         assertEquals(expected.creatorUid, actual.creatorUid);
         assertEquals(expected.creatorName, actual.creatorName);
         assertEquals(expected.lastUpdateUid, actual.lastUpdateUid);
