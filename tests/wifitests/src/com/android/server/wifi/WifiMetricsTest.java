@@ -2318,6 +2318,7 @@ public class WifiMetricsTest extends WifiBaseTest {
                     handler.obtainMessage(mia[0], mia[1], mia[2], mTestStaMessageObjs[i]));
         }
         mTestLooper.dispatchAll();
+        wifiMetrics.setScreenState(true);
         for (int i = 0; i < mTestStaLogInts.length; i++) {
             int[] lia = mTestStaLogInts[i];
             wifiMetrics.logStaEvent(lia[0], lia[1], lia[2] == 1 ? mTestWifiConfig : null);
@@ -2356,6 +2357,7 @@ public class WifiMetricsTest extends WifiBaseTest {
             assertEquals(evs[6], event.supplicantStateChangesBitmask);
             assertConfigInfoEqualsWifiConfig(
                     evs[7] == 1 ? mTestWifiConfig : null, event.configInfo);
+            assertEquals(true, event.screenOn);
             j++;
         }
         assertEquals(mExpectedValues.length, j);
@@ -2406,6 +2408,66 @@ public class WifiMetricsTest extends WifiBaseTest {
                 .count();
         assertEquals(WifiMetrics.MAX_LINK_PROBE_STA_EVENTS, numLinkProbeStaEvents);
         assertEquals(WifiMetrics.MAX_LINK_PROBE_STA_EVENTS + 10, mDecodedProto.staEventList.length);
+    }
+
+    /**
+     * Test the logging of UserActionEvent with a valid network ID
+     */
+    @Test
+    public void testLogUserActionEventValidNetworkId() throws Exception {
+        int testEventType = WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI;
+        int testNetworkId = 0;
+        long testStartTimeMillis = 123123L;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartTimeMillis);
+        WifiConfiguration config = mock(WifiConfiguration.class);
+        when(config.isEphemeral()).thenReturn(true);
+        when(config.isPasspoint()).thenReturn(true);
+        when(mWcm.getConfiguredNetwork(testNetworkId)).thenReturn(config);
+
+        mWifiMetrics.logUserActionEvent(testEventType, testNetworkId);
+        dumpProtoAndDeserialize();
+
+        WifiMetricsProto.UserActionEvent[] userActionEvents = mDecodedProto.userActionEvents;
+        assertEquals(1, userActionEvents.length);
+        assertEquals(WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI,
+                userActionEvents[0].eventType);
+        assertEquals(testStartTimeMillis, userActionEvents[0].startTimeMillis);
+        assertEquals(true, userActionEvents[0].targetNetworkInfo.isEphemeral);
+        assertEquals(true, userActionEvents[0].targetNetworkInfo.isPasspoint);
+    }
+
+    /**
+     * Test the logging of UserActionEvent with invalid network ID
+     */
+    @Test
+    public void testLogUserActionEventInvalidNetworkId() throws Exception {
+        int testEventType = WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI;
+        int testNetworkId = 0;
+        long testStartTimeMillis = 123123L;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartTimeMillis);
+        when(mWcm.getConfiguredNetwork(testNetworkId)).thenReturn(null);
+
+        mWifiMetrics.logUserActionEvent(testEventType, testNetworkId);
+        dumpProtoAndDeserialize();
+
+        WifiMetricsProto.UserActionEvent[] userActionEvents = mDecodedProto.userActionEvents;
+        assertEquals(1, userActionEvents.length);
+        assertEquals(WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI,
+                userActionEvents[0].eventType);
+        assertEquals(testStartTimeMillis, userActionEvents[0].startTimeMillis);
+        assertNull(userActionEvents[0].targetNetworkInfo);
+    }
+
+    /**
+     * Verify that the max length of the UserActionEvent list is limited to MAX_USER_ACTION_EVENTS.
+     */
+    @Test
+    public void testLogUserActionEventCapped() throws Exception {
+        for (int i = 0; i < WifiMetrics.MAX_USER_ACTION_EVENTS + 1; i++) {
+            mWifiMetrics.logUserActionEvent(WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI, 0);
+        }
+        dumpProtoAndDeserialize();
+        assertEquals(WifiMetrics.MAX_USER_ACTION_EVENTS, mDecodedProto.userActionEvents.length);
     }
 
     /**

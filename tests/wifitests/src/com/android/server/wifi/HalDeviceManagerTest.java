@@ -1144,7 +1144,6 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("allocated P2P interface", p2pIface, IsNull.notNullValue());
 
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
-        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
         // Request AP
         IWifiIface apIface = validateInterfaceSequence(chipMock,
@@ -1168,6 +1167,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
 
         inOrderAvail.verify(apAvailListener).onAvailabilityChanged(false);
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(true);
+        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
         // request AP2: should fail
         IWifiIface apIface2 = mDut.createApIface(null, null);
@@ -1192,7 +1192,6 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                         getName(apIface), apDestroyedListener)
         );
         collector.checkThat("allocated STA interface", staIface, IsNull.notNullValue());
-
         inOrderAvail.verify(apAvailListener).onAvailabilityChanged(true);
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(false);
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
@@ -1212,27 +1211,11 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 p2pDestroyedListener2, // destroyedListener
                 null // availableListener
         );
-
+        collector.checkThat("allocated P2P interface", p2pIface, IsNull.notNullValue());
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
-        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
-        // Request NAN: should fail
-        IWifiIface nanIface = mDut.createNanIface(nanDestroyedListener, mHandler);
-        mDut.registerInterfaceAvailableForRequestListener(IfaceType.NAN, nanAvailListener,
-                mHandler);
-        collector.checkThat("NAN can't be created", nanIface, IsNull.nullValue());
-
-        // Tear down P2P
-        mDut.removeIface(p2pIface);
-        mTestLooper.dispatchAll();
-
-        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
-        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(true);
-        verify(chipMock.chip, times(2)).removeP2pIface("p2p0");
-        verify(p2pDestroyedListener2).onDestroyed(getName(p2pIface));
-
-        // Should now be able to request and get NAN
-        nanIface = validateInterfaceSequence(chipMock,
+        // create NAN: will destroy P2P
+        IWifiIface nanIface = validateInterfaceSequence(chipMock,
                 true, // chipModeValid
                 TestChipV1.STA_CHIP_MODE_ID, // chipModeId
                 IfaceType.NAN, // ifaceTypeToCreate
@@ -1240,11 +1223,20 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 TestChipV1.STA_CHIP_MODE_ID, // finalChipMode
                 null, // tearDownList
                 nanDestroyedListener, // destroyedListener
-                nanAvailListener // availableListener
+                nanAvailListener, // availableListener
+                new InterfaceDestroyedListenerWithIfaceName("p2p0", p2pDestroyedListener2)
         );
         collector.checkThat("allocated NAN interface", nanIface, IsNull.notNullValue());
-
+        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
         inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
+
+        // Tear down NAN
+        mDut.removeIface(nanIface);
+        mTestLooper.dispatchAll();
+
+        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(true);
+        verify(chipMock.chip, times(1)).removeNanIface("wlan0");
+        verify(nanDestroyedListener).onDestroyed(getName(nanIface));
 
         verifyNoMoreInteractions(mManagerStatusListenerMock, staDestroyedListener, staAvailListener,
                 staDestroyedListener2, apDestroyedListener, apAvailListener, p2pDestroyedListener,
@@ -1518,11 +1510,24 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("P2P interface wasn't created", p2pIface, IsNull.notNullValue());
 
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
-        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
-        // request NAN: should fail
-        IWifiIface nanIface = mDut.createNanIface(null, null);
-        collector.checkThat("NAN should not be created", nanIface, IsNull.nullValue());
+        // create NAN
+        IWifiIface nanIface = validateInterfaceSequence(chipMock,
+                true, // chipModeValid
+                TestChipV2.CHIP_MODE_ID, // chipModeId
+                IfaceType.NAN, // ifaceTypeToCreate
+                "wlan0", // ifaceName
+                TestChipV2.CHIP_MODE_ID, // finalChipMode
+                null, // tearDownList
+                nanDestroyedListener, // destroyedListener
+                null, // availableListener (already registered)
+                new InterfaceDestroyedListenerWithIfaceName(
+                        getName(p2pIface), p2pDestroyedListener)
+        );
+        collector.checkThat("NAN interface wasn't created", nanIface, IsNull.notNullValue());
+
+        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
+        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
         // create AP
         IWifiIface apIface = validateInterfaceSequence(chipMock,
@@ -1595,14 +1600,13 @@ public class HalDeviceManagerTest extends WifiBaseTest {
 
         inOrderAvail.verify(apAvailListener).onAvailabilityChanged(false);
 
-        // tear down P2P
-        mDut.removeIface(p2pIface);
+        // tear down NAN
+        mDut.removeIface(nanIface);
         mTestLooper.dispatchAll();
 
-        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
         inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(true);
-        verify(chipMock.chip).removeP2pIface("p2p0");
-        verify(p2pDestroyedListener).onDestroyed(getName(p2pIface));
+        verify(chipMock.chip).removeNanIface("wlan0");
+        verify(nanDestroyedListener).onDestroyed(getName(nanIface));
 
         // create NAN
         nanIface = validateInterfaceSequence(chipMock,
@@ -1875,11 +1879,23 @@ public class HalDeviceManagerTest extends WifiBaseTest {
 
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(false);
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
-        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
-        // request NAN: should fail
-        IWifiIface nanIface = mDut.createNanIface(null, null);
-        collector.checkThat("NAN should not be created", nanIface, IsNull.nullValue());
+        // create NAN
+        IWifiIface nanIface = validateInterfaceSequence(chipMock,
+                true, // chipModeValid
+                TestChipV3.CHIP_MODE_ID, // chipModeId
+                IfaceType.NAN, // ifaceTypeToCreate
+                "wlan0", // ifaceName
+                TestChipV3.CHIP_MODE_ID, // finalChipMode
+                null, // tearDownList
+                nanDestroyedListener, // destroyedListener
+                null, // availableListener (already registered)
+                new InterfaceDestroyedListenerWithIfaceName("p2p0", p2pDestroyedListener)
+        );
+        collector.checkThat("NAN interface wasn't created", nanIface, IsNull.notNullValue());
+
+        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
+        inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
         // create AP: will destroy P2P
         IWifiIface apIface = validateInterfaceSequence(chipMock,
@@ -1891,12 +1907,13 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 null, // tearDownList
                 apDestroyedListener, // destroyedListener
                 null, // availableListener (already registered)
-                new InterfaceDestroyedListenerWithIfaceName("p2p0", p2pDestroyedListener)
+                new InterfaceDestroyedListenerWithIfaceName("wlan0", nanDestroyedListener)
         );
         collector.checkThat("AP interface wasn't created", apIface, IsNull.notNullValue());
         verify(chipMock.chip).removeP2pIface("p2p0");
 
         inOrderAvail.verify(apAvailListener).onAvailabilityChanged(false);
+        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
         IWifiIface staIface2 = mDut.createStaIface(null, null);
@@ -2134,13 +2151,24 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("P2P interface wasn't created", p2pIface, IsNull.notNullValue());
 
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
+
+        // create NAN: will destroy P2P
+        IWifiIface nanIface = validateInterfaceSequence(chipMock,
+                true, // chipModeValid
+                TestChipV4.CHIP_MODE_ID, // chipModeId
+                IfaceType.NAN, // ifaceTypeToCreate
+                "wlan0", // ifaceName
+                TestChipV4.CHIP_MODE_ID, // finalChipMode
+                null, // tearDownList
+                nanDestroyedListener, // destroyedListener
+                nanAvailListener, // availableListener
+                new InterfaceDestroyedListenerWithIfaceName("p2p0", p2pDestroyedListener)
+        );
+        collector.checkThat("allocated NAN interface", nanIface, IsNull.notNullValue());
+        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(true);
         inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
-        // request NAN: should fail
-        IWifiIface nanIface = mDut.createNanIface(null, null);
-        collector.checkThat("NAN should not be created", nanIface, IsNull.nullValue());
-
-        // create AP: will destroy P2P
+        // create AP: will destroy NAN
         IWifiIface apIface = validateInterfaceSequence(chipMock,
                 true, // chipModeValid
                 TestChipV4.CHIP_MODE_ID, // chipModeId
@@ -2150,12 +2178,13 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 null, // tearDownList
                 apDestroyedListener, // destroyedListener
                 null, // availableListener (already registered)
-                new InterfaceDestroyedListenerWithIfaceName("p2p0", p2pDestroyedListener)
+                new InterfaceDestroyedListenerWithIfaceName("wlan0", nanDestroyedListener)
         );
         collector.checkThat("AP interface wasn't created", apIface, IsNull.notNullValue());
         verify(chipMock.chip).removeP2pIface("p2p0");
 
         inOrderAvail.verify(apAvailListener).onAvailabilityChanged(false);
+        inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
         IWifiIface staIface2 = mDut.createStaIface(null, null);
@@ -2453,6 +2482,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 staDestroyedListener, // destroyedListener
                 staAvailListener // availableListener
         );
+        collector.checkThat("STA can't be created", staIface, IsNull.notNullValue());
         availInOrder.verify(staAvailListener).onAvailabilityChanged(
                 chipMock.chipMockId == CHIP_MOCK_V2 || chipMock.chipMockId == CHIP_MOCK_V3);
 
@@ -2486,40 +2516,28 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 new InterfaceDestroyedListenerWithIfaceName(
                         getName(nanIface), nanDestroyedListener)
         );
-
-        // Request NAN: expect failure
-        nanIface = mDut.createNanIface(nanDestroyedListener, mHandler);
-        mDut.registerInterfaceAvailableForRequestListener(IfaceType.NAN, nanAvailListener,
-                mHandler);
-        collector.checkThat("NAN can't be created", nanIface, IsNull.nullValue());
-
-        // Destroy P2P interface
-        boolean status = mDut.removeIface(p2pIface);
-        mInOrder.verify(chipMock.chip).removeP2pIface("p2p0");
-        collector.checkThat("P2P removal success", status, equalTo(true));
-
-        mTestLooper.dispatchAll();
-        verify(p2pDestroyedListener).onDestroyed(getName(p2pIface));
-        if (chipMock.chipMockId == CHIP_MOCK_V3) {
-            availInOrder.verify(staAvailListener).onAvailabilityChanged(true);
-        }
+        collector.checkThat("P2P can't be created", p2pIface, IsNull.notNullValue());
         availInOrder.verify(nanAvailListener).onAvailabilityChanged(true);
 
-        // Request NAN: expect success now
+        mTestLooper.dispatchAll();
+        verify(nanDestroyedListener).onDestroyed(getName(nanIface));
+
+        // Request NAN
         nanIface = validateInterfaceSequence(chipMock,
                 true, // chipModeValid
                 onlyChipMode, // chipModeId
                 IfaceType.NAN, // ifaceTypeToCreate
                 "wlan0", // ifaceName
                 onlyChipMode, // finalChipMode
-                null, // tearDownList
+                new IWifiIface[]{p2pIface}, // tearDownList
                 nanDestroyedListener, // destroyedListener
                 nanAvailListener // availableListener
         );
-        if (chipMock.chipMockId == CHIP_MOCK_V3) {
-            availInOrder.verify(staAvailListener).onAvailabilityChanged(false);
-        }
+        collector.checkThat("NAN can't be created", nanIface, IsNull.notNullValue());
         availInOrder.verify(nanAvailListener).onAvailabilityChanged(false);
+
+        mTestLooper.dispatchAll();
+        verify(p2pDestroyedListener).onDestroyed(getName(p2pIface));
 
         verifyNoMoreInteractions(mManagerStatusListenerMock, staDestroyedListener, staAvailListener,
                 nanDestroyedListener, nanAvailListener, p2pDestroyedListener);

@@ -684,6 +684,9 @@ message WifiLog {
 
   // Total number of Passpoint providers with subscription expiration date in their profile.
   optional int32 num_passpoint_provider_with_subscription_expiration = 191;
+
+  // List of user initiated actions
+  repeated UserActionEvent user_action_events = 192;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -1413,6 +1416,9 @@ message StaEvent {
 
   // Number of bytes received since device boot.
   optional int64 total_rx_bytes = 23 [default = -1];
+
+  // Whether screen is on when the event happens
+  optional bool screen_on = 24;
 }
 
 // Wi-Fi Aware metrics
@@ -3047,6 +3053,55 @@ message PasspointProvisionStats {
     // Number of failure for the failure_code.
     optional int32 count = 2;
   }
+}
+
+// An event capturing user action on wifi
+message UserActionEvent {
+  enum EventType {
+    // The default and unused event
+    EVENT_UNKNOWN = 0;
+    // User forgets the network
+    EVENT_FORGET_WIFI = 1;
+    // User manually triggers disconnect
+    EVENT_DISCONNECT_WIFI = 2;
+    // User changes the metered setting to "metered"
+    EVENT_CONFIGURE_METERED_STATUS_METERED = 3;
+    // User changes the metered setting to "unmetered"
+    EVENT_CONFIGURE_METERED_STATUS_UNMETERED = 4;
+    // User changes the mac randomization setting to use random MAC
+    EVENT_CONFIGURE_MAC_RANDOMIZATION_ON = 5;
+    // User changes the mac randomization setting to use factory MAC
+    EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF = 6;
+    // User sets auto-connect to on
+    EVENT_CONFIGURE_AUTO_CONNECT_ON = 7;
+    // User sets auto-connect to off
+    EVENT_CONFIGURE_AUTO_CONNECT_OFF = 8;
+    // User toggles wifi on
+    EVENT_TOGGLE_WIFI_ON = 9;
+    // User toggles wifi off
+    EVENT_TOGGLE_WIFI_OFF = 10;
+    // User manually connects to a network
+    EVENT_MANUAL_CONNECT = 11;
+  }
+
+  // The type of user action
+  optional EventType event_type = 1;
+
+  // The start time of the event in milliseconds since boot.
+  optional int64 start_time_millis = 2;
+
+  // Additional information on the target network for the action. This is not applicable and will
+  // be null for some actions such as EVENT_TOGGLE_WIFI_ON.
+  optional TargetNetworkInfo target_network_info = 3;
+}
+
+// Additional information on a network
+message TargetNetworkInfo {
+  // Whether the network is an ephemeral network.
+  optional bool is_ephemeral = 1;
+
+  // Whether the target is a passpoint network.
+  optional bool is_passpoint = 2;
 }
 
 // Number of networks with a large change of connection/disconnection

@@ -112,6 +112,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.AsyncChannel;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvider;
+import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.RssiUtil;
@@ -4090,12 +4091,18 @@ public class WifiServiceImpl extends BaseWifiService {
     @Override
     public void forget(int netId, IBinder binder, @Nullable IActionListener callback,
             int callbackIdentifier) {
-        if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
+        int uid = Binder.getCallingUid();
+        if (!isPrivileged(Binder.getCallingPid(), uid)) {
             throw new SecurityException(TAG + ": Permission denied");
         }
         mLog.info("forget uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.forget(
-                netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
+            // It's important to log this metric before the actual forget executes because
+            // the netId becomes invalid after the forget operation.
+            mWifiMetrics.logUserActionEvent(WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI,
+                    netId);
+        }
+        mClientModeImpl.forget(netId, binder, callback, callbackIdentifier, uid);
     }
 
     /**
