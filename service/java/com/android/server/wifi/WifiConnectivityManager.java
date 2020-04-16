@@ -1115,17 +1115,19 @@ public class WifiConnectivityManager {
                 <= 1000 * mContext.getResources().getInteger(
                 R.integer.config_wifiConnectedHighRssiScanMinimumWindowSizeSec));
 
-        boolean isGoodLinkAndShortTimeSinceLastNetworkSelection =
+        boolean isGoodLinkAndAcceptableInternetAndShortTimeSinceLastNetworkSelection =
                 mNetworkSelector.hasSufficientLinkQuality(mWifiInfo)
+                && mNetworkSelector.hasInternetOrExpectNoInternet(mWifiInfo)
                 && isShortTimeSinceLastNetworkSelection;
         // Check it is one of following conditions to skip scan (with firmware roaming)
         // or do partial scan only (without firmware roaming).
         // 1) Network is sufficient
-        // 2) link is good and it is a short time since last network selection
+        // 2) link is good, internet status is acceptable
+        //    and it is a short time since last network selection
         // 3) There is active stream such that scan will be likely disruptive
         if (mWifiState == WIFI_STATE_CONNECTED
                 && (mNetworkSelector.isNetworkSufficient(mWifiInfo)
-                || isGoodLinkAndShortTimeSinceLastNetworkSelection
+                || isGoodLinkAndAcceptableInternetAndShortTimeSinceLastNetworkSelection
                 || mNetworkSelector.hasActiveStream(mWifiInfo))) {
             // If only partial scan is proposed and firmware roaming control is supported,
             // we will not issue any scan because firmware roaming will take care of
