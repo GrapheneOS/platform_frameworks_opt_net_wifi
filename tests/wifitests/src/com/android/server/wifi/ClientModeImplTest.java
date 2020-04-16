@@ -3227,7 +3227,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiScoreCard).noteIpConfiguration(any());
         ArgumentCaptor<Layer2InformationParcelable> captor =
                 ArgumentCaptor.forClass(Layer2InformationParcelable.class);
-        verify(mIpClient).updateLayer2Information(captor.capture());
+        verify(mIpClient, atLeastOnce()).updateLayer2Information(captor.capture());
         final Layer2InformationParcelable info = captor.getValue();
         assertEquals(info.l2Key, "Wad");
         assertEquals(info.groupHint, "Gab");
