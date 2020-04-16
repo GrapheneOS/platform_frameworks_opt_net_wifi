@@ -107,7 +107,6 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<boolean name=\"MeteredHint\" value=\"false\" />\n"
                     + "<int name=\"MeteredOverride\" value=\"0\" />\n"
                     + "<boolean name=\"UseExternalScores\" value=\"false\" />\n"
-                    + "<int name=\"NumAssociation\" value=\"0\" />\n"
                     + "<int name=\"CreatorUid\" value=\"%d\" />\n"
                     + "<string name=\"CreatorName\">%s</string>\n"
                     + "<int name=\"LastUpdateUid\" value=\"-1\" />\n"
