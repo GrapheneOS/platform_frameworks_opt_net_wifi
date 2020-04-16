@@ -1756,6 +1756,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Verify that we perform full band scan in the following two cases
      * 1) Current RSSI is low, no active stream, network is insufficient
      * 2) Current RSSI is high, no active stream, and a long time since last network selection
+     * 3) Current RSSI is high, no active stream, and a short time since last network selection,
+     *  internet status is not acceptable
      *
      * Expected behavior: WifiConnectivityManager does full band scan in both cases
      */
@@ -1768,6 +1770,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasInternetOrExpectNoInternet(eq(mWifiInfo))).thenReturn(true);
 
         final List<Integer> channelList = new ArrayList<>();
         channelList.add(TEST_FREQUENCY_1);
@@ -1803,7 +1806,21 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(true);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasInternetOrExpectNoInternet(eq(mWifiInfo))).thenReturn(true);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(600_000L + 1L);
+        mWifiConnectivityManager.handleScreenStateChanged(true);
+        // Set WiFi to connected state to trigger periodic scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_CONNECTED);
+        verify(mWifiScanner, times(2)).startScan(anyObject(), anyObject(), anyObject(),
+                anyObject());
+
+        // Verify case 3
+        when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasInternetOrExpectNoInternet(eq(mWifiInfo))).thenReturn(false);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
         mWifiConnectivityManager.handleScreenStateChanged(true);
         // Set WiFi to connected state to trigger periodic scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -1825,6 +1842,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(true);
         when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(false);
+        when(mWifiNS.hasInternetOrExpectNoInternet(eq(mWifiInfo))).thenReturn(true);
 
         mResources.setInteger(
                 R.integer.config_wifi_framework_associated_partial_scan_max_num_active_channels,
@@ -1879,6 +1897,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasInternetOrExpectNoInternet(eq(mWifiInfo))).thenReturn(true);
 
         mResources.setInteger(
                 R.integer.config_wifi_framework_associated_partial_scan_max_num_active_channels,
@@ -1932,6 +1951,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void checkSingleScanSettingsWhenConnectedWithHighDataRateNotInCache() {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(true);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
+        when(mWifiNS.hasInternetOrExpectNoInternet(eq(mWifiInfo))).thenReturn(true);
 
         final List<Integer> channelList = new ArrayList<>();
         channelList.add(TEST_FREQUENCY_1);
