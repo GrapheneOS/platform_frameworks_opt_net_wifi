@@ -29,6 +29,8 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.IActionListener;
+import android.net.wifi.IScoreUpdateObserver;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
@@ -48,6 +50,7 @@ import android.util.Pair;
 
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
+import com.android.server.wifi.util.GeneralUtil;
 import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
@@ -90,6 +93,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             "list-suggestions",
             "remove-suggestion",
             "remove-all-suggestions",
+            "reset-connected-score",
+            "set-connected-score",
             "set-scan-always-available",
             "set-verbose-logging",
             "set-wifi-enabled",
@@ -609,6 +614,58 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     pw.println(hasUserApproved ? "yes" : "no");
                     return 0;
                 }
+                case "set-connected-score": {
+                    int score = Integer.parseInt(getNextArgRequired());
+                    CountDownLatch countDownLatch = new CountDownLatch(2);
+                    GeneralUtil.Mutable<IScoreUpdateObserver> scoreUpdateObserverMutable =
+                            new GeneralUtil.Mutable<>();
+                    GeneralUtil.Mutable<Integer> sessionIdMutable = new GeneralUtil.Mutable<>();
+                    IWifiConnectedNetworkScorer.Stub connectedScorer =
+                            new IWifiConnectedNetworkScorer.Stub() {
+                        @Override
+                        public void onStart(int sessionId) {
+                            sessionIdMutable.value = sessionId;
+                            countDownLatch.countDown();
+                        }
+                        @Override
+                        public void onStop(int sessionId) {
+                            // clear the external scorer on disconnect.
+                            mWifiService.clearWifiConnectedNetworkScorer();
+                        }
+                        @Override
+                        public void onSetScoreUpdateObserver(IScoreUpdateObserver observerImpl) {
+                            scoreUpdateObserverMutable.value = observerImpl;
+                            countDownLatch.countDown();
+                        }
+                    };
+                    mWifiService.clearWifiConnectedNetworkScorer(); // clear any previous scorer
+                    if (mWifiService.setWifiConnectedNetworkScorer(new Binder(), connectedScorer)) {
+                        // wait for retrieving the session id & score observer.
+                        countDownLatch.await(1000, TimeUnit.MILLISECONDS);
+                    }
+                    if (scoreUpdateObserverMutable.value == null
+                            || sessionIdMutable.value == null) {
+                        pw.println("Did not receive session id and/or the score update observer. "
+                                + "Is the device connected to a wifi network?");
+                        mWifiService.clearWifiConnectedNetworkScorer();
+                        return -1;
+                    }
+                    pw.println("Updating score: " + score + " for session id: "
+                            + sessionIdMutable.value);
+                    try {
+                        scoreUpdateObserverMutable.value.notifyScoreUpdate(
+                                sessionIdMutable.value, score);
+                    } catch (RemoteException e) {
+                        pw.println("Failed to send the score update");
+                        mWifiService.clearWifiConnectedNetworkScorer();
+                        return -1;
+                    }
+                    return 0;
+                }
+                case "reset-connected-score": {
+                    mWifiService.clearWifiConnectedNetworkScorer(); // clear any previous scorer
+                    return 0;
+                }
                 default:
                     return handleDefaultCommands(cmd);
             }
@@ -873,6 +930,17 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Removes all suggestions added via shell");
         pw.println("  list-suggestions");
         pw.println("    Lists the suggested networks added via shell");
+        pw.println("  set-connected-score <score>");
+        pw.println("    Set connected wifi network score (to choose between LTE & Wifi for "
+                + "default route).");
+        pw.println("    This turns off the active connected scorer (default or external).");
+        pw.println("    Only works while connected to a wifi network. This score will stay in "
+                + "effect until you call reset-connected-score or the device disconnects from the "
+                + "current network.");
+        pw.println("    <score> - Integer score should be in the range of 0 - 60");
+        pw.println("  reset-connected-score");
+        pw.println("    Turns on the default connected scorer.");
+        pw.println("    Note: Will clear any external scorer set.");
     }
 
     private void onHelpPrivileged(PrintWriter pw) {
