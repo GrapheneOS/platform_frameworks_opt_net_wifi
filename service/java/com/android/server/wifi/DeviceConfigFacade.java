@@ -95,6 +95,8 @@ public class DeviceConfigFacade {
     // Default report-high threshold to take-bug-report threshold ratio.
     // It should be larger than 1 since the bar to take bugreport should be higher.
     static final int DEFAULT_BUG_REPORT_THRESHOLD_EXTRA_RATIO = 2;
+    // Default overlapping connection duration threshold in ms to trigger bug report
+    static final int DEFAULT_OVERLAPPING_CONNECTION_DURATION_THRESHOLD_MS = 75_000;
 
     // Cached values of fields updated via updateDeviceConfigFlags()
     private boolean mIsAbnormalConnectionBugreportEnabled;
@@ -132,6 +134,8 @@ public class DeviceConfigFacade {
     private int mHealthMonitorMinNumConnectionAttempt;
     private int mBugReportMinWindowMs;
     private int mBugReportThresholdExtraRatio;
+    private boolean mIsOverlappingConnectionBugreportEnabled;
+    private int mOverlappingConnectionDurationThresholdMs;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -245,6 +249,11 @@ public class DeviceConfigFacade {
         mBugReportThresholdExtraRatio = DeviceConfig.getInt(NAMESPACE,
                 "report_bug_report_threshold_extra_ratio",
                 DEFAULT_BUG_REPORT_THRESHOLD_EXTRA_RATIO);
+        mIsOverlappingConnectionBugreportEnabled = DeviceConfig.getBoolean(NAMESPACE,
+                "overlapping_connection_bugreport_enabled", false);
+        mOverlappingConnectionDurationThresholdMs = DeviceConfig.getInt(NAMESPACE,
+                "overlapping_connection_duration_threshold_ms",
+                DEFAULT_OVERLAPPING_CONNECTION_DURATION_THRESHOLD_MS);
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -507,5 +516,19 @@ public class DeviceConfigFacade {
      */
     public int getBugReportThresholdExtraRatio() {
         return mBugReportThresholdExtraRatio;
+    }
+
+    /**
+     * Gets the feature flag for reporting overlapping connection.
+     */
+    public boolean isOverlappingConnectionBugreportEnabled() {
+        return mIsOverlappingConnectionBugreportEnabled;
+    }
+
+    /**
+     * Gets overlapping connection duration threshold in ms
+     */
+    public int getOverlappingConnectionDurationThresholdMs() {
+        return mOverlappingConnectionDurationThresholdMs;
     }
 }

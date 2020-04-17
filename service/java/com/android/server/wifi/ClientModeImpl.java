@@ -2889,7 +2889,16 @@ public class ClientModeImpl extends StateMachine {
      */
     private void reportConnectionAttemptStart(
             WifiConfiguration config, String targetBSSID, int roamType) {
-        mWifiMetrics.startConnectionEvent(config, targetBSSID, roamType);
+        int overlapWithLastConnectionMs =
+                mWifiMetrics.startConnectionEvent(config, targetBSSID, roamType);
+        DeviceConfigFacade deviceConfigFacade = mWifiInjector.getDeviceConfigFacade();
+        if (deviceConfigFacade.isOverlappingConnectionBugreportEnabled()
+                && overlapWithLastConnectionMs
+                > deviceConfigFacade.getOverlappingConnectionDurationThresholdMs()) {
+            String bugTitle = "Wi-Fi BugReport";
+            String bugDetail = "Detect abnormal overlapping connection";
+            takeBugReport(bugTitle, bugDetail);
+        }
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
         mWrongPasswordNotifier.onNewConnectionAttempt();
         removeMessages(CMD_DIAGS_CONNECT_TIMEOUT);
