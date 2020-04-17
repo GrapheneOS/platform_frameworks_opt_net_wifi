@@ -1211,30 +1211,6 @@ public class WifiVendorHalTest extends WifiBaseTest {
         assertEquals(2, ex);
     }
 
-    /**
-     * Test that setScanningMacOui is hooked up to the HAL correctly
-     */
-    @Test
-    public void testSetScanningMacOui() throws Exception {
-        byte[] oui = NativeUtil.macAddressOuiToByteArray("DA:A1:19");
-        byte[] zzz = NativeUtil.macAddressOuiToByteArray("00:00:00");
-
-        when(mIWifiStaIface.setScanningMacOui(any())).thenReturn(mWifiStatusSuccess);
-
-        // expect fail - STA not started
-        assertFalse(mWifiVendorHal.setScanningMacOui(TEST_IFACE_NAME, oui));
-        assertTrue(mWifiVendorHal.startVendorHalSta());
-        // expect fail - null
-        assertFalse(mWifiVendorHal.setScanningMacOui(TEST_IFACE_NAME, null));
-        // expect fail - len
-        assertFalse(mWifiVendorHal.setScanningMacOui(TEST_IFACE_NAME, new byte[]{(byte) 1}));
-        assertTrue(mWifiVendorHal.setScanningMacOui(TEST_IFACE_NAME, oui));
-        assertTrue(mWifiVendorHal.setScanningMacOui(TEST_IFACE_NAME, zzz));
-
-        verify(mIWifiStaIface).setScanningMacOui(eq(oui));
-        verify(mIWifiStaIface).setScanningMacOui(eq(zzz));
-    }
-
     @Test
     public void testStartSendingOffloadedPacket() throws Exception {
         byte[] srcMac = NativeUtil.macAddressToByteArray("4007b2088c81");
