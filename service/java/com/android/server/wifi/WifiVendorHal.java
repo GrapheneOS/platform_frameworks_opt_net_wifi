@@ -1299,33 +1299,6 @@ public class WifiVendorHal {
     }
 
     /**
-     * Set the MAC OUI during scanning.
-     * <p>
-     * An OUI {Organizationally Unique Identifier} is a 24-bit number that
-     * uniquely identifies a vendor or manufacturer.
-     *
-     * @param ifaceName Name of the interface.
-     * @param oui
-     * @return true for success
-     */
-    public boolean setScanningMacOui(@NonNull String ifaceName, byte[] oui) {
-        if (oui == null) return boolResult(false);
-        if (oui.length != 3) return boolResult(false);
-        synchronized (sLock) {
-            try {
-                IWifiStaIface iface = getStaIface(ifaceName);
-                if (iface == null) return boolResult(false);
-                WifiStatus status = iface.setScanningMacOui(oui);
-                if (!ok(status)) return false;
-                return true;
-            } catch (RemoteException e) {
-                handleRemoteException(e);
-                return false;
-            }
-        }
-    }
-
-    /**
      * Set Mac address on the given interface
      *
      * @param ifaceName Name of the interface

@@ -2911,19 +2911,6 @@ public class WifiNative {
     }
 
     /**
-     * Set the MAC OUI during scanning.
-     * An OUI {Organizationally Unique Identifier} is a 24-bit number that
-     * uniquely identifies a vendor or manufacturer.
-     *
-     * @param ifaceName Name of the interface.
-     * @param oui OUI to set.
-     * @return true for success
-     */
-    public boolean setScanningMacOui(@NonNull String ifaceName, byte[] oui) {
-        return mWifiVendorHal.setScanningMacOui(ifaceName, oui);
-    }
-
-    /**
      * Get the APF (Android Packet Filter) capabilities of the device
      * @param ifaceName Name of the interface.
      */
