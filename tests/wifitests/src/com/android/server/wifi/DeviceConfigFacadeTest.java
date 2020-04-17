@@ -176,6 +176,9 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
         assertEquals(DeviceConfigFacade.DEFAULT_BUG_REPORT_MIN_WINDOW_MS,
                 mDeviceConfigFacade.getBugReportMinWindowMs());
+        assertEquals(false, mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled());
+        assertEquals(DeviceConfigFacade.DEFAULT_OVERLAPPING_CONNECTION_DURATION_THRESHOLD_MS,
+                mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs());
     }
 
     /**
@@ -254,6 +257,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(20);
         when(DeviceConfig.getInt(anyString(), eq("bug_report_min_window_ms"),
                 anyInt())).thenReturn(1000);
+        when(DeviceConfig.getBoolean(anyString(), eq("overlapping_connection_bugreport_enabled"),
+                anyBoolean())).thenReturn(true);
+        when(DeviceConfig.getInt(anyString(), eq("overlapping_connection_duration_threshold_ms"),
+                anyInt())).thenReturn(50000);
 
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
@@ -297,5 +304,7 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(true, mDeviceConfigFacade.isAbnormalDisconnectionBugreportEnabled());
         assertEquals(20, mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt());
         assertEquals(1000, mDeviceConfigFacade.getBugReportMinWindowMs());
+        assertEquals(true, mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled());
+        assertEquals(50000, mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs());
     }
 }

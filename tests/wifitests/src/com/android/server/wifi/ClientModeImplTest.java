@@ -557,6 +557,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(new Pair<>(null, null));
         when(mDeviceConfigFacade.isAbnormalDisconnectionBugreportEnabled()).thenReturn(true);
         when(mDeviceConfigFacade.isAbnormalConnectionFailureBugreportEnabled()).thenReturn(true);
+        when(mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled()).thenReturn(true);
+        when(mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_OVERLAPPING_CONNECTION_DURATION_THRESHOLD_MS);
         when(mWifiScoreCard.detectAbnormalConnectionFailure(anyString()))
                 .thenReturn(WifiHealthMonitor.REASON_NO_FAILURE);
         when(mWifiScoreCard.detectAbnormalDisconnection())
@@ -1744,6 +1747,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testEapSimErrorVendorSpecific() throws Exception {
+        when(mWifiMetrics.startConnectionEvent(any(), anyString(), anyInt())).thenReturn(80000);
         initializeAndAddNetworkAndVerifySuccess();
 
         IActionListener connectActionListener = mock(IActionListener.class);
@@ -1778,7 +1782,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mockSession.finishMocking();
         verify(mDeviceConfigFacade).isAbnormalConnectionFailureBugreportEnabled();
         verify(mWifiScoreCard).detectAbnormalConnectionFailure(anyString());
-        verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
+        verify(mWifiDiagnostics, times(2)).takeBugReport(anyString(), anyString());
     }
 
     /**
