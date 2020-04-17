@@ -342,7 +342,6 @@ public class XmlUtil {
         public static final String XML_TAG_METERED_HINT = "MeteredHint";
         public static final String XML_TAG_METERED_OVERRIDE = "MeteredOverride";
         public static final String XML_TAG_USE_EXTERNAL_SCORES = "UseExternalScores";
-        public static final String XML_TAG_NUM_ASSOCIATION = "NumAssociation";
         public static final String XML_TAG_CREATOR_UID = "CreatorUid";
         public static final String XML_TAG_CREATOR_NAME = "CreatorName";
         public static final String XML_TAG_LAST_UPDATE_UID = "LastUpdateUid";
@@ -504,7 +503,6 @@ public class XmlUtil {
             XmlUtil.writeNextValue(out, XML_TAG_METERED_OVERRIDE, configuration.meteredOverride);
             XmlUtil.writeNextValue(
                     out, XML_TAG_USE_EXTERNAL_SCORES, configuration.useExternalScores);
-            XmlUtil.writeNextValue(out, XML_TAG_NUM_ASSOCIATION, configuration.numAssociation);
             XmlUtil.writeNextValue(out, XML_TAG_CREATOR_UID, configuration.creatorUid);
             XmlUtil.writeNextValue(out, XML_TAG_CREATOR_NAME, configuration.creatorName);
             XmlUtil.writeNextValue(out, XML_TAG_LAST_UPDATE_UID, configuration.lastUpdateUid);
@@ -673,9 +671,6 @@ public class XmlUtil {
                             break;
                         case XML_TAG_USE_EXTERNAL_SCORES:
                             configuration.useExternalScores = (boolean) value;
-                            break;
-                        case XML_TAG_NUM_ASSOCIATION:
-                            configuration.numAssociation = (int) value;
                             break;
                         case XML_TAG_CREATOR_UID:
                             configuration.creatorUid = (int) value;

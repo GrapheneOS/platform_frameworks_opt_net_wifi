@@ -218,6 +218,17 @@ public class WifiNetworkSelector {
     }
 
     /**
+     * Check if current network has internet or is expected to not have internet
+     */
+    public boolean hasInternetOrExpectNoInternet(WifiInfo wifiInfo) {
+        WifiConfiguration network =
+                mWifiConfigManager.getConfiguredNetwork(wifiInfo.getNetworkId());
+        if (network == null) {
+            return false;
+        }
+        return !network.hasNoInternetAccess() || network.isNoInternetAccessExpected();
+    }
+    /**
      * Determines whether the currently connected network is sufficient.
      *
      * If the network is good enough, or if switching to a new network is likely to
@@ -262,7 +273,7 @@ public class WifiNetworkSelector {
         }
 
         // Network without internet access is not sufficient, unless expected
-        if (network.hasNoInternetAccess() && !network.isNoInternetAccessExpected()) {
+        if (!hasInternetOrExpectNoInternet(wifiInfo)) {
             localLog("Current network has [" + network.numNoInternetAccessReports
                     + "] no-internet access reports");
             return false;
