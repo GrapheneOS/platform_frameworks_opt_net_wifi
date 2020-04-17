@@ -3904,7 +3904,17 @@ public class ClientModeImpl extends StateMachine {
                     // interest (e.g. routers); harmless if none are configured.
                     if (state == SupplicantState.COMPLETED) {
                         if (mIpClient != null) {
-                            mIpClient.confirmConfiguration();
+                            MacAddress lastBssid = null;
+                            try {
+                                lastBssid = (mLastBssid != null)
+                                        ? MacAddress.fromString(mLastBssid) : null;
+                            } catch (IllegalArgumentException e) {
+                                Log.e(TAG, "Invalid BSSID format: " + mLastBssid);
+                            }
+                            final Layer2Information info = new Layer2Information(
+                                    mLastL2KeyAndGroupHint.first, mLastL2KeyAndGroupHint.second,
+                                    lastBssid);
+                            mIpClient.updateLayer2Information(info);
                         }
                         mWifiScoreReport.noteIpCheck();
                     }
