@@ -4834,4 +4834,29 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertHistogramBucketsEqual(expectedFailureScanHistogram,
                 mDecodedProto.initPartialScanStats.failedScanChannelCountHistogram);
     }
+
+    /**
+     * Test overlapping and non-overlapping connection events return overlapping duration correctly
+     */
+    @Test
+    public void testOverlappingConnectionEvent() throws Exception {
+        // Connection event 1
+        when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 0);
+        mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 1000);
+        // Connection event 2 overlaps with 1
+        assertEquals(1000, mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE));
+
+        // Connection event 2 ends
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_NONE,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 2000);
+        // Connection event 3 doesn't overlap with 2
+        assertEquals(0, mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE));
+    }
 }

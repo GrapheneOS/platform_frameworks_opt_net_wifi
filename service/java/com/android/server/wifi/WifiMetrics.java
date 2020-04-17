@@ -1390,18 +1390,24 @@ public class WifiMetrics {
     private static final int SCREEN_OFF = 0;
 
     /**
-     * Create a new connection event. Call when wifi attempts to make a new network connection
+     * Create a new connection event and check if the new one overlaps with previous one.
+     * Call when wifi attempts to make a new network connection
      * If there is a current 'un-ended' connection event, it will be ended with UNKNOWN connectivity
      * failure code.
      * Gathers and sets the RouterFingerPrint data as well
      *
      * @param config WifiConfiguration of the config used for the current connection attempt
      * @param roamType Roam type that caused connection attempt, see WifiMetricsProto.WifiLog.ROAM_X
+     * @return The duration in ms since the last unfinished connection attempt,
+     * or 0 if there is no unfinished connection
      */
-    public void startConnectionEvent(WifiConfiguration config, String targetBSSID, int roamType) {
+    public int startConnectionEvent(
+            WifiConfiguration config, String targetBSSID, int roamType) {
         synchronized (mLock) {
-            // Check if this is overlapping another current connection event
+            int overlapWithLastConnectionMs = 0;
             if (mCurrentConnectionEvent != null) {
+                overlapWithLastConnectionMs = (int) (mClock.getElapsedSinceBootMillis()
+                        - mCurrentConnectionEvent.mRealStartTime);
                 //Is this new Connection Event the same as the current one
                 if (mCurrentConnectionEvent.mConfigSsid != null
                         && mCurrentConnectionEvent.mConfigBssid != null
@@ -1505,6 +1511,7 @@ public class WifiMetrics {
                             recentStats.getCount(WifiScoreCard.CNT_CONSECUTIVE_CONNECTION_FAILURE);
                 }
             }
+            return overlapWithLastConnectionMs;
         }
     }
 
