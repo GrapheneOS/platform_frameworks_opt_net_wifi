@@ -1197,21 +1197,6 @@ public class ClientModeImpl extends StateMachine {
         mWifiDataStall.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
-    private boolean setRandomMacOui() {
-        String oui = mContext.getResources().getString(R.string.config_wifi_random_mac_oui);
-        if (TextUtils.isEmpty(oui)) {
-            oui = GOOGLE_OUI;
-        }
-        String[] ouiParts = oui.split("-");
-        byte[] ouiBytes = new byte[3];
-        ouiBytes[0] = (byte) (Integer.parseInt(ouiParts[0], 16) & 0xFF);
-        ouiBytes[1] = (byte) (Integer.parseInt(ouiParts[1], 16) & 0xFF);
-        ouiBytes[2] = (byte) (Integer.parseInt(ouiParts[2], 16) & 0xFF);
-
-        logd("Setting OUI to " + oui);
-        return mWifiNative.setScanningMacOui(mInterfaceName, ouiBytes);
-    }
-
     /**
      * Initiates connection to a network specified by the user/app. This method checks if the
      * requesting app holds the NETWORK_SETTINGS permission.
@@ -3561,7 +3546,6 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiNative.setExternalSim(mInterfaceName, true);
 
-        setRandomMacOui();
         mCountryCode.setReadyForChange(true);
 
         mWifiDiagnostics.startPktFateMonitoring(mInterfaceName);
