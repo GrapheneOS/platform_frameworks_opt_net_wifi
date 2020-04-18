@@ -83,6 +83,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLinkLayerUsageSta
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLockStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkRequestApiLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog.SuggestionAppCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiToggleStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStatsEntry;
@@ -410,6 +411,7 @@ public class WifiMetrics {
             {5, 20, 50, 100, 500};
     private final IntHistogram mWifiNetworkSuggestionApiListSizeHistogram =
             new IntHistogram(NETWORK_SUGGESTION_API_LIST_SIZE_HISTOGRAM_BUCKETS);
+    private final IntCounter mWifiNetworkSuggestionApiAppTypeCounter = new IntCounter();
     private final WifiLockStats mWifiLockStats = new WifiLockStats();
     private static final int[] WIFI_LOCK_SESSION_DURATION_HISTOGRAM_BUCKETS =
             {1, 10, 60, 600, 3600};
@@ -3626,7 +3628,9 @@ public class WifiMetrics {
                         + mWifiNetworkRequestApiMatchSizeHistogram);
                 pw.println("mWifiNetworkSuggestionApiLog:\n" + mWifiNetworkSuggestionApiLog);
                 pw.println("mWifiNetworkSuggestionApiMatchSizeHistogram:\n"
-                        + mWifiNetworkRequestApiMatchSizeHistogram);
+                        + mWifiNetworkSuggestionApiListSizeHistogram);
+                pw.println("mWifiNetworkSuggestionApiAppTypeCounter:\n"
+                        + mWifiNetworkSuggestionApiAppTypeCounter);
                 pw.println("mNetworkIdToNominatorId:\n" + mNetworkIdToNominatorId);
                 pw.println("mWifiLockStats:\n" + mWifiLockStats);
                 pw.println("mWifiLockHighPerfAcqDurationSecHistogram:\n"
@@ -4243,6 +4247,14 @@ public class WifiMetrics {
 
             mWifiNetworkSuggestionApiLog.networkListSizeHistogram =
                     mWifiNetworkSuggestionApiListSizeHistogram.toProto();
+            mWifiNetworkSuggestionApiLog.appCountPerType =
+                    mWifiNetworkSuggestionApiAppTypeCounter.toProto(SuggestionAppCount.class,
+                            (key, count) -> {
+                                SuggestionAppCount entry = new SuggestionAppCount();
+                                entry.appType = key;
+                                entry.count = count;
+                                return entry;
+                            });
             mWifiLogProto.wifiNetworkSuggestionApiLog = mWifiNetworkSuggestionApiLog;
 
             mWifiLockStats.highPerfLockAcqDurationSecHistogram =
@@ -4507,6 +4519,7 @@ public class WifiMetrics {
             mWifiNetworkSuggestionApiLog.clear();
             mWifiNetworkRequestApiMatchSizeHistogram.clear();
             mWifiNetworkSuggestionApiListSizeHistogram.clear();
+            mWifiNetworkSuggestionApiAppTypeCounter.clear();
             mWifiLockHighPerfAcqDurationSecHistogram.clear();
             mWifiLockLowLatencyAcqDurationSecHistogram.clear();
             mWifiLockHighPerfActiveSessionDurationSecHistogram.clear();
@@ -5861,6 +5874,27 @@ public class WifiMetrics {
                 mWifiNetworkSuggestionApiListSizeHistogram.increment(listSize);
             }
         }
+    }
+
+    /** Increment number of app add suggestion with different privilege */
+    public void incrementNetworkSuggestionApiUsageNumOfAppInType(int appType) {
+        int typeCode;
+        synchronized (mLock) {
+            switch (appType) {
+                case WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED:
+                    typeCode = WifiNetworkSuggestionApiLog.TYPE_CARRIER_PRIVILEGED;
+                    break;
+                case WifiNetworkSuggestionsManager.APP_TYPE_NETWORK_PROVISIONING:
+                    typeCode = WifiNetworkSuggestionApiLog.TYPE_NETWORK_PROVISIONING;
+                    break;
+                case WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED:
+                    typeCode = WifiNetworkSuggestionApiLog.TYPE_NON_PRIVILEGED;
+                    break;
+                default:
+                    typeCode = WifiNetworkSuggestionApiLog.TYPE_UNKNOWN;
+            }
+        }
+        mWifiNetworkSuggestionApiAppTypeCounter.increment(typeCode);
     }
 
     /**

@@ -105,6 +105,10 @@ public class WifiNetworkSuggestionsManager {
     public static final String EXTRA_UID =
             "com.android.server.wifi.extra.NetworkSuggestion.UID";
 
+    public static final int APP_TYPE_CARRIER_PRIVILEGED = 1;
+    public static final int APP_TYPE_NETWORK_PROVISIONING = 2;
+    public static final int APP_TYPE_NON_PRIVILEGED = 3;
+
     /**
      * Limit number of hidden networks attach to scan
      */
@@ -824,19 +828,27 @@ public class WifiNetworkSuggestionsManager {
             if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)) {
                 Log.i(TAG, "Setting the carrier provisioning app approved");
                 perAppInfo.hasUserApproved = true;
+                mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                        APP_TYPE_NETWORK_PROVISIONING);
             } else if (carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
                 Log.i(TAG, "Setting the carrier privileged app approved");
                 perAppInfo.carrierId = carrierId;
+                mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                        APP_TYPE_CARRIER_PRIVILEGED);
             } else if (perAppInfo.packageName.equals(activeScorerPackage)) {
                 Log.i(TAG, "Exempting the active scorer app");
                 // nothing more to do, user approval related checks are done at network selection
                 // time (which also takes care of any dynamic changes in active scorer).
+                mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                        APP_TYPE_NON_PRIVILEGED);
             } else {
                 if (isSuggestionFromForegroundApp(packageName)) {
                     sendUserApprovalDialog(packageName, uid);
                 } else {
                     sendUserApprovalNotification(packageName, uid);
                 }
+                mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                        APP_TYPE_NON_PRIVILEGED);
             }
         }
         // If PerAppInfo is upgrade from pre-R, uid may not be set.
