@@ -66,6 +66,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 /**
  * Unit tests for {@link com.android.server.wifi.WifiScoreCard}.
  */
@@ -472,10 +473,9 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(diag, 0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(diag, 0, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
         assertEquals(diag, 0, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
-        List<Integer> frequencies = perNetwork.getFrequencies();
+        List<Integer> frequencies = perNetwork.getFrequencies(Long.MAX_VALUE);
         assertEquals(diag, 2, frequencies.size());
-        List<Integer> expectedFrequencies =
-                new ArrayList<>(Arrays.asList(new Integer[] {2432, 5805}));
+        List<Integer> expectedFrequencies = new ArrayList<>(Arrays.asList(2432, 5805));
         assertEquals(diag, expectedFrequencies, frequencies);
     }
 
@@ -1252,5 +1252,21 @@ public class WifiScoreCardTest extends WifiBaseTest {
         makeRecentStatsWithAuthFailure();
         assertEquals(WifiHealthMonitor.REASON_AUTH_FAILURE,
                 mWifiScoreCard.detectAbnormalConnectionFailure(mWifiInfo.getSSID()));
+    }
+
+    @Test
+    public void testAddGetFrequencies() {
+        mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
+        PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(mWifiInfo.getSSID());
+        millisecondsPass(100);
+        perNetwork.addFrequency(5805);
+        millisecondsPass(1000);
+        perNetwork.addFrequency(2432);
+        assertEquals(2, perNetwork.getFrequencies(Long.MAX_VALUE).size());
+        assertEquals(2432, (int) perNetwork.getFrequencies(Long.MAX_VALUE).get(0));
+        assertEquals(5805, (int) perNetwork.getFrequencies(Long.MAX_VALUE).get(1));
+        // Check over aged channel will not return.
+        assertEquals(1, perNetwork.getFrequencies(900L).size());
+        assertEquals(2432, (int) perNetwork.getFrequencies(Long.MAX_VALUE).get(0));
     }
 }
