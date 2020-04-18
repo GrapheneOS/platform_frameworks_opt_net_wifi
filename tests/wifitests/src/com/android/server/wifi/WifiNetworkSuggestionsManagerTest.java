@@ -301,7 +301,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_2, TEST_FEATURE));
         verify(mPasspointManager).addOrUpdateProvider(
                 passpointConfiguration, TEST_UID_2, TEST_PACKAGE_2, true, true);
-
+        verify(mWifiMetrics, times(2))
+                .incrementNetworkSuggestionApiUsageNumOfAppInType(
+                        WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
         Set<WifiNetworkSuggestion> allNetworkSuggestions =
                 mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
         Set<WifiNetworkSuggestion> expectedAllNetworkSuggestions =
@@ -541,11 +543,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
-
         // Assert that the original config was not metered.
         assertEquals(WifiConfiguration.METERED_OVERRIDE_NONE,
                 networkSuggestion.wifiConfiguration.meteredOverride);
-
+        verify(mWifiMetrics).incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        reset(mWifiMetrics);
         // Store the original WifiConfiguration from WifiConfigManager.
         WifiConfiguration configInWcm =
                 new WifiConfiguration(networkSuggestion.wifiConfiguration);
@@ -567,7 +570,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiConfiguration.METERED_OVERRIDE_METERED,
                 mWifiNetworkSuggestionsManager
                         .get(TEST_PACKAGE_1).get(0).wifiConfiguration.meteredOverride);
-
+        verify(mWifiMetrics, never()).incrementNetworkSuggestionApiUsageNumOfAppInType(anyInt());
         // Verify we did update config in WCM.
         ArgumentCaptor<WifiConfiguration> configCaptor =
                 ArgumentCaptor.forClass(WifiConfiguration.class);
@@ -674,7 +677,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
-
+        verify(mWifiMetrics).incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NETWORK_PROVISIONING);
         ScanDetail scanDetail = createScanDetailForNetwork(networkSuggestion.wifiConfiguration);
 
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestions =
@@ -2912,7 +2916,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
 
         assertEquals(status, WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS);
-
+        verify(mWifiMetrics).incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NETWORK_PROVISIONING);
     }
 
     @Test
@@ -3168,6 +3173,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_NOT_ALLOWED, status);
         verify(mNotificationManger, never()).notify(anyInt(), any());
         assertEquals(0, mWifiNetworkSuggestionsManager.get(TEST_PACKAGE_1).size());
+        verify(mWifiMetrics, never()).incrementNetworkSuggestionApiUsageNumOfAppInType(anyInt());
     }
 
     /**
@@ -3191,6 +3197,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS, status);
         verify(mNotificationManger, never()).notify(anyInt(), any());
         assertEquals(1,  mWifiNetworkSuggestionsManager.get(TEST_PACKAGE_1).size());
+        verify(mWifiMetrics).incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED);
     }
 
     /**
