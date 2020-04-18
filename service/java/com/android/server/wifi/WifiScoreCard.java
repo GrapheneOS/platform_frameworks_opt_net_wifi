@@ -40,6 +40,7 @@ import android.util.ArrayMap;
 import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
+import android.util.SparseLongArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.Preconditions;
@@ -68,6 +69,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -803,6 +805,8 @@ public class WifiScoreCard {
         private NetworkConnectionStats mStatsCurrBuild;
         private NetworkConnectionStats mStatsPrevBuild;
         private LruList<Integer> mFrequencyList;
+        // In memory keep frequency with timestamp last time available, the elapsed time since boot.
+        private SparseLongArray mFreqTimestamp;
 
         PerNetwork(String ssid) {
             super(computeHashLong(ssid, MacAddress.fromString(DEFAULT_MAC_ADDRESS), mL2KeySeed));
@@ -812,7 +816,8 @@ public class WifiScoreCard {
             mRecentStats = new NetworkConnectionStats();
             mStatsCurrBuild = new NetworkConnectionStats();
             mStatsPrevBuild = new NetworkConnectionStats();
-            mFrequencyList = new LruList<Integer>(MAX_FREQUENCIES_PER_SSID);
+            mFrequencyList = new LruList<>(MAX_FREQUENCIES_PER_SSID);
+            mFreqTimestamp = new SparseLongArray();
         }
 
         void updateEventStats(Event event, int rssi, int txSpeed, int failureReason) {
@@ -923,10 +928,19 @@ public class WifiScoreCard {
 
         /**
          * Retrieve the list of frequencies seen for this network, with the most recent first.
-         * @return
+         * @param ageInMills Max age to filter the channels.
+         * @return a list of frequencies
          */
-        List<Integer> getFrequencies() {
-            return mFrequencyList.getEntries();
+        List<Integer> getFrequencies(Long ageInMills) {
+            List<Integer> results = new ArrayList<>();
+            Long nowInMills = mClock.getElapsedSinceBootMillis();
+            for (Integer freq : mFrequencyList.getEntries()) {
+                if (nowInMills - mFreqTimestamp.get(freq, 0L) > ageInMills) {
+                    continue;
+                }
+                results.add(freq);
+            }
+            return results;
         }
 
         /**
@@ -935,6 +949,7 @@ public class WifiScoreCard {
          */
         void addFrequency(int frequency) {
             mFrequencyList.add(frequency);
+            mFreqTimestamp.put(frequency, mClock.getElapsedSinceBootMillis());
         }
 
         /**
