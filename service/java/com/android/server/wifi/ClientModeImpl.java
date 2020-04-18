@@ -1197,21 +1197,6 @@ public class ClientModeImpl extends StateMachine {
         mWifiDataStall.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
-    private boolean setRandomMacOui() {
-        String oui = mContext.getResources().getString(R.string.config_wifi_random_mac_oui);
-        if (TextUtils.isEmpty(oui)) {
-            oui = GOOGLE_OUI;
-        }
-        String[] ouiParts = oui.split("-");
-        byte[] ouiBytes = new byte[3];
-        ouiBytes[0] = (byte) (Integer.parseInt(ouiParts[0], 16) & 0xFF);
-        ouiBytes[1] = (byte) (Integer.parseInt(ouiParts[1], 16) & 0xFF);
-        ouiBytes[2] = (byte) (Integer.parseInt(ouiParts[2], 16) & 0xFF);
-
-        logd("Setting OUI to " + oui);
-        return mWifiNative.setScanningMacOui(mInterfaceName, ouiBytes);
-    }
-
     /**
      * Initiates connection to a network specified by the user/app. This method checks if the
      * requesting app holds the NETWORK_SETTINGS permission.
@@ -2904,7 +2889,16 @@ public class ClientModeImpl extends StateMachine {
      */
     private void reportConnectionAttemptStart(
             WifiConfiguration config, String targetBSSID, int roamType) {
-        mWifiMetrics.startConnectionEvent(config, targetBSSID, roamType);
+        int overlapWithLastConnectionMs =
+                mWifiMetrics.startConnectionEvent(config, targetBSSID, roamType);
+        DeviceConfigFacade deviceConfigFacade = mWifiInjector.getDeviceConfigFacade();
+        if (deviceConfigFacade.isOverlappingConnectionBugreportEnabled()
+                && overlapWithLastConnectionMs
+                > deviceConfigFacade.getOverlappingConnectionDurationThresholdMs()) {
+            String bugTitle = "Wi-Fi BugReport";
+            String bugDetail = "Detect abnormal overlapping connection";
+            takeBugReport(bugTitle, bugDetail);
+        }
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
         mWrongPasswordNotifier.onNewConnectionAttempt();
         removeMessages(CMD_DIAGS_CONNECT_TIMEOUT);
@@ -3561,7 +3555,6 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiNative.setExternalSim(mInterfaceName, true);
 
-        setRandomMacOui();
         mCountryCode.setReadyForChange(true);
 
         mWifiDiagnostics.startPktFateMonitoring(mInterfaceName);
@@ -3942,13 +3935,14 @@ public class ClientModeImpl extends StateMachine {
                         // Pair<identity, encrypted identity>
                         Pair<String, String> identityPair = mWifiCarrierInfoManager
                                 .getSimIdentity(mTargetWifiConfiguration);
-                        Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=["
-                                + ((identityPair.first.length() >= 7)
-                                ? identityPair.first.substring(0, 7 /* Prefix+PLMN ID */) + "****"
-                                : identityPair.first) + ", "
-                                + (!TextUtils.isEmpty(identityPair.second) ? identityPair.second
-                                : "<NONE>") + "]");
                         if (identityPair != null && identityPair.first != null) {
+                            Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=["
+                                    + ((identityPair.first.length() >= 7)
+                                    ? identityPair.first.substring(0, 7 /* Prefix+PLMN ID */)
+                                    + "****"
+                                    : identityPair.first) + ", "
+                                    + (!TextUtils.isEmpty(identityPair.second) ? identityPair.second
+                                    : "<NONE>") + "]");
                             mWifiNative.simIdentityResponse(mInterfaceName, identityPair.first,
                                     identityPair.second);
                             identitySent = true;
