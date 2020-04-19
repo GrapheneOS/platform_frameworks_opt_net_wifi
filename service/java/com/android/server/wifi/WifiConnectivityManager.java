@@ -114,13 +114,15 @@ public class WifiConnectivityManager {
     // to prevent caveat from things like PNO scan.
     private static final int WATCHDOG_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
     // Restricted channel list age out value.
-    private static final int CHANNEL_LIST_AGE_MS = 60 * 60 * 1000; // 1 hour
+    private static final long CHANNEL_LIST_AGE_MS = 60 * 60 * 1000; // 1 hour
     // This is the time interval for the connection attempt rate calculation. Connection attempt
     // timestamps beyond this interval is evicted from the list.
     public static final int MAX_CONNECTION_ATTEMPTS_TIME_INTERVAL_MS = 4 * 60 * 1000; // 4 mins
     // Max number of connection attempts in the above time interval.
     public static final int MAX_CONNECTION_ATTEMPTS_RATE = 6;
     private static final int TEMP_BSSID_BLOCK_DURATION = 10 * 1000; // 10 seconds
+    // Maximum age of frequencies last seen to be included in pno scans. (30 days)
+    private static final long MAX_PNO_SCAN_FREQUENCY_AGE_MS = (long) 1000 * 3600 * 24 * 30;
     // ClientModeImpl has a bunch of states. From the
     // WifiConnectivityManager's perspective it only cares
     // if it is in Connected state, Disconnected state or in
@@ -975,7 +977,7 @@ public class WifiConnectivityManager {
                     R.integer.config_wifiInitialPartialScanChannelCacheAgeMins);
             int maxCount = mContext.getResources().getInteger(
                     R.integer.config_wifiInitialPartialScanChannelMaxCount);
-            freqs = fetchChannelSetForPartialScan(maxCount);
+            freqs = fetchChannelSetForPartialScan(maxCount, ageInMillis);
         } else {
             freqs = fetchChannelSetForNetworkForPartialScan(config.networkId);
         }
@@ -999,14 +1001,16 @@ public class WifiConnectivityManager {
      * @param channelSet Target set for adding channel to.
      * @param config Network for query channel from WifiScoreCard
      * @param maxCount Size limit of the set. If equals to 0, means no limit.
+     * @param ageInMillis Only consider channel info whose timestamps are younger than this value.
      * @return True if all available channels for this network are added, otherwise false.
      */
     private boolean addChannelFromWifiScoreCard(@NonNull Set<Integer> channelSet,
-            @NonNull WifiConfiguration config, int maxCount) {
+            @NonNull WifiConfiguration config, int maxCount, long ageInMillis) {
         WifiScoreCard.PerNetwork network = mWifiScoreCard.lookupNetwork(config.SSID);
-        List<Integer> channelList = network.getFrequencies();
-        for (Integer channel : channelList) {
+        for (Integer channel : network.getFrequencies(ageInMillis)) {
             if (maxCount > 0 && channelSet.size() >= maxCount) {
+                localLog("addChannelFromWifiScoreCard: size limit reached for network:"
+                        + config.SSID);
                 return false;
             }
             channelSet.add(channel);
@@ -1031,7 +1035,8 @@ public class WifiConnectivityManager {
             channelSet.add(mWifiInfo.getFrequency());
         }
         // Then get channels for the network.
-        addChannelFromWifiScoreCard(channelSet, config, maxNumActiveChannelsForPartialScans);
+        addChannelFromWifiScoreCard(channelSet, config, maxNumActiveChannelsForPartialScans,
+                CHANNEL_LIST_AGE_MS);
         return channelSet;
     }
 
@@ -1039,7 +1044,7 @@ public class WifiConnectivityManager {
      * Fetch channel set for all saved and suggestion non-passpoint network for partial scan.
      */
     @VisibleForTesting
-    public Set<Integer> fetchChannelSetForPartialScan(int maxCount) {
+    public Set<Integer> fetchChannelSetForPartialScan(int maxCount, long ageInMillis) {
         List<WifiConfiguration> networks = getAllScanOptimizationNetworks();
         if (networks.isEmpty()) {
             return null;
@@ -1051,7 +1056,7 @@ public class WifiConnectivityManager {
         Set<Integer> channelSet = new HashSet<>();
 
         for (WifiConfiguration config : networks) {
-            if (!addChannelFromWifiScoreCard(channelSet, config, maxCount)) {
+            if (!addChannelFromWifiScoreCard(channelSet, config, maxCount, ageInMillis)) {
                 return channelSet;
             }
         }
@@ -1430,7 +1435,8 @@ public class WifiConnectivityManager {
                 continue;
             }
             Set<Integer> channelList = new HashSet<>();
-            addChannelFromWifiScoreCard(channelList, config, 0);
+            addChannelFromWifiScoreCard(channelList, config, 0,
+                    MAX_PNO_SCAN_FREQUENCY_AGE_MS);
             pnoNetwork.frequencies = channelList.stream().mapToInt(Integer::intValue).toArray();
             localLog("retrievePnoNetworkList " + pnoNetwork.ssid + ":"
                     + Arrays.toString(pnoNetwork.frequencies));

@@ -4186,6 +4186,20 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         mWifiMetrics.incrementNetworkSuggestionApiNumConnectFailure();
 
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NETWORK_PROVISIONING);
+
+
         mWifiMetrics.noteNetworkSuggestionApiListSizeHistogram(new ArrayList<Integer>() {{
                 add(5);
                 add(100);
@@ -4214,6 +4228,17 @@ public class WifiMetricsTest extends WifiBaseTest {
         };
         assertHistogramBucketsEqual(expectedNetworkListSizeHistogram,
                 mDecodedProto.wifiNetworkSuggestionApiLog.networkListSizeHistogram);
+
+        assertEquals(3, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType.length);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_CARRIER_PRIVILEGED,
+                mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[0].appType);
+        assertEquals(2, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[0].count);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_NETWORK_PROVISIONING,
+                mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[1].appType);
+        assertEquals(1, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[1].count);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_NON_PRIVILEGED,
+                mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].appType);
+        assertEquals(3, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].count);
     }
 
     private NetworkSelectionExperimentDecisions findUniqueNetworkSelectionExperimentDecisions(

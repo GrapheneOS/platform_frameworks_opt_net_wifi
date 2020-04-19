@@ -2897,6 +2897,24 @@ message WifiNetworkRequestApiLog {
 
 // NetworkSuggestion API metrics.
 message WifiNetworkSuggestionApiLog {
+  enum SuggestionAppTypeCode {
+    // UNKNOWN type suggestion app.
+    TYPE_UNKNOWN = 0;
+    // Suggestion app with carrier privilege.
+    TYPE_CARRIER_PRIVILEGED = 1;
+    // Suggestion app with network provisioning permission(NETWORK_CARRIER_PROVISIONING).
+    TYPE_NETWORK_PROVISIONING = 2;
+    // Suggestion app without special privilege.
+    TYPE_NON_PRIVILEGED = 3;
+  }
+
+  message SuggestionAppCount {
+    // Suggestion app type.
+    optional SuggestionAppTypeCode app_type = 1;
+    // Num of app in this type.
+    optional int32 count = 2;
+  }
+
   // Number of modifications to their suggestions by apps.
   optional int32 num_modification = 1;
 
@@ -2908,6 +2926,9 @@ message WifiNetworkSuggestionApiLog {
 
   // Histogram for size of the network lists provided by various apps on the device.
   repeated HistogramBucketInt32 network_list_size_histogram = 4;
+
+  // Count of app using suggestion API with different privilege.
+  repeated SuggestionAppCount app_count_per_type = 5;
 }
 
 // WifiLock metrics
