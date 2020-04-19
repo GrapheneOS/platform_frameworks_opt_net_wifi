@@ -4186,6 +4186,20 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         mWifiMetrics.incrementNetworkSuggestionApiNumConnectFailure();
 
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NON_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED);
+        mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
+                WifiNetworkSuggestionsManager.APP_TYPE_NETWORK_PROVISIONING);
+
+
         mWifiMetrics.noteNetworkSuggestionApiListSizeHistogram(new ArrayList<Integer>() {{
                 add(5);
                 add(100);
@@ -4214,6 +4228,17 @@ public class WifiMetricsTest extends WifiBaseTest {
         };
         assertHistogramBucketsEqual(expectedNetworkListSizeHistogram,
                 mDecodedProto.wifiNetworkSuggestionApiLog.networkListSizeHistogram);
+
+        assertEquals(3, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType.length);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_CARRIER_PRIVILEGED,
+                mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[0].appType);
+        assertEquals(2, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[0].count);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_NETWORK_PROVISIONING,
+                mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[1].appType);
+        assertEquals(1, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[1].count);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_NON_PRIVILEGED,
+                mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].appType);
+        assertEquals(3, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].count);
     }
 
     private NetworkSelectionExperimentDecisions findUniqueNetworkSelectionExperimentDecisions(
@@ -4833,5 +4858,30 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         assertHistogramBucketsEqual(expectedFailureScanHistogram,
                 mDecodedProto.initPartialScanStats.failedScanChannelCountHistogram);
+    }
+
+    /**
+     * Test overlapping and non-overlapping connection events return overlapping duration correctly
+     */
+    @Test
+    public void testOverlappingConnectionEvent() throws Exception {
+        // Connection event 1
+        when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 0);
+        mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 1000);
+        // Connection event 2 overlaps with 1
+        assertEquals(1000, mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE));
+
+        // Connection event 2 ends
+        mWifiMetrics.endConnectionEvent(
+                WifiMetrics.ConnectionEvent.FAILURE_NONE,
+                WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 2000);
+        // Connection event 3 doesn't overlap with 2
+        assertEquals(0, mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
+                WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE));
     }
 }
