@@ -40,6 +40,7 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     private int mScanRssi = -127;
     private int mFrequency = -1;
     private int mPredictedThroughputMbps = 0;
+    private int mEstimatedPercentInternetAvailability = 50;
 
     private final Map<WifiScoreCardProto.Event, WifiScoreCardProto.Signal>
             mEventStatisticsMap = new ArrayMap<>();
@@ -65,6 +66,8 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
         mScanRssi = candidate.getScanRssi();
         mFrequency = candidate.getFrequency();
         mPredictedThroughputMbps = candidate.getPredictedThroughputMbps();
+        mEstimatedPercentInternetAvailability = candidate
+                .getEstimatedPercentInternetAvailability();
         for (WifiScoreCardProto.Event event : WifiScoreCardProto.Event.values()) {
             WifiScoreCardProto.Signal signal = candidate.getEventStatistics(event);
             if (signal != null) {
@@ -241,6 +244,16 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     @Override
     public int getPredictedThroughputMbps() {
         return mPredictedThroughputMbps;
+    }
+
+    public ConcreteCandidate setEstimatedPercentInternetAvailability(int percent) {
+        mEstimatedPercentInternetAvailability = percent;
+        return this;
+    }
+
+    @Override
+    public int getEstimatedPercentInternetAvailability() {
+        return mEstimatedPercentInternetAvailability;
     }
 
     public ConcreteCandidate setEventStatistics(

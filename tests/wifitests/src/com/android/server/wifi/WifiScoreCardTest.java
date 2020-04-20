@@ -39,6 +39,7 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.net.MacAddress;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiSsid;
 import android.util.Base64;
@@ -72,6 +73,7 @@ import java.util.List;
  */
 @SmallTest
 public class WifiScoreCardTest extends WifiBaseTest {
+
     static final WifiSsid TEST_SSID_1 = WifiSsid.createFromAsciiEncoded("Joe's Place");
     static final WifiSsid TEST_SSID_2 = WifiSsid.createFromAsciiEncoded("Poe's Ravn");
 
@@ -364,8 +366,9 @@ public class WifiScoreCardTest extends WifiBaseTest {
         secondsPass(9900);
         // Second validation success should not matter.
         mWifiScoreCard.noteValidationSuccess(mWifiInfo);
+        mWifiInfo.setRssi(-88);
+        mWifiScoreCard.noteIpReachabilityLost(mWifiInfo);
         mWifiScoreCard.noteWifiDisabled(mWifiInfo);
-
 
         // Now verify
         WifiScoreCard.PerBssid perBssid = mWifiScoreCard.fetchByBssid(TEST_BSSID_1);
@@ -375,11 +378,88 @@ public class WifiScoreCardTest extends WifiBaseTest {
                 .elapsedMs.sum, TOL);
         assertEquals(9999999.0, perBssid.lookupSignal(Event.WIFI_DISABLED, 5805)
                 .elapsedMs.maxValue, TOL);
-        assertEquals(999.0,  perBssid.lookupSignal(Event.FIRST_POLL_AFTER_CONNECTION, 5805)
+        assertEquals(999.0, perBssid.lookupSignal(Event.FIRST_POLL_AFTER_CONNECTION, 5805)
                 .elapsedMs.minValue, TOL);
         assertEquals(99999.0, perBssid.lookupSignal(Event.VALIDATION_SUCCESS, 5805)
                 .elapsedMs.sum, TOL);
+        assertEquals(-88.0, perBssid.lookupSignal(Event.IP_REACHABILITY_LOST, 5805)
+                .rssi.sum, TOL);
         assertNull(perBssid.lookupSignal(Event.SIGNAL_POLL, 5805).elapsedMs);
+    }
+
+    /**
+     * Firmware roam
+     */
+    @Test
+    public void testFirmwareRoam() throws Exception {
+        // Start out disconnected; start connecting
+        mWifiInfo.setBSSID(android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS);
+        mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
+
+        // First poll has a bad RSSI
+        millisecondsPass(111);
+        mWifiInfo.setBSSID(TEST_BSSID_1.toString());
+        mWifiInfo.setSupplicantState(SupplicantState.COMPLETED);
+        mWifiInfo.setFrequency(5805);
+        mWifiInfo.setRssi(WifiInfo.INVALID_RSSI);
+
+        // A bit later, connection is complete (up through DHCP)
+        millisecondsPass(222);
+        mWifiInfo.setRssi(-55);
+        mWifiScoreCard.noteIpConfiguration(mWifiInfo);
+
+        millisecondsPass(666);
+        mWifiInfo.setRssi(-77);
+        // Rssi polls for 99 seconds
+        for (int i = 0; i < 99; i += 9) {
+            mWifiScoreCard.noteSignalPoll(mWifiInfo);
+            secondsPass(9);
+        }
+
+        // Make sure our simulated time adds up
+        assertEquals(mMilliSecondsSinceBoot, 99999);
+        // Validation success, rather late!
+        mWifiScoreCard.noteValidationSuccess(mWifiInfo);
+        // Simulate a successful roam
+        mWifiScoreCard.noteSupplicantStateChanging(mWifiInfo, SupplicantState.COMPLETED);
+        millisecondsPass(1);
+        mWifiInfo.setBSSID(TEST_BSSID_2.toString());
+        mWifiInfo.setRssi(-66);
+        mWifiInfo.setFrequency(2412);
+        mWifiInfo.setSupplicantState(SupplicantState.COMPLETED);
+        mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
+        secondsPass(9);
+        assertEquals(mMilliSecondsSinceBoot, 109000);
+        mWifiScoreCard.noteSignalPoll(mWifiInfo);
+
+        // Simulate an unsuccessful roam
+        secondsPass(1);
+        mWifiInfo.setRssi(-74);
+        mWifiScoreCard.noteSignalPoll(mWifiInfo);
+        secondsPass(1);
+        mWifiScoreCard.noteSupplicantStateChanging(mWifiInfo, SupplicantState.COMPLETED);
+        mWifiInfo.setBSSID(TEST_BSSID_1.toString());
+        mWifiInfo.setFrequency(5805);
+        mWifiInfo.setSupplicantState(SupplicantState.COMPLETED);
+        mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
+        secondsPass(3);
+        mWifiScoreCard.noteIpReachabilityLost(mWifiInfo);
+
+        // Now verify
+        WifiScoreCard.PerBssid perBssid = mWifiScoreCard.fetchByBssid(TEST_BSSID_1);
+        assertEquals(1, perBssid.lookupSignal(Event.IP_CONFIGURATION_SUCCESS, 5805)
+                .elapsedMs.count);
+        assertEquals(-77, perBssid.lookupSignal(Event.LAST_POLL_BEFORE_ROAM, 5805)
+                .rssi.minValue, TOL);
+        assertEquals(1, perBssid.lookupSignal(Event.ROAM_FAILURE, 5805)
+                .rssi.count);
+
+        assertEquals(67, perBssid.estimatePercentInternetAvailability());
+
+        perBssid = mWifiScoreCard.fetchByBssid(TEST_BSSID_2);
+        assertEquals(-66.0, perBssid.lookupSignal(Event.ROAM_SUCCESS, 2412)
+                .rssi.sum, TOL);
+        assertEquals(50, perBssid.estimatePercentInternetAvailability());
     }
 
     /**
