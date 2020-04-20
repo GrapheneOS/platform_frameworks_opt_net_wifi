@@ -743,7 +743,6 @@ public class WifiNativeTest extends WifiBaseTest {
         verify(mWificondControl).startPnoScan(eq(WIFI_IFACE_NAME),
                 eq(TEST_PNO_SETTINGS.toNativePnoSettings()), any(), captor.capture());
         captor.getValue().onPnoRequestSucceeded();
-        verify(mStaIfaceHal).removeAllNetworks(WIFI_IFACE_NAME);
         verify(mWifiMetrics).incrementPnoScanStartAttemptCount();
     }
 
