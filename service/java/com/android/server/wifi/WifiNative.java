@@ -1572,7 +1572,6 @@ public class WifiNative {
      * @return true on success.
      */
     public boolean startPnoScan(@NonNull String ifaceName, PnoSettings pnoSettings) {
-        removeAllNetworks(ifaceName);
         return mWifiCondManager.startPnoScan(ifaceName, pnoSettings.toNativePnoSettings(),
                 Runnable::run,
                 new WifiNl80211Manager.PnoScanRequestCallback() {
