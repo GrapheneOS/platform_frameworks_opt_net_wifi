@@ -3874,7 +3874,7 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public void setDeviceMobilityState(@DeviceMobilityState int state) {
-        mContext.enforceCallingPermission(
+        mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.WIFI_SET_DEVICE_MOBILITY_STATE, "WifiService");
 
         if (mVerboseLoggingEnabled) {
@@ -4000,7 +4000,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (listener == null) {
             throw new IllegalArgumentException("Listener must not be null");
         }
-        mContext.enforceCallingPermission(
+        mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE, "WifiService");
         if (mVerboseLoggingEnabled) {
             mLog.info("addOnWifiUsabilityStatsListener uid=%")
@@ -4021,7 +4021,7 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public void removeOnWifiUsabilityStatsListener(int listenerIdentifier) {
-        mContext.enforceCallingPermission(
+        mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE, "WifiService");
         if (mVerboseLoggingEnabled) {
             mLog.info("removeOnWifiUsabilityStatsListener uid=%")
@@ -4040,7 +4040,7 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public void updateWifiUsabilityScore(int seqNum, int score, int predictionHorizonSec) {
-        mContext.enforceCallingPermission(
+        mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE, "WifiService");
 
         if (mVerboseLoggingEnabled) {
@@ -4205,7 +4205,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (scorer == null) {
             throw new IllegalArgumentException("Scorer must not be null");
         }
-        mContext.enforceCallingPermission(
+        mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE, "WifiService");
         if (mVerboseLoggingEnabled) {
             mLog.info("setWifiConnectedNetworkScorer uid=%").c(Binder.getCallingUid()).flush();
@@ -4221,7 +4221,7 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public void clearWifiConnectedNetworkScorer() {
-        mContext.enforceCallingPermission(
+        mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE, "WifiService");
         if (mVerboseLoggingEnabled) {
             mLog.info("clearWifiConnectedNetworkScorer uid=%").c(Binder.getCallingUid()).flush();

@@ -4602,7 +4602,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void setDeviceMobilityStateThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
-                .enforceCallingPermission(
+                .enforceCallingOrSelfPermission(
                         eq(android.Manifest.permission.WIFI_SET_DEVICE_MOBILITY_STATE),
                         eq("WifiService"));
         try {
@@ -4630,7 +4630,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testAddStatsListenerThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
-                .enforceCallingPermission(
+                .enforceCallingOrSelfPermission(
                         eq(android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE),
                         eq("WifiService"));
         try {
@@ -4662,7 +4662,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testRemoveStatsListenerThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
-                .enforceCallingPermission(
+                .enforceCallingOrSelfPermission(
                         eq(android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE),
                         eq("WifiService"));
         try {
@@ -4703,7 +4703,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testUpdateWifiUsabilityScoreThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
-                .enforceCallingPermission(
+                .enforceCallingOrSelfPermission(
                 eq(android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE),
                 eq("WifiService"));
         try {
@@ -5475,7 +5475,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testSetNetworkScorerThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
-                .enforceCallingPermission(
+                .enforceCallingOrSelfPermission(
                         eq(android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE),
                         eq("WifiService"));
         try {
@@ -5505,7 +5505,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testClearNetworkScorerThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
-                .enforceCallingPermission(
+                .enforceCallingOrSelfPermission(
                         eq(android.Manifest.permission.WIFI_UPDATE_USABILITY_STATS_SCORE),
                                 eq("WifiService"));
         try {
