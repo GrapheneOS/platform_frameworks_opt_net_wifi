@@ -79,6 +79,7 @@ public class WifiCandidatesTest extends WifiBaseTest {
         doReturn(mScanResult1).when(mScanDetail1).getScanResult();
         doReturn(mScanResult2).when(mScanDetail2).getScanResult();
         doReturn(mPerBssid).when(mWifiScoreCard).lookupBssid(any(), any());
+        doReturn(50).when(mPerBssid).estimatePercentInternetAvailability();
         MockResources mResources = new MockResources();
         mResources.setBoolean(R.bool.config_wifiSaeUpgradeEnabled, true);
         doReturn(mResources).when(mContext).getResources();
@@ -182,13 +183,15 @@ public class WifiCandidatesTest extends WifiBaseTest {
      */
     @Test
     public void testCandidateToString() throws Exception {
+        doReturn(57).when(mPerBssid).estimatePercentInternetAvailability();
         mWifiCandidates.add(mScanDetail1, mConfig1, 2, 0.0015001, false, 100);
         WifiCandidates.Candidate c = mWifiCandidates.getGroupedCandidates()
                 .iterator().next().iterator().next();
         String s = c.toString();
         assertTrue(s, s.contains(" nominator = 2, "));
-        assertTrue(s, s.contains(" networkId = " + mConfig1.networkId + ", "));
+        assertTrue(s, s.contains(" config = " + mConfig1.networkId + ", "));
         assertTrue(s, s.contains(" lastSelectionWeight = 0.002, ")); // should be rounded
+        assertTrue(s, s.contains(" pInternet = 57, "));
         for (String x : s.split(",")) {
             if (x.startsWith("Candidate {")) x = x.substring("Candidate {".length());
             if (x.endsWith(" }")) x = x.substring(0, x.length() - 2);
