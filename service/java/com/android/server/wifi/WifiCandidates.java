@@ -141,9 +141,13 @@ public class WifiCandidates {
          */
         int getFrequency();
         /**
-         * Gets the predicted throughput in Mbps
+         * Gets the predicted throughput in Mbps.
          */
         int getPredictedThroughputMbps();
+        /**
+         * Estimated probability of getting internet access (percent 0-100).
+         */
+        int getEstimatedPercentInternetAvailability();
         /**
          * Gets statistics from the scorecard.
          */
@@ -171,6 +175,7 @@ public class WifiCandidates {
         private final boolean mTrusted;
         private final boolean mCarrierOrPrivileged;
         private final int mPredictedThroughputMbps;
+        private final int mEstimatedPercentInternetAvailability;
 
         CandidateImpl(Key key, WifiConfiguration config,
                 WifiScoreCard.PerBssid perBssid,
@@ -200,6 +205,8 @@ public class WifiCandidates {
             this.mTrusted = config.trusted;
             this.mCarrierOrPrivileged = isCarrierOrPrivileged;
             this.mPredictedThroughputMbps = predictedThroughputMbps;
+            this.mEstimatedPercentInternetAvailability = perBssid == null ? 50 :
+                    perBssid.estimatePercentInternetAvailability();
         }
 
         @Override
@@ -287,6 +294,11 @@ public class WifiCandidates {
             return mPredictedThroughputMbps;
         }
 
+        @Override
+        public int getEstimatedPercentInternetAvailability() {
+            return mEstimatedPercentInternetAvailability;
+        }
+
         /**
          * Accesses statistical information from the score card
          */
@@ -309,12 +321,13 @@ public class WifiCandidates {
                         + ", ";
             }
             return "Candidate { "
-                    + "networkId = " + getNetworkConfigId() + ", "
+                    + "config = " + getNetworkConfigId() + ", "
                     + "bssid = " + key.bssid + ", "
-                    + "frequency = " + getFrequency() + ", "
+                    + "freq = " + getFrequency() + ", "
                     + "rssi = " + getScanRssi() + ", "
                     + "Mbps = " + getPredictedThroughputMbps() + ", "
                     + "nominator = " + getNominatorId() + ", "
+                    + "pInternet = " + getEstimatedPercentInternetAvailability() + ", "
                     + lastSelectionWeightString
                     + (isCurrentBssid() ? "connected, " : "")
                     + (isCurrentNetwork() ? "current, " : "")
