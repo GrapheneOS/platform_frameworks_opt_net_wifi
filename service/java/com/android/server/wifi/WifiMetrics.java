@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static android.net.wifi.WifiConfiguration.MeteredOverride;
+
 import static java.lang.StrictMath.toIntExact;
 
 import android.content.Context;
@@ -77,6 +79,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.PnoScanMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.SoftApConnectedClientsEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent.ConfigInfo;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.TargetNetworkInfo;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiIsUnusableEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLinkLayerUsageStats;
@@ -734,6 +737,14 @@ public class WifiMetrics {
         private UserActionEvent mUserActionEvent;
         private long mWallClockTimeMs = 0; // wall clock time for debugging only
 
+        UserActionEventWithTime(int eventType, TargetNetworkInfo targetNetworkInfo) {
+            mUserActionEvent = new UserActionEvent();
+            mUserActionEvent.eventType = eventType;
+            mUserActionEvent.startTimeMillis = mClock.getElapsedSinceBootMillis();
+            mWallClockTimeMs = mClock.getWallClockMillis();
+            mUserActionEvent.targetNetworkInfo = targetNetworkInfo;
+        }
+
         UserActionEventWithTime(int eventType, int targetNetId) {
             mUserActionEvent = new UserActionEvent();
             mUserActionEvent.eventType = eventType;
@@ -742,8 +753,7 @@ public class WifiMetrics {
             if (targetNetId >= 0) {
                 WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(targetNetId);
                 if (config != null) {
-                    WifiMetricsProto.TargetNetworkInfo networkInfo =
-                            new WifiMetricsProto.TargetNetworkInfo();
+                    TargetNetworkInfo networkInfo = new TargetNetworkInfo();
                     networkInfo.isEphemeral = config.isEphemeral();
                     networkInfo.isPasspoint = config.isPasspoint();
                     mUserActionEvent.targetNetworkInfo = networkInfo;
@@ -770,6 +780,9 @@ public class WifiMetrics {
                 case UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_UNMETERED:
                     eventType = "EVENT_CONFIGURE_METERED_STATUS_UNMETERED";
                     break;
+                case UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_AUTO:
+                    eventType = "EVENT_CONFIGURE_METERED_STATUS_AUTO";
+                    break;
                 case UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_ON:
                     eventType = "EVENT_CONFIGURE_MAC_RANDOMIZATION_ON";
                     break;
@@ -794,7 +807,7 @@ public class WifiMetrics {
             }
             sb.append(" eventType=").append(eventType);
             sb.append(" startTimeMillis=").append(mUserActionEvent.startTimeMillis);
-            WifiMetricsProto.TargetNetworkInfo networkInfo = mUserActionEvent.targetNetworkInfo;
+            TargetNetworkInfo networkInfo = mUserActionEvent.targetNetworkInfo;
             if (networkInfo != null) {
                 sb.append(" isEphemeral=").append(networkInfo.isEphemeral);
                 sb.append(" isPasspoint=").append(networkInfo.isPasspoint);
@@ -5118,6 +5131,25 @@ public class WifiMetrics {
     }
 
     /**
+     * Converts MeteredOverride enum to UserActionEvent type.
+     * @param value
+     */
+    public static int convertMeteredOverrideEnumToUserActionEventType(@MeteredOverride int value) {
+        int result = UserActionEvent.EVENT_UNKNOWN;
+        switch(value) {
+            case WifiConfiguration.METERED_OVERRIDE_NONE:
+                result = UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_AUTO;
+                break;
+            case WifiConfiguration.METERED_OVERRIDE_METERED:
+                result = UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_METERED;
+                break;
+            case WifiConfiguration.METERED_OVERRIDE_NOT_METERED:
+                result = UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_UNMETERED;
+                break;
+        }
+        return result;
+    }
+    /**
      * Logs a UserActionEvent without a target network.
      * @param eventType the type of user action (one of WifiMetricsProto.UserActionEvent.EventType)
      */
@@ -5133,6 +5165,24 @@ public class WifiMetrics {
     public void logUserActionEvent(int eventType, int networkId) {
         synchronized (mLock) {
             mUserActionEventList.add(new UserActionEventWithTime(eventType, networkId));
+            if (mUserActionEventList.size() > MAX_USER_ACTION_EVENTS) {
+                mUserActionEventList.remove();
+            }
+        }
+    }
+
+    /**
+     * Logs a UserActionEvent, directly specifying the target network's properties.
+     * @param eventType the type of user action (one of WifiMetricsProto.UserActionEvent.EventType)
+     * @param isEphemeral true if the target network is ephemeral.
+     * @param isPasspoint true if the target network is passpoint.
+     */
+    public void logUserActionEvent(int eventType, boolean isEphemeral, boolean isPasspoint) {
+        synchronized (mLock) {
+            TargetNetworkInfo networkInfo = new TargetNetworkInfo();
+            networkInfo.isEphemeral = isEphemeral;
+            networkInfo.isPasspoint = isPasspoint;
+            mUserActionEventList.add(new UserActionEventWithTime(eventType, networkInfo));
             if (mUserActionEventList.size() > MAX_USER_ACTION_EVENTS) {
                 mUserActionEventList.remove();
             }

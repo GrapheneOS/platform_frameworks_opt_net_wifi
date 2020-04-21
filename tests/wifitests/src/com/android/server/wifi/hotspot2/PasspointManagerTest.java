@@ -108,6 +108,7 @@ import com.android.server.wifi.hotspot2.anqp.DomainNameElement;
 import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
 import com.android.server.wifi.hotspot2.anqp.I18Name;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.InformationElementUtil;
 import com.android.server.wifi.util.InformationElementUtil.RoamingConsortium;
 
@@ -678,7 +679,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         }
 
         verify(provider).uninstallCertsAndKeys();
-        verify(mWifiConfigManager, times(2)).removePasspointConfiguredNetwork(
+        verify(mWifiConfigManager, times(3)).removePasspointConfiguredNetwork(
                 provider.getWifiConfig().getKey());
         /**
          * 1 from |removeProvider| + 2 from |setAutojoinEnabled| + 2 from
@@ -750,26 +751,35 @@ public class PasspointManagerTest extends WifiBaseTest {
      * @param provider a mock provider that is already added into the PasspointManager
      */
     private void verifyEnableMacRandomization(PasspointProvider provider) {
+        when(provider.setMacRandomizationEnabled(anyBoolean())).thenReturn(true);
         assertTrue(mManager.enableMacRandomization(provider.getConfig().getHomeSp().getFqdn(),
                 false));
         verify(provider).setMacRandomizationEnabled(false);
-        when(provider.setMacRandomizationEnabled(true)).thenReturn(true);
+        verify(mWifiMetrics).logUserActionEvent(
+                UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF, false, true);
         assertTrue(mManager.enableMacRandomization(provider.getConfig().getHomeSp().getFqdn(),
                 true));
-        verify(mWifiConfigManager).removePasspointConfiguredNetwork(
+        verify(mWifiConfigManager, times(2)).removePasspointConfiguredNetwork(
                 provider.getWifiConfig().getKey());
+        verify(mWifiMetrics).logUserActionEvent(
+                UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_ON, false, true);
         verify(provider).setMacRandomizationEnabled(true);
         assertFalse(mManager.enableMacRandomization(provider.getConfig().getHomeSp().getFqdn()
                 + "-XXXX", false));
     }
 
     private void verifySetMeteredOverride(PasspointProvider provider) {
+        when(provider.setMeteredOverride(anyInt())).thenReturn(true);
         assertTrue(mManager.setMeteredOverride(provider.getConfig().getHomeSp().getFqdn(),
                 METERED_OVERRIDE_METERED));
         verify(provider).setMeteredOverride(METERED_OVERRIDE_METERED);
+        verify(mWifiMetrics).logUserActionEvent(
+                UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_METERED, false, true);
         assertTrue(mManager.setMeteredOverride(provider.getConfig().getHomeSp().getFqdn(),
                 METERED_OVERRIDE_NOT_METERED));
         verify(provider).setMeteredOverride(METERED_OVERRIDE_NOT_METERED);
+        verify(mWifiMetrics).logUserActionEvent(
+                UserActionEvent.EVENT_CONFIGURE_METERED_STATUS_UNMETERED, false, true);
         assertFalse(mManager.setMeteredOverride(provider.getConfig().getHomeSp().getFqdn()
                 + "-XXXX", METERED_OVERRIDE_METERED));
     }
