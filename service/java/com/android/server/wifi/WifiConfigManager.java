@@ -52,6 +52,7 @@ import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.hotspot2.PasspointManager;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.MissingCounterTimerLockList;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -1183,6 +1184,25 @@ public class WifiConfigManager {
         return newInternalConfig;
     }
 
+    private void logUserActionEvents(WifiConfiguration before, WifiConfiguration after) {
+        // Logs changes in meteredOverride.
+        if (before.meteredOverride != after.meteredOverride) {
+            mWifiInjector.getWifiMetrics().logUserActionEvent(
+                    WifiMetrics.convertMeteredOverrideEnumToUserActionEventType(
+                            after.meteredOverride),
+                    after.networkId);
+        }
+
+        // Logs changes in macRandomizationSetting.
+        if (before.macRandomizationSetting != after.macRandomizationSetting) {
+            mWifiInjector.getWifiMetrics().logUserActionEvent(
+                    after.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_NONE
+                            ? UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF
+                            : UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_ON,
+                    after.networkId);
+        }
+    }
+
     /**
      * Add a network or update a network configuration to our database.
      * If the supplied networkId is INVALID_NETWORK_ID, we create a new empty
@@ -1227,6 +1247,10 @@ public class WifiConfigManager {
                 Log.e(TAG, "UID " + uid + " does not have permission to update configuration "
                         + config.getKey());
                 return new NetworkUpdateResult(WifiConfiguration.INVALID_NETWORK_ID);
+            }
+            if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
+                    && !config.isPasspoint()) {
+                logUserActionEvents(existingInternalConfig, config);
             }
             newInternalConfig =
                     updateExistingInternalWifiConfigurationFromExternal(
