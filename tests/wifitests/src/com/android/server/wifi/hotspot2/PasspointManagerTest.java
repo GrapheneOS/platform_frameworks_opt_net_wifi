@@ -724,6 +724,7 @@ public class PasspointManagerTest extends WifiBaseTest {
      * @param provider a mock provider that is already added into the PasspointManager
      */
     private void verifyEnableAutojoin(PasspointProvider provider, boolean useFqdn) {
+        when(provider.setAutojoinEnabled(anyBoolean())).thenReturn(true);
         if (useFqdn) {
             assertTrue(mManager.enableAutojoin(null, provider.getConfig().getHomeSp().getFqdn(),
                     false));
@@ -744,6 +745,10 @@ public class PasspointManagerTest extends WifiBaseTest {
                     mManager.enableAutojoin(provider.getConfig().getHomeSp().getFqdn() + "-XXXX",
                             null, true));
         }
+        verify(mWifiMetrics).logUserActionEvent(UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF,
+                false, true);
+        verify(mWifiMetrics).logUserActionEvent(UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON,
+                false, true);
     }
 
     /**
