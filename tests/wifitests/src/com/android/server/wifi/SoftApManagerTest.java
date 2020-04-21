@@ -23,6 +23,7 @@ import static android.net.wifi.WifiManager.EXTRA_WIFI_AP_INTERFACE_NAME;
 import static android.net.wifi.WifiManager.EXTRA_WIFI_AP_MODE;
 import static android.net.wifi.WifiManager.EXTRA_WIFI_AP_STATE;
 import static android.net.wifi.WifiManager.IFACE_IP_MODE_LOCAL_ONLY;
+import static android.net.wifi.WifiManager.SAP_CLIENT_DISCONNECT_REASON_CODE_UNSPECIFIED;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_DISABLED;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_DISABLING;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLED;
@@ -1103,6 +1104,34 @@ public class SoftApManagerTest extends WifiBaseTest {
                 .addSoftApNumAssociatedStationsChangedEvent(
                 0, apConfig.getTargetMode());
 
+    }
+
+    @Test
+    public void stopDisconnectsConnectedClients() throws Exception {
+        InOrder order = inOrder(mCallback, mWifiMetrics);
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
+                        mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+
+        order.verify(mCallback).onConnectedClientsChanged(new ArrayList<>());
+
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT, true);
+        mLooper.dispatchAll();
+
+        order.verify(mCallback).onConnectedClientsChanged(
+                Mockito.argThat((List<WifiClient> clients) ->
+                        clients.contains(TEST_CONNECTED_CLIENT))
+        );
+        verify(mWifiMetrics).addSoftApNumAssociatedStationsChangedEvent(
+                1, apConfig.getTargetMode());
+
+        mSoftApManager.stop();
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).forceClientDisconnect(TEST_INTERFACE_NAME, TEST_MAC_ADDRESS,
+                SAP_CLIENT_DISCONNECT_REASON_CODE_UNSPECIFIED);
     }
 
     @Test
