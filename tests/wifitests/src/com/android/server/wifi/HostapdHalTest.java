@@ -34,6 +34,7 @@ import android.hidl.manager.V1_0.IServiceNotification;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
+import android.net.wifi.WifiManager;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.IHwBinder;
@@ -820,8 +821,26 @@ public class HostapdHalTest extends WifiBaseTest {
         when(mIHostapdMockV12.forceClientDisconnect(any(), any(), anyShort()))
                 .thenReturn(mStatusSuccess12);
 
-        assertTrue(mHostapdHal.forceClientDisconnect(IFACE_NAME, test_client, 0));
+        assertTrue(mHostapdHal.forceClientDisconnect(IFACE_NAME, test_client,
+                WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER));
         verify(mIHostapdMockV12).forceClientDisconnect(any(), any(), anyShort());
+    }
+
+    @Test
+    public void testForceClientDisconnectFailureDueToInvalidArg() throws Exception {
+        executeAndValidateInitializationSequence();
+        when(mServiceManagerMock.getTransport(anyString(), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        MacAddress test_client = MacAddress.fromString("da:a1:19:0:0:0");
+        mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        when(mIHostapdMockV12.forceClientDisconnect(any(), any(), anyShort()))
+                .thenReturn(mStatusSuccess12);
+
+        try {
+            mHostapdHal.forceClientDisconnect(IFACE_NAME, test_client, -1);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     /**
@@ -837,7 +856,8 @@ public class HostapdHalTest extends WifiBaseTest {
         when(mIHostapdMockV12.forceClientDisconnect(any(), any(), anyShort()))
                 .thenReturn(mStatusFailure12);
 
-        assertFalse(mHostapdHal.forceClientDisconnect(IFACE_NAME, test_client, 0));
+        assertFalse(mHostapdHal.forceClientDisconnect(IFACE_NAME, test_client,
+                WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER));
         verify(mIHostapdMockV12).forceClientDisconnect(any(), any(), anyShort());
     }
 
