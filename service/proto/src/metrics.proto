@@ -3103,6 +3103,8 @@ message UserActionEvent {
     EVENT_TOGGLE_WIFI_OFF = 10;
     // User manually connects to a network
     EVENT_MANUAL_CONNECT = 11;
+    // User changes the metered setting to "detect automatically"
+    EVENT_CONFIGURE_METERED_STATUS_AUTO = 12;
   }
 
   // The type of user action
