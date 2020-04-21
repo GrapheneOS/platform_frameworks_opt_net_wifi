@@ -112,7 +112,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.AsyncChannel;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvider;
-import com.android.server.wifi.proto.nano.WifiMetricsProto;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.RssiUtil;
@@ -2552,7 +2552,16 @@ public class WifiServiceImpl extends BaseWifiService {
             }
             // even for Suggestion, modify the current ephemeral configuration so that
             // existing configuration auto-connection is updated correctly
-            mWifiConfigManager.allowAutojoin(netId, choice);
+            if (choice != config.allowAutojoin) {
+                mWifiConfigManager.allowAutojoin(netId, choice);
+                // do not log this metrics for passpoint networks again here since it's already
+                // logged in PasspointManager.
+                if (!config.isPasspoint()) {
+                    mWifiMetrics.logUserActionEvent(choice
+                            ? UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON
+                            : UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF, netId);
+                }
+            }
         });
     }
 
@@ -3051,7 +3060,8 @@ public class WifiServiceImpl extends BaseWifiService {
             return;
         }
         mLog.info("disableEphemeralNetwork uid=%").c(Binder.getCallingUid()).flush();
-        mWifiThreadRunner.post(() -> mWifiConfigManager.userTemporarilyDisabledNetwork(network));
+        mWifiThreadRunner.post(() -> mWifiConfigManager.userTemporarilyDisabledNetwork(network,
+                Binder.getCallingUid()));
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -4062,12 +4072,15 @@ public class WifiServiceImpl extends BaseWifiService {
     @Override
     public void connect(WifiConfiguration config, int netId, IBinder binder,
             @Nullable IActionListener callback, int callbackIdentifier) {
-        if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
+        int uid = Binder.getCallingUid();
+        if (!isPrivileged(Binder.getCallingPid(), uid)) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        mLog.info("connect uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.connect(
-                config, netId, binder, callback, callbackIdentifier, Binder.getCallingUid());
+        mLog.info("connect uid=%").c(uid).flush();
+        mClientModeImpl.connect(config, netId, binder, callback, callbackIdentifier, uid);
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
+            mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
+        }
     }
 
     /**
@@ -4099,8 +4112,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
             // It's important to log this metric before the actual forget executes because
             // the netId becomes invalid after the forget operation.
-            mWifiMetrics.logUserActionEvent(WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI,
-                    netId);
+            mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_FORGET_WIFI, netId);
         }
         mClientModeImpl.forget(netId, binder, callback, callbackIdentifier, uid);
     }
