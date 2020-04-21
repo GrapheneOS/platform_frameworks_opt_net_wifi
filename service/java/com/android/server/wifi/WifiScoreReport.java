@@ -617,6 +617,7 @@ public class WifiScoreReport {
      * Stop the registered Wi-Fi connected network scorer.
      */
     public void stopConnectedNetworkScorer() {
+        mNetworkAgent = null;
         if (mWifiConnectedNetworkScorerHolder == null) {
             return;
         }

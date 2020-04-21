@@ -51,6 +51,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -142,6 +143,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock private WifiScoreCard mWifiScoreCard;
     @Mock private PerNetwork mPerNetwork;
+    @Mock private WifiMetrics mWifiMetrics;
     private LruConnectionTracker mLruConnectionTracker;
 
     private MockResources mResources;
@@ -222,6 +224,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiInjector.getWifiLastResortWatchdog().shouldIgnoreSsidUpdate())
                 .thenReturn(false);
         when(mWifiInjector.getMacAddressUtil()).thenReturn(mMacAddressUtil);
+        when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(TEST_RANDOMIZED_MAC);
         when(mWifiScoreCard.lookupNetwork(any())).thenReturn(mPerNetwork);
 
@@ -634,6 +637,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         networks.add(openNetwork);
 
         verifyAddNetworkToWifiConfigManager(openNetwork);
+        // Verify user action event is not logged when the network is added
+        verify(mWifiMetrics, never()).logUserActionEvent(anyInt(), anyBoolean(), anyBoolean());
         verify(mWcmListener).onNetworkAdded(wifiConfigCaptor.capture());
         assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
         reset(mWcmListener);
@@ -642,6 +647,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         NetworkUpdateResult networkUpdateResult = updateNetworkToWifiConfigManager(openNetwork);
         assertNotEquals(WifiConfiguration.INVALID_NETWORK_ID, networkUpdateResult.getNetworkId());
+        verify(mWifiMetrics).logUserActionEvent(
+                UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF, openNetwork.networkId);
 
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();

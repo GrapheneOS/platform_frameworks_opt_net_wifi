@@ -205,7 +205,7 @@ public class WifiScoreCard {
      *
      * We want to gather statistics only on the first success.
      */
-    private boolean mValidated = false;
+    private boolean mValidatedThisConnectionAtLeastOnce = false;
 
     /**
      * A note to ourself that we are attempting a network switch
@@ -279,7 +279,7 @@ public class WifiScoreCard {
         }
         mTsRoam = TS_NONE;
         mPolled = false;
-        mValidated = false;
+        mValidatedThisConnectionAtLeastOnce = false;
         mNonlocalDisconnection = false;
     }
 
@@ -363,9 +363,9 @@ public class WifiScoreCard {
      * @param wifiInfo object holding relevant values
      */
     public void noteValidationSuccess(@NonNull ExtendedWifiInfo wifiInfo) {
-        if (mValidated) return; // Only once per connection
+        if (mValidatedThisConnectionAtLeastOnce) return; // Only once per connection
         updatePerBssid(Event.VALIDATION_SUCCESS, wifiInfo);
-        mValidated = true;
+        mValidatedThisConnectionAtLeastOnce = true;
         doWrites();
     }
 
@@ -375,7 +375,7 @@ public class WifiScoreCard {
      * @param wifiInfo object holding relevant values
      */
     public void noteValidationFailure(@NonNull ExtendedWifiInfo wifiInfo) {
-        mValidated = false;
+        // VALIDATION_FAILURE is not currently recorded.
     }
 
     /**
@@ -448,10 +448,11 @@ public class WifiScoreCard {
      * @param wifiInfo object holding relevant values
      */
     public void noteIpReachabilityLost(@NonNull ExtendedWifiInfo wifiInfo) {
-        updatePerBssid(Event.IP_REACHABILITY_LOST, wifiInfo);
         if (mTsRoam > TS_NONE) {
             mTsConnectionAttemptStart = mTsRoam; // just to update elapsed
             updatePerBssid(Event.ROAM_FAILURE, wifiInfo);
+        } else {
+            updatePerBssid(Event.IP_REACHABILITY_LOST, wifiInfo);
         }
         // No need to call resetConnectionStateInternal() because
         // resetConnectionState() will be called after WifiNative.disconnect() in ClientModeImpl
@@ -466,7 +467,7 @@ public class WifiScoreCard {
      *
      * @param wifiInfo object holding relevant values
      */
-    public void noteRoam(@NonNull ExtendedWifiInfo wifiInfo) {
+    private void noteRoam(@NonNull ExtendedWifiInfo wifiInfo) {
         updatePerBssid(Event.LAST_POLL_BEFORE_ROAM, wifiInfo);
         mTsRoam = mClock.getElapsedSinceBootMillis();
     }
@@ -479,6 +480,10 @@ public class WifiScoreCard {
      */
     public void noteSupplicantStateChanging(@NonNull ExtendedWifiInfo wifiInfo,
             SupplicantState state) {
+        if (state == SupplicantState.COMPLETED && wifiInfo.getSupplicantState() == state) {
+            // Our signal that a firmware roam has occurred
+            noteRoam(wifiInfo);
+        }
         logd("Changing state to " + state + " " + wifiInfo);
     }
 
@@ -787,6 +792,38 @@ public class WifiScoreCard {
                 return;
             }
             merge(ap);
+        }
+
+        /**
+         * Estimates the probability of getting internet access, based on the
+         * device experience.
+         *
+         * @return a probability, expressed as a percentage in the range 0 to 100
+         */
+        public int estimatePercentInternetAvailability() {
+            // Initialize counts accoring to Laplace's rule of succession
+            int trials = 2;
+            int successes = 1;
+            // Aggregate over all of the frequencies
+            for (PerSignal s : mSignalForEventAndFrequency.values()) {
+                switch (s.event) {
+                    case IP_CONFIGURATION_SUCCESS:
+                        if (s.elapsedMs != null) {
+                            trials += s.elapsedMs.count;
+                        }
+                        break;
+                    case VALIDATION_SUCCESS:
+                        if (s.elapsedMs != null) {
+                            successes += s.elapsedMs.count;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            // Note that because of roaming it is possible to count successes
+            // without corresponding trials.
+            return Math.min(Math.max(Math.round(successes * 100.0f / trials), 0), 100);
         }
     }
 
@@ -1712,7 +1749,7 @@ public class WifiScoreCard {
             Preconditions.checkArgument(frequency == signal.getFrequency());
             rssi.merge(signal.getRssi());
             linkspeed.merge(signal.getLinkspeed());
-            if (signal.hasElapsedMs()) {
+            if (elapsedMs != null && signal.hasElapsedMs()) {
                 elapsedMs.merge(signal.getElapsedMs());
             }
             return this;
