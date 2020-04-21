@@ -241,9 +241,13 @@ public class PasspointProvider {
 
     /**
      * Get the metered override for this passpoint profile.
+     *
+     * @return true if the setting has changed
      */
-    public void setMeteredOverride(@MeteredOverride int meteredOverride) {
+    public boolean setMeteredOverride(@MeteredOverride int meteredOverride) {
+        boolean changed = mConfig.getMeteredOverride() != meteredOverride;
         mConfig.setMeteredOverride(meteredOverride);
+        return changed;
     }
 
     /**
