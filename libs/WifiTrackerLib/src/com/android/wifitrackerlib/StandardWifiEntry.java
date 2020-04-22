@@ -199,7 +199,7 @@ public class StandardWifiEntry extends WifiEntry {
                     sj.add(mContext.getString(R.string.wifi_disconnected));
                 } else if (!mForSavedNetworksPage) {
                     // Summary for unconnected suggested network
-                    if (mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion) {
+                    if (isSuggestion()) {
                         String carrierName = getCarrierNameForSubId(mContext,
                                 getSubIdForConfig(mContext, mWifiConfig));
                         sj.add(mContext.getString(R.string.available_via_app, carrierName != null
@@ -241,7 +241,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     private String getConnectStateDescription() {
         if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            if (!isSaved()) {
+            if (!isSaved() && !isSuggestion()) {
                 // Special case for connected + ephemeral networks.
                 if (!TextUtils.isEmpty(mRecommendationServiceLabel)) {
                     return String.format(mContext.getString(R.string.connected_via_network_scorer),
@@ -311,7 +311,12 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean isSaved() {
-        return mWifiConfig != null;
+        return mWifiConfig != null && !mWifiConfig.isEphemeral();
+    }
+
+    @Override
+    public boolean isSuggestion() {
+        return mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion;
     }
 
     @Override
@@ -321,10 +326,10 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public WifiConfiguration getWifiConfiguration() {
-        if (mWifiConfig != null && !mWifiConfig.fromWifiNetworkSuggestion) {
-            return mWifiConfig;
+        if (!isSaved()) {
+            return null;
         }
-        return null;
+        return mWifiConfig;
     }
 
     @Override
@@ -344,7 +349,11 @@ public class StandardWifiEntry extends WifiEntry {
         // We should flag this network to auto-open captive portal since this method represents
         // the user manually connecting to a network (i.e. not auto-join).
         mShouldAutoOpenCaptivePortal = true;
-        if (mWifiConfig == null) {
+
+        if (isSaved() || isSuggestion()) {
+            // Saved/suggested network
+            mWifiManager.connect(mWifiConfig.networkId, new ConnectActionListener());
+        } else {
             // Unsaved network
             if (mSecurity == SECURITY_NONE
                     || mSecurity == SECURITY_OWE) {
@@ -368,9 +377,6 @@ public class StandardWifiEntry extends WifiEntry {
                                     ConnectCallback.CONNECT_STATUS_FAILURE_NO_CONFIG));
                 }
             }
-        } else {
-            // Saved network
-            mWifiManager.connect(mWifiConfig.networkId, new ConnectActionListener());
         }
     }
 
@@ -525,7 +531,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean canSetPrivacy() {
-        return getWifiConfiguration() != null;
+        return isSaved();
     }
 
     @Override
@@ -552,7 +558,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean isAutoJoinEnabled() {
-        if (!isSaved()) {
+        if (mWifiConfig == null) {
             return false;
         }
 
@@ -561,11 +567,15 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean canSetAutoJoinEnabled() {
-        return isSaved();
+        return isSaved() || isSuggestion();
     }
 
     @Override
     public void setAutoJoinEnabled(boolean enabled) {
+        if (!canSetAutoJoinEnabled()) {
+            return;
+        }
+
         mWifiManager.allowAutojoin(mWifiConfig.networkId, enabled);
     }
 
@@ -746,10 +756,6 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         if (mWifiConfig != null) {
-            if (mWifiConfig.fromWifiNetworkSuggestion) {
-                // Match network suggestions with SSID since the net id is prone to change.
-                return TextUtils.equals(mSsid, sanitizeSsid(wifiInfo.getSSID()));
-            }
             if (mWifiConfig.networkId == wifiInfo.getNetworkId()) {
                 return true;
             }
