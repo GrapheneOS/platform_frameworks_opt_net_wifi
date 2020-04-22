@@ -629,7 +629,12 @@ public class PasspointManager {
                 Log.e(TAG, "Config doesn't exist");
                 return false;
             }
-            provider.setAutojoinEnabled(enableAutojoin);
+            if (provider.setAutojoinEnabled(enableAutojoin)) {
+                mWifiMetrics.logUserActionEvent(enableAutojoin
+                                ? UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON
+                                : UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF,
+                        provider.isFromSuggestion(), true);
+            }
             mWifiConfigManager.saveToStore(true);
             return true;
         }
@@ -640,7 +645,12 @@ public class PasspointManager {
         // FQDN provided, loop through all profiles with matching FQDN
         for (PasspointProvider provider : passpointProviders) {
             if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
-                provider.setAutojoinEnabled(enableAutojoin);
+                if (provider.setAutojoinEnabled(enableAutojoin)) {
+                    mWifiMetrics.logUserActionEvent(enableAutojoin
+                                    ? UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON
+                                    : UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF,
+                            provider.isFromSuggestion(), true);
+                }
                 found = true;
             }
         }
