@@ -287,6 +287,11 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     public abstract boolean isSaved();
 
     /**
+     * Indicates whether or not an entry is for a saved configuration.
+     */
+    public abstract boolean isSuggestion();
+
+    /**
      * Indicates whether or not an entry is for a subscription.
      */
     public abstract boolean isSubscription();
@@ -729,6 +734,9 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
         if (isSaved() && !other.isSaved()) return -1;
         if (!isSaved() && other.isSaved()) return 1;
 
+        if (isSuggestion() && !other.isSuggestion()) return -1;
+        if (!isSuggestion() && other.isSuggestion()) return 1;
+
         if (getLevel() > other.getLevel()) return -1;
         if (getLevel() < other.getLevel()) return 1;
 
@@ -749,6 +757,12 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
                 .append(getTitle())
                 .append(",summary:")
                 .append(getSummary())
+                .append(",isSaved:")
+                .append(isSaved())
+                .append(",isSubscription:")
+                .append(isSubscription())
+                .append(",isSuggestion:")
+                .append(isSuggestion())
                 .append(",level:")
                 .append(getLevel())
                 .append(",security:")
