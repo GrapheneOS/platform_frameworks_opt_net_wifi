@@ -130,6 +130,11 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
+    public boolean isSuggestion() {
+        return false;
+    }
+
+    @Override
     public boolean isSubscription() {
         return false;
     }
