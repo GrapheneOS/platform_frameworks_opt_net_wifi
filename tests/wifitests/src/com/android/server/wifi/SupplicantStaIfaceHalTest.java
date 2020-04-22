@@ -1736,7 +1736,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
@@ -1770,7 +1770,37 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
+
+        setupMocksForHalV1_3();
+        setupMocksForPmkCache();
+        setupMocksForConnectSequence(false);
+        executeAndValidateInitializationSequenceV1_3();
+        assertTrue(mDut.connectToNetwork(WLAN0_IFACE_NAME, config));
+
+        verify(mSupplicantStaNetworkMock, never()).setPmkCache(any(ArrayList.class));
+        verify(mISupplicantStaIfaceCallbackV13, never()).onPmkCacheAdded(
+                anyLong(), any(ArrayList.class));
+        verify(mHandler, never()).postDelayed(
+                /* private listener */ any(),
+                eq(SupplicantStaIfaceHal.PMK_CACHE_EXPIRATION_ALARM_TAG),
+                anyLong());
+    }
+
+    /**
+     * Test adding PMK cache entry returns faliure if this is a psk network.
+     */
+    @Test
+    public void testAddPmkEntryIsOmittedWithPskNetwork() throws Exception {
+        int testFrameworkNetworkId = 9;
+        long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
+        WifiConfiguration config = new WifiConfiguration();
+        config.networkId = testFrameworkNetworkId;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        PmkCacheStoreData pmkCacheData =
+                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
+        mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
 
         setupMocksForHalV1_3();
@@ -1797,7 +1827,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
@@ -1824,7 +1854,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);

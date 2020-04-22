@@ -987,6 +987,7 @@ public class SupplicantStaIfaceHal {
 
             PmkCacheStoreData pmkData = mPmkCacheEntries.get(config.networkId);
             if (pmkData != null
+                    && !WifiConfigurationUtil.isConfigForPskNetwork(config)
                     && pmkData.expirationTimeInSec > mClock.getElapsedSinceBootMillis() / 1000) {
                 logi("Set PMK cache for config id " + config.networkId);
                 if (networkHandle.setPmkCache(pmkData.data)) {
