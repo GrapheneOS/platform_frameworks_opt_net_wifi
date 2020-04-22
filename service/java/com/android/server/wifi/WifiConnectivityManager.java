@@ -165,6 +165,7 @@ public class WifiConnectivityManager {
     private WifiScoreCard mWifiScoreCard;
 
     private boolean mDbg = false;
+    private boolean mVerboseLoggingEnabled = false;
     private boolean mWifiEnabled = false;
     private boolean mAutoJoinEnabled = false; // disabled by default, enabled by external triggers
     private boolean mRunning = false;
@@ -219,6 +220,14 @@ public class WifiConnectivityManager {
     // be retrieved in bugreport.
     private void localLog(String log) {
         mLocalLog.log(log);
+        if (mVerboseLoggingEnabled) Log.v(TAG, log);
+    }
+
+    /**
+     * Enable verbose logging for WifiConnectivityManager.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     // A periodic/PNO scan will be rescheduled up to MAX_SCAN_RESTART_ALLOWED times
