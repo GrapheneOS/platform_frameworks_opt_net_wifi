@@ -3103,8 +3103,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             SparseArray<WifiAwareDiscoverySessionState> sessions = mClients.valueAt(
                     i).getSessions();
             for (int j = 0; j < sessions.size(); ++j) {
-                mAwareMetrics.recordDiscoverySessionDuration(sessions.valueAt(i).getCreationTime(),
-                        sessions.valueAt(i).isPublishSession());
+                mAwareMetrics.recordDiscoverySessionDuration(sessions.valueAt(j).getCreationTime(),
+                        sessions.valueAt(j).isPublishSession());
             }
         }
         mAwareMetrics.recordDisableAware();
