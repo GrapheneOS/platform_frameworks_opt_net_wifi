@@ -1195,6 +1195,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiHealthMonitor.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiInjector.getThroughputPredictor().enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiDataStall.enableVerboseLogging(mVerboseLoggingEnabled);
+        mWifiConnectivityManager.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
     /**
