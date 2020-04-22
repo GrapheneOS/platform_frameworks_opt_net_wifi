@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static android.net.wifi.WifiManager.SAP_CLIENT_DISCONNECT_REASON_CODE_UNSPECIFIED;
+
 import static com.android.server.wifi.util.ApConfigUtil.ERROR_GENERIC;
 import static com.android.server.wifi.util.ApConfigUtil.ERROR_NO_CHANNEL;
 import static com.android.server.wifi.util.ApConfigUtil.ERROR_UNSUPPORTED_CONFIGURATION;
@@ -433,9 +435,21 @@ public class SoftApManager implements ActiveModeManager {
     }
 
     /**
+     * Disconnect all connected clients on active softap interface(s).
+     * This is usually done just before stopSoftAp().
+     */
+    private void disconnectAllClients() {
+        for (WifiClient client : mConnectedClients) {
+            mWifiNative.forceClientDisconnect(mApInterfaceName, client.getMacAddress(),
+                    SAP_CLIENT_DISCONNECT_REASON_CODE_UNSPECIFIED);
+        }
+    }
+
+    /**
      * Teardown soft AP and teardown the interface.
      */
     private void stopSoftAp() {
+        disconnectAllClients();
         mWifiDiagnostics.stopLogging(mApInterfaceName);
         mWifiNative.teardownInterface(mApInterfaceName);
         Log.d(TAG, "Soft AP is stopped");

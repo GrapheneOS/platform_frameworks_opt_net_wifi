@@ -65,6 +65,7 @@ import com.android.server.wifi.hotspot2.anqp.ANQPElement;
 import com.android.server.wifi.hotspot2.anqp.Constants;
 import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.InformationElementUtil;
 
 import java.io.IOException;
@@ -628,7 +629,12 @@ public class PasspointManager {
                 Log.e(TAG, "Config doesn't exist");
                 return false;
             }
-            provider.setAutojoinEnabled(enableAutojoin);
+            if (provider.setAutojoinEnabled(enableAutojoin)) {
+                mWifiMetrics.logUserActionEvent(enableAutojoin
+                                ? UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON
+                                : UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF,
+                        provider.isFromSuggestion(), true);
+            }
             mWifiConfigManager.saveToStore(true);
             return true;
         }
@@ -639,7 +645,12 @@ public class PasspointManager {
         // FQDN provided, loop through all profiles with matching FQDN
         for (PasspointProvider provider : passpointProviders) {
             if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
-                provider.setAutojoinEnabled(enableAutojoin);
+                if (provider.setAutojoinEnabled(enableAutojoin)) {
+                    mWifiMetrics.logUserActionEvent(enableAutojoin
+                                    ? UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_ON
+                                    : UserActionEvent.EVENT_CONFIGURE_AUTO_CONNECT_OFF,
+                            provider.isFromSuggestion(), true);
+                }
                 found = true;
             }
         }
@@ -664,6 +675,10 @@ public class PasspointManager {
             if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
                 boolean settingChanged = provider.setMacRandomizationEnabled(enable);
                 if (settingChanged) {
+                    mWifiMetrics.logUserActionEvent(enable
+                                    ? UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_ON
+                                    : UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF,
+                            provider.isFromSuggestion(), true);
                     mWifiConfigManager.removePasspointConfiguredNetwork(
                             provider.getWifiConfig().getKey());
                 }
@@ -689,7 +704,12 @@ public class PasspointManager {
         // Loop through all profiles with matching FQDN
         for (PasspointProvider provider : passpointProviders) {
             if (TextUtils.equals(provider.getConfig().getHomeSp().getFqdn(), fqdn)) {
-                provider.setMeteredOverride(meteredOverride);
+                if (provider.setMeteredOverride(meteredOverride)) {
+                    mWifiMetrics.logUserActionEvent(
+                            WifiMetrics.convertMeteredOverrideEnumToUserActionEventType(
+                                    meteredOverride),
+                            provider.isFromSuggestion(), true);
+                }
                 found = true;
             }
         }

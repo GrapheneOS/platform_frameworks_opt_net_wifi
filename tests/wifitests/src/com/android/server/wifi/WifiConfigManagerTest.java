@@ -51,6 +51,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.server.wifi.WifiScoreCard.PerNetwork;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
@@ -142,6 +143,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock private WifiScoreCard mWifiScoreCard;
     @Mock private PerNetwork mPerNetwork;
+    @Mock private WifiMetrics mWifiMetrics;
     private LruConnectionTracker mLruConnectionTracker;
 
     private MockResources mResources;
@@ -222,6 +224,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiInjector.getWifiLastResortWatchdog().shouldIgnoreSsidUpdate())
                 .thenReturn(false);
         when(mWifiInjector.getMacAddressUtil()).thenReturn(mMacAddressUtil);
+        when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(TEST_RANDOMIZED_MAC);
         when(mWifiScoreCard.lookupNetwork(any())).thenReturn(mPerNetwork);
 
@@ -634,6 +637,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         networks.add(openNetwork);
 
         verifyAddNetworkToWifiConfigManager(openNetwork);
+        // Verify user action event is not logged when the network is added
+        verify(mWifiMetrics, never()).logUserActionEvent(anyInt(), anyBoolean(), anyBoolean());
         verify(mWcmListener).onNetworkAdded(wifiConfigCaptor.capture());
         assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
         reset(mWcmListener);
@@ -642,6 +647,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         NetworkUpdateResult networkUpdateResult = updateNetworkToWifiConfigManager(openNetwork);
         assertNotEquals(WifiConfiguration.INVALID_NETWORK_ID, networkUpdateResult.getNetworkId());
+        verify(mWifiMetrics).logUserActionEvent(
+                UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF, openNetwork.networkId);
 
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
@@ -4460,7 +4467,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 retrievedSavedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // Disable the passpoint network & ensure the user choice is now removed from saved network.
-        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN, TEST_UPDATE_UID);
 
         retrievedSavedNetwork = mWifiConfigManager.getConfiguredNetwork(savedNetwork.networkId);
         assertNull(retrievedSavedNetwork.getNetworkSelectionStatus().getConnectChoice());
@@ -4468,6 +4475,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     @Test
     public void  testUserEnableDisabledNetwork() {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         List<WifiConfiguration> networks = new ArrayList<>();
         networks.add(openNetwork);
@@ -4477,10 +4485,12 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 networks, retrievedNetworks);
 
-        mWifiConfigManager.userTemporarilyDisabledNetwork(openNetwork.SSID);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(openNetwork.SSID, TEST_UPDATE_UID);
         assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
         mWifiConfigManager.userEnabledNetwork(retrievedNetworks.get(0).networkId);
         assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
+        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_DISCONNECT_WIFI),
+                anyInt());
     }
 
     @Test
@@ -4488,7 +4498,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         List<WifiConfiguration> networks = new ArrayList<>();
         networks.add(openNetwork);
-        mWifiConfigManager.userTemporarilyDisabledNetwork(openNetwork.SSID);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(openNetwork.SSID, TEST_UPDATE_UID);
         assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(openNetwork.SSID));
 
         verifyAddNetworkToWifiConfigManager(openNetwork);
@@ -4504,7 +4514,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration passpointNetwork = WifiConfigurationTestUtil.createPasspointNetwork();
         List<WifiConfiguration> networks = new ArrayList<>();
         networks.add(passpointNetwork);
-        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN, TEST_UPDATE_UID);
         assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
         // Add new passpoint network will enable the network.
         NetworkUpdateResult result = addNetworkToWifiConfigManager(passpointNetwork);
@@ -4517,7 +4527,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 networks, retrievedNetworks);
         assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
 
-        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(passpointNetwork.FQDN, TEST_UPDATE_UID);
         assertTrue(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(passpointNetwork.FQDN));
         // Update a existing passpoint network will not enable network.
         result = addNetworkToWifiConfigManager(passpointNetwork);
@@ -4532,7 +4542,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         long currentTimeMs = disableTimeMs;
         when(mClock.getWallClockMillis()).thenReturn(currentTimeMs);
         String network = config.isPasspoint() ? config.FQDN : config.SSID;
-        mWifiConfigManager.userTemporarilyDisabledNetwork(network);
+        mWifiConfigManager.userTemporarilyDisabledNetwork(network, TEST_UPDATE_UID);
         // Before timer is triggered, timer will not expiry will enable network.
         currentTimeMs = disableTimeMs
                 + WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS + 1;

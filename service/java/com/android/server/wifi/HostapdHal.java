@@ -584,9 +584,12 @@ public class HostapdHal {
                     case WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_NO_MORE_STAS:
                         disconnectReason = Ieee80211ReasonCode.WLAN_REASON_DISASSOC_AP_BUSY;
                         break;
-                    default:
+                    case WifiManager.SAP_CLIENT_DISCONNECT_REASON_CODE_UNSPECIFIED:
                         disconnectReason = Ieee80211ReasonCode.WLAN_REASON_UNSPECIFIED;
                         break;
+                    default:
+                        throw new IllegalArgumentException(
+                                "Unknown disconnect reason code:" + reasonCode);
                 }
                 android.hardware.wifi.hostapd.V1_2.HostapdStatus status =
                         iHostapdV1_2.forceClientDisconnect(ifaceName,
