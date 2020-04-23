@@ -97,7 +97,6 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
 
             // One ScanResult can be associated with more than one network, hence we calculate all
             // the scores and use the highest one as the ScanResult's score.
-            // TODO(b/112196799): this has side effects, rather not do that in a nominator
             WifiConfiguration network =
                     mWifiConfigManager.getConfiguredNetworkForScanDetailAndCache(scanDetail);
 
@@ -117,20 +116,21 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
 
             // Ignore networks that the user has disallowed auto-join for.
             if (!network.allowAutojoin) {
+                localLog("Ignoring auto join disabled SSID: " + network.SSID);
                 continue;
             }
 
             WifiConfiguration.NetworkSelectionStatus status =
                     network.getNetworkSelectionStatus();
-            // TODO (b/112196799): another side effect
             status.setSeenInLastQualifiedNetworkSelection(true);
 
             if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network.SSID)) {
-                mLocalLog.log("Ignoring user disabled SSID: " + network.SSID);
+                localLog("Ignoring user disabled SSID: " + network.SSID);
                 continue;
             }
 
             if (!status.isNetworkEnabled()) {
+                localLog("Ignoring network selection disabled SSID: " + network.SSID);
                 continue;
             }
             if (network.BSSID != null &&  !network.BSSID.equals("any")
@@ -143,6 +143,7 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                 continue;
             }
             if (isNetworkSimBasedCredential(network) && !isSimBasedNetworkAbleToAutoJoin(network)) {
+                localLog("Ignoring SIM auto join disabled SSID: " + network.SSID);
                 continue;
             }
 
