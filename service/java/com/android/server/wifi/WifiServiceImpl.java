@@ -735,10 +735,10 @@ public class WifiServiceImpl extends BaseWifiService {
     private boolean isTargetSdkLessThanQOrPrivileged(String packageName, int pid, int uid) {
         return mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.Q, uid)
                 || isPrivileged(pid, uid)
-                // DO/PO apps should be able to add/modify saved networks.
                 || isDeviceOrProfileOwner(uid, packageName)
-                // TODO: Remove this system app bypass once Q is released.
-                || isSystem(packageName, uid);
+                || isSystem(packageName, uid)
+                // TODO(b/140540984): Remove this bypass.
+                || mWifiPermissionsUtil.checkSystemAlertWindowPermission(uid, packageName);
     }
 
     /**
@@ -749,9 +749,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private boolean isTargetSdkLessThanROrPrivileged(String packageName, int pid, int uid) {
         return mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.R, uid)
                 || isPrivileged(pid, uid)
-                // DO/PO apps should be able to add/modify saved networks.
                 || isDeviceOrProfileOwner(uid, packageName)
-                // TODO: Remove this system app bypass once R is released.
                 || isSystem(packageName, uid);
     }
 
