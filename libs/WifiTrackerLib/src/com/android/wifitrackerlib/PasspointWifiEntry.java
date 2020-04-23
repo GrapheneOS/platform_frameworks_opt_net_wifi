@@ -213,6 +213,12 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @Override
+    public boolean isSuggestion() {
+        // TODO(b/70983952): Fill this method in when passpoint suggestions are in
+        return false;
+    }
+
+    @Override
     public boolean isSubscription() {
         return true;
     }

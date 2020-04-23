@@ -884,7 +884,7 @@ public class SupplicantStaNetworkHal {
                     break;
                 case WifiConfiguration.GroupCipher.GCMP_256:
                     mask |= android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                                .GroupCipherMask.GCMP_256;
+                            .GroupCipherMask.GCMP_256;
                     break;
                 case WifiConfiguration.GroupCipher.SMS4:
                     mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
@@ -1126,8 +1126,8 @@ public class SupplicantStaNetworkHal {
                 mask, ISupplicantStaNetwork.GroupCipherMask.CCMP, bitset,
                 WifiConfiguration.GroupCipher.CCMP);
         mask = supplicantMaskValueToWifiConfigurationBitSet(mask,
-                android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork.GroupCipherMask
-                        .GCMP_256, bitset, WifiConfiguration.GroupCipher.GCMP_256);
+                android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                        .GroupCipherMask.GCMP_256, bitset, WifiConfiguration.GroupCipher.GCMP_256);
         mask = supplicantMaskValueToWifiConfigurationBitSet(
                 mask, ISupplicantStaNetwork.GroupCipherMask.GTK_NOT_USED, bitset,
                 WifiConfiguration.GroupCipher.GTK_NOT_USED);
@@ -1432,6 +1432,9 @@ public class SupplicantStaNetworkHal {
                      * Requires HAL v1.2 or higher */
                     status = iSupplicantStaNetworkV12.setGroupCipher_1_2(groupCipherMask);
                 } else {
+                    // Clear GCMP_256 group cipher which is not supported before v1.2
+                    groupCipherMask &= ~android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                            .GroupCipherMask.GCMP_256;
                     status = mISupplicantStaNetwork.setGroupCipher(
                             groupCipherMask);
                 }
@@ -1516,6 +1519,9 @@ public class SupplicantStaNetworkHal {
                      * Requires HAL v1.2 or higher */
                     status = iSupplicantStaNetworkV12.setPairwiseCipher_1_2(pairwiseCipherMask);
                 } else {
+                    // Clear GCMP_256 pairwise cipher which is not supported before v1.2
+                    pairwiseCipherMask &= ~android.hardware.wifi.supplicant.V1_2
+                            .ISupplicantStaNetwork.PairwiseCipherMask.GCMP_256;
                     status =
                             mISupplicantStaNetwork.setPairwiseCipher(pairwiseCipherMask);
                 }
@@ -1546,7 +1552,6 @@ public class SupplicantStaNetworkHal {
                 } else {
                     return false;
                 }
-
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
                 return false;

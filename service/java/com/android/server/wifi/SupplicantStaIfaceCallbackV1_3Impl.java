@@ -19,6 +19,7 @@ import android.annotation.NonNull;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.hardware.wifi.supplicant.V1_3.ISupplicantStaIfaceCallback.BssTmData;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiSsid;
 import android.util.Log;
@@ -192,10 +193,15 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
 
     @Override
     public void onPmkCacheAdded(long expirationTimeInSec, ArrayList<Byte> serializedEntry) {
-        int curNetworkId = mStaIfaceHal.getCurrentNetworkId(mIfaceName);
-        mStaIfaceHal.addPmkCacheEntry(curNetworkId, expirationTimeInSec, serializedEntry);
+        WifiConfiguration curConfig = mStaIfaceHal.getCurrentNetworkLocalConfig(mIfaceName);
+
+        if (curConfig == null) return;
+
+        if (WifiConfigurationUtil.isConfigForPskNetwork(curConfig)) return;
+
+        mStaIfaceHal.addPmkCacheEntry(curConfig.networkId, expirationTimeInSec, serializedEntry);
         mStaIfaceHal.logCallback(
-                "onPmkCacheAdded: update pmk cache for config id " + curNetworkId);
+                "onPmkCacheAdded: update pmk cache for config id " + curConfig.networkId);
     }
 
     @Override
