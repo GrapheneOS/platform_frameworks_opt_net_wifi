@@ -2087,14 +2087,19 @@ public class HalDeviceManager {
     private void dispatchAllDestroyedListeners() {
         if (VDBG) Log.d(TAG, "dispatchAllDestroyedListeners");
 
+        List<InterfaceDestroyedListenerProxy> triggerList = new ArrayList<>();
         synchronized (mLock) {
             for (InterfaceCacheEntry cacheEntry: mInterfaceInfoCache.values()) {
                 for (InterfaceDestroyedListenerProxy listener : cacheEntry.destroyedListeners) {
-                    listener.trigger();
+                    triggerList.add(listener);
                 }
                 cacheEntry.destroyedListeners.clear(); // for insurance
             }
             mInterfaceInfoCache.clear();
+        }
+
+        for (InterfaceDestroyedListenerProxy listener : triggerList) {
+            listener.trigger();
         }
     }
 
