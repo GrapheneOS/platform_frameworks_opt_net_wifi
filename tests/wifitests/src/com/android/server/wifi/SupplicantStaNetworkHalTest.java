@@ -196,6 +196,14 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     public void testPskPassphraseNetworkWifiConfigurationSaveLoad() throws Exception {
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
         config.requirePmf = true;
+
+        // Set the new defaults
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        config.allowedGroupManagementCiphers
+                .set(WifiConfiguration.GroupMgmtCipher.BIP_GMAC_256);
         testWifiConfigurationSaveLoad(config);
         verify(mISupplicantStaNetworkMock).setPskPassphrase(anyString());
         verify(mISupplicantStaNetworkMock)
@@ -203,6 +211,10 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         verify(mISupplicantStaNetworkMock, never()).setPsk(any(byte[].class));
         verify(mISupplicantStaNetworkMock, never())
                 .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
+        verify(mISupplicantStaNetworkMock)
+                .setPairwiseCipher(ISupplicantStaNetwork.PairwiseCipherMask.CCMP);
+        verify(mISupplicantStaNetworkMock)
+                .setGroupCipher(ISupplicantStaNetwork.GroupCipherMask.CCMP);
     }
 
     /**
@@ -948,6 +960,12 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     }
 
     private void testWifiConfigurationSaveLoad(WifiConfiguration config) {
+        if (mSupplicantNetwork.getSupplicantStaNetworkForV1_2Mockable() == null) {
+            // Clear unsupported settings in HAL v1.0
+            config.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.GCMP_256);
+            config.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.GCMP_256);
+        }
+        // Save the configuration using the default supplicant network HAL v1.0
         assertTrue(mSupplicantNetwork.saveWifiConfiguration(config));
         WifiConfiguration loadConfig = new WifiConfiguration();
         Map<String, String> networkExtras = new HashMap<>();
@@ -1036,6 +1054,38 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         ArrayList<Byte> serializedData = new ArrayList<>();
         assertFalse(mSupplicantNetwork.setPmkCache(serializedData));
         assertNull(mSupplicantVariables.serializedPmkCache);
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration to wpa_supplicant with psk passphrase for
+     * HAL v1.2 or higher
+     */
+    @Test
+    public void testPskPassphraseNetworkWifiConfigurationSaveLoad1_2OrHigher() throws Exception {
+        createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_2);
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        config.requirePmf = true;
+
+        // Set the new defaults
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        testWifiConfigurationSaveLoad(config);
+        verify(mISupplicantStaNetworkMock).setPskPassphrase(anyString());
+        verify(mISupplicantStaNetworkMock)
+                .getPskPassphrase(any(ISupplicantStaNetwork.getPskPassphraseCallback.class));
+        verify(mISupplicantStaNetworkMock, never()).setPsk(any(byte[].class));
+        verify(mISupplicantStaNetworkMock, never())
+                .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
+        verify(mISupplicantStaNetworkV12)
+                .setPairwiseCipher_1_2(ISupplicantStaNetwork.PairwiseCipherMask.CCMP
+                        | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                        .PairwiseCipherMask.GCMP_256);
+        verify(mISupplicantStaNetworkV12)
+                .setGroupCipher_1_2(ISupplicantStaNetwork.GroupCipherMask.CCMP
+                        | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                        .GroupCipherMask.GCMP_256);
     }
 
     /**
