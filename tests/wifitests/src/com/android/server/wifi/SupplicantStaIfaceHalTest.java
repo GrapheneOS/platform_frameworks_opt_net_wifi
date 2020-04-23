@@ -1063,14 +1063,35 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
      * Tests the handling of incorrect network passwords for WPA3-Personal networks
      */
     @Test
-    public void testAuthRejectionPassword() throws Exception {
+    public void testWpa3AuthRejectionPassword() throws Exception {
         executeAndValidateInitializationSequence();
         assertNotNull(mISupplicantStaIfaceCallback);
 
         executeAndValidateConnectSequenceWithKeyMgmt(SUPPLICANT_NETWORK_ID, false,
-                WifiConfiguration.KeyMgmt.SAE);
+                WifiConfiguration.KeyMgmt.SAE, null);
 
         int statusCode = ISupplicantStaIfaceCallback.StatusCode.UNSPECIFIED_FAILURE;
+
+        mISupplicantStaIfaceCallback.onAssociationRejected(
+                NativeUtil.macAddressToByteArray(BSSID), statusCode, false);
+        verify(mWifiMonitor).broadcastAuthenticationFailureEvent(eq(WLAN0_IFACE_NAME),
+                eq(WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD), eq(-1));
+        verify(mWifiMonitor).broadcastAssociationRejectionEvent(
+                eq(WLAN0_IFACE_NAME), eq(statusCode), eq(false), eq(BSSID));
+    }
+
+    /**
+     * Tests the handling of incorrect network passwords for WEP networks.
+     */
+    @Test
+    public void testWepAuthRejectionPassword() throws Exception {
+        executeAndValidateInitializationSequence();
+        assertNotNull(mISupplicantStaIfaceCallback);
+
+        executeAndValidateConnectSequenceWithKeyMgmt(SUPPLICANT_NETWORK_ID, false,
+                WifiConfiguration.KeyMgmt.NONE, "97CA326539");
+
+        int statusCode = ISupplicantStaIfaceCallback.StatusCode.CHALLENGE_FAIL;
 
         mISupplicantStaIfaceCallback.onAssociationRejected(
                 NativeUtil.macAddressToByteArray(BSSID), statusCode, false);
@@ -2396,7 +2417,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     private WifiConfiguration executeAndValidateConnectSequence(
             final int newFrameworkNetworkId, final boolean haveExistingNetwork) throws Exception {
         return executeAndValidateConnectSequenceWithKeyMgmt(newFrameworkNetworkId,
-                haveExistingNetwork, WifiConfiguration.KeyMgmt.WPA_PSK);
+                haveExistingNetwork, WifiConfiguration.KeyMgmt.WPA_PSK, null);
     }
 
     /**
@@ -2404,16 +2425,19 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
      *
      * @param newFrameworkNetworkId Framework Network Id of the new network to connect.
      * @param haveExistingNetwork Removes the existing network.
-     * @param keyMgmt Key management of the new network
+     * @param keyMgmt Key management of the new network.
+     * @param wepKey if configurations are for a WEP network else null.
      * @return the WifiConfiguration object of the new network to connect.
      */
     private WifiConfiguration executeAndValidateConnectSequenceWithKeyMgmt(
             final int newFrameworkNetworkId, final boolean haveExistingNetwork,
-            int keyMgmt) throws Exception {
+            int keyMgmt, String wepKey) throws Exception {
         setupMocksForConnectSequence(haveExistingNetwork);
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = newFrameworkNetworkId;
         config.allowedKeyManagement.set(keyMgmt);
+        config.wepKeys[0] = wepKey;
+        config.wepTxKeyIndex = 0;
         assertTrue(mDut.connectToNetwork(WLAN0_IFACE_NAME, config));
         validateConnectSequence(haveExistingNetwork, 1);
         return config;
