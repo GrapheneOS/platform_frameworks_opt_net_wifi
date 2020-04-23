@@ -4253,6 +4253,30 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that add or update networks is allowed for apps holding system alert permission.
+     */
+    @Test
+    public void testAddOrUpdateNetworkIsAllowedForAppsWithSystemAlertPermission() throws Exception {
+        doReturn(AppOpsManager.MODE_ALLOWED).when(mAppOpsManager)
+                .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
+        when(mWifiConfigManager.addOrUpdateNetwork(any(),  anyInt(), any())).thenReturn(
+                new NetworkUpdateResult(0));
+
+        when(mWifiPermissionsUtil.checkSystemAlertWindowPermission(
+                Process.myUid(), TEST_PACKAGE_NAME)).thenReturn(true);
+
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        mLooper.startAutoDispatch();
+        assertEquals(0, mWifiServiceImpl.addOrUpdateNetwork(config, TEST_PACKAGE_NAME));
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+
+        verifyCheckChangePermission(TEST_PACKAGE_NAME);
+        verify(mWifiPermissionsUtil).checkSystemAlertWindowPermission(anyInt(), anyString());
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(),  anyInt(), any());
+        verify(mWifiMetrics).incrementNumAddOrUpdateNetworkCalls();
+    }
+
+    /**
      * Verify that add or update networks is allowed for DeviceOwner app.
      */
     @Test
