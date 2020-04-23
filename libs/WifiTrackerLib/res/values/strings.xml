@@ -171,4 +171,22 @@
 
     <!-- IMSI protection warning for non-protection network [CHAR LIMIT=NONE] -->
     <string name="imsi_protection_warning">This network receives a unique ID that can be used to track device location.\n<annotation id="url">Learn more</annotation></string>
+
+    <!-- Speed label for very slow network speed -->
+    <string name="speed_label_very_slow">Very Slow</string>
+
+    <!-- Speed label for slow network speed -->
+    <string name="speed_label_slow">Slow</string>
+
+    <!-- Speed label for okay network speed -->
+    <string name="speed_label_okay">OK</string>
+
+    <!-- Speed label for medium network speed -->
+    <string name="speed_label_medium">Medium</string>
+
+    <!-- Speed label for fast network speed -->
+    <string name="speed_label_fast">Fast</string>
+
+    <!-- Speed label for very fast network speed -->
+    <string name="speed_label_very_fast">Very Fast</string>
 </resources>
