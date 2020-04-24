@@ -1744,6 +1744,24 @@ public class WifiMetrics {
     }
 
     /**
+     * Developer options toggle value for verbose logging.
+     */
+    public void setVerboseLoggingEnabled(boolean enabled) {
+        synchronized (mLock) {
+            mWifiLogProto.isVerboseLoggingEnabled = enabled;
+        }
+    }
+
+    /**
+     * Developer options toggle value for enhanced MAC randomization.
+     */
+    public void setEnhancedMacRandomizationForceEnabled(boolean enabled) {
+        synchronized (mLock) {
+            mWifiLogProto.isEnhancedMacRandomizationForceEnabled = enabled;
+        }
+    }
+
+    /**
      * Increment Non Empty Scan Results count
      */
     public void incrementNonEmptyScanResultCount() {
@@ -3107,6 +3125,10 @@ public class WifiMetrics {
                 pw.println("mWifiLogProto.isLocationEnabled=" + mWifiLogProto.isLocationEnabled);
                 pw.println("mWifiLogProto.isScanningAlwaysEnabled="
                         + mWifiLogProto.isScanningAlwaysEnabled);
+                pw.println("mWifiLogProto.isVerboseLoggingEnabled="
+                        + mWifiLogProto.isVerboseLoggingEnabled);
+                pw.println("mWifiLogProto.isEnhancedMacRandomizationForceEnabled="
+                        + mWifiLogProto.isEnhancedMacRandomizationForceEnabled);
                 pw.println("mWifiLogProto.numNetworksAddedByUser="
                         + mWifiLogProto.numNetworksAddedByUser);
                 pw.println("mWifiLogProto.numNetworksAddedByApps="
