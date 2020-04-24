@@ -4997,4 +4997,81 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verifyNoMoreInteractions(mNetworkAgentHandler);
     }
+
+    /*
+     * Verify that network cached data is cleared correctly in
+     * disconnected state.
+     */
+    @Test
+    public void testNetworkCachedDataIsClearedCorrectlyInDisconnectedState() throws Exception {
+        // Setup CONNECT_MODE & a WifiConfiguration
+        initializeAndAddNetworkAndVerifySuccess();
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        // got UNSPECIFIED during this connection attempt
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 1, sBSSID);
+        mLooper.dispatchAll();
+
+        assertEquals("DisconnectedState", getCurrentState().getName());
+        verify(mWifiNative, never()).removeNetworkCachedData(anyInt());
+
+        // got 4WAY_HANDSHAKE_TIMEOUT during this connection attempt
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 15, sBSSID);
+        mLooper.dispatchAll();
+
+        assertEquals("DisconnectedState", getCurrentState().getName());
+        verify(mWifiNative).removeNetworkCachedData(FRAMEWORK_NETWORK_ID);
+    }
+
+    /*
+     * Verify that network cached data is cleared correctly in
+     * disconnected state.
+     */
+    @Test
+    public void testNetworkCachedDataIsClearedCorrectlyInObtainingIpState() throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+
+        verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
+
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, 0, mock(Binder.class), connectActionListener, 0, Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        verify(mWifiConfigManager).enableNetwork(eq(0), eq(true), anyInt(), any());
+
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.COMPLETED));
+        mLooper.dispatchAll();
+
+        assertEquals("ObtainingIpState", getCurrentState().getName());
+
+        // got 4WAY_HANDSHAKE_TIMEOUT during this connection attempt
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 15, sBSSID);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).removeNetworkCachedData(FRAMEWORK_NETWORK_ID);
+    }
+
+    /*
+     * Verify that network cached data is NOT cleared in ConnectedState.
+     */
+    @Test
+    public void testNetworkCachedDataIsClearedIf4WayHandshakeFailure() throws Exception {
+        when(mWifiScoreCard.detectAbnormalDisconnection())
+                .thenReturn(WifiHealthMonitor.REASON_SHORT_CONNECTION_NONLOCAL);
+        InOrder inOrderWifiLockManager = inOrder(mWifiLockManager);
+        connect();
+        inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(true);
+
+        // got 4WAY_HANDSHAKE_TIMEOUT
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 15, sBSSID);
+        mLooper.dispatchAll();
+        verify(mWifiNative, never()).removeNetworkCachedData(anyInt());
+    }
+
 }
