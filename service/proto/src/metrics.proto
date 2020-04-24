@@ -687,6 +687,12 @@ message WifiLog {
 
   // List of user initiated actions
   repeated UserActionEvent user_action_events = 192;
+
+  // Does the user have wifi verbose logging enabled.
+  optional bool is_verbose_logging_enabled = 193;
+
+  // Does the user have enhanced MAC randomization forced to on.
+  optional bool is_enhanced_mac_randomization_force_enabled = 194;
 }
 
 // Information that gets logged for every WiFi connection.
