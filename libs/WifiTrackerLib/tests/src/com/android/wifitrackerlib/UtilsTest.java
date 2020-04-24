@@ -23,10 +23,12 @@ import static com.android.wifitrackerlib.Utils.getAppLabelForSavedNetwork;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
+import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
 import static com.android.wifitrackerlib.Utils.isSimPresent;
+import static com.android.wifitrackerlib.Utils.linkifyAnnotation;
 import static com.android.wifitrackerlib.Utils.mapScanResultsToKey;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_NONE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
@@ -46,6 +48,7 @@ import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -55,6 +58,11 @@ import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.Annotation;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ClickableSpan;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -361,6 +369,52 @@ public class UtilsTest {
         assertEquals(TEST_SUB_ID, getSubIdForConfig(mMockContext, config));
     }
 
+    @Test
+    public void testGetImsiProtectionDescription_isSimCredentialFalse_returnEmptyString() {
+        final WifiConfiguration wificonfig = new WifiConfiguration();
+
+        assertEquals(getImsiProtectionDescription(mMockContext, wificonfig), "");
+    }
+
+    @Test
+    public void testGetImsiProtectionDescription_noValidSubId_returnEmptyString() {
+        final WifiConfiguration mockWifiConfig = mock(WifiConfiguration.class);
+        final WifiEnterpriseConfig mockWifiEnterpriseConfig = mock(WifiEnterpriseConfig.class);
+        when(mockWifiEnterpriseConfig.isAuthenticationSimBased()).thenReturn(true);
+        mockWifiConfig.enterpriseConfig = mockWifiEnterpriseConfig;
+
+        assertEquals(getImsiProtectionDescription(mMockContext, mockWifiConfig), "");
+    }
+
+    @Test
+    public void testLinkifyAnnotation_noAnnotation_returnOriginalText() {
+        final CharSequence testText = "test text";
+
+        final CharSequence output = linkifyAnnotation(mMockContext, testText, "id", "url");
+
+        final SpannableString outputSpannableString = new SpannableString(output);
+        assertEquals(output, testText);
+        assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
+                ClickableSpan.class).length, 0);
+    }
+
+    @Test
+    public void testLinkifyAnnotation_annotation_returnTextWithClickableSpan() {
+        final String annotationId = "id";
+        final CharSequence testText = "test text ";
+        final CharSequence testLink = "link";
+        final CharSequence expectedText = "test text link";
+        final SpannableStringBuilder builder = new SpannableStringBuilder(testText);
+        builder.append(testLink, new Annotation("key", annotationId),
+                Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+
+        final CharSequence output = linkifyAnnotation(mMockContext, builder, annotationId, "url");
+
+        final SpannableString outputSpannableString = new SpannableString(output);
+        assertEquals(output.toString(), expectedText.toString());
+        assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
+                ClickableSpan.class).length, 1);
+    }
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
         final WifiManager mockWifiManager = mock(WifiManager.class);
