@@ -1036,7 +1036,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
 
         // Now trigger user selection to some network.
         WifiConfiguration selectedNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        networkRequestUserSelectionCallback.select(selectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, selectedNetwork);
         mLooper.dispatchAll();
 
         // Verify we did not attempt to trigger a connection or disable connectivity manager.
@@ -1060,7 +1060,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
 
         // Now trigger user selection to some network.
         WifiConfiguration selectedNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        networkRequestUserSelectionCallback.select(selectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, selectedNetwork);
         mLooper.dispatchAll();
 
         // Verify we did not attempt to trigger a connection or disable connectivity manager.
@@ -1082,7 +1082,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         ScanResult matchingScanResult = mTestScanDatas[0].getResults()[0];
         mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
         mSelectedNetwork.SSID = "\"" + mTestScanDatas[0].getResults()[0].SSID + "\"";
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Cancel periodic scans.
@@ -1140,7 +1140,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         // Now trigger user selection to one of the network.
         mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
         mSelectedNetwork.SSID = "\"" + mTestScanDatas[0].getResults()[0].SSID + "\"";
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Verifier num of Approved access points.
@@ -1150,7 +1150,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         // Now trigger user selection to another network with different SSID.
         mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
         mSelectedNetwork.SSID = "\"" + mTestScanDatas[0].getResults()[numOfApPerSsid].SSID + "\"";
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Verify triggered trim when user Approved Access Points exceed capacity.
@@ -1187,7 +1187,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 .thenReturn(matchingSavedNetwork);
 
         // Now trigger user selection to one of the network.
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Cancel periodic scans.
@@ -1240,7 +1240,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         INetworkRequestUserSelectionCallback networkRequestUserSelectionCallback =
                 mNetworkRequestUserSelectionCallback.getValue();
         assertNotNull(networkRequestUserSelectionCallback);
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Verify WifiConfiguration params.
@@ -1291,7 +1291,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         INetworkRequestUserSelectionCallback networkRequestUserSelectionCallback =
                 mNetworkRequestUserSelectionCallback.getValue();
         assertNotNull(networkRequestUserSelectionCallback);
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Verify WifiConfiguration params.
@@ -1734,7 +1734,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
 
         // Ignore stale callbacks.
         WifiConfiguration selectedNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        networkRequestUserSelectionCallback.select(selectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, selectedNetwork);
         mLooper.dispatchAll();
 
         verify(mNetworkRequestMatchCallback).onAbort();
@@ -2713,7 +2713,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         // Now trigger user selection to one of the network.
         mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
         mSelectedNetwork.SSID = "\"" + targetSsid + "\"";
-        networkRequestUserSelectionCallback.select(mSelectedNetwork);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
         // Cancel the periodic scan timer.
@@ -3054,5 +3054,13 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         mNetworkRequestStoreData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
                 mock(WifiConfigStoreEncryptionUtil.class));
+    }
+
+    private void sendUserSelectionSelect(INetworkRequestUserSelectionCallback callback,
+            WifiConfiguration selectedNetwork) throws RemoteException {
+        WifiConfiguration selectedNetworkinCb = new WifiConfiguration();
+        // only copy over the ssid
+        selectedNetworkinCb.SSID = selectedNetwork.SSID;
+        callback.select(selectedNetworkinCb);
     }
 }
