@@ -52,6 +52,7 @@ import static org.mockito.Mockito.when;
 
 import android.annotation.NonNull;
 import android.app.test.MockAnswerUtil;
+import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.content.Context;
 import android.hardware.wifi.V1_0.WifiChannelWidthInMhz;
 import android.hardware.wifi.supplicant.V1_0.ISupplicant;
@@ -69,6 +70,7 @@ import android.hardware.wifi.supplicant.V1_3.ISupplicantStaIfaceCallback.BssTmDa
 import android.hardware.wifi.supplicant.V1_3.WifiTechnology;
 import android.hidl.manager.V1_0.IServiceManager;
 import android.hidl.manager.V1_0.IServiceNotification;
+import android.net.MacAddress;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
@@ -126,6 +128,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     private static final int ICON_FILE_SIZE = 72;
     private static final String HS20_URL = "http://blahblah";
     private static final long PMK_CACHE_EXPIRATION_IN_SEC = 1024;
+    private static final byte[] CONNECTED_MAC_ADDRESS_BYTES =
+            {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
     private @Mock IServiceManager mServiceManagerMock;
     private @Mock ISupplicant mISupplicantMock;
@@ -251,6 +255,13 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 any(IServiceNotification.Stub.class))).thenReturn(true);
         when(mISupplicantMock.linkToDeath(any(IHwBinder.DeathRecipient.class),
                 anyLong())).thenReturn(true);
+        doAnswer(new AnswerWithArguments() {
+            public void answer(ISupplicantStaIface.getMacAddressCallback cb) {
+                cb.onValues(mStatusSuccess, CONNECTED_MAC_ADDRESS_BYTES);
+            }
+        })
+        .when(mISupplicantStaIfaceMock)
+                .getMacAddress(any(ISupplicantStaIface.getMacAddressCallback.class));
         mHandler = spy(new Handler(mLooper.getLooper()));
         mDut = new SupplicantStaIfaceHalSpy();
     }
@@ -1759,7 +1770,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         config.networkId = testFrameworkNetworkId;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         PmkCacheStoreData pmkCacheData =
-                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
+                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
+                        MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
 
@@ -1820,7 +1832,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         config.networkId = testFrameworkNetworkId;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
         PmkCacheStoreData pmkCacheData =
-                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
+                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
+                        MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
 
@@ -1850,7 +1863,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         config.networkId = testFrameworkNetworkId;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         PmkCacheStoreData pmkCacheData =
-                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
+                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
+                        MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
 
@@ -1877,7 +1891,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         config.networkId = testFrameworkNetworkId;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         PmkCacheStoreData pmkCacheData =
-                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>());
+                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
+                        MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
         mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
 
@@ -1892,6 +1907,40 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         mISupplicantStaIfaceCallbackV13.onAssociationRejected(
                 NativeUtil.macAddressToByteArray(BSSID), statusCode, false);
 
+        assertNull(mDut.mPmkCacheEntries.get(testFrameworkNetworkId));
+    }
+
+    /**
+     * Tests the PMK cache is removed and not set if MAC address is changed.
+     */
+    @Test
+    public void testRemovePmkEntryOnMacAddressChanged() throws Exception {
+        int testFrameworkNetworkId = 9;
+        long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
+        WifiConfiguration config = new WifiConfiguration();
+        config.networkId = testFrameworkNetworkId;
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        // Assume we have a PMK cache with a different MAC address.
+        final byte[] previouisConnectedMacAddressBytes =
+                {0x00, 0x01, 0x02, 0x03, 0x04, 0x09};
+        PmkCacheStoreData pmkCacheData =
+                new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
+                        MacAddress.fromBytes(previouisConnectedMacAddressBytes));
+        mDut.mPmkCacheEntries.put(testFrameworkNetworkId, pmkCacheData);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
+
+        setupMocksForHalV1_3();
+        setupMocksForPmkCache();
+        setupMocksForConnectSequence(false);
+
+        // When MAC is not changed, PMK cache should NOT be removed.
+        mDut.removeNetworkCachedDataIfNeeded(testFrameworkNetworkId,
+                MacAddress.fromBytes(previouisConnectedMacAddressBytes));
+        assertEquals(pmkCacheData, mDut.mPmkCacheEntries.get(testFrameworkNetworkId));
+
+        // When MAC is changed, PMK cache should be removed.
+        mDut.removeNetworkCachedDataIfNeeded(testFrameworkNetworkId,
+                MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
         assertNull(mDut.mPmkCacheEntries.get(testFrameworkNetworkId));
     }
 
