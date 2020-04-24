@@ -48,10 +48,17 @@ import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.Annotation;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.ClickableSpan;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.android.settingslib.HelpUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -565,5 +572,47 @@ class Utils {
         }
         return (bundle.getInt(CarrierConfigManager.IMSI_KEY_AVAILABILITY_INT)
                 & TelephonyManager.KEY_TYPE_WLAN) != 0;
+    }
+
+    static CharSequence getImsiProtectionDescription(Context context,
+            @Nullable WifiConfiguration wifiConfig) {
+        if (context == null || wifiConfig == null || !isSimCredential(wifiConfig)) {
+            return "";
+        }
+
+        int subId = getSubIdForConfig(context, wifiConfig);
+        if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID
+                || isImsiPrivacyProtectionProvided(context, subId)) {
+            return "";
+        }
+
+        // IMSI protection is not provided, return warning message.
+        return linkifyAnnotation(context, context.getText(R.string.imsi_protection_warning), "url",
+                context.getString(R.string.help_url_imsi_protection));
+    }
+
+    /** Find the annotation of specified id in rawText and linkify it with helpUriString. */
+    static CharSequence linkifyAnnotation(Context context, CharSequence rawText, String id,
+            String helpUriString) {
+        SpannableString spannableText = new SpannableString(rawText);
+        Annotation[] annotations = spannableText.getSpans(0, spannableText.length(),
+                Annotation.class);
+
+        for (Annotation annotation : annotations) {
+            if (TextUtils.equals(annotation.getValue(), id)) {
+                SpannableStringBuilder builder = new SpannableStringBuilder(spannableText);
+                ClickableSpan link = new ClickableSpan() {
+                    @Override
+                    public void onClick(View view) {
+                        view.startActivityForResult(HelpUtils.getHelpIntent(context, helpUriString,
+                                view.getClass().getName()), 0);
+                    }
+                };
+                builder.setSpan(link, spannableText.getSpanStart(annotation),
+                        spannableText.getSpanEnd(annotation), spannableText.getSpanFlags(link));
+                return builder;
+            }
+        }
+        return rawText;
     }
 }
