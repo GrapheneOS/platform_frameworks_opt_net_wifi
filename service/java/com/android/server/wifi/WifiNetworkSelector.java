@@ -1047,7 +1047,7 @@ public class WifiNetworkSelector {
 
     private static boolean isFromCarrierOrPrivilegedApp(WifiConfiguration config) {
         if (config.fromWifiNetworkSuggestion
-                && config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+                && config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
             // Privileged carrier suggestion
             return true;
         }
