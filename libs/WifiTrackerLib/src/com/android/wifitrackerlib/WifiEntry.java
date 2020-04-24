@@ -246,6 +246,11 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
         return getSummary(true /* concise */);
     }
 
+    /** Returns the second summary, it's for additional information of the WifiEntry */
+    public CharSequence getSecondSummary() {
+        return "";
+    }
+
     /**
      * Returns the display summary.
      * @param concise Whether to show more information. e.g., verbose logging.
