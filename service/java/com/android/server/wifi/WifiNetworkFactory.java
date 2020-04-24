@@ -790,7 +790,9 @@ public class WifiNetworkFactory extends NetworkFactory {
                 new WifiConfiguration(mActiveSpecificNetworkRequestSpecifier.wifiConfiguration);
         networkToConnect.SSID = network.SSID;
         // Set the WifiConfiguration.BSSID field to prevent roaming.
-        networkToConnect.BSSID = findBestBssidFromActiveMatchedScanResultsForNetwork(network);
+        networkToConnect.BSSID =
+                findBestBssidFromActiveMatchedScanResultsForNetwork(
+                        ScanResultMatchInfo.fromWifiConfiguration(networkToConnect));
         networkToConnect.ephemeral = true;
         // Mark it user private to avoid conflicting with any saved networks the user might have.
         // TODO (b/142035508): Use a more generic mechanism to fix this.
@@ -1246,14 +1248,14 @@ public class WifiNetworkFactory extends NetworkFactory {
     // i) The latest scan results were empty.
     // ii) The latest scan result did not contain any BSSID for the SSID user chose.
     private @Nullable String findBestBssidFromActiveMatchedScanResultsForNetwork(
-            @NonNull WifiConfiguration network) {
+            @NonNull ScanResultMatchInfo scanResultMatchInfo) {
         if (mActiveSpecificNetworkRequestSpecifier == null
                 || mActiveMatchedScanResults == null) return null;
         ScanResult selectedScanResult = mActiveMatchedScanResults
                 .stream()
                 .filter(scanResult -> Objects.equals(
                         ScanResultMatchInfo.fromScanResult(scanResult),
-                        ScanResultMatchInfo.fromWifiConfiguration(network)))
+                        scanResultMatchInfo))
                 .max(Comparator.comparing(scanResult -> scanResult.level))
                 .orElse(null);
         if (selectedScanResult == null) { // Should never happen.
