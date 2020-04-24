@@ -2952,9 +2952,14 @@ public class ClientModeImpl extends StateMachine {
         if (mIpClient != null) {
             Pair<String, String> p = mWifiScoreCard.getL2KeyAndGroupHint(mWifiInfo);
             if (!p.equals(mLastL2KeyAndGroupHint)) {
+                final MacAddress lastBssid = getCurrentBssid();
                 final Layer2Information l2Information = new Layer2Information(
-                        p.first, p.second,
-                        mLastBssid != null ? MacAddress.fromString(mLastBssid) : null);
+                        p.first, p.second, lastBssid);
+                // Update current BSSID on IpClient side whenever l2Key and groupHint
+                // pair changes (i.e. the initial connection establishment or L2 roaming
+                // happened). If we have COMPLETED the roaming to a different BSSID, start
+                // doing DNAv4/DNAv6 -style probing for on-link neighbors of interest (e.g.
+                // routers/DNS servers/default gateway).
                 if (mIpClient.updateLayer2Information(l2Information)) {
                     mLastL2KeyAndGroupHint = p;
                 } else {
@@ -3899,6 +3904,16 @@ public class ClientModeImpl extends StateMachine {
         return mLastBssid;
     }
 
+    MacAddress getCurrentBssid() {
+        MacAddress bssid = null;
+        try {
+            bssid = (mLastBssid != null) ? MacAddress.fromString(mLastBssid) : null;
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid BSSID format: " + mLastBssid);
+        }
+        return bssid;
+    }
+
     class ConnectModeState extends State {
 
         @Override
@@ -4081,23 +4096,7 @@ public class ClientModeImpl extends StateMachine {
                         transitionTo(mDisconnectedState);
                     }
 
-                    // If we have COMPLETED a connection to a BSSID, start doing
-                    // DNAv4/DNAv6 -style probing for on-link neighbors of
-                    // interest (e.g. routers); harmless if none are configured.
                     if (state == SupplicantState.COMPLETED) {
-                        if (mIpClient != null) {
-                            MacAddress lastBssid = null;
-                            try {
-                                lastBssid = (mLastBssid != null)
-                                        ? MacAddress.fromString(mLastBssid) : null;
-                            } catch (IllegalArgumentException e) {
-                                Log.e(TAG, "Invalid BSSID format: " + mLastBssid);
-                            }
-                            final Layer2Information info = new Layer2Information(
-                                    mLastL2KeyAndGroupHint.first, mLastL2KeyAndGroupHint.second,
-                                    lastBssid);
-                            mIpClient.updateLayer2Information(info);
-                        }
                         mWifiScoreReport.noteIpCheck();
                     }
                     break;
@@ -5441,6 +5440,13 @@ public class ClientModeImpl extends StateMachine {
                 scanResultInfo = new ProvisioningConfiguration.ScanResultInfo(scanResult.SSID,
                         scanResult.BSSID, ies);
             }
+            final MacAddress currentBssid = getCurrentBssid();
+            final String l2Key = mLastL2KeyAndGroupHint != null
+                    ? mLastL2KeyAndGroupHint.first : null;
+            final String groupHint = mLastL2KeyAndGroupHint != null
+                    ? mLastL2KeyAndGroupHint.second : null;
+            final Layer2Information layer2Info = new Layer2Information(l2Key, groupHint,
+                    currentBssid);
 
             if (!isUsingStaticIp) {
                 prov = new ProvisioningConfiguration.Builder()
@@ -5448,6 +5454,7 @@ public class ClientModeImpl extends StateMachine {
                             .withApfCapabilities(mWifiNative.getApfCapabilities(mInterfaceName))
                             .withNetwork(getCurrentNetwork())
                             .withScanResultInfo(scanResultInfo)
+                            .withLayer2Information(layer2Info)
                             .withDisplayName(currentConfig.SSID)
                             .build();
             } else {
@@ -5456,6 +5463,7 @@ public class ClientModeImpl extends StateMachine {
                             .withStaticConfiguration(staticIpConfig)
                             .withApfCapabilities(mWifiNative.getApfCapabilities(mInterfaceName))
                             .withNetwork(getCurrentNetwork())
+                            .withLayer2Information(layer2Info)
                             .withDisplayName(currentConfig.SSID)
                             .build();
             }
