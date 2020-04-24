@@ -2646,7 +2646,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      * 3. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_PERSISTENT and
      * 4. randomized MAC for the network to connect to is different from the current MAC.
      *
-     * Then the current MAC does not change when CMD_START_CONNECT executes.
+     * The factory MAC address is used for the connection.
      */
     @Test
     public void testConnectedMacRandomizationNotSupported() throws Exception {
@@ -2657,11 +2657,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(WifiManager.WIFI_STATE_ENABLED, mCmi.syncGetWifiState());
 
         connect();
-        verify(mWifiNative, never()).setMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
-        verify(mWifiMetrics, never())
-                .logStaEvent(eq(StaEvent.TYPE_MAC_CHANGE), any(WifiConfiguration.class));
         assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mCmi.getWifiInfo().getMacAddress());
-
     }
 
     /**
@@ -2746,9 +2742,8 @@ public class ClientModeImplTest extends WifiBaseTest {
      * Verifies that when
      * 1. connected MAC randomization is on and
      * 2. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_NONE and
-     * 3. current MAC is the factory MAC.
      *
-     * Then MAC change should not occur when CMD_START_CONNECT executes.
+     * Then the factory MAC should be used to connect to the network.
      * @throws Exception
      */
     @Test
@@ -2765,9 +2760,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
-        verify(mWifiNative, never()).setMacAddress(WIFI_IFACE_NAME, TEST_GLOBAL_MAC_ADDRESS);
-        verify(mWifiMetrics, never())
-                .logStaEvent(eq(StaEvent.TYPE_MAC_CHANGE), any(WifiConfiguration.class));
         assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mCmi.getWifiInfo().getMacAddress());
     }
 
@@ -2812,7 +2804,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
-        verify(mWifiNative, never()).setMacAddress(eq(WIFI_IFACE_NAME), any(MacAddress.class));
+        // setMacAddress is invoked once when ClientModeImpl starts to prevent leak of factory MAC.
+        verify(mWifiNative).setMacAddress(eq(WIFI_IFACE_NAME), any(MacAddress.class));
     }
 
     /**
@@ -3828,7 +3821,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeCmi();
         initializeAndAddNetworkAndVerifySuccess();
         when(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(null);
-        assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mCmi.getFactoryMacAddress());
+        mCmi.getFactoryMacAddress();
         verify(mWifiNative).getFactoryMacAddress(anyString());
         verify(mWifiNative, times(2)).getMacAddress(WIFI_IFACE_NAME);
     }
@@ -3842,6 +3835,21 @@ public class ClientModeImplTest extends WifiBaseTest {
                 WifiManager.DEVICE_MOBILITY_STATE_STATIONARY);
         verify(mWifiDataStall).setDeviceMobilityState(
                 WifiManager.DEVICE_MOBILITY_STATE_STATIONARY);
+    }
+
+    /**
+     * Verify the MAC address is being randomized at start to prevent leaking the factory MAC.
+     */
+    @Test
+    public void testRandomizeMacAddressOnStart() throws Exception {
+        ArgumentCaptor<MacAddress> macAddressCaptor = ArgumentCaptor.forClass(MacAddress.class);
+        loadComponentsInStaMode();
+        verify(mWifiNative).setMacAddress(anyString(), macAddressCaptor.capture());
+        MacAddress currentMac = macAddressCaptor.getValue();
+
+        assertNotEquals("The currently programmed MAC address should be different from the factory "
+                + "MAC address after ClientModeImpl starts",
+                mCmi.getFactoryMacAddress(), currentMac.toString());
     }
 
     /**
