@@ -199,9 +199,13 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
 
         if (WifiConfigurationUtil.isConfigForPskNetwork(curConfig)) return;
 
-        mStaIfaceHal.addPmkCacheEntry(curConfig.networkId, expirationTimeInSec, serializedEntry);
+        mStaIfaceHal.addPmkCacheEntry(mIfaceName,
+                curConfig.networkId, expirationTimeInSec, serializedEntry);
         mStaIfaceHal.logCallback(
-                "onPmkCacheAdded: update pmk cache for config id " + curConfig.networkId);
+                "onPmkCacheAdded: update pmk cache for config id "
+                + curConfig.networkId
+                + " on "
+                + mIfaceName);
     }
 
     @Override
