@@ -562,13 +562,16 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testSetWifiEnabledMetricsPrivilegedApp() throws Exception {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         when(mSettingsStore.handleWifiToggled(anyBoolean())).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
 
         InOrder inorder = inOrder(mWifiMetrics);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
+        inorder.verify(mWifiMetrics).logUserActionEvent(UserActionEvent.EVENT_TOGGLE_WIFI_ON);
         inorder.verify(mWifiMetrics).incrementNumWifiToggles(eq(true), eq(true));
+        inorder.verify(mWifiMetrics).logUserActionEvent(UserActionEvent.EVENT_TOGGLE_WIFI_OFF);
         inorder.verify(mWifiMetrics).incrementNumWifiToggles(eq(true), eq(false));
     }
 
