@@ -858,9 +858,6 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 // Register for interface availability from HalDeviceManager
                 mWifiNative.registerInterfaceAvailableListener((boolean isAvailable) -> {
                     mIsHalInterfaceAvailable = isAvailable;
-                    if (isAvailable) {
-                        checkAndReEnableP2p();
-                    }
                     checkAndSendP2pStateChangedBroadcast();
                 }, getHandler());
 
@@ -1390,7 +1387,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                             break;
                         }
                         mInterfaceName = mWifiNative.setupInterface((String ifaceName) -> {
+                            mIsHalInterfaceAvailable = false;
                             sendMessage(DISABLE_P2P);
+                            checkAndSendP2pStateChangedBroadcast();
                         }, getHandler());
                         if (mInterfaceName == null) {
                             Log.e(TAG, "Failed to setup interface for P2P");
