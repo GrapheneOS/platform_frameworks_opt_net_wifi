@@ -510,6 +510,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testWifiMetricsDump() {
         mWifiServiceImpl.dump(new FileDescriptor(), new PrintWriter(new StringWriter()),
                 new String[]{mWifiMetrics.PROTO_DUMP_ARG});
+        verify(mWifiMetrics).setEnhancedMacRandomizationForceEnabled(anyBoolean());
+        verify(mWifiMetrics).setIsScanningAlwaysEnabled(anyBoolean());
+        verify(mWifiMetrics).setVerboseLoggingEnabled(anyBoolean());
         verify(mWifiMetrics)
                 .dump(any(FileDescriptor.class), any(PrintWriter.class), any(String[].class));
         verify(mClientModeImpl, never())
