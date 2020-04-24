@@ -796,6 +796,10 @@ public class WifiServiceImpl extends BaseWifiService {
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(Binder.getCallingUid())) {
+            mWifiMetrics.logUserActionEvent(enable ? UserActionEvent.EVENT_TOGGLE_WIFI_ON
+                    : UserActionEvent.EVENT_TOGGLE_WIFI_OFF);
+        }
         mWifiMetrics.incrementNumWifiToggles(isPrivileged, enable);
         mActiveModeWarden.wifiToggled();
         return true;
