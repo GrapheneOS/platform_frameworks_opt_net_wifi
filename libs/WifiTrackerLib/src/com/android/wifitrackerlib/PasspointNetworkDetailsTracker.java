@@ -45,6 +45,7 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implementation of NetworkDetailsTracker that tracks a single PasspointWifiEntry.
@@ -68,17 +69,32 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
         super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
 
-        PasspointConfiguration passpointConfig = mWifiManager.getPasspointConfigurations().stream()
-                .filter(config -> TextUtils.equals(
-                        uniqueIdToPasspointWifiEntryKey(config.getUniqueId()), key))
-                .findAny().get();
+        Optional<PasspointConfiguration> optionalPasspointConfig =
+                mWifiManager.getPasspointConfigurations()
+                        .stream()
+                        .filter(passpointConfig -> TextUtils.equals(key,
+                                uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId())))
+                        .findAny();
+        if (optionalPasspointConfig.isPresent()) {
+            mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler,
+                    optionalPasspointConfig.get(), mWifiManager, false /* forSavedNetworksPage */);
+        } else {
+            Optional<WifiConfiguration> optionalWifiConfig =
+                    mWifiManager.getPrivilegedConfiguredNetworks()
+                            .stream()
+                            .filter(wifiConfig -> wifiConfig.isPasspoint()
+                                    && TextUtils.equals(key,
+                                            uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey())))
+                            .findAny();
+            if (optionalWifiConfig.isPresent()) {
+                mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler,
+                        optionalWifiConfig.get(), mWifiManager, false /* forSavedNetworksPage */);
+            } else {
+                throw new IllegalArgumentException(
+                        "Cannot find config for given PasspointWifiEntry key!");
+            }
+        }
 
-        checkNotNull(passpointConfig,
-                "Cannot find PasspointConfiguration with matching unique identifier: "
-                        + passpointConfig.getUniqueId());
-
-        mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler, passpointConfig,
-                mWifiManager, false /* forSavedNetworksPage */);
         cacheNewScanResults();
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
