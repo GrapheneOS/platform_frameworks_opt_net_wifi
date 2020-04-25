@@ -2416,6 +2416,15 @@ public class WifiNative {
         mSupplicantStaIfaceHal.removeNetworkCachedData(networkId);
     }
 
+    /** Clear HAL cached data for |networkId| if MAC address is changed.
+     *
+     * @param networkId network id of the network to be checked.
+     * @param curMacAddress current MAC address
+     */
+    public void removeNetworkCachedDataIfNeeded(int networkId, MacAddress curMacAddress) {
+        mSupplicantStaIfaceHal.removeNetworkCachedDataIfNeeded(networkId, curMacAddress);
+    }
+
     /*
      * DPP
      */

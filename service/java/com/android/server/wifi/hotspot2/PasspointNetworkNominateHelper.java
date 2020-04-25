@@ -204,13 +204,9 @@ public class PasspointNetworkNominateHelper {
         // Add or update with the newly created WifiConfiguration to WifiConfigManager.
         // NOTE: if existingNetwork != null, this update is a no-op in most cases if the SSID is the
         // same (since we update the cached config in PasspointManager#addOrUpdateProvider().
-        NetworkUpdateResult result;
-        if (config.fromWifiNetworkSuggestion) {
-            result = mWifiConfigManager.addOrUpdateNetwork(
-                    config, config.creatorUid, config.creatorName);
-        } else {
-            result = mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
-        }
+        NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
+                config, config.creatorUid, config.creatorName);
+
         if (!result.isSuccess()) {
             mLocalLog.log("Failed to add passpoint network");
             return existingNetwork;
