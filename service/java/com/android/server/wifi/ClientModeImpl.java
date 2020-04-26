@@ -67,6 +67,7 @@ import android.net.shared.Inet4AddressUtils;
 import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
+import android.net.util.MacAddressUtils;
 import android.net.util.NetUtils;
 import android.net.wifi.IActionListener;
 import android.net.wifi.INetworkRequestMatchCallback;
@@ -2984,6 +2985,31 @@ public class ClientModeImpl extends StateMachine {
         handleConnectionAttemptEndForDiagnostics(level2FailureCode);
     }
 
+    /* If this connection attempt fails after 802.1x stage, clear intermediate cached data. */
+    void clearNetworkCachedDataIfNeeded(WifiConfiguration config, int reason) {
+        if (config == null) return;
+
+        switch(reason) {
+            case 14: // MICHAEL_MIC_FAILURE
+            case 15: // 4WAY_HANDSHAKE_TIMEOUT
+            case 16: // GROUP_KEY_UPDATE_TIMEOUT
+            case 17: // IE_IN_4WAY_DIFFERS
+            case 18: // GROUP_CIPHER_NOT_VALID
+            case 19: // PAIRWISE_CIPHER_NOT_VALID
+            case 20: // AKMP_NOT_VALID
+            case 23: // IEEE_802_1X_AUTH_FAILED
+            case 24: // CIPHER_SUITE_REJECTED
+            case 29: // BAD_CIPHER_OR_AKM
+            case 45: // PEERKEY_MISMATCH
+            case 49: // INVALID_PMKID
+                mWifiNative.removeNetworkCachedData(config.networkId);
+                break;
+            default:
+                logi("Keep PMK cache for network disconnection reason " + reason);
+                break;
+        }
+    }
+
     /**
      * Returns the sufficient RSSI for the frequency that this network is last seen on.
      */
@@ -3246,6 +3272,9 @@ public class ClientModeImpl extends StateMachine {
             mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
             boolean setMacSuccess =
                     mWifiNative.setMacAddress(mInterfaceName, newMac);
+            if (setMacSuccess) {
+                mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, newMac);
+            }
             Log.d(TAG, "ConnectedMacRandomization SSID(" + config.getPrintableSsid()
                     + "). setMacAddress(" + newMac.toString() + ") from "
                     + currentMacString + " = " + setMacSuccess);
@@ -3264,6 +3293,7 @@ public class ClientModeImpl extends StateMachine {
         String currentMacStr = mWifiNative.getMacAddress(mInterfaceName);
         if (!TextUtils.equals(currentMacStr, factoryMac.toString())) {
             if (mWifiNative.setMacAddress(mInterfaceName, factoryMac)) {
+                mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, factoryMac);
                 mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
             } else {
                 Log.e(TAG, "Failed to set MAC address to " + "'" + factoryMac.toString() + "'");
@@ -3555,6 +3585,7 @@ public class ClientModeImpl extends StateMachine {
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
         mLastSignalLevel = -1;
+        mWifiNative.setMacAddress(mInterfaceName, MacAddressUtils.createRandomUnicastAddress());
         mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(true);
@@ -4211,6 +4242,7 @@ public class ClientModeImpl extends StateMachine {
                     // idempotent commands are executed twice (stopping Dhcp, enabling the SPS mode
                     // at the chip etc...
                     if (mVerboseLoggingEnabled) log("ConnectModeState: Network connection lost ");
+                    clearNetworkCachedDataIfNeeded(getTargetWifiConfiguration(), message.arg2);
                     handleNetworkDisconnect();
                     transitionTo(mDisconnectedState);
                     break;
@@ -5240,6 +5272,7 @@ public class ClientModeImpl extends StateMachine {
                                 + " BSSID=" + bssid
                                 + " target=" + target);
                     }
+                    clearNetworkCachedDataIfNeeded(getTargetWifiConfiguration(), message.arg2);
                     if (bssid != null && bssid.equals(mTargetBssid)) {
                         handleNetworkDisconnect();
                         transitionTo(mDisconnectedState);
@@ -5395,6 +5428,7 @@ public class ClientModeImpl extends StateMachine {
                         mWifiDiagnostics.captureBugReportData(
                                 WifiDiagnostics.REPORT_REASON_UNEXPECTED_DISCONNECT);
                     }
+
                     boolean localGen = message.arg1 == 1;
                     if (!localGen) { // ignore disconnects initiated by wpa_supplicant.
                         mWifiScoreCard.noteNonlocalDisconnect(message.arg2);
@@ -5598,6 +5632,7 @@ public class ClientModeImpl extends StateMachine {
                                         getTargetSsid(), bssid,
                                         WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
                     }
+                    clearNetworkCachedDataIfNeeded(getTargetWifiConfiguration(), message.arg2);
                     break;
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                     StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
