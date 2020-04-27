@@ -821,15 +821,29 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     /**
-     * Trigger recovery and a bug report if we see a native failure.
+     * Trigger recovery and a bug report if we see a native failure
+     * while the device is not shutting down
      */
     @Test
-    public void handleWifiNativeFailure() throws Exception {
+    public void handleWifiNativeFailureDeviceNotShuttingDown() throws Exception {
         mWifiNativeStatusListener.onStatusChanged(false);
         mLooper.dispatchAll();
         verify(mWifiDiagnostics).captureBugReportData(
                 WifiDiagnostics.REPORT_REASON_WIFINATIVE_FAILURE);
         verify(mSelfRecovery).trigger(eq(SelfRecovery.REASON_WIFINATIVE_FAILURE));
+    }
+
+    /**
+     * Verify the device shutting down doesn't trigger recovery or bug report.
+     */
+    @Test
+    public void handleWifiNativeFailureDeviceShuttingDown() throws Exception {
+        mActiveModeWarden.notifyShuttingDown();
+        mWifiNativeStatusListener.onStatusChanged(false);
+        mLooper.dispatchAll();
+        verify(mWifiDiagnostics, never()).captureBugReportData(
+                WifiDiagnostics.REPORT_REASON_WIFINATIVE_FAILURE);
+        verify(mSelfRecovery, never()).trigger(eq(SelfRecovery.REASON_WIFINATIVE_FAILURE));
     }
 
     /**
