@@ -571,11 +571,17 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private void handleShutDown() {
-        // There is no explicit disconnection event in clientModeImpl during shutdown.
-        // Call resetConnectionState() so that connection duration is calculated correctly
-        // before memory store write triggered by mMemoryStoreImpl.stop().
-        mWifiScoreCard.resetConnectionState();
-        mMemoryStoreImpl.stop();
+        // Direct call to notify ActiveModeWarden as soon as possible with the assumption that
+        // notifyShuttingDown() doesn't have codes that may cause concurrentModificationException,
+        // e.g., access to a collection.
+        mActiveModeWarden.notifyShuttingDown();
+        mWifiThreadRunner.post(()-> {
+            // There is no explicit disconnection event in clientModeImpl during shutdown.
+            // Call resetConnectionState() so that connection duration is calculated
+            // before memory store write triggered by mMemoryStoreImpl.stop().
+            mWifiScoreCard.resetConnectionState();
+            mMemoryStoreImpl.stop();
+        });
     }
 
     private boolean checkNetworkSettingsPermission(int pid, int uid) {
