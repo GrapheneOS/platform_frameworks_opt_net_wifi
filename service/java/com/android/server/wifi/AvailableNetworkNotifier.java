@@ -438,7 +438,7 @@ public class AvailableNetworkNotifier {
             mWifiMetrics.setNominatorForNetwork(result.netId, mNominatorId);
             ConnectActionListener connectActionListener = new ConnectActionListener();
             mClientModeImpl.connect(null, result.netId, new Binder(), connectActionListener,
-                    connectActionListener.hashCode(), Process.WIFI_UID);
+                    connectActionListener.hashCode(), Process.SYSTEM_UID);
             addNetworkToBlacklist(mRecommendedNetwork.SSID);
         }
 
