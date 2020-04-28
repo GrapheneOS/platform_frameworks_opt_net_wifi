@@ -16,6 +16,10 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
@@ -44,6 +48,7 @@ import android.net.NetworkScoreManager;
 import android.net.NetworkScorerAppData;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -638,6 +643,34 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean isExpired() {
+        return false;
+    }
+
+    @Override
+    public boolean shouldEditBeforeConnect() {
+        WifiConfiguration wifiConfig = getWifiConfiguration();
+        if (wifiConfig == null) {
+            return false;
+        }
+
+        // The secured Wi-Fi entry is never connected.
+        if (getSecurity() != SECURITY_NONE && getSecurity() != SECURITY_OWE
+                && !wifiConfig.getNetworkSelectionStatus().hasEverConnected()) {
+            return true;
+        }
+
+        // The network is disabled because of one of the authentication problems.
+        NetworkSelectionStatus networkSelectionStatus = wifiConfig.getNetworkSelectionStatus();
+        if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED) {
+            if (networkSelectionStatus.getDisableReasonCounter(DISABLED_AUTHENTICATION_FAILURE) > 0
+                    || networkSelectionStatus.getDisableReasonCounter(
+                    DISABLED_BY_WRONG_PASSWORD) > 0
+                    || networkSelectionStatus.getDisableReasonCounter(
+                    DISABLED_AUTHENTICATION_NO_CREDENTIALS) > 0) {
+                return true;
+            }
+        }
+
         return false;
     }
 
