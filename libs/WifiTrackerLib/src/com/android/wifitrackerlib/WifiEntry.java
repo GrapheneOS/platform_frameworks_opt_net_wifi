@@ -428,6 +428,11 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     /** Returns the ScanResult information of a WifiEntry */
     abstract String getScanResultDescription();
 
+    /** Returns the network selection information of a WifiEntry */
+    String getNetworkSelectionDescription() {
+        return "";
+    }
+
     /**
      * Sets the callback listener for WifiEntryCallback methods.
      * Subsequent calls will overwrite the previous listener.
