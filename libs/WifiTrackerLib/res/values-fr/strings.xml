@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Finalisation de l\'inscription…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Impossible de finaliser l\'inscription. Appuyez ici pour réessayer."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Inscription terminée. Connexion…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Ce réseau reçoit un identifiant unique qui peut être utilisé pour suivre la position de l\'appareil.\n"<annotation id="url">"Plus d\'infos"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Très lente"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Lente"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Correcte"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Moyenne"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Élevée"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Très rapide"</string>
 </resources>

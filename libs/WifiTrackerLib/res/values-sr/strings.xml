@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Регистрација се довршава…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Довршавање регистрације није успело. Додирните да бисте пробали поново."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Регистрација је довршена. Повезује се…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Ова мрежа захтева јединствени ИД који може да се користи за праћење локације уређаја.\n"<annotation id="url">"Сазнајте више"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Веома спора"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Спора"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Потврди"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Средња"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Брза"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Веома брза"</string>
 </resources>

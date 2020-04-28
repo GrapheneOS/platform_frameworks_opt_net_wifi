@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Kinukumpleto ang pag-sign up…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Hindi makumpleto ang pag-sign up. I-tap para subukan ulit."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Kumpleto na ang pag-sign up. Kumokonekta…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Nakakatanggap ang network na ito ng natatanging ID na magagamit para sumubaybay ng lokasyon ng device.\n"<annotation id="url">"Matuto pa"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Napakabagal"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Mabagal"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"OK"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Katamtaman"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Mabilis"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Napakabilis"</string>
 </resources>

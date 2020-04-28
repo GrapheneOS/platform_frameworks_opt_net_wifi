@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Concluindo inscrição…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Não foi possível concluir a inscrição. Toque para tentar novamente."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Inscrição concluída. Conectando…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Essa rede recebe um código exclusivo que pode ser usado para rastrear a localização do dispositivo.\n"<annotation id="url">"Saiba mais"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Muito lenta"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Lenta"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Ok"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Média"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Rápida"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Muito rápida"</string>
 </resources>

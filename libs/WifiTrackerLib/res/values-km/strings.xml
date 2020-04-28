@@ -38,7 +38,7 @@
     <string name="private_dns_broken" msgid="2212227512243587416">"មិនអាច​ចូលប្រើ​ម៉ាស៊ីនមេ DNS ឯកជន​បានទេ"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"គ្មាន​អ៊ីនធឺណិតទេ"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"គ្មាន"</string>
-    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"ផុតកំណត់"</string>
+    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"បានផុតកំណត់"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"ចុច​ដើម្បី​ចុះឈ្មោះ"</string>
     <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"ចុច ដើម្បី​បន្តការ​ជាវជាថ្មី និង​ភ្ជាប់"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"កំពុង​បើក <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"កំពុង​បញ្ចប់​ការចុះឈ្មោះ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"មិនអាច​បញ្ចប់​ការចុះឈ្មោះ​បានទេ។ សូមចុច ដើម្បី​ព្យាយាម​ម្ដង​ទៀត។"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ការចុះ​ឈ្មោះ​បានបញ្ចប់។ កំពុងភ្ជាប់…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"បណ្ដាញនេះ​ទទួលបាន​លេខសម្គាល់​ពិសេស ដែល​អាចប្រើ​ដើម្បី​តាមដាន​ទីតាំង​ឧបករណ៍។\n"<annotation id="url">"ស្វែងយល់​បន្ថែម"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"យឺតណាស់"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"យឺត"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"យល់ព្រម"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"មធ្យម"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"លឿន"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"លឿន​ខ្លាំង"</string>
 </resources>

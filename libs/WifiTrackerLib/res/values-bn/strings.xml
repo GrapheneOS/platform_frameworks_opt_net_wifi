@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"সাইন-আপ করা হচ্ছে…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"সাইন-আপ করা যায়নি। আবার চেষ্টা করতে ট্যাপ করুন।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"সাইন-আপ করা হয়ে গেছে। কানেক্ট করা হচ্ছে…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"এই নেটওয়ার্ক একটি অনন্য আইডি পায় যেটি ব্যবহার করে ডিভাইস লোকেশন ট্র্যাক করা যায়।\n"<annotation id="url">"আরও জানুন"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"খুব ধীরে"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"ধীরে"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ঠিক আছে"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"মাঝারি"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"দ্রুত"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"খুব দ্রুত"</string>
 </resources>

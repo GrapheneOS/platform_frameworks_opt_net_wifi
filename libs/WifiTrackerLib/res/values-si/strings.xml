@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"ලියාපදිංචිය සම්පූර්ණ කරමින්…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"ලියාපදිංචිය සම්පූර්ණ කළ නොහැකි විය. නැවත උත්සාහ කිරීමට තට්ටු කරන්න."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ලියාපදිංචිය සම්පූර්ණයි. සබැඳෙමින්…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"මෙම ජාලය උපාංග ස්ථානය නිරීක්ෂණය කිරීමට භාවිත කළ හැකි අනන්‍ය ID එකක් ලැබේ.\n"<annotation id="url">"තව දැන ගන්න"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"ඉතා මන්දගාමී"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"මන්දගාමී"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"හරි"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"මධ්‍යම"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"වේගවත්"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"ඉතා වේගවත්"</string>
 </resources>

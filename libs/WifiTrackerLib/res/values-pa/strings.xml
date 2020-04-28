@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਹੋਇਆ। ਕਨੈਕਟ ਹੋ ਰਿਹਾ ਹੈ…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"ਇਹ ਨੈੱਟਵਰਕ ਇੱਕ ਵਿਲੱਖਣ ਆਈਡੀ ਪ੍ਰਾਪਤ ਕਰਦਾ ਹੈ ਜਿਸ ਨੂੰ ਡੀਵਾਈਸ ਦੇ ਟਿਕਾਣੇ ਨੂੰ ਟਰੈਕ ਕਰਨ ਲਈ ਵਰਤਿਆ ਦਾ ਸਕਦਾ ਹੈ।\n"<annotation id="url">"ਹੋਰ ਜਾਣੋ"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"ਬਹੁਤ ਹੌਲੀ"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"ਹੌਲੀ"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ਠੀਕ ਹੈ"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"ਔਸਤ"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"ਤੇਜ਼"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"ਬਹੁਤ ਤੇਜ਼"</string>
 </resources>
