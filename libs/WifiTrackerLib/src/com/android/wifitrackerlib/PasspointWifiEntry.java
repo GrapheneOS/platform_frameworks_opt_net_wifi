@@ -554,4 +554,9 @@ public class PasspointWifiEntry extends WifiEntry {
         // TODO(b/70983952): Fill this method in.
         return "";
     }
+
+    @Override
+    String getNetworkSelectionDescription() {
+        return Utils.getNetworkSelectionDescription(mWifiConfig);
+    }
 }
