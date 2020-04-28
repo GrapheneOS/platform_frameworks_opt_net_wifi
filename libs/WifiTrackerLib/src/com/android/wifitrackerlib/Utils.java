@@ -41,6 +41,7 @@ import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -52,6 +53,7 @@ import android.text.Annotation;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
 import android.text.style.ClickableSpan;
 import android.view.View;
 
@@ -443,7 +445,45 @@ class Utils {
             sj.add(scanResultsDescription);
         }
 
+        final String networkSelectionDescription = wifiEntry.getNetworkSelectionDescription();
+        if (!TextUtils.isEmpty(networkSelectionDescription)) {
+            sj.add(networkSelectionDescription);
+        }
+
         return sj.toString();
+    }
+
+    static String getNetworkSelectionDescription(WifiConfiguration wifiConfig) {
+        if (wifiConfig == null) {
+            return "";
+        }
+
+        StringBuilder description = new StringBuilder();
+        NetworkSelectionStatus networkSelectionStatus = wifiConfig.getNetworkSelectionStatus();
+
+        if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED) {
+            description.append(" (" + networkSelectionStatus.getNetworkStatusString());
+            if (networkSelectionStatus.getDisableTime() > 0) {
+                long now = System.currentTimeMillis();
+                long elapsedSeconds = (now - networkSelectionStatus.getDisableTime()) / 1000;
+                description.append(" " + DateUtils.formatElapsedTime(elapsedSeconds));
+            }
+            description.append(")");
+        }
+
+        int maxNetworkSelectionDisableReason =
+                NetworkSelectionStatus.getMaxNetworkSelectionDisableReason();
+        for (int reason = 0; reason <= maxNetworkSelectionDisableReason; reason++) {
+            int disableReasonCounter = networkSelectionStatus.getDisableReasonCounter(reason);
+            if (disableReasonCounter == 0) {
+                continue;
+            }
+            description.append(" ")
+                    .append(NetworkSelectionStatus.getNetworkSelectionDisableReasonString(reason))
+                    .append("=")
+                    .append(disableReasonCounter);
+        }
+        return description.toString();
     }
 
     static String getCurrentNetworkCapabilitiesInformation(Context context,

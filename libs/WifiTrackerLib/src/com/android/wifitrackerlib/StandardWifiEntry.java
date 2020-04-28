@@ -852,4 +852,9 @@ public class StandardWifiEntry extends WifiEntry {
         description.append("}");
         return description.toString();
     }
+
+    @Override
+    String getNetworkSelectionDescription() {
+        return Utils.getNetworkSelectionDescription(getWifiConfiguration());
+    }
 }
