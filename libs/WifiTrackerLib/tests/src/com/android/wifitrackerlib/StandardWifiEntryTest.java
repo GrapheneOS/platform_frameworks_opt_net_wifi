@@ -16,6 +16,12 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED;
+
 import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.wifiConfigToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
@@ -23,6 +29,7 @@ import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_NONE;
+import static com.android.wifitrackerlib.WifiEntry.SECURITY_OWE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_WEP;
 import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
@@ -31,6 +38,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -48,6 +56,7 @@ import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -663,5 +672,99 @@ public class StandardWifiEntryTest {
         entry.updateNetworkCapabilities(captivePortalCapabilities);
 
         verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+    }
+
+    @Test
+    public void testShouldEditBeforeConnect_nullWifiConfig_returnFalse() {
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_EAP),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.shouldEditBeforeConnect()).isFalse();
+    }
+
+    @Test
+    public void testShouldEditBeforeConnect_openNetwork_returnFalse() {
+        // Test open networks.
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.SSID = "\"ssid\"";
+        wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE),
+                wifiConfig, mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.shouldEditBeforeConnect()).isFalse();
+
+        // Test enhanced open networks.
+        wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+        entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_OWE),
+                wifiConfig, mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.shouldEditBeforeConnect()).isFalse();
+    }
+
+    @Test
+    public void testShouldEditBeforeConnect_securedNetwork_returnTrueIfNeverConnected() {
+        // Test never connected.
+        WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        wifiConfig.SSID = "\"ssid\"";
+        wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_PSK),
+                wifiConfig, mMockWifiManager, false /* forSavedNetworksPage */);
+        NetworkSelectionStatus networkSelectionStatus =
+                spy(new NetworkSelectionStatus.Builder().build());
+        doReturn(networkSelectionStatus).when(wifiConfig).getNetworkSelectionStatus();
+
+        assertThat(entry.shouldEditBeforeConnect()).isTrue();
+
+        // Test ever connected.
+        doReturn(true).when(networkSelectionStatus).hasEverConnected();
+
+        assertThat(entry.shouldEditBeforeConnect()).isFalse();
+    }
+
+    @Test
+    public void testShouldEditBeforeConnect_authenticationFailure_returnTrue() {
+        // Test DISABLED_AUTHENTICATION_FAILURE.
+        WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        wifiConfig.SSID = "\"ssid\"";
+        wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_PSK),
+                wifiConfig, mMockWifiManager, false /* forSavedNetworksPage */);
+        NetworkSelectionStatus.Builder statusBuilder = new NetworkSelectionStatus.Builder();
+        NetworkSelectionStatus networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
+                NETWORK_SELECTION_TEMPORARY_DISABLED)
+                .setNetworkSelectionDisableReason(
+                DISABLED_AUTHENTICATION_FAILURE)
+                .build());
+        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
+                DISABLED_AUTHENTICATION_FAILURE);
+        doReturn(true).when(networkSelectionStatus).hasEverConnected();
+        doReturn(networkSelectionStatus).when(wifiConfig).getNetworkSelectionStatus();
+
+        assertThat(entry.shouldEditBeforeConnect()).isTrue();
+
+        // Test DISABLED_BY_WRONG_PASSWORD.
+        networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
+                NETWORK_SELECTION_PERMANENTLY_DISABLED)
+                .setNetworkSelectionDisableReason(DISABLED_BY_WRONG_PASSWORD)
+                .build());
+        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
+                DISABLED_BY_WRONG_PASSWORD);
+
+        assertThat(entry.shouldEditBeforeConnect()).isTrue();
+
+        // Test DISABLED_AUTHENTICATION_NO_CREDENTIALS.
+        networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
+                NETWORK_SELECTION_PERMANENTLY_DISABLED)
+                .setNetworkSelectionDisableReason(DISABLED_AUTHENTICATION_NO_CREDENTIALS)
+                .build());
+        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
+                DISABLED_AUTHENTICATION_NO_CREDENTIALS);
+
+        assertThat(entry.shouldEditBeforeConnect()).isTrue();
     }
 }
