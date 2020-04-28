@@ -99,7 +99,6 @@ android_test {
         "libdl_android",
         "libcgrouprc",
         "libcutils",
-        "libnativehelper",
         "libprocessgroup",
         "libutils",
         "libvndksupport",
