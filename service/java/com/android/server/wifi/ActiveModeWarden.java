@@ -79,6 +79,7 @@ public class ActiveModeWarden {
 
     private boolean mCanRequestMoreClientModeManagers = false;
     private boolean mCanRequestMoreSoftApManagers = false;
+    private boolean mIsShuttingdown = false;
 
     /**
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
@@ -122,7 +123,7 @@ public class ActiveModeWarden {
         mWifiController = new WifiController();
 
         wifiNative.registerStatusListener(isReady -> {
-            if (!isReady) {
+            if (!isReady && !mIsShuttingdown) {
                 mHandler.post(() -> {
                     Log.e(TAG, "One of the native daemons died. Triggering recovery");
                     wifiDiagnostics.captureBugReportData(
@@ -146,6 +147,15 @@ public class ActiveModeWarden {
                 (isAvailable) -> mHandler.post(() -> {
                     mCanRequestMoreSoftApManagers = isAvailable;
                 }));
+    }
+
+    /**
+     * Notify that device is shutting down
+     * Keep it simple and don't add collection access codes
+     * to avoid concurrentModificationException when it is directly called from a different thread
+     */
+    public void notifyShuttingDown() {
+        mIsShuttingdown = true;
     }
 
     /**
