@@ -372,8 +372,9 @@ message WifiLog {
   // SoftAP event list tracking sessions and client counts in local only mode
   repeated SoftApConnectedClientsEvent soft_ap_connected_clients_events_local_only = 90;
 
-  // Wps connection metrics
-  optional WpsMetrics wps_metrics = 91;
+  // WPS connection metrics - removed
+  reserved 91;
+  reserved "wps_metrics";
 
   // Wifi power statistics
   optional WifiPowerStats wifi_power_stats = 92;
@@ -1797,34 +1798,6 @@ message SoftApConnectedClientsEvent {
 
   // Indicates if user enabled the client_control
   optional bool client_control_is_enabled = 10;
-}
-
-// Wps connection metrics
-// Keeps track of Wi-Fi Protected Setup usage
-message WpsMetrics {
-  // Total number of wps connection attempts
-  optional int32 num_wps_attempts = 1;
-
-  // Total number of wps connection successes
-  optional int32 num_wps_success = 2;
-
-  // Total number of wps failures on start
-  optional int32 num_wps_start_failure = 3;
-
-  // Total number of wps overlap failure
-  optional int32 num_wps_overlap_failure = 4;
-
-  // Total number of wps timeout failure
-  optional int32 num_wps_timeout_failure = 5;
-
-  // Total number of other wps failure during connection
-  optional int32 num_wps_other_connection_failure = 6;
-
-  // Total number of supplicant failure after wps
-  optional int32 num_wps_supplicant_failure = 7;
-
-  // Total number of wps cancellation
-  optional int32 num_wps_cancellation = 8;
 }
 
 // Power stats for Wifi
