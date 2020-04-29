@@ -90,7 +90,6 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestion
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiToggleStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStatsEntry;
-import com.android.server.wifi.proto.nano.WifiMetricsProto.WpsMetrics;
 import com.android.server.wifi.rtt.RttMetrics;
 import com.android.server.wifi.scanner.KnownBandsChannelHelper;
 import com.android.server.wifi.util.ExternalCallbackTracker;
@@ -197,7 +196,6 @@ public class WifiMetrics {
     private RttMetrics mRttMetrics;
     private final PnoScanMetrics mPnoScanMetrics = new PnoScanMetrics();
     private final WifiLinkLayerUsageStats mWifiLinkLayerUsageStats = new WifiLinkLayerUsageStats();
-    private final WpsMetrics mWpsMetrics = new WpsMetrics();
     private final ExperimentValues mExperimentValues = new ExperimentValues();
     private Handler mHandler;
     private ScoringParams mScoringParams;
@@ -1325,78 +1323,6 @@ public class WifiMetrics {
     public void incrementPnoFoundNetworkEventCount() {
         synchronized (mLock) {
             mPnoScanMetrics.numPnoFoundNetworkEvents++;
-        }
-    }
-
-    /**
-     * Increment total number of wps connection attempts
-     */
-    public void incrementWpsAttemptCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsAttempts++;
-        }
-    }
-
-    /**
-     * Increment total number of wps connection success
-     */
-    public void incrementWpsSuccessCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsSuccess++;
-        }
-    }
-
-    /**
-     * Increment total number of wps failure on start
-     */
-    public void incrementWpsStartFailureCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsStartFailure++;
-        }
-    }
-
-    /**
-     * Increment total number of wps overlap failure
-     */
-    public void incrementWpsOverlapFailureCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsOverlapFailure++;
-        }
-    }
-
-    /**
-     * Increment total number of wps timeout failure
-     */
-    public void incrementWpsTimeoutFailureCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsTimeoutFailure++;
-        }
-    }
-
-    /**
-     * Increment total number of other wps failure during connection
-     */
-    public void incrementWpsOtherConnectionFailureCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsOtherConnectionFailure++;
-        }
-    }
-
-    /**
-     * Increment total number of supplicant failure after wps
-     */
-    public void incrementWpsSupplicantFailureCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsSupplicantFailure++;
-        }
-    }
-
-    /**
-     * Increment total number of wps cancellation
-     */
-    public void incrementWpsCancellationCount() {
-        synchronized (mLock) {
-            mWpsMetrics.numWpsCancellation++;
         }
     }
 
@@ -3553,23 +3479,6 @@ public class WifiMetrics {
                     pw.println(eventLine.toString());
                 }
 
-                pw.println("mWpsMetrics.numWpsAttempts="
-                        + mWpsMetrics.numWpsAttempts);
-                pw.println("mWpsMetrics.numWpsSuccess="
-                        + mWpsMetrics.numWpsSuccess);
-                pw.println("mWpsMetrics.numWpsStartFailure="
-                        + mWpsMetrics.numWpsStartFailure);
-                pw.println("mWpsMetrics.numWpsOverlapFailure="
-                        + mWpsMetrics.numWpsOverlapFailure);
-                pw.println("mWpsMetrics.numWpsTimeoutFailure="
-                        + mWpsMetrics.numWpsTimeoutFailure);
-                pw.println("mWpsMetrics.numWpsOtherConnectionFailure="
-                        + mWpsMetrics.numWpsOtherConnectionFailure);
-                pw.println("mWpsMetrics.numWpsSupplicantFailure="
-                        + mWpsMetrics.numWpsSupplicantFailure);
-                pw.println("mWpsMetrics.numWpsCancellation="
-                        + mWpsMetrics.numWpsCancellation);
-
                 mWifiPowerMetrics.dump(pw);
                 mWifiWakeMetrics.dump(pw);
 
@@ -4190,7 +4099,6 @@ public class WifiMetrics {
                         mWifiLogProto.softApConnectedClientsEventsLocalOnly);
             }
 
-            mWifiLogProto.wpsMetrics = mWpsMetrics;
             mWifiLogProto.wifiPowerStats = mWifiPowerMetrics.buildProto();
             mWifiLogProto.wifiRadioUsage = mWifiPowerMetrics.buildWifiRadioUsageProto();
             mWifiLogProto.wifiWakeStats = mWifiWakeMetrics.buildProto();
@@ -4511,7 +4419,6 @@ public class WifiMetrics {
             mObservedHotspotR3ApsPerEssInScanHistogram.clear();
             mSoftApEventListTethered.clear();
             mSoftApEventListLocalOnly.clear();
-            mWpsMetrics.clear();
             mWifiWakeMetrics.clear();
             mObserved80211mcApInScanHistogram.clear();
             mWifiIsUnusableList.clear();
