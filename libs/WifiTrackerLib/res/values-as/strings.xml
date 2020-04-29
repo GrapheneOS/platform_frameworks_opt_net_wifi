@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"ছাইন আপ সম্পূৰ্ণ কৰি থকা হৈছে…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"ছাইন আপ সম্পূৰ্ণ কৰিব পৰা নগ’ল। পুনৰ চেষ্টা কৰিবলৈ টিপক।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ছাইন আপ সম্পূৰ্ণ হৈছে। সংযোগ কৰি থকা হৈছে…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"এই নেটৱৰ্কটোৱে এটা অদ্বৈত আইডি পায়, যিটো ডিভাইচৰ অৱস্থান ট্ৰেক কৰিবলৈ ব্যৱহাৰ কৰিব পৰা যায়।\n"<annotation id="url">"অধিক জানক"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"অতি লেহেম"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"লেহেমীয়া"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ঠিক"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"মধ্যমীয়া"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"দ্ৰুত"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"অতি দ্ৰুত"</string>
 </resources>

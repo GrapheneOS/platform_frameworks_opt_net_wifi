@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Ολοκλήρωση εγγραφής…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Δεν ήταν δυνατή η ολοκλήρωση της εγγραφής. Πατήστε για να δοκιμάσετε ξανά."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Η εγγραφή ολοκληρώθηκε. Σύνδεση…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Αυτό το δίκτυο λαμβάνει ένα μοναδικό αναγνωριστικό που μπορεί να χρησιμοποιηθεί για τον εντοπισμό της τοποθεσίας της συσκευής.\n"<annotation id="url">"Μάθετε περισσότερα"</annotation>"."</string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Πολύ αργή"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Αργή"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ΟΚ"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Μέτρια"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Γρήγορη"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Πολύ γρήγορη"</string>
 </resources>

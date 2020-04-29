@@ -38,7 +38,7 @@
     <string name="private_dns_broken" msgid="2212227512243587416">"Non è possibile accedere al server DNS privato"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Internet assente"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Nessuna"</string>
-    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Scaduto"</string>
+    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Scaduta"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"Tocca per registrarti"</string>
     <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"Tocca per rinnovare l\'abbonamento e connetterti"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"Apertura di <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Completamento della registrazione…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Impossibile completare la registrazione. Tocca per riprovare."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registrazione completata. Connessione…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Questa rete riceve un ID univoco che può essere utilizzato per tracciare la posizione del dispositivo.\n"<annotation id="url">"Ulteriori informazioni"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Molto lenta"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Lenta"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"OK"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Media"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Veloce"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Molto veloce"</string>
 </resources>

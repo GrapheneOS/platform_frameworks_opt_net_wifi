@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"가입 완료 중…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"가입을 완료할 수 없습니다. 다시 시도하려면 탭하세요."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"가입이 완료되었습니다. 연결 중…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"이 네트워크는 기기 위치 추적에 사용될 수 있는 고유 ID를 수신합니다.\n"<annotation id="url">"자세히 알아보기"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"매우 느림"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"느림"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"보통"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"보통"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"빠름"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"매우 빠름"</string>
 </resources>

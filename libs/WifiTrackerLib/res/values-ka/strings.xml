@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
-    <string name="auto_connect_disable" msgid="1078319396240632542">"ავტომატური დაკავშირება გამორთულია"</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"ავტოდაკავშირება გამორთულია"</string>
     <string name="saved_network" msgid="6241977554502802914">"შენახული <xliff:g id="NAME">%1$s</xliff:g>-ის მიერ"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"ავტომატურად დაკავშირება ვერ ხერხდება"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"ინტერნეტ-კავშირი არ არის"</string>
@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"მიმდინარეობს რეგისტრაციის დასრულება…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"რეგისტრაციის დასრულება ვერ მოხერხდა. შეეხეთ ხელახლა საცდელად."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"რეგისტრაცია დასრულდა. მიმდინარეობს დაკავშირება…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"ეს ქსელი მიიღებს უნიკალურ ID-ს, რომლის მეშვეობითაც შესაძლებელია მოწყობილობის მდებარეობის აღნუსხვა.\n"<annotation id="url">"შეიტყვეთ მეტი"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"ძალიან ნელი"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"ნელი"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"კარგი"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"საშუალო"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"სწრაფი"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"ძალიან სწრაფი"</string>
 </resources>

@@ -38,7 +38,7 @@
     <string name="private_dns_broken" msgid="2212227512243587416">"Nije moguće pristupiti privatnom DNS serveru"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Nema internetske veze"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Ništa"</string>
-    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Istekao"</string>
+    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Isteklo"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"Dodirnite za registraciju"</string>
     <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"Dodirnite da obnovite pretplatu i povežete se"</string>
     <string name="osu_opening_provider" msgid="5633521771769175139">"Otvaranje <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Završavanje registracije…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Registraciju nije moguće izvršiti. Dodirnite da pokušate ponovo."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registracija je završena. Povezivanje…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Ova mreža prima jedinstveni ID koji se može koristiti za praćenje lokacije uređaja.\n"<annotation id="url">"Saznajte više"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Veoma sporo"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Sporo"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Uredu"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Srednja brzina"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Brzo"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Veoma brzo"</string>
 </resources>

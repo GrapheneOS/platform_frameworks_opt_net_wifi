@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"登録を完了しています…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"登録を完了できませんでした。タップしてもう一度お試しください。"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"登録が完了しました。接続しています…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"このネットワークは一意の ID を受信します。この ID を使ってデバイスの位置情報が追跡される可能性があります。\n"<annotation id="url">"詳細"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"とても遅い"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"遅い"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"OK"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"普通"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"速い"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"非常に速い"</string>
 </resources>
