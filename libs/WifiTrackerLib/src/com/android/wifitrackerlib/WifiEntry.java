@@ -165,14 +165,14 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     public static final int MAX_FREQ_5GHZ = 5900;
 
     /**
-     * Min bound on the 6.0 GHz (802.11ad/ay) WLAN channels.
+     * Min bound on the 6.0 GHz (802.11ax) WLAN channels.
      */
-    public static final int MIN_FREQ_6GHZ = 5700;
+    public static final int MIN_FREQ_6GHZ = 5925;
 
     /**
-     * Max bound on the 6.0 GHz (802.11ad/ay) WLAN channels.
+     * Max bound on the 6.0 GHz (802.11ax) WLAN channels.
      */
-    public static final int MAX_FREQ_6GHZ = 7100;
+    public static final int MAX_FREQ_6GHZ = 7125;
 
     /**
      * Max ScanResult information displayed of Wi-Fi Verbose Logging.
@@ -427,6 +427,20 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
 
     /** Returns the ScanResult information of a WifiEntry */
     abstract String getScanResultDescription();
+
+    /** Returns the network selection information of a WifiEntry */
+    String getNetworkSelectionDescription() {
+        return "";
+    }
+
+    /**
+     * In Wi-Fi picker, when users click a saved network, it will connect to the Wi-Fi network.
+     * However, for some special cases, Wi-Fi picker should show Wi-Fi editor UI for users to edit
+     * security or password before connecting. Or users will always get connection fail results.
+     */
+    public boolean shouldEditBeforeConnect() {
+        return false;
+    }
 
     /**
      * Sets the callback listener for WifiEntryCallback methods.

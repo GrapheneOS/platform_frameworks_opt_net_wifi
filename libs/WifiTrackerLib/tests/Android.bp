@@ -22,6 +22,7 @@ android_test {
         "mockito-target-minus-junit4",
         "truth-prebuilt",
         "WifiTrackerLib",
+        "Robolectric_all-target",
     ],
 
     libs: [

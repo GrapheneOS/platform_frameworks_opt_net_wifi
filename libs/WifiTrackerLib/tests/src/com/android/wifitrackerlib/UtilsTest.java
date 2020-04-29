@@ -25,6 +25,7 @@ import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
+import static com.android.wifitrackerlib.Utils.getNetworkSelectionDescription;
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
 import static com.android.wifitrackerlib.Utils.isSimPresent;
@@ -35,9 +36,10 @@ import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
 
 import static com.google.common.truth.Truth.assertThat;
 
-
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -48,6 +50,7 @@ import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -64,17 +67,21 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ClickableSpan;
 
+import com.android.wifitrackerlib.shadow.ShadowSystem;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Config(shadows = {ShadowSystem.class})
 public class UtilsTest {
     private static final String LABEL_AUTO_CONNECTION_DISABLED = "Auto-Connection disabled";
     private static final String LABEL_METERED = "Metered";
@@ -414,6 +421,26 @@ public class UtilsTest {
         assertEquals(output.toString(), expectedText.toString());
         assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
                 ClickableSpan.class).length, 1);
+    }
+
+    @Test
+    public void testGetNetworkSelectionDescription_disabledWrongPassword_showsWrongPasswordLabel() {
+        String expected = " (NETWORK_SELECTION_TEMPORARY_DISABLED 1:02:03) "
+                + "NETWORK_SELECTION_DISABLED_BY_WRONG_PASSWORD=2";
+        WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        NetworkSelectionStatus.Builder statusBuilder = new NetworkSelectionStatus.Builder();
+        NetworkSelectionStatus networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
+                NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED)
+                .setNetworkSelectionDisableReason(NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD)
+                .build());
+        doReturn(2).when(networkSelectionStatus).getDisableReasonCounter(
+                NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD);
+        long now = System.currentTimeMillis();
+        // Network selection disable time is 1:02:03 ago.
+        doReturn(now - (60 * 60 + 2 * 60 + 3) * 1000).when(networkSelectionStatus).getDisableTime();
+        when(wifiConfig.getNetworkSelectionStatus()).thenReturn(networkSelectionStatus);
+
+        assertThat(getNetworkSelectionDescription(wifiConfig)).isEqualTo(expected);
     }
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
