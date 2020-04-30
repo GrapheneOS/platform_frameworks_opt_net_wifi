@@ -68,7 +68,7 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
         mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, key, mWifiManager,
-                false /* forSavedNetworksPage */);
+                mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
         cacheNewScanResults();
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
@@ -151,6 +151,12 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         if (mChosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mChosenEntry.updateNetworkCapabilities(capabilities);
         }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkScoreCacheUpdated() {
+        mChosenEntry.onScoreCacheUpdated();
     }
 
     /**

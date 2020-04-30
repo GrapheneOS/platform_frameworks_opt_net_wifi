@@ -23,6 +23,7 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import static com.android.wifitrackerlib.Utils.getAppLabel;
 import static com.android.wifitrackerlib.Utils.getAppLabelForWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
+import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getCurrentNetworkCapabilitiesInformation;
@@ -32,6 +33,7 @@ import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getNetworkDetailedState;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
+import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
@@ -41,6 +43,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiNetworkScoreCache;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.text.TextUtils;
@@ -80,7 +83,6 @@ public class PasspointWifiEntry extends WifiEntry {
     private @Security int mSecurity = SECURITY_EAP;
     private boolean mIsRoaming = false;
 
-    private int mLevel = WIFI_LEVEL_UNREACHABLE;
     protected long mSubscriptionExpirationTimeInMillis;
 
     // PasspointConfiguration#setMeteredOverride(int meteredOverride) is a hide API and we can't
@@ -96,8 +98,9 @@ public class PasspointWifiEntry extends WifiEntry {
     PasspointWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull PasspointConfiguration passpointConfig,
             @NonNull WifiManager wifiManager,
+            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
         checkNotNull(passpointConfig, "Cannot construct with null PasspointConfiguration!");
 
@@ -119,8 +122,9 @@ public class PasspointWifiEntry extends WifiEntry {
     PasspointWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull WifiConfiguration wifiConfig,
             @NonNull WifiManager wifiManager,
+            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
         checkNotNull(wifiConfig, "Cannot construct with null PasspointConfiguration!");
         if (!wifiConfig.isPasspoint()) {
@@ -152,12 +156,6 @@ public class PasspointWifiEntry extends WifiEntry {
 
         StringJoiner sj = new StringJoiner(mContext.getString(R.string.summary_separator));
 
-        // TODO(b/70983952): Check if it's necessary to add speend information here.
-        String speedDescription = getSpeedDescription(mContext, this);
-        if (!TextUtils.isEmpty(speedDescription)) {
-            sj.add(speedDescription);
-        }
-
         if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
             String disconnectDescription = getDisconnectedStateDescription(mContext, this);
             if (TextUtils.isEmpty(disconnectDescription)) {
@@ -182,6 +180,11 @@ public class PasspointWifiEntry extends WifiEntry {
             if (!TextUtils.isEmpty(connectDescription)) {
                 sj.add(connectDescription);
             }
+        }
+
+        String speedDescription = getSpeedDescription(mContext, this);
+        if (!TextUtils.isEmpty(speedDescription)) {
+            sj.add(speedDescription);
         }
 
         String autoConnectDescription = getAutoConnectDescription(mContext, this);
@@ -234,12 +237,11 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @Override
-    public int getLevel() {
-        return mLevel;
-    }
-
-    @Override
     public String getSsid() {
+        if (mWifiInfo != null) {
+            return sanitizeSsid(mWifiInfo.getSSID());
+        }
+
         return mWifiConfig != null ? sanitizeSsid(mWifiConfig.SSID) : null;
     }
 
@@ -511,23 +513,46 @@ public class PasspointWifiEntry extends WifiEntry {
         }
         if (mWifiConfig != null) {
             mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
+            List<ScanResult> currentScanResults = new ArrayList<>();
             ScanResult bestScanResult = null;
             if (homeScanResults != null && !homeScanResults.isEmpty()) {
-                bestScanResult = getBestScanResultByLevel(homeScanResults);
+                currentScanResults.addAll(homeScanResults);
             } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
+                currentScanResults.addAll(roamingScanResults);
                 mIsRoaming = true;
-                bestScanResult = getBestScanResultByLevel(roamingScanResults);
             }
-            if (bestScanResult == null) {
-                mLevel = WIFI_LEVEL_UNREACHABLE;
-            } else {
+            bestScanResult = getBestScanResultByLevel(currentScanResults);
+            if (bestScanResult != null) {
                 mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
-                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+            }
+            if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+                mLevel = bestScanResult != null
+                        ? mWifiManager.calculateSignalLevel(bestScanResult.level)
+                        : WIFI_LEVEL_UNREACHABLE;
+                // Average speed is used to prevent speed label flickering from multiple APs.
+                mSpeed = getAverageSpeedFromScanResults(mScoreCache, currentScanResults);
             }
         } else {
             mLevel = WIFI_LEVEL_UNREACHABLE;
         }
+        notifyOnUpdated();
+    }
 
+    @WorkerThread
+    void onScoreCacheUpdated() {
+        if (mWifiInfo != null) {
+            mSpeed = getSpeedFromWifiInfo(mScoreCache, mWifiInfo);
+        } else {
+            synchronized (mLock) {
+                // Average speed is used to prevent speed label flickering from multiple APs.
+                if (!mCurrentHomeScanResults.isEmpty()) {
+                    mSpeed = getAverageSpeedFromScanResults(mScoreCache, mCurrentHomeScanResults);
+                } else {
+                    mSpeed = getAverageSpeedFromScanResults(mScoreCache,
+                            mCurrentRoamingScanResults);
+                }
+            }
+        }
         notifyOnUpdated();
     }
 
