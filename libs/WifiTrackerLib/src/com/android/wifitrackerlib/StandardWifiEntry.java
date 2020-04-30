@@ -28,6 +28,7 @@ import static com.android.wifitrackerlib.Utils.getAppLabel;
 import static com.android.wifitrackerlib.Utils.getAppLabelForSavedNetwork;
 import static com.android.wifitrackerlib.Utils.getAppLabelForWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
+import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getCurrentNetworkCapabilitiesInformation;
@@ -37,6 +38,7 @@ import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getNetworkDetailedState;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
+import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
@@ -51,6 +53,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.TextUtils;
@@ -129,8 +132,10 @@ public class StandardWifiEntry extends WifiEntry {
             @NonNull String key,
             @NonNull List<ScanResult> scanResults,
             @NonNull WifiManager wifiManager,
+            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        this(context, callbackHandler, key, wifiManager, forSavedNetworksPage);
+        this(context, callbackHandler, key, wifiManager, scoreCache,
+                forSavedNetworksPage);
 
         checkNotNull(scanResults, "Cannot construct with null ScanResult list!");
         if (scanResults.isEmpty()) {
@@ -143,8 +148,10 @@ public class StandardWifiEntry extends WifiEntry {
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull String key, @NonNull WifiConfiguration config,
             @NonNull WifiManager wifiManager,
+            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        this(context, callbackHandler, key, wifiManager, forSavedNetworksPage);
+        this(context, callbackHandler, key, wifiManager, scoreCache,
+                forSavedNetworksPage);
 
         checkNotNull(config, "Cannot construct with null config!");
         checkNotNull(config.SSID, "Supplied config must have an SSID!");
@@ -153,9 +160,11 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
-            @NonNull String key, @NonNull WifiManager wifiManager, boolean forSavedNetworksPage) {
+            @NonNull String key, @NonNull WifiManager wifiManager,
+            @NonNull WifiNetworkScoreCache scoreCache,
+            boolean forSavedNetworksPage) {
         // TODO: second argument (isSaved = false) is bogus in this context
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
         if (!key.startsWith(KEY_PREFIX)) {
             throw new IllegalArgumentException("Key does not start with correct prefix!");
@@ -185,11 +194,6 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     public String getSummary(boolean concise) {
         StringJoiner sj = new StringJoiner(mContext.getString(R.string.summary_separator));
-
-        final String speedDescription = getSpeedDescription(mContext, this);
-        if (!TextUtils.isEmpty(speedDescription)) {
-            sj.add(speedDescription);
-        }
 
         if (!concise && mForSavedNetworksPage && isSaved()) {
             final CharSequence appLabel = getAppLabelForSavedNetwork(mContext, this);
@@ -223,6 +227,11 @@ public class StandardWifiEntry extends WifiEntry {
             if (!TextUtils.isEmpty(connectDescription)) {
                 sj.add(connectDescription);
             }
+        }
+
+        final String speedDescription = getSpeedDescription(mContext, this);
+        if (!TextUtils.isEmpty(speedDescription)) {
+            sj.add(speedDescription);
         }
 
         final String autoConnectDescription = getAutoConnectDescription(mContext, this);
@@ -282,11 +291,6 @@ public class StandardWifiEntry extends WifiEntry {
     public CharSequence getSecondSummary() {
         return getConnectedState() == CONNECTED_STATE_CONNECTED
                 ? getImsiProtectionDescription(mContext, getWifiConfiguration()) : "";
-    }
-
-    @Override
-    public int getLevel() {
-        return mLevel;
     }
 
     @Override
@@ -702,6 +706,10 @@ public class StandardWifiEntry extends WifiEntry {
             mLevel = bestScanResult != null
                     ? mWifiManager.calculateSignalLevel(bestScanResult.level)
                     : WIFI_LEVEL_UNREACHABLE;
+            synchronized (mLock) {
+                // Average speed is used to prevent speed label flickering from multiple APs.
+                mSpeed = getAverageSpeedFromScanResults(mScoreCache, mCurrentScanResults);
+            }
         }
         notifyOnUpdated();
     }
@@ -716,6 +724,19 @@ public class StandardWifiEntry extends WifiEntry {
             mShouldAutoOpenCaptivePortal = false;
             signIn(null /* callback */);
         }
+    }
+
+    @WorkerThread
+    void onScoreCacheUpdated() {
+        if (mWifiInfo != null) {
+            mSpeed = getSpeedFromWifiInfo(mScoreCache, mWifiInfo);
+        } else {
+            synchronized (mLock) {
+                // Average speed is used to prevent speed label flickering from multiple APs.
+                mSpeed = getAverageSpeedFromScanResults(mScoreCache, mCurrentScanResults);
+            }
+        }
+        notifyOnUpdated();
     }
 
     private void updateEapType(ScanResult result) {
