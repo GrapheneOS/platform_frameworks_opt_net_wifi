@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"साइन अप किया जा रहा है…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"साइन अप नहीं हो सका. फिर से कोशिश करने के लिए टैप करें."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"साइन अप की प्रक्रिया पूरी हो गई. कनेक्ट हो रहा है…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"इस नेटवर्क को एक विशेष आईडी दिया जाता है. इसका इस्तेमाल डिवाइस की जगह की जानकारी का पता लगाने के लिए किया जा सकता है.\n"<annotation id="url">"ज़्यादा जानें"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"अत्‍यधिक धीमी"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"धीमी"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ठीक है"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"मध्यम"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"तेज़"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"बहुत ज़्यादा तेज़"</string>
 </resources>

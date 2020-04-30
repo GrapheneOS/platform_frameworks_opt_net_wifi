@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"سائن اپ مکمل ہو رہا ہے…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"سائن اپ مکمل نہیں ہو سکا۔ دوبارہ کوشش کرنے کے لیے تھپتھپائیں۔"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"سائن اپ مکمل ہو گیا۔ منسلک ہو رہا ہے…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"‏اس نیٹ ورک کو ایک منفرد ID موصول ہوتی ہے جو آلہ کے مقام کو ٹریک کرنے کیلئے استعمال ہوسکتی ہے۔\n"<annotation id="url">"مزید جانیں"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"بہت سست"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"سست"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ٹھیک ہے"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"متوسط"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"تیز"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"بہت تیز"</string>
 </resources>

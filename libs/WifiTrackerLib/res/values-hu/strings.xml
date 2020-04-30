@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Regisztráció befejezése…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Nem sikerült a regisztráció befejezése. Koppintással újrapróbálkozhat."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"A regisztráció befejeződött. Csatlakozás…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Ez a hálózat egyedi azonosítót kap, amely felhasználható az eszköz helyadatainak követésére.\n"<annotation id="url">"További információ."</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Nagyon lassú"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Lassú"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Rendben"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Közepes"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Gyors"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Nagyon gyors"</string>
 </resources>

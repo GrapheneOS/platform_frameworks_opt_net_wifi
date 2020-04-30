@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"பதிவு செய்தல் நிறைவடைகிறது…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"பதிவு செய்தலை நிறைவுசெய்ய முடியவில்லை. மீண்டும் முயல தட்டவும்."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"பதிவு செய்தல் நிறைவடைந்தது. இணைக்கிறது…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"இந்த நெட்வொர்க் ஒரு தனிப்பட்ட ஐடியைப் பெறும், சாதன இருப்பிடத்தை டிராக் செய்ய இதைப் பயன்படுத்தலாம்.\n"<annotation id="url">"மேலும் அறிக"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"மிகவும் வேகம் குறைவானது"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"வேகம் குறைவு"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"சரி"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"நடுத்தரம்"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"வேகம்"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"மிகவும் வேகமானது"</string>
 </resources>

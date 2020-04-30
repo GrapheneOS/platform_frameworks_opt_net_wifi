@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"साइन अप गर्ने कार्य सम्पन्न गर्दै…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"साइन अप गर्ने कार्य सम्पन्न गर्न सकिएन। फेरि प्रयास गर्न ट्याप गर्नुहोस्।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"साइन अप गर्ने कार्य सम्पन्न भयो। जोड्दै…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"यो नेटवर्कले यन्त्रको स्थान पत्ता लगाउन प्रयोग गर्न सकिने एउटा अद्वित्तीय ID प्राप्त गर्छ।\n"<annotation id="url">"थप जान्नुहोस्"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"धेरै ढिलो"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"बिस्तारै"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"ठिक छ"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"मध्यम"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"छिटो"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"धेरै छिटो"</string>
 </resources>

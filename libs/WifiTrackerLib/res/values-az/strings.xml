@@ -46,5 +46,12 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Qeydiyyat tamamlanır…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Qeydiyyat tamamlanmadı. Yenidən cəhd etmək üçün toxunun."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Qeydiyyat tamamlandı. Qoşulur…"</string>
-    <string name="imsi_protection_warning" msgid="3771878632537231149">"Bu şəbəkə cihaz məkanını izləmək üçün istifadə edilə biləcək unikal ID qəbul edir.\n"<annotation id="url">"Ətraflı məlumat"</annotation></string>
+    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
+    <skip />
+    <string name="speed_label_very_slow" msgid="2401582671941367179">"Çox Yavaş"</string>
+    <string name="speed_label_slow" msgid="8410385703344502127">"Yavaş"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"OK"</string>
+    <string name="speed_label_medium" msgid="3175703848952862009">"Orta"</string>
+    <string name="speed_label_fast" msgid="8344116097613544322">"Sürətli"</string>
+    <string name="speed_label_very_fast" msgid="1595806641512447877">"Çox Sürətli"</string>
 </resources>
