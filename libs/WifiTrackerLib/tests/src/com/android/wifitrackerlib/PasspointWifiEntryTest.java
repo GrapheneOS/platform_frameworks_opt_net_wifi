@@ -16,8 +16,13 @@
 
 package com.android.wifitrackerlib;
 
+import static com.android.wifitrackerlib.TestUtils.buildScanResult;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_FAST;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_SLOW;
+
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -26,8 +31,13 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.NetworkKey;
+import android.net.ScoredNetwork;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiNetworkScoreCache;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
@@ -39,10 +49,20 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Collections;
+
 public class PasspointWifiEntryTest {
+    public static final int GOOD_RSSI = -50;
+    public static final int OKAY_RSSI = -60;
+    public static final int BAD_RSSI = -70;
+
     @Mock private Context mMockContext;
     @Mock private WifiManager mMockWifiManager;
     @Mock private Resources mMockResources;
+    @Mock private WifiInfo mMockWifiInfo;
+    @Mock private NetworkInfo mMockNetworkInfo;
+    @Mock private WifiNetworkScoreCache mMockScoreCache;
+    @Mock private ScoredNetwork mMockScoredNetwork;
 
     private TestLooper mTestLooper;
     private Handler mTestHandler;
@@ -56,8 +76,14 @@ public class PasspointWifiEntryTest {
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
 
+        when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
+        when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(
+                NetworkInfo.DetailedState.DISCONNECTED);
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockResources.getString(R.string.summary_separator)).thenReturn("/");
+        when(mMockScoreCache.getScoredNetwork((ScanResult) any())).thenReturn(mMockScoredNetwork);
+        when(mMockScoreCache.getScoredNetwork((NetworkKey) any())).thenReturn(mMockScoredNetwork);
     }
 
     @Test
@@ -68,7 +94,8 @@ public class PasspointWifiEntryTest {
         when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
 
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager, false /* forSavedNetworksPage */);
+                passpointConfiguration, mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
 
         assertThat(passpointWifiEntry.getSummary()).isNotEqualTo(expired);
     }
@@ -79,7 +106,8 @@ public class PasspointWifiEntryTest {
         String expired = "Expired";
         when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager, false /* forSavedNetworksPage */);
+                passpointConfiguration, mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
         PasspointWifiEntry spyEntry = spy(passpointWifiEntry);
         when(spyEntry.isExpired()).thenReturn(true);
 
@@ -98,7 +126,8 @@ public class PasspointWifiEntryTest {
     @Test
     public void testGetMeteredChoice_afterSetMeteredChoice_getCorrectValue() {
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                getPasspointConfiguration(), mMockWifiManager, false /* forSavedNetworksPage */);
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
 
         entry.setMeteredChoice(WifiEntry.METERED_CHOICE_UNMETERED);
 
@@ -127,9 +156,69 @@ public class PasspointWifiEntryTest {
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
 
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                getPasspointConfiguration(), mMockWifiManager, false /* forSavedNetworksPage */);
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
         entry.updateConnectionInfo(wifiInfo, networkInfo);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
+    }
+
+    @Test
+    public void testGetSpeed_cacheUpdated_speedValueChanges() {
+        when(mMockScoredNetwork.calculateBadge(GOOD_RSSI)).thenReturn(SPEED_FAST);
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.FQDN = FQDN;
+        entry.updateScanResultInfo(wifiConfig,
+                Collections.singletonList(buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
+                null);
+
+        when(mMockScoredNetwork.calculateBadge(GOOD_RSSI)).thenReturn(SPEED_SLOW);
+        entry.onScoreCacheUpdated();
+
+        assertThat(entry.getSpeed()).isEqualTo(SPEED_SLOW);
+    }
+
+    @Test
+    public void testGetSpeed_connected_useWifiInfoRssiForSpeed() {
+        when(mMockScoredNetwork.calculateBadge(BAD_RSSI)).thenReturn(SPEED_SLOW);
+        when(mMockScoredNetwork.calculateBadge(GOOD_RSSI)).thenReturn(SPEED_FAST);
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getRssi()).thenReturn(BAD_RSSI);
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.FQDN = FQDN;
+        entry.updateScanResultInfo(wifiConfig,
+                Collections.singletonList(buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
+                null);
+
+        entry.updateConnectionInfo(mMockWifiInfo, mMockNetworkInfo);
+
+        assertThat(entry.getSpeed()).isEqualTo(SPEED_SLOW);
+    }
+
+    @Test
+    public void testGetSpeed_newScanResults_speedValueChanges() {
+        when(mMockScoredNetwork.calculateBadge(BAD_RSSI)).thenReturn(SPEED_SLOW);
+        when(mMockScoredNetwork.calculateBadge(GOOD_RSSI)).thenReturn(SPEED_FAST);
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.FQDN = FQDN;
+        entry.updateScanResultInfo(wifiConfig,
+                Collections.singletonList(buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
+                null);
+
+        entry.updateScanResultInfo(wifiConfig,
+                Collections.singletonList(buildScanResult("ssid", "bssid0", 0, BAD_RSSI)),
+                null);
+
+        assertThat(entry.getSpeed()).isEqualTo(SPEED_SLOW);
     }
 }
