@@ -3853,6 +3853,16 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify the MAC address is being randomized at start to prevent leaking the factory MAC.
+     */
+    @Test
+    public void testNoRandomizeMacAddressOnStartIfMacRandomizationNotEnabled() throws Exception {
+        mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, false);
+        loadComponentsInStaMode();
+        verify(mWifiNative, never()).setMacAddress(anyString(), any());
+    }
+
+    /**
      * Verify bugreport will be taken when get IP_REACHABILITY_LOST
      */
     @Test
