@@ -54,12 +54,15 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         mLocalLog = new LocalLog(512);
         mSavedNetworkNominator = new SavedNetworkNominator(mWifiConfigManager,
                 mPasspointNetworkNominateHelper, mLocalLog, mWifiCarrierInfoManager,
-                mWifiPermissionsUtil);
+                mWifiPermissionsUtil, mWifiNetworkSuggestionsManager);
         when(mWifiCarrierInfoManager.isSimPresent(anyInt())).thenReturn(true);
         when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(any())).thenReturn(VALID_SUBID);
         when(mWifiCarrierInfoManager.requiresImsiEncryption(VALID_SUBID)).thenReturn(true);
         when(mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(anyInt())).thenReturn(true);
         when(mWifiCarrierInfoManager.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(VALID_SUBID);
+        when(mWifiNetworkSuggestionsManager
+                .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
+                .thenReturn(false);
 
     }
 
@@ -84,6 +87,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
     @Mock private WifiCarrierInfoManager mWifiCarrierInfoManager;
     @Mock private PasspointNetworkNominateHelper mPasspointNetworkNominateHelper;
     @Mock private WifiPermissionsUtil mWifiPermissionsUtil;
+    @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private LocalLog mLocalLog;
 
     /**
@@ -306,5 +310,35 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(false);
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
+    }
+
+    @Test
+    public void testIgnoreOpenNetworkWithSameNetworkSuggestionHasSecureNetworkFromSameCarrier() {
+        String[] ssids = {"\"test1\""};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3"};
+        int[] freqs = {2470};
+        String[] caps = {"[ESS]"};
+        int[] levels = {RSSI_LEVEL};
+        int[] securities = {SECURITY_NONE};
+
+        ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
+                WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
+                        freqs, caps, levels, securities, mWifiConfigManager, mClock);
+        List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
+        WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
+
+        when(mWifiNetworkSuggestionsManager
+                .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
+                .thenReturn(true);
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
+                null, null, true, false, mOnConnectableListener);
+        verify(mOnConnectableListener, never()).onConnectable(any(), any());
+
+        when(mWifiNetworkSuggestionsManager
+                .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
+                .thenReturn(false);
+        mSavedNetworkNominator.nominateNetworks(scanDetails,
+                null, null, true, false, mOnConnectableListener);
+        verify(mOnConnectableListener).onConnectable(any(), any());
     }
 }

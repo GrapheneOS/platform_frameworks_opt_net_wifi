@@ -1967,17 +1967,21 @@ public class WifiNetworkSuggestionsManager {
             if (suggestion == null || suggestion.wifiConfiguration == null) {
                 continue;
             }
-            if (suggestion.passpointConfiguration != null) {
-                filteredScanResults.put(suggestion,
-                        mWifiInjector.getPasspointManager().getMatchingScanResults(
-                                suggestion.passpointConfiguration, scanResults));
-            } else {
-                filteredScanResults.put(suggestion,
-                        getMatchingScanResults(suggestion.wifiConfiguration, scanResults));
-            }
+            filteredScanResults.put(suggestion,
+                    getMatchingScanResultsForSuggestion(suggestion, scanResults));
         }
 
         return filteredScanResults;
+    }
+
+    private List<ScanResult> getMatchingScanResultsForSuggestion(WifiNetworkSuggestion suggestion,
+            List<ScanResult> scanResults) {
+        if (suggestion.passpointConfiguration != null) {
+            return mWifiInjector.getPasspointManager().getMatchingScanResults(
+                    suggestion.passpointConfiguration, scanResults);
+        } else {
+            return getMatchingScanResults(suggestion.wifiConfiguration, scanResults);
+        }
     }
 
     /**
@@ -2010,6 +2014,101 @@ public class WifiNetworkSuggestionsManager {
      */
     public void addOnSuggestionUpdateListener(OnSuggestionUpdateListener listener) {
         mListeners.add(listener);
+    }
+
+    /**
+     * When a saved open network has a same network suggestion which is from app has
+     * NETWORK_CARRIER_PROVISIONING permission, also that app suggested secure network suggestion
+     * for same carrier with higher or equal priority and Auto-Join enabled, also that secure
+     * network is in the range. The saved open network will be ignored during the network selection.
+     * TODO (b/142035508): revert all these changes once we build infra needed to solve this.
+     * @param configuration Saved open network to check if it should be ignored.
+     * @param scanDetails Available ScanDetail nearby.
+     * @return True if the open network should be ignored, false otherwise.
+     */
+    public boolean shouldBeIgnoredBySecureSuggestionFromSameCarrier(
+            @NonNull WifiConfiguration configuration, List<ScanDetail> scanDetails) {
+        if (!mResources.getBoolean(
+                R.bool.config_wifiIgnoreOpenSavedNetworkWhenSecureSuggestionAvailable)) {
+            return false;
+        }
+        if (configuration == null || scanDetails == null || !configuration.isOpenNetwork()) {
+            return false;
+        }
+        Set<ExtendedWifiNetworkSuggestion> matchedExtSuggestions =
+                getNetworkSuggestionsForWifiConfiguration(configuration, null);
+        if (matchedExtSuggestions == null || matchedExtSuggestions.isEmpty()) {
+            return false;
+        }
+        matchedExtSuggestions = matchedExtSuggestions.stream().filter(ewns ->
+                mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(ewns.perAppInfo.uid))
+                .collect(Collectors.toSet());
+        if (matchedExtSuggestions.isEmpty()) {
+            return false;
+        }
+        for (ExtendedWifiNetworkSuggestion ewns : matchedExtSuggestions) {
+            if (hasSecureSuggestionFromSameCarrierAvailable(ewns, scanDetails)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasSecureSuggestionFromSameCarrierAvailable(
+            ExtendedWifiNetworkSuggestion extendedWifiNetworkSuggestion,
+            List<ScanDetail> scanDetails) {
+        boolean isOpenSuggestionMetered = WifiConfiguration.isMetered(
+                extendedWifiNetworkSuggestion.wns.wifiConfiguration, null);
+        Set<ExtendedWifiNetworkSuggestion> secureExtSuggestions = new HashSet<>();
+        for (ExtendedWifiNetworkSuggestion ewns : extendedWifiNetworkSuggestion.perAppInfo
+                .extNetworkSuggestions) {
+            // Open network and auto-join disable suggestion, ignore.
+            if (isOpenSuggestion(ewns) || !ewns.isAutojoinEnabled) {
+                continue;
+            }
+            // From different carrier as open suggestion, ignore.
+            if (getCarrierIdFromSuggestion(ewns)
+                    != getCarrierIdFromSuggestion(extendedWifiNetworkSuggestion)) {
+                continue;
+            }
+            // Secure and open has different meterness, ignore
+            if (WifiConfiguration.isMetered(ewns.wns.wifiConfiguration, null)
+                    != isOpenSuggestionMetered) {
+                continue;
+            }
+            // Low priority than open suggestion, ignore.
+            if (ewns.wns.wifiConfiguration.priority
+                    < extendedWifiNetworkSuggestion.wns.wifiConfiguration.priority) {
+                continue;
+            }
+            WifiConfiguration wcmConfig = mWifiConfigManager
+                    .getConfiguredNetwork(ewns.wns.wifiConfiguration.getKey());
+            // Network selection is disabled, ignore.
+            if (wcmConfig != null && !wcmConfig.getNetworkSelectionStatus().isNetworkEnabled()) {
+                continue;
+            }
+            secureExtSuggestions.add(ewns);
+        }
+
+        if (secureExtSuggestions.isEmpty()) {
+            return false;
+        }
+        List<ScanResult> scanResults = scanDetails.stream().map(ScanDetail::getScanResult)
+                .collect(Collectors.toList());
+        // Check if the secure suggestion is in the range.
+        for (ExtendedWifiNetworkSuggestion ewns : secureExtSuggestions) {
+            if (!getMatchingScanResultsForSuggestion(ewns.wns, scanResults).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isOpenSuggestion(ExtendedWifiNetworkSuggestion extendedWifiNetworkSuggestion) {
+        if (extendedWifiNetworkSuggestion.wns.passpointConfiguration != null) {
+            return false;
+        }
+        return extendedWifiNetworkSuggestion.wns.wifiConfiguration.isOpenNetwork();
     }
 
     /**
