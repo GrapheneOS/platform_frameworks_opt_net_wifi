@@ -54,6 +54,7 @@ import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.PersistableBundle;
 import android.os.test.TestLooper;
@@ -98,6 +99,7 @@ public class UtilsTest {
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
     @Mock private NetworkScoreManager mMockNetworkScoreManager;
+    @Mock private WifiNetworkScoreCache mMockScoreCache;
     @Mock private SubscriptionManager mSubscriptionManager;
     @Mock private TelephonyManager mTelephonyManager;
     @Mock private CarrierConfigManager mCarrierConfigManager;
@@ -209,7 +211,7 @@ public class UtilsTest {
 
         final CharSequence appLabel = getAppLabelForSavedNetwork(mMockContext, entry);
 
-        assertThat(appLabel).isEqualTo(APP_LABEL);
+        assertThat(appLabel.toString()).isEqualTo(APP_LABEL);
     }
 
     @Test
@@ -380,7 +382,7 @@ public class UtilsTest {
     public void testGetImsiProtectionDescription_isSimCredentialFalse_returnEmptyString() {
         final WifiConfiguration wificonfig = new WifiConfiguration();
 
-        assertEquals(getImsiProtectionDescription(mMockContext, wificonfig), "");
+        assertEquals(getImsiProtectionDescription(mMockContext, wificonfig).toString(), "");
     }
 
     @Test
@@ -390,7 +392,7 @@ public class UtilsTest {
         when(mockWifiEnterpriseConfig.isAuthenticationSimBased()).thenReturn(true);
         mockWifiConfig.enterpriseConfig = mockWifiEnterpriseConfig;
 
-        assertEquals(getImsiProtectionDescription(mMockContext, mockWifiConfig), "");
+        assertEquals(getImsiProtectionDescription(mMockContext, mockWifiConfig).toString(), "");
     }
 
     @Test
@@ -400,7 +402,7 @@ public class UtilsTest {
         final CharSequence output = linkifyAnnotation(mMockContext, testText, "id", "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
-        assertEquals(output, testText);
+        assertEquals(output.toString(), testText);
         assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
                 ClickableSpan.class).length, 0);
     }
@@ -447,7 +449,7 @@ public class UtilsTest {
         final WifiManager mockWifiManager = mock(WifiManager.class);
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 wifiConfigToStandardWifiEntryKey(config), config,
-                mockWifiManager, false /* forSavedNetworksPage */);
+                mockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
         final WifiInfo mockWifiInfo = mock(WifiInfo.class);
         final NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
 
