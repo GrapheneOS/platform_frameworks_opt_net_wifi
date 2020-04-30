@@ -310,7 +310,7 @@ public class WifiInjector {
                         mConnectivityLocalLog);
         mSavedNetworkNominator = new SavedNetworkNominator(
                 mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mWifiCarrierInfoManager,
-                mWifiPermissionsUtil);
+                mWifiPermissionsUtil, mWifiNetworkSuggestionsManager);
         mNetworkSuggestionNominator = new NetworkSuggestionNominator(mWifiNetworkSuggestionsManager,
                 mWifiConfigManager, nominateHelper, mConnectivityLocalLog, mWifiCarrierInfoManager);
         mScoredNetworkNominator = new ScoredNetworkNominator(mContext, wifiHandler,
