@@ -39,16 +39,19 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final PasspointNetworkNominateHelper mPasspointNetworkNominateHelper;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
+    private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
 
     SavedNetworkNominator(WifiConfigManager configManager,
             PasspointNetworkNominateHelper nominateHelper, LocalLog localLog,
             WifiCarrierInfoManager wifiCarrierInfoManager,
-            WifiPermissionsUtil wifiPermissionsUtil) {
+            WifiPermissionsUtil wifiPermissionsUtil,
+            WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager) {
         mWifiConfigManager = configManager;
         mPasspointNetworkNominateHelper = nominateHelper;
         mLocalLog = localLog;
         mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mWifiPermissionsUtil = wifiPermissionsUtil;
+        mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
     }
 
     private void localLog(String log) {
@@ -152,6 +155,14 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
             if (network.useExternalScores) {
                 localLog("Network " + WifiNetworkSelector.toNetworkString(network)
                         + " has external score.");
+                continue;
+            }
+
+            if (mWifiNetworkSuggestionsManager
+                    .shouldBeIgnoredBySecureSuggestionFromSameCarrier(network,
+                            scanDetails)) {
+                localLog("Open Network " + WifiNetworkSelector.toNetworkString(network)
+                        + " has a secure network suggestion from same carrier.");
                 continue;
             }
 
