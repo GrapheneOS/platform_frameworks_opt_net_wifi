@@ -412,4 +412,6 @@
          cause the wifi stack to turn wifi off and wait for user input.
          Set to 0 to turn off recovery attempts and always turn off wifi on failures -->
     <integer translatable="false" name="config_wifiMaxNativeFailureSelfRecoveryPerHour">2</integer>
+    <!-- Ignore the open saved network if from carrier provisioning app, there is a same open suggestion and a secure suggestion from same carrier available -->
+    <bool translatable="false" name="config_wifiIgnoreOpenSavedNetworkWhenSecureSuggestionAvailable">true</bool>
 </resources>
