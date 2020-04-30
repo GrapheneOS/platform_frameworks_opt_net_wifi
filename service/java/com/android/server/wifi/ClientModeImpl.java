@@ -3585,7 +3585,9 @@ public class ClientModeImpl extends StateMachine {
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
         mLastSignalLevel = -1;
-        mWifiNative.setMacAddress(mInterfaceName, MacAddressUtils.createRandomUnicastAddress());
+        if (isConnectedMacRandomizationEnabled()) {
+            mWifiNative.setMacAddress(mInterfaceName, MacAddressUtils.createRandomUnicastAddress());
+        }
         mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(true);
