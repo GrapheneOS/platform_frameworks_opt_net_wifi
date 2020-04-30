@@ -27,6 +27,12 @@ import static com.android.wifitrackerlib.WifiEntry.SECURITY_OWE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_SAE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_WEP;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_FAST;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_MODERATE;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_NONE;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_SLOW;
+import static com.android.wifitrackerlib.WifiEntry.SPEED_VERY_FAST;
+import static com.android.wifitrackerlib.WifiEntry.Speed;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.groupingBy;
@@ -39,9 +45,13 @@ import android.content.pm.PackageManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
+import android.net.NetworkKey;
+import android.net.ScoredNetwork;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiNetworkScoreCache;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -301,6 +311,53 @@ class Utils {
         return scanResultsByKey;
     }
 
+    @Speed
+    static int getAverageSpeedFromScanResults(@NonNull WifiNetworkScoreCache scoreCache,
+            @NonNull List<ScanResult> scanResults) {
+        int count = 0;
+        int totalSpeed = 0;
+        for (ScanResult scanResult : scanResults) {
+            ScoredNetwork scoredNetwork = scoreCache.getScoredNetwork(scanResult);
+            if (scoredNetwork == null) {
+                continue;
+            }
+            @Speed int speed = scoredNetwork.calculateBadge(scanResult.level);
+            if (speed != SPEED_NONE) {
+                count++;
+                totalSpeed += speed;
+            }
+        }
+        if (count == 0) {
+            return SPEED_NONE;
+        } else {
+            return roundToClosestSpeedEnum(totalSpeed / count);
+        }
+    }
+
+    @Speed
+    static int getSpeedFromWifiInfo(@NonNull WifiNetworkScoreCache scoreCache,
+            @NonNull WifiInfo wifiInfo) {
+        ScoredNetwork scoredNetwork = scoreCache.getScoredNetwork(
+                NetworkKey.createFromWifiInfo(wifiInfo));
+        if (scoredNetwork == null) {
+            return SPEED_NONE;
+        }
+        return roundToClosestSpeedEnum(scoredNetwork.calculateBadge(wifiInfo.getRssi()));
+    }
+
+    @Speed
+    private static int roundToClosestSpeedEnum(int speed) {
+        if (speed < (SPEED_SLOW + SPEED_MODERATE) / 2) {
+            return SPEED_SLOW;
+        } else if (speed < (SPEED_MODERATE + SPEED_FAST) / 2) {
+            return SPEED_MODERATE;
+        } else if (speed < (SPEED_FAST + SPEED_VERY_FAST) / 2) {
+            return SPEED_FAST;
+        } else {
+            return SPEED_VERY_FAST;
+        }
+    }
+
     static CharSequence getAppLabel(Context context, String packageName) {
         try {
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfoAsUser(
@@ -421,11 +478,24 @@ class Utils {
     }
 
     static String getSpeedDescription(@NonNull Context context, @NonNull WifiEntry wifiEntry) {
-        // TODO(b/70983952): Fill this method in.
         if (context == null || wifiEntry == null) {
             return "";
         }
-        return "";
+
+        @Speed int speed = wifiEntry.getSpeed();
+        switch (speed) {
+            case SPEED_VERY_FAST:
+                return context.getString(R.string.speed_label_very_fast);
+            case SPEED_FAST:
+                return context.getString(R.string.speed_label_fast);
+            case SPEED_MODERATE:
+                return context.getString(R.string.speed_label_okay);
+            case SPEED_SLOW:
+                return context.getString(R.string.speed_label_slow);
+            case SPEED_NONE:
+            default:
+                return "";
+        }
     }
 
     static String getVerboseLoggingDescription(@NonNull WifiEntry wifiEntry) {
