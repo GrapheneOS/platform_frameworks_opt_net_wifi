@@ -89,6 +89,7 @@ LIB_WIFI_HAL := libwifi-hal-fallback
 VENDOR_LOCAL_SHARED_LIBRARIES :=
 ifeq ($(BOARD_WLAN_DEVICE), bcmdhd)
   LIB_WIFI_HAL := libwifi-hal-bcm
+  VENDOR_LOCAL_SHARED_LIBRARIES := libcrypto
 else ifeq ($(BOARD_WLAN_DEVICE), qcwcn)
   LIB_WIFI_HAL := libwifi-hal-qcom
   VENDOR_LOCAL_SHARED_LIBRARIES := libcld80211
