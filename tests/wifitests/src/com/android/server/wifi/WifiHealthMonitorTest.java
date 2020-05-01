@@ -514,6 +514,23 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     }
 
     /**
+     * Test FailureStats class
+     */
+    @Test
+    public void testFailureStats() throws Exception {
+        WifiHealthMonitor.FailureStats failureStats = new WifiHealthMonitor.FailureStats();
+        failureStats.setCount(WifiHealthMonitor.REASON_AUTH_FAILURE, 10);
+        failureStats.incrementCount(WifiHealthMonitor.REASON_AUTH_FAILURE);
+
+        String expectedString = "authentication failure: 11 ";
+        String unexpectedString =
+                WifiHealthMonitor.FAILURE_REASON_NAME[WifiHealthMonitor.REASON_ASSOC_REJECTION];
+        assertEquals(11, failureStats.getCount(WifiHealthMonitor.REASON_AUTH_FAILURE));
+        assertEquals(true, failureStats.toString().contains(expectedString));
+        assertEquals(false, failureStats.toString().contains(unexpectedString));
+    }
+
+    /**
      * Check WestWorld logging after one daily detection with high non-local disconnection rate
      */
     @Test
