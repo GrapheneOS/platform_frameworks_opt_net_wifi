@@ -20,8 +20,8 @@ import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.net.wifi.WifiInfo.INVALID_RSSI;
 import static android.net.wifi.WifiInfo.LINK_SPEED_UNKNOWN;
 
-import static com.android.server.wifi.WifiHealthMonitor.HEALTH_MONITOR_COUNT_MIN_TX_RATE;
 import static com.android.server.wifi.WifiHealthMonitor.HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS;
+import static com.android.server.wifi.WifiHealthMonitor.HEALTH_MONITOR_MIN_TX_PACKET_PER_SEC;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_REJECTION;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_TIMEOUT;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_AUTH_FAILURE;
@@ -70,6 +70,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -295,7 +296,7 @@ public class WifiScoreCard {
                 wifiInfo.getRssi(),
                 wifiInfo.getLinkSpeed());
         perBssid.setNetworkConfigId(wifiInfo.getNetworkId());
-        logd("BSSID update " + event.toString() + " ID: " + perBssid.id + " " + wifiInfo);
+        logd("BSSID update " + event + " ID: " + perBssid.id + " " + wifiInfo);
     }
 
     /**
@@ -305,7 +306,7 @@ public class WifiScoreCard {
     private void updatePerNetwork(WifiScoreCardProto.Event event, String ssid, int rssi,
             int txSpeed, int failureReason) {
         PerNetwork perNetwork = lookupNetwork(ssid);
-        logd("network update " + event.toString() + ((ssid == null) ? " " : " "
+        logd("network update " + event + ((ssid == null) ? " " : " "
                     + ssid) + " ID: " + perNetwork.id + " RSSI " + rssi + " txSpeed " + txSpeed);
         perNetwork.updateEventStats(event, rssi, txSpeed, failureReason);
     }
@@ -335,12 +336,12 @@ public class WifiScoreCard {
     }
 
     private int geTxLinkSpeedWithSufficientTxRate(@NonNull ExtendedWifiInfo wifiInfo) {
-        double txRate = wifiInfo.getSuccessfulTxPacketsPerSecond()
+        int txRate = (int) Math.ceil(wifiInfo.getSuccessfulTxPacketsPerSecond()
                 + wifiInfo.getLostTxPacketsPerSecond()
-                + wifiInfo.getRetriedTxPacketsPerSecond();
+                + wifiInfo.getRetriedTxPacketsPerSecond());
         int txSpeed = wifiInfo.getTxLinkSpeedMbps();
         logd("txRate: " + txRate + " txSpeed: " + txSpeed);
-        return (txRate >= HEALTH_MONITOR_COUNT_MIN_TX_RATE) ? txSpeed : LINK_SPEED_UNKNOWN;
+        return (txRate >= HEALTH_MONITOR_MIN_TX_PACKET_PER_SEC) ? txSpeed : LINK_SPEED_UNKNOWN;
     }
 
     /** Wait a few seconds before considering the roam successful */
@@ -915,15 +916,19 @@ public class WifiScoreCard {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(" LastRssiPollTime: " + mLastRssiPollTimeMs);
+            sb.append("SSID: ").append(ssid).append("\n");
+            Calendar c = Calendar.getInstance();
+            if (mLastRssiPollTimeMs != TS_NONE) {
+                sb.append(" LastRssiPollTime: ");
+                c.setTimeInMillis(mLastRssiPollTimeMs);
+                sb.append(String.format("%tm-%td %tH:%tM:%tS", c, c, c, c, c));
+            }
             sb.append(" LastRssiPoll: " + mLastRssiPoll);
             sb.append(" LastTxSpeedPoll: " + mLastTxSpeedPoll);
             sb.append("\n");
-            sb.append(" StatsRecent: " + mRecentStats.toString());
-            sb.append("\n");
-            sb.append(" StatsCurr: " + mStatsCurrBuild.toString());
-            sb.append("\n");
-            sb.append(" StatsPrev: " + mStatsPrevBuild.toString());
+            sb.append(" StatsRecent: ").append(mRecentStats).append("\n");
+            sb.append(" StatsCurr: ").append(mStatsCurrBuild).append("\n");
+            sb.append(" StatsPrev: ").append(mStatsPrevBuild);
             return sb.toString();
         }
         private void handleDisconnection() {
@@ -1023,12 +1028,11 @@ public class WifiScoreCard {
         private void dailyDetectionDisconnectionEvent(FailureStats statsDec, FailureStats statsInc,
                 FailureStats statsHigh) {
             // Skip daily detection if recentStats is not sufficient
-            if (mRecentStats.getCount(CNT_DISCONNECTION)
-                    < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
+            int minConnectAttempt = mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt();
+            if (mRecentStats.getCount(CNT_CONNECTION_ATTEMPT) < minConnectAttempt) {
                 return;
             }
-            if (mStatsPrevBuild.getCount(CNT_DISCONNECTION)
-                    < mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()) {
+            if (mStatsPrevBuild.getCount(CNT_CONNECTION_ATTEMPT) < minConnectAttempt) {
                 recentStatsHighDetectionDisconnection(statsHigh);
             } else {
                 statsDeltaDetectionDisconnection(statsDec, statsInc);
@@ -1083,11 +1087,11 @@ public class WifiScoreCard {
             statsDeltaDetection(statsDec, statsInc, CNT_SHORT_CONNECTION_NONLOCAL,
                     REASON_SHORT_CONNECTION_NONLOCAL,
                     mDeviceConfigFacade.getShortConnectionNonlocalCountMin(),
-                    CNT_DISCONNECTION);
+                    CNT_CONNECTION_ATTEMPT);
             statsDeltaDetection(statsDec, statsInc, CNT_DISCONNECTION_NONLOCAL,
                     REASON_DISCONNECTION_NONLOCAL,
                     mDeviceConfigFacade.getDisconnectionNonlocalCountMin(),
-                    CNT_DISCONNECTION);
+                    CNT_CONNECTION_ATTEMPT);
         }
 
         private void recentStatsHighDetectionDisconnection(FailureStats statsHigh) {
@@ -1139,7 +1143,7 @@ public class WifiScoreCard {
             // Check R1 / R2 >= ratioThr
             return ((stats1.getCount(countCode) + 1) * (stats2.getCount(refCountCode) + 2)
                     * mDeviceConfigFacade.HEALTH_MONITOR_RATIO_THR_DENOMINATOR)
-                    >= ((stats1.getCount(refCountCode) + 1) * (stats2.getCount(countCode) + 2)
+                    >= ((stats1.getCount(refCountCode) + 2) * (stats2.getCount(countCode) + 1)
                     * mDeviceConfigFacade.getHealthMonitorRatioThrNumerator());
         }
 
