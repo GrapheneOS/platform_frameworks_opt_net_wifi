@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"ກຳລັງສຳເລັດການສະໝັກ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"ບໍ່ສາມາດສຳເລັດການສະໝັກໄດ້. ແຕະເພື່ອລອງໃໝ່."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ສະໝັກສຳເລັດແລ້ວ. ກຳລັງເຊື່ອມຕໍ່…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"ເຄືອຂ່າຍນີ້ຈະຮັບ unique ID ທີ່ສາມາດໃຊ້ເພື່ອຕິດຕາມສະຖານທີ່ອຸປະກອນ "<annotation id="url">"ສຶກສາເພີ່ມເຕີມ"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"ຊ້າຫຼາຍ"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"ຊ້າ"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ຕົກລົງ"</string>

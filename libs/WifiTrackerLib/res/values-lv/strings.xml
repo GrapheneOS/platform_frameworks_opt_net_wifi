@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Notiek reģistrācijas pabeigšana…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Nevarēja pabeigt reģistrāciju. Pieskarieties, lai mēģinātu vēlreiz."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Reģistrācija ir pabeigta. Notiek savienojuma izveide…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Šis tīkls saņem unikālo ID, ko var izmantot, lai izsekotu ierīces atrašanās vietu. "<annotation id="url">"Uzziniet vairāk"</annotation>"."</string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Ļoti lēns"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Lēns"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"Labi"</string>

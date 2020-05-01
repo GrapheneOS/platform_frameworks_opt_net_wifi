@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Бүртгэлийг дуусгаж байна…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Бүртгэлийг дуусгаж чадсангүй. Дахин оролдохын тулд товшино уу."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Бүртгэлийг дуусгалаа. Холбогдож байна…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Энэ сүлжээ нь төхөөрөмжийн байршлыг тандахад ашиглах боломжтой цор ганц дугаарыг хүлээн авдаг. "<annotation id="url">"Нэмэлт мэдээлэл авах"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Маш удаан"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Удаан"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ЗА"</string>

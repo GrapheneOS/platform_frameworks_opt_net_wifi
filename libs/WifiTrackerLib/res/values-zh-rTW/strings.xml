@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"正在完成註冊程序…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"無法完成註冊程序。輕觸即可重試。"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"註冊完成。連線中…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"這個網路會收到可用於追蹤裝置位置的唯一 ID。"<annotation id="url">"瞭解詳情"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"非常慢"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"慢"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"確定"</string>

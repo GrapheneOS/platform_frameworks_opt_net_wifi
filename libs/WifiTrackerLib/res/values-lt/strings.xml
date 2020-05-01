@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Baigiamas prisiregistravimas…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Nepavyko užbaigti prisiregistravimo. Jei norite bandyti dar kartą, palieskite."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Prisiregistravimas baigtas. Prijungiama…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Šis tinklas gauna unikalų ID, kurį galima naudoti įrenginio vietovei stebėti. "<annotation id="url">"Sužinokite daugiau"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Labai lėtas"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Lėtas"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"Gerai"</string>
