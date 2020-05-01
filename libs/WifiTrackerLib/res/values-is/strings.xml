@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Gengur frá skráningu…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Ekki tókst að ljúka við skráningu. Ýttu til að reyna aftur."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Skráningu lokið. Tengist…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Þetta net fær einkvæmt auðkenni sem hægt er að nota til að rekja staðsetningu tækis. "<annotation id="url">"Frekari upplýsingar"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Mjög hægt"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Hægt"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"Í lagi"</string>

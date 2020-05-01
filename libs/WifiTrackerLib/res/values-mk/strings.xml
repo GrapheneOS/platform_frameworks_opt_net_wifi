@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Се завршува регистрацијата…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Не можеше да се заврши регистрацијата. Допрете за да се обидете повторно."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Регистрацијата е завршена. Се поврзува…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Мрежава прима уникатен ID што може да се користи за следење на локацијата на уредот. "<annotation id="url">"Дознајте повеќе"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Многу бавна"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Бавна"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"Во ред"</string>

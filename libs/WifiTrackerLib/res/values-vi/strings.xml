@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Đang hoàn tất việc đăng ký…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Không thể hoàn tất việc đăng ký. Hãy nhấn để thử lại."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Đã đăng ký xong. Đang kết nối…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Mạng này nhận được một mã nhận dạng duy nhất có thể dùng để theo dõi vị trí của thiết bị. "<annotation id="url">"Tìm hiểu thêm"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Rất chậm"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Chậm"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"Khá tốt"</string>
