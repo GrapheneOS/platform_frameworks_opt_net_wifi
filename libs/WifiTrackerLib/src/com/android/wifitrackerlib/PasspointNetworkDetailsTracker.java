@@ -77,7 +77,8 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                         .findAny();
         if (optionalPasspointConfig.isPresent()) {
             mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler,
-                    optionalPasspointConfig.get(), mWifiManager, false /* forSavedNetworksPage */);
+                    optionalPasspointConfig.get(), mWifiManager, mWifiNetworkScoreCache,
+                    false /* forSavedNetworksPage */);
         } else {
             Optional<WifiConfiguration> optionalWifiConfig =
                     mWifiManager.getPrivilegedConfiguredNetworks()
@@ -88,7 +89,8 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                             .findAny();
             if (optionalWifiConfig.isPresent()) {
                 mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler,
-                        optionalWifiConfig.get(), mWifiManager, false /* forSavedNetworksPage */);
+                        optionalWifiConfig.get(), mWifiManager, mWifiNetworkScoreCache,
+                        false /* forSavedNetworksPage */);
             } else {
                 throw new IllegalArgumentException(
                         "Cannot find config for given PasspointWifiEntry key!");
@@ -154,6 +156,12 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
         if (mChosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mChosenEntry.updateLinkProperties(linkProperties);
         }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkScoreCacheUpdated() {
+        mChosenEntry.onScoreCacheUpdated();
     }
 
     @WorkerThread

@@ -28,6 +28,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiNetworkScoreCache;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.ProvisioningCallback;
@@ -61,16 +62,15 @@ class OsuWifiEntry extends WifiEntry {
     @NonNull private OsuProvider mOsuProvider;
     private String mOsuStatusString;
 
-    private int mLevel = WIFI_LEVEL_UNREACHABLE;
-
     /**
      * Create n OsuWifiEntry with the associated OsuProvider
      */
     OsuWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull OsuProvider osuProvider,
             @NonNull WifiManager wifiManager,
+            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
         checkNotNull(osuProvider, "Cannot construct with null osuProvider!");
 
@@ -94,11 +94,6 @@ class OsuWifiEntry extends WifiEntry {
         // TODO(b/70983952): Add verbose summary
         return mOsuStatusString != null
                 ? mOsuStatusString : mContext.getString(R.string.tap_to_sign_up);
-    }
-
-    @Override
-    public int getLevel() {
-        return mLevel;
     }
 
     @Override
@@ -280,12 +275,11 @@ class OsuWifiEntry extends WifiEntry {
         }
 
         final ScanResult bestScanResult = getBestScanResultByLevel(scanResults);
-        if (bestScanResult == null) {
-            mLevel = WIFI_LEVEL_UNREACHABLE;
-        } else {
-            mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+            mLevel = bestScanResult != null
+                    ? mWifiManager.calculateSignalLevel(bestScanResult.level)
+                    : WIFI_LEVEL_UNREACHABLE;
         }
-
         notifyOnUpdated();
     }
 
