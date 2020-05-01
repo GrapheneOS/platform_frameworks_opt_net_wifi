@@ -596,6 +596,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         verify(mWifiConfigManager, times(savedConfigs.length)).tryEnableNetwork(anyInt());
         verify(mWifiConfigManager, times(savedConfigs.length))
                 .clearNetworkCandidateScanResult(anyInt());
+        verify(mWifiMetrics, atLeastOnce()).addMeteredStat(any(), anyBoolean());
     }
 
     /**
