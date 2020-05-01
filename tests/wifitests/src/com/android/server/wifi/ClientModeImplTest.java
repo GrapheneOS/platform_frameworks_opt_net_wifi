@@ -1028,6 +1028,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         injectDhcpSuccess(dhcpResults);
         mLooper.dispatchAll();
 
+        // Verify WifiMetrics logging for metered metrics based on DHCP results
+        verify(mWifiMetrics).addMeteredStat(any(), anyBoolean());
         WifiInfo wifiInfo = mCmi.getWifiInfo();
         assertNotNull(wifiInfo);
         assertEquals(sBSSID, wifiInfo.getBSSID());
