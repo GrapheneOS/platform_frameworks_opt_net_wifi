@@ -4975,4 +4975,21 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(0, mWifiMetrics.startConnectionEvent(mTestWifiConfig, "TestNetwork",
                 WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE));
     }
+
+    @Test
+    public void testCarrierWifiConnectionEvent() throws Exception {
+        mWifiMetrics.incrementNumOfCarrierWifiConnectionSuccess();
+        for (int i = 0; i < 2; i++) {
+            mWifiMetrics.incrementNumOfCarrierWifiConnectionAuthFailure();
+        }
+        for (int i = 0; i < 3; i++) {
+            mWifiMetrics.incrementNumOfCarrierWifiConnectionNonAuthFailure();
+        }
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(1, mDecodedProto.carrierWifiMetrics.numConnectionSuccess);
+        assertEquals(2, mDecodedProto.carrierWifiMetrics.numConnectionAuthFailure);
+        assertEquals(3, mDecodedProto.carrierWifiMetrics.numConnectionNonAuthFailure);
+    }
 }
