@@ -694,6 +694,12 @@ message WifiLog {
 
   // Does the user have enhanced MAC randomization forced to on.
   optional bool is_enhanced_mac_randomization_force_enabled = 194;
+
+  // Metered stats for saved networks.
+  optional MeteredNetworkStats metered_network_stats_saved = 195;
+
+  // Metered stats for suggestion networks.
+  optional MeteredNetworkStats metered_network_stats_suggestion = 196;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -3053,6 +3059,21 @@ message PasspointProvisionStats {
     // Number of failure for the failure_code.
     optional int32 count = 2;
   }
+}
+
+// Counts number of networks on the device that are metered.
+message MeteredNetworkStats {
+  // Number of networks that are set or detected as metered.
+  optional int32 num_metered = 1 [default = 0];
+
+  // Number of networks that are set or detected as unmetered.
+  optional int32 num_unmetered = 2;
+
+  // Number of networks that have meteredOverride set to metered.
+  optional int32 num_override_metered = 3;
+
+  // Number of networks that have meteredOverride set to unmetered.
+  optional int32 num_override_unmetered = 4;
 }
 
 // An event capturing user action on wifi

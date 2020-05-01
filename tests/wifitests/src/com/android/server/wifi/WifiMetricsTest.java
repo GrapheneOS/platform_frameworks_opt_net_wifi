@@ -4468,6 +4468,66 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(4, mDecodedProto.wifiToggleStats.numToggleOffNormal);
     }
 
+    /**
+     * Verify metered stats are counted properly for saved and ephemeral networks.
+     */
+    @Test
+    public void testMeteredNetworkMetrics() throws Exception {
+        // Test without metered override
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        WifiConfiguration config1 = WifiConfigurationTestUtil.createPskNetwork();
+        config.fromWifiNetworkSuggestion = false;
+        config1.fromWifiNetworkSuggestion = true;
+        mWifiMetrics.addMeteredStat(config, false);
+        mWifiMetrics.addMeteredStat(config1, true);
+        dumpProtoAndDeserialize();
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSaved.numMetered);
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSaved.numUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSaved.numOverrideMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSaved.numOverrideUnmetered);
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSuggestion.numMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numOverrideMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numOverrideUnmetered);
+
+        // Test with metered override
+        config = WifiConfigurationTestUtil.createPskNetwork();
+        config1 = WifiConfigurationTestUtil.createPskNetwork();
+        config.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
+        config1.meteredOverride = WifiConfiguration.METERED_OVERRIDE_NOT_METERED;
+        mWifiMetrics.addMeteredStat(config, true);
+        mWifiMetrics.addMeteredStat(config1, true);
+        dumpProtoAndDeserialize();
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSaved.numMetered);
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSaved.numUnmetered);
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSaved.numOverrideMetered);
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSaved.numOverrideUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numOverrideMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numOverrideUnmetered);
+    }
+
+    /**
+     * Verify that the same network does not get counted twice
+     */
+    @Test
+    public void testMeteredNetworkMetricsNoDoubleCount() throws Exception {
+        WifiConfiguration config = new WifiConfiguration();
+        config.ephemeral = false;
+        mWifiMetrics.addMeteredStat(config, false);
+        mWifiMetrics.addMeteredStat(config, true);
+        mWifiMetrics.addMeteredStat(config, true);
+        dumpProtoAndDeserialize();
+        assertEquals(1, mDecodedProto.meteredNetworkStatsSaved.numMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSaved.numUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSaved.numOverrideMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSaved.numOverrideUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numUnmetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numOverrideMetered);
+        assertEquals(0, mDecodedProto.meteredNetworkStatsSuggestion.numOverrideUnmetered);
+    }
 
     /**
      * Create a test to verify data collection logic triggered by score breaching low

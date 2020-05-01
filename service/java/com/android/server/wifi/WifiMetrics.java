@@ -71,6 +71,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.ExperimentProbeCounts;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.LinkProbeFailureReasonCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkSpeedCount;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.MeteredNetworkStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkSelectionExperimentDecisions;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.PasspointProfileTypeCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.PasspointProvisionStats;
@@ -351,6 +352,8 @@ public class WifiMetrics {
     private final IntHistogram mLinkProbeSuccessElapsedTimeMsHistogram = new IntHistogram(
             LINK_PROBE_ELAPSED_TIME_MS_HISTOGRAM_BUCKETS);
     private final IntCounter mLinkProbeFailureReasonCounts = new IntCounter();
+    private final MeteredNetworkStatsBuilder mMeteredNetworkStatsBuilder =
+            new MeteredNetworkStatsBuilder();
 
     /**
      * Maps a String link probe experiment ID to the number of link probes that were sent for this
@@ -3077,7 +3080,10 @@ public class WifiMetrics {
                         + mWifiLogProto.numExternalForegroundAppOneshotScanRequestsThrottled);
                 pw.println("mWifiLogProto.numExternalBackgroundAppOneshotScanRequestsThrottled="
                         + mWifiLogProto.numExternalBackgroundAppOneshotScanRequestsThrottled);
-
+                pw.println("mWifiLogProto.meteredNetworkStatsSaved=");
+                pw.println(mMeteredNetworkStatsBuilder.toProto(false));
+                pw.println("mWifiLogProto.meteredNetworkStatsSuggestion=");
+                pw.println(mMeteredNetworkStatsBuilder.toProto(true));
                 pw.println("mScanReturnEntries:");
                 pw.println("  SCAN_UNKNOWN: " + getScanReturnEntry(
                         WifiMetricsProto.WifiLog.SCAN_UNKNOWN));
@@ -3701,6 +3707,7 @@ public class WifiMetrics {
             mWifiLogProto.numNetworksAddedByApps = 0;
             mWifiLogProto.numHiddenNetworks = 0;
             mWifiLogProto.numPasspointNetworks = 0;
+
             for (WifiConfiguration config : networks) {
                 if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)) {
                     mWifiLogProto.numOpenNetworks++;
@@ -4262,6 +4269,8 @@ public class WifiMetrics {
                     mRxThroughputMbpsHistogram2G.toProto();
             mWifiLogProto.throughputMbpsHistogram.rxAbove2G =
                     mRxThroughputMbpsHistogramAbove2G.toProto();
+            mWifiLogProto.meteredNetworkStatsSaved = mMeteredNetworkStatsBuilder.toProto(false);
+            mWifiLogProto.meteredNetworkStatsSuggestion = mMeteredNetworkStatsBuilder.toProto(true);
 
             InitPartialScanStats initialPartialScanStats = new InitPartialScanStats();
             initialPartialScanStats.numScans = mInitPartialScanTotalCount;
@@ -4444,6 +4453,7 @@ public class WifiMetrics {
             mProbeElapsedTimeSinceLastUpdateMs = -1;
             mProbeMcsRateSinceLastUpdate = -1;
             mScoreBreachLowTimeMillis = -1;
+            mMeteredNetworkStatsBuilder.clear();
             mWifiConfigStoreReadDurationHistogram.clear();
             mWifiConfigStoreWriteDurationHistogram.clear();
             mLinkProbeSuccessRssiCounts.clear();
@@ -5077,6 +5087,72 @@ public class WifiMetrics {
                 break;
         }
         return result;
+    }
+
+    static class MeteredNetworkStatsBuilder {
+        // A map from network identifier to MeteredDetail
+        Map<String, MeteredDetail> mNetworkMap = new ArrayMap<>();
+
+        void put(WifiConfiguration config, boolean detectedAsMetered) {
+            MeteredDetail meteredDetail = new MeteredDetail();
+            boolean isMetered = detectedAsMetered;
+            if (config.meteredOverride == WifiConfiguration.METERED_OVERRIDE_METERED) {
+                isMetered = true;
+            } else if (config.meteredOverride == WifiConfiguration.METERED_OVERRIDE_NOT_METERED) {
+                isMetered = false;
+            }
+            meteredDetail.isMetered = isMetered;
+            meteredDetail.isMeteredOverrideSet = config.meteredOverride
+                    != WifiConfiguration.METERED_OVERRIDE_NONE;
+            meteredDetail.isFromSuggestion = config.fromWifiNetworkSuggestion;
+            mNetworkMap.put(config.getKey(), meteredDetail);
+        }
+
+        void clear() {
+            mNetworkMap.clear();
+        }
+
+        MeteredNetworkStats toProto(boolean isFromSuggestion) {
+            MeteredNetworkStats result = new MeteredNetworkStats();
+            for (MeteredDetail meteredDetail : mNetworkMap.values()) {
+                if (meteredDetail.isFromSuggestion != isFromSuggestion) {
+                    continue;
+                }
+                if (meteredDetail.isMetered) {
+                    result.numMetered++;
+                } else {
+                    result.numUnmetered++;
+                }
+                if (meteredDetail.isMeteredOverrideSet) {
+                    if (meteredDetail.isMetered) {
+                        result.numOverrideMetered++;
+                    } else {
+                        result.numOverrideUnmetered++;
+                    }
+                }
+            }
+            return result;
+        }
+
+        static class MeteredDetail {
+            public boolean isMetered;
+            public boolean isMeteredOverrideSet;
+            public boolean isFromSuggestion;
+        }
+    }
+
+    /**
+     * Add metered information of this network.
+     * @param config WifiConfiguration representing the netework.
+     * @param detectedAsMetered is the network detected as metered.
+     */
+    public void addMeteredStat(WifiConfiguration config, boolean detectedAsMetered) {
+        synchronized (mLock) {
+            if (config == null) {
+                return;
+            }
+            mMeteredNetworkStatsBuilder.put(config, detectedAsMetered);
+        }
     }
     /**
      * Logs a UserActionEvent without a target network.
