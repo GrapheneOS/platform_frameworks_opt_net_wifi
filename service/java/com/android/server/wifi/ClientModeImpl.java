@@ -3087,6 +3087,9 @@ public class ClientModeImpl extends StateMachine {
         // Set meteredHint if DHCP result says network is metered
         if (dhcpResults.vendorInfo != null && dhcpResults.vendorInfo.contains("ANDROID_METERED")) {
             mWifiInfo.setMeteredHint(true);
+            mWifiMetrics.addMeteredStat(config, true);
+        } else {
+            mWifiMetrics.addMeteredStat(config, false);
         }
 
         updateCapabilities(config);
