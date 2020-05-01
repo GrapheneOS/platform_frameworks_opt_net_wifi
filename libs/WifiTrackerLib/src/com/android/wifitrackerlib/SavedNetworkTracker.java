@@ -169,6 +169,17 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         updateSubscriptionWifiEntries();
     }
 
+    @WorkerThread
+    @Override
+    protected void handleNetworkScoreCacheUpdated() {
+        for (StandardWifiEntry entry : mStandardWifiEntryCache.values()) {
+            entry.onScoreCacheUpdated();
+        }
+        for (PasspointWifiEntry entry : mPasspointWifiEntryCache.values()) {
+            entry.onScoreCacheUpdated();
+        }
+    }
+
     private void updateSavedWifiEntries() {
         synchronized (mLock) {
             mSavedWifiEntries.clear();
@@ -300,7 +311,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             if (changeReason != WifiManager.CHANGE_REASON_REMOVED) {
                 mStandardWifiEntryCache.put(key,
                         new StandardWifiEntry(mContext, mMainHandler, key, config, mWifiManager,
-                                true /* forSavedNetworksPage */));
+                                mWifiNetworkScoreCache, true /* forSavedNetworksPage */));
             }
         }
     }
@@ -328,7 +339,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         for (String key : wifiConfigsByKey.keySet()) {
             mStandardWifiEntryCache.put(key,
                     new StandardWifiEntry(mContext, mMainHandler, key, wifiConfigsByKey.get(key),
-                            mWifiManager, true /* forSavedNetworksPage */));
+                            mWifiManager, mWifiNetworkScoreCache, true /* forSavedNetworksPage */));
         }
     }
 
@@ -359,7 +370,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         for (String key : passpointConfigsByKey.keySet()) {
             mPasspointWifiEntryCache.put(key,
                     new PasspointWifiEntry(mContext, mMainHandler, passpointConfigsByKey.get(key),
-                            mWifiManager, true /* forSavedNetworksPage */));
+                            mWifiManager, mWifiNetworkScoreCache, true /* forSavedNetworksPage */));
         }
     }
 
