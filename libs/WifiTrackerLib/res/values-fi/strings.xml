@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Viimeistellään rekisteröitymistä…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Rekisteröityminen ei onnistunut. Yritä uudelleen napauttamalla."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Rekisteröityminen valmis. Yhdistetään…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Tälle verkolle lähetetään yksilöllinen tunnus, jolla voidaan seurata laitteen sijaintia. "<annotation id="url">"Lue lisää"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Hyvin hidas"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Hidas"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"OK"</string>

@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Завершення реєстрації…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Не вдалося завершити реєстрацію. Торкніться, щоб повторити спробу."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Реєстрацію завершено. Підключення…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Ця мережа отримує унікальний ідентифікатор, за допомогою якого можна відстежити місцезнаходження пристрою. "<annotation id="url">"Докладніше"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Дуже повільна"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Повільна"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ОК"</string>

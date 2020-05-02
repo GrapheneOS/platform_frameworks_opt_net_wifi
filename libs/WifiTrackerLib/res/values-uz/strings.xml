@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Registratsiya tamomlanmoqda…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Registratsiya tamomlanmadi. Qayta urinish uchun tegining."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registratsiya qilindi. Ulanmoqda…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Bu tarmoqqa qurilma joylashuvini aniqlash imkonini beruvchi maxsus identifikator beriladi. "<annotation id="url">"Batafsil"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Juda sekin"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Sekin"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"OK"</string>

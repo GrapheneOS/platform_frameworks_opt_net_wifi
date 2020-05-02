@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"સાઇન અપ પૂર્ણ કરી રહ્યા છીએ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"સાઇન અપ પૂર્ણ કરી શકાયું નથી. ફરી પ્રયાસ કરવા માટે ટૅપ કરો."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"સાઇન અપ પૂર્ણ. કનેક્ટ કરી રહ્યાં છીએ…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"આ નેટવર્ક એક વિશેષ ID મેળવે છે જેનો ઉપયોગ ડિવાઇસનું સ્થાન ટ્રૅક કરવા માટે થઈ શકે છે. "<annotation id="url">"વધુ જાણો"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"ખૂબ જ ધીમી"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"ધીમી"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ઓકે"</string>

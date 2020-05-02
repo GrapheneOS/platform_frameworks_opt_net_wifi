@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Registreringen slutförs …"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Det gick inte att slutföra registreringen. Tryck för att försöka igen."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Registrering har slutförts. Ansluter …"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Det här nätverket får ett unikt id som kan användas till att spåra enhetens plats. "<annotation id="url">"Läs mer"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Mycket långsam"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Långsam"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"Okej"</string>

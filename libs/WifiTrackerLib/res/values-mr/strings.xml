@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"साइन-अप पूर्ण होत आहे…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"साइन-अप पूर्ण करता आले नाही. पुन्हा प्रयत्न करण्यासाठी टॅप करा."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"साइन-अप पूर्ण झाले आहे. कनेक्ट करत आहे…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"हे नेटवर्क डिव्हाइसच्या स्थानाचा माग घेण्यासाठी वापरता येणारा युनिक आयडी मिळवते. "<annotation id="url">"अधिक जाणून घ्या"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"खूप हळू"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"हळू"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ठीक आहे"</string>

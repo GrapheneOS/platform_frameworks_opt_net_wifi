@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"កំពុង​បញ្ចប់​ការចុះឈ្មោះ…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"មិនអាច​បញ្ចប់​ការចុះឈ្មោះ​បានទេ។ សូមចុច ដើម្បី​ព្យាយាម​ម្ដង​ទៀត។"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"ការចុះ​ឈ្មោះ​បានបញ្ចប់។ កំពុងភ្ជាប់…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"បណ្ដាញនេះទទួលលេខសម្គាល់ពិសេស ដែលអាចប្រើ​សម្រាប់​តាមដាន​ទីតាំងឧបករណ៍។ "<annotation id="url">"ស្វែងយល់បន្ថែម"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"យឺតណាស់"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"យឺត"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"យល់ព្រម"</string>

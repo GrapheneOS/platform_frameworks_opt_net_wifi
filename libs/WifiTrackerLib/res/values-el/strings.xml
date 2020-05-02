@@ -46,8 +46,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Ολοκλήρωση εγγραφής…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"Δεν ήταν δυνατή η ολοκλήρωση της εγγραφής. Πατήστε για να δοκιμάσετε ξανά."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Η εγγραφή ολοκληρώθηκε. Σύνδεση…"</string>
-    <!-- no translation found for imsi_protection_warning (3207104049473134195) -->
-    <skip />
+    <string name="imsi_protection_warning" msgid="3207104049473134195">"Αυτό το δίκτυο λαμβάνει ένα μοναδικό αναγνωριστικό το οποίο μπορεί να χρησιμοποιηθεί για τον εντοπισμό της τοποθεσίας της συσκευής. "<annotation id="url">"Μάθετε περισσότερα"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Πολύ αργή"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Αργή"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ΟΚ"</string>
