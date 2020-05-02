@@ -38,7 +38,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -229,21 +229,26 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
     }
 
     /**
-     * Ensure that we do nominate the only matching saved passponit network .
+     * Ensure that we do nominate the only matching saved passponit network with auto-join enabled .
      */
     @Test
-    public void returnCandidatesIfPasspointNetworksAvailable() {
-        ScanDetail scanDetail = mock(ScanDetail.class);
-        List<ScanDetail> scanDetails = new ArrayList<>();
-        scanDetails.add(scanDetail);
-        WifiConfiguration configuration = mock(WifiConfiguration.class);
-        List<Pair<ScanDetail, WifiConfiguration>> passpointCandidates = new ArrayList<>();
-        passpointCandidates.add(Pair.create(scanDetail, configuration));
+    public void returnCandidatesIfPasspointNetworksAvailableWithAutojoinEnabled() {
+        ScanDetail scanDetail1 = mock(ScanDetail.class);
+        ScanDetail scanDetail2 = mock(ScanDetail.class);
+        List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
+        WifiConfiguration configuration1 = mock(WifiConfiguration.class);
+        configuration1.allowAutojoin = true;
+        WifiConfiguration configuration2 = mock(WifiConfiguration.class);
+        configuration2.allowAutojoin = false;
+        List<Pair<ScanDetail, WifiConfiguration>> passpointCandidates =
+                Arrays.asList(Pair.create(scanDetail1, configuration1), Pair.create(scanDetail2,
+                        configuration2));
         when(mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false))
                 .thenReturn(passpointCandidates);
         mSavedNetworkNominator.nominateNetworks(scanDetails, null, null,
                 false, false, mOnConnectableListener);
-        verify(mOnConnectableListener).onConnectable(scanDetail, configuration);
+        verify(mOnConnectableListener).onConnectable(scanDetail1, configuration1);
+        verify(mOnConnectableListener, never()).onConnectable(scanDetail2, configuration2);
     }
 
     /**
