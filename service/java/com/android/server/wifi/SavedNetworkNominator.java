@@ -177,6 +177,9 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
             WifiConfiguration config = candidate.second;
+            if (!config.allowAutojoin) {
+                continue;
+            }
             if (isNetworkSimBasedCredential(config) && !isSimBasedNetworkAbleToAutoJoin(config)) {
                 continue;
             }

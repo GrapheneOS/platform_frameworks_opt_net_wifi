@@ -48,6 +48,8 @@ import com.android.server.wifi.util.ScanResultUtil;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -92,17 +94,14 @@ public class WifiHealthMonitor {
     private static final int MIN_NUM_BSSID_SCAN_2G = 2;
     // Minimum number of BSSIDs found above 2G with a normal scan
     private static final int MIN_NUM_BSSID_SCAN_ABOVE_2G = 2;
-    // Maximum scan RSSI valid time for scan RSSI search which is done by finding
-    // the maximum RSSI found among all valid scan detail entries of each network's scanDetailCache
-    // If a scanDetail is seen more than SCAN_RSSI_VALID_TIME_MS ago,
-    // it will not be considered valid anymore.
-    static final int SCAN_RSSI_VALID_TIME_MS = 6_000;
+    static final int DEFAULT_SCAN_RSSI_VALID_TIME_MS = 5_000;
+    static final int STATIONARY_SCAN_RSSI_VALID_TIME_MS = 20_000;
 
     // Minimum Tx speed in Mbps for disconnection stats collection
     // Disconnection events with Tx speed below this threshold are not
     // included in connection stats collection.
     static final int HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS = 54;
-    static final int HEALTH_MONITOR_COUNT_MIN_TX_RATE = 6;
+    static final int HEALTH_MONITOR_MIN_TX_PACKET_PER_SEC = 2;
     private final Context mContext;
     private final WifiConfigManager mWifiConfigManager;
     private final WifiScoreCard mWifiScoreCard;
@@ -126,6 +125,7 @@ public class WifiHealthMonitor {
     private int mNumNetworkSufficientRecentStatsOnly = 0;
     private int mNumNetworkSufficientRecentPrevStats = 0;
     private boolean mHasNewDataForWifiMetrics = false;
+    private int mDeviceMobilityState = WifiManager.DEVICE_MOBILITY_STATE_UNKNOWN;
 
     WifiHealthMonitor(Context context, WifiInjector wifiInjector, Clock clock,
             WifiConfigManager wifiConfigManager, WifiScoreCard wifiScoreCard, Handler handler,
@@ -211,7 +211,18 @@ public class WifiHealthMonitor {
      */
     public void setDeviceMobilityState(@DeviceMobilityState int newState) {
         logd("Device mobility state: " + newState);
+        mDeviceMobilityState = newState;
         mWifiSystemInfoStats.setMobilityState(newState);
+    }
+
+    /**
+     * Get the maximum scan RSSI valid time for scan RSSI search which is done by finding
+     * the maximum RSSI found among all valid scan detail entries of each network's scanDetailCache
+     * If a scanDetail was older than the returned value, it will not be considered valid.
+     */
+    public int getScanRssiValidTimeMs() {
+        return (mDeviceMobilityState == WifiManager.DEVICE_MOBILITY_STATE_STATIONARY)
+                ? STATIONARY_SCAN_RSSI_VALID_TIME_MS : DEFAULT_SCAN_RSSI_VALID_TIME_MS;
     }
 
     /**
@@ -287,6 +298,34 @@ public class WifiHealthMonitor {
                 mPostBootDetectionListener, mHandler);
     }
 
+    /**
+     * Dump the internal state of WifiHealthMonitor.
+     */
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println("Dump of WifiHealthMonitor");
+        pw.println("WifiHealthMonitor - Log Begin ----");
+        pw.println("System Info Stats");
+        pw.println(mWifiSystemInfoStats);
+        pw.println("configured network connection stats");
+        List<WifiConfiguration> configuredNetworks = mWifiConfigManager.getConfiguredNetworks();
+        for (WifiConfiguration network : configuredNetworks) {
+            if (isInvalidConfiguredNetwork(network)) continue;
+            PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(network.SSID);
+            int cntName = WifiScoreCard.CNT_CONNECTION_ATTEMPT;
+            if (perNetwork.getStatsCurrBuild().getCount(cntName) > 0
+                    || perNetwork.getRecentStats().getCount(cntName) > 0) {
+                pw.println(mWifiScoreCard.lookupNetwork(network.SSID));
+            }
+        }
+        pw.println("networks with failure increase: ");
+        pw.println(mFailureStatsIncrease);
+        pw.println("networks with failure drop: ");
+        pw.println(mFailureStatsDecrease);
+        pw.println("networks with high failure without previous stats: ");
+        pw.println(mFailureStatsHigh);
+        pw.println("WifiHealthMonitor - Log End ----");
+    }
+
     private synchronized void dailyDetectionHandler() {
         logd("Run daily detection");
         // Clear daily detection result
@@ -301,10 +340,9 @@ public class WifiHealthMonitor {
         scheduleDailyDetectionAlarm(DAILY_DETECTION_INTERVAL_MS);
         List<WifiConfiguration> configuredNetworks = mWifiConfigManager.getConfiguredNetworks();
         for (WifiConfiguration network : configuredNetworks) {
-            if (isInValidConfiguredNetwork(network)) {
+            if (isInvalidConfiguredNetwork(network)) {
                 continue;
             }
-            logd(network.SSID);
             PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(network.SSID);
 
             int detectionFlag = perNetwork.dailyDetection(mFailureStatsDecrease,
@@ -319,10 +357,10 @@ public class WifiHealthMonitor {
             connectionDurationSec += perNetwork.getRecentStats().getCount(
                     WifiScoreCard.CNT_CONNECTION_DURATION_SEC);
 
-            logd("before daily update: " + perNetwork.toString());
+            logd("before daily update: " + perNetwork);
             // Update historical stats with dailyStats and clear dailyStats
             perNetwork.updateAfterDailyDetection();
-            logd("after daily update: " + perNetwork.toString());
+            logd("after daily update: " + perNetwork);
         }
         logd("total connection duration: " + connectionDurationSec);
         logd("#networks w/ sufficient recent stats: " + mNumNetworkSufficientRecentStatsOnly);
@@ -413,7 +451,7 @@ public class WifiHealthMonitor {
         return stats;
     }
 
-    private boolean isInValidConfiguredNetwork(WifiConfiguration config) {
+    private boolean isInvalidConfiguredNetwork(WifiConfiguration config) {
         return (config == null || WifiManager.UNKNOWN_SSID.equals(config.SSID)
                 || config.SSID == null);
     }
@@ -454,7 +492,7 @@ public class WifiHealthMonitor {
     private void requestReadAllNetworks() {
         List<WifiConfiguration> configuredNetworks = mWifiConfigManager.getConfiguredNetworks();
         for (WifiConfiguration network : configuredNetworks) {
-            if (isInValidConfiguredNetwork(network)) {
+            if (isInvalidConfiguredNetwork(network)) {
                 continue;
             }
             logd(network.SSID);
@@ -475,15 +513,15 @@ public class WifiHealthMonitor {
     private void updateAllNetworkAfterSwBuildChange() {
         List<WifiConfiguration> configuredNetworks = mWifiConfigManager.getConfiguredNetworks();
         for (WifiConfiguration network : configuredNetworks) {
-            if (isInValidConfiguredNetwork(network)) {
+            if (isInvalidConfiguredNetwork(network)) {
                 continue;
             }
             logd(network.SSID);
             WifiScoreCard.PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(network.SSID);
 
-            logd("before SW build update: " + perNetwork.toString());
+            logd("before SW build update: " + perNetwork);
             perNetwork.updateAfterSwBuildChange();
-            logd("after SW build update: " + perNetwork.toString());
+            logd("after SW build update: " + perNetwork);
         }
     }
 
@@ -574,6 +612,16 @@ public class WifiHealthMonitor {
 
         void incrementCount(@FailureReasonCode int reasonCode) {
             mCount[reasonCode]++;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < NUMBER_FAILURE_REASON_CODE; i++) {
+                if (mCount[i] == 0) continue;
+                sb.append(FAILURE_REASON_NAME[i]).append(": ").append(mCount[i]).append(" ");
+            }
+            return sb.toString();
         }
     }
     /**
@@ -701,8 +749,8 @@ public class WifiHealthMonitor {
                 return false;
             }
 
-            logd(" from Memory: " + mCurrSoftwareBuildInfo.toString());
-            logd(" from SW: " + currSoftwareBuildInfo.toString());
+            logd(" from Memory: " + mCurrSoftwareBuildInfo);
+            logd(" from SW: " + currSoftwareBuildInfo);
             return (!mCurrSoftwareBuildInfo.equals(currSoftwareBuildInfo));
         }
 
@@ -854,16 +902,19 @@ public class WifiHealthMonitor {
             StringBuilder sb = new StringBuilder();
             if (mCurrSoftwareBuildInfo != null) {
                 sb.append("current SW build: ");
-                sb.append(mCurrSoftwareBuildInfo.toString());
+                sb.append(mCurrSoftwareBuildInfo);
             }
             if (mPrevSoftwareBuildInfo != null) {
-                sb.append(" previous SW build: ");
-                sb.append(mPrevSoftwareBuildInfo.toString());
+                sb.append("\n");
+                sb.append("previous SW build: ");
+                sb.append(mPrevSoftwareBuildInfo);
             }
-            sb.append(" currScanStats: ");
-            sb.append(mCurrScanStats.toString());
-            sb.append(" prevScanStats: ");
-            sb.append(mPrevScanStats.toString());
+            sb.append("\n");
+            sb.append("currScanStats: ");
+            sb.append(mCurrScanStats);
+            sb.append("\n");
+            sb.append("prevScanStats: ");
+            sb.append(mPrevScanStats);
             return sb.toString();
         }
     }

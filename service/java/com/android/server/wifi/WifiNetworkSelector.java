@@ -676,16 +676,24 @@ public class WifiNetworkSelector {
      * This is sticky to prevent continuous flip-flopping between networks, when the metered
      * status is learned after association.
      */
-    private boolean isEverMetered(@NonNull WifiConfiguration config, @Nullable WifiInfo info) {
+    private boolean isEverMetered(@NonNull WifiConfiguration config, @Nullable WifiInfo info,
+            @NonNull ScanDetail scanDetail) {
         // If info does not match config, don't use it.
-        // TODO(b/149988649) Metrics
         if (info != null && info.getNetworkId() != config.networkId) info = null;
         boolean metered = WifiConfiguration.isMetered(config, info);
+        NetworkDetail networkDetail = scanDetail.getNetworkDetail();
+        if (networkDetail != null
+                && networkDetail.getAnt()
+                == NetworkDetail.Ant.ChargeablePublic) {
+            metered = true;
+        }
+        mWifiMetrics.addMeteredStat(config, metered);
         if (config.meteredOverride != WifiConfiguration.METERED_OVERRIDE_NONE) {
             // User override is in effect; we should trust it
             if (mKnownMeteredNetworkIds.remove(config.networkId)) {
                 localLog("KnownMeteredNetworkIds = " + mKnownMeteredNetworkIds);
             }
+            metered = config.meteredOverride == WifiConfiguration.METERED_OVERRIDE_METERED;
         } else if (mKnownMeteredNetworkIds.contains(config.networkId)) {
             // Use the saved information
             metered = true;
@@ -794,7 +802,7 @@ public class WifiNetworkSelector {
                         WifiCandidates.Key key = wifiCandidates.keyFromScanDetailAndConfig(
                                 scanDetail, config);
                         if (key != null) {
-                            boolean metered = isEverMetered(config, wifiInfo);
+                            boolean metered = isEverMetered(config, wifiInfo, scanDetail);
                             // TODO(b/151981920) Saved passpoint candidates are marked ephemeral
                             boolean added = wifiCandidates.add(key, config,
                                     registeredNominator.getId(),
