@@ -372,6 +372,7 @@ public class WifiNetworkSuggestionsManager {
      */
     private boolean mUserApprovalUiActive = false;
 
+    private boolean mUserDataLoaded = false;
     /**
      * Listener for app-ops changes for active suggestor apps.
      */
@@ -434,6 +435,7 @@ public class WifiNetworkSuggestionsManager {
 
         @Override
         public void fromDeserialized(Map<String, PerAppInfo> networkSuggestionsMap) {
+            mActiveNetworkSuggestionsPerApp.clear();
             mActiveNetworkSuggestionsPerApp.putAll(networkSuggestionsMap);
             // Build the scan cache.
             for (Map.Entry<String, PerAppInfo> entry : networkSuggestionsMap.entrySet()) {
@@ -457,10 +459,12 @@ public class WifiNetworkSuggestionsManager {
                     }
                 }
             }
+            mUserDataLoaded = true;
         }
 
         @Override
         public void reset() {
+            mUserDataLoaded = false;
             mActiveNetworkSuggestionsPerApp.clear();
             mActiveScanResultMatchInfoWithBssid.clear();
             mActiveScanResultMatchInfoWithNoBssid.clear();
@@ -802,6 +806,10 @@ public class WifiNetworkSuggestionsManager {
     public @WifiManager.NetworkSuggestionsStatusCode int add(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName,
             @Nullable String featureId) {
+        if (!mUserDataLoaded) {
+            Log.e(TAG, "Add Network suggestion before boot complete is not allowed.");
+            return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL;
+        }
         if (networkSuggestions == null || networkSuggestions.isEmpty()) {
             Log.w(TAG, "Empty list of network suggestions for " + packageName + ". Ignoring");
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS;
@@ -1067,6 +1075,10 @@ public class WifiNetworkSuggestionsManager {
      */
     public @WifiManager.NetworkSuggestionsStatusCode int remove(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName) {
+        if (!mUserDataLoaded) {
+            Log.e(TAG, "Remove Network suggestion before boot complete is not allowed.");
+            return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL;
+        }
         if (networkSuggestions == null) {
             Log.w(TAG, "Null list of network suggestions for " + packageName + ". Ignoring");
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS;
@@ -1123,6 +1135,10 @@ public class WifiNetworkSuggestionsManager {
      */
     public @NonNull List<WifiNetworkSuggestion> get(@NonNull String packageName) {
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
+        if (!mUserDataLoaded) {
+            Log.e(TAG, "Get Network suggestion before boot complete is not allowed.");
+            return networkSuggestionList;
+        }
         PerAppInfo perAppInfo = mActiveNetworkSuggestionsPerApp.get(packageName);
         // if App never suggested return empty list.
         if (perAppInfo == null) return networkSuggestionList;
