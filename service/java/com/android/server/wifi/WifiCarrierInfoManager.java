@@ -176,8 +176,9 @@ public class WifiCarrierInfoManager {
 
         @Override
         public void fromDeserialized(Map<Integer, Boolean> imsiProtectionExemptionMap) {
-            mUserDataLoaded = true;
+            mImsiPrivacyProtectionExemptionMap.clear();
             mImsiPrivacyProtectionExemptionMap.putAll(imsiProtectionExemptionMap);
+            mUserDataLoaded = true;
         }
 
         @Override
