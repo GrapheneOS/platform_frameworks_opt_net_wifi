@@ -262,6 +262,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         verify(mWifiInjector).makeNetworkSuggestionStoreData(dataSourceArgumentCaptor.capture());
         mDataSource = dataSourceArgumentCaptor.getValue();
         assertNotNull(mDataSource);
+        mDataSource.fromDeserialized(Collections.EMPTY_MAP);
 
         verify(mWifiCarrierInfoManager).addImsiExemptionUserApprovalListener(
                 mUserApproveCarrierListenerArgumentCaptor.capture());
@@ -372,6 +373,24 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 maxSizesCaptor.capture());
         assertNotNull(maxSizesCaptor.getValue());
         assertEquals(maxSizesCaptor.getValue(), new ArrayList<Integer>() {{ add(1); add(1); }});
+    }
+
+    /**
+     * Add or remove suggestion before user data store loaded will fail.
+     */
+    @Test
+    public void testAddRemoveSuggestionBeforeUserDataLoaded() {
+        // Clear the data source, and user data store is not loaded
+        mDataSource.reset();
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+        List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL,
+                mWifiNetworkSuggestionsManager.remove(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1));
     }
 
     @Test
@@ -3676,7 +3695,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         when(mLruConnectionTracker.isMostRecentlyConnected(any())).thenReturn(true);
-        Map<String, PerAppInfo> suggestionStore = mDataSource.toSerialize();
+        Map<String, PerAppInfo> suggestionStore = new HashMap<>(mDataSource.toSerialize());
         PerAppInfo perAppInfo = suggestionStore.get(TEST_PACKAGE_1);
         ExtendedWifiNetworkSuggestion ewns = perAppInfo.extNetworkSuggestions.iterator().next();
         assertTrue(ewns.wns.wifiConfiguration.isMostRecentlyConnected);
