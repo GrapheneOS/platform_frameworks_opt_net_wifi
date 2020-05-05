@@ -13,7 +13,7 @@
 
 <!-- These values can be used to control wifi stack behavior/features on individual devices.
      These can be overridden by OEM's by using an RRO overlay app.
-     There is a sample RRO overlay app under frameworks/opt/net/wifi/RROOverlaySampleApp -->
+     See device/google/coral/rro_overlays/WifiOverlay/ for a sample overlay app. -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <overlayable name="WifiCustomization">
         <!-- START VENDOR CUSTOMIZATION -->
