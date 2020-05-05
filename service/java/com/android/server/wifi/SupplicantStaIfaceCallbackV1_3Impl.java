@@ -15,6 +15,8 @@
  */
 package com.android.server.wifi;
 
+import static com.android.server.wifi.SupplicantStaIfaceCallbackImpl.supplicantHidlStateToFrameworkState;
+
 import android.annotation.NonNull;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.hardware.wifi.supplicant.V1_3.ISupplicantStaIfaceCallback.BssTmData;
@@ -34,7 +36,6 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
     private final SupplicantStaIfaceHal mStaIfaceHal;
     private final String mIfaceName;
     private final WifiMonitor mWifiMonitor;
-    private final SupplicantStaIfaceHal.SupplicantStaIfaceHalCallback mCallbackV10;
     private final SupplicantStaIfaceHal.SupplicantStaIfaceHalCallbackV1_2 mCallbackV12;
     private boolean mStateIsFourwayV13 = false; // Used to help check for PSK password mismatch
 
@@ -47,7 +48,6 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
         // Create an older callback for function delegation,
         // and it would cascadingly create older one.
         mCallbackV12 = mStaIfaceHal.new SupplicantStaIfaceHalCallbackV1_2(mIfaceName);
-        mCallbackV10 = mStaIfaceHal.new SupplicantStaIfaceHalCallback(mIfaceName);
     }
 
     @Override
@@ -367,7 +367,7 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
             ArrayList<Byte> ssid, boolean filsHlpSent) {
         mStaIfaceHal.logCallback("onStateChanged_1_3");
         SupplicantState newSupplicantState =
-                mCallbackV10.supplicantHidlStateToFrameworkState(newState);
+                supplicantHidlStateToFrameworkState(newState);
         WifiSsid wifiSsid =
                 WifiSsid.createFromByteArray(NativeUtil.byteArrayFromArrayList(ssid));
         String bssidStr = NativeUtil.macAddressFromByteArray(bssid);
