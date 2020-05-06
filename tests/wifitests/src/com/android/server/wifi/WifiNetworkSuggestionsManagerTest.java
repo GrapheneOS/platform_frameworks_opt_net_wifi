@@ -2269,7 +2269,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         sendBroadcastForUserActionOnApp(
                 NOTIFICATION_USER_DISMISSED_INTENT_ACTION, TEST_PACKAGE_1, TEST_UID_1);
         reset(mNotificationManger);
-
+        verify(mWifiMetrics).addNetworkSuggestionUserApprovalAppUiReaction(
+                WifiNetworkSuggestionsManager.ACTION_USER_DISMISS, false);
         // Simulate finding the network in scan results.
         mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(
                 createScanDetailForNetwork(networkSuggestion.wifiConfiguration));
@@ -2326,6 +2327,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Verify config store interactions.
         verify(mWifiConfigManager, times(2)).saveToStore(true);
         assertTrue(mDataSource.hasNewDataToSerialize());
+        verify(mWifiMetrics).addNetworkSuggestionUserApprovalAppUiReaction(
+                WifiNetworkSuggestionsManager.ACTION_USER_ALLOWED_APP, false);
 
         reset(mNotificationManger);
         // We should not resend the notification next time the network is found in scan results.
@@ -2376,6 +2379,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Verify config store interactions.
         verify(mWifiConfigManager, times(2)).saveToStore(true);
         assertTrue(mDataSource.hasNewDataToSerialize());
+        verify(mWifiMetrics).addNetworkSuggestionUserApprovalAppUiReaction(
+                WifiNetworkSuggestionsManager.ACTION_USER_DISALLOWED_APP, false);
 
         reset(mNotificationManger);
 
@@ -2544,6 +2549,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Verify config store interactions.
         verify(mWifiConfigManager, times(2)).saveToStore(true);
         assertTrue(mDataSource.hasNewDataToSerialize());
+        verify(mWifiMetrics).addNetworkSuggestionUserApprovalAppUiReaction(
+                WifiNetworkSuggestionsManager.ACTION_USER_ALLOWED_APP, true);
 
         // We should not resend the notification next time the network is found in scan results.
         mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(
@@ -2588,6 +2595,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Verify config store interactions.
         verify(mWifiConfigManager, times(2)).saveToStore(true);
         assertTrue(mDataSource.hasNewDataToSerialize());
+        verify(mWifiMetrics).addNetworkSuggestionUserApprovalAppUiReaction(
+                WifiNetworkSuggestionsManager.ACTION_USER_DISALLOWED_APP, true);
 
         // Now trigger the app-ops callback to ensure we remove all of their suggestions.
         AppOpsManager.OnOpChangedListener listener = mAppOpChangedListenerCaptor.getValue();
@@ -2640,6 +2649,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Verify no new config store or app-op interactions.
         verify(mWifiConfigManager).saveToStore(true); // 1 already done for add
         verify(mAppOpsManager, never()).setMode(any(), anyInt(), any(), anyInt());
+        verify(mWifiMetrics).addNetworkSuggestionUserApprovalAppUiReaction(
+                WifiNetworkSuggestionsManager.ACTION_USER_DISMISS, true);
 
         // We should resend the notification next time the network is found in scan results.
         mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(
