@@ -465,11 +465,13 @@ public class WifiMonitor {
      * @param iface Name of iface on which this occurred.
      * @param status Status code for association rejection.
      * @param timedOut Indicates if the association timed out.
+     * @param ssid SSID of the access point.
      * @param bssid BSSID of the access point from which we received the reject.
      */
     public void broadcastAssociationRejectionEvent(String iface, int status, boolean timedOut,
-                                                   String bssid) {
-        sendMessage(iface, ASSOCIATION_REJECTION_EVENT, timedOut ? 1 : 0, status, bssid);
+            String ssid, String bssid) {
+        sendMessage(iface, ASSOCIATION_REJECTION_EVENT,
+                new AssocRejectEventInfo(ssid, bssid, status, timedOut));
     }
 
     /**
@@ -509,13 +511,15 @@ public class WifiMonitor {
      * Broadcast the network disconnection event to all the handlers registered for this event.
      *
      * @param iface Name of iface on which this occurred.
-     * @param local Whether the disconnect was locally triggered.
+     * @param locallyGenerated Whether the disconnect was locally triggered.
      * @param reason Disconnect reason code.
+     * @param ssid SSID of the access point.
      * @param bssid BSSID of the access point.
      */
-    public void broadcastNetworkDisconnectionEvent(String iface, int local, int reason,
-                                                   String bssid) {
-        sendMessage(iface, NETWORK_DISCONNECTION_EVENT, local, reason, bssid);
+    public void broadcastNetworkDisconnectionEvent(String iface, boolean locallyGenerated,
+            int reason, String ssid, String bssid) {
+        sendMessage(iface, NETWORK_DISCONNECTION_EVENT,
+                new DisconnectEventInfo(ssid, bssid, reason, locallyGenerated));
     }
 
     /**

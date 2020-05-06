@@ -18,6 +18,8 @@ package com.android.server.wifi;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -385,16 +387,22 @@ public class WifiMonitorTest extends WifiBaseTest {
         mWifiMonitor.registerHandler(
                 WLAN_IFACE_NAME, WifiMonitor.ASSOCIATION_REJECTION_EVENT, mHandlerSpy);
         int status = 5;
+        String ssid = SSID;
         String bssid = BSSID;
-        mWifiMonitor.broadcastAssociationRejectionEvent(WLAN_IFACE_NAME, status, false, bssid);
+        mWifiMonitor.broadcastAssociationRejectionEvent(
+                WLAN_IFACE_NAME, status, false, ssid, bssid);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
         assertEquals(WifiMonitor.ASSOCIATION_REJECTION_EVENT, messageCaptor.getValue().what);
-        assertEquals(0, messageCaptor.getValue().arg1);
-        assertEquals(status, messageCaptor.getValue().arg2);
-        assertEquals(bssid, (String) messageCaptor.getValue().obj);
+        AssocRejectEventInfo assocRejectEventInfo =
+                (AssocRejectEventInfo) messageCaptor.getValue().obj;
+        assertNotNull(assocRejectEventInfo);
+        assertEquals(status, assocRejectEventInfo.statusCode);
+        assertFalse(assocRejectEventInfo.timedOut);
+        assertEquals(ssid, assocRejectEventInfo.ssid);
+        assertEquals(bssid, assocRejectEventInfo.bssid);
     }
 
     /**
@@ -441,18 +449,24 @@ public class WifiMonitorTest extends WifiBaseTest {
     public void testBroadcastNetworkDisconnectionEvent() {
         mWifiMonitor.registerHandler(
                 WLAN_IFACE_NAME, WifiMonitor.NETWORK_DISCONNECTION_EVENT, mHandlerSpy);
-        int local = 1;
+        boolean local = true;
         int reason  = 5;
+        String ssid = SSID;
         String bssid = BSSID;
-        mWifiMonitor.broadcastNetworkDisconnectionEvent(WLAN_IFACE_NAME, local, reason, bssid);
+        mWifiMonitor.broadcastNetworkDisconnectionEvent(
+                WLAN_IFACE_NAME, local, reason, ssid, bssid);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
         assertEquals(WifiMonitor.NETWORK_DISCONNECTION_EVENT, messageCaptor.getValue().what);
-        assertEquals(local, messageCaptor.getValue().arg1);
-        assertEquals(reason, messageCaptor.getValue().arg2);
-        assertEquals(bssid, (String) messageCaptor.getValue().obj);
+        DisconnectEventInfo disconnectEventInfo =
+                (DisconnectEventInfo) messageCaptor.getValue().obj;
+        assertNotNull(disconnectEventInfo);
+        assertEquals(local, disconnectEventInfo.locallyGenerated);
+        assertEquals(reason, disconnectEventInfo.reasonCode);
+        assertEquals(ssid, disconnectEventInfo.ssid);
+        assertEquals(bssid, disconnectEventInfo.bssid);
     }
 
     /**
@@ -476,7 +490,7 @@ public class WifiMonitorTest extends WifiBaseTest {
         StateChangeResult result = (StateChangeResult) messageCaptor.getValue().obj;
         assertEquals(networkId, result.networkId);
         assertEquals(wifiSsid, result.wifiSsid);
-        assertEquals(bssid, result.BSSID);
+        assertEquals(bssid, result.bssid);
         assertEquals(newState, result.state);
     }
 

@@ -56,6 +56,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
     private final Object mLock;
     private final WifiMonitor mWifiMonitor;
     private boolean mStateIsFourway = false; // Used to help check for PSK password mismatch
+    private String mCurrentSsid = null;
 
     SupplicantStaIfaceCallbackImpl(@NonNull SupplicantStaIfaceHal staIfaceHal,
             @NonNull String ifaceName,
@@ -173,6 +174,8 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
                 mWifiMonitor.broadcastNetworkConnectionEvent(
                         mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), filsHlpSent,
                         bssidStr);
+            } else if (newSupplicantState == SupplicantState.ASSOCIATING) {
+                mCurrentSsid = NativeUtil.encodeSsid(ssid);
             }
             mWifiMonitor.broadcastSupplicantStateChangeEvent(
                     mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), wifiSsid,
@@ -257,7 +260,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
                         mIfaceName, WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD, -1);
             }
             mWifiMonitor.broadcastNetworkDisconnectionEvent(
-                    mIfaceName, locallyGenerated ? 1 : 0, reasonCode,
+                    mIfaceName, locallyGenerated, reasonCode, mCurrentSsid,
                     NativeUtil.macAddressFromByteArray(bssid));
         }
     }
@@ -299,6 +302,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             mWifiMonitor
                     .broadcastAssociationRejectionEvent(
                             mIfaceName, statusCode, timedOut,
+                            mCurrentSsid,
                             NativeUtil.macAddressFromByteArray(bssid));
         }
     }
