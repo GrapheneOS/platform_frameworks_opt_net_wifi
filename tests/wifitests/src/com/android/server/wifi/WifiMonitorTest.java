@@ -423,13 +423,14 @@ public class WifiMonitorTest extends WifiBaseTest {
                 WLAN_IFACE_NAME, WifiMonitor.NETWORK_CONNECTION_EVENT, mHandlerSpy);
         int networkId = NETWORK_ID;
         String bssid = BSSID;
-        mWifiMonitor.broadcastNetworkConnectionEvent(WLAN_IFACE_NAME, networkId, bssid);
+        mWifiMonitor.broadcastNetworkConnectionEvent(WLAN_IFACE_NAME, networkId, false, bssid);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
         assertEquals(WifiMonitor.NETWORK_CONNECTION_EVENT, messageCaptor.getValue().what);
         assertEquals(networkId, messageCaptor.getValue().arg1);
+        assertEquals(0, messageCaptor.getValue().arg2);
         assertEquals(bssid, (String) messageCaptor.getValue().obj);
     }
 
@@ -607,17 +608,17 @@ public class WifiMonitorTest extends WifiBaseTest {
     @Test
     public void testBroadcastFilsNetworkConnectionEvent() {
         mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.FILS_NETWORK_CONNECTION_EVENT, mHandlerSpy);
+                WLAN_IFACE_NAME, WifiMonitor.NETWORK_CONNECTION_EVENT, mHandlerSpy);
         int networkId = NETWORK_ID;
         String bssid = BSSID;
-        mWifiMonitor.broadcastFilsNetworkConnectionEvent(WLAN_IFACE_NAME, networkId, bssid);
+        mWifiMonitor.broadcastNetworkConnectionEvent(WLAN_IFACE_NAME, networkId, true, bssid);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.FILS_NETWORK_CONNECTION_EVENT, messageCaptor.getValue().what);
+        assertEquals(WifiMonitor.NETWORK_CONNECTION_EVENT, messageCaptor.getValue().what);
         assertEquals(networkId, messageCaptor.getValue().arg1);
+        assertEquals(1, messageCaptor.getValue().arg2);
         assertEquals(bssid, (String) messageCaptor.getValue().obj);
     }
-
 }

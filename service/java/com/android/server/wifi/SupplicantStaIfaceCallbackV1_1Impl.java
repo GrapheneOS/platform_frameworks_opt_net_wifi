@@ -53,10 +53,18 @@ abstract class SupplicantStaIfaceCallbackV1_1Impl extends
         mCallbackV10.onNetworkRemoved(id);
     }
 
+    /**
+     * Added to plumb the new {@code filsHlpSent} param from the V1.3 callback version.
+     */
+    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id, ArrayList<Byte> ssid,
+            boolean filsHlpSent) {
+        mCallbackV10.onStateChanged(newState, bssid, id, ssid, filsHlpSent);
+    }
+
     @Override
     public void onStateChanged(int newState, byte[/* 6 */] bssid, int id,
                                ArrayList<Byte> ssid) {
-        mCallbackV10.onStateChanged(newState, bssid, id, ssid);
+        onStateChanged(newState, bssid, id, ssid, false);
     }
 
     @Override
