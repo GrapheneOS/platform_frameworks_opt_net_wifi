@@ -347,7 +347,9 @@ class Utils {
 
     @Speed
     private static int roundToClosestSpeedEnum(int speed) {
-        if (speed < (SPEED_SLOW + SPEED_MODERATE) / 2) {
+        if (speed == SPEED_NONE) {
+            return SPEED_NONE;
+        } else if (speed < (SPEED_SLOW + SPEED_MODERATE) / 2) {
             return SPEED_SLOW;
         } else if (speed < (SPEED_MODERATE + SPEED_FAST) / 2) {
             return SPEED_MODERATE;
