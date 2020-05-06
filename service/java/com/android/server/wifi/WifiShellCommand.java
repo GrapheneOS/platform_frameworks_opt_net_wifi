@@ -74,7 +74,6 @@ import java.util.concurrent.TimeUnit;
  *
  * Permissions: currently root permission is required for some commands. Others will
  * enforce the corresponding API permissions.
- * TODO (b/152875610): Add unit tests.
  */
 public class WifiShellCommand extends BasicShellCommandHandler {
     private static String SHELL_PACKAGE_NAME = "com.android.shell";
