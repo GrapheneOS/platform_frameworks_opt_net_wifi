@@ -86,6 +86,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         return BaseWifiTracker.sVerboseLogging;
     }
 
+    // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         @WorkerThread
@@ -224,9 +225,9 @@ public class BaseWifiTracker implements LifecycleObserver {
                 mWifiNetworkScoreCache,
                 NetworkScoreManager.SCORE_FILTER_SCAN_RESULTS);
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
-            mScanner.start();
+            mWorkerHandler.post(mScanner::start);
         } else {
-            mScanner.stop();
+            mWorkerHandler.post(mScanner::stop);
         }
         mWorkerHandler.post(this::handleOnStart);
     }
@@ -237,7 +238,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     @MainThread
     public void onStop() {
-        mScanner.stop();
+        mWorkerHandler.post(mScanner::stop);
         mContext.unregisterReceiver(mBroadcastReceiver);
         mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
         mNetworkScoreManager.unregisterNetworkScoreCache(NetworkKey.TYPE_WIFI,
@@ -335,6 +336,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Scanner to handle starting scans every SCAN_INTERVAL_MILLIS
      */
+    @WorkerThread
     private class Scanner extends Handler {
         private static final int SCAN_RETRY_TIMES = 3;
 
@@ -344,15 +346,13 @@ public class BaseWifiTracker implements LifecycleObserver {
             super(looper);
         }
 
-        @AnyThread
         private void start() {
             if (isVerboseLoggingEnabled()) {
                 Log.v(mTag, "Scanner start");
             }
-            post(this::postScan);
+            postScan();
         }
 
-        @AnyThread
         private void stop() {
             if (isVerboseLoggingEnabled()) {
                 Log.v(mTag, "Scanner stop");
@@ -361,7 +361,6 @@ public class BaseWifiTracker implements LifecycleObserver {
             removeCallbacksAndMessages(null);
         }
 
-        @WorkerThread
         private void postScan() {
             if (mWifiManager.startScan()) {
                 mRetry = 0;
