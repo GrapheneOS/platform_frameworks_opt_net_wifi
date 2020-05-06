@@ -49,11 +49,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -392,7 +394,7 @@ public class WifiPickerTrackerTest {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
-        when(mMockWifiManager.getConfiguredNetworks())
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         wifiPickerTracker.onStart();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
@@ -426,7 +428,7 @@ public class WifiPickerTrackerTest {
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.networkId = 1;
-        when(mMockWifiManager.getConfiguredNetworks())
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(-50);
@@ -448,7 +450,7 @@ public class WifiPickerTrackerTest {
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.networkId = 1;
-        when(mMockWifiManager.getConfiguredNetworks())
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
                 buildScanResult("ssid", "bssid", START_MILLIS)));
@@ -479,7 +481,7 @@ public class WifiPickerTrackerTest {
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.networkId = 1;
-        when(mMockWifiManager.getConfiguredNetworks())
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
                 buildScanResult("ssid", "bssid", START_MILLIS)));
@@ -578,7 +580,8 @@ public class WifiPickerTrackerTest {
     public void testGetConnectedEntry_alreadyConnectedToPasspoint_returnsPasspointEntry() {
         final String fqdn = "fqdn";
         final String friendlyName = "friendlyName";
-        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final int networkId = 1;
+        // Create a passpoint configuration to match with the current network
         final PasspointConfiguration passpointConfig = new PasspointConfiguration();
         final HomeSp homeSp = new HomeSp();
         homeSp.setFqdn(fqdn);
@@ -587,10 +590,23 @@ public class WifiPickerTrackerTest {
         passpointConfig.setCredential(new Credential());
         when(mMockWifiManager.getPasspointConfigurations())
                 .thenReturn(Collections.singletonList(passpointConfig));
+        // Create a wifi config to match the WifiInfo netId and unique id of the passpoint config
+        final WifiConfiguration config = Mockito.mock(WifiConfiguration.class);
+        config.SSID = "\"ssid\"";
+        config.networkId = networkId;
+        config.allowedKeyManagement = new BitSet();
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
+
+        when(config.isPasspoint()).thenReturn(true);
+        when(config.getKey()).thenReturn(passpointConfig.getUniqueId());
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getNetworkId()).thenReturn(networkId);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(fqdn);
         when(mMockWifiInfo.getRssi()).thenReturn(-50);
         when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
 
         wifiPickerTracker.onStart();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
