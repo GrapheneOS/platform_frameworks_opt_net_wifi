@@ -910,8 +910,6 @@ public class ClientModeImpl extends StateMachine {
                 getHandler());
         mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_CONNECTION_EVENT,
                 getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.FILS_NETWORK_CONNECTION_EVENT,
-                getHandler());
         mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_DISCONNECTION_EVENT,
                 getHandler());
         mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.RX_HS20_ANQP_ICON_EVENT,
@@ -1998,7 +1996,6 @@ public class ClientModeImpl extends StateMachine {
                 }
                 sb.append(" blacklist=" + Boolean.toString(mDidBlackListBSSID));
                 break;
-            case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 sb.append(" ");
                 sb.append(Integer.toString(msg.arg1));
@@ -2263,9 +2260,6 @@ public class ClientModeImpl extends StateMachine {
                 break;
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 s = "NETWORK_CONNECTION_EVENT";
-                break;
-            case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
-                s = "FILS_NETWORK_CONNECTION_EVENT";
                 break;
             case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 s = "NETWORK_DISCONNECTION_EVENT";
@@ -3456,7 +3450,6 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_RECONNECT:
                 case CMD_REASSOCIATE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
-                case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
@@ -4213,12 +4206,11 @@ public class ClientModeImpl extends StateMachine {
                     }
                     handleStatus = NOT_HANDLED;
                     break;
-                case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
-                    mWifiMetrics.incrementL2ConnectionThroughFilsAuthCount();
-                    mSentHLPs = true;
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                     if (mVerboseLoggingEnabled) log("Network connection established");
                     mLastNetworkId = message.arg1;
+                    mSentHLPs = message.arg2 == 1;
+                    if (mSentHLPs) mWifiMetrics.incrementL2ConnectionThroughFilsAuthCount();
                     mWifiConfigManager.clearRecentFailureReason(mLastNetworkId);
                     mLastBssid = (String) message.obj;
                     reasonCode = message.arg2;
@@ -4908,7 +4900,6 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
-                case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
                     mWifiInfo.setBSSID((String) message.obj);
                     mLastNetworkId = message.arg1;
                     mWifiInfo.setNetworkId(mLastNetworkId);
