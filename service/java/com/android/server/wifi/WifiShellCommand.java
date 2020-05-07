@@ -98,7 +98,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             "set-verbose-logging",
             "set-wifi-enabled",
             "start-scan",
+            "start-softap",
             "status",
+            "stop-softap",
     };
 
     private static final Map<String, Pair<NetworkRequest, ConnectivityManager.NetworkCallback>>
@@ -302,6 +304,23 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         mHostapdHal.disableForceSoftApChannel();
                         return 0;
                     }
+                }
+                case "start-softap": {
+                    SoftApConfiguration config = buildSoftApConfiguration(pw);
+                    if (mWifiService.startTetheredHotspot(config)) {
+                        pw.println("Soft AP started successfully");
+                    } else {
+                        pw.println("Soft AP failed to start. Please check config parameters");
+                    }
+                    return 0;
+                }
+                case "stop-softap": {
+                    if (mWifiService.stopSoftAp()) {
+                        pw.println("Soft AP stopped successfully");
+                    } else {
+                        pw.println("Soft AP failed to stop");
+                    }
+                    return 0;
                 }
                 case "force-country-code": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
@@ -722,6 +741,42 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         return configuration;
     }
 
+    private SoftApConfiguration buildSoftApConfiguration(PrintWriter pw) {
+        String ssid = getNextArgRequired();
+        String type = getNextArgRequired();
+        SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setSsid("\"" + ssid + "\"");
+        if (TextUtils.equals(type, "wpa2")) {
+            configBuilder.setPassphrase(getNextArgRequired(),
+                    SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
+        } else if (TextUtils.equals(type, "open")) {
+            configBuilder.setPassphrase(null, SoftApConfiguration.SECURITY_TYPE_OPEN);
+        } else {
+            throw new IllegalArgumentException("Unknown network type " + type);
+        }
+        String option = getNextOption();
+        while (option != null) {
+            if (option.equals("-b")) {
+                String preferredBand = getNextArgRequired();
+                if (preferredBand.equals("2")) {
+                    configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+                } else if (preferredBand.equals("5")) {
+                    configBuilder.setBand(SoftApConfiguration.BAND_5GHZ);
+                } else if (preferredBand.equals("6")) {
+                    configBuilder.setBand(SoftApConfiguration.BAND_6GHZ);
+                } else if (preferredBand.equals("any")) {
+                    configBuilder.setBand(SoftApConfiguration.BAND_ANY);
+                } else {
+                    throw new IllegalArgumentException("Invalid band option " + preferredBand);
+                }
+            } else {
+                pw.println("Ignoring unknown option " + option);
+            }
+            option = getNextOption();
+        }
+        return configBuilder.build();
+    }
+
     private WifiNetworkSuggestion buildSuggestion(PrintWriter pw) {
         String ssid = getNextArgRequired();
         String type = getNextArgRequired();
@@ -940,6 +995,25 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  reset-connected-score");
         pw.println("    Turns on the default connected scorer.");
         pw.println("    Note: Will clear any external scorer set.");
+        pw.println("  start-softap <ssid> (open|wpa2) <passphrase> [-b 2|5|6|any]");
+        pw.println("    Start softap with provided params");
+        pw.println("    Note that the shell command doesn't activate internet tethering. In some "
+                + "devices, internet sharing is possible when Wi-Fi STA is also enabled and is"
+                + "associated to another AP with internet access.");
+        pw.println("    <ssid> - SSID of the network");
+        pw.println("    open|wpa2 - Security type of the network.");
+        pw.println("        - Use 'open' for networks with no passphrase");
+        pw.println("        - Use 'wpa2' for networks with passphrase");
+        pw.println("    -b 2|5|6|any - select the preferred band.");
+        pw.println("        - Use '2' to select 2.4GHz band as the preferred band");
+        pw.println("        - Use '5' to select 5GHz band as the preferred band");
+        pw.println("        - Use '6' to select 6GHz band as the preferred band");
+        pw.println("        - Use 'any' to indicate no band preference");
+        pw.println("    Note: If the band option is not provided, 2.4GHz is the preferred band.");
+        pw.println("          The exact channel is auto-selected by FW unless overridden by "
+                + "force-softap-channel command");
+        pw.println("  stop-softap");
+        pw.println("    Stop softap (hotspot)");
     }
 
     private void onHelpPrivileged(PrintWriter pw) {
