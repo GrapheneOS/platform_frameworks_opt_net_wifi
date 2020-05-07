@@ -485,29 +485,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     break;
                 }
                 case "status":
-                    boolean wifiEnabled = mWifiService.getWifiEnabledState() == WIFI_STATE_ENABLED;
-                    pw.println("Wifi is " + (wifiEnabled ? "enabled" : "disabled"));
-                    pw.println("Wifi scanning is "
-                            + (mWifiService.isScanAlwaysAvailable()
-                            ? "always available" : "only available when wifi is enabled"));
-                    WifiInfo info =
-                            mWifiService.getConnectionInfo(SHELL_PACKAGE_NAME, null);
-                    if (wifiEnabled) {
-                        if (info.getSupplicantState() == SupplicantState.COMPLETED) {
-                            pw.println("Wifi is connected to " + info.getSSID());
-                            pw.println("WifiInfo: " + info);
-                            Network network = mWifiService.getCurrentNetwork();
-                            try {
-                                NetworkCapabilities capabilities =
-                                        mConnectivityManager.getNetworkCapabilities(network);
-                                pw.println("NetworkCapabilities: " + capabilities);
-                            } catch (SecurityException e) {
-                                // ignore on unrooted shell.
-                            }
-                        } else {
-                            pw.println("Wifi is not connected");
-                        }
-                    }
+                    printStatus(pw);
                     break;
                 case "set-verbose-logging": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
@@ -916,6 +894,41 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 || Arrays.binarySearch(allowed5gFreq, apChannelMHz) >= 0
                 || Arrays.binarySearch(allowed5gDfsFreq, apChannelMHz) >= 0)
                 || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0;
+    }
+
+    private void printStatus(PrintWriter pw) {
+        boolean wifiEnabled = mWifiService.getWifiEnabledState() == WIFI_STATE_ENABLED;
+        pw.println("Wifi is " + (wifiEnabled ? "enabled" : "disabled"));
+        pw.println("Wifi scanning is "
+                + (mWifiService.isScanAlwaysAvailable()
+                ? "always available" : "only available when wifi is enabled"));
+        if (!wifiEnabled) {
+            return;
+        }
+        WifiInfo info = mWifiService.getConnectionInfo(SHELL_PACKAGE_NAME, null);
+        if (info.getSupplicantState() != SupplicantState.COMPLETED) {
+            pw.println("Wifi is not connected");
+            return;
+        }
+        pw.println("Wifi is connected to " + info.getSSID());
+        pw.println("WifiInfo: " + info);
+        // additional diagnostics not printed by WifiInfo.toString()
+        pw.println("successfulTxPackets: " + info.txSuccess);
+        pw.println("successfulTxPacketsPerSecond: " + info.getSuccessfulTxPacketsPerSecond());
+        pw.println("retriedTxPackets: " + info.txRetries);
+        pw.println("retriedTxPacketsPerSecond: " + info.getRetriedTxPacketsPerSecond());
+        pw.println("lostTxPackets: " + info.txBad);
+        pw.println("lostTxPacketsPerSecond: " + info.getLostTxPacketsPerSecond());
+        pw.println("successfulRxPackets: " + info.rxSuccess);
+        pw.println("successfulRxPacketsPerSecond: " + info.getSuccessfulRxPacketsPerSecond());
+
+        Network network = mWifiService.getCurrentNetwork();
+        try {
+            NetworkCapabilities capabilities = mConnectivityManager.getNetworkCapabilities(network);
+            pw.println("NetworkCapabilities: " + capabilities);
+        } catch (SecurityException e) {
+            // ignore on unrooted shell.
+        }
     }
 
     private void onHelpNonPrivileged(PrintWriter pw) {
