@@ -56,6 +56,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
     private final Object mLock;
     private final WifiMonitor mWifiMonitor;
     private boolean mStateIsFourway = false; // Used to help check for PSK password mismatch
+    private String mCurrentSsid = null;
 
     SupplicantStaIfaceCallbackImpl(@NonNull SupplicantStaIfaceHal staIfaceHal,
             @NonNull String ifaceName,
@@ -156,9 +157,11 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
         }
     }
 
-    @Override
-    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id,
-                               ArrayList<Byte> ssid) {
+    /**
+     * Added to plumb the new {@code filsHlpSent} param from the V1.3 callback version.
+     */
+    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id, ArrayList<Byte> ssid,
+            boolean filsHlpSent) {
         synchronized (mLock) {
             mStaIfaceHal.logCallback("onStateChanged");
             SupplicantState newSupplicantState =
@@ -169,12 +172,20 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             mStateIsFourway = (newState == ISupplicantStaIfaceCallback.State.FOURWAY_HANDSHAKE);
             if (newSupplicantState == SupplicantState.COMPLETED) {
                 mWifiMonitor.broadcastNetworkConnectionEvent(
-                        mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), bssidStr);
+                        mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), filsHlpSent,
+                        bssidStr);
+            } else if (newSupplicantState == SupplicantState.ASSOCIATING) {
+                mCurrentSsid = NativeUtil.encodeSsid(ssid);
             }
             mWifiMonitor.broadcastSupplicantStateChangeEvent(
                     mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), wifiSsid,
                     bssidStr, newSupplicantState);
         }
+    }
+
+    @Override
+    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id, ArrayList<Byte> ssid) {
+        onStateChanged(newState, bssid, id, ssid, false);
     }
 
     @Override
@@ -249,7 +260,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
                         mIfaceName, WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD, -1);
             }
             mWifiMonitor.broadcastNetworkDisconnectionEvent(
-                    mIfaceName, locallyGenerated ? 1 : 0, reasonCode,
+                    mIfaceName, locallyGenerated, reasonCode, mCurrentSsid,
                     NativeUtil.macAddressFromByteArray(bssid));
         }
     }
@@ -291,6 +302,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             mWifiMonitor
                     .broadcastAssociationRejectionEvent(
                             mIfaceName, statusCode, timedOut,
+                            mCurrentSsid,
                             NativeUtil.macAddressFromByteArray(bssid));
         }
     }
