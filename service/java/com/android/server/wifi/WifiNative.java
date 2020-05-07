@@ -1781,6 +1781,9 @@ public class WifiNative {
      */
     public boolean setMacAddress(String interfaceName, MacAddress mac) {
         // TODO(b/72459123): Suppress interface down/up events from this call
+        // Trigger an explicit disconnect to avoid losing the disconnect event reason (if currently
+        // connected) from supplicant if the interface is brought down for MAC address change.
+        disconnect(interfaceName);
         return mWifiVendorHal.setMacAddress(interfaceName, mac);
     }
 
