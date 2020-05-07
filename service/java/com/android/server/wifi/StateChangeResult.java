@@ -16,8 +16,11 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiSsid;
+
+import java.util.Objects;
 
 /**
  * Stores supplicant state change information passed from WifiMonitor to
@@ -26,25 +29,24 @@ import android.net.wifi.WifiSsid;
  * @hide
  */
 public class StateChangeResult {
-    StateChangeResult(int networkId, WifiSsid wifiSsid, String BSSID,
+    StateChangeResult(int networkId, @NonNull WifiSsid wifiSsid, @NonNull String bssid,
             SupplicantState state) {
         this.state = state;
-        this.wifiSsid= wifiSsid;
-        this.BSSID = BSSID;
+        this.wifiSsid = Objects.requireNonNull(wifiSsid);
+        this.bssid = Objects.requireNonNull(bssid);
         this.networkId = networkId;
     }
 
-    int networkId;
-    WifiSsid wifiSsid;
-    String BSSID;
-    SupplicantState state;
+    public final int networkId;
+    @NonNull public final WifiSsid wifiSsid;
+    @NonNull public final String bssid;
+    public final SupplicantState state;
 
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
-
-        sb.append(" SSID: ").append(wifiSsid.toString());
-        sb.append(" BSSID: ").append(BSSID);
+        sb.append(" ssid: ").append(wifiSsid);
+        sb.append(" bssid: ").append(bssid);
         sb.append(" nid: ").append(networkId);
         sb.append(" state: ").append(state);
         return sb.toString();
