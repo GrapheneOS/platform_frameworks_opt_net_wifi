@@ -344,6 +344,13 @@ public class UtilsTest {
     }
 
     @Test
+    public void testGetCarrierNameWithInvalidSubId() {
+        when(mSpecifiedTm.getSimCarrierIdName()).thenReturn(TEST_CARRIER_NAME);
+        assertNull(getCarrierNameForSubId(mMockContext,
+                SubscriptionManager.INVALID_SUBSCRIPTION_ID));
+    }
+
+    @Test
     public void testCheckRequireImsiPrivacyProtectionWithNoCarrierConfig() {
         assertFalse(isImsiPrivacyProtectionProvided(mMockContext, TEST_SUB_ID));
     }
@@ -376,6 +383,13 @@ public class UtilsTest {
         subscriptionInfoList.add(subscriptionInfo);
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
         assertEquals(TEST_SUB_ID, getSubIdForConfig(mMockContext, config));
+    }
+
+    @Test
+    public void testGetSubIdForWifiConfigurationWithoutCarrierId() {
+        WifiConfiguration config = new WifiConfiguration();
+        assertEquals(SubscriptionManager.INVALID_SUBSCRIPTION_ID,
+                getSubIdForConfig(mMockContext, config));
     }
 
     @Test

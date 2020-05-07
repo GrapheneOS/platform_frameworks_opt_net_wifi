@@ -618,6 +618,9 @@ class Utils {
      * Get the SIM carrier name for target subscription Id.
      */
     static @Nullable String getCarrierNameForSubId(@NonNull Context context, int subId) {
+        if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            return null;
+        }
         TelephonyManager telephonyManager =
                 (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         if (telephonyManager == null) return null;
@@ -641,9 +644,8 @@ class Utils {
      * Get the best match subscription Id for target WifiConfiguration.
      */
     static int getSubIdForConfig(@NonNull Context context, @NonNull WifiConfiguration config) {
-        int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
         if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
-            return dataSubId;
+            return SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         }
         SubscriptionManager subscriptionManager =
                 (SubscriptionManager) context.getSystemService(
@@ -657,6 +659,7 @@ class Utils {
         }
 
         int matchSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+        int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
         for (SubscriptionInfo subInfo : subInfoList) {
             if (subInfo.getCarrierId() == config.carrierId) {
                 matchSubId = subInfo.getSubscriptionId();
@@ -691,8 +694,13 @@ class Utils {
         if (context == null || wifiConfig == null || !isSimCredential(wifiConfig)) {
             return "";
         }
-
-        int subId = getSubIdForConfig(context, wifiConfig);
+        int subId;
+        if (wifiConfig.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            // Config without carrierId use default data subscription.
+            subId = SubscriptionManager.getDefaultSubscriptionId();
+        } else {
+            subId = getSubIdForConfig(context, wifiConfig);
+        }
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID
                 || isImsiPrivacyProtectionProvided(context, subId)) {
             return "";
