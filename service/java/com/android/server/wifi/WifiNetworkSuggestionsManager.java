@@ -109,6 +109,10 @@ public class WifiNetworkSuggestionsManager {
     public static final int APP_TYPE_NETWORK_PROVISIONING = 2;
     public static final int APP_TYPE_NON_PRIVILEGED = 3;
 
+    public static final int ACTION_USER_ALLOWED_APP = 1;
+    public static final int ACTION_USER_DISALLOWED_APP = 2;
+    public static final int ACTION_USER_DISMISS = 3;
+
     /**
      * Limit number of hidden networks attach to scan
      */
@@ -372,6 +376,8 @@ public class WifiNetworkSuggestionsManager {
      */
     private boolean mUserApprovalUiActive = false;
 
+    private boolean mIsLastUserApprovalUiDialog = false;
+
     private boolean mUserDataLoaded = false;
     /**
      * Listener for app-ops changes for active suggestor apps.
@@ -482,6 +488,9 @@ public class WifiNetworkSuggestionsManager {
         // Set the user approved flag.
         setHasUserApprovedForApp(true, packageName);
         mUserApprovalUiActive = false;
+        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(
+                ACTION_USER_ALLOWED_APP,
+                mIsLastUserApprovalUiDialog);
     }
 
     private void handleUserDisallowAction(int uid, String packageName) {
@@ -492,11 +501,17 @@ public class WifiNetworkSuggestionsManager {
         mAppOps.setMode(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, uid, packageName,
                 MODE_IGNORED);
         mUserApprovalUiActive = false;
+        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(
+                ACTION_USER_DISALLOWED_APP,
+                mIsLastUserApprovalUiDialog);
     }
 
     private void handleUserDismissAction() {
         Log.i(TAG, "User dismissed the notification");
         mUserApprovalUiActive = false;
+        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(
+                ACTION_USER_DISMISS,
+                mIsLastUserApprovalUiDialog);
     }
 
     private final BroadcastReceiver mBroadcastReceiver =
@@ -853,7 +868,7 @@ public class WifiNetworkSuggestionsManager {
                 if (isSuggestionFromForegroundApp(packageName)) {
                     sendUserApprovalDialog(packageName, uid);
                 } else {
-                    sendUserApprovalNotification(packageName, uid);
+                    sendUserApprovalNotificationIfNotApproved(packageName, uid);
                 }
                 mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
                         APP_TYPE_NON_PRIVILEGED);
@@ -1318,6 +1333,7 @@ public class WifiNetworkSuggestionsManager {
                 WindowManager.LayoutParams.SYSTEM_FLAG_SHOW_FOR_ALL_USERS);
         dialog.show();
         mUserApprovalUiActive = true;
+        mIsLastUserApprovalUiDialog = true;
     }
 
     private void sendUserApprovalNotification(@NonNull String packageName, int uid) {
@@ -1359,6 +1375,7 @@ public class WifiNetworkSuggestionsManager {
         mNotificationManager.notify(
                 SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE, notification);
         mUserApprovalUiActive = true;
+        mIsLastUserApprovalUiDialog = false;
     }
 
     /**

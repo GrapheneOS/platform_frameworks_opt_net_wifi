@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.wifi.SoftApConfiguration;
 import android.os.Binder;
 import android.os.Process;
 
@@ -37,6 +39,7 @@ import androidx.test.filters.SmallTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -395,5 +398,29 @@ public class WifiShellCommandTest extends WifiBaseTest {
                 new String[]{"network-requests-has-user-approved", TEST_PACKAGE});
         verify(mClientModeImpl, times(2)).hasNetworkRequestUserApprovedApp(TEST_PACKAGE);
         mWifiShellCommand.getOutPrintWriter().toString().contains("no");
+    }
+
+    @Test
+    public void testStartSoftAp() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"start-softap", "ap1", "wpa2", "xyzabc321", "-b", "5"});
+        ArgumentCaptor<SoftApConfiguration> softApConfigurationCaptor = ArgumentCaptor.forClass(
+                SoftApConfiguration.class);
+        verify(mWifiService).startTetheredHotspot(softApConfigurationCaptor.capture());
+        assertEquals(SoftApConfiguration.BAND_5GHZ,
+                softApConfigurationCaptor.getValue().getBand());
+        assertEquals(SoftApConfiguration.SECURITY_TYPE_WPA2_PSK,
+                softApConfigurationCaptor.getValue().getSecurityType());
+        assertEquals("\"ap1\"", softApConfigurationCaptor.getValue().getSsid());
+        assertEquals("xyzabc321", softApConfigurationCaptor.getValue().getPassphrase());
+    }
+
+    @Test
+    public void testStopSoftAp() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"stop-softap"});
+        verify(mWifiService).stopSoftAp();
     }
 }

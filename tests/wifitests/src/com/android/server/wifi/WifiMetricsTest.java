@@ -4177,6 +4177,9 @@ public class WifiMetricsTest extends WifiBaseTest {
                 add(60);
             }});
 
+        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(1,  true);
+        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(2,  false);
+
         dumpProtoAndDeserialize();
 
         assertEquals(4, mDecodedProto.wifiNetworkSuggestionApiLog.numModification);
@@ -4202,6 +4205,21 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_NON_PRIVILEGED,
                 mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].appType);
         assertEquals(3, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].count);
+
+        assertEquals(2,
+                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction.length);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.ACTION_ALLOWED,
+                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[0]
+                        .userAction);
+        assertEquals(true,
+                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[0]
+                        .isDialog);
+        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.ACTION_DISALLOWED,
+                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[1]
+                        .userAction);
+        assertEquals(false,
+                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[1]
+                        .isDialog);
     }
 
     private NetworkSelectionExperimentDecisions findUniqueNetworkSelectionExperimentDecisions(
