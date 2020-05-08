@@ -4010,6 +4010,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .shouldBeIgnoredBySecureSuggestionFromSameCarrier(network1, scanDetails));
     }
 
+    @Test
+    public void testUnregisterSuggestionConnectionStatusListenerNeverRegistered() {
+        int listenerIdentifier = 1234;
+        mWifiNetworkSuggestionsManager.unregisterSuggestionConnectionStatusListener(
+                listenerIdentifier, TEST_PACKAGE_1);
+    }
+
     /**
      * Helper function for creating a test configuration with user credential.
      *
