@@ -41,6 +41,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.NoSuchElementException;
 
 /** Unit tests for {@link WifiLockManager}. */
 @SmallTest
@@ -1374,5 +1375,20 @@ public class WifiLockManagerTest extends WifiBaseTest {
                 "WifiLock{" + TEST_WIFI_LOCK_TAG + " type=" + WifiManager.WIFI_MODE_FULL_HIGH_PERF
                 + " uid=" + Binder.getCallingUid() + " workSource=WorkSource{"
                         + DEFAULT_TEST_UID_1 + "}"));
+    }
+
+    /**
+     * Verify that an Exception in unlinkDeathRecipient is caught.
+     */
+    @Test
+    public void testUnlinkDeathRecipiientCatchesException() throws Exception {
+        acquireWifiLockSuccessful(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "",
+                mBinder, mWorkSource);
+        assertEquals(WifiManager.WIFI_MODE_FULL_HIGH_PERF, mWifiLockManager.getStrongestLockMode());
+
+        doThrow(new NoSuchElementException()).when(mBinder).unlinkToDeath(any(), anyInt());
+        releaseLowLatencyWifiLockSuccessful(mBinder);
+        assertEquals(WifiManager.WIFI_MODE_NO_LOCKS_HELD,
+                mWifiLockManager.getStrongestLockMode());
     }
 }
