@@ -89,7 +89,8 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 mLocalLog,
                 mWifiMetrics,
                 mWifiNative,
-                mThroughputPredictor);
+                mThroughputPredictor,
+                mWifiChannelUtilization);
 
         mWifiNetworkSelector.registerNetworkNominator(mDummyNominator);
         mDummyNominator.setNominatorToSelectCandidate(true);
@@ -248,6 +249,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     @Mock private Clock mClock;
     @Mock private NetworkDetail mNetworkDetail;
     @Mock private ThroughputPredictor mThroughputPredictor;
+    @Mock private WifiChannelUtilization mWifiChannelUtilization;
     private ScoringParams mScoringParams;
     private LocalLog mLocalLog;
     private int mThresholdMinimumRssi2G;

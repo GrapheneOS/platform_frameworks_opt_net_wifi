@@ -101,13 +101,13 @@ public class WifiNetworkSelector {
     private final WifiScoreCard mWifiScoreCard;
     private final ScoringParams mScoringParams;
     private final WifiNative mWifiNative;
+    private final ThroughputPredictor mThroughputPredictor;
+    private final WifiChannelUtilization mWifiChannelUtilization;
 
     private final Map<String, WifiCandidates.CandidateScorer> mCandidateScorers = new ArrayMap<>();
     private boolean mIsEnhancedOpenSupportedInitialized = false;
     private boolean mIsEnhancedOpenSupported;
-    private ThroughputPredictor mThroughputPredictor;
     private boolean mIsBluetoothConnected = false;
-    private WifiChannelUtilization mWifiChannelUtilization;
 
     /**
      * Interface for WiFi Network Nominator
@@ -1083,31 +1083,32 @@ public class WifiNetworkSelector {
     private static final int MIN_SCORER_EXP_ID = ID_PREFIX * ID_SUFFIX_MOD;
 
     /**
-     * Set Wifi channel utilization calculated from link layer stats
-     */
-    public void setWifiChannelUtilization(WifiChannelUtilization wifiChannelUtilization) {
-        mWifiChannelUtilization = wifiChannelUtilization;
-    }
-
-    /**
      * Set whether bluetooth is in the connected state
      */
     public void setBluetoothConnected(boolean isBlueToothConnected) {
         mIsBluetoothConnected = isBlueToothConnected;
     }
 
-    WifiNetworkSelector(Context context, WifiScoreCard wifiScoreCard, ScoringParams scoringParams,
-            WifiConfigManager configManager, Clock clock, LocalLog localLog,
-            WifiMetrics wifiMetrics, WifiNative wifiNative,
-            ThroughputPredictor throughputPredictor) {
+    WifiNetworkSelector(
+            Context context,
+            WifiScoreCard wifiScoreCard,
+            ScoringParams scoringParams,
+            WifiConfigManager configManager,
+            Clock clock,
+            LocalLog localLog,
+            WifiMetrics wifiMetrics,
+            WifiNative wifiNative,
+            ThroughputPredictor throughputPredictor,
+            WifiChannelUtilization wifiChannelUtilization) {
         mContext = context;
-        mWifiConfigManager = configManager;
-        mClock = clock;
         mWifiScoreCard = wifiScoreCard;
         mScoringParams = scoringParams;
+        mWifiConfigManager = configManager;
+        mClock = clock;
         mLocalLog = localLog;
         mWifiMetrics = wifiMetrics;
         mWifiNative = wifiNative;
         mThroughputPredictor = throughputPredictor;
+        mWifiChannelUtilization = wifiChannelUtilization;
     }
 }
