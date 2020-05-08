@@ -2040,6 +2040,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mAppOpsManager).stopWatchingMode(mAppOpChangedListenerCaptor.getValue());
         assertTrue(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions().isEmpty());
+        verify(mWifiMetrics).incrementNetworkSuggestionUserRevokePermission();
     }
 
     /**

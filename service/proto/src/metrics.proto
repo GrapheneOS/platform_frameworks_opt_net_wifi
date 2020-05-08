@@ -2934,6 +2934,9 @@ message WifiNetworkSuggestionApiLog {
 
   // Event of user reaction to the UI.
   repeated UserReaction user_approval_app_ui_reaction = 6;
+
+  // Number of user revoke app's permission from settings or disallowed from UI.
+  optional int32 user_revoke_app_suggestion_permission = 7;
 }
 
 // WifiLock metrics
