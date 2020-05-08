@@ -959,24 +959,6 @@ public class WifiMetrics {
     }
 
     /**
-     * Increment number of pno scans started successfully over offload
-     */
-    public void incrementPnoScanStartedOverOffloadCount() {
-        synchronized (mLock) {
-            mPnoScanMetrics.numPnoScanStartedOverOffload++;
-        }
-    }
-
-    /**
-     * Increment number of pno scans failed over offload
-     */
-    public void incrementPnoScanFailedOverOffloadCount() {
-        synchronized (mLock) {
-            mPnoScanMetrics.numPnoScanFailedOverOffload++;
-        }
-    }
-
-    /**
      * Increment number of times pno scan found a result
      */
     public void incrementPnoFoundNetworkEventCount() {
