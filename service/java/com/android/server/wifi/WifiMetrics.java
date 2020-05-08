@@ -4544,8 +4544,9 @@ public class WifiMetrics {
         switch (msg.what) {
             case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
                 event.type = StaEvent.TYPE_ASSOCIATION_REJECTION_EVENT;
-                event.associationTimedOut = msg.arg1 > 0 ? true : false;
-                event.status = msg.arg2;
+                AssocRejectEventInfo assocRejectEventInfo = (AssocRejectEventInfo) msg.obj;
+                event.associationTimedOut = assocRejectEventInfo.timedOut;
+                event.status = assocRejectEventInfo.statusCode;
                 break;
             case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
                 event.type = StaEvent.TYPE_AUTHENTICATION_FAILURE_EVENT;
@@ -4571,8 +4572,9 @@ public class WifiMetrics {
                 break;
             case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 event.type = StaEvent.TYPE_NETWORK_DISCONNECTION_EVENT;
-                event.reason = msg.arg2;
-                event.localGen = msg.arg1 == 0 ? false : true;
+                DisconnectEventInfo disconnectEventInfo = (DisconnectEventInfo) msg.obj;
+                event.reason = disconnectEventInfo.reasonCode;
+                event.localGen = disconnectEventInfo.locallyGenerated;
                 break;
             case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                 logEvent = false;

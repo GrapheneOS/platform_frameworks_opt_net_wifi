@@ -861,6 +861,7 @@ public class WifiNativeTest extends WifiBaseTest {
     @Test
     public void testSetMacAddress() throws Exception {
         mWifiNative.setMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
+        verify(mStaIfaceHal).disconnect(WIFI_IFACE_NAME);
         verify(mWifiVendorHal).setMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
     }
 
