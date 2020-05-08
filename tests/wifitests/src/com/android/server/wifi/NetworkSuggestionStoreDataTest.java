@@ -466,6 +466,13 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         assertEquals(networkSuggestion, deserializedSuggestion.wns);
     }
 
+    @Test
+    public void testDeserializeNullData() throws Exception {
+        mNetworkSuggestionStoreData.deserializeData(null, 0,
+                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
+        verify(mDataSource).fromDeserialized(any());
+    }
+
     private Map<String, PerAppInfo> assertSerializeDeserialize(
             Map<String, PerAppInfo> networkSuggestionsMap) throws Exception {
         // Setup the data to serialize.
