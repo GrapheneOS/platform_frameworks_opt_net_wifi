@@ -40,6 +40,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -122,8 +123,8 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
             @WifiConfigStore.Version int version,
             @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
             throws XmlPullParserException, IOException {
-        // Ignore empty reads.
         if (in == null) {
+            mDataSource.fromDeserialized(Collections.EMPTY_MAP);
             return;
         }
         mDataSource.fromDeserialized(
