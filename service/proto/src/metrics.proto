@@ -700,6 +700,9 @@ message WifiLog {
 
   // Metered stats for suggestion networks.
   optional MeteredNetworkStats metered_network_stats_suggestion = 196;
+
+  // Does the user have wifi wake enabled.
+  optional bool is_wifi_wake_enabled = 197;
 }
 
 // Information that gets logged for every WiFi connection.
