@@ -4540,7 +4540,29 @@ public class ClientModeImpl extends StateMachine {
                         handleNetworkDisconnect();
                         transitionTo(mDisconnectedState);
                     }
+                    StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
+                    if (SupplicantState.isConnecting(stateChangeResult.state)) {
+                        WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(
+                                stateChangeResult.networkId);
 
+                        // Update Passpoint information before setNetworkDetailedState as
+                        // WifiTracker monitors NETWORK_STATE_CHANGED_ACTION to update UI.
+                        mWifiInfo.setFQDN(null);
+                        mWifiInfo.setPasspointUniqueId(null);
+                        mWifiInfo.setOsuAp(false);
+                        mWifiInfo.setProviderFriendlyName(null);
+                        if (config != null && (config.isPasspoint() || config.osu)) {
+                            if (config.isPasspoint()) {
+                                mWifiInfo.setFQDN(config.FQDN);
+                                mWifiInfo.setPasspointUniqueId(config.getPasspointUniqueId());
+                            } else {
+                                mWifiInfo.setOsuAp(true);
+                            }
+                            mWifiInfo.setProviderFriendlyName(config.providerFriendlyName);
+                        }
+                    }
+                    sendNetworkChangeBroadcast(
+                            WifiInfo.getDetailedStateOf(stateChangeResult.state));
                     if (state == SupplicantState.COMPLETED) {
                         mWifiScoreReport.noteIpCheck();
                     }
@@ -4690,17 +4712,16 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {
-                    // Calling handleNetworkDisconnect here is redundant because we might already
-                    // have called it when leaving L2ConnectedState to go to disconnecting state
-                    // or thru other path
-                    // We should normally check the mWifiInfo or mLastNetworkId so as to check
-                    // if they are valid, and only in this case call handleNEtworkDisconnect,
-                    // TODO: this should be fixed for a L MR release
-                    // The side effect of calling handleNetworkDisconnect twice is that a bunch of
-                    // idempotent commands are executed twice (stopping Dhcp, enabling the SPS mode
-                    // at the chip etc...
                     if (mVerboseLoggingEnabled) log("ConnectModeState: Network connection lost ");
                     DisconnectEventInfo eventInfo = (DisconnectEventInfo) message.obj;
+                    if (eventInfo.reasonCode == 15 /* FOURWAY_HANDSHAKE_TIMEOUT */) {
+                        String bssid = !isValidBssid(eventInfo.bssid)
+                                ? mTargetBssid : eventInfo.bssid;
+                        mWifiInjector.getWifiLastResortWatchdog()
+                                .noteConnectionFailureAndTriggerIfNeeded(
+                                        getTargetSsid(), bssid,
+                                        WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
+                    }
                     clearNetworkCachedDataIfNeeded(
                             getTargetWifiConfiguration(), eventInfo.reasonCode);
                     handleNetworkDisconnect();
@@ -4712,6 +4733,12 @@ public class ClientModeImpl extends StateMachine {
                     if (message.obj != null) {
                         mTargetBssid = (String) message.obj;
                     }
+                    break;
+                }
+                case CMD_DISCONNECT: {
+                    mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                            StaEvent.DISCONNECT_GENERIC);
+                    mWifiNative.disconnect(mInterfaceName);
                     break;
                 }
                 case CMD_PRE_DHCP_ACTION:
@@ -5720,60 +5747,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case CMD_DISCONNECT: {
-                    mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
-                            StaEvent.DISCONNECT_GENERIC);
-                    mWifiNative.disconnect(mInterfaceName);
-                    break;
-                }
-                case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {
-                    DisconnectEventInfo eventInfo = (DisconnectEventInfo) message.obj;
-                    stopIpClient();
-                    if (eventInfo.reasonCode == 15 /* FOURWAY_HANDSHAKE_TIMEOUT */) {
-                        String bssid = !isValidBssid(eventInfo.bssid)
-                                ? mTargetBssid : eventInfo.bssid;
-                        mWifiInjector.getWifiLastResortWatchdog()
-                                .noteConnectionFailureAndTriggerIfNeeded(
-                                        getTargetSsid(), bssid,
-                                        WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
-                    }
-                    clearNetworkCachedDataIfNeeded(
-                            getTargetWifiConfiguration(), eventInfo.reasonCode);
-                    break;
-                }
-                case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT: {
-                    StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
-                    if (mVerboseLoggingEnabled) {
-                        logd("SUPPLICANT_STATE_CHANGE_EVENT state=" + stateChangeResult.state
-                                + " -> state= "
-                                + WifiInfo.getDetailedStateOf(stateChangeResult.state));
-                    }
-                    if (SupplicantState.isConnecting(stateChangeResult.state)) {
-                        WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(
-                                stateChangeResult.networkId);
-
-                        // Update Passpoint information before setNetworkDetailedState as
-                        // WifiTracker monitors NETWORK_STATE_CHANGED_ACTION to update UI.
-                        mWifiInfo.setFQDN(null);
-                        mWifiInfo.setPasspointUniqueId(null);
-                        mWifiInfo.setOsuAp(false);
-                        mWifiInfo.setProviderFriendlyName(null);
-                        if (config != null && (config.isPasspoint() || config.osu)) {
-                            if (config.isPasspoint()) {
-                                mWifiInfo.setFQDN(config.FQDN);
-                                mWifiInfo.setPasspointUniqueId(config.getPasspointUniqueId());
-                            } else {
-                                mWifiInfo.setOsuAp(true);
-                            }
-                            mWifiInfo.setProviderFriendlyName(config.providerFriendlyName);
-                        }
-                    }
-                    sendNetworkChangeBroadcast(
-                            WifiInfo.getDetailedStateOf(stateChangeResult.state));
-                    /* ConnectModeState does the rest of the handling */
-                    handleStatus = NOT_HANDLED;
-                    break;
-                }
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {
                     NetworkInfo info = (NetworkInfo) message.obj;
                     mP2pConnected.set(info.isConnected());
