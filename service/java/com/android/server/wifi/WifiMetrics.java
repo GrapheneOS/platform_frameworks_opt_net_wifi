@@ -5936,6 +5936,15 @@ public class WifiMetrics {
         }
     }
 
+    /** Increment number of user revoke suggestion permission. Including from settings or
+     * disallowed from UI.
+     */
+    public void incrementNetworkSuggestionUserRevokePermission() {
+        synchronized (mLock) {
+            mWifiNetworkSuggestionApiLog.userRevokeAppSuggestionPermission++;
+        }
+    }
+
     /** Clear and set the latest network suggestion API max list size histogram */
     public void noteNetworkSuggestionApiListSizeHistogram(List<Integer> listSizes) {
         synchronized (mLock) {

@@ -36,6 +36,7 @@ import com.android.server.wifi.util.WorkSourceUtil;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * WifiLockManager maintains the list of wake locks held by different applications.
@@ -189,7 +190,6 @@ public class WifiLockManager {
         // This is to make sure worksource value can not be changed by caller
         // after function returns.
         WorkSource newWorkSource = new WorkSource(ws);
-
         return addLock(new WifiLock(lockMode, tag, binder, newWorkSource));
     }
 
@@ -804,6 +804,7 @@ public class WifiLockManager {
             try {
                 mBinder.linkToDeath(this, 0);
             } catch (RemoteException e) {
+                Log.e(TAG, "mBinder.linkToDeath failed: " + e.getMessage());
                 binderDied();
             }
         }
@@ -829,7 +830,11 @@ public class WifiLockManager {
         }
 
         public void unlinkDeathRecipient() {
-            mBinder.unlinkToDeath(this, 0);
+            try {
+                mBinder.unlinkToDeath(this, 0);
+            } catch (NoSuchElementException e) {
+                Log.e(TAG, "mBinder.unlinkToDeath failed: " + e.getMessage());
+            }
         }
 
         public String toString() {
