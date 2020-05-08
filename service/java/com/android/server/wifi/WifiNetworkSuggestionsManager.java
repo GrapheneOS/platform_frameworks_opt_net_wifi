@@ -1921,7 +1921,7 @@ public class WifiNetworkSuggestionsManager {
             Log.w(TAG, "unregisterSuggestionConnectionStatusListener: Listener["
                     + listenerIdentifier + "] from " + packageName + " already unregister.");
         }
-        if (listenersTracker.getNumCallbacks() == 0) {
+        if (listenersTracker != null && listenersTracker.getNumCallbacks() == 0) {
             mSuggestionStatusListenerPerApp.remove(packageName);
         }
     }
