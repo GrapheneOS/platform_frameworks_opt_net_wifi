@@ -99,7 +99,6 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.IBinder;
 import android.os.IPowerManager;
 import android.os.IThermalService;
 import android.os.Looper;
@@ -107,7 +106,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.Process;
-import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.provider.Settings;
 import android.telephony.SubscriptionInfo;
@@ -368,18 +366,12 @@ public class ClientModeImplTest extends WifiBaseTest {
     WifiConfiguration mConnectedNetwork;
     WifiCarrierInfoManager mWifiCarrierInfoManager;
 
-    @Mock WifiScanner mWifiScanner;
     @Mock SupplicantStateTracker mSupplicantStateTracker;
     @Mock WifiMetrics mWifiMetrics;
-    @Mock UserManager mUserManager;
-    @Mock BackupManagerProxy mBackupManagerProxy;
     @Mock WifiCountryCode mCountryCode;
     @Mock WifiInjector mWifiInjector;
     @Mock WifiLastResortWatchdog mWifiLastResortWatchdog;
     @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
-    @Mock PropertyService mPropertyService;
-    @Mock BuildProperties mBuildProperties;
-    @Mock IBinder mPackageManagerBinder;
     @Mock SarManager mSarManager;
     @Mock WifiConfigManager mWifiConfigManager;
     @Mock WifiNative mWifiNative;
@@ -400,7 +392,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
     @Mock ConnectivityManager mConnectivityManager;
     @Mock IProvisioningCallback mProvisioningCallback;
-    @Mock HandlerThread mWifiHandlerThread;
     @Mock WifiPermissionsWrapper mWifiPermissionsWrapper;
     @Mock WakeupController mWakeupController;
     @Mock WifiDataStall mWifiDataStall;
@@ -425,9 +416,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
 
-    public ClientModeImplTest() throws Exception {
-    }
-
     @Before
     public void setUp() throws Exception {
         Log.d(TAG, "Setting up ...");
@@ -440,49 +428,20 @@ public class ClientModeImplTest extends WifiBaseTest {
         /** uncomment this to enable logs from ClientModeImpls */
         // enableDebugLogs();
         mWifiMonitor = new MockWifiMonitor();
-        when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
-        when(mWifiInjector.getClock()).thenReturn(new Clock());
         when(mWifiInjector.getWifiLastResortWatchdog()).thenReturn(mWifiLastResortWatchdog);
-        when(mWifiInjector.getPropertyService()).thenReturn(mPropertyService);
-        when(mWifiInjector.getBuildProperties()).thenReturn(mBuildProperties);
-        when(mWifiInjector.getWifiBackupRestore()).thenReturn(mock(WifiBackupRestore.class));
-        when(mWifiInjector.getWifiDiagnostics()).thenReturn(mWifiDiagnostics);
-        when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
-        when(mWifiInjector.getWifiScanner()).thenReturn(mWifiScanner);
         when(mWifiInjector.makeWifiConnectivityManager(any()))
                 .thenReturn(mWifiConnectivityManager);
-        when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
-        when(mWifiInjector.getWifiStateTracker()).thenReturn(mWifiStateTracker);
-        when(mWifiInjector.getWifiMonitor()).thenReturn(mWifiMonitor);
-        when(mWifiInjector.getWifiNative()).thenReturn(mWifiNative);
-        when(mWifiInjector.getWifiTrafficPoller()).thenReturn(mWifiTrafficPoller);
         when(mWifiInjector.getSelfRecovery()).thenReturn(mSelfRecovery);
-        when(mWifiInjector.getWifiPermissionsUtil()).thenReturn(mWifiPermissionsUtil);
         when(mWifiInjector.makeTelephonyManager()).thenReturn(mTelephonyManager);
         when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mDataTelephonyManager);
-        when(mWifiInjector.getClock()).thenReturn(mClock);
-        when(mWifiHandlerThread.getLooper()).thenReturn(mLooper.getLooper());
-        when(mWifiInjector.getWifiHandlerThread()).thenReturn(mWifiHandlerThread);
-        when(mWifiInjector.getWifiPermissionsWrapper()).thenReturn(mWifiPermissionsWrapper);
         when(mWifiInjector.getWakeupController()).thenReturn(mWakeupController);
-        when(mWifiInjector.getScoringParams()).thenReturn(new ScoringParams());
-        when(mWifiInjector.getWifiDataStall()).thenReturn(mWifiDataStall);
         when(mWifiInjector.makeWifiNetworkFactory(any(), any())).thenReturn(mWifiNetworkFactory);
         when(mWifiInjector.makeUntrustedWifiNetworkFactory(any(), any()))
                 .thenReturn(mUntrustedWifiNetworkFactory);
-        when(mWifiInjector.getWifiNetworkSuggestionsManager())
-                .thenReturn(mWifiNetworkSuggestionsManager);
-        when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
-        when(mWifiInjector.getWifiHealthMonitor()).thenReturn(mWifiHealthMonitor);
         when(mWifiInjector.getWifiLockManager()).thenReturn(mWifiLockManager);
-        when(mWifiInjector.getWifiThreadRunner())
-                .thenReturn(new WifiThreadRunner(new Handler(mLooper.getLooper())));
         when(mWifiInjector.makeConnectionFailureNotifier(any()))
                 .thenReturn(mConnectionFailureNotifier);
         when(mWifiInjector.getBssidBlocklistMonitor()).thenReturn(mBssidBlocklistMonitor);
-        when(mWifiInjector.getThroughputPredictor()).thenReturn(mThroughputPredictor);
-        when(mWifiInjector.getScanRequestProxy()).thenReturn(mScanRequestProxy);
-        when(mWifiInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
         when(mWifiNetworkFactory.getSpecificNetworkRequestUidAndPackageName(any()))
                 .thenReturn(Pair.create(Process.INVALID_UID, ""));
         when(mWifiNative.initialize()).thenReturn(true);
@@ -534,9 +493,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         }).when(mIpClient).shutdown();
         when(mConnectivityManager.registerNetworkAgent(any(), any(), any(), any(), anyInt(), any(),
                 anyInt())).thenReturn(mock(Network.class));
-        List<SubscriptionInfo> subList = new ArrayList<>() {{
-                add(mock(SubscriptionInfo.class));
-            }};
+        List<SubscriptionInfo> subList = Arrays.asList(mock(SubscriptionInfo.class));
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subList);
         when(mSubscriptionManager.getActiveSubscriptionIdList())
                 .thenReturn(new int[]{DATA_SUBID});
@@ -606,8 +563,14 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     private void initializeCmi() throws Exception {
-        mCmi = new ClientModeImpl(mContext, mFrameworkFacade, mLooper.getLooper(),
-                mUserManager, mWifiInjector, mBackupManagerProxy, mCountryCode, mWifiNative,
+        mCmi = new ClientModeImpl(mContext, mWifiMetrics, mClock, mWifiScoreCard, mWifiStateTracker,
+                mWifiPermissionsUtil, mWifiConfigManager, mPasspointManager,
+                mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper, mWifiDataStall,
+                new ScoringParams(), new WifiThreadRunner(new Handler(mLooper.getLooper())),
+                mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
+                mDeviceConfigFacade, mScanRequestProxy,
+                mFrameworkFacade, mLooper.getLooper(), mWifiInjector,
+                mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mSarManager, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier);

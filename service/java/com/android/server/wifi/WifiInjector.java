@@ -341,9 +341,13 @@ public class WifiInjector {
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
-        mClientModeImpl = new ClientModeImpl(mContext, mFrameworkFacade,
-                wifiLooper, mUserManager,
-                this, mBackupManagerProxy, mCountryCode, mWifiNative,
+        mClientModeImpl = new ClientModeImpl(mContext, mWifiMetrics, mClock, mWifiScoreCard,
+                mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager, mPasspointManager,
+                mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper, mWifiDataStall,
+                mScoringParams, mWifiThreadRunner,
+                mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
+                mDeviceConfigFacade, mScanRequestProxy,
+                mFrameworkFacade, wifiLooper, this, mCountryCode, mWifiNative,
                 new WrongPasswordNotifier(mContext, mFrameworkFacade),
                 mSarManager, mWifiTrafficPoller, mLinkProbeManager, mBatteryStats,
                 supplicantStateTracker, mMboOceController, mWifiCarrierInfoManager,
@@ -493,14 +497,6 @@ public class WifiInjector {
         return mClock;
     }
 
-    public PropertyService getPropertyService() {
-        return mPropertyService;
-    }
-
-    public BuildProperties getBuildProperties() {
-        return mBuildProperties;
-    }
-
     public WifiBackupRestore getWifiBackupRestore() {
         return mWifiBackupRestore;
     }
@@ -534,15 +530,11 @@ public class WifiInjector {
     }
 
     public TelephonyManager makeTelephonyManager() {
-        return (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
+        return mContext.getSystemService(TelephonyManager.class);
     }
 
     public WifiCarrierInfoManager getWifiCarrierInfoManager() {
         return mWifiCarrierInfoManager;
-    }
-
-    public WifiStateTracker getWifiStateTracker() {
-        return mWifiStateTracker;
     }
 
     public DppManager getDppManager() {
@@ -580,10 +572,6 @@ public class WifiInjector {
      */
     public WifiLog makeLog(String tag) {
         return new LogcatLog(tag);
-    }
-
-    public BaseWifiDiagnostics getWifiDiagnostics() {
-        return mWifiDiagnostics;
     }
 
     /**
@@ -817,10 +805,6 @@ public class WifiInjector {
 
     public WifiHealthMonitor getWifiHealthMonitor() {
         return mWifiHealthMonitor;
-    }
-
-    public ThroughputPredictor getThroughputPredictor() {
-        return mThroughputPredictor;
     }
 
     public WifiSettingsConfigStore getSettingsConfigStore() {

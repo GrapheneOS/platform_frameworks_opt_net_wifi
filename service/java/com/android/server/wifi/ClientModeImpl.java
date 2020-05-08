@@ -96,7 +96,6 @@ import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
-import android.os.UserManager;
 import android.os.WorkSource;
 import android.provider.Settings;
 import android.system.OsConstants;
@@ -158,8 +157,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Implementation of ClientMode.  Event handling for Client mode logic is done here,
  * and all changes in connectivity state are initiated here.
- *
- * @hide
  */
 public class ClientModeImpl extends StateMachine {
 
@@ -212,6 +209,7 @@ public class ClientModeImpl extends StateMachine {
     protected void log(String s) {
         Log.d(getName(), s);
     }
+    private final Context mContext;
     private final WifiMetrics mWifiMetrics;
     private final WifiInjector mWifiInjector;
     private final WifiMonitor mWifiMonitor;
@@ -221,13 +219,11 @@ public class ClientModeImpl extends StateMachine {
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private ConnectivityManager mCm;
-    private BaseWifiDiagnostics mWifiDiagnostics;
+    private final BaseWifiDiagnostics mWifiDiagnostics;
     private final boolean mP2pSupported;
     private final AtomicBoolean mP2pConnected = new AtomicBoolean(false);
     private boolean mTemporarilyDisconnectWifi = false;
     private final Clock mClock;
-    private final PropertyService mPropertyService;
-    private final BuildProperties mBuildProperties;
     private final WifiCountryCode mCountryCode;
     private final WifiScoreCard mWifiScoreCard;
     private final WifiHealthMonitor mWifiHealthMonitor;
@@ -241,9 +237,20 @@ public class ClientModeImpl extends StateMachine {
     private final WifiDataStall mWifiDataStall;
     private final LinkProbeManager mLinkProbeManager;
     private final MboOceController mMboOceController;
-
     private final McastLockManagerFilterController mMcastLockManagerFilterController;
     private final ActivityManager mActivityManager;
+    private final FrameworkFacade mFacade;
+    private final WifiStateTracker mWifiStateTracker;
+    private final WrongPasswordNotifier mWrongPasswordNotifier;
+    private final EapFailureNotifier mEapFailureNotifier;
+    private final SimRequiredNotifier mSimRequiredNotifier;
+    private final ConnectionFailureNotifier mConnectionFailureNotifier;
+    private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
+    private final ThroughputPredictor mThroughputPredictor;
+    private final DeviceConfigFacade mDeviceConfigFacade;
+    private final ScoringParams mScoringParams;
+    private final WifiThreadRunner mWifiThreadRunner;
+    private final ScanRequestProxy mScanRequestProxy;
 
     private boolean mScreenOn = false;
 
@@ -341,8 +348,6 @@ public class ClientModeImpl extends StateMachine {
 
     /* Tracks sequence number on a periodic scan message */
     private int mPeriodicScanToken = 0;
-
-    private Context mContext;
 
     private final Object mDhcpResultsParcelableLock = new Object();
     @NonNull
@@ -727,43 +732,55 @@ public class ClientModeImpl extends StateMachine {
     // Used for debug and stats gathering
     private static int sScanAlarmIntentCount = 0;
 
-    private FrameworkFacade mFacade;
-    private WifiStateTracker mWifiStateTracker;
-    private final BackupManagerProxy mBackupManagerProxy;
-    private final WrongPasswordNotifier mWrongPasswordNotifier;
-    private final EapFailureNotifier mEapFailureNotifier;
-    private final SimRequiredNotifier mSimRequiredNotifier;
-    private final ConnectionFailureNotifier mConnectionFailureNotifier;
-    private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     // Maximum duration to continue to log Wifi usability stats after a data stall is triggered.
     @VisibleForTesting
     public static final long DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS = 30 * 1000;
     private long mDataStallTriggerTimeMs = -1;
     private int mLastStatusDataStall = WifiIsUnusableEvent.TYPE_UNKNOWN;
 
-    public ClientModeImpl(Context context, FrameworkFacade facade, Looper looper,
-                            UserManager userManager, WifiInjector wifiInjector,
-                            BackupManagerProxy backupManagerProxy, WifiCountryCode countryCode,
-                            WifiNative wifiNative, WrongPasswordNotifier wrongPasswordNotifier,
-                            SarManager sarManager, WifiTrafficPoller wifiTrafficPoller,
-                            LinkProbeManager linkProbeManager,
-                            BatteryStatsManager batteryStatsManager,
-                            SupplicantStateTracker supplicantStateTracker,
-                            MboOceController mboOceController,
-                            WifiCarrierInfoManager wifiCarrierInfoManager,
-                            EapFailureNotifier eapFailureNotifier,
-                            SimRequiredNotifier simRequiredNotifier) {
+    public ClientModeImpl(
+            Context context,
+            WifiMetrics wifiMetrics,
+            Clock clock,
+            WifiScoreCard wifiScoreCard,
+            WifiStateTracker wifiStateTracker,
+            WifiPermissionsUtil wifiPermissionsUtil,
+            WifiConfigManager wifiConfigManager,
+            PasspointManager passpointManager,
+            WifiMonitor wifiMonitor,
+            BaseWifiDiagnostics wifiDiagnostics,
+            WifiPermissionsWrapper wifiPermissionsWrapper,
+            WifiDataStall wifiDataStall,
+            ScoringParams scoringParams,
+            WifiThreadRunner wifiThreadRunner,
+            WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager,
+            WifiHealthMonitor wifiHealthMonitor,
+            ThroughputPredictor throughputPredictor,
+            DeviceConfigFacade deviceConfigFacade,
+            ScanRequestProxy scanRequestProxy,
+            FrameworkFacade facade,
+            Looper looper,
+            WifiInjector wifiInjector,
+            WifiCountryCode countryCode,
+            WifiNative wifiNative,
+            WrongPasswordNotifier wrongPasswordNotifier,
+            SarManager sarManager,
+            WifiTrafficPoller wifiTrafficPoller,
+            LinkProbeManager linkProbeManager,
+            BatteryStatsManager batteryStatsManager,
+            SupplicantStateTracker supplicantStateTracker,
+            MboOceController mboOceController,
+            WifiCarrierInfoManager wifiCarrierInfoManager,
+            EapFailureNotifier eapFailureNotifier,
+            SimRequiredNotifier simRequiredNotifier) {
         super(TAG, looper);
         mWifiInjector = wifiInjector;
-        mWifiMetrics = mWifiInjector.getWifiMetrics();
-        mClock = wifiInjector.getClock();
-        mPropertyService = wifiInjector.getPropertyService();
-        mBuildProperties = wifiInjector.getBuildProperties();
-        mWifiScoreCard = wifiInjector.getWifiScoreCard();
+        mWifiMetrics = wifiMetrics;
+        mClock = clock;
+        mWifiScoreCard = wifiScoreCard;
         mContext = context;
         mFacade = facade;
         mWifiNative = wifiNative;
-        mBackupManagerProxy = backupManagerProxy;
         mWrongPasswordNotifier = wrongPasswordNotifier;
         mEapFailureNotifier = eapFailureNotifier;
         mSimRequiredNotifier = simRequiredNotifier;
@@ -775,20 +792,22 @@ public class ClientModeImpl extends StateMachine {
         mNetworkAgentState = DetailedState.DISCONNECTED;
 
         mBatteryStatsManager = batteryStatsManager;
-        mWifiStateTracker = wifiInjector.getWifiStateTracker();
+        mWifiStateTracker = wifiStateTracker;
 
         mP2pSupported = mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_WIFI_DIRECT);
 
-        mWifiPermissionsUtil = mWifiInjector.getWifiPermissionsUtil();
-        mWifiConfigManager = mWifiInjector.getWifiConfigManager();
+        mWifiPermissionsUtil = wifiPermissionsUtil;
+        mWifiConfigManager = wifiConfigManager;
 
-        mPasspointManager = mWifiInjector.getPasspointManager();
+        mPasspointManager = passpointManager;
 
-        mWifiMonitor = mWifiInjector.getWifiMonitor();
-        mWifiDiagnostics = mWifiInjector.getWifiDiagnostics();
-        mWifiPermissionsWrapper = mWifiInjector.getWifiPermissionsWrapper();
-        mWifiDataStall = mWifiInjector.getWifiDataStall();
+        mWifiMonitor = wifiMonitor;
+        mWifiDiagnostics = wifiDiagnostics;
+        mWifiPermissionsWrapper = wifiPermissionsWrapper;
+        mWifiDataStall = wifiDataStall;
+        mThroughputPredictor = throughputPredictor;
+        mDeviceConfigFacade = deviceConfigFacade;
 
         mWifiInfo = new ExtendedWifiInfo(context);
         mSupplicantStateTracker = supplicantStateTracker;
@@ -808,10 +827,11 @@ public class ClientModeImpl extends StateMachine {
         mLastSignalLevel = -1;
 
         mCountryCode = countryCode;
-
-        mWifiScoreReport = new WifiScoreReport(mWifiInjector.getScoringParams(), mClock,
-                mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor,
-                mWifiInjector.getWifiThreadRunner());
+        mScoringParams = scoringParams;
+        mWifiThreadRunner = wifiThreadRunner;
+        mScanRequestProxy = scanRequestProxy;
+        mWifiScoreReport = new WifiScoreReport(scoringParams, mClock,
+                mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor, wifiThreadRunner);
 
         mNetworkCapabilitiesFilter = new NetworkCapabilities.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -835,9 +855,9 @@ public class ClientModeImpl extends StateMachine {
         mUntrustedNetworkFactory = mWifiInjector.makeUntrustedWifiNetworkFactory(
                 mNetworkCapabilitiesFilter, mWifiConnectivityManager);
 
-        mWifiNetworkSuggestionsManager = mWifiInjector.getWifiNetworkSuggestionsManager();
+        mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mProcessingActionListeners = new ExternalCallbackTracker<>(getHandler());
-        mWifiHealthMonitor = mWifiInjector.getWifiHealthMonitor();
+        mWifiHealthMonitor = wifiHealthMonitor;
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_ON);
@@ -1193,7 +1213,7 @@ public class ClientModeImpl extends StateMachine {
         mMboOceController.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiScoreCard.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiHealthMonitor.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiInjector.getThroughputPredictor().enableVerboseLogging(mVerboseLoggingEnabled);
+        mThroughputPredictor.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiDataStall.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiConnectivityManager.enableVerboseLogging(mVerboseLoggingEnabled);
     }
@@ -1590,8 +1610,7 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private void checkAbnormalConnectionFailureAndTakeBugReport(String ssid) {
-        if (mWifiInjector.getDeviceConfigFacade()
-                .isAbnormalConnectionFailureBugreportEnabled()) {
+        if (mDeviceConfigFacade.isAbnormalConnectionFailureBugreportEnabled()) {
             int reasonCode = mWifiScoreCard.detectAbnormalConnectionFailure(ssid);
             if (reasonCode != WifiHealthMonitor.REASON_NO_FAILURE) {
                 String bugTitle = "Wi-Fi BugReport";
@@ -1603,8 +1622,7 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private void checkAbnormalDisconnectionAndTakeBugReport() {
-        if (mWifiInjector.getDeviceConfigFacade()
-                .isAbnormalDisconnectionBugreportEnabled()) {
+        if (mDeviceConfigFacade.isAbnormalDisconnectionBugreportEnabled()) {
             int reasonCode = mWifiScoreCard.detectAbnormalDisconnection();
             if (reasonCode != WifiHealthMonitor.REASON_NO_FAILURE) {
                 String bugTitle = "Wi-Fi BugReport";
@@ -2669,9 +2687,8 @@ public class ClientModeImpl extends StateMachine {
     private void updateWifiInfoAfterAssociation() {
         WifiNative.ConnectionCapabilities capabilities =
                 mWifiNative.getConnectionCapabilities(mInterfaceName);
-        ThroughputPredictor throughputPredictor = mWifiInjector.getThroughputPredictor();
-        int maxTxLinkSpeedMbps = throughputPredictor.predictMaxTxThroughput(capabilities);
-        int maxRxLinkSpeedMbps = throughputPredictor.predictMaxRxThroughput(capabilities);
+        int maxTxLinkSpeedMbps = mThroughputPredictor.predictMaxTxThroughput(capabilities);
+        int maxRxLinkSpeedMbps = mThroughputPredictor.predictMaxRxThroughput(capabilities);
         mWifiInfo.setWifiStandard(capabilities.wifiStandard);
         mWifiInfo.setMaxSupportedTxLinkSpeedMbps(maxTxLinkSpeedMbps);
         mWifiInfo.setMaxSupportedRxLinkSpeedMbps(maxRxLinkSpeedMbps);
@@ -2898,10 +2915,9 @@ public class ClientModeImpl extends StateMachine {
             WifiConfiguration config, String targetBSSID, int roamType) {
         int overlapWithLastConnectionMs =
                 mWifiMetrics.startConnectionEvent(config, targetBSSID, roamType);
-        DeviceConfigFacade deviceConfigFacade = mWifiInjector.getDeviceConfigFacade();
-        if (deviceConfigFacade.isOverlappingConnectionBugreportEnabled()
+        if (mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled()
                 && overlapWithLastConnectionMs
-                > deviceConfigFacade.getOverlappingConnectionDurationThresholdMs()) {
+                > mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs()) {
             String bugTitle = "Wi-Fi BugReport";
             String bugDetail = "Detect abnormal overlapping connection";
             takeBugReport(bugTitle, bugDetail);
@@ -3024,7 +3040,7 @@ public class ClientModeImpl extends StateMachine {
         if (scanResult == null) {
             return WifiInfo.INVALID_RSSI;
         }
-        return mWifiInjector.getScoringParams().getSufficientRssi(scanResult.frequency);
+        return mScoringParams.getSufficientRssi(scanResult.frequency);
     }
 
     private int convertToBssidBlocklistMonitorFailureReason(
@@ -5377,7 +5393,7 @@ public class ClientModeImpl extends StateMachine {
                                             DISABLED_NO_INTERNET_TEMPORARY);
                                 }
                                 int rssi = mWifiInfo.getRssi();
-                                int sufficientRssi = mWifiInjector.getScoringParams()
+                                int sufficientRssi = mScoringParams
                                         .getSufficientRssi(mWifiInfo.getFrequency());
                                 boolean isLowRssi = rssi < sufficientRssi;
                                 mBssidBlocklistMonitor.handleBssidConnectionFailure(
@@ -5440,7 +5456,7 @@ public class ClientModeImpl extends StateMachine {
                     if (!localGen) { // ignore disconnects initiated by wpa_supplicant.
                         mWifiScoreCard.noteNonlocalDisconnect(message.arg2);
                         int rssi = mWifiInfo.getRssi();
-                        int sufficientRssi = mWifiInjector.getScoringParams()
+                        int sufficientRssi = mScoringParams
                                 .getSufficientRssi(mWifiInfo.getFrequency());
                         boolean isLowRssi = rssi < sufficientRssi;
                         mBssidBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
@@ -6092,11 +6108,11 @@ public class ClientModeImpl extends StateMachine {
      */
     public void connect(WifiConfiguration config, int netId, @Nullable IBinder binder,
             @Nullable IActionListener callback, int callbackIdentifier, int callingUid) {
-        mWifiInjector.getWifiThreadRunner().post(() -> {
+        mWifiThreadRunner.post(() -> {
             if (callback != null && binder != null) {
                 mProcessingActionListeners.add(binder, callback, callbackIdentifier);
             }
-            /**
+            /*
              * The connect message can contain a network id passed as arg1 on message or
              * or a config passed as obj on message.
              * For a new network, a config is passed to create and connect.
@@ -6142,7 +6158,7 @@ public class ClientModeImpl extends StateMachine {
      */
     public void save(WifiConfiguration config, @Nullable IBinder binder,
             @Nullable IActionListener callback, int callbackIdentifier, int callingUid) {
-        mWifiInjector.getWifiThreadRunner().post(() -> {
+        mWifiThreadRunner.post(() -> {
             if (callback != null && binder != null) {
                 mProcessingActionListeners.add(binder, callback, callbackIdentifier);
             }
@@ -6178,7 +6194,7 @@ public class ClientModeImpl extends StateMachine {
      */
     public void forget(int netId, @Nullable IBinder binder, @Nullable IActionListener callback,
             int callbackIdentifier, int callingUid) {
-        mWifiInjector.getWifiThreadRunner().post(() -> {
+        mWifiThreadRunner.post(() -> {
             if (callback != null && binder != null) {
                 mProcessingActionListeners.add(binder, callback, callbackIdentifier);
             }
@@ -6326,12 +6342,9 @@ public class ClientModeImpl extends StateMachine {
             }
         }
 
-        /**
-         *  Go through the matching scan results and update wifi config.
-         */
+        // Go through the matching scan results and update wifi config.
         ScanResultMatchInfo key1 = ScanResultMatchInfo.fromWifiConfiguration(config);
-        ScanRequestProxy scanRequestProxy = mWifiInjector.getScanRequestProxy();
-        List<ScanResult> scanResults = scanRequestProxy.getScanResults();
+        List<ScanResult> scanResults = mScanRequestProxy.getScanResults();
         for (ScanResult scanResult : scanResults) {
             if (!config.SSID.equals(ScanResultUtil.createQuotedSSID(scanResult.SSID))) {
                 continue;
@@ -6481,8 +6494,7 @@ public class ClientModeImpl extends StateMachine {
                 // connection, try to check full scan result list again to look up matched
                 // scan result associated to the current SSID and BSSID.
                 if (scanResult == null) {
-                    ScanRequestProxy scanRequestProxy = mWifiInjector.getScanRequestProxy();
-                    List<ScanResult> scanResults = scanRequestProxy.getScanResults();
+                    List<ScanResult> scanResults = mScanRequestProxy.getScanResults();
                     for (ScanResult result : scanResults) {
                         if (result.SSID.equals(WifiInfo.removeDoubleQuotes(config.SSID))
                                 && result.BSSID.equals(mLastBssid)) {
