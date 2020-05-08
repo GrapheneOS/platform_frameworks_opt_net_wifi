@@ -4180,6 +4180,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(1,  true);
         mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(2,  false);
 
+        mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
+        mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
+
         dumpProtoAndDeserialize();
 
         assertEquals(4, mDecodedProto.wifiNetworkSuggestionApiLog.numModification);
@@ -4220,6 +4223,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(false,
                 mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[1]
                         .isDialog);
+
+        assertEquals(2, mDecodedProto.wifiNetworkSuggestionApiLog
+                .userRevokeAppSuggestionPermission);
     }
 
     private NetworkSelectionExperimentDecisions findUniqueNetworkSelectionExperimentDecisions(
