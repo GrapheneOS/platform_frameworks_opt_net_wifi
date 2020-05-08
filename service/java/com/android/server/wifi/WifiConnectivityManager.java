@@ -43,6 +43,7 @@ import android.util.Log;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.ScanResultUtil;
 import com.android.wifi.resources.R;
@@ -145,7 +146,7 @@ public class WifiConnectivityManager {
     private static final String PNO_SCAN_LISTENER = "PnoScanListener";
 
     private final Context mContext;
-    private final ClientModeImpl mStateMachine;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
     private final WifiConfigManager mConfigManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private final WifiInfo mWifiInfo;
@@ -310,26 +311,28 @@ public class WifiConnectivityManager {
      */
     private boolean handleScanResults(List<ScanDetail> scanDetails, String listenerName,
             boolean isFullScan) {
+        ClientModeImpl clientModeImpl = mClientModeImplHolder.get();
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
-                mStateMachine.getWifiLinkLayerStats(), WifiChannelUtilization.UNKNOWN_FREQ);
+                clientModeImpl.getWifiLinkLayerStats(),
+                WifiChannelUtilization.UNKNOWN_FREQ);
 
         updateUserDisabledList(scanDetails);
 
         // Check if any blocklisted BSSIDs can be freed.
         Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
 
-        if (mStateMachine.isSupplicantTransientState()) {
+        if (clientModeImpl.isSupplicantTransientState()) {
             localLog(listenerName
                     + " onResults: No network selection because supplicantTransientState is "
-                    + mStateMachine.isSupplicantTransientState());
+                    + clientModeImpl.isSupplicantTransientState());
             return false;
         }
 
         localLog(listenerName + " onResults: start network selection");
 
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
-                scanDetails, bssidBlocklist, mWifiInfo, mStateMachine.isConnected(),
-                mStateMachine.isDisconnected(), mUntrustedConnectionAllowed);
+                scanDetails, bssidBlocklist, mWifiInfo, clientModeImpl.isConnected(),
+                clientModeImpl.isDisconnected(), mUntrustedConnectionAllowed);
         mLatestCandidates = candidates;
         mLatestCandidatesTimestampMs = mClock.getElapsedSinceBootMillis();
 
@@ -769,7 +772,8 @@ public class WifiConnectivityManager {
     WifiConnectivityManager(
             Context context,
             ScoringParams scoringParams,
-            ClientModeImpl stateMachine,
+            // we should eventually get ClientModeImpl from ActiveModeWarden
+            PrimaryClientModeImplHolder clientModeImplHolder,
             WifiConfigManager configManager,
             WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager,
             WifiInfo wifiInfo,
@@ -787,7 +791,7 @@ public class WifiConnectivityManager {
             PasspointManager passpointManager) {
         mContext = context;
         mScoringParams = scoringParams;
-        mStateMachine = stateMachine;
+        mClientModeImplHolder = clientModeImplHolder;
         mConfigManager = configManager;
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiInfo = wifiInfo;
@@ -937,6 +941,7 @@ public class WifiConnectivityManager {
         String currentAssociationId = (currentConnectedNetwork == null) ? "Disconnected" :
                 (mWifiInfo.getSSID() + " : " + mWifiInfo.getBSSID());
 
+        ClientModeImpl clientModeImpl = mClientModeImplHolder.get();
         if (currentConnectedNetwork != null
                 && (currentConnectedNetwork.networkId == candidate.networkId
                 //TODO(b/36788683): re-enable linked configuration check
@@ -950,7 +955,7 @@ public class WifiConnectivityManager {
             } else {
                 localLog("connectToNetwork: Roaming to " + targetAssociationId + " from "
                         + currentAssociationId);
-                mStateMachine.startRoamToNetwork(candidate.networkId, scanResultCandidate);
+                clientModeImpl.startRoamToNetwork(candidate.networkId, scanResultCandidate);
             }
         } else {
             // Framework specifies the connection target BSSID if firmware doesn't support
@@ -965,7 +970,8 @@ public class WifiConnectivityManager {
                 localLog("connectToNetwork: Connect to " + targetAssociationId + " from "
                         + currentAssociationId);
             }
-            mStateMachine.startConnectToNetwork(candidate.networkId, Process.WIFI_UID, targetBssid);
+            clientModeImpl.startConnectToNetwork(
+                    candidate.networkId, Process.WIFI_UID, targetBssid);
         }
     }
 
@@ -990,7 +996,7 @@ public class WifiConnectivityManager {
     private boolean setScanChannels(ScanSettings settings) {
         Set<Integer> freqs;
 
-        WifiConfiguration config = mStateMachine.getCurrentWifiConfiguration();
+        WifiConfiguration config = mClientModeImplHolder.get().getCurrentWifiConfiguration();
         if (config == null) {
             long ageInMillis = 1000 * 60 * mContext.getResources().getInteger(
                     R.integer.config_wifiInitialPartialScanChannelCacheAgeMins);
@@ -1624,7 +1630,8 @@ public class WifiConnectivityManager {
      * 2. The device is connected to that network.
      */
     private boolean useSingleSavedNetworkSchedule() {
-        WifiConfiguration currentNetwork = mStateMachine.getCurrentWifiConfiguration();
+        WifiConfiguration currentNetwork = mClientModeImplHolder.get()
+                .getCurrentWifiConfiguration();
         if (currentNetwork == null) {
             localLog("Current network is missing, may caused by remove network and disconnecting ");
             return false;
@@ -1889,7 +1896,7 @@ public class WifiConnectivityManager {
         retrieveWifiScanner();
         mConnectivityHelper.getFirmwareRoamingInfo();
         mBssidBlocklistMonitor.clearBssidBlocklist();
-        mWifiChannelUtilization.init(mStateMachine.getWifiLinkLayerStats());
+        mWifiChannelUtilization.init(mClientModeImplHolder.get().getWifiLinkLayerStats());
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiEnablePartialInitialScan)) {
             setInitialScanState(INITIAL_SCAN_STATE_START);

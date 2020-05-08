@@ -143,6 +143,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -301,7 +302,9 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiTrafficPoller = mWifiInjector.getWifiTrafficPoller();
         mUserManager = mWifiInjector.getUserManager();
         mCountryCode = mWifiInjector.getWifiCountryCode();
-        mClientModeImpl = mWifiInjector.getClientModeImpl();
+        // Assume that ClientModeImpl is a singleton and PrimaryClientModeImplHolder's value never
+        // changing. Assumption will no longer be valid when STA+STA implementation is complete.
+        mClientModeImpl = Objects.requireNonNull(mWifiInjector.getClientModeImplHolder().get());
         mActiveModeWarden = mWifiInjector.getActiveModeWarden();
         mClientModeImpl.enableRssiPolling(true);                  //TODO(b/65033024) strange startup
         mScanRequestProxy = mWifiInjector.getScanRequestProxy();
@@ -3195,7 +3198,7 @@ public class WifiServiceImpl extends BaseWifiService {
     public int handleShellCommand(@NonNull ParcelFileDescriptor in,
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new WifiShellCommand(mWifiInjector, this, mContext).exec(
+        return new WifiShellCommand(mWifiInjector, this, mContext, mClientModeImpl).exec(
                 this, in.getFileDescriptor(), out.getFileDescriptor(), err.getFileDescriptor(),
                 args);
     }

@@ -149,6 +149,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.internal.os.PowerProfile;
 import com.android.internal.util.AsyncChannel;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiServiceImpl.LocalOnlyRequestorCallback;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvisioningTestUtil;
@@ -334,7 +335,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getUserManager()).thenReturn(mUserManager);
         when(mWifiInjector.getWifiCountryCode()).thenReturn(mWifiCountryCode);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
-        when(mWifiInjector.getClientModeImpl()).thenReturn(mClientModeImpl);
+        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
+        holder.set(mClientModeImpl);
+        when(mWifiInjector.getClientModeImplHolder()).thenReturn(holder);
         when(mClientModeImpl.getHandler()).thenReturn(new Handler());
         when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
         when(mWifiInjector.getAsyncChannelHandlerThread()).thenReturn(mHandlerThread);

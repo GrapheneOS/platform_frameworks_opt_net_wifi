@@ -72,7 +72,6 @@ public class WifiShellCommandTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        when(mWifiInjector.getClientModeImpl()).thenReturn(mClientModeImpl);
         when(mWifiInjector.getWifiLockManager()).thenReturn(mWifiLockManager);
         when(mWifiInjector.getWifiNetworkSuggestionsManager())
                 .thenReturn(mWifiNetworkSuggestionsManager);
@@ -83,7 +82,8 @@ public class WifiShellCommandTest extends WifiBaseTest {
         when(mWifiInjector.getWifiLastResortWatchdog()).thenReturn(mWifiLastResortWatchdog);
         when(mWifiInjector.getWifiCarrierInfoManager()).thenReturn(mWifiCarrierInfoManager);
 
-        mWifiShellCommand = new WifiShellCommand(mWifiInjector, mWifiService, mContext);
+        mWifiShellCommand = new WifiShellCommand(mWifiInjector, mWifiService, mContext,
+                mClientModeImpl);
 
         // by default emulate shell uid.
         BinderUtil.setUid(Process.SHELL_UID);

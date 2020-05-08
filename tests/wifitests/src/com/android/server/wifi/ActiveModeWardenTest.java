@@ -60,6 +60,7 @@ import android.util.Log;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiNative.InterfaceAvailableForRequestListener;
 import com.android.server.wifi.util.GeneralUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -197,6 +198,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     private ActiveModeWarden createActiveModeWarden() {
+        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
+        holder.set(mClientModeImpl);
         ActiveModeWarden warden = new ActiveModeWarden(
                 mWifiInjector,
                 mLooper.getLooper(),
@@ -205,7 +208,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 mBatteryStats,
                 mWifiDiagnostics,
                 mContext,
-                mClientModeImpl,
+                holder,
                 mSettingsStore,
                 mFacade,
                 mWifiPermissionsUtil);

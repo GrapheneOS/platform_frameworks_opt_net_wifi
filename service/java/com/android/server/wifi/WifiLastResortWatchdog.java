@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -28,6 +29,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
@@ -104,40 +106,45 @@ public class WifiLastResortWatchdog {
     private boolean mWatchdogAllowedToTrigger = true;
     private long mTimeLastTrigger = 0;
     private String mSsidLastTrigger = null;
-
-    private WifiInjector mWifiInjector;
-    private WifiMetrics mWifiMetrics;
-    private ClientModeImpl mClientModeImpl;
-    private Looper mClientModeImplLooper;
     private double mBugReportProbability = PROB_TAKE_BUGREPORT_DEFAULT;
-    private Clock mClock;
-    private Context mContext;
-    private DeviceConfigFacade mDeviceConfigFacade;
     // If any connection failure happened after watchdog triggering restart then assume watchdog
     // did not fix the problem
     private boolean mWatchdogFixedWifi = true;
     private long mLastStartConnectTime = 0;
+    private Boolean mWatchdogFeatureEnabled = null;
+
+    private final WifiInjector mWifiInjector;
+    private final WifiMetrics mWifiMetrics;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final Clock mClock;
+    private final Context mContext;
+    private final DeviceConfigFacade mDeviceConfigFacade;
     private final Handler mHandler;
     private final WifiThreadRunner mWifiThreadRunner;
-
-    private Boolean mWatchdogFeatureEnabled = null;
+    private final WifiInfo mWifiInfo;
 
     /**
      * Local log used for debugging any WifiLastResortWatchdog issues.
      */
     private final LocalLog mLocalLog = new LocalLog(100);
 
-    WifiLastResortWatchdog(WifiInjector wifiInjector, Context context, Clock clock,
-            WifiMetrics wifiMetrics, ClientModeImpl clientModeImpl, Looper clientModeImplLooper,
-            DeviceConfigFacade deviceConfigFacade, WifiThreadRunner wifiThreadRunner) {
+    WifiLastResortWatchdog(
+            WifiInjector wifiInjector,
+            Context context, Clock clock,
+            WifiMetrics wifiMetrics,
+            PrimaryClientModeImplHolder clientModeImplHolder,
+            Looper clientModeImplLooper,
+            DeviceConfigFacade deviceConfigFacade,
+            WifiThreadRunner wifiThreadRunner,
+            WifiInfo wifiInfo) {
         mWifiInjector = wifiInjector;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
-        mClientModeImpl = clientModeImpl;
-        mClientModeImplLooper = clientModeImplLooper;
+        mClientModeImplHolder = clientModeImplHolder;
         mContext = context;
         mDeviceConfigFacade = deviceConfigFacade;
         mWifiThreadRunner = wifiThreadRunner;
+        mWifiInfo = wifiInfo;
         mHandler = new Handler(clientModeImplLooper) {
             public void handleMessage(Message msg) {
                 processMessage(msg);
@@ -178,7 +185,7 @@ public class WifiLastResortWatchdog {
                                 + "Actually took " + durationMs + " milliseconds.";
                         logv("Triggering bug report for abnormal connection time.");
                         mWifiThreadRunner.post(() ->
-                                mClientModeImpl.takeBugReport(bugTitle, bugDetail));
+                                mClientModeImplHolder.get().takeBugReport(bugTitle, bugDetail));
                     }
                 }
                 // Should reset last connection time after each connection regardless if bugreport
@@ -367,7 +374,7 @@ public class WifiLastResortWatchdog {
      * which is in BSSID failure list after watchdog trigger.
      */
     private boolean checkIfConnectedBssidHasEverFailed() {
-        return mBssidFailureList.contains(mClientModeImpl.getWifiInfo().getBSSID());
+        return mBssidFailureList.contains(mWifiInfo.getBSSID());
     }
 
     /**
@@ -375,7 +382,7 @@ public class WifiLastResortWatchdog {
      * SSID after watchdog trigger
      */
     private boolean checkIfConnectedBackToSameSsid() {
-        if (TextUtils.equals(mSsidLastTrigger, mClientModeImpl.getWifiInfo().getSSID())) {
+        if (TextUtils.equals(mSsidLastTrigger, mWifiInfo.getSSID())) {
             return true;
         }
         localLog("checkIfConnectedBackToSameSsid: different SSID be connected");
@@ -390,9 +397,7 @@ public class WifiLastResortWatchdog {
         if (mBugReportProbability <= Math.random()) {
             return;
         }
-        (new Handler(mClientModeImplLooper)).post(() -> {
-            mClientModeImpl.takeBugReport(BUGREPORT_TITLE, bugDetail);
-        });
+        mHandler.post(() -> mClientModeImplHolder.get().takeBugReport(BUGREPORT_TITLE, bugDetail));
     }
 
     /**
