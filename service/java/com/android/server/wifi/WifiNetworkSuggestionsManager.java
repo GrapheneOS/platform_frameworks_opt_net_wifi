@@ -411,6 +411,7 @@ public class WifiNetworkSuggestionsManager {
                     // User disabled the app, remove app from database. We want the notification
                     // again if the user enabled the app-op back.
                     removeApp(mPackageName);
+                    mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
                 }
             });
         }
