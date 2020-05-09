@@ -318,6 +318,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final boolean IS_SCANNING_ALWAYS_ENABLED = true;
     private static final boolean IS_VERBOSE_LOGGING_ENABLED = true;
     private static final boolean IS_ENHANCED_MAC_RANDOMIZATION_FORCE_ENABLED = true;
+    private static final boolean IS_WIFI_WAKE_ENABLED = true;
     private static final int NUM_EMPTY_SCAN_RESULTS = 19;
     private static final int NUM_NON_EMPTY_SCAN_RESULTS = 23;
     private static final int NUM_SCAN_UNKNOWN = 1;
@@ -677,6 +678,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.setVerboseLoggingEnabled(IS_VERBOSE_LOGGING_ENABLED);
         mWifiMetrics.setEnhancedMacRandomizationForceEnabled(
                 IS_ENHANCED_MAC_RANDOMIZATION_FORCE_ENABLED);
+        mWifiMetrics.setWifiWakeEnabled(IS_WIFI_WAKE_ENABLED);
 
         for (int i = 0; i < NUM_EMPTY_SCAN_RESULTS; i++) {
             mWifiMetrics.incrementEmptyScanResultCount();
@@ -1127,6 +1129,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(IS_VERBOSE_LOGGING_ENABLED, mDecodedProto.isVerboseLoggingEnabled);
         assertEquals(IS_ENHANCED_MAC_RANDOMIZATION_FORCE_ENABLED,
                 mDecodedProto.isEnhancedMacRandomizationForceEnabled);
+        assertEquals(IS_WIFI_WAKE_ENABLED, mDecodedProto.isWifiWakeEnabled);
         assertEquals("mDecodedProto.numEmptyScanResults == NUM_EMPTY_SCAN_RESULTS",
                 NUM_EMPTY_SCAN_RESULTS, mDecodedProto.numEmptyScanResults);
         assertEquals("mDecodedProto.numNonEmptyScanResults == NUM_NON_EMPTY_SCAN_RESULTS",
@@ -4180,6 +4183,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(1,  true);
         mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(2,  false);
 
+        mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
+        mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
+
         dumpProtoAndDeserialize();
 
         assertEquals(4, mDecodedProto.wifiNetworkSuggestionApiLog.numModification);
@@ -4220,6 +4226,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(false,
                 mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[1]
                         .isDialog);
+
+        assertEquals(2, mDecodedProto.wifiNetworkSuggestionApiLog
+                .userRevokeAppSuggestionPermission);
     }
 
     private NetworkSelectionExperimentDecisions findUniqueNetworkSelectionExperimentDecisions(

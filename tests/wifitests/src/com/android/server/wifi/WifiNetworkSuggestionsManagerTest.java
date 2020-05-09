@@ -2040,6 +2040,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mAppOpsManager).stopWatchingMode(mAppOpChangedListenerCaptor.getValue());
         assertTrue(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions().isEmpty());
+        verify(mWifiMetrics).incrementNetworkSuggestionUserRevokePermission();
     }
 
     /**
@@ -4007,6 +4008,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_1, TEST_FEATURE));
         assertTrue(mWifiNetworkSuggestionsManager
                 .shouldBeIgnoredBySecureSuggestionFromSameCarrier(network1, scanDetails));
+    }
+
+    @Test
+    public void testUnregisterSuggestionConnectionStatusListenerNeverRegistered() {
+        int listenerIdentifier = 1234;
+        mWifiNetworkSuggestionsManager.unregisterSuggestionConnectionStatusListener(
+                listenerIdentifier, TEST_PACKAGE_1);
     }
 
     /**

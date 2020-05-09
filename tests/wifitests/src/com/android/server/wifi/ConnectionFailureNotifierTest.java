@@ -54,7 +54,6 @@ import org.mockito.MockitoAnnotations;
 @SmallTest
 public class ConnectionFailureNotifierTest extends WifiBaseTest {
     @Mock private Context mContext;
-    @Mock private WifiInjector mWifiInjector;
     @Mock private Resources mResources;
     @Mock private FrameworkFacade mFrameworkFacade;
     @Mock private WifiConfigManager mWifiConfigManager;
@@ -64,10 +63,10 @@ public class ConnectionFailureNotifierTest extends WifiBaseTest {
     @Mock private Notification mNotification;
     @Mock private AlertDialog mAlertDialog;
 
-    final ArgumentCaptor<BroadcastReceiver> mBroadCastReceiverCaptor =
+    private final ArgumentCaptor<BroadcastReceiver> mBroadCastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
     private ConnectionFailureNotifier mConnectionFailureNotifier;
-    TestLooper mLooper;
+    private TestLooper mLooper;
 
     /** Initialize objects before each test run. */
     @Before
@@ -76,16 +75,14 @@ public class ConnectionFailureNotifierTest extends WifiBaseTest {
         mLooper = new TestLooper();
         MockitoAnnotations.initMocks(this);
         when(mContext.getResources()).thenReturn(mResources);
-        when(mWifiInjector.getNotificationManager()).thenReturn(mNotificationManager);
-        when(mWifiInjector.getConnectionFailureNotificationBuilder())
-                .thenReturn(mConnectionFailureNotificationBuilder);
         when(mConnectionFailureNotificationBuilder
                 .buildNoMacRandomizationSupportNotification(any())).thenReturn(mNotification);
         when(mConnectionFailureNotificationBuilder.buildChangeMacRandomizationSettingDialog(any(),
                 any())).thenReturn(mAlertDialog);
-        mConnectionFailureNotifier = new ConnectionFailureNotifier(mContext, mWifiInjector,
-                mFrameworkFacade, mWifiConfigManager, mWifiConnectivityManager,
-                new Handler(mLooper.getLooper()));
+        mConnectionFailureNotifier = new ConnectionFailureNotifier(
+                mContext, mFrameworkFacade, mWifiConfigManager, mWifiConnectivityManager,
+                new Handler(mLooper.getLooper()), mNotificationManager,
+                mConnectionFailureNotificationBuilder);
 
         verify(mContext).registerReceiver(mBroadCastReceiverCaptor.capture(), any());
     }

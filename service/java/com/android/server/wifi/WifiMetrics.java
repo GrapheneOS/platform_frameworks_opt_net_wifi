@@ -1695,6 +1695,15 @@ public class WifiMetrics {
     }
 
     /**
+     * Wifi wake feature toggle.
+     */
+    public void setWifiWakeEnabled(boolean enabled) {
+        synchronized (mLock) {
+            mWifiLogProto.isWifiWakeEnabled = enabled;
+        }
+    }
+
+    /**
      * Increment Non Empty Scan Results count
      */
     public void incrementNonEmptyScanResultCount() {
@@ -3062,6 +3071,7 @@ public class WifiMetrics {
                         + mWifiLogProto.isVerboseLoggingEnabled);
                 pw.println("mWifiLogProto.isEnhancedMacRandomizationForceEnabled="
                         + mWifiLogProto.isEnhancedMacRandomizationForceEnabled);
+                pw.println("mWifiLogProto.isWifiWakeEnabled=" + mWifiLogProto.isWifiWakeEnabled);
                 pw.println("mWifiLogProto.numNetworksAddedByUser="
                         + mWifiLogProto.numNetworksAddedByUser);
                 pw.println("mWifiLogProto.numNetworksAddedByApps="
@@ -5935,6 +5945,15 @@ public class WifiMetrics {
     public void incrementNetworkSuggestionApiNumConnectFailure() {
         synchronized (mLock) {
             mWifiNetworkSuggestionApiLog.numConnectFailure++;
+        }
+    }
+
+    /** Increment number of user revoke suggestion permission. Including from settings or
+     * disallowed from UI.
+     */
+    public void incrementNetworkSuggestionUserRevokePermission() {
+        synchronized (mLock) {
+            mWifiNetworkSuggestionApiLog.userRevokeAppSuggestionPermission++;
         }
     }
 

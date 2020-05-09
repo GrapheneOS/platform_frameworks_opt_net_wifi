@@ -411,6 +411,7 @@ public class WifiNetworkSuggestionsManager {
                     // User disabled the app, remove app from database. We want the notification
                     // again if the user enabled the app-op back.
                     removeApp(mPackageName);
+                    mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
                 }
             });
         }
@@ -1920,7 +1921,7 @@ public class WifiNetworkSuggestionsManager {
             Log.w(TAG, "unregisterSuggestionConnectionStatusListener: Listener["
                     + listenerIdentifier + "] from " + packageName + " already unregister.");
         }
-        if (listenersTracker.getNumCallbacks() == 0) {
+        if (listenersTracker != null && listenersTracker.getNumCallbacks() == 0) {
             mSuggestionStatusListenerPerApp.remove(packageName);
         }
     }

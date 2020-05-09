@@ -700,6 +700,9 @@ message WifiLog {
 
   // Metered stats for suggestion networks.
   optional MeteredNetworkStats metered_network_stats_suggestion = 196;
+
+  // Does the user have wifi wake enabled.
+  optional bool is_wifi_wake_enabled = 197;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -2934,6 +2937,9 @@ message WifiNetworkSuggestionApiLog {
 
   // Event of user reaction to the UI.
   repeated UserReaction user_approval_app_ui_reaction = 6;
+
+  // Number of user revoke app's permission from settings or disallowed from UI.
+  optional int32 user_revoke_app_suggestion_permission = 7;
 }
 
 // WifiLock metrics

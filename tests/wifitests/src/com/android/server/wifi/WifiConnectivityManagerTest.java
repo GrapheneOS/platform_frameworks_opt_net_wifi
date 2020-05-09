@@ -21,14 +21,13 @@ import static com.android.server.wifi.WifiConfigurationTestUtil.generateWifiConf
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.argThat;
 
+import android.app.AlarmManager;
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.app.test.TestAlarmManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.ScanResult.InformationElement;
 import android.net.wifi.SupplicantState;
@@ -106,17 +105,11 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiScanner = mockWifiScanner();
         mWifiConnectivityHelper = mockWifiConnectivityHelper();
         mWifiNS = mockWifiNetworkSelector();
-        when(mWifiInjector.getWifiScanner()).thenReturn(mWifiScanner);
+        when(mContext.getSystemService(WifiScanner.class)).thenReturn(mWifiScanner);
         when(mWifiNetworkSuggestionsManager.retrieveHiddenNetworkList())
                 .thenReturn(new ArrayList<>());
         when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
                 .thenReturn(new HashSet<>());
-        when(mWifiInjector.getBssidBlocklistMonitor()).thenReturn(mBssidBlocklistMonitor);
-        when(mWifiInjector.getWifiChannelUtilizationScan()).thenReturn(mWifiChannelUtilization);
-        when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
-        when(mWifiInjector.getWifiNetworkSuggestionsManager())
-                .thenReturn(mWifiNetworkSuggestionsManager);
-        when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
         when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
                 .thenReturn(new ArrayList<>());
         mWifiConnectivityManager = createConnectivityManager();
@@ -127,8 +120,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
         mWifiConnectivityManager.setWifiEnabled(true);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime());
-        mMinPacketRateActiveTraffic = mResources.getInteger(
-                R.integer.config_wifiFrameworkMinPacketPerSecondActiveTraffic);
         when(mWifiLastResortWatchdog.shouldIgnoreBssidUpdate(anyString())).thenReturn(false);
         mLruConnectionTracker = new LruConnectionTracker(100, mContext);
         Comparator<WifiConfiguration> comparator =
@@ -185,13 +176,10 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private WifiInfo mWifiInfo;
     private LocalLog mLocalLog;
     private LruConnectionTracker mLruConnectionTracker;
-    @Mock private WifiInjector mWifiInjector;
-    @Mock private NetworkScoreManager mNetworkScoreManager;
     @Mock private Clock mClock;
     @Mock private WifiLastResortWatchdog mWifiLastResortWatchdog;
     @Mock private OpenNetworkNotifier mOpenNetworkNotifier;
     @Mock private WifiMetrics mWifiMetrics;
-    @Mock private WifiNetworkScoreCache mScoreCache;
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock private BssidBlocklistMonitor mBssidBlocklistMonitor;
     @Mock private WifiChannelUtilization mWifiChannelUtilization;
@@ -207,14 +195,11 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Mock WifiCandidates.Candidate mCandidate2;
     private List<WifiCandidates.Candidate> mCandidateList;
     @Captor ArgumentCaptor<ScanResult> mCandidateScanResultCaptor;
-    @Captor ArgumentCaptor<ArrayList<String>> mBssidBlacklistCaptor;
-    @Captor ArgumentCaptor<ArrayList<String>> mSsidWhitelistCaptor;
     @Captor ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener>
             mNetworkUpdateListenerCaptor;
     @Captor ArgumentCaptor<WifiNetworkSuggestionsManager.OnSuggestionUpdateListener>
             mSuggestionUpdateListenerCaptor;
     private MockResources mResources;
-    private int mMinPacketRateActiveTraffic;
 
     private static final int CANDIDATE_NETWORK_ID = 0;
     private static final String CANDIDATE_SSID = "\"AnSsid\"";
@@ -249,7 +234,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         Context context = mock(Context.class);
 
         when(context.getResources()).thenReturn(mResources);
-        when(context.getSystemService(Context.ALARM_SERVICE)).thenReturn(
+        when(context.getSystemService(AlarmManager.class)).thenReturn(
                 mAlarmManager.getAlarmManager());
         when(context.getPackageManager()).thenReturn(mock(PackageManager.class));
 
@@ -396,13 +381,13 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     WifiConnectivityManager createConnectivityManager() {
-        return new WifiConnectivityManager(mContext,
-                mScoringParams,
-                mClientModeImpl, mWifiInjector, mWifiConfigManager, mWifiNetworkSuggestionsManager,
+        return new WifiConnectivityManager(mContext, mScoringParams,
+                mClientModeImpl, mWifiConfigManager, mWifiNetworkSuggestionsManager,
                 mWifiInfo, mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
-                mLocalLog, mWifiScoreCard);
+                mLocalLog, mWifiScoreCard, mBssidBlocklistMonitor, mWifiChannelUtilization,
+                mPasspointManager);
     }
 
     void setWifiStateConnected() {

@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import static com.android.internal.util.Preconditions.checkNotNull;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
 
 import android.annotation.NonNull;
@@ -44,6 +43,7 @@ import android.util.Log;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.ScanResultUtil;
 import com.android.wifi.resources.R;
 
@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -145,7 +146,6 @@ public class WifiConnectivityManager {
 
     private final Context mContext;
     private final ClientModeImpl mStateMachine;
-    private final WifiInjector mWifiInjector;
     private final WifiConfigManager mConfigManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private final WifiInfo mWifiInfo;
@@ -159,11 +159,13 @@ public class WifiConnectivityManager {
     private final Clock mClock;
     private final ScoringParams mScoringParams;
     private final LocalLog mLocalLog;
-    private final LinkedList<Long> mConnectionAttemptTimeStamps;
+    private final LinkedList<Long> mConnectionAttemptTimeStamps = new LinkedList<>();
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
-    private WifiScanner mScanner;
-    private WifiScoreCard mWifiScoreCard;
+    private final PasspointManager mPasspointManager;
+    private final WifiScoreCard mWifiScoreCard;
+    private final WifiChannelUtilization mWifiChannelUtilization;
 
+    private WifiScanner mScanner;
     private boolean mDbg = false;
     private boolean mVerboseLoggingEnabled = false;
     private boolean mWifiEnabled = false;
@@ -208,8 +210,7 @@ public class WifiConnectivityManager {
     private int[] mCurrentSingleScanScheduleSec;
 
     private int mCurrentSingleScanScheduleIndex;
-    private int mPnoScanIntervalMs;
-    private WifiChannelUtilization mWifiChannelUtilization;
+    private int mPnoScanIntervalMs = MOVING_PNO_SCAN_INTERVAL_MS;
     // Cached WifiCandidates used in high mobility state to avoid connecting to APs that are
     // moving relative to the user.
     private CachedWifiCandidates mCachedWifiCandidates = null;
@@ -421,8 +422,8 @@ public class WifiConnectivityManager {
             passpointAp.add(scanDetail.getScanResult());
         }
         if (!passpointAp.isEmpty()) {
-            results.addAll(new ArrayList<>(mWifiInjector.getPasspointManager()
-                    .getAllMatchingPasspointProfilesForScanResults(passpointAp).keySet()));
+            results.addAll(mPasspointManager
+                    .getAllMatchingPasspointProfilesForScanResults(passpointAp).keySet());
         }
         mConfigManager.updateUserDisabledList(results);
     }
@@ -765,42 +766,51 @@ public class WifiConnectivityManager {
     /**
      * WifiConnectivityManager constructor
      */
-    WifiConnectivityManager(Context context, ScoringParams scoringParams,
+    WifiConnectivityManager(
+            Context context,
+            ScoringParams scoringParams,
             ClientModeImpl stateMachine,
-            WifiInjector injector, WifiConfigManager configManager,
-            WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager, WifiInfo wifiInfo,
-            WifiNetworkSelector networkSelector, WifiConnectivityHelper connectivityHelper,
-            WifiLastResortWatchdog wifiLastResortWatchdog, OpenNetworkNotifier openNetworkNotifier,
-            WifiMetrics wifiMetrics, Handler handler,
-            Clock clock, LocalLog localLog, WifiScoreCard scoreCard) {
+            WifiConfigManager configManager,
+            WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager,
+            WifiInfo wifiInfo,
+            WifiNetworkSelector networkSelector,
+            WifiConnectivityHelper connectivityHelper,
+            WifiLastResortWatchdog wifiLastResortWatchdog,
+            OpenNetworkNotifier openNetworkNotifier,
+            WifiMetrics wifiMetrics,
+            Handler handler,
+            Clock clock,
+            LocalLog localLog,
+            WifiScoreCard scoreCard,
+            BssidBlocklistMonitor bssidBlocklistMonitor,
+            WifiChannelUtilization wifiChannelUtilization,
+            PasspointManager passpointManager) {
         mContext = context;
+        mScoringParams = scoringParams;
         mStateMachine = stateMachine;
-        mWifiInjector = injector;
         mConfigManager = configManager;
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiInfo = wifiInfo;
         mNetworkSelector = networkSelector;
         mConnectivityHelper = connectivityHelper;
-        mLocalLog = localLog;
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mOpenNetworkNotifier = openNetworkNotifier;
         mWifiMetrics = wifiMetrics;
-        mAlarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         mEventHandler = handler;
         mClock = clock;
-        mScoringParams = scoringParams;
-        mConnectionAttemptTimeStamps = new LinkedList<>();
-        mPnoScanIntervalMs = MOVING_PNO_SCAN_INTERVAL_MS;
+        mLocalLog = localLog;
+        mWifiScoreCard = scoreCard;
+        mBssidBlocklistMonitor = bssidBlocklistMonitor;
+        mWifiChannelUtilization = wifiChannelUtilization;
+        mPasspointManager = passpointManager;
+
+        mAlarmManager = context.getSystemService(AlarmManager.class);
 
         // Listen to WifiConfigManager network update events
         mConfigManager.addOnNetworkUpdateListener(new OnNetworkUpdateListener());
         // Listen to WifiNetworkSuggestionsManager suggestion update events
         mWifiNetworkSuggestionsManager.addOnSuggestionUpdateListener(
                 new OnSuggestionUpdateListener());
-        mBssidBlocklistMonitor = mWifiInjector.getBssidBlocklistMonitor();
-        mWifiChannelUtilization = mWifiInjector.getWifiChannelUtilizationScan();
-        mNetworkSelector.setWifiChannelUtilization(mWifiChannelUtilization);
-        mWifiScoreCard = scoreCard;
     }
 
     /** Initialize single scanning schedules, and validate them */
@@ -1626,7 +1636,7 @@ public class WifiConnectivityManager {
         }
 
         List<PasspointConfiguration> passpointNetworks =
-                mWifiInjector.getPasspointManager().getProviderConfigs(Process.WIFI_UID, true);
+                mPasspointManager.getProviderConfigs(Process.WIFI_UID, true);
         // If we have multiple networks (saved + passpoint), then no need to proceed
         if (passpointNetworks.size() + savedNetworks.size() > 1) {
             return false;
@@ -1864,8 +1874,8 @@ public class WifiConnectivityManager {
      */
     private void retrieveWifiScanner() {
         if (mScanner != null) return;
-        mScanner = mWifiInjector.getWifiScanner();
-        checkNotNull(mScanner);
+        mScanner = Objects.requireNonNull(mContext.getSystemService(WifiScanner.class),
+                "Got a null instance of WifiScanner!");
         // Register for all single scan results
         mScanner.registerScanListener(new HandlerExecutor(mEventHandler), mAllSingleScanListener);
     }
