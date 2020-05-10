@@ -47,8 +47,8 @@
     <string name="wifi_watchdog_network_disabled" msgid="688248897654073438">"Não foi possível ligar a Wi-Fi"</string>
     <string name="wifi_watchdog_network_disabled_detailed" msgid="2946200607682633112">" tem uma ligação à internet fraca."</string>
     <string name="wifi_connect_alert_title" msgid="6144470472092017636">"Permitir ligação?"</string>
-    <string name="wifi_connect_alert_message" msgid="3123801378559831220">"A aplicação %1$s pretende estabelecer ligação à rede Wi-Fi %2$s"</string>
-    <string name="wifi_connect_default_application" msgid="6164721692891325243">"Uma aplicação"</string>
+    <string name="wifi_connect_alert_message" msgid="3123801378559831220">"A app %1$s pretende estabelecer ligação à rede Wi-Fi %2$s"</string>
+    <string name="wifi_connect_default_application" msgid="6164721692891325243">"Uma app"</string>
     <string name="accept" msgid="5931271886782610829">"Aceitar"</string>
     <string name="decline" msgid="6874256900873707640">"Recusar"</string>
     <string name="ok" msgid="4215387532539340948">"OK"</string>
