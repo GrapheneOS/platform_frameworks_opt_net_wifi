@@ -42,7 +42,7 @@ public class ThroughputPredictor {
     public static final int CHANNEL_UTILIZATION_DEFAULT_2G = MAX_CHANNEL_UTILIZATION * 6 / 16;
     // Default value of channel utilization at 5G when channel utilization is not available from
     // BssLoad IE or from link layer stats
-    public static final int CHANNEL_UTILIZATION_DEFAULT_5G = MAX_CHANNEL_UTILIZATION / 16;
+    public static final int CHANNEL_UTILIZATION_DEFAULT_ABOVE_2G = MAX_CHANNEL_UTILIZATION / 16;
     // Channel utilization boost when bluetooth is in the connected mode
     public static final int CHANNEL_UTILIZATION_BOOST_BT_CONNECTED_2G = MAX_CHANNEL_UTILIZATION / 4;
     //TODO: b/145133625 Need to consider 6GHz
@@ -388,7 +388,7 @@ public class ThroughputPredictor {
             channelUtilization = channelUtilizationLinkLayerStats;
         } else {
             channelUtilization = is2G ? CHANNEL_UTILIZATION_DEFAULT_2G :
-                    CHANNEL_UTILIZATION_DEFAULT_5G;
+                    CHANNEL_UTILIZATION_DEFAULT_ABOVE_2G;
         }
 
         if (is2G && isBluetoothConnected) {

@@ -3202,6 +3202,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiMetrics.setEnhancedMacRandomizationForceEnabled(isEnhancedMacRandEnabled);
         mWifiMetrics.setIsScanningAlwaysEnabled(isScanAlwaysAvailable());
         mWifiMetrics.setVerboseLoggingEnabled(mVerboseLoggingEnabled);
+        mWifiMetrics.setWifiWakeEnabled(mWifiInjector.getWakeupController().isEnabled());
     }
 
     @Override
