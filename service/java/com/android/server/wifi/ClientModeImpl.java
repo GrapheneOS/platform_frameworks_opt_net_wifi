@@ -38,6 +38,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.ReasonCode;
+import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.StatusCode;
 import android.net.ConnectivityManager;
 import android.net.DhcpResultsParcelable;
 import android.net.InvalidPacketException;
@@ -163,10 +165,6 @@ public class ClientModeImpl extends StateMachine {
     @VisibleForTesting public static final short NUM_LOG_RECS_NORMAL = 100;
     @VisibleForTesting public static final short NUM_LOG_RECS_VERBOSE_LOW_MEMORY = 200;
     @VisibleForTesting public static final short NUM_LOG_RECS_VERBOSE = 3000;
-
-    // Association rejection reason codes
-    @VisibleForTesting
-    protected static final int REASON_CODE_AP_UNABLE_TO_HANDLE_NEW_STA = 17;
 
     private static final String TAG = "WifiClientModeImpl";
 
@@ -2997,18 +2995,18 @@ public class ClientModeImpl extends StateMachine {
         if (config == null) return;
 
         switch(reason) {
-            case 14: // MICHAEL_MIC_FAILURE
-            case 15: // 4WAY_HANDSHAKE_TIMEOUT
-            case 16: // GROUP_KEY_UPDATE_TIMEOUT
-            case 17: // IE_IN_4WAY_DIFFERS
-            case 18: // GROUP_CIPHER_NOT_VALID
-            case 19: // PAIRWISE_CIPHER_NOT_VALID
-            case 20: // AKMP_NOT_VALID
-            case 23: // IEEE_802_1X_AUTH_FAILED
-            case 24: // CIPHER_SUITE_REJECTED
-            case 29: // BAD_CIPHER_OR_AKM
-            case 45: // PEERKEY_MISMATCH
-            case 49: // INVALID_PMKID
+            case ReasonCode.MICHAEL_MIC_FAILURE:
+            case ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT:
+            case ReasonCode.GROUP_KEY_UPDATE_TIMEOUT:
+            case ReasonCode.IE_IN_4WAY_DIFFERS:
+            case ReasonCode.GROUP_CIPHER_NOT_VALID:
+            case ReasonCode.PAIRWISE_CIPHER_NOT_VALID:
+            case ReasonCode.AKMP_NOT_VALID:
+            case ReasonCode.IEEE_802_1X_AUTH_FAILED:
+            case ReasonCode.CIPHER_SUITE_REJECTED:
+            case ReasonCode.BAD_CIPHER_OR_AKM:
+            case ReasonCode.PEERKEY_MISMATCH:
+            case ReasonCode.INVALID_PMKID:
                 mWifiNative.removeNetworkCachedData(config.networkId);
                 break;
             default:
@@ -4430,9 +4428,9 @@ public class ClientModeImpl extends StateMachine {
                     mDidBlackListBSSID = false;
                     String bssid = assocRejectEventInfo.bssid;
                     boolean timedOut = assocRejectEventInfo.timedOut;
-                    int reasonCode = assocRejectEventInfo.statusCode;
-                    Log.d(TAG, "Association Rejection event: bssid=" + bssid + " reason code="
-                            + reasonCode + " timedOut=" + timedOut);
+                    int statusCode = assocRejectEventInfo.statusCode;
+                    Log.d(TAG, "Association Rejection event: bssid=" + bssid + " statusCode="
+                            + statusCode + " timedOut=" + timedOut);
                     if (!isValidBssid(bssid)) {
                         // If BSSID is null, use the target roam BSSID
                         bssid = mTargetBssid;
@@ -4446,11 +4444,11 @@ public class ClientModeImpl extends StateMachine {
                             WifiConfiguration.NetworkSelectionStatus
                                     .DISABLED_ASSOCIATION_REJECTION);
                     mWifiConfigManager.setRecentFailureAssociationStatus(mTargetNetworkId,
-                            reasonCode);
+                            statusCode);
 
                     int level2FailureReason =
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN;
-                    if (reasonCode == REASON_CODE_AP_UNABLE_TO_HANDLE_NEW_STA) {
+                    if (statusCode == StatusCode.AP_UNABLE_TO_HANDLE_NEW_STA) {
                         level2FailureReason = WifiMetricsProto.ConnectionEvent
                                 .ASSOCIATION_REJECTION_AP_UNABLE_TO_HANDLE_NEW_STA;
                     }
@@ -4461,7 +4459,7 @@ public class ClientModeImpl extends StateMachine {
                                     : WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION,
                             WifiMetricsProto.ConnectionEvent.HLF_NONE,
                             level2FailureReason);
-                    if (reasonCode != REASON_CODE_AP_UNABLE_TO_HANDLE_NEW_STA) {
+                    if (statusCode != StatusCode.AP_UNABLE_TO_HANDLE_NEW_STA) {
                         mWifiInjector.getWifiLastResortWatchdog()
                                 .noteConnectionFailureAndTriggerIfNeeded(
                                         getTargetSsid(), bssid,
@@ -4737,7 +4735,7 @@ public class ClientModeImpl extends StateMachine {
                     if (mVerboseLoggingEnabled) {
                         log("ConnectingState: Network disconnection " + eventInfo);
                     }
-                    if (eventInfo.reasonCode == 15 /* FOURWAY_HANDSHAKE_TIMEOUT */) {
+                    if (eventInfo.reasonCode == ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT) {
                         String bssid = !isValidBssid(eventInfo.bssid)
                                 ? mTargetBssid : eventInfo.bssid;
                         mWifiInjector.getWifiLastResortWatchdog()
@@ -5969,18 +5967,18 @@ public class ClientModeImpl extends StateMachine {
      * @return true if this is a suspicious disconnect
      */
     static boolean unexpectedDisconnectedReason(int reason) {
-        return reason == 2              // PREV_AUTH_NOT_VALID
-                || reason == 6          // CLASS2_FRAME_FROM_NONAUTH_STA
-                || reason == 7          // FRAME_FROM_NONASSOC_STA
-                || reason == 8          // STA_HAS_LEFT
-                || reason == 9          // STA_REQ_ASSOC_WITHOUT_AUTH
-                || reason == 14         // MICHAEL_MIC_FAILURE
-                || reason == 15         // 4WAY_HANDSHAKE_TIMEOUT
-                || reason == 16         // GROUP_KEY_UPDATE_TIMEOUT
-                || reason == 18         // GROUP_CIPHER_NOT_VALID
-                || reason == 19         // PAIRWISE_CIPHER_NOT_VALID
-                || reason == 23         // IEEE_802_1X_AUTH_FAILED
-                || reason == 34;        // DISASSOC_LOW_ACK
+        return reason == ReasonCode.PREV_AUTH_NOT_VALID
+                || reason == ReasonCode.CLASS2_FRAME_FROM_NONAUTH_STA
+                || reason == ReasonCode.CLASS3_FRAME_FROM_NONASSOC_STA
+                || reason == ReasonCode.DISASSOC_STA_HAS_LEFT
+                || reason == ReasonCode.STA_REQ_ASSOC_WITHOUT_AUTH
+                || reason == ReasonCode.MICHAEL_MIC_FAILURE
+                || reason == ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT
+                || reason == ReasonCode.GROUP_KEY_UPDATE_TIMEOUT
+                || reason == ReasonCode.GROUP_CIPHER_NOT_VALID
+                || reason == ReasonCode.PAIRWISE_CIPHER_NOT_VALID
+                || reason == ReasonCode.IEEE_802_1X_AUTH_FAILED
+                || reason == ReasonCode.DISASSOC_LOW_ACK;
     }
 
     private static String getLinkPropertiesSummary(LinkProperties lp) {
