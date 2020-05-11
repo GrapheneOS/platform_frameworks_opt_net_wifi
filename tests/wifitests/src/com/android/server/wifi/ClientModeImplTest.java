@@ -1851,6 +1851,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(false);
         verify(mWifiScoreCard).detectAbnormalDisconnection();
         verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
+        verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
+        // Set MAC address thrice - once at bootup, once for new connection, once for disconnect.
+        verify(mWifiNative, times(3)).setMacAddress(eq(WIFI_IFACE_NAME), any());
     }
 
     /**
@@ -5119,5 +5122,46 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertEquals(mCmi.getWifiInfo().getSupplicantState(), SupplicantState.DISCONNECTED);
+    }
+
+    /**
+     * Ensures that we only disable the current network & set MAC address only when we exit
+     * ConnectingState.
+     * @throws Exception
+     */
+    @Test
+    public void testDisableNetworkOnExitingConnectingOrConnectedState() throws Exception {
+        connect();
+        String oldSsid = mConnectedNetwork.SSID;
+
+        // Trigger connection to a different network
+        mConnectedNetwork.SSID = oldSsid.concat("blah");
+        mConnectedNetwork.networkId++;
+        mConnectedNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        setupAndStartConnectSequence(mConnectedNetwork);
+
+        // Send disconnect event for the old network.
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(oldSsid, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+
+        assertEquals("L2ConnectingState", getCurrentState().getName());
+        // Since we remain in connecting state, we should not disable the network or set random MAC
+        // address on disconnect.
+        verify(mWifiNative, never()).disableNetwork(WIFI_IFACE_NAME);
+        // Set MAC address thrice - once at bootup, twice for the 2 connections.
+        verify(mWifiNative, times(3)).setMacAddress(eq(WIFI_IFACE_NAME), any());
+
+        // Send disconnect event for the new network.
+        disconnectEventInfo =
+                new DisconnectEventInfo(mConnectedNetwork.SSID, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
+        // Set MAC address thrice - once at bootup, twice for the connections,
+        // once for the disconnect.
+        verify(mWifiNative, times(4)).setMacAddress(eq(WIFI_IFACE_NAME), any());
     }
 }
