@@ -207,13 +207,6 @@ public class SupplicantStaNetworkHal {
                     config.wepKeys[i] = NativeUtil.bytesToHexOrQuotedString(mWepKey);
                 }
             }
-            /** PSK pass phrase */
-            config.preSharedKey = null;
-            if (getPskPassphrase() && !TextUtils.isEmpty(mPskPassphrase)) {
-                config.preSharedKey = NativeUtil.addEnclosingQuotes(mPskPassphrase);
-            } else if (getPsk() && !ArrayUtils.isEmpty(mPsk)) {
-                config.preSharedKey = NativeUtil.hexStringFromByteArray(mPsk);
-            } /* Do not read SAE password */
 
             /** allowedKeyManagement */
             if (getKeyMgmt()) {
@@ -246,6 +239,18 @@ public class SupplicantStaNetworkHal {
                 config.allowedGroupManagementCiphers =
                         supplicantToWifiConfigurationGroupMgmtCipherMask(mGroupMgmtCipherMask);
             }
+
+            /** PSK pass phrase */
+            config.preSharedKey = null;
+            if (getPskPassphrase() && !TextUtils.isEmpty(mPskPassphrase)) {
+                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                    config.preSharedKey = mPskPassphrase;
+                } else {
+                    config.preSharedKey = NativeUtil.addEnclosingQuotes(mPskPassphrase);
+                }
+            } else if (getPsk() && !ArrayUtils.isEmpty(mPsk)) {
+                config.preSharedKey = NativeUtil.hexStringFromByteArray(mPsk);
+            } /* Do not read SAE password */
 
             /** metadata: idstr */
             if (getIdStr() && !TextUtils.isEmpty(mIdStr)) {
@@ -302,7 +307,12 @@ public class SupplicantStaNetworkHal {
             // For PSK, this can either be quoted ASCII passphrase or hex string for raw psk.
             // For SAE, password must be a quoted ASCII string
             if (config.preSharedKey != null) {
-                if (config.preSharedKey.startsWith("\"")) {
+                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                    if (!setPskPassphrase(config.preSharedKey)) {
+                        Log.e(TAG, "failed to set wapi psk passphrase");
+                        return false;
+                    }
+                } else if (config.preSharedKey.startsWith("\"")) {
                     if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
                         /* WPA3 case, field is SAE Password */
                         if (!setSaePassword(
