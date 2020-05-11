@@ -2348,12 +2348,21 @@ public class WifiNative {
     }
 
     /**
+     * Disable the currently configured network in supplicant
+     *
+     * @param ifaceName Name of the interface.
+     */
+    public boolean disableNetwork(@NonNull String ifaceName) {
+        return mSupplicantStaIfaceHal.disableCurrentNetwork(ifaceName);
+    }
+
+    /**
      * Set the BSSID for the currently configured network in wpa_supplicant.
      *
      * @param ifaceName Name of the interface.
      * @return true if successful, false otherwise.
      */
-    public boolean setConfiguredNetworkBSSID(@NonNull String ifaceName, String bssid) {
+    public boolean setNetworkBSSID(@NonNull String ifaceName, String bssid) {
         return mSupplicantStaIfaceHal.setCurrentNetworkBssid(ifaceName, bssid);
     }
 
