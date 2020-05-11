@@ -37,15 +37,14 @@ import static com.android.wifitrackerlib.WifiEntry.Speed;
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.groupingBy;
 
-import android.app.AppGlobals;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
 import android.net.NetworkKey;
+import android.net.NetworkScoreManager;
 import android.net.ScoredNetwork;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -53,8 +52,8 @@ import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.PersistableBundle;
-import android.os.RemoteException;
 import android.os.UserHandle;
+import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -83,6 +82,15 @@ import java.util.StringJoiner;
  * Utility methods for WifiTrackerLib.
  */
 class Utils {
+    private static NetworkScoreManager sNetworkScoreManager;
+
+    private static String getActiveScorerPackage(@NonNull Context context) {
+        if (sNetworkScoreManager == null) {
+            sNetworkScoreManager = context.getSystemService(NetworkScoreManager.class);
+        }
+        return sNetworkScoreManager.getActiveScorerPackage();
+    }
+
     // Returns the ScanResult with the best RSSI from a list of ScanResults.
     @Nullable
     static ScanResult getBestScanResultByLevel(@NonNull List<ScanResult> scanResults) {
@@ -360,51 +368,28 @@ class Utils {
         }
     }
 
+    /**
+     * Get the app label for a suggestion/specifier package name.
+     */
     static CharSequence getAppLabel(Context context, String packageName) {
         try {
+            String openWifiPackageName = Settings.Global.getString(context.getContentResolver(),
+                    Settings.Global.USE_OPEN_WIFI_PACKAGE);
+            if (!TextUtils.isEmpty(openWifiPackageName) && TextUtils.equals(packageName,
+                    getActiveScorerPackage(context))) {
+                packageName = openWifiPackageName;
+            }
+
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfoAsUser(
                     packageName,
                     0 /* flags */,
                     UserHandle.getUserId(UserHandle.USER_CURRENT));
             return appInfo.loadLabel(context.getPackageManager());
         } catch (PackageManager.NameNotFoundException e) {
-            // Do nothing.
-        }
-        return "";
-    }
-
-    static CharSequence getAppLabelForSavedNetwork(@NonNull Context context,
-            @NonNull WifiEntry wifiEntry) {
-        return getAppLabelForWifiConfiguration(context, wifiEntry.getWifiConfiguration());
-    }
-
-    static CharSequence getAppLabelForWifiConfiguration(@NonNull Context context,
-            @NonNull WifiConfiguration config) {
-        if (context == null || config == null) {
-            return "";
-        }
-
-        final PackageManager pm = context.getPackageManager();
-        final String systemName = pm.getNameForUid(android.os.Process.SYSTEM_UID);
-        final int userId = UserHandle.getUserId(config.creatorUid);
-        ApplicationInfo appInfo = null;
-        if (config.creatorName != null && config.creatorName.equals(systemName)) {
-            appInfo = context.getApplicationInfo();
-        } else {
-            try {
-                final IPackageManager ipm = AppGlobals.getPackageManager();
-                appInfo = ipm.getApplicationInfo(config.creatorName, 0 /* flags */, userId);
-            } catch (RemoteException rex) {
-                // Do nothing.
-            }
-        }
-        if (appInfo != null
-                && !appInfo.packageName.equals(context.getString(R.string.settings_package))
-                && !appInfo.packageName.equals(
-                context.getString(R.string.certinstaller_package))) {
-            return appInfo.loadLabel(pm);
-        } else {
-            return "";
+            // The packageName should come from a suggestion/specifier which is guaranteed to
+            // have an associated app label. If there is a concurrency issue between the current
+            // connection and the suggestion being removed, we should fall back to the packageName.
+            return packageName;
         }
     }
 
