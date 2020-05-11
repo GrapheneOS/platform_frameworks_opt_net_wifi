@@ -21,7 +21,6 @@ import static android.net.wifi.WifiInfo.sanitizeSsid;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.Utils.getAppLabel;
-import static com.android.wifitrackerlib.Utils.getAppLabelForWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
@@ -167,7 +166,7 @@ public class PasspointWifiEntry extends WifiEntry {
                                 getSubIdForConfig(mContext, mWifiConfig));
                         sj.add(mContext.getString(R.string.available_via_app, carrierName != null
                                 ? carrierName
-                                : getAppLabelForWifiConfiguration(mContext, mWifiConfig)));
+                                : getAppLabel(mContext, mWifiConfig.creatorName)));
                     } else {
                         sj.add(mContext.getString(R.string.wifi_remembered));
                     }
