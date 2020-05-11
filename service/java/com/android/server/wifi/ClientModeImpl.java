@@ -3818,9 +3818,6 @@ public class ClientModeImpl extends StateMachine {
             if (!mWifiNative.removeAllNetworks(mInterfaceName)) {
                 loge("Failed to remove networks on exiting connect mode");
             }
-            mWifiInfo.reset();
-            mWifiInfo.setSupplicantState(SupplicantState.DISCONNECTED);
-            mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
             mWifiHealthMonitor.setWifiEnabled(false);
             mWifiDataStall.reset();
             stopClientMode();
@@ -4406,7 +4403,10 @@ public class ClientModeImpl extends StateMachine {
 
     class ConnectingState extends State {
         @Override
-        public void enter() {
+        public void exit() {
+            mWifiInfo.reset();
+            mWifiInfo.setSupplicantState(SupplicantState.DISCONNECTED);
+            mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
         }
 
         @Override
@@ -5722,13 +5722,22 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT: {
-                    /**
-                     * If we get a SUPPLICANT_STATE_CHANGE_EVENT before NETWORK_DISCONNECTION_EVENT
-                     * we have missed the network disconnection, transition to mDisconnectedState
-                     * and handle the rest of the events there
-                     */
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DEFERRED;
-                    deferMessage(message);
+                    StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
+                    SupplicantState state = handleSupplicantStateChange(stateChangeResult);
+                    if (state == SupplicantState.DISCONNECTED) {
+                        if (mVerboseLoggingEnabled) {
+                            log("Missed CTRL-EVENT-DISCONNECTED, disconnect");
+                        }
+                        handleNetworkDisconnect(false);
+                        transitionTo(mDisconnectedState);
+                    }
+                    break;
+                }
+                case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {
+                    DisconnectEventInfo eventInfo = (DisconnectEventInfo) message.obj;
+                    if (mVerboseLoggingEnabled) {
+                        log("DisconnectingState: Network disconnection " + eventInfo);
+                    }
                     handleNetworkDisconnect(false);
                     transitionTo(mDisconnectedState);
                     break;
