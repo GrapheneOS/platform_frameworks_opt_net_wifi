@@ -412,6 +412,23 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
      * Tests the saving of WifiConfiguration to wpa_supplicant.
      */
     @Test
+    public void testWapiPskHexNetworkWifiConfigurationSaveLoad() throws Exception {
+        // Now expose the V1.3 ISupplicantStaNetwork
+        createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_3);
+
+        WifiConfiguration config = WifiConfigurationTestUtil.createWapiPskNetwork();
+
+        config.preSharedKey =
+                "1234567890abcdef0"
+                + "1234567890abcdef0";
+        // WAPI should accept a hex bytes whose length is not exact 32.
+        testWifiConfigurationSaveLoad(config);
+    }
+
+    /**
+     * Tests the saving of WifiConfiguration to wpa_supplicant.
+     */
+    @Test
     public void testWapiCertNetworkWifiConfigurationSaveLoad() throws Exception {
         // Now expose the V1.3 ISupplicantStaNetwork
         createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_3);
