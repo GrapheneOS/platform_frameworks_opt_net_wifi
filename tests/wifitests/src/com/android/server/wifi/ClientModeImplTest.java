@@ -5081,4 +5081,43 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiNative, never()).removeNetworkCachedData(anyInt());
     }
+
+    @Test
+    public void testVerifyWifiInfoStateOnFrameworkDisconnect() throws Exception {
+        connect();
+
+        assertEquals(mCmi.getWifiInfo().getSupplicantState(), SupplicantState.COMPLETED);
+
+        // Now trigger disconnect
+        mCmi.disconnectCommand();
+        mLooper.dispatchAll();
+
+        // get disconnect event
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, WifiSsid.createFromAsciiEncoded(mConnectedNetwork.SSID),
+                        sBSSID, SupplicantState.DISCONNECTED));
+        mLooper.dispatchAll();
+
+        assertEquals(mCmi.getWifiInfo().getSupplicantState(), SupplicantState.DISCONNECTED);
+    }
+
+    @Test
+    public void testVerifyWifiInfoStateOnFrameworkDisconnectButMissingDisconnectEvent()
+            throws Exception {
+        connect();
+
+        assertEquals(mCmi.getWifiInfo().getSupplicantState(), SupplicantState.COMPLETED);
+
+        // Now trigger disconnect
+        mCmi.disconnectCommand();
+        mLooper.dispatchAll();
+
+        // missing disconnect event, but got supplicant state change with disconnect state instead.
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, WifiSsid.createFromAsciiEncoded(mConnectedNetwork.SSID),
+                        sBSSID, SupplicantState.DISCONNECTED));
+        mLooper.dispatchAll();
+
+        assertEquals(mCmi.getWifiInfo().getSupplicantState(), SupplicantState.DISCONNECTED);
+    }
 }
