@@ -339,6 +339,68 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verifies the addition of a WAPI-PSK network using
+     * {@link WifiConfigManager#addOrUpdateNetwork(WifiConfiguration, int)}
+     */
+    @Test
+    public void testAddWapiPskNetwork() {
+        WifiConfiguration wapiPskNetwork = WifiConfigurationTestUtil.createWapiPskNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(wapiPskNetwork);
+
+        verifyAddNetworkToWifiConfigManager(wapiPskNetwork);
+
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        // Ensure that the newly added network is disabled.
+        assertEquals(WifiConfiguration.Status.DISABLED, retrievedNetworks.get(0).status);
+    }
+
+    /**
+     * Verifies the addition of a WAPI-PSK network with hex bytes using
+     * {@link WifiConfigManager#addOrUpdateNetwork(WifiConfiguration, int)}
+     */
+    @Test
+    public void testAddWapiPskHexNetwork() {
+        WifiConfiguration wapiPskNetwork = WifiConfigurationTestUtil.createWapiPskNetwork();
+        wapiPskNetwork.preSharedKey =
+            "123456780abcdef0123456780abcdef0";
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(wapiPskNetwork);
+
+        verifyAddNetworkToWifiConfigManager(wapiPskNetwork);
+
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        // Ensure that the newly added network is disabled.
+        assertEquals(WifiConfiguration.Status.DISABLED, retrievedNetworks.get(0).status);
+    }
+
+    /**
+     * Verifies the addition of a WAPI-CERT network using
+     * {@link WifiConfigManager#addOrUpdateNetwork(WifiConfiguration, int)}
+     */
+    @Test
+    public void testAddWapiCertNetwork() {
+        WifiConfiguration wapiCertNetwork = WifiConfigurationTestUtil.createWapiCertNetwork();
+        List<WifiConfiguration> networks = new ArrayList<>();
+        networks.add(wapiCertNetwork);
+
+        verifyAddNetworkToWifiConfigManager(wapiCertNetwork);
+
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+        // Ensure that the newly added network is disabled.
+        assertEquals(WifiConfiguration.Status.DISABLED, retrievedNetworks.get(0).status);
+    }
+
+    /**
      * Verifies the addition of a single network when the corresponding ephemeral network exists.
      */
     @Test
