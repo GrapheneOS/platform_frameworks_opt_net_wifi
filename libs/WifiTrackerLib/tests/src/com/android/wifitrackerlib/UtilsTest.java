@@ -19,7 +19,6 @@ package com.android.wifitrackerlib;
 import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.wifiConfigToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
-import static com.android.wifitrackerlib.Utils.getAppLabelForSavedNetwork;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
@@ -43,8 +42,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
@@ -190,28 +187,6 @@ public class UtilsTest {
         assertThat(scanResultsByKey.keySet()).containsExactly(
                 ssidAndSecurityToStandardWifiEntryKey(wpa3TransitionScan.SSID, SECURITY_PSK),
                 ssidAndSecurityToStandardWifiEntryKey(oweTransitionScan.SSID, SECURITY_NONE));
-    }
-
-    @Test
-    public void testGetAppLabelForSavedNetwork_returnAppLabel() {
-        final PackageManager mockPackageManager = mock(PackageManager.class);
-        when(mMockContext.getPackageManager()).thenReturn(mockPackageManager);
-        when(mockPackageManager.getNameForUid(android.os.Process.SYSTEM_UID))
-                .thenReturn(SYSTEM_UID_APP_NAME);
-        final ApplicationInfo mockApplicationInfo = mock(ApplicationInfo.class);
-        when(mMockContext.getApplicationInfo()).thenReturn(mockApplicationInfo);
-        mockApplicationInfo.packageName = SYSTEM_UID_APP_NAME;
-        when(mockApplicationInfo.loadLabel(mockPackageManager)).thenReturn(APP_LABEL);
-        final WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"ssid\"";
-        config.creatorName = SYSTEM_UID_APP_NAME;
-        final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.settings_package))
-                .thenReturn(SETTINGS_APP_NAME);
-
-        final CharSequence appLabel = getAppLabelForSavedNetwork(mMockContext, entry);
-
-        assertThat(appLabel.toString()).isEqualTo(APP_LABEL);
     }
 
     @Test

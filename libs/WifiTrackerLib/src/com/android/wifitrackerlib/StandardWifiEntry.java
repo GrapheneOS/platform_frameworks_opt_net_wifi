@@ -25,8 +25,6 @@ import static android.net.wifi.WifiInfo.sanitizeSsid;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.Utils.getAppLabel;
-import static com.android.wifitrackerlib.Utils.getAppLabelForSavedNetwork;
-import static com.android.wifitrackerlib.Utils.getAppLabelForWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
@@ -196,7 +194,7 @@ public class StandardWifiEntry extends WifiEntry {
         StringJoiner sj = new StringJoiner(mContext.getString(R.string.summary_separator));
 
         if (!concise && mForSavedNetworksPage && isSaved()) {
-            final CharSequence appLabel = getAppLabelForSavedNetwork(mContext, this);
+            final CharSequence appLabel = getAppLabel(mContext, mWifiConfig.creatorName);
             if (!TextUtils.isEmpty(appLabel)) {
                 sj.add(mContext.getString(R.string.saved_network, appLabel));
             }
@@ -214,7 +212,7 @@ public class StandardWifiEntry extends WifiEntry {
                                 getSubIdForConfig(mContext, mWifiConfig));
                         sj.add(mContext.getString(R.string.available_via_app, carrierName != null
                                 ? carrierName
-                                : getAppLabelForWifiConfiguration(mContext, mWifiConfig)));
+                                : getAppLabel(mContext, mWifiConfig.creatorName)));
                     } else if (isSaved()) {
                         sj.add(mContext.getString(R.string.wifi_remembered));
                     }
