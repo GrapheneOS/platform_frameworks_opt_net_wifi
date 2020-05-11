@@ -407,7 +407,7 @@ public class ClientModeImpl extends StateMachine {
             logd(dbg + " clearTargetBssid " + bssid + " key=" + config.getKey());
         }
         mTargetBssid = bssid;
-        return mWifiNative.setConfiguredNetworkBSSID(mInterfaceName, bssid);
+        return mWifiNative.setNetworkBSSID(mInterfaceName, bssid);
     }
 
     /**
