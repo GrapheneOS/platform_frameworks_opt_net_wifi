@@ -2242,7 +2242,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(sBSSID, wifiInfo.getBSSID());
         assertEquals(sWifiSsid, wifiInfo.getWifiSsid());
 
+        mLooper.startAutoDispatch();
         WifiInfo connectionInfo = mCmi.syncRequestConnectionInfo();
+        mLooper.stopAutoDispatch();
 
         assertNotEquals(wifiInfo, connectionInfo);
         assertEquals(wifiInfo.getSSID(), connectionInfo.getSSID());

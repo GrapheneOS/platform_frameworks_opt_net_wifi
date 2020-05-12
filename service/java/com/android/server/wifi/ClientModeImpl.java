@@ -1559,8 +1559,7 @@ public class ClientModeImpl extends StateMachine {
      * @return a {@link WifiInfo} object containing information about the current connection
      */
     public WifiInfo syncRequestConnectionInfo() {
-        WifiInfo result = new WifiInfo(mWifiInfo);
-        return result;
+        return mWifiThreadRunner.call(() -> new WifiInfo(mWifiInfo), new WifiInfo());
     }
 
     /**
