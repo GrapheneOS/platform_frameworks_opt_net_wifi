@@ -2865,17 +2865,6 @@ public class WifiServiceImpl extends BaseWifiService {
         return 0;
     }
 
-    /**
-     * Deauthenticate and set the re-authentication hold off time for the current network
-     * @param holdoff hold off time in milliseconds
-     * @param ess set if the hold off pertains to an ESS rather than a BSS
-     */
-    @Override
-    public void deauthenticateNetwork(long holdoff, boolean ess) {
-        mLog.info("deauthenticateNetwork uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.deauthenticateNetwork(mClientModeImplChannel, holdoff, ess);
-    }
-
      /**
      * Get the country code
      * @return Get the best choice country code for wifi, regardless of if it was set or

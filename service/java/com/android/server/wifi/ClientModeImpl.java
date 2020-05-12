@@ -1684,15 +1684,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Deauthenticate and set the re-authentication hold off time for the current network
-     * @param holdoff hold off time in milliseconds
-     * @param ess set if the hold off pertains to an ESS rather than a BSS
-     */
-    public void deauthenticateNetwork(AsyncChannel channel, long holdoff, boolean ess) {
-        // TODO: This needs an implementation
-    }
-
-    /**
      * Disconnect from Access Point
      */
     public void disconnectCommand() {
