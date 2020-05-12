@@ -39,7 +39,6 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
-import android.os.Handler;
 import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
@@ -56,7 +55,6 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.MissingCounterTimerLockList;
 import com.android.server.wifi.util.WifiPermissionsUtil;
-import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -240,9 +238,10 @@ public class WifiConfigManager {
     private final WifiKeyStore mWifiKeyStore;
     private final WifiConfigStore mWifiConfigStore;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
-    private final WifiPermissionsWrapper mWifiPermissionsWrapper;
-    private final WifiInjector mWifiInjector;
     private final MacAddressUtil mMacAddressUtil;
+    private final WifiMetrics mWifiMetrics;
+    private final BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final WifiLastResortWatchdog mWifiLastResortWatchdog;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiScoreCard mWifiScoreCard;
     // Keep order of network connection.
@@ -333,17 +332,23 @@ public class WifiConfigManager {
      * Create new instance of WifiConfigManager.
      */
     WifiConfigManager(
-            Context context, Clock clock, UserManager userManager,
-            WifiCarrierInfoManager wifiCarrierInfoManager, WifiKeyStore wifiKeyStore,
+            Context context,
+            Clock clock,
+            UserManager userManager,
+            WifiCarrierInfoManager wifiCarrierInfoManager,
+            WifiKeyStore wifiKeyStore,
             WifiConfigStore wifiConfigStore,
             WifiPermissionsUtil wifiPermissionsUtil,
-            WifiPermissionsWrapper wifiPermissionsWrapper,
-            WifiInjector wifiInjector,
+            MacAddressUtil macAddressUtil,
+            WifiMetrics wifiMetrics,
+            BssidBlocklistMonitor bssidBlocklistMonitor,
+            WifiLastResortWatchdog wifiLastResortWatchdog,
             NetworkListSharedStoreData networkListSharedStoreData,
             NetworkListUserStoreData networkListUserStoreData,
             RandomizedMacStoreData randomizedMacStoreData,
-            FrameworkFacade frameworkFacade, Handler handler,
-            DeviceConfigFacade deviceConfigFacade, WifiScoreCard wifiScoreCard,
+            FrameworkFacade frameworkFacade,
+            DeviceConfigFacade deviceConfigFacade,
+            WifiScoreCard wifiScoreCard,
             LruConnectionTracker lruConnectionTracker) {
         mContext = context;
         mClock = clock;
@@ -353,8 +358,9 @@ public class WifiConfigManager {
         mWifiKeyStore = wifiKeyStore;
         mWifiConfigStore = wifiConfigStore;
         mWifiPermissionsUtil = wifiPermissionsUtil;
-        mWifiPermissionsWrapper = wifiPermissionsWrapper;
-        mWifiInjector = wifiInjector;
+        mWifiMetrics = wifiMetrics;
+        mBssidBlocklistMonitor = bssidBlocklistMonitor;
+        mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWifiScoreCard = wifiScoreCard;
 
         mConfiguredNetworks = new ConfigurationMap(userManager);
@@ -377,7 +383,7 @@ public class WifiConfigManager {
 
         mLocalLog = new LocalLog(
                 context.getSystemService(ActivityManager.class).isLowRamDevice() ? 128 : 256);
-        mMacAddressUtil = mWifiInjector.getMacAddressUtil();
+        mMacAddressUtil = macAddressUtil;
         mLruConnectionTracker = lruConnectionTracker;
     }
 
@@ -1187,7 +1193,7 @@ public class WifiConfigManager {
     private void logUserActionEvents(WifiConfiguration before, WifiConfiguration after) {
         // Logs changes in meteredOverride.
         if (before.meteredOverride != after.meteredOverride) {
-            mWifiInjector.getWifiMetrics().logUserActionEvent(
+            mWifiMetrics.logUserActionEvent(
                     WifiMetrics.convertMeteredOverrideEnumToUserActionEventType(
                             after.meteredOverride),
                     after.networkId);
@@ -1195,7 +1201,7 @@ public class WifiConfigManager {
 
         // Logs changes in macRandomizationSetting.
         if (before.macRandomizationSetting != after.macRandomizationSetting) {
-            mWifiInjector.getWifiMetrics().logUserActionEvent(
+            mWifiMetrics.logUserActionEvent(
                     after.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_NONE
                             ? UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF
                             : UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_ON,
@@ -1434,7 +1440,7 @@ public class WifiConfigManager {
         mScanDetailCaches.remove(config.networkId);
         // Stage the backup of the SettingsProvider package which backs this up.
         mBackupManagerProxy.notifyDataChanged();
-        mWifiInjector.getBssidBlocklistMonitor().handleNetworkRemoved(config.SSID);
+        mBssidBlocklistMonitor.handleNetworkRemoved(config.SSID);
 
         localLog("removeNetworkInternal: removed config."
                 + " netId=" + config.networkId
@@ -1743,7 +1749,7 @@ public class WifiConfigManager {
             if (reason == NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION
                     || reason == NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE
                     || reason == NetworkSelectionStatus.DISABLED_DHCP_FAILURE) {
-                if (mWifiInjector.getWifiLastResortWatchdog().shouldIgnoreSsidUpdate()) {
+                if (mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()) {
                     if (mVerboseLoggingEnabled) {
                         Log.v(TAG, "Ignore update network selection status "
                                     + "since Watchdog trigger is activated");
@@ -1812,8 +1818,7 @@ public class WifiConfigManager {
                     mClock.getElapsedSinceBootMillis() - networkStatus.getDisableTime();
             int disableReason = networkStatus.getNetworkSelectionDisableReason();
             int blockedBssids = Math.min(MAX_BLOCKED_BSSID_PER_NETWORK,
-                    mWifiInjector.getBssidBlocklistMonitor()
-                            .getNumBlockedBssidsForSsid(config.SSID));
+                    mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(config.SSID));
             // if no BSSIDs are blocked then we should keep trying to connect to something
             long disableTimeoutMs = 0;
             if (blockedBssids > 0) {
@@ -2713,7 +2718,7 @@ public class WifiConfigManager {
         for (WifiConfiguration config : getInternalConfiguredNetworks()) {
             if (TextUtils.equals(config.SSID, network) || TextUtils.equals(config.FQDN, network)) {
                 if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
-                    mWifiInjector.getWifiMetrics().logUserActionEvent(
+                    mWifiMetrics.logUserActionEvent(
                             UserActionEvent.EVENT_DISCONNECT_WIFI, config.networkId);
                 }
                 removeConnectChoiceFromAllNetworks(config.getKey());
@@ -2737,7 +2742,7 @@ public class WifiConfigManager {
             network = configuration.SSID;
         }
         mUserTemporarilyDisabledList.remove(network);
-        mWifiInjector.getBssidBlocklistMonitor().clearBssidBlocklistForSsid(configuration.SSID);
+        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(configuration.SSID);
         Log.d(TAG, "Enable disabled network: " + network + " num="
                 + mUserTemporarilyDisabledList.size());
     }
