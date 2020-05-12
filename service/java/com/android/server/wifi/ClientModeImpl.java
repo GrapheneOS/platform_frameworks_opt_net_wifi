@@ -6375,12 +6375,12 @@ public class ClientModeImpl extends StateMachine {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         }
 
-        if (config.macRandomizationSetting
-                == WifiConfiguration.RANDOMIZATION_PERSISTENT
-                && isConnectedMacRandomizationEnabled()) {
-            configureRandomizedMacAddress(config);
-        } else {
-            setCurrentMacToFactoryMac(config);
+        if (isConnectedMacRandomizationEnabled()) {
+            if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+                configureRandomizedMacAddress(config);
+            } else {
+                setCurrentMacToFactoryMac(config);
+            }
         }
 
         if (config.enterpriseConfig != null

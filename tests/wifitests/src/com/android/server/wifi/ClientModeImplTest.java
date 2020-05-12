@@ -2648,7 +2648,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      * 3. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_PERSISTENT and
      * 4. randomized MAC for the network to connect to is different from the current MAC.
      *
-     * The factory MAC address is used for the connection.
+     * The factory MAC address is used for the connection, and no attempt is made to change it.
      */
     @Test
     public void testConnectedMacRandomizationNotSupported() throws Exception {
@@ -2660,6 +2660,8 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         connect();
         assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mCmi.getWifiInfo().getMacAddress());
+        verify(mWifiNative, never()).setMacAddress(any(), any());
+        verify(mWifiNative, never()).getFactoryMacAddress(any());
     }
 
     /**
