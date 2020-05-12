@@ -2742,9 +2742,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 scanSettingsCaptor.capture(), any(), any(), any());
         assertEquals(scanSettingsCaptor.getValue().periodInMs,
                 WifiConnectivityManager.STATIONARY_PNO_SCAN_INTERVAL_MS);
-        verify(mScoringParams, times(2)).getEntryRssi(ScoringParams.BAND6);
-        verify(mScoringParams, times(2)).getEntryRssi(ScoringParams.BAND5);
-        verify(mScoringParams, times(2)).getEntryRssi(ScoringParams.BAND2);
+        verify(mScoringParams, times(2)).getEntryRssi(ScanResult.BAND_6_GHZ_START_FREQ_MHZ);
+        verify(mScoringParams, times(2)).getEntryRssi(ScanResult.BAND_5_GHZ_START_FREQ_MHZ);
+        verify(mScoringParams, times(2)).getEntryRssi(ScanResult.BAND_24_GHZ_START_FREQ_MHZ);
     }
 
     /**

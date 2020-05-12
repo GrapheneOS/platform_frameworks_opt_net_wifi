@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.MacAddress;
+import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
@@ -221,25 +222,6 @@ public class ApConfigUtilTest extends WifiBaseTest {
     }
 
     /**
-     * verify frequency to channel conversion for all possible frequencies.
-     */
-    @Test
-    public void convertFrequencyToChannel() throws Exception {
-        for (int i = 0; i < FREQUENCY_TO_CHANNEL_MAP.length; i += 3) {
-            assertEquals(FREQUENCY_TO_CHANNEL_MAP[i + 2],
-                    ApConfigUtil.convertFrequencyToChannel(FREQUENCY_TO_CHANNEL_MAP[i]));
-        }
-    }
-
-    /**
-     * Verify frequency to channel conversion failed for an invalid frequency.
-     */
-    @Test
-    public void convertFrequencyToChannelWithInvalidFreq() throws Exception {
-        assertEquals(-1, ApConfigUtil.convertFrequencyToChannel(8000));
-    }
-
-    /**
      * verify frequency to band conversion for all possible frequencies.
      */
     @Test
@@ -295,7 +277,8 @@ public class ApConfigUtilTest extends WifiBaseTest {
                 .thenReturn(allowed2gChannels);
         int freq = ApConfigUtil.chooseApChannel(SoftApConfiguration.BAND_2GHZ, mWifiNative,
                 mResources);
-        assertEquals(ApConfigUtil.DEFAULT_AP_CHANNEL, ApConfigUtil.convertFrequencyToChannel(freq));
+        assertEquals(ApConfigUtil.DEFAULT_AP_CHANNEL,
+                ScanResult.convertFrequencyMhzToChannel(freq));
     }
 
     /**

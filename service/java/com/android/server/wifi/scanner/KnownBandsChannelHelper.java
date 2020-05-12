@@ -28,6 +28,7 @@ import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_6_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_MAX;
 import static android.net.wifi.WifiScanner.WIFI_BAND_UNSPECIFIED;
 
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations.WifiBandBasic;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiScanner.WifiBandIndex;
@@ -44,25 +45,18 @@ import java.util.stream.Collectors;
  * This allows more fine operations on channels than if band channels are not known.
  */
 public class KnownBandsChannelHelper extends ChannelHelper {
-    public static final int BAND_24_GHZ_START_FREQ = 2400;
-    public static final int BAND_24_GHZ_END_FREQ = 2500;
-    public static final int BAND_5_GHZ_START_FREQ = 4900;
-    public static final int BAND_5_GHZ_END_FREQ = 5875;
-    public static final int BAND_6_GHZ_START_FREQ = 5925;
-    public static final int BAND_6_GHZ_END_FREQ = 7125;
-
     // 5G low includes U-NII-1 and Japan 4.9G band
     public static final int BAND_5_GHZ_LOW_END_FREQ = 5240;
     // 5G middle includes U-NII-2A and U-NII-2C
     public static final int BAND_5_GHZ_MID_END_FREQ = 5710;
     // 5G high includes U-NII-3
-    public static final int BAND_5_GHZ_HIGH_END_FREQ = BAND_5_GHZ_END_FREQ;
+    public static final int BAND_5_GHZ_HIGH_END_FREQ = ScanResult.BAND_5_GHZ_END_FREQ_MHZ;
     // 6G low includes UNII-5
     public static final int BAND_6_GHZ_LOW_END_FREQ = 6425;
     // 6G middle includes UNII-6 and UNII-7
     public static final int BAND_6_GHZ_MID_END_FREQ = 6875;
     // 6G high includes UNII-8
-    public static final int BAND_6_GHZ_HIGH_END_FREQ = BAND_6_GHZ_END_FREQ;
+    public static final int BAND_6_GHZ_HIGH_END_FREQ = ScanResult.BAND_6_GHZ_END_FREQ_MHZ;
 
     private WifiScanner.ChannelSpec[][] mBandsToChannels;
 
@@ -175,15 +169,15 @@ public class KnownBandsChannelHelper extends ChannelHelper {
 
     // TODO this should be rewritten to be based on the input data instead of hardcoded ranges
     private int getBandFromChannel(int frequency) {
-        if (BAND_24_GHZ_START_FREQ <= frequency && frequency < BAND_24_GHZ_END_FREQ) {
+        if (ScanResult.is24GHz(frequency)) {
             return WIFI_BAND_24_GHZ;
-        } else if (BAND_5_GHZ_START_FREQ <= frequency && frequency < BAND_5_GHZ_END_FREQ) {
+        } else if (ScanResult.is5GHz(frequency)) {
             if (isDfsChannel(frequency)) {
                 return WIFI_BAND_5_GHZ_DFS_ONLY;
             } else {
                 return WIFI_BAND_5_GHZ;
             }
-        } else if (BAND_6_GHZ_START_FREQ <= frequency && frequency < BAND_6_GHZ_END_FREQ) {
+        } else if (ScanResult.is6GHz(frequency)) {
             return WIFI_BAND_6_GHZ;
         } else {
             return WIFI_BAND_UNSPECIFIED;
@@ -198,6 +192,8 @@ public class KnownBandsChannelHelper extends ChannelHelper {
                 return WIFI_BAND_INDEX_5_GHZ;
             case WIFI_BAND_5_GHZ_DFS_ONLY:
                 return WIFI_BAND_INDEX_5_GHZ_DFS_ONLY;
+            case WIFI_BAND_6_GHZ:
+                return WIFI_BAND_INDEX_6_GHZ;
             default:
                 return -1;
         }

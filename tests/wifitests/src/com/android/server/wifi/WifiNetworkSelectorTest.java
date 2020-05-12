@@ -281,11 +281,14 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     private void setupThresholds() {
-        mThresholdMinimumRssi2G = mScoringParams.getEntryRssi(ScoringParams.BAND2);
-        mThresholdMinimumRssi5G = mScoringParams.getEntryRssi(ScoringParams.BAND5);
+        mThresholdMinimumRssi2G = mScoringParams.getEntryRssi(
+                ScanResult.BAND_24_GHZ_START_FREQ_MHZ);
+        mThresholdMinimumRssi5G = mScoringParams.getEntryRssi(ScanResult.BAND_5_GHZ_START_FREQ_MHZ);
 
-        mThresholdQualifiedRssi2G = mScoringParams.getSufficientRssi(ScoringParams.BAND2);
-        mThresholdQualifiedRssi5G = mScoringParams.getSufficientRssi(ScoringParams.BAND5);
+        mThresholdQualifiedRssi2G = mScoringParams.getSufficientRssi(
+                ScanResult.BAND_24_GHZ_START_FREQ_MHZ);
+        mThresholdQualifiedRssi5G = mScoringParams.getSufficientRssi(
+                ScanResult.BAND_5_GHZ_START_FREQ_MHZ);
     }
 
     private void setupWifiInfo() {
