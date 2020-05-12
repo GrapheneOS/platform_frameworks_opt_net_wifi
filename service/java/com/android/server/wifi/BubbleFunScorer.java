@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
+import android.net.wifi.ScanResult;
 
 import com.android.server.wifi.WifiCandidates.Candidate;
 import com.android.server.wifi.WifiCandidates.ScoredCandidate;
@@ -74,7 +75,7 @@ final class BubbleFunScorer implements WifiCandidates.CandidateScorer {
 
         // Prefer 5GHz/6GHz when all are strong, but at the fringes, 2.4 might be better
         // Typically the entry rssi is lower for the 2.4 band, which provides the fringe boost
-        if (candidate.getFrequency() < ScoringParams.MINIMUM_5GHZ_BAND_FREQUENCY_IN_MEGAHERTZ) {
+        if (ScanResult.is24GHz(candidate.getFrequency())) {
             score *= LOW_BAND_FACTOR;
             gain *= LOW_BAND_FACTOR;
         }

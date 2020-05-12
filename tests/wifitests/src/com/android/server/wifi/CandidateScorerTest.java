@@ -148,7 +148,7 @@ public class CandidateScorerTest extends WifiBaseTest {
     @Test
     public void testPrefer5GhzOver2GhzInNonFringeConditionsSimilarRssi() throws Exception {
         assertThat(evaluate(mCandidate1.setFrequency(5180).setScanRssi(-44)),
-                greaterThan(evaluate(mCandidate2.setFrequency(2024).setScanRssi(-44))));
+                greaterThan(evaluate(mCandidate2.setFrequency(2432).setScanRssi(-44))));
     }
 
     /**
