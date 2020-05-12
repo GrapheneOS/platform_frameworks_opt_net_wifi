@@ -2892,4 +2892,18 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 any(WifiSsid.class), eq(BSSID), eq(SupplicantState.COMPLETED));
     }
 
+    @Test
+    public void testDisableNetworkAfterConnected() throws Exception {
+        when(mSupplicantStaNetworkMock.disable()).thenReturn(true);
+
+        executeAndValidateInitializationSequence();
+
+        // Connect to a network.
+        executeAndValidateConnectSequence(4, false);
+
+        // Disable it.
+        assertTrue(mDut.disableCurrentNetwork(WLAN0_IFACE_NAME));
+        verify(mSupplicantStaNetworkMock).disable();
+    }
+
 }

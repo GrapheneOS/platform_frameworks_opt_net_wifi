@@ -1100,6 +1100,20 @@ public class SupplicantStaIfaceHal {
     }
 
     /**
+     * Disable the current network in supplicant
+     *
+     * @param ifaceName Name of the interface.
+     */
+    public boolean disableCurrentNetwork(@NonNull String ifaceName) {
+        synchronized (mLock) {
+            SupplicantStaNetworkHal networkHandle =
+                    checkSupplicantStaNetworkAndLogFailure(ifaceName, "disableCurrentNetwork");
+            if (networkHandle == null) return false;
+            return networkHandle.disable();
+        }
+    }
+
+    /**
      * Set the currently configured network's bssid.
      *
      * @param ifaceName Name of the interface.
