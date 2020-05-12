@@ -61,7 +61,7 @@ import java.util.Map;
 public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellCommand {
     private static final String TAG = "WifiAwareNativeApi";
     private static final boolean VDBG = false; // STOPSHIP if true
-    /* package */ boolean mDbg = false;
+    private boolean mDbg = false;
 
     @VisibleForTesting
     static final String SERVICE_NAME_FOR_OOB_DATA_PATH = "Wi-Fi Aware Data Path";
@@ -76,6 +76,14 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
             mTransactionIds = new SparseIntArray();
         }
     }
+
+    /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mDbg = verbose | VDBG;
+    }
+
 
     private void recordTransactionId(int transactionId) {
         if (!VDBG) return;
