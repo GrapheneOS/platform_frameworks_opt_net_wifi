@@ -5993,15 +5993,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Dynamically turn on/off WifiConnectivityManager
-     *
-     * @param choice true-enable; false-disable
-     */
-    public void allowAutoJoinGlobal(boolean choice) {
-        mWifiConnectivityManager.setAutoJoinEnabledExternal(choice);
-    }
-
-    /**
      * @param reason reason code from supplicant on network disconnected event
      * @return true if this is a suspicious disconnect
      */

@@ -185,6 +185,7 @@ public class WifiInjector {
             mWifiScanAlwaysAvailableSettingsCompatibility;
     private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     private final LruConnectionTracker mLruConnectionTracker;
+    private final WifiConnectivityManager mWifiConnectivityManager;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -371,7 +372,7 @@ public class WifiInjector {
                 wifiLooper, mFrameworkFacade, mClock, mWifiMetrics,
                 mWifiConfigManager, mWifiConfigStore, mClientModeImplHolder,
                 new ConnectToNetworkNotificationBuilder(mContext, this, mFrameworkFacade));
-        WifiConnectivityManager wifiConnectivityManager = new WifiConnectivityManager(
+        mWifiConnectivityManager = new WifiConnectivityManager(
                 mContext, mScoringParams, mClientModeImplHolder, mWifiConfigManager,
                 mWifiNetworkSuggestionsManager, mWifiInfo, mWifiNetworkSelector,
                 mWifiConnectivityHelper, mWifiLastResortWatchdog, mOpenNetworkNotifier,
@@ -380,19 +381,19 @@ public class WifiInjector {
                 mWifiChannelUtilizationScan, mPasspointManager);
         NotificationManager notificationManager =
                 mContext.getSystemService(NotificationManager.class);
-        ConnectionFailureNotifier connectionFailureNotifier =
-                new ConnectionFailureNotifier(mContext, mFrameworkFacade, mWifiConfigManager,
-                wifiConnectivityManager, wifiHandler,
+        ConnectionFailureNotifier connectionFailureNotifier = new ConnectionFailureNotifier(
+                mContext, mFrameworkFacade, mWifiConfigManager,
+                mWifiConnectivityManager, wifiHandler,
                 notificationManager, mConnectionFailureNotificationBuilder);
         WifiNetworkFactory wifiNetworkFactory = new WifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER,
                 (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE),
                 (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE),
                 (AppOpsManager) mContext.getSystemService(Context.APP_OPS_SERVICE),
-                mClock, this, wifiConnectivityManager, mWifiConfigManager,
+                mClock, this, mWifiConnectivityManager, mWifiConfigManager,
                 mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mClientModeImplHolder);
         UntrustedWifiNetworkFactory untrustedWifiNetworkFactory = new UntrustedWifiNetworkFactory(
-                wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER, wifiConnectivityManager);
+                wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER, mWifiConnectivityManager);
         mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
                 mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
                 mContext, mClientModeImplHolder, mSettingsStore, mFrameworkFacade,
@@ -430,7 +431,7 @@ public class WifiInjector {
                 mPasspointManager, mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper,
                 mWifiDataStall, mScoringParams, mWifiThreadRunner,
                 mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
-                mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, wifiConnectivityManager,
+                mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
                 mBssidBlocklistMonitor, connectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
                 wifiNetworkFactory, untrustedWifiNetworkFactory, mWifiLastResortWatchdog,
                 mWakeupController, mLockManager, mSelfRecovery,
@@ -832,5 +833,9 @@ public class WifiInjector {
 
     public DeviceConfigFacade getDeviceConfigFacade() {
         return mDeviceConfigFacade;
+    }
+
+    public WifiConnectivityManager getWifiConnectivityManager() {
+        return mWifiConnectivityManager;
     }
 }

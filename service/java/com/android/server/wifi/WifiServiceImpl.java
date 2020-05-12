@@ -189,6 +189,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiConfigManager mWifiConfigManager;
     private final PasspointManager mPasspointManager;
     private final WifiLog mLog;
+    private final WifiConnectivityManager mWifiConnectivityManager;
     /**
      * Verbose logging flag. Toggled by developer options.
      */
@@ -333,6 +334,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiScoreCard = mWifiInjector.getWifiScoreCard();
         mMemoryStoreImpl = new MemoryStoreImpl(mContext, mWifiInjector,
                 mWifiScoreCard,  mWifiInjector.getWifiHealthMonitor());
+        mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
     }
 
     /**
@@ -2532,7 +2534,7 @@ public class WifiServiceImpl extends BaseWifiService {
         int callingUid = Binder.getCallingUid();
         mLog.info("allowAutojoin=% uid=%").c(choice).c(callingUid).flush();
 
-        mWifiThreadRunner.post(() -> mClientModeImpl.allowAutoJoinGlobal(choice));
+        mWifiThreadRunner.post(() -> mWifiConnectivityManager.setAutoJoinEnabledExternal(choice));
     }
 
     /**
