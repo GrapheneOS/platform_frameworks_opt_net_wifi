@@ -87,7 +87,7 @@ import java.util.TreeSet;
 public class WifiAwareDataPathStateManager {
     private static final String TAG = "WifiAwareDataPathStMgr";
     private static final boolean VDBG = false; // STOPSHIP if true
-    /* package */ boolean mDbg = false;
+    private boolean mDbg = false;
 
     private static final String AWARE_INTERFACE_PREFIX = "aware_data";
     private static final String NETWORK_TAG = "WIFI_AWARE_FACTORY";
@@ -166,6 +166,13 @@ public class WifiAwareDataPathStateManager {
         mNetworkFactory.register();
     }
 
+    /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mDbg = verbose | VDBG;
+    }
+
     private Map.Entry<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation>
                 getNetworkRequestByNdpId(int ndpId) {
         for (Map.Entry<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation> entry :
@@ -200,7 +207,7 @@ public class WifiAwareDataPathStateManager {
      * capabilities of the firmware.
      */
     public void createAllInterfaces() {
-        if (VDBG) Log.v(TAG, "createAllInterfaces");
+        if (mDbg) Log.v(TAG, "createAllInterfaces");
 
         if (mMgr.getCapabilities() == null) {
             Log.e(TAG, "createAllInterfaces: capabilities aren't initialized yet!");
@@ -226,7 +233,7 @@ public class WifiAwareDataPathStateManager {
      * Delete all Aware data-path interfaces which are currently up.
      */
     public void deleteAllInterfaces() {
-        if (VDBG) Log.v(TAG, "deleteAllInterfaces");
+        if (mDbg) Log.v(TAG, "deleteAllInterfaces");
         onAwareDownCleanupDataPaths();
 
         if (mMgr.getCapabilities() == null) {
@@ -245,7 +252,7 @@ public class WifiAwareDataPathStateManager {
      * Called when firmware indicates the an interface was created.
      */
     public void onInterfaceCreated(String interfaceName) {
-        if (VDBG) Log.v(TAG, "onInterfaceCreated: interfaceName=" + interfaceName);
+        if (mDbg) Log.v(TAG, "onInterfaceCreated: interfaceName=" + interfaceName);
 
         if (mInterfaces.contains(interfaceName)) {
             Log.w(TAG, "onInterfaceCreated: already contains interface -- " + interfaceName);
@@ -258,7 +265,7 @@ public class WifiAwareDataPathStateManager {
      * Called when firmware indicates the an interface was deleted.
      */
     public void onInterfaceDeleted(String interfaceName) {
-        if (VDBG) Log.v(TAG, "onInterfaceDeleted: interfaceName=" + interfaceName);
+        if (mDbg) Log.v(TAG, "onInterfaceDeleted: interfaceName=" + interfaceName);
 
         if (!mInterfaces.contains(interfaceName)) {
             Log.w(TAG, "onInterfaceDeleted: interface not on list -- " + interfaceName);
@@ -275,7 +282,7 @@ public class WifiAwareDataPathStateManager {
      * @param ndpId            The ID assigned to the data-path.
      */
     public void onDataPathInitiateSuccess(WifiAwareNetworkSpecifier networkSpecifier, int ndpId) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG,
                     "onDataPathInitiateSuccess: networkSpecifier=" + networkSpecifier + ", ndpId="
                             + ndpId);
@@ -309,7 +316,7 @@ public class WifiAwareDataPathStateManager {
      * @param reason           Failure reason.
      */
     public void onDataPathInitiateFail(WifiAwareNetworkSpecifier networkSpecifier, int reason) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG,
                     "onDataPathInitiateFail: networkSpecifier=" + networkSpecifier + ", reason="
                             + reason);
@@ -346,7 +353,7 @@ public class WifiAwareDataPathStateManager {
      */
     public WifiAwareNetworkSpecifier onDataPathRequest(int pubSubId, byte[] mac, int ndpId,
             byte[] message) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG,
                     "onDataPathRequest: pubSubId=" + pubSubId + ", mac=" + String.valueOf(
                             HexEncoding.encode(mac)) + ", ndpId=" + ndpId);
@@ -456,7 +463,7 @@ public class WifiAwareDataPathStateManager {
      * @param success Whether or not the 'RespondToDataPathRequest' operation was a success.
      */
     public void onRespondToDataPathRequest(int ndpId, boolean success, int reasonOnFailure) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "onRespondToDataPathRequest: ndpId=" + ndpId + ", success=" + success);
         }
 
@@ -525,7 +532,7 @@ public class WifiAwareDataPathStateManager {
      */
     public WifiAwareNetworkSpecifier onDataPathConfirm(int ndpId, byte[] mac, boolean accept,
             int reason, byte[] message, List<NanDataPathChannelInfo> channelInfo) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "onDataPathConfirm: ndpId=" + ndpId + ", mac=" + String.valueOf(
                     HexEncoding.encode(mac)) + ", accept=" + accept + ", reason=" + reason
                     + ", message.length=" + ((message == null) ? 0 : message.length)
@@ -685,7 +692,7 @@ public class WifiAwareDataPathStateManager {
                 declareUnfullfillableAndEndDp(nnri, ndpId);
                 return;
             }
-            if (mDbg) {
+            if (VDBG) {
                 Log.d(TAG, "Failed address validation");
             }
             mHandler.postDelayed(() -> {
@@ -707,7 +714,7 @@ public class WifiAwareDataPathStateManager {
      * @param ndpId The ID of the terminated data-path.
      */
     public void onDataPathEnd(int ndpId) {
-        if (VDBG) Log.v(TAG, "onDataPathEnd: ndpId=" + ndpId);
+        if (mDbg) Log.v(TAG, "onDataPathEnd: ndpId=" + ndpId);
 
         Map.Entry<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation> nnriE =
                 getNetworkRequestByNdpId(ndpId);
@@ -734,7 +741,7 @@ public class WifiAwareDataPathStateManager {
      */
     public void onDataPathSchedUpdate(byte[] peerMac, List<Integer> ndpIds,
             List<NanDataPathChannelInfo> channelInfo) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "onDataPathSchedUpdate: peerMac=" + MacAddress.fromBytes(peerMac).toString()
                     + ", ndpIds=" + ndpIds + ", channelInfo=" + channelInfo);
         }
@@ -761,7 +768,7 @@ public class WifiAwareDataPathStateManager {
      * Called whenever Aware comes down. Clean up all pending and up network requests and agents.
      */
     public void onAwareDownCleanupDataPaths() {
-        if (VDBG) Log.v(TAG, "onAwareDownCleanupDataPaths");
+        if (mDbg) Log.v(TAG, "onAwareDownCleanupDataPaths");
 
         Iterator<Map.Entry<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation>> it =
                 mNetworkRequestsCache.entrySet().iterator();
@@ -782,7 +789,7 @@ public class WifiAwareDataPathStateManager {
 
         AwareNetworkRequestInformation nnri = mNetworkRequestsCache.remove(networkSpecifier);
         if (nnri == null) {
-            if (mDbg) {
+            if (VDBG) {
                 Log.v(TAG,
                         "handleDataPathTimeout: network request not found for networkSpecifier="
                                 + networkSpecifier);
@@ -899,7 +906,7 @@ public class WifiAwareDataPathStateManager {
 
         @Override
         protected void needNetworkFor(NetworkRequest networkRequest, int score) {
-            if (VDBG) {
+            if (mDbg) {
                 Log.v(TAG, "WifiAwareNetworkFactory.needNetworkFor: networkRequest="
                         + networkRequest + ", score=" + score);
             }
@@ -951,7 +958,7 @@ public class WifiAwareDataPathStateManager {
 
         @Override
         protected void releaseNetworkFor(NetworkRequest networkRequest) {
-            if (VDBG) {
+            if (mDbg) {
                 Log.v(TAG, "WifiAwareNetworkFactory.releaseNetworkFor: networkRequest="
                         + networkRequest);
             }
@@ -986,7 +993,7 @@ public class WifiAwareDataPathStateManager {
              */
             nnri.removeSupportForRequest(networkRequest);
             if (nnri.equivalentRequests.isEmpty()) {
-                if (VDBG) {
+                if (mDbg) {
                     Log.v(TAG, "releaseNetworkFor: there are no further requests, networkRequest="
                             + networkRequest);
                 }
@@ -1033,7 +1040,7 @@ public class WifiAwareDataPathStateManager {
 
         @Override
         public void onNetworkUnwanted() {
-            if (VDBG) {
+            if (mDbg) {
                 Log.v(TAG, "WifiAwareNetworkAgent.unwanted: request=" + mAwareNetworkRequestInfo);
             }
 
@@ -1045,7 +1052,7 @@ public class WifiAwareDataPathStateManager {
         }
 
         void reconfigureAgentAsDisconnected() {
-            if (VDBG) {
+            if (mDbg) {
                 Log.v(TAG, "WifiAwareNetworkAgent.reconfigureAgentAsDisconnected: request="
                         + mAwareNetworkRequestInfo);
             }
@@ -1059,7 +1066,7 @@ public class WifiAwareDataPathStateManager {
         if (!TextUtils.isEmpty(nnri.interfaceName)) {
             boolean interfaceUsedByAnotherNdp = isInterfaceUpAndUsedByAnotherNdp(nnri);
             if (interfaceUsedByAnotherNdp) {
-                if (VDBG) {
+                if (mDbg) {
                     Log.v(TAG, "tearDownInterfaceIfPossible: interfaceName=" + nnri.interfaceName
                             + ", still in use - not turning down");
                 }
@@ -1108,7 +1115,7 @@ public class WifiAwareDataPathStateManager {
         SortedSet<String> potential = new TreeSet<>(mInterfaces);
         Set<String> used = new HashSet<>();
 
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "selectInterfaceForRequest: req=" + req + ", mNetworkRequestsCache="
                     + mNetworkRequestsCache);
         }
@@ -1539,7 +1546,7 @@ public class WifiAwareDataPathStateManager {
                 testDatagramSocket = new DatagramSocket(0, address);
             } catch (SocketException e) {
                 if (mDbg) {
-                    Log.d(TAG, "Can't create socket on address " + address + " -- " + e);
+                    Log.v(TAG, "Can't create socket on address " + address + " -- " + e);
                 }
                 return false;
             } finally {

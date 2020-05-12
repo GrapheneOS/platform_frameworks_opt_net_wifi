@@ -41,8 +41,6 @@ import java.util.Set;
  */
 public class WifiAwareMetrics {
     private static final String TAG = "WifiAwareMetrics";
-    private static final boolean VDBG = false;
-    /* package */ boolean mDbg = false;
 
     // Histogram: 8 buckets (i=0, ..., 7) of 9 slots in range 10^i -> 10^(i+1)
     // Buckets:

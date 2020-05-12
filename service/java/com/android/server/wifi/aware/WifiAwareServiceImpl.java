@@ -44,7 +44,6 @@ import android.util.SparseArray;
 import android.util.SparseIntArray;
 
 import com.android.server.wifi.Clock;
-import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -62,8 +61,7 @@ import java.util.List;
  */
 public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
     private static final String TAG = "WifiAwareService";
-    private static final boolean VDBG = false; // STOPSHIP if true
-    /* package */ boolean mDbg = false;
+    private boolean mDbg = false;
 
     private Context mContext;
     private AppOpsManager mAppOps;
@@ -124,25 +122,17 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
         });
     }
 
-    private void enableVerboseLogging(boolean verbose, WifiAwareStateManager awareStateManager,
+    private void enableVerboseLogging(boolean dbg, WifiAwareStateManager awareStateManager,
             WifiAwareNativeManager wifiAwareNativeManager, WifiAwareNativeApi wifiAwareNativeApi,
             WifiAwareNativeCallback wifiAwareNativeCallback) {
-        boolean dbg;
-
-        dbg = verbose;
-        if (VDBG) {
-            dbg = true; // just override
-        }
-
         mDbg = dbg;
-        awareStateManager.mDbg = dbg;
+        awareStateManager.enableVerboseLogging(dbg);
         if (awareStateManager.mDataPathMgr != null) { // needed for unit tests
-            awareStateManager.mDataPathMgr.mDbg = dbg;
-            WifiInjector.getInstance().getWifiMetrics().getWifiAwareMetrics().mDbg = dbg;
+            awareStateManager.mDataPathMgr.enableVerboseLogging(dbg);
         }
-        wifiAwareNativeCallback.mDbg = dbg;
-        wifiAwareNativeManager.mDbg = dbg;
-        wifiAwareNativeApi.mDbg = dbg;
+        wifiAwareNativeCallback.enableVerboseLogging(dbg);
+        wifiAwareNativeManager.enableVerboseLogging(dbg);
+        wifiAwareNativeApi.enableVerboseLogging(dbg);
     }
 
     /**
@@ -278,7 +268,7 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
 
         int uid = getMockableCallingUid();
         enforceClientValidity(uid, clientId);
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "terminateSession: sessionId=" + sessionId + ", uid=" + uid + ", clientId="
                     + clientId);
         }
@@ -307,7 +297,7 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
                 mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_RTT));
 
         enforceClientValidity(uid, clientId);
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "publish: uid=" + uid + ", clientId=" + clientId + ", publishConfig="
                     + publishConfig + ", callback=" + callback);
         }
@@ -328,7 +318,7 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
 
         int uid = getMockableCallingUid();
         enforceClientValidity(uid, clientId);
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "updatePublish: uid=" + uid + ", clientId=" + clientId + ", sessionId="
                     + sessionId + ", config=" + publishConfig);
         }
@@ -357,7 +347,7 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
                 mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_RTT));
 
         enforceClientValidity(uid, clientId);
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "subscribe: uid=" + uid + ", clientId=" + clientId + ", config="
                     + subscribeConfig + ", callback=" + callback);
         }
@@ -378,7 +368,7 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
 
         int uid = getMockableCallingUid();
         enforceClientValidity(uid, clientId);
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "updateSubscribe: uid=" + uid + ", clientId=" + clientId + ", sessionId="
                     + sessionId + ", config=" + subscribeConfig);
         }
@@ -408,7 +398,7 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
 
         int uid = getMockableCallingUid();
         enforceClientValidity(uid, clientId);
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG,
                     "sendMessage: sessionId=" + sessionId + ", uid=" + uid + ", clientId="
                             + clientId + ", peerId=" + peerId + ", messageId=" + messageId
