@@ -242,7 +242,7 @@ public class WifiInjector {
                 mDppMetrics);
         mDeviceConfigFacade = new DeviceConfigFacade(mContext, wifiHandler, mWifiMetrics);
         // Modules interacting with Native.
-        mWifiMonitor = new WifiMonitor(this);
+        mWifiMonitor = new WifiMonitor();
         mHalDeviceManager = new HalDeviceManager(mClock, wifiHandler);
         mWifiVendorHal = new WifiVendorHal(mHalDeviceManager, wifiHandler);
         mSupplicantStaIfaceHal = new SupplicantStaIfaceHal(
@@ -254,7 +254,7 @@ public class WifiInjector {
                 mWifiVendorHal, mSupplicantStaIfaceHal, mHostapdHal, mWifiCondManager,
                 mWifiMonitor, mPropertyService, mWifiMetrics,
                 wifiHandler, new Random(), this);
-        mWifiP2pMonitor = new WifiP2pMonitor(this);
+        mWifiP2pMonitor = new WifiP2pMonitor();
         mSupplicantP2pIfaceHal = new SupplicantP2pIfaceHal(mWifiP2pMonitor);
         mWifiP2pNative = new WifiP2pNative(this,
                 mWifiVendorHal, mSupplicantP2pIfaceHal, mHalDeviceManager,
