@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
+import android.net.wifi.ScanResult;
 
 import com.android.server.wifi.WifiCandidates.Candidate;
 import com.android.server.wifi.WifiCandidates.ScoredCandidate;
@@ -79,10 +80,9 @@ final class CompatibilityScorer implements WifiCandidates.CandidateScorer {
         int rssi = Math.min(candidate.getScanRssi(), rssiSaturationThreshold);
         int score = (rssi + RSSI_SCORE_OFFSET) * RSSI_SCORE_SLOPE_IS_4;
 
-        if (candidate.getFrequency() > ScoringParams.MINIMUM_6GHZ_BAND_FREQUENCY_IN_MEGAHERTZ) {
+        if (ScanResult.is6GHz(candidate.getFrequency())) {
             score += BAND_6GHZ_AWARD_IS_40;
-        } else if (candidate.getFrequency()
-                >= ScoringParams.MINIMUM_5GHZ_BAND_FREQUENCY_IN_MEGAHERTZ) {
+        } else if (ScanResult.is5GHz(candidate.getFrequency())) {
             score += BAND_5GHZ_AWARD_IS_40;
         }
         score += (int) (candidate.getLastSelectionWeight() * LAST_SELECTION_AWARD_IS_480);
