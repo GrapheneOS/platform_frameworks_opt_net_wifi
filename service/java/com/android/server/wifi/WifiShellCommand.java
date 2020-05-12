@@ -281,7 +281,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                     + "- must be a positive integer");
                             return -1;
                         }
-                        int apChannel = ApConfigUtil.convertFrequencyToChannel(apChannelMHz);
+                        int apChannel = ScanResult.convertFrequencyMhzToChannel(apChannelMHz);
                         int band = ApConfigUtil.convertFrequencyToBand(apChannelMHz);
                         if (apChannel == -1 || band == -1 || !isApChannelMHzValid(apChannelMHz)) {
                             pw.println("Invalid argument to 'force-softap-channel enabled' "

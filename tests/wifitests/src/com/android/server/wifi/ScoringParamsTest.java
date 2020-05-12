@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
 import androidx.test.filters.SmallTest;
@@ -304,20 +305,20 @@ public class ScoringParamsTest extends WifiBaseTest {
 
         assertEquals(mBad2GHz, mScoringParams.getExitRssi(2412));
         assertEquals(mEntry2GHz, mScoringParams.getEntryRssi(2480));
-        assertEquals(mSufficient2GHz, mScoringParams.getSufficientRssi(2400));
-        assertEquals(mGood2GHz, mScoringParams.getGoodRssi(2499));
-        assertEquals(mGood2GHz, mScoringParams.getGoodRssi(ScoringParams.BAND2));
+        assertEquals(mSufficient2GHz, mScoringParams.getSufficientRssi(2457));
+        assertEquals(mGood2GHz, mScoringParams.getGoodRssi(2442));
+        assertEquals(mGood2GHz, mScoringParams.getGoodRssi(ScanResult.BAND_24_GHZ_START_FREQ_MHZ));
 
-        assertEquals(mBad5GHz, mScoringParams.getExitRssi(5000));
-        assertEquals(mEntry5GHz, mScoringParams.getEntryRssi(5010));
-        assertEquals(mSufficient5GHz, mScoringParams.getSufficientRssi(5100));
-        assertEquals(mGood5GHz, mScoringParams.getGoodRssi(5678));
-        assertEquals(mGood5GHz, mScoringParams.getGoodRssi(ScoringParams.BAND5));
+        assertEquals(mBad5GHz, mScoringParams.getExitRssi(5200));
+        assertEquals(mEntry5GHz, mScoringParams.getEntryRssi(5220));
+        assertEquals(mSufficient5GHz, mScoringParams.getSufficientRssi(5300));
+        assertEquals(mGood5GHz, mScoringParams.getGoodRssi(5745));
+        assertEquals(mGood5GHz, mScoringParams.getGoodRssi(ScanResult.BAND_5_GHZ_START_FREQ_MHZ));
 
-        assertEquals(mBad6GHz, mScoringParams.getExitRssi(5935));
+        assertEquals(mBad6GHz, mScoringParams.getExitRssi(5965));
         assertEquals(mEntry6GHz, mScoringParams.getEntryRssi(6095));
         assertEquals(mSufficient6GHz, mScoringParams.getSufficientRssi(6255));
         assertEquals(mGood6GHz, mScoringParams.getGoodRssi(6275));
-        assertEquals(mGood6GHz, mScoringParams.getGoodRssi(ScoringParams.BAND6));
+        assertEquals(mGood6GHz, mScoringParams.getGoodRssi(ScanResult.BAND_6_GHZ_START_FREQ_MHZ));
     }
 }

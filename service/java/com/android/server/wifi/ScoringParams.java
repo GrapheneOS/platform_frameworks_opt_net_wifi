@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.content.Context;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.util.Log;
 
@@ -33,10 +34,6 @@ import com.android.wifi.resources.R;
  *
  */
 public class ScoringParams {
-    // A long name that describes itself pretty well
-    public static final int MINIMUM_5GHZ_BAND_FREQUENCY_IN_MEGAHERTZ = 5000;
-    public static final int MINIMUM_6GHZ_BAND_FREQUENCY_IN_MEGAHERTZ = 5925;
-
     private final Context mContext;
 
     private static final String TAG = "WifiScoringParams";
@@ -337,15 +334,6 @@ public class ScoringParams {
         return printable;
     }
 
-    /** Constant to denote someplace in the 2.4 GHz band */
-    public static final int BAND2 = 2400;
-
-    /** Constant to denote someplace in the 5 GHz band */
-    public static final int BAND5 = 5000;
-
-    /** Constant to denote someplace in the 6 GHz band */
-    public static final int BAND6 = 6000;
-
     /**
      * Returns the RSSI value at which the connection is deemed to be unusable,
      * in the absence of other indications.
@@ -498,13 +486,16 @@ public class ScoringParams {
 
     private int[] getRssiArray(int frequency) {
         loadResources(mContext);
-        if (frequency < MINIMUM_5GHZ_BAND_FREQUENCY_IN_MEGAHERTZ) {
+        if (ScanResult.is24GHz(frequency)) {
             return mVal.rssi2;
-        } else if (frequency < MINIMUM_6GHZ_BAND_FREQUENCY_IN_MEGAHERTZ) {
+        } else if (ScanResult.is5GHz(frequency)) {
             return mVal.rssi5;
-        } else {
+        } else if (ScanResult.is6GHz(frequency)) {
             return mVal.rssi6;
         }
+        // Invalid frequency use
+        Log.e(TAG, "Invalid frequency(" + frequency + "), using 5G as default rssi array");
+        return mVal.rssi5;
     }
 
     @Override
