@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static com.android.server.wifi.util.InformationElementUtil.BssLoad.CHANNEL_UTILIZATION_SCALE;
 
 import android.content.Context;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager.DeviceMobilityState;
 import android.os.Handler;
@@ -501,18 +502,18 @@ public class WifiDataStall {
 
     private int getBand(int frequency) {
         int band;
-        if (frequency >= KnownBandsChannelHelper.BAND_24_GHZ_START_FREQ
-                && frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+        if (ScanResult.is24GHz(frequency)) {
             band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_2G;
-        } else if (frequency >= KnownBandsChannelHelper.BAND_5_GHZ_START_FREQ
-                && frequency <= KnownBandsChannelHelper.BAND_6_GHZ_END_FREQ) {
+        } else if (ScanResult.is5GHz(frequency)) {
             if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_LOW_END_FREQ) {
                 band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_LOW;
             } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_MID_END_FREQ) {
                 band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_MIDDLE;
-            } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_END_FREQ) {
+            } else {
                 band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_HIGH;
-            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_LOW_END_FREQ) {
+            }
+        } else if (ScanResult.is6GHz(frequency)) {
+            if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_LOW_END_FREQ) {
                 band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_LOW;
             } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_MID_END_FREQ) {
                 band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_MIDDLE;
@@ -524,6 +525,7 @@ public class WifiDataStall {
         }
         return band;
     }
+
     private void logd(String string) {
         if (mVerboseLoggingEnabled) {
             Log.d(TAG, string);

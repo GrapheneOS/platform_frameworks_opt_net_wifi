@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
 import com.android.server.wifi.util.KalmanFilter;
@@ -29,7 +30,7 @@ public class VelocityBasedConnectedScore extends ConnectedScore {
 
     private final ScoringParams mScoringParams;
 
-    private int mFrequency = ScoringParams.BAND5;
+    private int mFrequency = ScanResult.BAND_5_GHZ_START_FREQ_MHZ;
     private double mThresholdAdjustment;
     private final KalmanFilter mFilter;
     private long mLastMillis;

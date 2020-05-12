@@ -381,7 +381,7 @@ public class ThroughputPredictor {
     private int getValidChannelUtilization(int frequency, int channelUtilizationBssLoad,
             int channelUtilizationLinkLayerStats, boolean isBluetoothConnected) {
         int channelUtilization;
-        boolean is2G = (frequency < ScoringParams.MINIMUM_5GHZ_BAND_FREQUENCY_IN_MEGAHERTZ);
+        boolean is2G = ScanResult.is24GHz(frequency);
         if (isValidUtilizationRatio(channelUtilizationBssLoad)) {
             channelUtilization = channelUtilizationBssLoad;
         } else if (isValidUtilizationRatio(channelUtilizationLinkLayerStats)) {

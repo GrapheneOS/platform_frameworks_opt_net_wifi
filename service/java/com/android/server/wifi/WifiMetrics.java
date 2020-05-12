@@ -2114,7 +2114,7 @@ public class WifiMetrics {
             return;
         }
         synchronized (mLock) {
-            if (frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+            if (ScanResult.is24GHz(frequency)) {
                 mTxLinkSpeedCount2g.increment(txLinkSpeed);
             } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_LOW_END_FREQ) {
                 mTxLinkSpeedCount5gLow.increment(txLinkSpeed);
@@ -2139,7 +2139,7 @@ public class WifiMetrics {
             return;
         }
         synchronized (mLock) {
-            if (frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+            if (ScanResult.is24GHz(frequency)) {
                 mRxLinkSpeedCount2g.increment(rxLinkSpeed);
             } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_LOW_END_FREQ) {
                 mRxLinkSpeedCount5gLow.increment(rxLinkSpeed);
@@ -2163,7 +2163,7 @@ public class WifiMetrics {
             return;
         }
         synchronized (mLock) {
-            if (frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+            if (ScanResult.is24GHz(frequency)) {
                 mChannelUtilizationHistogram2G.increment(channelUtilization);
             } else {
                 mChannelUtilizationHistogramAbove2G.increment(channelUtilization);
@@ -2181,7 +2181,7 @@ public class WifiMetrics {
     public void incrementThroughputKbpsCount(int txThroughputKbps, int rxThroughputKbps,
             int frequency) {
         synchronized (mLock) {
-            if (frequency <= KnownBandsChannelHelper.BAND_24_GHZ_END_FREQ) {
+            if (ScanResult.is24GHz(frequency)) {
                 if (txThroughputKbps >= 0) {
                     mTxThroughputMbpsHistogram2G.increment(txThroughputKbps / 1000);
                 }
