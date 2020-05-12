@@ -1388,9 +1388,10 @@ public class WifiConnectivityManager {
 
         pnoSettings.networkList = new PnoSettings.PnoNetwork[listSize];
         pnoSettings.networkList = pnoNetworkList.toArray(pnoSettings.networkList);
-        pnoSettings.min6GHzRssi = mScoringParams.getEntryRssi(ScoringParams.BAND6);
-        pnoSettings.min5GHzRssi = mScoringParams.getEntryRssi(ScoringParams.BAND5);
-        pnoSettings.min24GHzRssi = mScoringParams.getEntryRssi(ScoringParams.BAND2);
+        pnoSettings.min6GHzRssi = mScoringParams.getEntryRssi(ScanResult.BAND_6_GHZ_START_FREQ_MHZ);
+        pnoSettings.min5GHzRssi = mScoringParams.getEntryRssi(ScanResult.BAND_5_GHZ_START_FREQ_MHZ);
+        pnoSettings.min24GHzRssi = mScoringParams.getEntryRssi(
+                ScanResult.BAND_24_GHZ_START_FREQ_MHZ);
 
         // Initialize scan settings
         ScanSettings scanSettings = new ScanSettings();
