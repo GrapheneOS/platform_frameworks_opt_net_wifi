@@ -256,9 +256,8 @@ public class WifiInjector {
                 wifiHandler, new Random(), this);
         mWifiP2pMonitor = new WifiP2pMonitor();
         mSupplicantP2pIfaceHal = new SupplicantP2pIfaceHal(mWifiP2pMonitor);
-        mWifiP2pNative = new WifiP2pNative(this,
-                mWifiVendorHal, mSupplicantP2pIfaceHal, mHalDeviceManager,
-                mPropertyService);
+        mWifiP2pNative = new WifiP2pNative(mWifiCondManager, mWifiNative,
+                mWifiVendorHal, mSupplicantP2pIfaceHal, mHalDeviceManager, mPropertyService);
 
         // Now get instances of all the objects that depend on the HandlerThreads
         mWifiTrafficPoller = new WifiTrafficPoller(wifiHandler);

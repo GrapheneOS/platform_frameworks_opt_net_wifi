@@ -45,7 +45,6 @@ import androidx.test.filters.SmallTest;
 import com.android.server.wifi.HalDeviceManager;
 import com.android.server.wifi.PropertyService;
 import com.android.server.wifi.WifiBaseTest;
-import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiNative;
 import com.android.server.wifi.WifiVendorHal;
 
@@ -83,7 +82,6 @@ public class WifiP2pNativeTest extends WifiBaseTest {
     private static final String TEST_NFC_SELECT_MSG = "select";
     private static final String TEST_CLIENT_LIST = "aa:bb:cc:dd:ee:ff 11:22:33:44:55:66";
 
-    @Mock private WifiInjector mWifiInjector;
     @Mock private WifiNl80211Manager mWifiCondManager;
     @Mock private WifiNative mWifiNative;
     @Mock private WifiVendorHal mWifiVendorHalMock;
@@ -115,14 +113,12 @@ public class WifiP2pNativeTest extends WifiBaseTest {
         mWifiClientInterfaceNames.add("wlan1");
 
         mWifiP2pNative = new WifiP2pNative(
-                mWifiInjector,
+                mWifiCondManager,
+                mWifiNative,
                 mWifiVendorHalMock,
                 mSupplicantP2pIfaceHalMock,
                 mHalDeviceManagerMock,
                 mPropertyServiceMock);
-
-        when(mWifiInjector.getWifiCondManager()).thenReturn(mWifiCondManager);
-        when(mWifiInjector.getWifiNative()).thenReturn(mWifiNative);
 
         when(mWifiNative.getClientInterfaceNames()).thenReturn(mWifiClientInterfaceNames);
 
