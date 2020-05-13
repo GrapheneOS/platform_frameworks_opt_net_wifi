@@ -20,6 +20,7 @@ import android.app.AlarmManager;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiScanner;
+import android.net.wifi.WifiScanner.WifiBandIndex;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -344,20 +345,14 @@ public class WificondScannerImpl extends WifiScannerImpl implements Handler.Call
      * Return one of the WIFI_BAND_# values that was scanned for in this scan.
      */
     private static int getBandScanned(ChannelCollection channelCollection) {
-        if (channelCollection.containsBand(WifiScanner.WIFI_BAND_BOTH_WITH_DFS)) {
-            return WifiScanner.WIFI_BAND_BOTH_WITH_DFS;
-        } else if (channelCollection.containsBand(WifiScanner.WIFI_BAND_BOTH)) {
-            return WifiScanner.WIFI_BAND_BOTH;
-        } else if (channelCollection.containsBand(WifiScanner.WIFI_BAND_5_GHZ_WITH_DFS)) {
-            return WifiScanner.WIFI_BAND_5_GHZ_WITH_DFS;
-        } else if (channelCollection.containsBand(WifiScanner.WIFI_BAND_5_GHZ)) {
-            return WifiScanner.WIFI_BAND_5_GHZ;
-        } else if (channelCollection.containsBand(WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY)) {
-            return WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY;
-        } else if (channelCollection.containsBand(WifiScanner.WIFI_BAND_24_GHZ)) {
-            return WifiScanner.WIFI_BAND_24_GHZ;
+        int bandScanned = WifiScanner.WIFI_BAND_UNSPECIFIED;
+
+        for (@WifiBandIndex int i = 0; i < WifiScanner.WIFI_BAND_COUNT; i++) {
+            if (channelCollection.containsBand(1 << i)) {
+                bandScanned |= 1 << i;
+            }
         }
-        return WifiScanner.WIFI_BAND_UNSPECIFIED;
+        return bandScanned;
     }
 
     private void pollLatestScanData() {

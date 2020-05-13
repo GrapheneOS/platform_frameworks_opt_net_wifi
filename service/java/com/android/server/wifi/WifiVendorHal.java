@@ -747,6 +747,9 @@ public class WifiVendorHal {
     /**
      * Makes the Hal flavor of WifiScanner's band indication
      *
+     * Note: This method is only used by background scan which does not
+     *       support 6GHz, hence band combinations including 6GHz are considered invalid
+     *
      * @param frameworkBand one of WifiScanner.WIFI_BAND_*
      * @return A WifiBand value
      * @throws IllegalArgumentException if frameworkBand is not recognized

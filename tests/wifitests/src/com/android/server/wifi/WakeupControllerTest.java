@@ -114,8 +114,9 @@ public class WakeupControllerTest extends WifiBaseTest {
         ScanResult[] scanResults = new ScanResult[1];
         scanResults[0] = mTestScanResult;
         mTestScanDatas = new WifiScanner.ScanData[1];
+        int scanBand = WifiScanner.WIFI_BAND_ALL & ~WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY;
         mTestScanDatas[0] = new WifiScanner.ScanData(0 /* id */, 0 /* flags */,
-                0 /* bucketsScanned */, WifiScanner.WIFI_BAND_BOTH /* bandScanned */, scanResults);
+                0 /* bucketsScanned */, scanBand /* bandScanned */, scanResults);
     }
 
     /** Initializes the wakeupcontroller in the given {@code enabled} state. */
