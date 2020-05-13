@@ -292,6 +292,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiScoreCard mWifiScoreCard;
     private final WifiHealthMonitor mWifiHealthMonitor;
     private final WifiDataStall mWifiDataStall;
+    private final WifiNative mWifiNative;
 
     public WifiServiceImpl(Context context, WifiInjector wifiInjector, AsyncChannel asyncChannel) {
         mContext = context;
@@ -336,6 +337,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 mWifiScoreCard,  mWifiHealthMonitor);
         mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
         mWifiDataStall = wifiInjector.getWifiDataStall();
+        mWifiNative = wifiInjector.getWifiNative();
     }
 
     /**
@@ -2895,8 +2897,12 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private boolean is5GhzBandSupportedInternal() {
+        if (mContext.getResources().getBoolean(R.bool.config_wifi5ghzSupport)) {
+            return true;
+        }
         return mWifiThreadRunner.call(
-                () -> mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ), false);
+                () -> mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ).length > 0,
+                false);
     }
 
     @Override
@@ -2909,8 +2915,12 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private boolean is6GhzBandSupportedInternal() {
+        if (mContext.getResources().getBoolean(R.bool.config_wifi6ghzSupport)) {
+            return true;
+        }
         return mWifiThreadRunner.call(
-                () -> mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ), false);
+                () -> mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ).length > 0,
+                false);
     }
 
     @Override
