@@ -82,13 +82,14 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent.ConfigInfo;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.TargetNetworkInfo;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserReactionToApprovalUiEvent;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.UserReactionToApprovalUiEvent.UserReaction;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiIsUnusableEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLinkLayerUsageStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLockStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkRequestApiLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog.SuggestionAppCount;
-import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog.UserReaction;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiToggleStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStatsEntry;
@@ -417,7 +418,9 @@ public class WifiMetrics {
     private final IntHistogram mWifiNetworkSuggestionApiListSizeHistogram =
             new IntHistogram(NETWORK_SUGGESTION_API_LIST_SIZE_HISTOGRAM_BUCKETS);
     private final IntCounter mWifiNetworkSuggestionApiAppTypeCounter = new IntCounter();
-    private final List<UserReaction> mWifiNetworkSuggestionUserApprovalAppUiReaction =
+    private final List<UserReaction> mUserApprovalSuggestionAppUiReactionList =
+            new ArrayList<>();
+    private final List<UserReaction> mUserApprovalCarrierUiReactionList =
             new ArrayList<>();
 
     private final WifiLockStats mWifiLockStats = new WifiLockStats();
@@ -3595,7 +3598,8 @@ public class WifiMetrics {
                         + mWifiNetworkSuggestionApiListSizeHistogram);
                 pw.println("mWifiNetworkSuggestionApiAppTypeCounter:\n"
                         + mWifiNetworkSuggestionApiAppTypeCounter);
-                printSuggestionUserApprovalAppReaction(pw);
+                printUserApprovalSuggestionAppReaction(pw);
+                printUserApprovalCarrierReaction(pw);
                 pw.println("mNetworkIdToNominatorId:\n" + mNetworkIdToNominatorId);
                 pw.println("mWifiLockStats:\n" + mWifiLockStats);
                 pw.println("mWifiLockHighPerfAcqDurationSecHistogram:\n"
@@ -3702,9 +3706,16 @@ public class WifiMetrics {
         pw.println(line.toString());
     }
 
-    private void printSuggestionUserApprovalAppReaction(PrintWriter pw) {
-        pw.println("mWifiNetworkSuggestionApprovalAppUiUserReaction:");
-        for (UserReaction event : mWifiNetworkSuggestionUserApprovalAppUiReaction) {
+    private void printUserApprovalSuggestionAppReaction(PrintWriter pw) {
+        pw.println("mUserApprovalSuggestionAppUiUserReaction:");
+        for (UserReaction event : mUserApprovalSuggestionAppUiReactionList) {
+            pw.println(event);
+        }
+    }
+
+    private void printUserApprovalCarrierReaction(PrintWriter pw) {
+        pw.println("mUserApprovalCarrierUiUserReaction:");
+        for (UserReaction event : mUserApprovalCarrierUiReactionList) {
             pw.println(event);
         }
     }
@@ -4227,10 +4238,14 @@ public class WifiMetrics {
                                 entry.count = count;
                                 return entry;
                             });
-            mWifiNetworkSuggestionApiLog.userApprovalAppUiReaction =
-                    mWifiNetworkSuggestionUserApprovalAppUiReaction
-                            .toArray(new UserReaction[0]);
             mWifiLogProto.wifiNetworkSuggestionApiLog = mWifiNetworkSuggestionApiLog;
+
+            UserReactionToApprovalUiEvent events = new UserReactionToApprovalUiEvent();
+            events.userApprovalAppUiReaction = mUserApprovalSuggestionAppUiReactionList
+                    .toArray(new UserReaction[0]);
+            events.userApprovalCarrierUiReaction = mUserApprovalCarrierUiReactionList
+                    .toArray(new UserReaction[0]);
+            mWifiLogProto.userReactionToApprovalUiEvent = events;
 
             mWifiLockStats.highPerfLockAcqDurationSecHistogram =
                     mWifiLockHighPerfAcqDurationSecHistogram.toProto();
@@ -4496,7 +4511,8 @@ public class WifiMetrics {
             mWifiNetworkRequestApiMatchSizeHistogram.clear();
             mWifiNetworkSuggestionApiListSizeHistogram.clear();
             mWifiNetworkSuggestionApiAppTypeCounter.clear();
-            mWifiNetworkSuggestionUserApprovalAppUiReaction.clear();
+            mUserApprovalSuggestionAppUiReactionList.clear();
+            mUserApprovalCarrierUiReactionList.clear();
             mWifiLockHighPerfAcqDurationSecHistogram.clear();
             mWifiLockLowLatencyAcqDurationSecHistogram.clear();
             mWifiLockHighPerfActiveSessionDurationSecHistogram.clear();
@@ -5986,29 +6002,57 @@ public class WifiMetrics {
         }
     }
 
-    /** Add user action to the approval app UI */
-    public void addNetworkSuggestionUserApprovalAppUiReaction(int actionType, boolean isDialog) {
+    /** Add user action to the approval suggestion app UI */
+    public void addUserApprovalSuggestionAppUiReaction(@WifiNetworkSuggestionsManager.UserActionCode
+            int actionType, boolean isDialog) {
         int actionCode;
+        switch (actionType) {
+            case WifiNetworkSuggestionsManager.ACTION_USER_ALLOWED_APP:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_ALLOWED;
+                break;
+            case WifiNetworkSuggestionsManager.ACTION_USER_DISALLOWED_APP:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_DISALLOWED;
+                break;
+            case WifiNetworkSuggestionsManager.ACTION_USER_DISMISS:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_DISMISS;
+                break;
+            default:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_UNKNOWN;
+        }
         UserReaction event = new UserReaction();
+        event.userAction = actionCode;
+        event.isDialog = isDialog;
         synchronized (mLock) {
-            switch (actionType) {
-                case WifiNetworkSuggestionsManager.ACTION_USER_ALLOWED_APP:
-                    actionCode = WifiNetworkSuggestionApiLog.ACTION_ALLOWED;
-                    break;
-                case WifiNetworkSuggestionsManager.ACTION_USER_DISALLOWED_APP:
-                    actionCode = WifiNetworkSuggestionApiLog.ACTION_DISALLOWED;
-                    break;
-                case WifiNetworkSuggestionsManager.ACTION_USER_DISMISS:
-                    actionCode = WifiNetworkSuggestionApiLog.ACTION_DISMISS;
-                    break;
-                default:
-                    actionCode = WifiNetworkSuggestionApiLog.ACTION_UNKNOWN;
-            }
-            event.userAction = actionCode;
-            event.isDialog = isDialog;
-            mWifiNetworkSuggestionUserApprovalAppUiReaction.add(event);
+            mUserApprovalSuggestionAppUiReactionList.add(event);
         }
     }
+
+    /** Add user action to the approval Carrier Imsi protection exemption UI */
+    public void addUserApprovalCarrierUiReaction(@WifiCarrierInfoManager.UserActionCode
+            int actionType, boolean isDialog) {
+        int actionCode;
+        switch (actionType) {
+            case WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_ALLOWED;
+                break;
+            case WifiCarrierInfoManager.ACTION_USER_DISALLOWED_CARRIER:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_DISALLOWED;
+                break;
+            case WifiCarrierInfoManager.ACTION_USER_DISMISS:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_DISMISS;
+                break;
+            default:
+                actionCode = UserReactionToApprovalUiEvent.ACTION_UNKNOWN;
+        }
+        UserReaction event = new UserReaction();
+        event.userAction = actionCode;
+        event.isDialog = isDialog;
+
+        synchronized (mLock) {
+            mUserApprovalCarrierUiReactionList.add(event);
+        }
+    }
+
     /**
      * Sets the nominator for a network (i.e. which entity made the suggestion to connect)
      * @param networkId the ID of the network, from its {@link WifiConfiguration}

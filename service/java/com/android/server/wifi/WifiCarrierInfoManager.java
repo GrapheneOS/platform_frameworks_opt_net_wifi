@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.app.AlertDialog;
 import android.app.Notification;
@@ -53,6 +54,8 @@ import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -111,6 +114,18 @@ public class WifiCarrierInfoManager {
         EAP_METHOD_PREFIX.put(WifiEnterpriseConfig.Eap.AKA_PRIME, "6");
     }
 
+    public static final int ACTION_USER_ALLOWED_CARRIER = 1;
+    public static final int ACTION_USER_DISALLOWED_CARRIER = 2;
+    public static final int ACTION_USER_DISMISS = 3;
+
+    @IntDef(prefix = { "ACTION_USER_" }, value = {
+            ACTION_USER_ALLOWED_CARRIER,
+            ACTION_USER_DISALLOWED_CARRIER,
+            ACTION_USER_DISMISS
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface UserActionCode { }
+
     /**
      * 3GPP TS 11.11  2G_authentication command/response
      *                Input: [RAND]
@@ -130,6 +145,7 @@ public class WifiCarrierInfoManager {
     private final TelephonyManager mTelephonyManager;
     private final SubscriptionManager mSubscriptionManager;
     private final NotificationManager mNotificationManager;
+    private final WifiMetrics mWifiMetrics;
 
     /**
      * Intent filter for processing notification actions.
@@ -149,6 +165,7 @@ public class WifiCarrierInfoManager {
     private boolean mUserApprovalUiActive = false;
     private boolean mHasNewDataToSerialize = false;
     private boolean mUserDataLoaded = false;
+    private boolean mIsLastUserApprovalUiDialog = false;
 
     /**
      * Interface for other modules to listen to the user approve IMSI protection exemption.
@@ -229,18 +246,25 @@ public class WifiCarrierInfoManager {
     private void handleUserDismissAction() {
         Log.i(TAG, "User dismissed the notification");
         mUserApprovalUiActive = false;
+        mWifiMetrics.addUserApprovalCarrierUiReaction(ACTION_USER_DISMISS,
+                mIsLastUserApprovalUiDialog);
     }
 
     private void handleUserAllowCarrierExemptionAction(String carrierName, int carrierId) {
         Log.i(TAG, "User clicked to allow carrier:" + carrierName);
         setHasUserApprovedImsiPrivacyExemptionForCarrier(true, carrierId);
         mUserApprovalUiActive = false;
+        mWifiMetrics.addUserApprovalCarrierUiReaction(ACTION_USER_ALLOWED_CARRIER,
+                mIsLastUserApprovalUiDialog);
+
     }
 
     private void handleUserDisallowCarrierExemptionAction(String carrierName, int carrierId) {
         Log.i(TAG, "User clicked to disallow carrier:" + carrierName);
         setHasUserApprovedImsiPrivacyExemptionForCarrier(false, carrierId);
         mUserApprovalUiActive = false;
+        mWifiMetrics.addUserApprovalCarrierUiReaction(
+                ACTION_USER_DISALLOWED_CARRIER, mIsLastUserApprovalUiDialog);
     }
 
     /**
@@ -256,7 +280,8 @@ public class WifiCarrierInfoManager {
             @NonNull FrameworkFacade frameworkFacade,
             @NonNull WifiContext context,
             @NonNull WifiConfigStore configStore,
-            @NonNull Handler handler) {
+            @NonNull Handler handler,
+            @NonNull WifiMetrics wifiMetrics) {
         mTelephonyManager = telephonyManager;
         mContext = context;
         mResources = mContext.getResources();
@@ -264,7 +289,7 @@ public class WifiCarrierInfoManager {
         mHandler = handler;
         mSubscriptionManager = subscriptionManager;
         mFrameworkFacade = frameworkFacade;
-
+        mWifiMetrics = wifiMetrics;
         mNotificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         // Register broadcast receiver for UI interactions.
@@ -1438,9 +1463,12 @@ public class WifiCarrierInfoManager {
         mNotificationManager.notify(
                 SystemMessageProto.SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE, notification);
         mUserApprovalUiActive = true;
+        mIsLastUserApprovalUiDialog = false;
     }
 
     private void sendImsiPrivacyConfirmationDialog(@NonNull String carrierName, int carrierId) {
+        mWifiMetrics.addUserApprovalCarrierUiReaction(ACTION_USER_ALLOWED_CARRIER,
+                mIsLastUserApprovalUiDialog);
         AlertDialog dialog = mFrameworkFacade.makeAlertDialogBuilder(mContext)
                 .setTitle(mResources.getString(
                         R.string.wifi_suggestion_imsi_privacy_exemption_confirmation_title))
@@ -1468,6 +1496,7 @@ public class WifiCarrierInfoManager {
                 WindowManager.LayoutParams.SYSTEM_FLAG_SHOW_FOR_ALL_USERS);
         dialog.show();
         mUserApprovalUiActive = true;
+        mIsLastUserApprovalUiDialog = true;
     }
 
     /**
