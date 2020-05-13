@@ -369,9 +369,9 @@ class Utils {
     }
 
     /**
-     * Get the app label for a suggestion/specifier package name.
+     * Get the app label for a suggestion/specifier package name, or an empty String if none exist
      */
-    static CharSequence getAppLabel(Context context, String packageName) {
+    static String getAppLabel(Context context, String packageName) {
         try {
             String openWifiPackageName = Settings.Global.getString(context.getContentResolver(),
                     Settings.Global.USE_OPEN_WIFI_PACKAGE);
@@ -384,12 +384,9 @@ class Utils {
                     packageName,
                     0 /* flags */,
                     UserHandle.getUserId(UserHandle.USER_CURRENT));
-            return appInfo.loadLabel(context.getPackageManager());
+            return appInfo.loadLabel(context.getPackageManager()).toString();
         } catch (PackageManager.NameNotFoundException e) {
-            // The packageName should come from a suggestion/specifier which is guaranteed to
-            // have an associated app label. If there is a concurrency issue between the current
-            // connection and the suggestion being removed, we should fall back to the packageName.
-            return packageName;
+            return "";
         }
     }
 
