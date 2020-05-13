@@ -303,7 +303,6 @@ public class WifiServiceImpl extends BaseWifiService {
         mCountryCode = mWifiInjector.getWifiCountryCode();
         mClientModeImpl = mWifiInjector.getClientModeImpl();
         mActiveModeWarden = mWifiInjector.getActiveModeWarden();
-        mClientModeImpl.enableRssiPolling(true);                  //TODO(b/65033024) strange startup
         mScanRequestProxy = mWifiInjector.getScanRequestProxy();
         mSettingsStore = mWifiInjector.getWifiSettingsStore();
         mPowerManager = mContext.getSystemService(PowerManager.class);
