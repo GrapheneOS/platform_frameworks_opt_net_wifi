@@ -582,6 +582,24 @@ public class BssidBlocklistMonitorTest {
         verifyAddTestBssidToBlocklist();
         mBssidBlocklistMonitor.clearBssidBlocklist();
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+
+    }
+
+    /**
+     * Verify that the BssidStatusHistoryLoggerSize is capped.
+     */
+    @Test
+    public void testBssidStatusHistoryLoggerSize() {
+        int bssidStatusHistoryLoggerSize = 30;
+        for (int i = 0; i < bssidStatusHistoryLoggerSize; i++) {
+            verifyAddTestBssidToBlocklist();
+            mBssidBlocklistMonitor.clearBssidBlocklist();
+            assertEquals(i + 1, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+        }
+        verifyAddTestBssidToBlocklist();
+        mBssidBlocklistMonitor.clearBssidBlocklist();
+        assertEquals(bssidStatusHistoryLoggerSize,
+                mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
     }
 
     /**
@@ -633,6 +651,7 @@ public class BssidBlocklistMonitorTest {
         // Verify that the BSSID is removed from blocklist by clearBssidBlocklistForSsid
         mBssidBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(1, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
 
         // Add the BSSID to blocklist again.
         mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration);
@@ -641,5 +660,6 @@ public class BssidBlocklistMonitorTest {
         // Verify that the BSSID is removed from blocklist once the specified duration is over.
         when(mClock.getWallClockMillis()).thenReturn(testDuration + 1);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(2, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
     }
 }
