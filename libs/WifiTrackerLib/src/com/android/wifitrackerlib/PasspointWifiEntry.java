@@ -164,9 +164,14 @@ public class PasspointWifiEntry extends WifiEntry {
                     if (mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion) {
                         String carrierName = getCarrierNameForSubId(mContext,
                                 getSubIdForConfig(mContext, mWifiConfig));
+                        String suggestorLabel = getAppLabel(mContext, mWifiConfig.creatorName);
+                        if (TextUtils.isEmpty(suggestorLabel)) {
+                            // Fall-back to the package name in case the app label is missing
+                            suggestorLabel = mWifiConfig.creatorName;
+                        }
                         sj.add(mContext.getString(R.string.available_via_app, carrierName != null
                                 ? carrierName
-                                : getAppLabel(mContext, mWifiConfig.creatorName)));
+                                : suggestorLabel));
                     } else {
                         sj.add(mContext.getString(R.string.wifi_remembered));
                     }
@@ -215,9 +220,14 @@ public class PasspointWifiEntry extends WifiEntry {
                 String carrierName = mWifiConfig != null
                         ? getCarrierNameForSubId(mContext, getSubIdForConfig(mContext, mWifiConfig))
                         : null;
+                String suggestorLabel = getAppLabel(mContext, mWifiConfig.creatorName);
+                if (TextUtils.isEmpty(suggestorLabel)) {
+                    // Fall-back to the package name in case the app label is missing
+                    suggestorLabel = mWifiConfig.creatorName;
+                }
                 return mContext.getString(R.string.connected_via_app, carrierName != null
                         ? carrierName
-                        : getAppLabel(mContext, suggestionOrSpecifierPackageName));
+                        : suggestorLabel);
             }
             String networkCapabilitiesinformation =
                     getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
