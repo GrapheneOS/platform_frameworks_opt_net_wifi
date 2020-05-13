@@ -3820,17 +3820,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative, times(2)).getMacAddress(WIFI_IFACE_NAME);
     }
 
-    @Test
-    public void testSetDeviceMobilityState() {
-        mCmi.setDeviceMobilityState(WifiManager.DEVICE_MOBILITY_STATE_STATIONARY);
-        verify(mWifiConnectivityManager).setDeviceMobilityState(
-                WifiManager.DEVICE_MOBILITY_STATE_STATIONARY);
-        verify(mWifiHealthMonitor).setDeviceMobilityState(
-                WifiManager.DEVICE_MOBILITY_STATE_STATIONARY);
-        verify(mWifiDataStall).setDeviceMobilityState(
-                WifiManager.DEVICE_MOBILITY_STATE_STATIONARY);
-    }
-
     /**
      * Verify the MAC address is being randomized at start to prevent leaking the factory MAC.
      */

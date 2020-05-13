@@ -209,8 +209,6 @@ public class WifiServiceImpl extends BaseWifiService {
 
     private final LohsSoftApTracker mLohsSoftApTracker;
 
-    private WifiScanner mWifiScanner;
-
     /**
      * Callback for use with LocalOnlyHotspot to unregister requesting applications upon death.
      */
@@ -292,6 +290,8 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiThreadRunner mWifiThreadRunner;
     private final MemoryStoreImpl mMemoryStoreImpl;
     private final WifiScoreCard mWifiScoreCard;
+    private final WifiHealthMonitor mWifiHealthMonitor;
+    private final WifiDataStall mWifiDataStall;
 
     public WifiServiceImpl(Context context, WifiInjector wifiInjector, AsyncChannel asyncChannel) {
         mContext = context;
@@ -332,9 +332,11 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiConfigManager = mWifiInjector.getWifiConfigManager();
         mPasspointManager = mWifiInjector.getPasspointManager();
         mWifiScoreCard = mWifiInjector.getWifiScoreCard();
+        mWifiHealthMonitor = wifiInjector.getWifiHealthMonitor();
         mMemoryStoreImpl = new MemoryStoreImpl(mContext, mWifiInjector,
-                mWifiScoreCard,  mWifiInjector.getWifiHealthMonitor());
+                mWifiScoreCard,  mWifiHealthMonitor);
         mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
+        mWifiDataStall = wifiInjector.getWifiDataStall();
     }
 
     /**
@@ -3440,7 +3442,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
             mWifiNetworkSuggestionsManager.clear();
             mWifiInjector.getWifiScoreCard().clear();
-            mWifiInjector.getWifiHealthMonitor().clear();
+            mWifiHealthMonitor.clear();
             notifyFactoryReset();
         });
     }
@@ -3897,7 +3899,11 @@ public class WifiServiceImpl extends BaseWifiService {
                     .flush();
         }
         // Post operation to handler thread
-        mWifiThreadRunner.post(() -> mClientModeImpl.setDeviceMobilityState(state));
+        mWifiThreadRunner.post(() -> {
+            mWifiConnectivityManager.setDeviceMobilityState(state);
+            mWifiHealthMonitor.setDeviceMobilityState(state);
+            mWifiDataStall.setDeviceMobilityState(state);
+        });
     }
 
     /**
