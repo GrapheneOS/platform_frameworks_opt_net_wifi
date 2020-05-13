@@ -307,7 +307,6 @@ public class WifiServiceImpl extends BaseWifiService {
         // changing. Assumption will no longer be valid when STA+STA implementation is complete.
         mClientModeImpl = Objects.requireNonNull(mWifiInjector.getClientModeImplHolder().get());
         mActiveModeWarden = mWifiInjector.getActiveModeWarden();
-        mClientModeImpl.enableRssiPolling(true);                  //TODO(b/65033024) strange startup
         mScanRequestProxy = mWifiInjector.getScanRequestProxy();
         mSettingsStore = mWifiInjector.getWifiSettingsStore();
         mPowerManager = mContext.getSystemService(PowerManager.class);
