@@ -920,9 +920,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         }
                         if (validateScanRequest(ci, handler, scanSettings)) {
                             mWifiMetrics.incrementOneshotScanCount();
-                            if (scanSettings.band == WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY
-                                    || scanSettings.band == WifiScanner.WIFI_BAND_5_GHZ_WITH_DFS
-                                    || scanSettings.band == WifiScanner.WIFI_BAND_BOTH_WITH_DFS) {
+                            if ((scanSettings.band & WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY) != 0) {
                                 mWifiMetrics.incrementOneshotScanWithDfsCount();
                             }
                             logScanRequest("addSingleScanRequest", ci, handler, workSource,
@@ -1283,8 +1281,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
             }
 
             // Cache full band (with DFS or not) scan results.
-            if (results.getBandScanned() == WifiScanner.WIFI_BAND_BOTH_WITH_DFS
-                    || results.getBandScanned() == WifiScanner.WIFI_BAND_BOTH) {
+            if (WifiScanner.isFullBandScan(results.getBandScanned(), true)) {
                 mCachedScanResults.clear();
                 mCachedScanResults.addAll(Arrays.asList(results.getResults()));
             }
