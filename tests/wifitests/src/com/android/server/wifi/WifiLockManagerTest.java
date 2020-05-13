@@ -32,6 +32,8 @@ import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -91,8 +93,10 @@ public class WifiLockManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(Context.ACTIVITY_SERVICE)).thenReturn(mActivityManager);
         when(mWifiNative.getClientInterfaceName()).thenReturn(INTERFACE_NAME);
 
+        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
+        holder.set(mClientModeImpl);
         mWifiLockManager = new WifiLockManager(mContext, mBatteryStats,
-                mClientModeImpl, mFrameworkFacade, mHandler, mWifiNative, mClock, mWifiMetrics);
+                holder, mFrameworkFacade, mHandler, mWifiNative, mClock, mWifiMetrics);
     }
 
     private void acquireWifiLockSuccessful(int lockMode, String tag, IBinder binder, WorkSource ws)

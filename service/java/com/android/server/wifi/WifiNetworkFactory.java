@@ -57,6 +57,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.util.ArrayUtils;
 import com.android.server.wifi.util.ExternalCallbackTracker;
@@ -123,6 +124,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     private final PeriodicScanAlarmListener mPeriodicScanTimerListener;
     private final ConnectionTimeoutAlarmListener mConnectionTimeoutAlarmListener;
     private final ExternalCallbackTracker<INetworkRequestMatchCallback> mRegisteredCallbacks;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
     // Store all user approved access points for apps.
     @VisibleForTesting
     public final Map<String, LinkedHashSet<AccessPoint>> mUserApprovedAccessPointMap;
@@ -354,7 +356,8 @@ public class WifiNetworkFactory extends NetworkFactory {
             WifiConfigManager configManager,
             WifiConfigStore configStore,
             WifiPermissionsUtil wifiPermissionsUtil,
-            WifiMetrics wifiMetrics) {
+            WifiMetrics wifiMetrics,
+            PrimaryClientModeImplHolder clientModeImplHolder) {
         super(looper, context, TAG, nc);
         mContext = context;
         mActivityManager = activityManager;
@@ -368,6 +371,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         mWifiConfigStore = configStore;
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mWifiMetrics = wifiMetrics;
+        mClientModeImplHolder = clientModeImplHolder;
         // Create the scan settings.
         mScanSettings = new WifiScanner.ScanSettings();
         mScanSettings.type = WifiScanner.SCAN_TYPE_HIGH_ACCURACY;
@@ -732,7 +736,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     private void disconnectAndRemoveNetworkFromWifiConfigManager(
             @Nullable WifiConfiguration network) {
         // Trigger a disconnect first.
-        mWifiInjector.getClientModeImpl().disconnectCommand();
+        mClientModeImplHolder.get().disconnectCommand();
 
         if (network == null) return;
         WifiConfiguration wcmNetwork =
@@ -772,7 +776,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         // Send the connect request to ClientModeImpl.
         // TODO(b/117601161): Refactor this.
         ConnectActionListener connectActionListener = new ConnectActionListener();
-        mWifiInjector.getClientModeImpl().connect(null, networkId, new Binder(),
+        mClientModeImplHolder.get().connect(null, networkId, new Binder(),
                 connectActionListener, connectActionListener.hashCode(),
                 mActiveSpecificNetworkRequest.getRequestorUid());
 

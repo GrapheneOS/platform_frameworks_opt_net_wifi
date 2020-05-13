@@ -18,7 +18,6 @@ package com.android.server.wifi.p2p;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -31,6 +30,7 @@ import android.hardware.wifi.V1_0.IWifiP2pIface;
 import android.hardware.wifi.V1_0.IfaceType;
 import android.hardware.wifi.V1_0.WifiStatus;
 import android.hardware.wifi.V1_0.WifiStatusCode;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.RemoteException;
 
@@ -42,7 +42,7 @@ import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
 import com.android.server.wifi.HalDeviceManager.ManagerStatusListener;
 import com.android.server.wifi.PropertyService;
 import com.android.server.wifi.WifiBaseTest;
-import com.android.server.wifi.WifiInjector;
+import com.android.server.wifi.WifiNative;
 import com.android.server.wifi.WifiVendorHal;
 
 import org.junit.Before;
@@ -53,7 +53,7 @@ import org.mockito.MockitoAnnotations;
 
 /**
  * Unit tests for the interface management operations in
- * {@link com.android.server.wifi.WifiP2pNative}.
+ * {@link com.android.server.wifi.p2p.WifiP2pNative}.
  */
 @SmallTest
 public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
@@ -69,7 +69,8 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
     @Mock private IWifiP2pIface mIWifiP2pIface;
     @Mock private IWifiIface mIWifiIface;
     @Mock private WifiVendorHal mWifiVendorHal;
-    @Mock private WifiInjector mWifiInjector;
+    @Mock private WifiNl80211Manager mWifiNl80211Manager;
+    @Mock private WifiNative mWifiNative;
     private WifiP2pNative mWifiP2pNative;
     private WifiStatus mWifiStatusSuccess;
     private ManagerStatusListener mManagerStatusListener;
@@ -100,7 +101,7 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
         when(mPropertyService.getString(P2P_INTERFACE_PROPERTY, P2P_IFACE_NAME))
               .thenReturn(P2P_IFACE_NAME);
 
-        mWifiP2pNative = new WifiP2pNative(mWifiInjector,
+        mWifiP2pNative = new WifiP2pNative(mWifiNl80211Manager, mWifiNative,
                               mWifiVendorHal, mSupplicantP2pIfaceHal, mHalDeviceManager,
                               mPropertyService);
     }

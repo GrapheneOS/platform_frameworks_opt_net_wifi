@@ -29,7 +29,6 @@ import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.Protocol;
-import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.p2p.WifiP2pServiceImpl.P2pStatus;
 
 import java.util.HashMap;
@@ -40,8 +39,6 @@ import java.util.Set;
 /**
  * Listens for events from the wpa_supplicant, and passes them on
  * to the {@link WifiP2pServiceImpl} for handling.
- *
- * @hide
  */
 public class WifiP2pMonitor {
     private static final String TAG = "WifiP2pMonitor";
@@ -79,13 +76,7 @@ public class WifiP2pMonitor {
     public static final int AP_STA_CONNECTED_EVENT               = BASE + 42;
 
 
-    private final WifiInjector mWifiInjector;
     private boolean mVerboseLoggingEnabled = false;
-    private boolean mConnected = false;
-
-    public WifiP2pMonitor(WifiInjector wifiInjector) {
-        mWifiInjector = wifiInjector;
-    }
 
     /**
      * Enable verbose logging for all sub modules.
@@ -134,12 +125,6 @@ public class WifiP2pMonitor {
         mMonitoringMap.put(iface, enabled);
     }
 
-    private void setMonitoringNone() {
-        for (String iface : mMonitoringMap.keySet()) {
-            setMonitoring(iface, false);
-        }
-    }
-
     /**
      * Start Monitoring for wpa_supplicant events.
      *
@@ -162,16 +147,6 @@ public class WifiP2pMonitor {
         setMonitoring(iface, true);
         broadcastSupplicantDisconnectionEvent(iface);
         setMonitoring(iface, false);
-    }
-
-    /**
-     * Stop Monitoring for wpa_supplicant events.
-     *
-     * TODO: Add unit tests for these once we remove the legacy code.
-     */
-    public synchronized void stopAllMonitoring() {
-        mConnected = false;
-        setMonitoringNone();
     }
 
     /**
