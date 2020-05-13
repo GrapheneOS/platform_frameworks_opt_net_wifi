@@ -139,7 +139,7 @@ public class ScanRequestProxy {
                 Log.d(TAG, "Received " + scanResults.length + " scan results");
             }
             // Only process full band scan results.
-            if (scanData.getBandScanned() == WifiScanner.WIFI_BAND_BOTH_WITH_DFS) {
+            if (WifiScanner.isFullBandScan(scanData.getBandScanned(), false)) {
                 // Store the last scan results & send out the scan completion broadcast.
                 mLastScanResults.clear();
                 mLastScanResults.addAll(Arrays.asList(scanResults));
@@ -442,7 +442,7 @@ public class ScanRequestProxy {
             settings.type = WifiScanner.SCAN_TYPE_HIGH_ACCURACY;
         }
         // always do full scans
-        settings.band = WifiScanner.WIFI_BAND_BOTH_WITH_DFS;
+        settings.band = WifiScanner.WIFI_BAND_ALL;
         settings.reportEvents = WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN
                 | WifiScanner.REPORT_EVENT_FULL_SCAN_RESULT;
         if (mScanningForHiddenNetworksEnabled) {

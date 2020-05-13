@@ -131,11 +131,11 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         mTestScanDatas1 =
                 ScanTestUtil.createScanDatas(new int[][]{{ 2417, 2427, 5180, 5170 }},
                         new int[]{0},
-                        new int[]{WifiScanner.WIFI_BAND_BOTH_WITH_DFS});
+                        new int[]{WifiScanner.WIFI_BAND_ALL});
         mTestScanDatas2 =
                 ScanTestUtil.createScanDatas(new int[][]{{ 2412, 2422, 5200, 5210 }},
                         new int[]{0},
-                        new int[]{WifiScanner.WIFI_BAND_BOTH_WITH_DFS});
+                        new int[]{WifiScanner.WIFI_BAND_ALL});
 
         // Scan throttling is enabled by default.
         when(mWifiSettingsConfigStore.get(eq(WIFI_SCAN_THROTTLE_ENABLED))).thenReturn(true);
@@ -866,7 +866,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                                       boolean expectHiddenNetworks,
                                       boolean expectHighAccuracyType) {
         assertNotNull(scanSettings);
-        assertEquals(WifiScanner.WIFI_BAND_BOTH_WITH_DFS, scanSettings.band);
+        assertEquals(WifiScanner.WIFI_BAND_ALL, scanSettings.band);
         if (expectHighAccuracyType) {
             assertEquals(WifiScanner.SCAN_TYPE_HIGH_ACCURACY, scanSettings.type);
         } else {
