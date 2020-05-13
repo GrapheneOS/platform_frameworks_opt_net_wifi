@@ -2454,6 +2454,19 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
     }
 
+    private void expectUnregisterNetworkAgent() {
+        // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
+        // TODO (b/134538181): consider exposing WifiNetworkAgent and using mocks.
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        mLooper.dispatchAll();
+        verify(mNetworkAgentHandler).handleMessage(messageCaptor.capture());
+        Message message = messageCaptor.getValue();
+        assertNotNull(message);
+        assertEquals(NetworkAgent.EVENT_NETWORK_INFO_CHANGED, message.what);
+        NetworkInfo networkInfo = (NetworkInfo) message.obj;
+        assertEquals(NetworkInfo.DetailedState.DISCONNECTED, networkInfo.getDetailedState());
+    }
+
     private void expectNetworkAgentUpdateCapabilities(
             Consumer<NetworkCapabilities> networkCapabilitiesChecker) {
         // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
@@ -5088,4 +5101,33 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative, never()).removeNetworkCachedData(anyInt());
     }
 
+    @Test
+    public void testIpReachabilityLostAndRoamEventsRace() throws Exception {
+        connect();
+        expectRegisterNetworkAgent((agentConfig) -> { }, (cap) -> { });
+        reset(mNetworkAgentHandler);
+
+        // Trigger ip reachibility loss and ensure we trigger a disconnect & we're in
+        // "DisconnectingState"
+        mCmi.sendMessage(ClientModeImpl.CMD_IP_REACHABILITY_LOST);
+        mLooper.dispatchAll();
+        verify(mWifiNative).disconnect(any());
+        assertEquals("DisconnectingState", getCurrentState().getName());
+
+        // Now send a network connection (indicating a roam) event before we get the disconnect
+        // event.
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+        // ensure that we ignored the transient roam while we're disconnecting.
+        assertEquals("DisconnectingState", getCurrentState().getName());
+        verifyNoMoreInteractions(mNetworkAgentHandler);
+
+        // Now send the disconnect event and ensure that we transition to "DisconnectedState".
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+        assertEquals("DisconnectedState", getCurrentState().getName());
+        expectUnregisterNetworkAgent();
+
+        verifyNoMoreInteractions(mNetworkAgentHandler);
+    }
 }
