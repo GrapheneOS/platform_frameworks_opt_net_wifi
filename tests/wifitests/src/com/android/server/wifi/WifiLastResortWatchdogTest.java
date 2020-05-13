@@ -31,6 +31,7 @@ import android.util.Pair;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.wifi.resources.R;
 
 import org.junit.Before;
@@ -82,15 +83,16 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         mResources.setBoolean(R.bool.config_wifi_watchdog_enabled, true);
         when(mContext.getResources()).thenReturn(mResources);
         createWifiLastResortWatchdog();
-        when(mClientModeImpl.getWifiInfo()).thenReturn(mWifiInfo);
         when(mWifiInfo.getSSID()).thenReturn(TEST_NETWORK_SSID);
     }
 
     private void createWifiLastResortWatchdog() {
         WifiThreadRunner wifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
+        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
+        holder.set(mClientModeImpl);
         mLastResortWatchdog = new WifiLastResortWatchdog(mWifiInjector, mContext, mClock,
-                mWifiMetrics, mClientModeImpl, mLooper.getLooper(), mDeviceConfigFacade,
-                wifiThreadRunner);
+                mWifiMetrics, holder, mLooper.getLooper(), mDeviceConfigFacade,
+                wifiThreadRunner, mWifiInfo);
         mLastResortWatchdog.setBugReportProbability(1);
     }
 

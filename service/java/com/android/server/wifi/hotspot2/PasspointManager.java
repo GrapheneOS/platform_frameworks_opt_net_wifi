@@ -58,6 +58,7 @@ import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiConfigManager;
 import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.WifiInjector;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
@@ -131,6 +132,7 @@ public class PasspointManager {
     private final PasspointProvisioner mPasspointProvisioner;
     private final AppOpsManager mAppOps;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
 
     /**
      * Map of package name of an app to the app ops changed listener for the app.
@@ -327,14 +329,14 @@ public class PasspointManager {
 
     private void disconnectIfPasspointNetwork(String uniqueId) {
         WifiConfiguration currentConfiguration =
-                mWifiInjector.getClientModeImpl().getCurrentWifiConfiguration();
+                mClientModeImplHolder.get().getCurrentWifiConfiguration();
         if (currentConfiguration == null) return;
         if (currentConfiguration.isPasspoint() && TextUtils.equals(currentConfiguration.getKey(),
                 uniqueId)) {
             Log.i(TAG, "Disconnect current Passpoint network for FQDN: "
                     + currentConfiguration.FQDN + " and ID: " + uniqueId
                     + " because the profile was removed");
-            mWifiInjector.getClientModeImpl().disconnectCommand();
+            mClientModeImplHolder.get().disconnectCommand();
         }
     }
 
@@ -343,7 +345,8 @@ public class PasspointManager {
             PasspointObjectFactory objectFactory, WifiConfigManager wifiConfigManager,
             WifiConfigStore wifiConfigStore,
             WifiMetrics wifiMetrics,
-            WifiCarrierInfoManager wifiCarrierInfoManager) {
+            WifiCarrierInfoManager wifiCarrierInfoManager,
+            PrimaryClientModeImplHolder clientModeImplHolder) {
         mPasspointEventHandler = objectFactory.makePasspointEventHandler(wifiNative,
                 new CallbackHandler(context));
         mWifiInjector = wifiInjector;
@@ -357,6 +360,7 @@ public class PasspointManager {
         mWifiMetrics = wifiMetrics;
         mProviderIndex = 0;
         mWifiCarrierInfoManager = wifiCarrierInfoManager;
+        mClientModeImplHolder = clientModeImplHolder;
         wifiConfigStore.registerStoreData(objectFactory.makePasspointConfigUserStoreData(
                 mKeyStore, mWifiCarrierInfoManager, new UserDataSourceHandler()));
         wifiConfigStore.registerStoreData(objectFactory.makePasspointConfigSharedStoreData(

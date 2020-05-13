@@ -43,6 +43,7 @@ import com.android.internal.util.IState;
 import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
 import com.android.server.wifi.util.WifiHandler;
 
@@ -64,7 +65,7 @@ public class ClientModeManager implements ActiveModeManager {
     private final SarManager mSarManager;
     private final WakeupController mWakeupController;
     private final Listener mModeListener;
-    private final ClientModeImpl mClientModeImpl;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
 
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
@@ -74,7 +75,7 @@ public class ClientModeManager implements ActiveModeManager {
 
     ClientModeManager(Context context, @NonNull Looper looper, Clock clock, WifiNative wifiNative,
             Listener listener, WifiMetrics wifiMetrics, SarManager sarManager,
-            WakeupController wakeupController, ClientModeImpl clientModeImpl) {
+            WakeupController wakeupController, PrimaryClientModeImplHolder clientModeImplHolder) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -82,7 +83,7 @@ public class ClientModeManager implements ActiveModeManager {
         mWifiMetrics = wifiMetrics;
         mSarManager = sarManager;
         mWakeupController = wakeupController;
-        mClientModeImpl = clientModeImpl;
+        mClientModeImplHolder = clientModeImplHolder;
         mStateMachine = new ClientModeStateMachine(looper);
         mDeferStopHandler = new DeferStopHandler(TAG, looper);
     }
@@ -310,7 +311,7 @@ public class ClientModeManager implements ActiveModeManager {
             return;
         }
 
-        mClientModeImpl.setWifiStateForApiCalls(newState);
+        mClientModeImplHolder.get().setWifiStateForApiCalls(newState);
 
         final Intent intent = new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
@@ -342,7 +343,7 @@ public class ClientModeManager implements ActiveModeManager {
                     // we must immediately clean up state in ClientModeImpl to unregister
                     // all client mode related objects
                     // Note: onDestroyed is only called from the main Wifi thread
-                    mClientModeImpl.handleIfaceDestroyed();
+                    mClientModeImplHolder.get().handleIfaceDestroyed();
 
                     sendMessage(CMD_INTERFACE_DESTROYED);
                 }
@@ -461,7 +462,8 @@ public class ClientModeManager implements ActiveModeManager {
                     case CMD_INTERFACE_DOWN:
                         Log.e(TAG, "Detected an interface down, reporting failure to "
                                 + "SelfRecovery");
-                        mClientModeImpl.failureDetected(SelfRecovery.REASON_STA_IFACE_DOWN);
+                        mClientModeImplHolder.get()
+                                .failureDetected(SelfRecovery.REASON_STA_IFACE_DOWN);
                         transitionTo(mIdleState);
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
@@ -484,7 +486,7 @@ public class ClientModeManager implements ActiveModeManager {
              */
             @Override
             public void exit() {
-                mClientModeImpl.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+                mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
 
                 if (mClientInterfaceName != null) {
                     mWifiNative.teardownInterface(mClientInterfaceName);
@@ -503,7 +505,7 @@ public class ClientModeManager implements ActiveModeManager {
             @Override
             public void enter() {
                 Log.d(TAG, "entering ScanOnlyModeState");
-                mClientModeImpl.setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
+                mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
                         mClientInterfaceName);
                 mRole = ROLE_CLIENT_SCAN_ONLY;
                 mModeListener.onStarted();
@@ -537,7 +539,7 @@ public class ClientModeManager implements ActiveModeManager {
             @Override
             public void enter() {
                 Log.d(TAG, "entering ConnectModeState");
-                mClientModeImpl.setOperationalMode(ClientModeImpl.CONNECT_MODE,
+                mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.CONNECT_MODE,
                         mClientInterfaceName);
                 mModeListener.onStarted();
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
@@ -572,7 +574,7 @@ public class ClientModeManager implements ActiveModeManager {
                             break;  // no change
                         }
                         if (!isUp) {
-                            if (!mClientModeImpl.isConnectedMacRandomizationEnabled()) {
+                            if (!mClientModeImplHolder.get().isConnectedMacRandomizationEnabled()) {
                                 // Handle the error case where our underlying interface went down if
                                 // we do not have mac randomization enabled (b/72459123).
                                 // if the interface goes down we should exit and go back to idle

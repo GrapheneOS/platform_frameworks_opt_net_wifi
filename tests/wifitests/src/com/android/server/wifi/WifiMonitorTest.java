@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,7 +64,7 @@ public class WifiMonitorTest extends WifiBaseTest {
 
     @Before
     public void setUp() throws Exception {
-        mWifiMonitor = new WifiMonitor(mock(WifiInjector.class));
+        mWifiMonitor = new WifiMonitor();
         mLooper = new TestLooper();
         mHandlerSpy = spy(new Handler(mLooper.getLooper()));
         mSecondHandlerSpy = spy(new Handler(mLooper.getLooper()));

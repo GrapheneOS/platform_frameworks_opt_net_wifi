@@ -41,7 +41,6 @@ import java.util.Set;
 /**
  * Listen for events from the wpa_supplicant & wificond and broadcast them on
  * to the various {@link ClientModeImpl} modules interested in handling these events.
- * @hide
  */
 public class WifiMonitor {
     private static final String TAG = "WifiMonitor";
@@ -108,20 +107,10 @@ public class WifiMonitor {
     private static final int REASON_TKIP_ONLY_PROHIBITED = 1;
     private static final int REASON_WEP_PROHIBITED = 2;
 
-    private final WifiInjector mWifiInjector;
     private boolean mVerboseLoggingEnabled = false;
-    private boolean mConnected = false;
-
-    public WifiMonitor(WifiInjector wifiInjector) {
-        mWifiInjector = wifiInjector;
-    }
 
     void enableVerboseLogging(int verbose) {
-        if (verbose > 0) {
-            mVerboseLoggingEnabled = true;
-        } else {
-            mVerboseLoggingEnabled = false;
-        }
+        mVerboseLoggingEnabled = verbose > 0;
     }
 
     private final Map<String, SparseArray<Set<Handler>>> mHandlerMap = new HashMap<>();
@@ -178,12 +167,6 @@ public class WifiMonitor {
         mMonitoringMap.put(iface, enabled);
     }
 
-    private void setMonitoringNone() {
-        for (String iface : mMonitoringMap.keySet()) {
-            setMonitoring(iface, false);
-        }
-    }
-
     /**
      * Start Monitoring for wpa_supplicant events.
      *
@@ -205,16 +188,6 @@ public class WifiMonitor {
         setMonitoring(iface, true);
         broadcastSupplicantDisconnectionEvent(iface);
         setMonitoring(iface, false);
-    }
-
-    /**
-     * Stop Monitoring for wpa_supplicant events.
-     *
-     * TODO: Add unit tests for these once we remove the legacy code.
-     */
-    public synchronized void stopAllMonitoring() {
-        mConnected = false;
-        setMonitoringNone();
     }
 
 

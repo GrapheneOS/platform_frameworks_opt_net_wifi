@@ -46,6 +46,7 @@ import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.proto.nano.WifiMetricsProto
         .ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -125,7 +126,7 @@ public class AvailableNetworkNotifier {
     private final WifiMetrics mWifiMetrics;
     private final Clock mClock;
     private final WifiConfigManager mConfigManager;
-    private final ClientModeImpl mClientModeImpl;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
     private final ConnectToNetworkNotificationBuilder mNotificationBuilder;
 
     private ScanResult mRecommendedNetwork;
@@ -160,7 +161,7 @@ public class AvailableNetworkNotifier {
             WifiMetrics wifiMetrics,
             WifiConfigManager wifiConfigManager,
             WifiConfigStore wifiConfigStore,
-            ClientModeImpl clientModeImpl,
+            PrimaryClientModeImplHolder clientModeImplHolder,
             ConnectToNetworkNotificationBuilder connectToNetworkNotificationBuilder) {
         mTag = tag;
         mStoreDataIdentifier = storeDataIdentifier;
@@ -173,7 +174,7 @@ public class AvailableNetworkNotifier {
         mWifiMetrics = wifiMetrics;
         mClock = clock;
         mConfigManager = wifiConfigManager;
-        mClientModeImpl = clientModeImpl;
+        mClientModeImplHolder = clientModeImplHolder;
         mNotificationBuilder = connectToNetworkNotificationBuilder;
         mScreenOn = false;
         wifiConfigStore.registerStoreData(new SsidSetStoreData(mStoreDataIdentifier,
@@ -437,8 +438,8 @@ public class AvailableNetworkNotifier {
         if (result.isSuccess()) {
             mWifiMetrics.setNominatorForNetwork(result.netId, mNominatorId);
             ConnectActionListener connectActionListener = new ConnectActionListener();
-            mClientModeImpl.connect(null, result.netId, new Binder(), connectActionListener,
-                    connectActionListener.hashCode(), Process.SYSTEM_UID);
+            mClientModeImplHolder.get().connect(null, result.netId, new Binder(),
+                    connectActionListener, connectActionListener.hashCode(), Process.SYSTEM_UID);
             addNetworkToBlacklist(mRecommendedNetwork.SSID);
         }
 
