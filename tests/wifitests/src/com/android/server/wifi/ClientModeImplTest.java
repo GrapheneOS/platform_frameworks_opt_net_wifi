@@ -543,7 +543,8 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         WifiCarrierInfoManager tu = new WifiCarrierInfoManager(mTelephonyManager,
                 mSubscriptionManager, mWifiInjector, mock(FrameworkFacade.class),
-                mock(WifiContext.class), mock(WifiConfigStore.class), mock(Handler.class));
+                mock(WifiContext.class), mock(WifiConfigStore.class), mock(Handler.class),
+                mWifiMetrics);
         mWifiCarrierInfoManager = spy(tu);
         // static mocking
         mSession = ExtendedMockito.mockitoSession().strictness(Strictness.LENIENT)

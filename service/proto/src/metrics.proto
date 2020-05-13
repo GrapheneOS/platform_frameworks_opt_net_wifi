@@ -703,6 +703,9 @@ message WifiLog {
 
   // Does the user have wifi wake enabled.
   optional bool is_wifi_wake_enabled = 197;
+
+  // User reaction to the carrier or suggestion app approval UI.
+  optional UserReactionToApprovalUiEvent userReactionToApprovalUiEvent = 198;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -2895,29 +2898,12 @@ message WifiNetworkSuggestionApiLog {
     // Suggestion app without special privilege.
     TYPE_NON_PRIVILEGED = 3;
   }
-  enum UserActionCode {
-    // UNKNOWN user action.
-    ACTION_UNKNOWN = 0;
-    // Action user allowed.
-    ACTION_ALLOWED = 1;
-    // Action user disallowed.
-    ACTION_DISALLOWED = 2;
-    // Action user dismiss.
-    ACTION_DISMISS = 3;
-  }
 
   message SuggestionAppCount {
     // Suggestion app type.
     optional SuggestionAppTypeCode app_type = 1;
     // Num of app in this type.
     optional int32 count = 2;
-  }
-
-  message UserReaction {
-    // User action to the UI.
-    optional UserActionCode user_action = 1;
-    // Is UI a dialog or notification.
-    optional bool is_dialog = 3;
   }
 
   // Number of modifications to their suggestions by apps.
@@ -2935,11 +2921,8 @@ message WifiNetworkSuggestionApiLog {
   // Count of app using suggestion API with different privilege.
   repeated SuggestionAppCount app_count_per_type = 5;
 
-  // Event of user reaction to the UI.
-  repeated UserReaction user_approval_app_ui_reaction = 6;
-
   // Number of user revoke app's permission from settings or disallowed from UI.
-  optional int32 user_revoke_app_suggestion_permission = 7;
+  optional int32 user_revoke_app_suggestion_permission = 6;
 }
 
 // WifiLock metrics
@@ -3273,4 +3256,30 @@ message InitPartialScanStats {
 
   // Histogram of number of channels used in a failed partial scan
   repeated HistogramBucketInt32 failed_scan_channel_count_histogram = 5;
+}
+
+// User reaction to the carrier IMSI protection exemption UI
+message UserReactionToApprovalUiEvent {
+  enum UserActionCode {
+    // UNKNOWN user action.
+    ACTION_UNKNOWN = 0;
+    // Action user allowed.
+    ACTION_ALLOWED = 1;
+    // Action user disallowed.
+    ACTION_DISALLOWED = 2;
+    // Action user dismiss.
+    ACTION_DISMISS = 3;
+  }
+  message UserReaction {
+    // User action to the UI.
+    optional UserActionCode user_action = 1;
+    // Is UI a dialog or notification.
+    optional bool is_dialog = 2;
+  }
+
+  // Event of user reaction to the app approval UI.
+  repeated UserReaction user_approval_app_ui_reaction = 1;
+
+  // Event of user reaction to the carrier approval UI.
+  repeated UserReaction user_approval_carrier_ui_reaction = 2;
 }
