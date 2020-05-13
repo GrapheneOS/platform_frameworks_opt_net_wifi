@@ -3496,11 +3496,6 @@ public class WifiServiceImpl extends BaseWifiService {
     public byte[] retrieveBackupData() {
         enforceNetworkSettingsPermission();
         mLog.info("retrieveBackupData uid=%").c(Binder.getCallingUid()).flush();
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return null;
-        }
-
         Log.d(TAG, "Retrieving backup data");
         List<WifiConfiguration> wifiConfigurations = mWifiThreadRunner.call(
                 () -> mWifiConfigManager.getConfiguredNetworksWithPasswords(), null);
@@ -3548,11 +3543,6 @@ public class WifiServiceImpl extends BaseWifiService {
     public void restoreBackupData(byte[] data) {
         enforceNetworkSettingsPermission();
         mLog.info("restoreBackupData uid=%").c(Binder.getCallingUid()).flush();
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return;
-        }
-
         Log.d(TAG, "Restoring backup data");
         List<WifiConfiguration> wifiConfigurations =
                 mWifiBackupRestore.retrieveConfigurationsFromBackupData(data);
@@ -3608,11 +3598,6 @@ public class WifiServiceImpl extends BaseWifiService {
     public void restoreSupplicantBackupData(byte[] supplicantData, byte[] ipConfigData) {
         enforceNetworkSettingsPermission();
         mLog.trace("restoreSupplicantBackupData uid=%").c(Binder.getCallingUid()).flush();
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return;
-        }
-
         Log.d(TAG, "Restoring supplicant backup data");
         List<WifiConfiguration> wifiConfigurations =
                 mWifiBackupRestore.retrieveConfigurationsFromSupplicantBackupData(
@@ -3700,14 +3685,11 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private long getSupportedFeaturesInternal() {
-        final AsyncChannel channel = mClientModeImplChannel;
-        long supportedFeatureSet = 0L;
-        if (channel != null) {
-            supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures(channel);
-        } else {
+        if (mClientModeImplChannel == null) {
             Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return supportedFeatureSet;
+            return 0L;
         }
+        long supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures(mClientModeImplChannel);
         // Mask the feature set against system properties.
         boolean rttSupported = mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_WIFI_RTT);
