@@ -5614,12 +5614,6 @@ public class ClientModeImpl extends StateMachine {
                     mWifiConfigManager.setNetworkNoInternetAccessExpected(mLastNetworkId, accept);
                     break;
                 }
-                case WifiMonitor.ASSOCIATED_BSSID_EVENT: {
-                    // ASSOCIATING to a new BSSID while already connected, indicates
-                    // that driver is roaming
-                    handleStatus = NOT_HANDLED;
-                    break;
-                }
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {
                     DisconnectEventInfo eventInfo = (DisconnectEventInfo) message.obj;
                     reportConnectionAttemptEnd(
@@ -5852,10 +5846,6 @@ public class ClientModeImpl extends StateMachine {
                         // ConnectableState handles it
                         handleStatus = NOT_HANDLED;
                     }
-                    break;
-                }
-                case CMD_SCREEN_STATE_CHANGED: {
-                    handleScreenStateChanged(message.arg1 != 0);
                     break;
                 }
                 default: {
