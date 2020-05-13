@@ -4180,9 +4180,6 @@ public class WifiMetricsTest extends WifiBaseTest {
                 add(60);
             }});
 
-        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(1,  true);
-        mWifiMetrics.addNetworkSuggestionUserApprovalAppUiReaction(2,  false);
-
         mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
         mWifiMetrics.incrementNetworkSuggestionUserRevokePermission();
 
@@ -4211,24 +4208,60 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.TYPE_NON_PRIVILEGED,
                 mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].appType);
         assertEquals(3, mDecodedProto.wifiNetworkSuggestionApiLog.appCountPerType[2].count);
+    }
+
+    /**
+     * Test the generation of 'UserReactionToApprovalUiEvent' message.
+     */
+    @Test
+    public void testUserReactionToApprovalUiEvent() throws Exception {
+        mWifiMetrics.addUserApprovalSuggestionAppUiReaction(1,  true);
+        mWifiMetrics.addUserApprovalSuggestionAppUiReaction(2,  false);
+
+        mWifiMetrics.addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, true);
+        mWifiMetrics.addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_DISMISS, false);
+        mWifiMetrics.addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_DISALLOWED_CARRIER, false);
+
+        dumpProtoAndDeserialize();
 
         assertEquals(2,
-                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction.length);
-        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.ACTION_ALLOWED,
-                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[0]
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalAppUiReaction.length);
+        assertEquals(WifiMetricsProto.UserReactionToApprovalUiEvent.ACTION_ALLOWED,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalAppUiReaction[0]
                         .userAction);
         assertEquals(true,
-                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[0]
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalAppUiReaction[0]
                         .isDialog);
-        assertEquals(WifiMetricsProto.WifiNetworkSuggestionApiLog.ACTION_DISALLOWED,
-                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[1]
+        assertEquals(WifiMetricsProto.UserReactionToApprovalUiEvent.ACTION_DISALLOWED,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalAppUiReaction[1]
                         .userAction);
         assertEquals(false,
-                mDecodedProto.wifiNetworkSuggestionApiLog.userApprovalAppUiReaction[1]
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalAppUiReaction[1]
                         .isDialog);
 
-        assertEquals(2, mDecodedProto.wifiNetworkSuggestionApiLog
-                .userRevokeAppSuggestionPermission);
+        assertEquals(3,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction.length);
+        assertEquals(WifiMetricsProto.UserReactionToApprovalUiEvent.ACTION_ALLOWED,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction[0]
+                        .userAction);
+        assertEquals(true,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction[0]
+                        .isDialog);
+        assertEquals(WifiMetricsProto.UserReactionToApprovalUiEvent.ACTION_DISMISS,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction[1]
+                        .userAction);
+        assertEquals(false,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction[1]
+                        .isDialog);
+        assertEquals(WifiMetricsProto.UserReactionToApprovalUiEvent.ACTION_DISALLOWED,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction[2]
+                        .userAction);
+        assertEquals(false,
+                mDecodedProto.userReactionToApprovalUiEvent.userApprovalCarrierUiReaction[2]
+                        .isDialog);
     }
 
     private NetworkSelectionExperimentDecisions findUniqueNetworkSelectionExperimentDecisions(
