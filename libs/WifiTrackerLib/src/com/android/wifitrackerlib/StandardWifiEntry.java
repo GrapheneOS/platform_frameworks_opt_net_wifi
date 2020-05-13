@@ -210,9 +210,13 @@ public class StandardWifiEntry extends WifiEntry {
                     if (isSuggestion()) {
                         String carrierName = getCarrierNameForSubId(mContext,
                                 getSubIdForConfig(mContext, mWifiConfig));
+                        String suggestorName = getAppLabel(mContext, mWifiConfig.creatorName);
+                        if (TextUtils.isEmpty(suggestorName)) {
+                            // Fall-back to the package name in case the app label is missing
+                            suggestorName = mWifiConfig.creatorName;
+                        }
                         sj.add(mContext.getString(R.string.available_via_app, carrierName != null
-                                ? carrierName
-                                : getAppLabel(mContext, mWifiConfig.creatorName)));
+                                ? carrierName : suggestorName));
                     } else if (isSaved()) {
                         sj.add(mContext.getString(R.string.wifi_remembered));
                     }
@@ -270,9 +274,13 @@ public class StandardWifiEntry extends WifiEntry {
                 String carrierName = mWifiConfig != null
                         ? getCarrierNameForSubId(mContext, getSubIdForConfig(mContext, mWifiConfig))
                         : null;
+                String suggestorName = getAppLabel(mContext, suggestionOrSpecifierPackageName);
+                if (TextUtils.isEmpty(suggestorName)) {
+                    // Fall-back to the package name in case the app label is missing
+                    suggestorName = mWifiConfig.creatorName;
+                }
                 return mContext.getString(R.string.connected_via_app, carrierName != null
-                        ? carrierName
-                        : getAppLabel(mContext, suggestionOrSpecifierPackageName));
+                        ? carrierName : suggestorName);
             }
 
             String networkCapabilitiesinformation =
