@@ -20,12 +20,12 @@ import static android.net.wifi.WifiScanner.WIFI_BAND_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY;
 import static android.net.wifi.WifiScanner.WIFI_BAND_6_GHZ;
+import static android.net.wifi.WifiScanner.WIFI_BAND_ALL;
 import static android.net.wifi.WifiScanner.WIFI_BAND_COUNT;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_5_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_5_GHZ_DFS_ONLY;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_6_GHZ;
-import static android.net.wifi.WifiScanner.WIFI_BAND_MAX;
 import static android.net.wifi.WifiScanner.WIFI_BAND_UNSPECIFIED;
 
 import android.net.wifi.ScanResult;
@@ -106,7 +106,7 @@ public class KnownBandsChannelHelper extends ChannelHelper {
 
     @Override
     public WifiScanner.ChannelSpec[][] getAvailableScanChannels(int band) {
-        if (band <= WIFI_BAND_UNSPECIFIED || band >= WIFI_BAND_MAX) {
+        if (band <= WIFI_BAND_UNSPECIFIED || band > WIFI_BAND_ALL) {
             // Invalid value for band.
             return null;
         }
@@ -301,7 +301,7 @@ public class KnownBandsChannelHelper extends ChannelHelper {
 
         @Override
         public boolean isAllChannels() {
-            return containsBand(WIFI_BAND_MAX - 1);
+            return containsBand(WIFI_BAND_ALL);
         }
 
         @Override
@@ -369,7 +369,7 @@ public class KnownBandsChannelHelper extends ChannelHelper {
 
         @Override
         public Set<Integer> getScanFreqs() {
-            if (mExactBands == WIFI_BAND_MAX - 1) {
+            if (mExactBands == WIFI_BAND_ALL) {
                 return null;
             } else {
                 return new ArraySet<Integer>(mChannels);
