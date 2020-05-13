@@ -156,7 +156,8 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    /** @deprecated dead code */
+    @Deprecated
     public void deauthenticateNetwork(long holdoff, boolean ess) {
         throw new UnsupportedOperationException();
     }
