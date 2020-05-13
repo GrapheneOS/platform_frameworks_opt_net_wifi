@@ -36,8 +36,7 @@ import java.io.PrintWriter;
  */
 public class WifiAwareNativeManager {
     private static final String TAG = "WifiAwareNativeManager";
-    private static final boolean VDBG = false;
-    /* package */ boolean mDbg = false;
+    private boolean mDbg = false;
 
     // to be used for synchronizing access to any of the WifiAwareNative objects
     private final Object mLock = new Object();
@@ -62,6 +61,13 @@ public class WifiAwareNativeManager {
     }
 
     /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mDbg = verbose;
+    }
+
+    /**
      * (HIDL) Cast the input to a 1.2 NAN interface (possibly resulting in a null).
      *
      * Separate function so can be mocked in unit tests.
@@ -82,7 +88,7 @@ public class WifiAwareNativeManager {
                 new HalDeviceManager.ManagerStatusListener() {
                     @Override
                     public void onStatusChanged() {
-                        if (VDBG) Log.v(TAG, "onStatusChanged");
+                        if (mDbg) Log.v(TAG, "onStatusChanged");
                         // only care about isStarted (Wi-Fi started) not isReady - since if not
                         // ready then Wi-Fi will also be down.
                         if (mHalDeviceManager.isStarted()) {

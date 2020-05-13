@@ -2934,7 +2934,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
     private void validateScanSettings(@Nullable String hiddenSsid) {
         ScanSettings scanSettings = mScanSettingsArgumentCaptor.getValue();
         assertNotNull(scanSettings);
-        assertEquals(WifiScanner.WIFI_BAND_BOTH_WITH_DFS, scanSettings.band);
+        assertEquals(WifiScanner.WIFI_BAND_ALL, scanSettings.band);
         assertEquals(WifiScanner.SCAN_TYPE_HIGH_ACCURACY, scanSettings.type);
         assertEquals(WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN, scanSettings.reportEvents);
         if (hiddenSsid == null) {
