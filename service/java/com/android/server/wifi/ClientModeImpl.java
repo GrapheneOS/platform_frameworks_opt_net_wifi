@@ -4590,28 +4590,33 @@ public class ClientModeImpl extends StateMachine {
         @Override
         public void onStartSocketKeepalive(int slot, @NonNull Duration interval,
                 @NonNull KeepalivePacketData packet) {
+            if (this != mNetworkAgent) return;
             ClientModeImpl.this.sendMessage(
                     CMD_START_IP_PACKET_OFFLOAD, slot, (int) interval.getSeconds(), packet);
         }
 
         @Override
         public void onStopSocketKeepalive(int slot) {
+            if (this != mNetworkAgent) return;
             ClientModeImpl.this.sendMessage(CMD_STOP_IP_PACKET_OFFLOAD, slot);
         }
 
         @Override
         public void onAddKeepalivePacketFilter(int slot, @NonNull KeepalivePacketData packet) {
+            if (this != mNetworkAgent) return;
             ClientModeImpl.this.sendMessage(
                     CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF, slot, 0, packet);
         }
 
         @Override
         public void onRemoveKeepalivePacketFilter(int slot) {
+            if (this != mNetworkAgent) return;
             ClientModeImpl.this.sendMessage(CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF, slot);
         }
 
         @Override
         public void onSignalStrengthThresholdsUpdated(@NonNull int[] thresholds) {
+            if (this != mNetworkAgent) return;
             // 0. If there are no thresholds, or if the thresholds are invalid,
             //    stop RSSI monitoring.
             // 1. Tell the hardware to start RSSI monitoring here, possibly adding MIN_VALUE and
@@ -4725,6 +4730,7 @@ public class ClientModeImpl extends StateMachine {
                 // This should never happen.
                 if (mNetworkAgent != null) {
                     Log.wtf(TAG, "mNetworkAgent is not null: " + mNetworkAgent);
+                    mNetworkAgent.unregister();
                 }
                 mNetworkAgent = new WifiNetworkAgent(mContext, getHandler().getLooper(),
                         "WifiNetworkAgent", nc, mLinkProperties, 60, naConfig,
@@ -5566,6 +5572,11 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_DISCONNECT:
                     if (mVerboseLoggingEnabled) {
                         log("Ignore CMD_DISCONNECT when already disconnecting.");
+                    }
+                    break;
+                case WifiMonitor.NETWORK_CONNECTION_EVENT:
+                    if (mVerboseLoggingEnabled) {
+                        log("Ignore NETWORK_CONNECTION_EVENT when already disconnecting.");
                     }
                     break;
                 case CMD_DISCONNECTING_WATCHDOG_TIMER:
