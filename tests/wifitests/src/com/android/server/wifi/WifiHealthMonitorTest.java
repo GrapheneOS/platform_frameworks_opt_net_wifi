@@ -165,7 +165,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
                 .thenReturn(mAlarmManager.getAlarmManager());
 
         mScanData = mockScanData();
-        mWifiScanner = mockWifiScanner(WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+        mWifiScanner = mockWifiScanner(WifiScanner.WIFI_BAND_ALL);
         when(mWifiInjector.getWifiScanner()).thenReturn(mWifiScanner);
         when(mWifiNative.getDriverVersion()).thenReturn(mDriverVersion);
         when(mWifiNative.getFirmwareVersion()).thenReturn(mFirmwareVersion);
@@ -703,7 +703,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
 
         // Add Above2G only scan data
         mScanData = mockScanDataAbove2GOnly();
-        mWifiScanner = mockWifiScanner(WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+        mWifiScanner = mockWifiScanner(WifiScanner.WIFI_BAND_ALL);
         when(mWifiInjector.getWifiScanner()).thenReturn(mWifiScanner);
         millisecondsPass(5000);
         mWifiHealthMonitor.setWifiEnabled(true);

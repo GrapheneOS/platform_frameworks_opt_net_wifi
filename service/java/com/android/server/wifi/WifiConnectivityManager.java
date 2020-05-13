@@ -492,9 +492,11 @@ public class WifiConnectivityManager {
             }
 
             // We treat any full band scans (with DFS or not) as "full".
-            boolean isFullBandScanResults =
-                    results[0].getBandScanned() == WifiScanner.WIFI_BAND_BOTH_WITH_DFS
-                            || results[0].getBandScanned() == WifiScanner.WIFI_BAND_BOTH;
+            boolean isFullBandScanResults = false;
+            if (results != null && results.length > 0) {
+                isFullBandScanResults =
+                        WifiScanner.isFullBandScan(results[0].getBandScanned(), true);
+            }
             // Full band scan results only.
             if (mWaitForFullBandScanResults) {
                 if (!isFullBandScanResults) {
@@ -505,7 +507,7 @@ public class WifiConnectivityManager {
                     mWaitForFullBandScanResults = false;
                 }
             }
-            if (results.length > 0) {
+            if (results != null && results.length > 0) {
                 mWifiMetrics.incrementAvailableNetworksHistograms(mScanDetails,
                         isFullBandScanResults);
             }
@@ -966,7 +968,7 @@ public class WifiConnectivityManager {
 
     private int getScanBand(boolean isFullBandScan) {
         if (isFullBandScan) {
-            return WifiScanner.WIFI_BAND_BOTH_WITH_DFS;
+            return WifiScanner.WIFI_BAND_ALL;
         } else {
             // Use channel list instead.
             return WifiScanner.WIFI_BAND_UNSPECIFIED;

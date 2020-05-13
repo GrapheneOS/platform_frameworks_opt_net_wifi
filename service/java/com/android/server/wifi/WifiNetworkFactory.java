@@ -371,7 +371,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         // Create the scan settings.
         mScanSettings = new WifiScanner.ScanSettings();
         mScanSettings.type = WifiScanner.SCAN_TYPE_HIGH_ACCURACY;
-        mScanSettings.band = WifiScanner.WIFI_BAND_BOTH_WITH_DFS;
+        mScanSettings.band = WifiScanner.WIFI_BAND_ALL;
         mScanSettings.reportEvents = WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN;
         mScanListener = new NetworkFactoryScanListener();
         mPeriodicScanTimerListener = new PeriodicScanAlarmListener();
