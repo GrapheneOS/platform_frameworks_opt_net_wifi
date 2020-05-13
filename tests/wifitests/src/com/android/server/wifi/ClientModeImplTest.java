@@ -1069,7 +1069,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mSimRequiredNotifier).showSimRequiredNotification(any(), any());
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative, times(2)).removeAllNetworks(WIFI_IFACE_NAME);
     }
 
     /**
@@ -1083,7 +1083,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
         mLooper.dispatchAll();
 
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative, times(2)).removeAllNetworks(WIFI_IFACE_NAME);
     }
 
     /**
@@ -1587,7 +1587,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         injectDhcpFailure();
         mLooper.dispatchAll();
 
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative).disconnect(WIFI_IFACE_NAME);
         // Verify this is not counted as a IP renewal failure
         verify(mWifiMetrics, never()).incrementIpRenewalFailure();
         // Verifies that WifiLastResortWatchdog be notified
@@ -2065,7 +2065,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         injectDhcpSuccess(dhcpResults);
         mLooper.dispatchAll();
 
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative, times(2)).disconnect(WIFI_IFACE_NAME);
     }
 
     /**
@@ -4074,7 +4074,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiNative).removeNetworkCachedData(FRAMEWORK_NETWORK_ID);
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative).disconnect(WIFI_IFACE_NAME);
     }
 
     /**
@@ -4091,7 +4091,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD);
         mLooper.dispatchAll();
 
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative).disconnect(WIFI_IFACE_NAME);
     }
 
     /**
@@ -4874,7 +4874,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
         mLooper.dispatchAll();
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative).disconnect(WIFI_IFACE_NAME);
     }
 
     /**
@@ -4924,7 +4924,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
         mLooper.dispatchAll();
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative).disconnect(WIFI_IFACE_NAME);
     }
 
     /**
@@ -5181,19 +5181,16 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((agentConfig) -> { }, (cap) -> { });
         reset(mNetworkAgentHandler);
 
-        // Trigger ip reachibility loss and ensure we trigger a disconnect & we're in
-        // "DisconnectingState"
+        // Trigger ip reachability loss and ensure we trigger a disconnect.
         mCmi.sendMessage(ClientModeImpl.CMD_IP_REACHABILITY_LOST);
         mLooper.dispatchAll();
-        verify(mWifiNative).disconnect(any());
-        assertEquals("DisconnectingState", getCurrentState().getName());
+        verify(mWifiNative).disconnect(WIFI_IFACE_NAME);
 
         // Now send a network connection (indicating a roam) event before we get the disconnect
         // event.
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
         // ensure that we ignored the transient roam while we're disconnecting.
-        assertEquals("DisconnectingState", getCurrentState().getName());
         verifyNoMoreInteractions(mNetworkAgentHandler);
 
         // Now send the disconnect event and ensure that we transition to "DisconnectedState".
@@ -5205,5 +5202,43 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectUnregisterNetworkAgent();
 
         verifyNoMoreInteractions(mNetworkAgentHandler);
+    }
+
+    @Test
+    public void testConnectionWhileDisconnecting() throws Exception {
+        connect();
+
+        // Trigger a disconnect event.
+        mCmi.disconnectCommand();
+        mLooper.dispatchAll();
+        assertEquals("L3ConnectedState", getCurrentState().getName());
+
+        // Trigger a new connection before the NETWORK_DISCONNECTION_EVENT comes in.
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        config.networkId = FRAMEWORK_NETWORK_ID + 1;
+        setupAndStartConnectSequence(config);
+        // Ensure that we triggered the connection attempt.
+        validateSuccessfulConnectSequence(config);
+
+        // Now trigger the disconnect event for the previous disconnect and ensure we handle it
+        // correctly and remain in ConnectingState.
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(mConnectedNetwork.SSID, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+        assertEquals("L2ConnectingState", mCmi.getCurrentState().getName());
+    }
+
+    @Test
+    public void testConnectionWatchdog() throws Exception {
+        triggerConnect();
+        Log.i(TAG, "Triggering Connect done");
+
+        // Simulate watchdog timeout and ensure we retuned to disconnected state.
+        mLooper.moveTimeForward(ClientModeImpl.CONNECTING_WATCHDOG_TIMEOUT_MS + 5L);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
+        assertEquals("DisconnectedState", mCmi.getCurrentState().getName());
     }
 }
