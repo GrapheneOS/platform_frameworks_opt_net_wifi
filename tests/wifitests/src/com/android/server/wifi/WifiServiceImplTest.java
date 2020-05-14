@@ -4048,26 +4048,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
-     * Verifies that entering airplane mode does not reset country code.
-     */
-    @Test
-    public void testEnterAirplaneModeNotResetCountryCode() {
-        mWifiServiceImpl.checkAndStartWifi();
-        mLooper.dispatchAll();
-        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                (IntentFilter) argThat((IntentFilter filter) ->
-                        filter.hasAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)));
-
-        when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
-
-        // Send the broadcast
-        Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
-        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
-
-        verifyNoMoreInteractions(mWifiCountryCode);
-    }
-
-    /**
      * Verify that a call to registerTrafficStateCallback throws a SecurityException if the caller
      * does not have NETWORK_SETTINGS permission.
      */
