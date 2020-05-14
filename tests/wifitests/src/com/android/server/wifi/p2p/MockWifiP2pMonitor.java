@@ -17,13 +17,10 @@
 package com.android.server.wifi.p2p;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import android.os.Handler;
 import android.os.Message;
 import android.util.SparseArray;
-
-import com.android.server.wifi.WifiInjector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,10 +32,6 @@ import java.util.Map;
  */
 public class MockWifiP2pMonitor extends  WifiP2pMonitor {
     private final Map<String, SparseArray<Handler>> mHandlerMap = new HashMap<>();
-
-    public MockWifiP2pMonitor() {
-        super(mock(WifiInjector.class));
-    }
 
     @Override
     public void registerHandler(String iface, int what, Handler handler) {
@@ -88,5 +81,4 @@ public class MockWifiP2pMonitor extends  WifiP2pMonitor {
         }
         return false;
     }
-
 }

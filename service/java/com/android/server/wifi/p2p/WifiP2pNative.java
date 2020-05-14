@@ -31,7 +31,6 @@ import android.util.Log;
 
 import com.android.server.wifi.HalDeviceManager;
 import com.android.server.wifi.PropertyService;
-import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiNative;
 import com.android.server.wifi.WifiVendorHal;
 
@@ -40,14 +39,13 @@ import java.util.Set;
 /**
  * Native calls for bring up/shut down of the supplicant daemon and for
  * sending requests to the supplicant daemon
- *
- * {@hide}
  */
 public class WifiP2pNative {
     private static final String TAG = "WifiP2pNative";
     private boolean mVerboseLoggingEnabled = false;
     private final SupplicantP2pIfaceHal mSupplicantP2pIfaceHal;
-    private final WifiInjector mWifiInjector;
+    private final WifiNative mWifiNative;
+    private final WifiNl80211Manager mWifiNl80211Manager;
     private final HalDeviceManager mHalDeviceManager;
     private final PropertyService mPropertyService;
     private final WifiVendorHal mWifiVendorHal;
@@ -114,10 +112,15 @@ public class WifiP2pNative {
         }
     }
 
-    public WifiP2pNative(WifiInjector wifiInjector, WifiVendorHal wifiVendorHal,
-            SupplicantP2pIfaceHal p2pIfaceHal, HalDeviceManager halDeviceManager,
+    public WifiP2pNative(
+            WifiNl80211Manager wifiNl80211Manager,
+            WifiNative wifiNative,
+            WifiVendorHal wifiVendorHal,
+            SupplicantP2pIfaceHal p2pIfaceHal,
+            HalDeviceManager halDeviceManager,
             PropertyService propertyService) {
-        mWifiInjector = wifiInjector;
+        mWifiNative = wifiNative;
+        mWifiNl80211Manager = wifiNl80211Manager;
         mWifiVendorHal = wifiVendorHal;
         mSupplicantP2pIfaceHal = p2pIfaceHal;
         mHalDeviceManager = halDeviceManager;
@@ -615,12 +618,10 @@ public class WifiP2pNative {
     private void abortWifiRunningScanIfNeeded(boolean isJoin) {
         if (!isJoin) return;
 
-        WifiNl80211Manager wifiCondManager = mWifiInjector.getWifiCondManager();
-        WifiNative wifiNative = mWifiInjector.getWifiNative();
-        Set<String> wifiClientInterfaces = wifiNative.getClientInterfaceNames();
+        Set<String> wifiClientInterfaces = mWifiNative.getClientInterfaceNames();
 
         for (String interfaceName: wifiClientInterfaces) {
-            wifiCondManager.abortScan(interfaceName);
+            mWifiNl80211Manager.abortScan(interfaceName);
         }
     }
 

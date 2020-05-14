@@ -119,8 +119,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final ConnectivityManager mConnectivityManager;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
-    WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context) {
-        mClientModeImpl = wifiInjector.getClientModeImpl();
+    WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context,
+            ClientModeImpl clientModeImpl) {
+        mClientModeImpl = clientModeImpl;
         mWifiLockManager = wifiInjector.getWifiLockManager();
         mWifiNetworkSuggestionsManager = wifiInjector.getWifiNetworkSuggestionsManager();
         mWifiConfigManager = wifiInjector.getWifiConfigManager();

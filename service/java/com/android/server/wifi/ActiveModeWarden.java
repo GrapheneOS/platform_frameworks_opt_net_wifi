@@ -41,6 +41,7 @@ import com.android.internal.util.Preconditions;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -65,7 +66,7 @@ public class ActiveModeWarden {
     private final Looper mLooper;
     private final Handler mHandler;
     private final Context mContext;
-    private final ClientModeImpl mClientModeImpl;
+    private final PrimaryClientModeImplHolder mClientModeImplHolder;
     private final WifiSettingsStore mSettingsStore;
     private final FrameworkFacade mFacade;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
@@ -103,7 +104,7 @@ public class ActiveModeWarden {
                      BatteryStatsManager batteryStatsManager,
                      BaseWifiDiagnostics wifiDiagnostics,
                      Context context,
-                     ClientModeImpl clientModeImpl,
+                     PrimaryClientModeImplHolder clientModeImplHolder,
                      WifiSettingsStore settingsStore,
                      FrameworkFacade facade,
                      WifiPermissionsUtil wifiPermissionsUtil) {
@@ -111,7 +112,7 @@ public class ActiveModeWarden {
         mLooper = looper;
         mHandler = new Handler(looper);
         mContext = context;
-        mClientModeImpl = clientModeImpl;
+        mClientModeImplHolder = clientModeImplHolder;
         mSettingsStore = settingsStore;
         mFacade = facade;
         mWifiPermissionsUtil = wifiPermissionsUtil;
@@ -926,7 +927,8 @@ public class ActiveModeWarden {
                             bugTitle = "Wi-Fi BugReport";
                         }
                         if (msg.arg1 != SelfRecovery.REASON_LAST_RESORT_WATCHDOG) {
-                            mHandler.post(() -> mClientModeImpl.takeBugReport(bugTitle, bugDetail));
+                            mHandler.post(() -> mClientModeImplHolder.get()
+                                    .takeBugReport(bugTitle, bugDetail));
                         }
                         log("Recovery triggered, disable wifi");
                         deferMessage(obtainMessage(CMD_DEFERRED_RECOVERY_RESTART_WIFI));

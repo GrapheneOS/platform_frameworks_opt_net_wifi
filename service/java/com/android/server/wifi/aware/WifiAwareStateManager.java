@@ -77,9 +77,8 @@ import java.util.Map;
  */
 public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShellCommand {
     private static final String TAG = "WifiAwareStateManager";
-    private static final boolean VDBG = false; // STOPSHIP if true
-    private static final boolean VVDBG = false; // STOPSHIP if true - for detailed state machine
-    /* package */ boolean mDbg = false;
+    private static final boolean VDBG = false; // STOPSHIP if true - for detailed state machine
+    private boolean mDbg = false;
 
     @VisibleForTesting
     public static final String HAL_COMMAND_TIMEOUT_TAG = TAG + " HAL Command Timeout";
@@ -236,6 +235,14 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     }
 
     /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mDbg = verbose | VDBG;
+    }
+
+
+    /**
      * Inject references to other manager objects. Needed to resolve
      * circular dependencies and to allow mocking.
      */
@@ -264,18 +271,15 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         final PrintWriter pw_out = parentShell.getOutPrintWriter();
 
         String subCmd = parentShell.getNextArgRequired();
-        if (VDBG) Log.v(TAG, "onCommand: subCmd='" + subCmd + "'");
         switch (subCmd) {
             case "set": {
                 String name = parentShell.getNextArgRequired();
-                if (VDBG) Log.v(TAG, "onCommand: name='" + name + "'");
                 if (!mSettableParameters.containsKey(name)) {
                     pw_err.println("Unknown parameter name -- '" + name + "'");
                     return -1;
                 }
 
                 String valueStr = parentShell.getNextArgRequired();
-                if (VDBG) Log.v(TAG, "onCommand: valueStr='" + valueStr + "'");
                 int value;
                 try {
                     value = Integer.valueOf(valueStr);
@@ -288,7 +292,6 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             }
             case "get": {
                 String name = parentShell.getNextArgRequired();
-                if (VDBG) Log.v(TAG, "onCommand: name='" + name + "'");
                 if (!mSettableParameters.containsKey(name)) {
                     pw_err.println("Unknown parameter name -- '" + name + "'");
                     return -1;
@@ -327,7 +330,6 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             }
             case "allow_ndp_any": {
                 String flag = parentShell.getNextArgRequired();
-                if (VDBG) Log.v(TAG, "onCommand: flag='" + flag + "'");
                 if (mDataPathMgr == null) {
                     pw_err.println("Null Aware data-path manager - can't configure");
                     return -1;
@@ -389,7 +391,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         mAwareMetrics = awareMetrics;
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mSm = new WifiAwareStateMachine(TAG, looper);
-        mSm.setDbg(VVDBG);
+        mSm.setDbg(VDBG);
         mSm.start();
 
         mDataPathMgr = new WifiAwareDataPathStateManager(this, clock);
@@ -408,7 +410,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                if (VDBG) Log.v(TAG, "BroadcastReceiver: action=" + action);
+                if (mDbg) Log.v(TAG, "BroadcastReceiver: action=" + action);
                 if (action.equals(Intent.ACTION_SCREEN_ON)
                         || action.equals(Intent.ACTION_SCREEN_OFF)) {
                     reconfigure();
@@ -523,7 +525,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             }
 
             try {
-                if (VDBG) Log.v(TAG, "requestMacAddresses: peerIdToMacMap=" + peerIdToMacMap);
+                if (mDbg) Log.v(TAG, "requestMacAddresses: peerIdToMacMap=" + peerIdToMacMap);
                 callback.macAddress(peerIdToMacMap);
             } catch (RemoteException e) {
                 Log.e(TAG, "requestMacAddress (sync): exception on callback -- " + e);
@@ -1469,7 +1471,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                         int retryCount = sentMessage.getData()
                                 .getInt(MESSAGE_BUNDLE_KEY_RETRY_COUNT);
                         if (retryCount > 0 && reason == NanStatusType.NO_OTA_ACK) {
-                            if (VDBG) {
+                            if (mDbg) {
                                 Log.v(TAG,
                                         "NOTIFICATION_TYPE_ON_MESSAGE_SEND_FAIL: transactionId="
                                                 + transactionId + ", reason=" + reason
@@ -1951,14 +1953,11 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
              * Only have to handle those COMMANDs which wait for a response.
              */
             switch (msg.arg1) {
-                case COMMAND_TYPE_CONNECT: {
+                case COMMAND_TYPE_CONNECT:
+                case COMMAND_TYPE_DISCONNECT:
                     onConfigFailedLocal(mCurrentCommand, NanStatusType.INTERNAL_FAILURE);
                     break;
-                }
-                case COMMAND_TYPE_DISCONNECT: {
-                    onConfigFailedLocal(mCurrentCommand, NanStatusType.INTERNAL_FAILURE);
-                    break;
-                }
+
                 case COMMAND_TYPE_RECONFIGURE:
                     /*
                      * Reconfigure timed-out. There is nothing to do but log the issue - which
@@ -1970,19 +1969,12 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                     Log.wtf(TAG, "processTimeout: TERMINATE_SESSION - shouldn't be waiting!");
                     break;
                 }
-                case COMMAND_TYPE_PUBLISH: {
-                    onSessionConfigFailLocal(mCurrentCommand, true, NanStatusType.INTERNAL_FAILURE);
-                    break;
-                }
+                case COMMAND_TYPE_PUBLISH:
                 case COMMAND_TYPE_UPDATE_PUBLISH: {
                     onSessionConfigFailLocal(mCurrentCommand, true, NanStatusType.INTERNAL_FAILURE);
                     break;
                 }
-                case COMMAND_TYPE_SUBSCRIBE: {
-                    onSessionConfigFailLocal(mCurrentCommand, false,
-                            NanStatusType.INTERNAL_FAILURE);
-                    break;
-                }
+                case COMMAND_TYPE_SUBSCRIBE:
                 case COMMAND_TYPE_UPDATE_SUBSCRIBE: {
                     onSessionConfigFailLocal(mCurrentCommand, false,
                             NanStatusType.INTERNAL_FAILURE);
@@ -2240,7 +2232,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             WifiAwareClientState client = new WifiAwareClientState(mContext, clientId, uid, pid,
                     callingPackage, callingFeatureId, callback, configRequest, notifyIdentityChange,
                     SystemClock.elapsedRealtime(), mWifiPermissionsUtil);
-            client.mDbg = mDbg;
+            client.enableVerboseLogging(mDbg);
             client.onInterfaceAddressChange(mCurrentDiscoveryInterfaceMac);
             mClients.append(clientId, client);
             mAwareMetrics.recordAttachSession(uid, notifyIdentityChange, mClients);
@@ -2604,7 +2596,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             WifiAwareClientState client = new WifiAwareClientState(mContext, clientId, uid, pid,
                     callingPackage, callingFeatureId, callback, configRequest, notifyIdentityChange,
                     SystemClock.elapsedRealtime(), mWifiPermissionsUtil);
-            client.mDbg = mDbg;
+            client.enableVerboseLogging(mDbg);
             mClients.put(clientId, client);
             mAwareMetrics.recordAttachSession(uid, notifyIdentityChange, mClients);
             try {
@@ -2737,7 +2729,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             WifiAwareDiscoverySessionState session = new WifiAwareDiscoverySessionState(
                     mWifiAwareNativeApi, sessionId, pubSubId, callback, isPublish, isRangingEnabled,
                     SystemClock.elapsedRealtime());
-            session.mDbg = mDbg;
+            session.enableVerboseLogging(mDbg);
             client.addSession(session);
 
             if (isRangingEnabled) {
@@ -3140,7 +3132,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
      * If the configurations are "incompatible" (rules in comment below) return a null.
      */
     private ConfigRequest mergeConfigRequests(ConfigRequest configRequest) {
-        if (VDBG) {
+        if (mDbg) {
             Log.v(TAG, "mergeConfigRequests(): mClients=[" + mClients + "], configRequest="
                     + configRequest);
         }

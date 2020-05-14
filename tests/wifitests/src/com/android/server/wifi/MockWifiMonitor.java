@@ -17,7 +17,6 @@
 package com.android.server.wifi;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import android.os.Handler;
 import android.os.Message;
@@ -31,12 +30,8 @@ import java.util.Map;
  * WARNING: This does not perfectly mock the behavior of WifiMonitor at the moment
  *          ex. startMonitoring does nothing and will not send a connection/disconnection event
  */
-public class MockWifiMonitor extends  WifiMonitor {
+public class MockWifiMonitor extends WifiMonitor {
     private final Map<String, SparseArray<Handler>> mHandlerMap = new HashMap<>();
-
-    public MockWifiMonitor() {
-        super(mock(WifiInjector.class));
-    }
 
     @Override
     public void registerHandler(String iface, int what, Handler handler) {
@@ -86,5 +81,4 @@ public class MockWifiMonitor extends  WifiMonitor {
         }
         return false;
     }
-
 }

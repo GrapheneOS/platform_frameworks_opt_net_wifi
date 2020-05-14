@@ -143,6 +143,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -188,6 +189,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiConfigManager mWifiConfigManager;
     private final PasspointManager mPasspointManager;
     private final WifiLog mLog;
+    private final WifiConnectivityManager mWifiConnectivityManager;
     /**
      * Verbose logging flag. Toggled by developer options.
      */
@@ -301,9 +303,10 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiTrafficPoller = mWifiInjector.getWifiTrafficPoller();
         mUserManager = mWifiInjector.getUserManager();
         mCountryCode = mWifiInjector.getWifiCountryCode();
-        mClientModeImpl = mWifiInjector.getClientModeImpl();
+        // Assume that ClientModeImpl is a singleton and PrimaryClientModeImplHolder's value never
+        // changing. Assumption will no longer be valid when STA+STA implementation is complete.
+        mClientModeImpl = Objects.requireNonNull(mWifiInjector.getClientModeImplHolder().get());
         mActiveModeWarden = mWifiInjector.getActiveModeWarden();
-        mClientModeImpl.enableRssiPolling(true);                  //TODO(b/65033024) strange startup
         mScanRequestProxy = mWifiInjector.getScanRequestProxy();
         mSettingsStore = mWifiInjector.getWifiSettingsStore();
         mPowerManager = mContext.getSystemService(PowerManager.class);
@@ -330,6 +333,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiScoreCard = mWifiInjector.getWifiScoreCard();
         mMemoryStoreImpl = new MemoryStoreImpl(mContext, mWifiInjector,
                 mWifiScoreCard,  mWifiInjector.getWifiHealthMonitor());
+        mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
     }
 
     /**
@@ -2529,7 +2533,7 @@ public class WifiServiceImpl extends BaseWifiService {
         int callingUid = Binder.getCallingUid();
         mLog.info("allowAutojoin=% uid=%").c(choice).c(callingUid).flush();
 
-        mWifiThreadRunner.post(() -> mClientModeImpl.allowAutoJoinGlobal(choice));
+        mWifiThreadRunner.post(() -> mWifiConnectivityManager.setAutoJoinEnabledExternal(choice));
     }
 
     /**
@@ -2865,17 +2869,6 @@ public class WifiServiceImpl extends BaseWifiService {
         return 0;
     }
 
-    /**
-     * Deauthenticate and set the re-authentication hold off time for the current network
-     * @param holdoff hold off time in milliseconds
-     * @param ess set if the hold off pertains to an ESS rather than a BSS
-     */
-    @Override
-    public void deauthenticateNetwork(long holdoff, boolean ess) {
-        mLog.info("deauthenticateNetwork uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.deauthenticateNetwork(mClientModeImplChannel, holdoff, ess);
-    }
-
      /**
      * Get the country code
      * @return Get the best choice country code for wifi, regardless of if it was set or
@@ -3195,7 +3188,7 @@ public class WifiServiceImpl extends BaseWifiService {
     public int handleShellCommand(@NonNull ParcelFileDescriptor in,
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new WifiShellCommand(mWifiInjector, this, mContext).exec(
+        return new WifiShellCommand(mWifiInjector, this, mContext, mClientModeImpl).exec(
                 this, in.getFileDescriptor(), out.getFileDescriptor(), err.getFileDescriptor(),
                 args);
     }
@@ -3507,11 +3500,6 @@ public class WifiServiceImpl extends BaseWifiService {
     public byte[] retrieveBackupData() {
         enforceNetworkSettingsPermission();
         mLog.info("retrieveBackupData uid=%").c(Binder.getCallingUid()).flush();
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return null;
-        }
-
         Log.d(TAG, "Retrieving backup data");
         List<WifiConfiguration> wifiConfigurations = mWifiThreadRunner.call(
                 () -> mWifiConfigManager.getConfiguredNetworksWithPasswords(), null);
@@ -3559,11 +3547,6 @@ public class WifiServiceImpl extends BaseWifiService {
     public void restoreBackupData(byte[] data) {
         enforceNetworkSettingsPermission();
         mLog.info("restoreBackupData uid=%").c(Binder.getCallingUid()).flush();
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return;
-        }
-
         Log.d(TAG, "Restoring backup data");
         List<WifiConfiguration> wifiConfigurations =
                 mWifiBackupRestore.retrieveConfigurationsFromBackupData(data);
@@ -3619,11 +3602,6 @@ public class WifiServiceImpl extends BaseWifiService {
     public void restoreSupplicantBackupData(byte[] supplicantData, byte[] ipConfigData) {
         enforceNetworkSettingsPermission();
         mLog.trace("restoreSupplicantBackupData uid=%").c(Binder.getCallingUid()).flush();
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return;
-        }
-
         Log.d(TAG, "Restoring supplicant backup data");
         List<WifiConfiguration> wifiConfigurations =
                 mWifiBackupRestore.retrieveConfigurationsFromSupplicantBackupData(
@@ -3711,14 +3689,11 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private long getSupportedFeaturesInternal() {
-        final AsyncChannel channel = mClientModeImplChannel;
-        long supportedFeatureSet = 0L;
-        if (channel != null) {
-            supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures(channel);
-        } else {
+        if (mClientModeImplChannel == null) {
             Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return supportedFeatureSet;
+            return 0L;
         }
+        long supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures(mClientModeImplChannel);
         // Mask the feature set against system properties.
         boolean rttSupported = mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_WIFI_RTT);

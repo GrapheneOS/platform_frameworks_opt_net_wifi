@@ -24,6 +24,7 @@ import android.util.ArrayMap;
 import android.util.LocalLog;
 import android.util.Log;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
@@ -32,6 +33,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This classes manages the addition and removal of BSSIDs to the BSSID blocklist, which is used
+ * This class manages the addition and removal of BSSIDs to the BSSID blocklist, which is used
  * for firmware roaming and network selection.
  */
 public class BssidBlocklistMonitor {
@@ -107,6 +109,9 @@ public class BssidBlocklistMonitor {
     // Map of bssid to BssidStatus
     private Map<String, BssidStatus> mBssidStatusMap = new ArrayMap<>();
 
+    // Keeps history of 30 blocked BSSIDs that were most recently removed.
+    private BssidStatusHistoryLogger mBssidStatusHistoryLogger = new BssidStatusHistoryLogger(30);
+
     /**
      * Create a new instance of BssidBlocklistMonitor
      */
@@ -149,9 +154,10 @@ public class BssidBlocklistMonitor {
      */
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("Dump of BssidBlocklistMonitor");
-        pw.println("BssidBlocklistMonitor - Bssid blocklist Begin ----");
+        pw.println("BssidBlocklistMonitor - Bssid blocklist begin ----");
         mBssidStatusMap.values().stream().forEach(entry -> pw.println(entry));
-        pw.println("BssidBlocklistMonitor - Bssid blocklist End ----");
+        pw.println("BssidBlocklistMonitor - Bssid blocklist end ----");
+        mBssidStatusHistoryLogger.dump(pw);
     }
 
     private void addToBlocklist(@NonNull BssidStatus entry, long durationMs, String reasonString) {
@@ -399,7 +405,14 @@ public class BssidBlocklistMonitor {
      */
     public void clearBssidBlocklistForSsid(@NonNull String ssid) {
         int prevSize = mBssidStatusMap.size();
-        mBssidStatusMap.entrySet().removeIf(e -> e.getValue().ssid.equals(ssid));
+        mBssidStatusMap.entrySet().removeIf(e -> {
+            BssidStatus status = e.getValue();
+            if (status.ssid.equals(ssid)) {
+                mBssidStatusHistoryLogger.add(status, "clearBssidBlocklistForSsid");
+                return true;
+            }
+            return false;
+        });
         int diff = prevSize - mBssidStatusMap.size();
         if (diff > 0) {
             localLog(TAG + " clearBssidBlocklistForSsid: SSID=" + ssid
@@ -413,6 +426,9 @@ public class BssidBlocklistMonitor {
     public void clearBssidBlocklist() {
         if (mBssidStatusMap.size() > 0) {
             int prevSize = mBssidStatusMap.size();
+            for (BssidStatus status : mBssidStatusMap.values()) {
+                mBssidStatusHistoryLogger.add(status, "clearBssidBlocklist");
+            }
             mBssidStatusMap.clear();
             localLog(TAG + " clearBssidBlocklist: num BSSIDs cleared="
                     + (prevSize - mBssidStatusMap.size()));
@@ -449,6 +465,7 @@ public class BssidBlocklistMonitor {
             BssidStatus status = e.getValue();
             if (status.isInBlocklist) {
                 if (status.blocklistEndTimeMs < curTime) {
+                    mBssidStatusHistoryLogger.add(status, "updateAndGetBssidBlocklistInternal");
                     return true;
                 }
                 builder.accept(status);
@@ -490,6 +507,50 @@ public class BssidBlocklistMonitor {
         }
     }
 
+    @VisibleForTesting
+    public int getBssidStatusHistoryLoggerSize() {
+        return mBssidStatusHistoryLogger.size();
+    }
+
+    private class BssidStatusHistoryLogger {
+        private LinkedList<String> mLogHistory = new LinkedList<>();
+        private int mBufferSize;
+
+        BssidStatusHistoryLogger(int bufferSize) {
+            mBufferSize = bufferSize;
+        }
+
+        public void add(BssidStatus bssidStatus, String trigger) {
+            // only log history for Bssids that had been blocked.
+            if (bssidStatus == null || !bssidStatus.isInBlocklist) {
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            mCalendar.setTimeInMillis(mClock.getWallClockMillis());
+            sb.append(", logTimeMs="
+                    + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,
+                    mCalendar, mCalendar, mCalendar, mCalendar));
+            sb.append(", trigger=" + trigger);
+            mLogHistory.add(bssidStatus.toString() + sb.toString());
+            if (mLogHistory.size() > mBufferSize) {
+                mLogHistory.removeFirst();
+            }
+        }
+
+        @VisibleForTesting
+        public int size() {
+            return mLogHistory.size();
+        }
+
+        public void dump(PrintWriter pw) {
+            pw.println("BssidBlocklistMonitor - Bssid blocklist history begin ----");
+            for (String line : mLogHistory) {
+                pw.println(line);
+            }
+            pw.println("BssidBlocklistMonitor - Bssid blocklist history end ----");
+        }
+    }
+
     /**
      * Helper class that counts the number of failures per BSSID.
      */
@@ -502,6 +563,7 @@ public class BssidBlocklistMonitor {
         // The following are used to flag how long this BSSID stays in the blocklist.
         public boolean isInBlocklist;
         public long blocklistEndTimeMs;
+        public long blocklistStartTimeMs;
 
         BssidStatus(String bssid, String ssid) {
             this.bssid = bssid;
@@ -522,7 +584,8 @@ public class BssidBlocklistMonitor {
          */
         public void addToBlocklist(long durationMs, String blockReason) {
             isInBlocklist = true;
-            blocklistEndTimeMs = mClock.getWallClockMillis() + durationMs;
+            blocklistStartTimeMs = mClock.getWallClockMillis();
+            blocklistEndTimeMs = blocklistStartTimeMs + durationMs;
             mBlockReason = blockReason;
         }
 
@@ -530,7 +593,9 @@ public class BssidBlocklistMonitor {
          * Remove this BSSID from the blocklist.
          */
         public void removeFromBlocklist() {
+            mBssidStatusHistoryLogger.add(this, "removeFromBlocklist");
             isInBlocklist = false;
+            blocklistStartTimeMs = 0;
             blocklistEndTimeMs = 0;
             mBlockReason = "";
             localLog(TAG + " removeFromBlocklist BSSID=" + bssid);
@@ -544,6 +609,10 @@ public class BssidBlocklistMonitor {
             sb.append(", isInBlocklist=" + isInBlocklist);
             if (isInBlocklist) {
                 sb.append(", blockReason=" + mBlockReason);
+                mCalendar.setTimeInMillis(blocklistStartTimeMs);
+                sb.append(", blocklistStartTimeMs="
+                        + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,
+                        mCalendar, mCalendar, mCalendar, mCalendar));
                 mCalendar.setTimeInMillis(blocklistEndTimeMs);
                 sb.append(", blocklistEndTimeMs="
                         + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,

@@ -54,7 +54,6 @@ import com.android.server.wifi.WifiScoreCard.PerNetwork;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.WifiPermissionsUtil;
-import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
 
 import org.junit.After;
@@ -129,7 +128,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private WifiConfigStore mWifiConfigStore;
     @Mock private PackageManager mPackageManager;
     @Mock private WifiPermissionsUtil mWifiPermissionsUtil;
-    @Mock private WifiPermissionsWrapper mWifiPermissionsWrapper;
     @Mock private WifiInjector mWifiInjector;
     @Mock private WifiLastResortWatchdog mWifiLastResortWatchdog;
     @Mock private NetworkListSharedStoreData mNetworkListSharedStoreData;
@@ -217,20 +215,14 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         when(mWifiPermissionsUtil.isDeviceOwner(anyInt(), any())).thenReturn(false);
         when(mWifiPermissionsUtil.isProfileOwner(anyInt(), any())).thenReturn(false);
-        when(mWifiInjector.getWifiNetworkSuggestionsManager())
-                .thenReturn(mWifiNetworkSuggestionsManager);
-        when(mWifiInjector.getBssidBlocklistMonitor()).thenReturn(mBssidBlocklistMonitor);
-        when(mWifiInjector.getWifiLastResortWatchdog()).thenReturn(mWifiLastResortWatchdog);
-        when(mWifiInjector.getWifiLastResortWatchdog().shouldIgnoreSsidUpdate())
-                .thenReturn(false);
-        when(mWifiInjector.getMacAddressUtil()).thenReturn(mMacAddressUtil);
-        when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
+        when(mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()).thenReturn(false);
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(TEST_RANDOMIZED_MAC);
         when(mWifiScoreCard.lookupNetwork(any())).thenReturn(mPerNetwork);
 
         mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
                 mSubscriptionManager, mWifiInjector, mock(FrameworkFacade.class),
-                mock(WifiContext.class), mock(WifiConfigStore.class), mock(Handler.class));
+                mock(WifiContext.class), mock(WifiConfigStore.class), mock(Handler.class),
+                mWifiMetrics);
         mLruConnectionTracker = new LruConnectionTracker(100, mContext);
         createWifiConfigManager();
         mWifiConfigManager.addOnNetworkUpdateListener(mWcmListener);
@@ -4674,10 +4666,11 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 new WifiConfigManager(
                         mContext, mClock, mUserManager, mWifiCarrierInfoManager,
                         mWifiKeyStore, mWifiConfigStore,
-                        mWifiPermissionsUtil, mWifiPermissionsWrapper, mWifiInjector,
+                        mWifiPermissionsUtil, mMacAddressUtil, mWifiMetrics, mBssidBlocklistMonitor,
+                        mWifiLastResortWatchdog,
                         mNetworkListSharedStoreData, mNetworkListUserStoreData,
                         mRandomizedMacStoreData,
-                        mFrameworkFacade, new Handler(mLooper.getLooper()), mDeviceConfigFacade,
+                        mFrameworkFacade, mDeviceConfigFacade,
                         mWifiScoreCard, mLruConnectionTracker);
         mWifiConfigManager.enableVerboseLogging(1);
     }
@@ -5383,8 +5376,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
 
-        when(mWifiInjector.getWifiLastResortWatchdog().shouldIgnoreSsidUpdate())
-                .thenReturn(true);
+        when(mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()).thenReturn(true);
 
         int networkId = result.getNetworkId();
         // First set it to enabled.

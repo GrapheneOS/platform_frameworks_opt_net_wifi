@@ -52,6 +52,7 @@ import android.util.LocalLog;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -244,7 +245,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     ScanData mockScanData() {
         ScanData scanData = mock(ScanData.class);
 
-        when(scanData.getBandScanned()).thenReturn(WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+        when(scanData.getBandScanned()).thenReturn(WifiScanner.WIFI_BAND_ALL);
 
         return scanData;
     }
@@ -381,8 +382,10 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     WifiConnectivityManager createConnectivityManager() {
+        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
+        holder.set(mClientModeImpl);
         return new WifiConnectivityManager(mContext, mScoringParams,
-                mClientModeImpl, mWifiConfigManager, mWifiNetworkSuggestionsManager,
+                holder, mWifiConfigManager, mWifiNetworkSuggestionsManager,
                 mWifiInfo, mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
@@ -1776,7 +1779,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         doAnswer(new AnswerWithArguments() {
             public void answer(ScanSettings settings, ScanListener listener,
                     WorkSource workSource) throws Exception {
-                assertEquals(settings.band, WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+                assertEquals(settings.band, WifiScanner.WIFI_BAND_ALL);
                 assertNull(settings.channels);
             }}).when(mWifiScanner).startScan(anyObject(), anyObject(), anyObject());
 
@@ -1943,7 +1946,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         doAnswer(new AnswerWithArguments() {
             public void answer(ScanSettings settings, Executor executor, ScanListener listener,
                     WorkSource workSource) throws Exception {
-                assertEquals(settings.band, WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+                assertEquals(settings.band, WifiScanner.WIFI_BAND_ALL);
                 assertNull(settings.channels);
             }}).when(mWifiScanner).startScan(anyObject(), anyObject(), anyObject(), anyObject());
 
@@ -2095,7 +2098,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
 
         // Set up as full band scan results.
-        when(mScanData.getBandScanned()).thenReturn(WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+        when(mScanData.getBandScanned()).thenReturn(WifiScanner.WIFI_BAND_ALL);
 
         // Force a connectivity scan which enables WifiConnectivityManager
         // to wait for full band scan results.

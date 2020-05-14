@@ -128,6 +128,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
     @Mock AlertDialog.Builder mAlertDialogBuilder;
     @Mock AlertDialog mAlertDialog;
     @Mock WifiCarrierInfoManager.OnUserApproveCarrierListener mListener;
+    @Mock WifiMetrics mWifiMetrics;
 
     private List<SubscriptionInfo> mSubInfoList;
 
@@ -176,7 +177,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
         mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
                 mSubscriptionManager, mWifiInjector, mFrameworkFacade, mContext, mWifiConfigStore,
-                new Handler(mLooper.getLooper()));
+                new Handler(mLooper.getLooper()), mWifiMetrics);
         ArgumentCaptor<ImsiPrivacyProtectionExemptionStoreData.DataSource>
                 imsiDataSourceArgumentCaptor =
                 ArgumentCaptor.forClass(ImsiPrivacyProtectionExemptionStoreData.DataSource.class);
@@ -1535,6 +1536,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
                 CARRIER_NAME, DATA_CARRIER_ID);
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
         validateUserApprovalDialog(CARRIER_NAME);
 
         // Simulate user clicking on allow in the dialog.
@@ -1553,6 +1556,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         assertTrue(mWifiCarrierInfoManager
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
         verify(mListener).onUserAllowed(DATA_CARRIER_ID);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, true);
     }
 
     @Test
@@ -1581,6 +1586,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         assertFalse(mWifiCarrierInfoManager
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
         verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_DISALLOWED_CARRIER, false);
     }
 
     @Test
@@ -1601,6 +1608,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         //Simulate user dismissal the notification
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
                 CARRIER_NAME, DATA_SUBID);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_DISMISS, false);
         reset(mNotificationManger);
         // No Notification is active, should send notification again.
         mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
@@ -1637,6 +1646,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
                 CARRIER_NAME, DATA_SUBID);
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
         validateUserApprovalDialog(CARRIER_NAME);
 
         // Simulate user clicking on disallow in the dialog.
@@ -1655,6 +1666,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         assertFalse(mWifiCarrierInfoManager
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
         verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_DISALLOWED_CARRIER, true);
     }
 
     @Test
@@ -1675,6 +1688,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
                 CARRIER_NAME, DATA_SUBID);
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
         validateUserApprovalDialog(CARRIER_NAME);
 
         // Simulate user clicking on dismissal in the dialog.
@@ -1698,6 +1713,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         assertFalse(mWifiCarrierInfoManager
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
         verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_DISMISS, true);
     }
 
     @Test

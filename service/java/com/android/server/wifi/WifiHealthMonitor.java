@@ -1046,15 +1046,12 @@ public class WifiHealthMonitor {
 
         @Override
         public void onResults(WifiScanner.ScanData[] results) {
-            if (!mWifiEnabled) {
+            if (!mWifiEnabled || results == null || results.length == 0) {
                 clearScanDetails();
                 return;
             }
 
-            boolean isFullBandScanResults =
-                    results[0].getBandScanned() == WifiScanner.WIFI_BAND_BOTH_WITH_DFS
-                            || results[0].getBandScanned() == WifiScanner.WIFI_BAND_BOTH;
-            if (isFullBandScanResults) {
+            if (WifiScanner.isFullBandScan(results[0].getBandScanned(), true)) {
                 handleScanResults(mScanDetails);
             }
             clearScanDetails();

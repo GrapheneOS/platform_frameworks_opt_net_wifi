@@ -28,6 +28,7 @@ import android.hardware.wifi.V1_0.WifiNanStatus;
 import android.hardware.wifi.V1_2.IWifiNanIfaceEventCallback;
 import android.hardware.wifi.V1_2.NanDataPathChannelInfo;
 import android.hardware.wifi.V1_2.NanDataPathScheduleUpdateInd;
+import android.net.MacAddress;
 import android.net.wifi.util.HexEncoding;
 import android.os.BasicShellCommandHandler;
 import android.util.Log;
@@ -49,8 +50,7 @@ import java.util.Arrays;
 public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub implements
         WifiAwareShellCommand.DelegatedShellCommand {
     private static final String TAG = "WifiAwareNativeCallback";
-    private static final boolean VDBG = false;
-    /* package */ boolean mDbg = false;
+    private boolean mDbg = false;
 
     /* package */ boolean mIsHal12OrLater = false;
 
@@ -59,6 +59,14 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
     public WifiAwareNativeCallback(WifiAwareStateManager wifiAwareStateManager) {
         mWifiAwareStateManager = wifiAwareStateManager;
     }
+
+    /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mDbg = verbose;
+    }
+
 
     /*
      * Counts of callbacks from HAL. Retrievable through shell command.
@@ -94,11 +102,9 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
         final PrintWriter pwo = parentShell.getOutPrintWriter();
 
         String subCmd = parentShell.getNextArgRequired();
-        if (VDBG) Log.v(TAG, "onCommand: subCmd='" + subCmd + "'");
         switch (subCmd) {
             case "get_cb_count": {
                 String option = parentShell.getNextOption();
-                if (VDBG) Log.v(TAG, "option='" + option + "'");
                 boolean reset = false;
                 if (option != null) {
                     if ("--reset".equals(option)) {
@@ -126,7 +132,6 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
             }
             case  "get_channel_info": {
                 String option = parentShell.getNextOption();
-                if (VDBG) Log.v(TAG, "option='" + option + "'");
                 if (option != null) {
                     pwe.println("Unknown option to 'get_channel_info'");
                     return -1;
@@ -536,7 +541,9 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
     @Override
     public void eventDataPathScheduleUpdate(NanDataPathScheduleUpdateInd event) {
         if (mDbg) {
-            Log.v(TAG, "eventDataPathScheduleUpdate");
+            Log.v(TAG, "eventDataPathScheduleUpdate: peerMac="
+                    + MacAddress.fromBytes(event.peerDiscoveryAddress).toString()
+                    + ", ndpIds=" + event.ndpInstanceIds + ", channelInfo=" + event.channelInfo);
         }
         if (!mIsHal12OrLater) {
             Log.wtf(TAG, "eventDataPathScheduleUpdate should not be called by a <1.2 HAL!");

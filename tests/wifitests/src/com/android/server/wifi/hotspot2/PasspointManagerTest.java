@@ -98,6 +98,7 @@ import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.WifiConfigurationTestUtil;
 import com.android.server.wifi.WifiContext;
 import com.android.server.wifi.WifiInjector;
+import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
@@ -207,6 +208,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     ArgumentCaptor<AppOpsManager.OnOpChangedListener> mAppOpChangedListenerCaptor =
             ArgumentCaptor.forClass(AppOpsManager.OnOpChangedListener.class);
     WifiCarrierInfoManager mWifiCarrierInfoManager;
+    PrimaryClientModeImplHolder mClientModeImplHolder;
 
     /** Sets up test. */
     @Before
@@ -225,17 +227,18 @@ public class PasspointManagerTest extends WifiBaseTest {
                 any(PasspointManager.class), any(WifiMetrics.class)))
                 .thenReturn(mPasspointProvisioner);
         when(mContext.getSystemService(Context.APP_OPS_SERVICE)).thenReturn(mAppOpsManager);
-        when(mWifiInjector.getClientModeImpl()).thenReturn(mClientModeImpl);
+        mClientModeImplHolder = new PrimaryClientModeImplHolder();
+        mClientModeImplHolder.set(mClientModeImpl);
         when(mWifiInjector.getWifiNetworkSuggestionsManager())
                 .thenReturn(mWifiNetworkSuggestionsManager);
         mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
                 mSubscriptionManager, mWifiInjector, mock(FrameworkFacade.class),
-                mock(WifiContext.class), mWifiConfigStore, mock(Handler.class));
+                mock(WifiContext.class), mWifiConfigStore, mock(Handler.class), mWifiMetrics);
         mLooper = new TestLooper();
         mHandler = new Handler(mLooper.getLooper());
         mManager = new PasspointManager(mContext, mWifiInjector, mHandler, mWifiNative,
                 mWifiKeyStore, mClock, mObjectFactory, mWifiConfigManager,
-                mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager);
+                mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager, mClientModeImplHolder);
         ArgumentCaptor<PasspointEventHandler.Callbacks> callbacks =
                 ArgumentCaptor.forClass(PasspointEventHandler.Callbacks.class);
         verify(mObjectFactory).makePasspointEventHandler(any(WifiNative.class),
@@ -863,7 +866,7 @@ public class PasspointManagerTest extends WifiBaseTest {
                 .thenReturn(true);
         PasspointManager ut = new PasspointManager(mContext, mWifiInjector, mHandler, mWifiNative,
                 mWifiKeyStore, mClock, spyFactory, mWifiConfigManager,
-                mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager);
+                mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager, mClientModeImplHolder);
 
         assertTrue(ut.addOrUpdateProvider(config, TEST_CREATOR_UID, TEST_PACKAGE,
                 true, true));
