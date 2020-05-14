@@ -705,7 +705,7 @@ message WifiLog {
   optional bool is_wifi_wake_enabled = 197;
 
   // User reaction to the carrier or suggestion app approval UI.
-  optional UserReactionToApprovalUiEvent userReactionToApprovalUiEvent = 198;
+  optional UserReactionToApprovalUiEvent user_reaction_to_approval_ui_event = 198;
 }
 
 // Information that gets logged for every WiFi connection.
