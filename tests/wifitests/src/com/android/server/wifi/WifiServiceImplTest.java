@@ -4759,9 +4759,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testWifiUsabilityScoreUpdateAfterScoreEvent() {
-        mWifiServiceImpl.updateWifiUsabilityScore(anyInt(), anyInt(), 15);
+        mWifiServiceImpl.updateWifiUsabilityScore(5, 10, 15);
         mLooper.dispatchAll();
-        verify(mClientModeImpl).updateWifiUsabilityScore(anyInt(), anyInt(), anyInt());
+        verify(mWifiMetrics).incrementWifiUsabilityScoreCount(5, 10, 15);
     }
 
     private void startLohsAndTethering(boolean isApConcurrencySupported) throws Exception {

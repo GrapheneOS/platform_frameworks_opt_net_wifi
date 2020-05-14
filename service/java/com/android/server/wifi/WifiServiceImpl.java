@@ -4071,7 +4071,7 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         // Post operation to handler thread
         mWifiThreadRunner.post(() ->
-                mClientModeImpl.updateWifiUsabilityScore(seqNum, score, predictionHorizonSec));
+                mWifiMetrics.incrementWifiUsabilityScoreCount(seqNum, score, predictionHorizonSec));
     }
 
     /**
