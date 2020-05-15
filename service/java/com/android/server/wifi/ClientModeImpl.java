@@ -539,11 +539,6 @@ public class ClientModeImpl extends StateMachine {
      * initiate connection attempt, etc.
      * */
     static final int CMD_BOOT_COMPLETED                                 = BASE + 134;
-    /**
-     * Initialize ClientModeImpl. This is currently used to initialize the
-     * {@link HalDeviceManager} module.
-     */
-    static final int CMD_INITIALIZE                                     = BASE + 135;
 
     /* We now have a valid IP configuration. */
     static final int CMD_IP_CONFIGURATION_SUCCESSFUL                    = BASE + 138;
@@ -3382,10 +3377,6 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case CMD_INITIALIZE: {
-                    mWifiNative.initialize();
-                    break;
-                }
                 case CMD_BOOT_COMPLETED: {
                     // get other services that we need to manage
                     getAdditionalWifiServiceInterfaces();
@@ -5997,13 +5988,6 @@ public class ClientModeImpl extends StateMachine {
      */
     public void setIpReachabilityDisconnectEnabled(boolean enabled) {
         mIpReachabilityDisconnectEnabled = enabled;
-    }
-
-    /**
-     * Sends a message to initialize the ClientModeImpl.
-     */
-    public void initialize() {
-        sendMessage(CMD_INITIALIZE);
     }
 
     /**
