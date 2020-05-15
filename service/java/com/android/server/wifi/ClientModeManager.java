@@ -114,6 +114,14 @@ public class ClientModeManager implements ActiveModeManager {
         mDeferStopHandler.start(getWifiOffDeferringTimeMs());
     }
 
+    /**
+     * @return Returns the client mode impl associated with this instance of
+     * {@link ClientModeManager}.
+     */
+    public ClientModeImpl getImpl() {
+        return mClientModeImplHolder.get();
+    }
+
     private class DeferStopHandler extends WifiHandler {
         private boolean mIsDeferring = false;
         private ImsMmTelManager mImsMmTelManager = null;
