@@ -62,6 +62,7 @@ public class ActiveModeWarden {
 
     // Holder for active mode managers
     private final ArraySet<ActiveModeManager> mActiveModeManagers;
+    private final ArraySet<ModeChangeCallback> mCallbacks;
     // DefaultModeManager used to service API calls when there are not active mode managers.
     private final DefaultModeManager mDefaultModeManager;
 
@@ -100,6 +101,32 @@ public class ActiveModeWarden {
         mLohsCallback = callback;
     }
 
+    /**
+     * Callbacks for indicating any mode manager changes to the rest of the system.
+     */
+    public interface ModeChangeCallback {
+        /**
+         * Invoked when new mode manager is added.
+         *
+         * @param activeModeManager Instance of {@link ActiveModeManager}.
+         */
+        void onActiveModeManagerAdded(@NonNull ActiveModeManager activeModeManager);
+
+        /**
+         * Invoked when a mode manager is removed.
+         *
+         * @param activeModeManager Instance of {@link ActiveModeManager}.
+         */
+        void onActiveModeManagerRemoved(@NonNull ActiveModeManager activeModeManager);
+
+        /**
+         * Invoked when an existing mode manager's role is changed.
+         *
+         * @param activeModeManager Instance of {@link ActiveModeManager}.
+         */
+        void onActiveModeManagerRoleChanged(@NonNull ActiveModeManager activeModeManager);
+    }
+
     ActiveModeWarden(WifiInjector wifiInjector,
                      Looper looper,
                      WifiNative wifiNative,
@@ -120,6 +147,7 @@ public class ActiveModeWarden {
         mFacade = facade;
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mActiveModeManagers = new ArraySet<>();
+        mCallbacks = new ArraySet<>();
         mDefaultModeManager = defaultModeManager;
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
@@ -151,6 +179,38 @@ public class ActiveModeWarden {
                 (isAvailable) -> mHandler.post(() -> {
                     mCanRequestMoreSoftApManagers = isAvailable;
                 }));
+    }
+
+    private void invokeOnAddedCallbacks(@NonNull ActiveModeManager activeModeManager) {
+        for (ModeChangeCallback callback : mCallbacks) {
+            callback.onActiveModeManagerAdded(activeModeManager);
+        }
+    }
+
+    private void invokeOnRemovedCallbacks(@NonNull ActiveModeManager activeModeManager) {
+        for (ModeChangeCallback callback : mCallbacks) {
+            callback.onActiveModeManagerRemoved(activeModeManager);
+        }
+    }
+
+    private void invokeOnRoleChangedCallbacks(@NonNull ActiveModeManager activeModeManager) {
+        for (ModeChangeCallback callback : mCallbacks) {
+            callback.onActiveModeManagerRoleChanged(activeModeManager);
+        }
+    }
+
+    /**
+     * Register for mode change callbacks.
+     */
+    public void registerModeChangeCallback(@NonNull ModeChangeCallback callback) {
+        mCallbacks.add(Objects.requireNonNull(callback));
+    }
+
+    /**
+     * Unregister mode change callback.
+     */
+    public void unregisterModeChangeCallback(@NonNull ModeChangeCallback callback) {
+        mCallbacks.remove(Objects.requireNonNull(callback));
     }
 
     /**
@@ -655,6 +715,12 @@ public class ActiveModeWarden {
         @Override
         public void onStarted() {
             updateBatteryStats();
+            invokeOnAddedCallbacks(getActiveModeManager());
+        }
+
+        @Override
+        public void onRoleChanged() {
+            Log.w(TAG, "Role switched received on SoftApManager unexpectedly");
         }
 
         @Override
@@ -662,6 +728,7 @@ public class ActiveModeWarden {
             mActiveModeManagers.remove(getActiveModeManager());
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_AP_STOPPED);
+            invokeOnRemovedCallbacks(getActiveModeManager());
         }
 
         @Override
@@ -692,6 +759,14 @@ public class ActiveModeWarden {
                 ClientModeManager clientModeManager = (ClientModeManager) getActiveModeManager();
                 mExternalRequestListener.onAnswer(clientModeManager);
             }
+            invokeOnAddedCallbacks(getActiveModeManager());
+        }
+
+        @Override
+        public void onRoleChanged() {
+            updateClientScanMode();
+            updateBatteryStats();
+            invokeOnRoleChangedCallbacks(getActiveModeManager());
         }
 
         @Override
@@ -700,6 +775,7 @@ public class ActiveModeWarden {
             updateClientScanMode();
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_STA_STOPPED);
+            invokeOnRemovedCallbacks(getActiveModeManager());
         }
 
         @Override
