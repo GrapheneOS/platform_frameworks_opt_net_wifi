@@ -317,6 +317,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiSettingsConfigStore mWifiSettingsConfigStore;
     @Mock WifiScanAlwaysAvailableSettingsCompatibility mScanAlwaysAvailableSettingsCompatibility;
     @Mock PackageInfo mPackageInfo;
+    @Mock WifiConnectivityManager mWifiConnectivityManager;
+    @Mock WifiDataStall mWifiDataStall;
 
     WifiLog mLog = new LogcatLog(TAG);
 
@@ -395,6 +397,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getSettingsConfigStore()).thenReturn(mWifiSettingsConfigStore);
         when(mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility())
                 .thenReturn(mScanAlwaysAvailableSettingsCompatibility);
+        when(mWifiInjector.getWifiConnectivityManager()).thenReturn(mWifiConnectivityManager);
+        when(mWifiInjector.getWifiDataStall()).thenReturn(mWifiDataStall);
         when(mClientModeImpl.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class), any())).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
@@ -4632,17 +4636,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
      * Verify that a call to setDeviceMobilityState throws a SecurityException if the
      * caller does not have WIFI_SET_DEVICE_MOBILITY_STATE permission.
      */
-    @Test
+    @Test(expected = SecurityException.class)
     public void setDeviceMobilityStateThrowsSecurityExceptionOnMissingPermissions() {
         doThrow(new SecurityException()).when(mContext)
                 .enforceCallingOrSelfPermission(
                         eq(android.Manifest.permission.WIFI_SET_DEVICE_MOBILITY_STATE),
                         eq("WifiService"));
-        try {
-            mWifiServiceImpl.setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
-            fail("expected SecurityException");
-        } catch (SecurityException expected) {
-        }
+        mWifiServiceImpl.setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
     }
 
     /**
@@ -4651,9 +4651,16 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void setDeviceMobilityStateRunsOnHandler() {
         mWifiServiceImpl.setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
-        verify(mClientModeImpl, never()).setDeviceMobilityState(anyInt());
+        verify(mWifiConnectivityManager, never())
+                .setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
+        verify(mWifiHealthMonitor, never())
+                .setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
+        verify(mWifiDataStall, never())
+                .setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
         mLooper.dispatchAll();
-        verify(mClientModeImpl).setDeviceMobilityState(eq(DEVICE_MOBILITY_STATE_STATIONARY));
+        verify(mWifiConnectivityManager).setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
+        verify(mWifiHealthMonitor).setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
+        verify(mWifiDataStall).setDeviceMobilityState(DEVICE_MOBILITY_STATE_STATIONARY);
     }
 
     /**
@@ -4752,9 +4759,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testWifiUsabilityScoreUpdateAfterScoreEvent() {
-        mWifiServiceImpl.updateWifiUsabilityScore(anyInt(), anyInt(), 15);
+        mWifiServiceImpl.updateWifiUsabilityScore(5, 10, 15);
         mLooper.dispatchAll();
-        verify(mClientModeImpl).updateWifiUsabilityScore(anyInt(), anyInt(), anyInt());
+        verify(mWifiMetrics).incrementWifiUsabilityScoreCount(5, 10, 15);
     }
 
     private void startLohsAndTethering(boolean isApConcurrencySupported) throws Exception {
