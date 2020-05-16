@@ -437,12 +437,11 @@ public class WificondScannerImpl extends WifiScannerImpl implements Handler.Call
                 return false;
             }
 
-            if (startHwPnoScan(settings)) {
-                mLastPnoScanSettings = new LastPnoScanSettings(
-                            mClock.getElapsedSinceBootMillis(),
-                            settings.networkList, eventHandler);
+            mLastPnoScanSettings = new LastPnoScanSettings(
+                        mClock.getElapsedSinceBootMillis(),
+                        settings.networkList, eventHandler);
 
-            } else {
+            if (!startHwPnoScan(settings)) {
                 Log.e(TAG, "Failed to start PNO scan");
                 reportPnoScanFailure();
             }
