@@ -385,19 +385,19 @@ public class WifiInjector {
                 mContext, mFrameworkFacade, mWifiConfigManager,
                 mWifiConnectivityManager, wifiHandler,
                 notificationManager, mConnectionFailureNotificationBuilder);
+        mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
+                mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
+                mContext, mClientModeImplHolder, mSettingsStore, mFrameworkFacade,
+                mWifiPermissionsUtil);
         WifiNetworkFactory wifiNetworkFactory = new WifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER,
                 (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE),
                 (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE),
                 (AppOpsManager) mContext.getSystemService(Context.APP_OPS_SERVICE),
                 mClock, this, mWifiConnectivityManager, mWifiConfigManager,
-                mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mClientModeImplHolder);
+                mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mActiveModeWarden);
         UntrustedWifiNetworkFactory untrustedWifiNetworkFactory = new UntrustedWifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER, mWifiConnectivityManager);
-        mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
-                mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
-                mContext, mClientModeImplHolder, mSettingsStore, mFrameworkFacade,
-                mWifiPermissionsUtil);
         mWifiScanAlwaysAvailableSettingsCompatibility =
                 new WifiScanAlwaysAvailableSettingsCompatibility(mContext, wifiHandler,
                         mSettingsStore, mActiveModeWarden, mFrameworkFacade);

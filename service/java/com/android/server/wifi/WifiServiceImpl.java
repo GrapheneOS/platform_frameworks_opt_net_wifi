@@ -423,7 +423,6 @@ public class WifiServiceImpl extends BaseWifiService {
             registerForBroadcasts();
             mInIdleMode = mPowerManager.isDeviceIdleMode();
 
-            mClientModeImpl.initialize();
             mActiveModeWarden.start();
             registerForCarrierConfigChange();
         });
