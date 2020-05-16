@@ -1844,15 +1844,6 @@ public class WifiConnectivityManager {
     }
 
     /**
-     * Handler when user specifies a particular network to connect to
-     */
-    public void setUserConnectChoice(int netId) {
-        localLog("setUserConnectChoice: netId=" + netId);
-
-        mNetworkSelector.setUserConnectChoice(netId);
-    }
-
-    /**
      * Handler to prepare for connection to a user or app specified network
      */
     public void prepareForForcedConnection(int netId) {
