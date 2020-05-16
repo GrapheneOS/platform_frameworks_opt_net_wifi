@@ -220,10 +220,10 @@ public class PasspointWifiEntry extends WifiEntry {
                 String carrierName = mWifiConfig != null
                         ? getCarrierNameForSubId(mContext, getSubIdForConfig(mContext, mWifiConfig))
                         : null;
-                String suggestorLabel = getAppLabel(mContext, mWifiConfig.creatorName);
+                String suggestorLabel = getAppLabel(mContext, suggestionOrSpecifierPackageName);
                 if (TextUtils.isEmpty(suggestorLabel)) {
                     // Fall-back to the package name in case the app label is missing
-                    suggestorLabel = mWifiConfig.creatorName;
+                    suggestorLabel = suggestionOrSpecifierPackageName;
                 }
                 return mContext.getString(R.string.connected_via_app, carrierName != null
                         ? carrierName

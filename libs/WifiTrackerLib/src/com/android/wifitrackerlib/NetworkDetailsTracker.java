@@ -61,7 +61,8 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
-        if (key.startsWith(StandardWifiEntry.KEY_PREFIX)) {
+        if (key.startsWith(StandardWifiEntry.KEY_PREFIX)
+                || key.startsWith(NetworkRequestEntry.KEY_PREFIX)) {
             return new StandardNetworkDetailsTracker(lifecycle, context, wifiManager,
                     connectivityManager, networkScoreManager, mainHandler, workerHandler, clock,
                     maxScanAgeMillis, scanIntervalMillis, key);
