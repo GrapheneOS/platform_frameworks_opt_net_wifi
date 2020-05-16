@@ -1572,7 +1572,6 @@ public class WifiConnectivityManager {
         cancelPeriodicScanTimer();
         cancelDelayedPartialScan();
         stopPnoScan();
-        mScanRestartCount = 0;
     }
 
     /**
@@ -1905,6 +1904,7 @@ public class WifiConnectivityManager {
         mWaitForFullBandScanResults = false;
         mLatestCandidates = null;
         mLatestCandidatesTimestampMs = 0;
+        mScanRestartCount = 0;
     }
 
     /**

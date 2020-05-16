@@ -107,6 +107,28 @@ public class WificondPnoScannerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the HW disconnected PNO scan triggers a wificond PNO scan and invokes the
+     * OnPnoScanFailed callback when the scan fails.
+     */
+    @Test
+    public void startHwDisconnectedPnoScanFailure() {
+        createScannerWithHwPnoScanSupport();
+
+        WifiNative.PnoEventHandler pnoEventHandler = mock(WifiNative.PnoEventHandler.class);
+        WifiNative.PnoSettings pnoSettings = createDummyPnoSettings(false);
+
+        InOrder order = inOrder(pnoEventHandler, mWifiNative);
+
+        // Fail PNO scan
+        when(mWifiNative.startPnoScan(eq(IFACE_NAME), any(WifiNative.PnoSettings.class)))
+                .thenReturn(false);
+        assertTrue(mScanner.setHwPnoList(pnoSettings, pnoEventHandler));
+        order.verify(mWifiNative).startPnoScan(any(), any(WifiNative.PnoSettings.class));
+        order.verify(pnoEventHandler).onPnoScanFailed();
+        verifyNoMoreInteractions(pnoEventHandler);
+    }
+
+    /**
      * Verify that the HW PNO scan stop failure still resets the PNO scan state.
      * 1. Start Hw PNO.
      * 2. Stop Hw PNO scan which raises a stop command to WifiNative which is failed.
