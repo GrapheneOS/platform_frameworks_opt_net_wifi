@@ -164,14 +164,12 @@ public class StandardWifiEntry extends WifiEntry {
         // TODO: second argument (isSaved = false) is bogus in this context
         super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
-        if (!key.startsWith(KEY_PREFIX)) {
-            throw new IllegalArgumentException("Key does not start with correct prefix!");
-        }
         mContext = context;
         mKey = key;
         try {
+            final int prefixDelimiter = key.indexOf(":");
             final int securityDelimiter = key.lastIndexOf(",");
-            mSsid = key.substring(KEY_PREFIX.length(), securityDelimiter);
+            mSsid = key.substring(prefixDelimiter + 1, securityDelimiter);
             mSecurity = Integer.valueOf(key.substring(securityDelimiter + 1));
         } catch (StringIndexOutOfBoundsException | NumberFormatException e) {
             throw new IllegalArgumentException("Malformed key: " + key);
@@ -258,16 +256,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     private String getConnectStateDescription() {
         if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            if (!isSaved() && !isSuggestion()) {
-                // Special case for connected + ephemeral networks.
-                if (!TextUtils.isEmpty(mRecommendationServiceLabel)) {
-                    return String.format(mContext.getString(R.string.connected_via_network_scorer),
-                            mRecommendationServiceLabel);
-                }
-                return mContext.getString(R.string.connected_via_network_scorer_default);
-            }
-
-            // For network suggestions
+            // For suggestion or specifier networks
             final String suggestionOrSpecifierPackageName = mWifiInfo != null
                     ? mWifiInfo.getRequestingPackageName() : null;
             if (!TextUtils.isEmpty(suggestionOrSpecifierPackageName)) {
@@ -277,10 +266,19 @@ public class StandardWifiEntry extends WifiEntry {
                 String suggestorName = getAppLabel(mContext, suggestionOrSpecifierPackageName);
                 if (TextUtils.isEmpty(suggestorName)) {
                     // Fall-back to the package name in case the app label is missing
-                    suggestorName = mWifiConfig.creatorName;
+                    suggestorName = suggestionOrSpecifierPackageName;
                 }
                 return mContext.getString(R.string.connected_via_app, carrierName != null
                         ? carrierName : suggestorName);
+            }
+
+            if (!isSaved() && !isSuggestion()) {
+                // Special case for connected + ephemeral networks.
+                if (!TextUtils.isEmpty(mRecommendationServiceLabel)) {
+                    return String.format(mContext.getString(R.string.connected_via_network_scorer),
+                            mRecommendationServiceLabel);
+                }
+                return mContext.getString(R.string.connected_via_network_scorer_default);
             }
 
             String networkCapabilitiesinformation =

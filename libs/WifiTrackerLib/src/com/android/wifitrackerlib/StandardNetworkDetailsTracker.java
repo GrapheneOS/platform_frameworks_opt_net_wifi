@@ -18,6 +18,7 @@ package com.android.wifitrackerlib;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
+import static com.android.wifitrackerlib.NetworkRequestEntry.wifiConfigToNetworkRequestEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.wifiConfigToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
@@ -28,8 +29,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
+import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -53,6 +54,7 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "StandardNetworkDetailsTracker";
 
     private final StandardWifiEntry mChosenEntry;
+    private final boolean mIsNetworkRequest;
 
     StandardNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
@@ -67,16 +69,24 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             String key) {
         super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
-        mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, key, mWifiManager,
-                mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+
+        if (key.startsWith(NetworkRequestEntry.KEY_PREFIX)) {
+            mIsNetworkRequest = true;
+            mChosenEntry = new NetworkRequestEntry(mContext, mMainHandler, key, mWifiManager,
+                    mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+        } else {
+            mIsNetworkRequest = false;
+            mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, key, mWifiManager,
+                    mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+        }
         cacheNewScanResults();
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
         final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        final NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
-        mChosenEntry.updateConnectionInfo(wifiInfo, networkInfo);
-        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(
-                mWifiManager.getCurrentNetwork()));
+        final Network currentNetwork = mWifiManager.getCurrentNetwork();
+        mChosenEntry.updateConnectionInfo(wifiInfo, mConnectivityManager
+                .getNetworkInfo(currentNetwork));
+        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
     }
 
     @AnyThread
@@ -106,9 +116,7 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         checkNotNull(intent, "Intent cannot be null!");
         final WifiConfiguration updatedConfig =
                 (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (updatedConfig != null && !updatedConfig.isPasspoint()
-                && !updatedConfig.fromWifiNetworkSuggestion && TextUtils.equals(
-                wifiConfigToStandardWifiEntryKey(updatedConfig), mChosenEntry.getKey())) {
+        if (updatedConfig != null && configMatches(updatedConfig)) {
             final int changeReason = intent.getIntExtra(WifiManager.EXTRA_CHANGE_REASON,
                     -1 /* defaultValue*/);
             if (changeReason == WifiManager.CHANGE_REASON_ADDED
@@ -127,14 +135,14 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
         mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
-                (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO));
+                mConnectivityManager.getNetworkInfo(mWifiManager.getCurrentNetwork()));
     }
 
     @WorkerThread
     @Override
     protected void handleRssiChangedAction() {
         mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
-                mConnectivityManager.getActiveNetworkInfo());
+                mConnectivityManager.getNetworkInfo(mWifiManager.getCurrentNetwork()));
     }
 
     @WorkerThread
@@ -186,10 +194,7 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
      */
     private void conditionallyUpdateConfig() {
         WifiConfiguration updatedConfig = mWifiManager.getPrivilegedConfiguredNetworks().stream()
-                .filter(cachedConfig -> !cachedConfig.isPasspoint()
-                        && TextUtils.equals(
-                                wifiConfigToStandardWifiEntryKey(cachedConfig),
-                                mChosenEntry.getKey()))
+                .filter(this::configMatches)
                 .findAny().orElse(null);
         mChosenEntry.updateConfig(updatedConfig);
     }
@@ -203,5 +208,15 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
                         && getSecurityTypesFromScanResult(scan).contains(
                                 mChosenEntry.getSecurity()))
                 .collect(toList()));
+    }
+
+    private boolean configMatches(@NonNull WifiConfiguration config) {
+        if (config.isPasspoint()) {
+            return false;
+        }
+        String configKey = config.fromWifiNetworkSpecifier
+                ? wifiConfigToNetworkRequestEntryKey(config)
+                : wifiConfigToStandardWifiEntryKey(config);
+        return TextUtils.equals(configKey, mChosenEntry.getKey());
     }
 }
