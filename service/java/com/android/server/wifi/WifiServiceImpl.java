@@ -2466,8 +2466,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 countDownLatch.countDown();
             }
         };
-        mClientModeImpl.connect(null, netId, new Binder(), connectListener,
-                connectListener.hashCode(), callingUid);
+        mClientModeImpl.connect(null, netId, connectListener, callingUid);
         // now wait for response.
         try {
             countDownLatch.await(RUN_WITH_SCISSORS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
@@ -4066,7 +4065,7 @@ public class WifiServiceImpl extends BaseWifiService {
             throw new SecurityException(TAG + ": Permission denied");
         }
         mLog.info("connect uid=%").c(uid).flush();
-        mClientModeImpl.connect(config, netId, binder, callback, callbackIdentifier, uid);
+        mClientModeImpl.connect(config, netId, callback, uid);
         if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
             mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
         }
@@ -4083,8 +4082,7 @@ public class WifiServiceImpl extends BaseWifiService {
             throw new SecurityException(TAG + ": Permission denied");
         }
         mLog.info("save uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.save(
-                config, binder, callback, callbackIdentifier, Binder.getCallingUid());
+        mClientModeImpl.save(config, callback, Binder.getCallingUid());
     }
 
     /**
@@ -4103,7 +4101,7 @@ public class WifiServiceImpl extends BaseWifiService {
             // the netId becomes invalid after the forget operation.
             mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_FORGET_WIFI, netId);
         }
-        mClientModeImpl.forget(netId, binder, callback, callbackIdentifier, uid);
+        mClientModeImpl.forget(netId, callback, uid);
     }
 
     /**

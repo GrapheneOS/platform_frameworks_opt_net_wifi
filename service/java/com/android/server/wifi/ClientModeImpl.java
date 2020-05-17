@@ -6030,8 +6030,8 @@ public class ClientModeImpl extends StateMachine {
     /**
      * Trigger network connection and provide status via the provided callback.
      */
-    public void connect(WifiConfiguration config, int netId, @Nullable IBinder binder,
-            @Nullable IActionListener callback, int callbackIdentifier, int callingUid) {
+    public void connect(WifiConfiguration config, int netId,
+            @Nullable IActionListener callback, int callingUid) {
         mWifiThreadRunner.post(() -> {
             /*
              * The connect message can contain a network id passed as arg1 on message or
@@ -6078,8 +6078,7 @@ public class ClientModeImpl extends StateMachine {
     /**
      * Trigger network save and provide status via the provided callback.
      */
-    public void save(WifiConfiguration config, @Nullable IBinder binder,
-            @Nullable IActionListener callback, int callbackIdentifier, int callingUid) {
+    public void save(WifiConfiguration config, @Nullable IActionListener callback, int callingUid) {
         mWifiThreadRunner.post(() -> {
             ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
             if (config == null) {
@@ -6112,8 +6111,7 @@ public class ClientModeImpl extends StateMachine {
     /**
      * Trigger network forget and provide status via the provided callback.
      */
-    public void forget(int netId, @Nullable IBinder binder, @Nullable IActionListener callback,
-            int callbackIdentifier, int callingUid) {
+    public void forget(int netId, @Nullable IActionListener callback, int callingUid) {
         mWifiThreadRunner.post(() -> {
             boolean success = mWifiConfigManager.removeNetwork(netId, callingUid, null);
             ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
