@@ -42,7 +42,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.SecurityType;
 import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiScanner;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.IBinder;
@@ -803,8 +802,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         // Send the connect request to ClientModeImpl.
         // TODO(b/117601161): Refactor this.
         ConnectActionListener connectActionListener = new ConnectActionListener();
-        mClientModeManager.getImpl().connect(null, networkId, new Binder(),
-                connectActionListener, connectActionListener.hashCode(),
+        mClientModeManager.getImpl().connect(null, networkId, connectActionListener,
                 mActiveSpecificNetworkRequest.getRequestorUid());
 
         // Post an alarm to handle connection timeout.

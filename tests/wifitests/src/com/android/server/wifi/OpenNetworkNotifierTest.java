@@ -43,7 +43,6 @@ import android.net.Uri;
 import android.net.wifi.IActionListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.os.Binder;
 import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
@@ -497,8 +496,8 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
     @Test
     public void actionConnectToNetwork_notificationNotShowing_doesNothing() {
         mBroadcastReceiver.onReceive(mContext, createIntent(ACTION_CONNECT_TO_NETWORK));
-        verify(mClientModeImpl, never()).connect(any(), anyInt(), any(Binder.class),
-                any(IActionListener.class), anyInt(), eq(Process.SYSTEM_UID));
+        verify(mClientModeImpl, never()).connect(any(), anyInt(),
+                any(IActionListener.class), eq(Process.SYSTEM_UID));
     }
 
     /**
@@ -518,8 +517,8 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         mBroadcastReceiver.onReceive(mContext, createIntent(ACTION_CONNECT_TO_NETWORK));
 
-        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID), any(Binder.class),
-                any(IActionListener.class), anyInt(), eq(Process.SYSTEM_UID));
+        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID),
+                any(IActionListener.class), eq(Process.SYSTEM_UID));
         // Connecting Notification
         verify(mNotificationBuilder).createNetworkConnectingNotification(OPEN_NET_NOTIFIER_TAG,
                 mDummyNetwork);
@@ -699,8 +698,8 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         ArgumentCaptor<IActionListener> connectListenerCaptor =
                 ArgumentCaptor.forClass(IActionListener.class);
-        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID), any(Binder.class),
-                connectListenerCaptor.capture(), anyInt(), eq(Process.SYSTEM_UID));
+        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID),
+                connectListenerCaptor.capture(), eq(Process.SYSTEM_UID));
         IActionListener connectListener = connectListenerCaptor.getValue();
 
         // Connecting Notification
