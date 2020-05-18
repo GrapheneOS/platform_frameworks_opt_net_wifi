@@ -92,6 +92,7 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
     private ActivityManager mActivityManager;
     private PowerManager mPowerManager;
     private int mBackgroundProcessExecGapMs;
+    private long mLastRequestTimestamp;
 
     private RttServiceSynchronized mRttServiceSynchronized;
 
@@ -829,6 +830,7 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
             }
 
             nextRequest.cmdId = mNextCommandId++;
+            mLastRequestTimestamp = mClock.getWallClockMillis();
             if (mRttNative.rangeRequest(nextRequest.cmdId, nextRequest.request,
                     nextRequest.isCalledFromPrivilegedContext)) {
                 long timeout = HAL_RANGING_TIMEOUT_MS;
@@ -1065,7 +1067,8 @@ public class RttServiceImpl extends IWifiRttManager.Stub {
                     List<RangingResult> finalResults = postProcessResults(topOfQueueRequest.request,
                             results, topOfQueueRequest.isCalledFromPrivilegedContext);
                     mRttMetrics.recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
-                    mRttMetrics.recordResult(topOfQueueRequest.request, results);
+                    mRttMetrics.recordResult(topOfQueueRequest.request, results,
+                            (int) (mClock.getWallClockMillis() - mLastRequestTimestamp));
                     if (VDBG) {
                         Log.v(TAG, "RttServiceSynchronized.onRangingResults: finalResults="
                                 + finalResults);
