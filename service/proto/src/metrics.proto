@@ -1918,6 +1918,12 @@ message WifiRttLog {
   // RTT to Wi-Fi Aware peers metrics
   optional RttToPeerLog rtt_to_aware = 4;
 
+  // Histogram of how long a measurement with only AP take.
+  repeated HistogramBucket histogram_measurement_duration_ap_only = 5;
+
+  // Histogram of how long a measurement with aware peer included take.
+  repeated HistogramBucket histogram_measurement_duration_with_aware = 6;
+
   // Metrics for a RTT to Peer (peer = AP or Wi-Fi Aware)
   message RttToPeerLog {
     // Total number of API calls
