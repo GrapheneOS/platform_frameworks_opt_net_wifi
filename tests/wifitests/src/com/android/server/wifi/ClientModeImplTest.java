@@ -872,7 +872,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).userEnabledNetwork(config.networkId);
         verify(mWifiConfigManager).enableNetwork(
                 eq(config.networkId), eq(true), anyInt(), any());
-        verify(mWifiConnectivityManager).setUserConnectChoice(eq(config.networkId));
+        verify(mWifiConfigManager).setUserConnectChoice(config.networkId);
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager).getConfiguredNetworkWithoutMasking(eq(config.networkId));
         verify(mWifiNative).connectToNetwork(eq(WIFI_IFACE_NAME), eq(config));
@@ -882,7 +882,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     private void validateFailureConnectSequence(WifiConfiguration config) {
         verify(mWifiConfigManager).enableNetwork(
                 eq(config.networkId), eq(true), anyInt(), any());
-        verify(mWifiConnectivityManager).setUserConnectChoice(eq(config.networkId));
+        verify(mWifiConfigManager).setUserConnectChoice(config.networkId);
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager, never())
                 .getConfiguredNetworkWithoutMasking(eq(config.networkId));
@@ -924,7 +924,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         setupAndStartConnectSequence(config);
         verify(mWifiConfigManager).enableNetwork(
                 eq(config.networkId), eq(true), anyInt(), any());
-        verify(mWifiConnectivityManager, never()).setUserConnectChoice(eq(config.networkId));
+        verify(mWifiConfigManager, never()).setUserConnectChoice(config.networkId);
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager).getConfiguredNetworkWithoutMasking(eq(config.networkId));
         verify(mWifiNative).connectToNetwork(eq(WIFI_IFACE_NAME), eq(config));
@@ -1421,7 +1421,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         setupAndStartConnectSequence(config);
         verify(mWifiConfigManager).enableNetwork(
                 eq(config.networkId), eq(true), anyInt(), any());
-        verify(mWifiConnectivityManager, never()).setUserConnectChoice(eq(config.networkId));
+        verify(mWifiConfigManager, never()).setUserConnectChoice(config.networkId);
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager, never())
                 .getConfiguredNetworkWithoutMasking(eq(config.networkId));
@@ -2015,7 +2015,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(connectActionListener).onSuccess();
 
         verify(mWifiConfigManager).enableNetwork(eq(0), eq(true), anyInt(), any());
-        verify(mWifiConnectivityManager).setUserConnectChoice(eq(0));
+        verify(mWifiConfigManager).setUserConnectChoice(0);
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
                 .thenReturn(mScanDetailCache);
 
@@ -2287,7 +2287,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // We should not be in initial state now.
         assertTrue("DefaultState".equals(getCurrentState().getName()));
         initializeMocksForAddedNetwork(false);
-        verify(mWifiConnectivityManager, never()).setUserConnectChoice(eq(0));
+        verify(mWifiConfigManager, never()).setUserConnectChoice(0);
     }
 
     /**

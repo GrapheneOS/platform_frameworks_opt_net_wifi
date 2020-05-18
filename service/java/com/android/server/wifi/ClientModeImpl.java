@@ -6102,7 +6102,7 @@ public class ClientModeImpl extends StateMachine {
             } else if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
                 // Note user connect choice here, so that it will be considered in the
                 // next network selection.
-                mWifiConnectivityManager.setUserConnectChoice(networkId);
+                mWifiConfigManager.setUserConnectChoice(networkId);
             }
             Message message =
                     obtainMessage(CMD_CONNECT_NETWORK, -1, callbackIdentifier, result);
