@@ -88,7 +88,6 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkAgentSpecifier;
-import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
@@ -4539,74 +4538,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         ie.id = id;
         ie.bytes = bytes;
         return ie;
-    }
-
-    /*
-     * Verify isWifiBandSupported for 5GHz with an overlay override config
-     */
-    @Test
-    public void testIsWifiBandSupported5gWithOverride() throws Exception {
-        mResources.setBoolean(R.bool.config_wifi5ghzSupport, true);
-        assertTrue(mCmi.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ));
-        verify(mWifiNative, never()).getChannelsForBand(anyInt());
-    }
-
-    /**
-     * Verify isWifiBandSupported for 6GHz with an overlay override config
-     */
-    @Test
-    public void testIsWifiBandSupported6gWithOverride() throws Exception {
-        mResources.setBoolean(R.bool.config_wifi6ghzSupport, true);
-        assertTrue(mCmi.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ));
-        verify(mWifiNative, never()).getChannelsForBand(anyInt());
-    }
-
-    /**
-     * Verify isWifiBandSupported for 5GHz with no overlay override config no channels
-     */
-    @Test
-    public void testIsWifiBandSupported5gNoOverrideNoChannels() throws Exception {
-        final int[] emptyArray = {};
-        mResources.setBoolean(R.bool.config_wifi5ghzSupport, false);
-        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(emptyArray);
-        assertFalse(mCmi.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ));
-        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
-    }
-
-    /**
-     * Verify isWifiBandSupported for 5GHz with no overlay override config with channels
-     */
-    @Test
-    public void testIsWifiBandSupported5gNoOverrideWithChannels() throws Exception {
-        final int[] channelArray = {5170};
-        mResources.setBoolean(R.bool.config_wifi5ghzSupport, false);
-        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(channelArray);
-        assertTrue(mCmi.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ));
-        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
-    }
-
-    /**
-     * Verify isWifiBandSupported for 6GHz with no overlay override config no channels
-     */
-    @Test
-    public void testIsWifiBandSupported6gNoOverrideNoChannels() throws Exception {
-        final int[] emptyArray = {};
-        mResources.setBoolean(R.bool.config_wifi6ghzSupport, false);
-        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(emptyArray);
-        assertFalse(mCmi.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ));
-        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
-    }
-
-    /**
-     * Verify isWifiBandSupported for 6GHz with no overlay override config with channels
-     */
-    @Test
-    public void testIsWifiBandSupported6gNoOverrideWithChannels() throws Exception {
-        final int[] channelArray = {6420};
-        mResources.setBoolean(R.bool.config_wifi6ghzSupport, false);
-        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(channelArray);
-        assertTrue(mCmi.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ));
-        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
     }
 
     /**

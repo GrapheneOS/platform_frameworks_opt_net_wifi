@@ -79,7 +79,6 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkAgentSpecifier;
-import android.net.wifi.WifiScanner;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.DeviceWiphyCapabilities;
@@ -1324,32 +1323,6 @@ public class ClientModeImpl extends StateMachine {
             mWifiInfo.updatePacketRates(mTxPkts, mRxPkts, mLastLinkLayerStatsUpdate);
         }
         return stats;
-    }
-
-    /**
-     * Check if a Wi-Fi band is supported
-     *
-     * @param band A value from {@link WifiScanner.WIFI_BAND_5_GHZ} or
-     *        {@link WifiScanner.WIFI_BAND_6_GHZ}
-     * @return {@code true} if band is supported, {@code false} otherwise.
-     */
-    public boolean isWifiBandSupported(int band) {
-        if (band == WifiScanner.WIFI_BAND_5_GHZ) {
-            // In some cases, devices override the value by the overlay configs
-            if (mContext.getResources().getBoolean(R.bool.config_wifi5ghzSupport)) {
-                return true;
-            }
-            return (mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ).length > 0);
-        }
-
-        if (band == WifiScanner.WIFI_BAND_6_GHZ) {
-            if (mContext.getResources().getBoolean(R.bool.config_wifi6ghzSupport)) {
-                return true;
-            }
-            return (mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ).length > 0);
-        }
-
-        return false;
     }
 
     /**

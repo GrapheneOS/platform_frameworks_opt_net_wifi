@@ -33,6 +33,7 @@ import android.os.BatteryStatsManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.telephony.TelephonyManager;
 import android.util.ArraySet;
 import android.util.Log;
 
@@ -185,6 +186,43 @@ public class ActiveModeWarden {
 
     /** Begin listening to broadcasts and start the internal state machine. */
     public void start() {
+        mContext.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                // Location mode has been toggled...  trigger with the scan change
+                // update to make sure we are in the correct mode
+                scanAlwaysModeChanged();
+            }
+        }, new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
+        mContext.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (mSettingsStore.handleAirplaneModeToggled()) {
+                    airplaneModeToggled();
+                }
+            }
+        }, new IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED));
+        mContext.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                boolean emergencyMode =
+                        intent.getBooleanExtra(TelephonyManager.EXTRA_PHONE_IN_ECM_STATE, false);
+                emergencyCallbackModeChanged(emergencyMode);
+            }
+        }, new IntentFilter(TelephonyManager.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED));
+        boolean trackEmergencyCallState = mContext.getResources().getBoolean(
+                R.bool.config_wifi_turn_off_during_emergency_call);
+        if (trackEmergencyCallState) {
+            mContext.registerReceiver(new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    boolean inCall = intent.getBooleanExtra(
+                            TelephonyManager.EXTRA_PHONE_IN_EMERGENCY_CALL, false);
+                    emergencyCallStateChanged(inCall);
+                }
+            }, new IntentFilter(TelephonyManager.ACTION_EMERGENCY_CALL_STATE_CHANGED));
+        }
+
         mWifiController.start();
     }
 
@@ -232,13 +270,13 @@ public class ActiveModeWarden {
     }
 
     /** Emergency Callback Mode has changed. */
-    public void emergencyCallbackModeChanged(boolean isInEmergencyCallbackMode) {
+    private void emergencyCallbackModeChanged(boolean isInEmergencyCallbackMode) {
         mWifiController.sendMessage(
                 WifiController.CMD_EMERGENCY_MODE_CHANGED, isInEmergencyCallbackMode ? 1 : 0);
     }
 
     /** Emergency Call state has changed. */
-    public void emergencyCallStateChanged(boolean isInEmergencyCall) {
+    private void emergencyCallStateChanged(boolean isInEmergencyCall) {
         mWifiController.sendMessage(
                 WifiController.CMD_EMERGENCY_CALL_STATE_CHANGED, isInEmergencyCall ? 1 : 0);
     }
@@ -787,14 +825,6 @@ public class ActiveModeWarden {
             } else {
                 setInitialState(mDisabledState);
             }
-            mContext.registerReceiver(new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    // Location mode has been toggled...  trigger with the scan change
-                    // update to make sure we are in the correct mode
-                    scanAlwaysModeChanged();
-                }
-            }, new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
 
             // Initialize the lower layers before we start.
             mWifiNative.initialize();
