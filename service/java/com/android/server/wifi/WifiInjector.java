@@ -92,6 +92,7 @@ public class WifiInjector {
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED)
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)
                     .setLinkUpstreamBandwidthKbps(1024 * 1024)
                     .setLinkDownstreamBandwidthKbps(1024 * 1024)
                     .setNetworkSpecifier(new MatchAllNetworkSpecifier())
