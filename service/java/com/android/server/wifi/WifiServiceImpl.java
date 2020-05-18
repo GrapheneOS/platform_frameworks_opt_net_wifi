@@ -292,6 +292,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiScoreCard mWifiScoreCard;
     private final WifiHealthMonitor mWifiHealthMonitor;
     private final WifiDataStall mWifiDataStall;
+    private final WifiNative mWifiNative;
 
     public WifiServiceImpl(Context context, WifiInjector wifiInjector, AsyncChannel asyncChannel) {
         mContext = context;
@@ -336,6 +337,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 mWifiScoreCard,  mWifiHealthMonitor);
         mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
         mWifiDataStall = wifiInjector.getWifiDataStall();
+        mWifiNative = wifiInjector.getWifiNative();
     }
 
     /**
@@ -359,17 +361,6 @@ public class WifiServiceImpl extends BaseWifiService {
                     "WifiService starting up with Wi-Fi " + (wifiEnabled ? "enabled" : "disabled"));
 
             mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility().initialize();
-            mContext.registerReceiver(
-                    new BroadcastReceiver() {
-                        @Override
-                        public void onReceive(Context context, Intent intent) {
-                            if (mSettingsStore.handleAirplaneModeToggled()) {
-                                mActiveModeWarden.airplaneModeToggled();
-                            }
-                        }
-                    },
-                    new IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED));
-
             mContext.registerReceiver(
                     new BroadcastReceiver() {
                         @Override
@@ -437,15 +428,35 @@ public class WifiServiceImpl extends BaseWifiService {
             intentFilter.addAction(Intent.ACTION_USER_REMOVED);
             intentFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
             intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-            intentFilter.addAction(TelephonyManager.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED);
             intentFilter.addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
             intentFilter.addAction(Intent.ACTION_SHUTDOWN);
-            boolean trackEmergencyCallState = mContext.getResources().getBoolean(
-                    R.bool.config_wifi_turn_off_during_emergency_call);
-            if (trackEmergencyCallState) {
-                intentFilter.addAction(TelephonyManager.ACTION_EMERGENCY_CALL_STATE_CHANGED);
-            }
-            mContext.registerReceiver(mReceiver, intentFilter);
+            mContext.registerReceiver(new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action.equals(Intent.ACTION_USER_REMOVED)) {
+                        UserHandle userHandle = intent.getParcelableExtra(Intent.EXTRA_USER);
+                        if (userHandle == null) {
+                            Log.e(TAG, "User removed broadcast received with no user handle");
+                            return;
+                        }
+                        mWifiThreadRunner.post(() -> mWifiConfigManager
+                                .removeNetworksForUser(userHandle.getIdentifier()));
+                    } else if (action.equals(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)) {
+                        int state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
+                                BluetoothAdapter.STATE_DISCONNECTED);
+                        mClientModeImpl.sendBluetoothAdapterConnectionStateChange(state);
+                    } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                        int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                                BluetoothAdapter.STATE_OFF);
+                        mClientModeImpl.sendBluetoothAdapterStateChange(state);
+                    } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
+                        handleIdleModeChanged();
+                    } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
+                        handleShutDown();
+                    }
+                }
+            }, intentFilter);
             mMemoryStoreImpl.start();
             mPasspointManager.initializeProvisioner(
                     mWifiInjector.getPasspointProvisionerHandlerThread().getLooper());
@@ -2895,8 +2906,12 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private boolean is5GhzBandSupportedInternal() {
+        if (mContext.getResources().getBoolean(R.bool.config_wifi5ghzSupport)) {
+            return true;
+        }
         return mWifiThreadRunner.call(
-                () -> mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ), false);
+                () -> mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ).length > 0,
+                false);
     }
 
     @Override
@@ -2909,8 +2924,12 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private boolean is6GhzBandSupportedInternal() {
+        if (mContext.getResources().getBoolean(R.bool.config_wifi6ghzSupport)) {
+            return true;
+        }
         return mWifiThreadRunner.call(
-                () -> mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ), false);
+                () -> mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ).length > 0,
+                false);
     }
 
     @Override
@@ -3075,43 +3094,6 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiThreadRunner.post(() -> mWifiConfigManager.userTemporarilyDisabledNetwork(network,
                 Binder.getCallingUid()));
     }
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action.equals(Intent.ACTION_USER_REMOVED)) {
-                UserHandle userHandle = intent.getParcelableExtra(Intent.EXTRA_USER);
-                if (userHandle == null) {
-                    Log.e(TAG, "User removed broadcast received with no user handle");
-                    return;
-                }
-                mWifiThreadRunner.post(() ->
-                        mWifiConfigManager.removeNetworksForUser(userHandle.getIdentifier()));
-            } else if (action.equals(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)) {
-                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
-                        BluetoothAdapter.STATE_DISCONNECTED);
-                mClientModeImpl.sendBluetoothAdapterConnectionStateChange(state);
-            } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.STATE_OFF);
-                mClientModeImpl.sendBluetoothAdapterStateChange(state);
-            } else if (action.equals(TelephonyManager.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED)) {
-                boolean emergencyMode =
-                        intent.getBooleanExtra(TelephonyManager.EXTRA_PHONE_IN_ECM_STATE, false);
-                mActiveModeWarden.emergencyCallbackModeChanged(emergencyMode);
-            } else if (action.equals(TelephonyManager.ACTION_EMERGENCY_CALL_STATE_CHANGED)) {
-                boolean inCall =
-                        intent.getBooleanExtra(
-                                TelephonyManager.EXTRA_PHONE_IN_EMERGENCY_CALL, false);
-                mActiveModeWarden.emergencyCallStateChanged(inCall);
-            } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
-                handleIdleModeChanged();
-            } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
-                handleShutDown();
-            }
-        }
-    };
 
     private void registerForBroadcasts() {
         IntentFilter intentFilter = new IntentFilter();
