@@ -268,17 +268,15 @@ public class WifiNetworkSelectorTestUtil {
 
         WifiConfiguration[] configs = new WifiConfiguration[ssids.length];
         for (int index = 0; index < ssids.length; index++) {
-            String configKey = ssids[index] + Integer.toString(securities[index]);
-            Integer id;
-
-            id = netIdMap.get(configKey);
+            String configKey = ssids[index] + securities[index];
+            Integer id = netIdMap.get(configKey);
             if (id == null) {
-                id = new Integer(netId);
+                id = netId;
                 netIdMap.put(configKey, id);
                 netId++;
             }
 
-            configs[index] = generateWifiConfig(id.intValue(), 0, ssids[index], false, true, null,
+            configs[index] = generateWifiConfig(id, 0, ssids[index], false, true, null,
                     null, securities[index]);
             if (securities[index] == SECURITY_PSK || securities[index] == SECURITY_SAE
                     || securities[index] == SECURITY_WAPI_PSK) {
@@ -358,28 +356,6 @@ public class WifiNetworkSelectorTestUtil {
                             configs[netId].getNetworkSelectionStatus().setCandidateScore(score);
                             configs[netId].getNetworkSelectionStatus()
                                     .setSeenInLastQualifiedNetworkSelection(true);
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }
-                });
-        when(wifiConfigManager.clearNetworkConnectChoice(anyInt()))
-                .then(new AnswerWithArguments() {
-                    public boolean answer(int netId) {
-                        if (netId >= 0 && netId < configs.length) {
-                            configs[netId].getNetworkSelectionStatus().setConnectChoice(null);
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }
-                });
-        when(wifiConfigManager.setNetworkConnectChoice(anyInt(), anyString()))
-                .then(new AnswerWithArguments() {
-                    public boolean answer(int netId, String configKey) {
-                        if (netId >= 0 && netId < configs.length) {
-                            configs[netId].getNetworkSelectionStatus().setConnectChoice(configKey);
                             return true;
                         } else {
                             return false;

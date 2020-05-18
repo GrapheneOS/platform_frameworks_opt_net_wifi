@@ -1952,7 +1952,7 @@ public class WifiConfigManager {
         config.allowAutojoin = choice;
         if (!choice) {
             removeConnectChoiceFromAllNetworks(config.getKey());
-            clearNetworkConnectChoice(config.networkId);
+            config.getNetworkSelectionStatus().setConnectChoice(null);
         }
         sendConfiguredNetworkChangedBroadcast(config, WifiManager.CHANGE_REASON_CONFIG_CHANGE);
         if (!config.ephemeral) {
@@ -2139,54 +2139,9 @@ public class WifiConfigManager {
             if (TextUtils.equals(connectChoice, connectChoiceConfigKey)) {
                 Log.d(TAG, "remove connect choice:" + connectChoice + " from " + config.SSID
                         + " : " + config.networkId);
-                clearNetworkConnectChoice(config.networkId);
+                config.getNetworkSelectionStatus().setConnectChoice(null);
             }
         }
-    }
-
-    /**
-     * Clear the {@link NetworkSelectionStatus#mConnectChoice} for the provided network.
-     *
-     * @param networkId network ID corresponding to the network.
-     * @return true if the network was found, false otherwise.
-     */
-    public boolean clearNetworkConnectChoice(int networkId) {
-        if (mVerboseLoggingEnabled) {
-            Log.v(TAG, "Clear network connect choice for " + networkId);
-        }
-        WifiConfiguration config = getInternalConfiguredNetwork(networkId);
-        if (config == null) {
-            return false;
-        }
-        config.getNetworkSelectionStatus().setConnectChoice(null);
-        saveToStore(false);
-        return true;
-    }
-
-    /**
-     * Set the {@link NetworkSelectionStatus#mConnectChoice} for the provided network.
-     *
-     * This is invoked by Network Selector when the user overrides the currently connected network
-     * choice.
-     *
-     * @param networkId              network ID corresponding to the network.
-     * @param connectChoiceConfigKey ConfigKey corresponding to the network which was chosen over
-     *                               this network.
-     * @param timestamp              timestamp at which the choice was made.
-     * @return true if the network was found, false otherwise.
-     */
-    public boolean setNetworkConnectChoice(
-            int networkId, String connectChoiceConfigKey) {
-        if (mVerboseLoggingEnabled) {
-            Log.v(TAG, "Set network connect choice " + connectChoiceConfigKey + " for " + networkId);
-        }
-        WifiConfiguration config = getInternalConfiguredNetwork(networkId);
-        if (config == null) {
-            return false;
-        }
-        config.getNetworkSelectionStatus().setConnectChoice(connectChoiceConfigKey);
-        saveToStore(false);
-        return true;
     }
 
     /**
@@ -2701,6 +2656,7 @@ public class WifiConfigManager {
         Log.d(TAG, "Temporarily disable network: " + network + " uid=" + uid + " num="
                 + mUserTemporarilyDisabledList.size());
         removeUserChoiceFromDisabledNetwork(network, uid);
+        saveToStore(false);
     }
 
     /**
@@ -3320,5 +3276,72 @@ public class WifiConfigManager {
 
     public Comparator<WifiConfiguration> getScanListComparator() {
         return mScanListComparator;
+    }
+
+    /**
+     * This API is called when user explicitly selects a network. Currently, it is used in following
+     * cases:
+     * (1) User explicitly chooses to connect to a saved network.
+     * (2) User saves a network after adding a new network.
+     * (3) User saves a network after modifying a saved network.
+     * Following actions will be triggered:
+     * 1. If this network is disabled, we need re-enable it again.
+     * 2. This network is favored over all the other networks visible in latest network
+     * selection procedure.
+     *
+     * @param netId ID for the network chosen by the user
+     * @return true -- There is change made to connection choice of any saved network.
+     * false -- There is no change made to connection choice of any saved network.
+     */
+    public boolean setUserConnectChoice(int netId) {
+        localLog("userSelectNetwork: network ID=" + netId);
+        WifiConfiguration selected = getInternalConfiguredNetwork(netId);
+
+        if (selected == null || selected.getKey() == null) {
+            localLog("userSelectNetwork: Invalid configuration with nid=" + netId);
+            return false;
+        }
+
+        // Enable the network if it is disabled.
+        if (!selected.getNetworkSelectionStatus().isNetworkEnabled()) {
+            updateNetworkSelectionStatus(selected,
+                    WifiConfiguration.NetworkSelectionStatus.DISABLED_NONE);
+        }
+        boolean changed = setLegacyUserConnectChoice(selected);
+        if (changed) {
+            saveToStore(false);
+        }
+        return changed;
+    }
+
+    /**
+     * This maintains the legacy user connect choice state in the config store
+     */
+    private boolean setLegacyUserConnectChoice(@NonNull final WifiConfiguration selected) {
+        boolean change = false;
+        String key = selected.getKey();
+        Collection<WifiConfiguration> configuredNetworks = getInternalConfiguredNetworks();
+
+        for (WifiConfiguration network : configuredNetworks) {
+            WifiConfiguration.NetworkSelectionStatus status = network.getNetworkSelectionStatus();
+            if (network.networkId == selected.networkId) {
+                if (status.getConnectChoice() != null) {
+                    localLog("Remove user selection preference of " + status.getConnectChoice()
+                            + " from " + network.SSID + " : " + network.networkId);
+                    network.getNetworkSelectionStatus().setConnectChoice(null);
+                    change = true;
+                }
+                continue;
+            }
+
+            if (status.getSeenInLastQualifiedNetworkSelection()
+                    && !key.equals(status.getConnectChoice())) {
+                localLog("Add key: " + key + " to "
+                        + WifiNetworkSelector.toNetworkString(network));
+                network.getNetworkSelectionStatus().setConnectChoice(key);
+                change = true;
+            }
+        }
+        return change;
     }
 }

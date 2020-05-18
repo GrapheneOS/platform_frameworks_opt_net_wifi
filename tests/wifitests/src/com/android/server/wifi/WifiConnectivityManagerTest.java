@@ -615,7 +615,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
             numAttempts++;
         }
 
-        mWifiConnectivityManager.setUserConnectChoice(CANDIDATE_NETWORK_ID);
         mWifiConnectivityManager.prepareForForcedConnection(CANDIDATE_NETWORK_ID);
 
         for (int attempt = 0; attempt < maxAttemptRate; attempt++) {
