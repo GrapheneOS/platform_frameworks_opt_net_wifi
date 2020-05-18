@@ -3605,7 +3605,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).connect(any(WifiConfiguration.class), anyInt(),
-                    any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                    any(IActionListener.class), anyInt());
         }
     }
 
@@ -3620,8 +3620,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                     mock(IActionListener.class), 0);
             fail();
         } catch (SecurityException e) {
-            verify(mClientModeImpl, never()).forget(anyInt(), any(Binder.class),
-                    any(IActionListener.class), anyInt(), anyInt());
+            verify(mClientModeImpl, never()).forget(anyInt(),
+                    any(IActionListener.class), anyInt());
         }
     }
 
@@ -3637,7 +3637,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).save(any(WifiConfiguration.class),
-                    any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                    any(IActionListener.class), anyInt());
         }
     }
 
@@ -3654,7 +3654,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 mock(Binder.class),
                 mock(IActionListener.class), 0);
         verify(mClientModeImpl).connect(any(WifiConfiguration.class), anyInt(),
-                any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                any(IActionListener.class), anyInt());
         verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_MANUAL_CONNECT), anyInt());
     }
 
@@ -3669,7 +3669,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(Binder.class),
                 mock(IActionListener.class), 0);
         verify(mClientModeImpl).save(any(WifiConfiguration.class),
-                any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                any(IActionListener.class), anyInt());
     }
 
     /**
@@ -3687,8 +3687,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         InOrder inOrder = inOrder(mClientModeImpl, mWifiMetrics);
         inOrder.verify(mWifiMetrics).logUserActionEvent(
                 UserActionEvent.EVENT_FORGET_WIFI, TEST_NETWORK_ID);
-        inOrder.verify(mClientModeImpl).forget(anyInt(), any(Binder.class),
-                any(IActionListener.class), anyInt(), anyInt());
+        inOrder.verify(mClientModeImpl).forget(anyInt(),
+                any(IActionListener.class), anyInt());
     }
 
     /**
@@ -4424,19 +4424,17 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
 
         doAnswer(new MockAnswerUtil.AnswerWithArguments() {
-            public void answer(WifiConfiguration config, int netId, IBinder binder,
-                    IActionListener callback, int callbackIdentifier, int callingUid) {
+            public void answer(WifiConfiguration config, int netId,
+                    IActionListener callback, int callingUid) {
                 try {
                     callback.onSuccess(); // return success
                 } catch (RemoteException e) { }
             }
-        }).when(mClientModeImpl).connect(
-                isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(), anyInt());
+        }).when(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
 
         assertTrue(mWifiServiceImpl.enableNetwork(TEST_NETWORK_ID, true, TEST_PACKAGE_NAME));
 
-        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(),
-                anyInt());
+        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
         verify(mWifiMetrics).incrementNumEnableNetworkCalls();
     }
 
@@ -4454,19 +4452,17 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 eq(Build.VERSION_CODES.Q), anyInt())).thenReturn(true);
 
         doAnswer(new MockAnswerUtil.AnswerWithArguments() {
-            public void answer(WifiConfiguration config, int netId, IBinder binder,
-                    IActionListener callback, int callbackIdentifier, int callingUid) {
+            public void answer(WifiConfiguration config, int netId,
+                    IActionListener callback, int callingUid) {
                 try {
                     callback.onSuccess(); // return success
                 } catch (RemoteException e) { }
             }
-        }).when(mClientModeImpl).connect(
-                isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(), anyInt());
+        }).when(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
 
         assertTrue(mWifiServiceImpl.enableNetwork(TEST_NETWORK_ID, true, TEST_PACKAGE_NAME));
 
-        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(),
-                anyInt());
+        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
         verify(mWifiMetrics).incrementNumEnableNetworkCalls();
     }
 
@@ -4503,8 +4499,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         mWifiServiceImpl.enableNetwork(TEST_NETWORK_ID, true, TEST_PACKAGE_NAME);
 
-        verify(mClientModeImpl, never()).connect(isNull(), anyInt(), any(), any(), anyInt(),
-                anyInt());
+        verify(mClientModeImpl, never()).connect(isNull(), anyInt(), any(), anyInt());
         verify(mWifiMetrics, never()).incrementNumEnableNetworkCalls();
     }
 
