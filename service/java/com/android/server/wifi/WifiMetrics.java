@@ -4999,10 +4999,6 @@ public class WifiMetrics {
             sb.append(" lastWifiUsabilityScore=").append(event.lastWifiUsabilityScore);
             sb.append(" lastPredictionHorizonSec=").append(event.lastPredictionHorizonSec);
         }
-        if (event.mobileTxBytes > 0) sb.append(" mobileTxBytes=").append(event.mobileTxBytes);
-        if (event.mobileRxBytes > 0) sb.append(" mobileRxBytes=").append(event.mobileRxBytes);
-        if (event.totalTxBytes > 0) sb.append(" totalTxBytes=").append(event.totalTxBytes);
-        if (event.totalRxBytes > 0) sb.append(" totalRxBytes=").append(event.totalRxBytes);
         sb.append(" screenOn=").append(event.screenOn);
         sb.append(" cellularData=").append(event.isCellularDataAvailable);
         if (event.supplicantStateChangesBitmask != 0) {
@@ -5012,7 +5008,10 @@ public class WifiMetrics {
         if (event.configInfo != null) {
             sb.append(", ").append(configInfoToString(event.configInfo));
         }
-
+        if (event.mobileTxBytes > 0) sb.append(" mobileTxBytes=").append(event.mobileTxBytes);
+        if (event.mobileRxBytes > 0) sb.append(" mobileRxBytes=").append(event.mobileRxBytes);
+        if (event.totalTxBytes > 0) sb.append(" totalTxBytes=").append(event.totalTxBytes);
+        if (event.totalRxBytes > 0) sb.append(" totalRxBytes=").append(event.totalRxBytes);
         return sb.toString();
     }
 
