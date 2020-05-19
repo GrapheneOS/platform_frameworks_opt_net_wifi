@@ -718,19 +718,15 @@ public class ClientModeImplTest extends WifiBaseTest {
     private void canSaveNetworkConfig() throws Exception {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
 
-        int networkId = TEST_NETWORK_ID;
-        when(mWifiConfigManager.addOrUpdateNetwork(any(WifiConfiguration.class), anyInt()))
-                .thenReturn(new NetworkUpdateResult(networkId));
-        when(mWifiConfigManager.enableNetwork(eq(networkId), eq(false), anyInt(), any()))
-                .thenReturn(true);
+        when(mWifiConfigManager.updateBeforeSaveNetwork(any(), anyInt()))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
 
         IActionListener connectActionListener = mock(IActionListener.class);
         mCmi.save(config, connectActionListener, Binder.getCallingUid());
         mLooper.dispatchAll();
         verify(connectActionListener).onSuccess();
 
-        verify(mWifiConfigManager).addOrUpdateNetwork(any(WifiConfiguration.class), anyInt());
-        verify(mWifiConfigManager).enableNetwork(eq(networkId), eq(false), anyInt(), any());
+        verify(mWifiConfigManager).updateBeforeSaveNetwork(any(WifiConfiguration.class), anyInt());
     }
 
     /**
@@ -761,51 +757,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(connectActionListener).onFailure(WifiManager.ERROR);
 
         verify(mWifiConfigManager, never())
-                .addOrUpdateNetwork(any(WifiConfiguration.class), anyInt());
-        verify(mWifiConfigManager, never())
-                .enableNetwork(anyInt(), anyBoolean(), anyInt(), any());
-    }
-
-    /**
-     * Verifies that configs save fails when the addition of network fails.
-     */
-    @Test
-    public void saveNetworkConfigFailsWithConfigAddFailure() throws Exception {
-        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-
-        when(mWifiConfigManager.addOrUpdateNetwork(any(WifiConfiguration.class), anyInt()))
-                .thenReturn(new NetworkUpdateResult(WifiConfiguration.INVALID_NETWORK_ID));
-
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.save(config, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onFailure(WifiManager.ERROR);
-
-        verify(mWifiConfigManager).addOrUpdateNetwork(any(WifiConfiguration.class), anyInt());
-        verify(mWifiConfigManager, never())
-                .enableNetwork(anyInt(), anyBoolean(), anyInt(), any());
-    }
-
-    /**
-     * Verifies that configs save fails when the enable of network fails.
-     */
-    @Test
-    public void saveNetworkConfigFailsWithConfigEnableFailure() throws Exception {
-        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-
-        int networkId = 5;
-        when(mWifiConfigManager.addOrUpdateNetwork(any(WifiConfiguration.class), anyInt()))
-                .thenReturn(new NetworkUpdateResult(networkId));
-        when(mWifiConfigManager.enableNetwork(eq(networkId), eq(false), anyInt(), any()))
-                .thenReturn(false);
-
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.save(config, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onFailure(WifiManager.ERROR);
-
-        verify(mWifiConfigManager).addOrUpdateNetwork(any(WifiConfiguration.class), anyInt());
-        verify(mWifiConfigManager).enableNetwork(eq(networkId), eq(false), anyInt(), any());
+                .updateBeforeSaveNetwork(any(WifiConfiguration.class), anyInt());
     }
 
     /**

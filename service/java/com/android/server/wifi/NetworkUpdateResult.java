@@ -39,6 +39,11 @@ public class NetworkUpdateResult {
         credentialChanged = credential;
     }
 
+    /** Make an instance of NetworkUpdateResult whose {@link #isSuccess()} method returns false. */
+    public static NetworkUpdateResult makeFailed() {
+        return new NetworkUpdateResult(INVALID_NETWORK_ID);
+    }
+
     public void setNetworkId(int id) {
         netId = id;
     }
@@ -70,5 +75,4 @@ public class NetworkUpdateResult {
     public boolean isSuccess() {
         return netId != INVALID_NETWORK_ID;
     }
-
 }
