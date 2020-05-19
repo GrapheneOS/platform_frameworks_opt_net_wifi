@@ -3600,8 +3600,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testConnectNetworkWithoutPrivilegedPermission() throws Exception {
         try {
             mWifiServiceImpl.connect(mock(WifiConfiguration.class), TEST_NETWORK_ID,
-                    mock(Binder.class),
-                    mock(IActionListener.class), 0);
+                    mock(IActionListener.class));
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).connect(any(WifiConfiguration.class), anyInt(),
@@ -3616,8 +3615,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testForgetNetworkWithoutPrivilegedPermission() throws Exception {
         try {
-            mWifiServiceImpl.forget(TEST_NETWORK_ID, mock(Binder.class),
-                    mock(IActionListener.class), 0);
+            mWifiServiceImpl.forget(TEST_NETWORK_ID, mock(IActionListener.class));
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).forget(anyInt(),
@@ -3632,8 +3630,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testSaveNetworkWithoutPrivilegedPermission() throws Exception {
         try {
-            mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(Binder.class),
-                    mock(IActionListener.class), 0);
+            mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(IActionListener.class));
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).save(any(WifiConfiguration.class),
@@ -3651,8 +3648,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         mWifiServiceImpl.connect(mock(WifiConfiguration.class), TEST_NETWORK_ID,
-                mock(Binder.class),
-                mock(IActionListener.class), 0);
+                mock(IActionListener.class));
         verify(mClientModeImpl).connect(any(WifiConfiguration.class), anyInt(),
                 any(IActionListener.class), anyInt());
         verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_MANUAL_CONNECT), anyInt());
@@ -3666,8 +3662,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testSaveNetworkWithPrivilegedPermission() throws Exception {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
             anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
-        mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(Binder.class),
-                mock(IActionListener.class), 0);
+        mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(IActionListener.class));
         verify(mClientModeImpl).save(any(WifiConfiguration.class),
                 any(IActionListener.class), anyInt());
     }
@@ -3681,8 +3676,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
             anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
-        mWifiServiceImpl.forget(TEST_NETWORK_ID, mock(Binder.class), mock(IActionListener.class),
-                0);
+        mWifiServiceImpl.forget(TEST_NETWORK_ID, mock(IActionListener.class));
 
         InOrder inOrder = inOrder(mClientModeImpl, mWifiMetrics);
         inOrder.verify(mWifiMetrics).logUserActionEvent(

@@ -432,8 +432,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         }
                     };
                     WifiConfiguration config = buildWifiConfiguration(pw);
-                    mWifiService.connect(
-                            config, -1, new Binder(), actionListener, actionListener.hashCode());
+                    mWifiService.connect(config, -1, actionListener);
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
                     setAutoJoin(pw, config.SSID, config.allowAutojoin);
@@ -455,8 +454,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         }
                     };
                     WifiConfiguration config = buildWifiConfiguration(pw);
-                    mWifiService.save(
-                            config, new Binder(), actionListener, actionListener.hashCode());
+                    mWifiService.save(config, actionListener);
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
                     setAutoJoin(pw, config.SSID, config.allowAutojoin);
@@ -478,9 +476,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                             countDownLatch.countDown();
                         }
                     };
-                    mWifiService.forget(
-                            Integer.parseInt(networkId), new Binder(), actionListener,
-                            actionListener.hashCode());
+                    mWifiService.forget(Integer.parseInt(networkId), actionListener);
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
                     break;
