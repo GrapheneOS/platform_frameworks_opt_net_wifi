@@ -103,6 +103,7 @@ import java.util.Set;
 public class RttServiceImplTest extends WifiBaseTest {
 
     private static final int BACKGROUND_PROCESS_EXEC_GAP_MS = 10 * 60 * 1000;  // 10 minutes.
+    private static final int MEASUREMENT_DURATION = 1000;
 
     private RttServiceImplSpy mDut;
     private TestLooper mMockLooper;
@@ -265,6 +266,9 @@ public class RttServiceImplTest extends WifiBaseTest {
             results.add(RttTestUtils.getDummyRangingResults(requests[i]));
         }
 
+        ClockAnswer clock = new ClockAnswer();
+        doAnswer(clock).when(mockClock).getWallClockMillis();
+        clock.time = 100;
         // (1) request 10 ranging operations
         for (int i = 0; i < numIter; ++i) {
             mDut.startRanging(mockIbinder, mPackageName, mFeatureId, null, requests[i],
@@ -273,6 +277,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         mMockLooper.dispatchAll();
 
         for (int i = 0; i < numIter; ++i) {
+            clock.time += MEASUREMENT_DURATION;
             // (2) verify that request issued to native
             verify(mockNative).rangeRequest(mIntCaptor.capture(), eq(requests[i]), eq(true));
             verifyWakeupSet(i % 2 != 0, 0);
@@ -293,7 +298,8 @@ public class RttServiceImplTest extends WifiBaseTest {
         // verify metrics
         for (int i = 0; i < numIter; ++i) {
             verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(requests[i]));
-            verify(mockMetrics).recordResult(eq(requests[i]), eq(results.get(i).second));
+            verify(mockMetrics).recordResult(eq(requests[i]), eq(results.get(i).second),
+                    eq(MEASUREMENT_DURATION));
         }
         verify(mockMetrics, times(numIter)).recordOverallStatus(
                 WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
@@ -327,6 +333,9 @@ public class RttServiceImplTest extends WifiBaseTest {
         doAnswer(answer).when(mockAwareManager).requestMacAddresses(anyInt(), any(), any());
 
         // issue request
+        ClockAnswer clock = new ClockAnswer();
+        doAnswer(clock).when(mockClock).getWallClockMillis();
+        clock.time = 100;
         mDut.startRanging(mockIbinder, mPackageName, mFeatureId, null, request, mockCallback);
         mMockLooper.dispatchAll();
 
@@ -351,6 +360,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         results.second.add(
                 new RangingResult(RangingResult.STATUS_FAIL, removed.getPeerHandle(), 0, 0, 0, 0, 0,
                         null, null, null, 0));
+        clock.time += MEASUREMENT_DURATION;
         mDut.onRangingResults(mIntCaptor.getValue(), results.first);
         mMockLooper.dispatchAll();
 
@@ -364,7 +374,8 @@ public class RttServiceImplTest extends WifiBaseTest {
 
         // verify metrics
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request));
-        verify(mockMetrics).recordResult(eq(finalRequest), eq(results.first));
+        verify(mockMetrics).recordResult(eq(finalRequest), eq(results.first),
+                eq(MEASUREMENT_DURATION));
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
         verify(mockNative, atLeastOnce()).isReady();
@@ -426,7 +437,8 @@ public class RttServiceImplTest extends WifiBaseTest {
         for (int i = 0; i < numIter; ++i) {
             verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(requests[i]));
             if (i != 0) {
-                verify(mockMetrics).recordResult(eq(requests[i]), eq(results.get(i).second));
+                verify(mockMetrics).recordResult(eq(requests[i]), eq(results.get(i).second),
+                        anyInt());
             }
         }
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_HAL_FAILURE);
@@ -545,7 +557,8 @@ public class RttServiceImplTest extends WifiBaseTest {
             verify(mockMetrics).recordRequest(eq((i % 2) == 0 ? mDefaultWs : oddWs),
                     eq(requests[i]));
             if (i % 2 == 1) {
-                verify(mockMetrics).recordResult(eq(requests[i]), eq(results.get(i).second));
+                verify(mockMetrics).recordResult(eq(requests[i]), eq(results.get(i).second),
+                        anyInt());
             }
         }
         verify(mockMetrics, times(numIter / 2)).recordOverallStatus(
@@ -688,7 +701,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         verifyWakeupCancelled();
 
         // verify metrics
-        verify(mockMetrics).recordResult(eq(request), eq(results.second));
+        verify(mockMetrics).recordResult(eq(request), eq(results.second), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
         verify(mockNative, atLeastOnce()).isReady();
@@ -729,7 +742,7 @@ public class RttServiceImplTest extends WifiBaseTest {
 
         // verify metrics
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request));
-        verify(mockMetrics).recordResult(eq(request), eq(results.second));
+        verify(mockMetrics).recordResult(eq(request), eq(results.second), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
         verify(mockNative, atLeastOnce()).isReady();
@@ -776,7 +789,7 @@ public class RttServiceImplTest extends WifiBaseTest {
 
         // verify metrics
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request));
-        verify(mockMetrics).recordResult(eq(request), eq(results.second));
+        verify(mockMetrics).recordResult(eq(request), eq(results.second), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
         verify(mockNative, atLeastOnce()).isReady();
@@ -819,7 +832,7 @@ public class RttServiceImplTest extends WifiBaseTest {
 
         // verify metrics
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request));
-        verify(mockMetrics).recordResult(eq(request), eq(new ArrayList<>()));
+        verify(mockMetrics).recordResult(eq(request), eq(new ArrayList<>()), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
         verify(mockNative, atLeastOnce()).isReady();
@@ -872,7 +885,7 @@ public class RttServiceImplTest extends WifiBaseTest {
 
         // verify metrics
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request));
-        verify(mockMetrics).recordResult(eq(request), eq(results.second));
+        verify(mockMetrics).recordResult(eq(request), eq(results.second), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
         verify(mockNative, atLeastOnce()).isReady();
@@ -925,7 +938,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         // verify metrics
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request1));
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request2));
-        verify(mockMetrics).recordResult(eq(request2), eq(result2.second));
+        verify(mockMetrics).recordResult(eq(request2), eq(result2.second), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_TIMEOUT);
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
 
@@ -1035,9 +1048,9 @@ public class RttServiceImplTest extends WifiBaseTest {
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request3));
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request4));
         verify(mockMetrics).recordRequest(eq(mDefaultWs), eq(request5));
-        verify(mockMetrics).recordResult(eq(request1), eq(result1.second));
-        verify(mockMetrics).recordResult(eq(request3), eq(result3.second));
-        verify(mockMetrics).recordResult(eq(request4), eq(result4.second));
+        verify(mockMetrics).recordResult(eq(request1), eq(result1.second), anyInt());
+        verify(mockMetrics).recordResult(eq(request3), eq(result3.second), anyInt());
+        verify(mockMetrics).recordResult(eq(request4), eq(result4.second), anyInt());
         verify(mockMetrics, times(2)).recordOverallStatus(
                 WifiMetricsProto.WifiRttLog.OVERALL_THROTTLE);
         verify(mockMetrics, times(3)).recordOverallStatus(
@@ -1137,8 +1150,8 @@ public class RttServiceImplTest extends WifiBaseTest {
         verify(mockMetrics).recordRequest(eq(wsReq1), eq(request1));
         verify(mockMetrics).recordRequest(eq(wsReq2), eq(request2));
         verify(mockMetrics).recordRequest(eq(wsReq1), eq(request3));
-        verify(mockMetrics).recordResult(eq(request1), eq(result1.second));
-        verify(mockMetrics).recordResult(eq(request2), eq(result2.second));
+        verify(mockMetrics).recordResult(eq(request1), eq(result1.second), anyInt());
+        verify(mockMetrics).recordResult(eq(request2), eq(result2.second), anyInt());
         verify(mockMetrics).recordOverallStatus(WifiMetricsProto.WifiRttLog.OVERALL_THROTTLE);
         verify(mockMetrics, times(2)).recordOverallStatus(
                 WifiMetricsProto.WifiRttLog.OVERALL_SUCCESS);
@@ -1293,7 +1306,7 @@ public class RttServiceImplTest extends WifiBaseTest {
         // verify metrics
         verify(mockMetrics, times(RttServiceImpl.MAX_QUEUED_PER_UID + 12)).recordRequest(
                 eq(useUids ? mDefaultWs : ws), eq(request));
-        verify(mockMetrics).recordResult(eq(request), eq(result.second));
+        verify(mockMetrics).recordResult(eq(request), eq(result.second), anyInt());
         verify(mockMetrics, times(11)).recordOverallStatus(
                 WifiMetricsProto.WifiRttLog.OVERALL_THROTTLE);
         verify(mockMetrics, times(RttServiceImpl.MAX_QUEUED_PER_UID)).recordOverallStatus(
