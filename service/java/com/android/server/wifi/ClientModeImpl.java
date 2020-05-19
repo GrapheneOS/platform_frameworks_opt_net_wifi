@@ -6029,16 +6029,13 @@ public class ClientModeImpl extends StateMachine {
 
     /**
      * Trigger network connection and provide status via the provided callback.
+     *
+     * For a new network, a config is passed to create and connect, and netId is ignored.
+     * For an existing network, a network id is passed along with a null config.
      */
     public void connect(WifiConfiguration config, int netId,
             @Nullable IActionListener callback, int callingUid) {
         mWifiThreadRunner.post(() -> {
-            /*
-             * The connect message can contain a network id passed as arg1 on message or
-             * or a config passed as obj on message.
-             * For a new network, a config is passed to create and connect.
-             * For an existing network, a network id is passed
-             */
             ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
             NetworkUpdateResult result = null;
             if (config != null) {
@@ -6058,21 +6055,17 @@ public class ClientModeImpl extends StateMachine {
                 result = new NetworkUpdateResult(netId);
             }
             final int networkId = result.getNetworkId();
-            mWifiConfigManager.userEnabledNetwork(networkId);
-            if (!mWifiConfigManager.enableNetwork(networkId, true, callingUid, null)
-                    || !mWifiConfigManager.updateLastConnectUid(networkId, callingUid)) {
-                logi("connect Allowing uid " + callingUid
-                        + " with insufficient permissions to connect=" + networkId);
-            } else if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
-                // Note user connect choice here, so that it will be considered in the
-                // next network selection.
-                mWifiConfigManager.setUserConnectChoice(networkId);
-            }
-            Message message =
-                    obtainMessage(CMD_CONNECT_NETWORK, new ConnectNetworkMessage(result, wrapper));
-            message.sendingUid = callingUid;
-            sendMessage(message);
+            mWifiConfigManager.updateBeforeConnectNetwork(networkId, callingUid);
+            sendConnectMessage(result, wrapper, callingUid);
         });
+    }
+
+    private void sendConnectMessage(NetworkUpdateResult result, ActionListenerWrapper wrapper,
+            int callingUid) {
+        Message message =
+                obtainMessage(CMD_CONNECT_NETWORK, new ConnectNetworkMessage(result, wrapper));
+        message.sendingUid = callingUid;
+        sendMessage(message);
     }
 
     /**
@@ -6101,11 +6094,18 @@ public class ClientModeImpl extends StateMachine {
                 return;
             }
             broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
-            Message message =
-                    obtainMessage(CMD_SAVE_NETWORK, new ConnectNetworkMessage(result, wrapper));
-            message.sendingUid = callingUid;
-            sendMessage(message);
+            sendSaveMessage(result, wrapper, callingUid);
         });
+    }
+
+
+
+    private void sendSaveMessage(NetworkUpdateResult result, ActionListenerWrapper wrapper,
+            int callingUid) {
+        Message message =
+                obtainMessage(CMD_SAVE_NETWORK, new ConnectNetworkMessage(result, wrapper));
+        message.sendingUid = callingUid;
+        sendMessage(message);
     }
 
     /**

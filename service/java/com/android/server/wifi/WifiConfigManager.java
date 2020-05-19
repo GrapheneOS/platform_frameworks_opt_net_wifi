@@ -1968,7 +1968,7 @@ public class WifiConfigManager {
      * @param uid       uid of the app requesting the connection.
      * @return true if the network was found, false otherwise.
      */
-    public boolean updateLastConnectUid(int networkId, int uid) {
+    private boolean updateLastConnectUid(int networkId, int uid) {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Update network last connect UID for " + networkId);
         }
@@ -2685,13 +2685,14 @@ public class WifiConfigManager {
     /**
      * User enabled network manually, maybe trigger by user select to connect network.
      * @param networkId enabled network id.
+     * @return true if the operation succeeded, false otherwise.
      */
-    public void userEnabledNetwork(int networkId) {
+    public boolean userEnabledNetwork(int networkId) {
         WifiConfiguration configuration = getInternalConfiguredNetwork(networkId);
         if (configuration == null) {
-            return;
+            return false;
         }
-        String network;
+        final String network;
         if (configuration.isPasspoint()) {
             network = configuration.FQDN;
         } else {
@@ -2701,6 +2702,7 @@ public class WifiConfigManager {
         mBssidBlocklistMonitor.clearBssidBlocklistForSsid(configuration.SSID);
         Log.d(TAG, "Enable disabled network: " + network + " num="
                 + mUserTemporarilyDisabledList.size());
+        return true;
     }
 
     /**
@@ -3343,5 +3345,28 @@ public class WifiConfigManager {
             }
         }
         return change;
+    }
+
+    /** Update WifiConfigManager before connecting to a network. */
+    public boolean updateBeforeConnectNetwork(int networkId, int callingUid) {
+        if (!userEnabledNetwork(networkId)) {
+            return false;
+        }
+        if (!enableNetwork(networkId, true, callingUid, null)) {
+            Log.i(TAG, "connect Allowing uid " + callingUid
+                    + " with insufficient permissions to connect=" + networkId);
+            return false;
+        }
+        if (!updateLastConnectUid(networkId, callingUid)) {
+            Log.i(TAG, "connect Allowing uid " + callingUid
+                    + " with insufficient permissions to connect=" + networkId);
+            return false;
+        }
+        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
+            // Note user connect choice here, so that it will be considered in the
+            // next network selection.
+            setUserConnectChoice(networkId);
+        }
+        return true;
     }
 }
