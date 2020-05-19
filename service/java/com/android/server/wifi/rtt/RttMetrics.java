@@ -75,12 +75,21 @@ public class RttMetrics {
     //   >= 100
     private static final int[] DISTANCE_MM_HISTOGRAM =
             {0, 5 * 1000, 15 * 1000, 30 * 1000, 60 * 1000, 100 * 1000};
+    // Histogram for duration for ap only measurement. Indicates 5 buckets with 1000 ms interval.
+    private static final int[] MEASUREMENT_DURATION_HISTOGRAM_AP =
+            {1 * 1000, 2 * 1000, 3 * 1000, 4 * 1000};
+
+    // Histogram for duration for measurement with aware. Indicates 5 buckets with 2000 ms interval.
+    private static final int[] MEASUREMENT_DURATION_HISTOGRAM_AWARE =
+            {2 * 1000, 4 * 1000, 6 * 1000, 8 * 1000};
 
     private static final int PEER_AP = 0;
     private static final int PEER_AWARE = 1;
 
     private int mNumStartRangingCalls = 0;
     private SparseIntArray mOverallStatusHistogram = new SparseIntArray();
+    private SparseIntArray mMeasurementDurationApOnlyHistogram = new SparseIntArray();
+    private SparseIntArray mMeasurementDurationWithAwareHistogram = new SparseIntArray();
     private PerPeerTypeInfo[] mPerPeerTypeInfo;
 
     public RttMetrics(Clock clock) {
@@ -150,13 +159,14 @@ public class RttMetrics {
     /**
      * Record metrics for the range results.
      */
-    public void recordResult(RangingRequest requests, List<RangingResult> results) {
+    public void recordResult(RangingRequest requests, List<RangingResult> results,
+            int measurementDuration) {
         Map<MacAddress, ResponderConfig> requestEntries = new HashMap<>();
         for (ResponderConfig responder : requests.mRttPeers) {
             requestEntries.put(responder.macAddress, responder);
         }
-
         if (results != null) {
+            boolean containsAwarePeer = false;
             for (RangingResult result : results) {
                 if (result == null) {
                     continue;
@@ -172,10 +182,20 @@ public class RttMetrics {
                 if (responder.responderType == ResponderConfig.RESPONDER_AP) {
                     updatePeerInfoWithResultInfo(mPerPeerTypeInfo[PEER_AP], result);
                 } else if (responder.responderType == ResponderConfig.RESPONDER_AWARE) {
+                    containsAwarePeer = true;
                     updatePeerInfoWithResultInfo(mPerPeerTypeInfo[PEER_AWARE], result);
                 } else {
                     Log.e(TAG, "recordResult: unexpected peer type in responder: " + responder);
                 }
+            }
+            if (containsAwarePeer) {
+                addValueToLinearHistogram(measurementDuration,
+                        mMeasurementDurationWithAwareHistogram,
+                        MEASUREMENT_DURATION_HISTOGRAM_AWARE);
+            } else {
+                addValueToLinearHistogram(measurementDuration,
+                        mMeasurementDurationApOnlyHistogram,
+                        MEASUREMENT_DURATION_HISTOGRAM_AP);
             }
         }
 
@@ -255,6 +275,12 @@ public class RttMetrics {
         synchronized (mLock) {
             log.numRequests = mNumStartRangingCalls;
             log.histogramOverallStatus = consolidateOverallStatus(mOverallStatusHistogram);
+            log.histogramMeasurementDurationApOnly = genericBucketsToRttBuckets(
+                    linearHistogramToGenericBuckets(mMeasurementDurationApOnlyHistogram,
+                            MEASUREMENT_DURATION_HISTOGRAM_AP));
+            log.histogramMeasurementDurationWithAware = genericBucketsToRttBuckets(
+                    linearHistogramToGenericBuckets(mMeasurementDurationWithAwareHistogram,
+                            MEASUREMENT_DURATION_HISTOGRAM_AWARE));
 
             consolidatePeerType(log.rttToAp, mPerPeerTypeInfo[PEER_AP]);
             consolidatePeerType(log.rttToAware, mPerPeerTypeInfo[PEER_AWARE]);
@@ -356,6 +382,9 @@ public class RttMetrics {
             pw.println("RTT Metrics:");
             pw.println("mNumStartRangingCalls:" + mNumStartRangingCalls);
             pw.println("mOverallStatusHistogram:" + mOverallStatusHistogram);
+            pw.println("mMeasurementDurationApOnlyHistogram" + mMeasurementDurationApOnlyHistogram);
+            pw.println("mMeasurementDurationWithAwareHistogram"
+                    + mMeasurementDurationWithAwareHistogram);
             pw.println("AP:" + mPerPeerTypeInfo[PEER_AP]);
             pw.println("AWARE:" + mPerPeerTypeInfo[PEER_AWARE]);
         }
@@ -370,6 +399,8 @@ public class RttMetrics {
             mOverallStatusHistogram.clear();
             mPerPeerTypeInfo[PEER_AP] = new PerPeerTypeInfo();
             mPerPeerTypeInfo[PEER_AWARE] = new PerPeerTypeInfo();
+            mMeasurementDurationApOnlyHistogram.clear();
+            mMeasurementDurationWithAwareHistogram.clear();
         }
     }
 

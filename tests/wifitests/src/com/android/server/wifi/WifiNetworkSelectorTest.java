@@ -32,7 +32,6 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.os.SystemClock;
 import android.util.LocalLog;
@@ -696,53 +695,6 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     /**
-     * Ensures that setting the user connect choice updates the
-     * NetworkSelectionStatus#mConnectChoice for all other WifiConfigurations in range in the last
-     * round of network selection.
-     *
-     * Expected behavior: WifiConfiguration.NetworkSelectionStatus#mConnectChoice is set to
-     *                    test1's configkey for test2. test3's WifiConfiguration is unchanged.
-     */
-    @Test
-    public void setUserConnectChoice() {
-        String[] ssids = {"\"test1\"", "\"test2\"", "\"test3\""};
-        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4", "6c:f3:7f:ae:8c:f5"};
-        int[] freqs = {2437, 5180, 5181};
-        String[] caps = {"[WPA2-PSK][ESS]", "[WPA2-EAP-CCMP][ESS]", "[WPA2-PSK][ESS]"};
-        int[] levels = {mThresholdMinimumRssi2G + RSSI_BUMP, mThresholdMinimumRssi5G + RSSI_BUMP,
-                mThresholdMinimumRssi5G + RSSI_BUMP};
-        int[] securities = {SECURITY_PSK, SECURITY_EAP, SECURITY_PSK};
-
-        ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
-                WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
-                        freqs, caps, levels, securities, mWifiConfigManager, mClock);
-
-        WifiConfiguration selectedWifiConfig = scanDetailsAndConfigs.getWifiConfigs()[0];
-        selectedWifiConfig.getNetworkSelectionStatus()
-                .setCandidate(scanDetailsAndConfigs.getScanDetails().get(0).getScanResult());
-        selectedWifiConfig.getNetworkSelectionStatus().setNetworkSelectionStatus(
-                NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED);
-        selectedWifiConfig.getNetworkSelectionStatus().setConnectChoice("bogusKey");
-
-        WifiConfiguration configInLastNetworkSelection = scanDetailsAndConfigs.getWifiConfigs()[1];
-        configInLastNetworkSelection.getNetworkSelectionStatus()
-                .setSeenInLastQualifiedNetworkSelection(true);
-
-        WifiConfiguration configNotInLastNetworkSelection =
-                scanDetailsAndConfigs.getWifiConfigs()[2];
-
-        assertTrue(mWifiNetworkSelector.setUserConnectChoice(selectedWifiConfig.networkId));
-
-        verify(mWifiConfigManager).updateNetworkSelectionStatus(selectedWifiConfig.networkId,
-                NetworkSelectionStatus.DISABLED_NONE);
-        verify(mWifiConfigManager).clearNetworkConnectChoice(selectedWifiConfig.networkId);
-        verify(mWifiConfigManager).setNetworkConnectChoice(configInLastNetworkSelection.networkId,
-                selectedWifiConfig.getKey());
-        verify(mWifiConfigManager, never()).setNetworkConnectChoice(
-                configNotInLastNetworkSelection.networkId, selectedWifiConfig.getKey());
-    }
-
-    /**
      * If two qualified networks, test1 and test2, are in range when the user selects test2 over
      * test1, WifiNetworkSelector will override the NetworkSelector's choice to connect to test1
      * with test2.
@@ -762,16 +714,16 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        WifiConfiguration[] wifiConfigs = scanDetailsAndConfigs.getWifiConfigs();
+        HashSet<String> blacklist = new HashSet<>();
 
         // DummyNominator always selects the first network in the list.
-        WifiConfiguration networkSelectorChoice = scanDetailsAndConfigs.getWifiConfigs()[0];
+        WifiConfiguration networkSelectorChoice = wifiConfigs[0];
         networkSelectorChoice.getNetworkSelectionStatus()
                 .setSeenInLastQualifiedNetworkSelection(true);
 
-        WifiConfiguration userChoice = scanDetailsAndConfigs.getWifiConfigs()[1];
-        userChoice.getNetworkSelectionStatus()
-                .setCandidate(scanDetailsAndConfigs.getScanDetails().get(1).getScanResult());
+        WifiConfiguration userChoice = wifiConfigs[1];
+        userChoice.getNetworkSelectionStatus().setCandidate(scanDetails.get(1).getScanResult());
 
         // With no user choice set, networkSelectorChoice should be chosen.
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
@@ -791,7 +743,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime()
                 + WifiNetworkSelector.MINIMUM_NETWORK_SELECTION_INTERVAL_MS + 2000);
 
-        assertTrue(mWifiNetworkSelector.setUserConnectChoice(userChoice.networkId));
+        // set user connect choice
+        userChoice.getNetworkSelectionStatus().setConnectChoice(null);
+        networkSelectorChoice.getNetworkSelectionStatus().setConnectChoice(userChoice.getKey());
 
         // After user connect choice is set, userChoice should override networkSelectorChoice.
         candidates = mWifiNetworkSelector.getCandidatesFromScan(

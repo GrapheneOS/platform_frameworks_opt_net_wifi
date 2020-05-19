@@ -319,6 +319,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock PackageInfo mPackageInfo;
     @Mock WifiConnectivityManager mWifiConnectivityManager;
     @Mock WifiDataStall mWifiDataStall;
+    @Mock WifiNative mWifiNative;
 
     WifiLog mLog = new LogcatLog(TAG);
 
@@ -399,6 +400,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(mScanAlwaysAvailableSettingsCompatibility);
         when(mWifiInjector.getWifiConnectivityManager()).thenReturn(mWifiConnectivityManager);
         when(mWifiInjector.getWifiDataStall()).thenReturn(mWifiDataStall);
+        when(mWifiInjector.getWifiNative()).thenReturn(mWifiNative);
         when(mClientModeImpl.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class), any())).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
@@ -1363,11 +1365,109 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify isWifiBandSupported for 5GHz with an overlay override config
+     */
+    @Test
+    public void testIsWifiBandSupported5gWithOverride() throws Exception {
+        when(mResources.getBoolean(R.bool.config_wifi5ghzSupport)).thenReturn(true);
+        mLooper.startAutoDispatch();
+        assertTrue(mWifiServiceImpl.is5GHzBandSupported());
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        verify(mWifiNative, never()).getChannelsForBand(anyInt());
+    }
+
+    /**
+     * Verify isWifiBandSupported for 6GHz with an overlay override config
+     */
+    @Test
+    public void testIsWifiBandSupported6gWithOverride() throws Exception {
+        when(mResources.getBoolean(R.bool.config_wifi6ghzSupport)).thenReturn(true);
+        mLooper.startAutoDispatch();
+        assertTrue(mWifiServiceImpl.is6GHzBandSupported());
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        verify(mWifiNative, never()).getChannelsForBand(anyInt());
+    }
+
+    /**
+     * Verify isWifiBandSupported for 5GHz with no overlay override config no channels
+     */
+    @Test
+    public void testIsWifiBandSupported5gNoOverrideNoChannels() throws Exception {
+        final int[] emptyArray = {};
+        when(mResources.getBoolean(R.bool.config_wifi5ghzSupport)).thenReturn(false);
+        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(emptyArray);
+        mLooper.startAutoDispatch();
+        assertFalse(mWifiServiceImpl.is5GHzBandSupported());
+        mLooper.stopAutoDispatch();
+        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
+    }
+
+    /**
+     * Verify isWifiBandSupported for 5GHz with no overlay override config with channels
+     */
+    @Test
+    public void testIsWifiBandSupported5gNoOverrideWithChannels() throws Exception {
+        final int[] channelArray = {5170};
+        when(mResources.getBoolean(R.bool.config_wifi5ghzSupport)).thenReturn(false);
+        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(channelArray);
+        mLooper.startAutoDispatch();
+        assertTrue(mWifiServiceImpl.is5GHzBandSupported());
+        mLooper.stopAutoDispatch();
+        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
+    }
+
+    /**
+     * Verify isWifiBandSupported for 6GHz with no overlay override config no channels
+     */
+    @Test
+    public void testIsWifiBandSupported6gNoOverrideNoChannels() throws Exception {
+        final int[] emptyArray = {};
+        when(mResources.getBoolean(R.bool.config_wifi6ghzSupport)).thenReturn(false);
+        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(emptyArray);
+        mLooper.startAutoDispatch();
+        assertFalse(mWifiServiceImpl.is6GHzBandSupported());
+        mLooper.stopAutoDispatch();
+        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
+    }
+
+    /**
+     * Verify isWifiBandSupported for 6GHz with no overlay override config with channels
+     */
+    @Test
+    public void testIsWifiBandSupported6gNoOverrideWithChannels() throws Exception {
+        final int[] channelArray = {6420};
+        when(mResources.getBoolean(R.bool.config_wifi6ghzSupport)).thenReturn(false);
+        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(channelArray);
+        mLooper.startAutoDispatch();
+        assertTrue(mWifiServiceImpl.is6GHzBandSupported());
+        mLooper.stopAutoDispatch();
+        verify(mWifiNative).getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
+    }
+
+    private void setup5GhzSupported() {
+        when(mResources.getBoolean(R.bool.config_wifi5ghzSupport)).thenReturn(true);
+    }
+
+    private void setup5GhzUnsupported() {
+        when(mResources.getBoolean(R.bool.config_wifi5ghzSupport)).thenReturn(false);
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(new int[0]);
+    }
+
+    private void setup6GhzSupported() {
+        when(mResources.getBoolean(R.bool.config_wifi6ghzSupport)).thenReturn(true);
+    }
+
+    private void setup6GhzUnsupported() {
+        when(mResources.getBoolean(R.bool.config_wifi6ghzSupport)).thenReturn(false);
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ)).thenReturn(new int[0]);
+    }
+
+    /**
      * Verify attempt to start softAp with a supported 5GHz band succeeds.
      */
     @Test
     public void testStartTetheredHotspotWithSupported5gBand() {
-        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(true);
+        setup5GhzSupported();
 
         SoftApConfiguration config = new SoftApConfiguration.Builder()
                 .setSsid("TestAp")
@@ -1388,7 +1488,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testStartTetheredHotspotWithUnSupported5gBand() {
-        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(false);
+        setup5GhzUnsupported();
 
         SoftApConfiguration config = new SoftApConfiguration.Builder()
                 .setSsid("TestAp")
@@ -1411,7 +1511,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mResources.getBoolean(
                 eq(R.bool.config_wifiSoftap6ghzSupported)))
                 .thenReturn(true);
-        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ)).thenReturn(true);
+        setup6GhzSupported();
 
         SoftApConfiguration config = new SoftApConfiguration.Builder()
                 .setSsid("TestAp")
@@ -1435,7 +1535,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mResources.getBoolean(
                 eq(R.bool.config_wifiSoftap6ghzSupported)))
                 .thenReturn(false);
-        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ)).thenReturn(true);
+        setup6GhzSupported();
 
         SoftApConfiguration config = new SoftApConfiguration.Builder()
                 .setSsid("TestAp")
@@ -1455,7 +1555,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testStartTetheredHotspotWithSupportedBand() {
-        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(true);
+        setup5GhzSupported();
 
         SoftApConfiguration config = new SoftApConfiguration.Builder()
                 .setSsid("TestAp")
@@ -2150,7 +2250,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mResources.getBoolean(
                 eq(R.bool.config_wifi_local_only_hotspot_5ghz)))
                 .thenReturn(true);
-        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(true);
+        setup5GhzSupported();
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)).thenReturn(true);
 
         verify(mAsyncChannel).connect(any(), mHandlerCaptor.capture(), any(Handler.class));
@@ -3505,7 +3605,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).connect(any(WifiConfiguration.class), anyInt(),
-                    any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                    any(IActionListener.class), anyInt());
         }
     }
 
@@ -3520,8 +3620,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                     mock(IActionListener.class), 0);
             fail();
         } catch (SecurityException e) {
-            verify(mClientModeImpl, never()).forget(anyInt(), any(Binder.class),
-                    any(IActionListener.class), anyInt(), anyInt());
+            verify(mClientModeImpl, never()).forget(anyInt(),
+                    any(IActionListener.class), anyInt());
         }
     }
 
@@ -3537,7 +3637,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             fail();
         } catch (SecurityException e) {
             verify(mClientModeImpl, never()).save(any(WifiConfiguration.class),
-                    any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                    any(IActionListener.class), anyInt());
         }
     }
 
@@ -3554,7 +3654,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 mock(Binder.class),
                 mock(IActionListener.class), 0);
         verify(mClientModeImpl).connect(any(WifiConfiguration.class), anyInt(),
-                any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                any(IActionListener.class), anyInt());
         verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_MANUAL_CONNECT), anyInt());
     }
 
@@ -3569,7 +3669,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(Binder.class),
                 mock(IActionListener.class), 0);
         verify(mClientModeImpl).save(any(WifiConfiguration.class),
-                any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
+                any(IActionListener.class), anyInt());
     }
 
     /**
@@ -3587,8 +3687,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         InOrder inOrder = inOrder(mClientModeImpl, mWifiMetrics);
         inOrder.verify(mWifiMetrics).logUserActionEvent(
                 UserActionEvent.EVENT_FORGET_WIFI, TEST_NETWORK_ID);
-        inOrder.verify(mClientModeImpl).forget(anyInt(), any(Binder.class),
-                any(IActionListener.class), anyInt(), anyInt());
+        inOrder.verify(mClientModeImpl).forget(anyInt(),
+                any(IActionListener.class), anyInt());
     }
 
     /**
@@ -3944,26 +4044,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         intent.putExtra(Intent.EXTRA_USER_HANDLE, userHandle);
         intent.putExtra(TelephonyManager.EXTRA_SIM_STATE, Intent.SIM_STATE_ABSENT);
         mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
-        verifyNoMoreInteractions(mWifiCountryCode);
-    }
-
-    /**
-     * Verifies that entering airplane mode does not reset country code.
-     */
-    @Test
-    public void testEnterAirplaneModeNotResetCountryCode() {
-        mWifiServiceImpl.checkAndStartWifi();
-        mLooper.dispatchAll();
-        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                (IntentFilter) argThat((IntentFilter filter) ->
-                        filter.hasAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)));
-
-        when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
-
-        // Send the broadcast
-        Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
-        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
-
         verifyNoMoreInteractions(mWifiCountryCode);
     }
 
@@ -4344,19 +4424,17 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
 
         doAnswer(new MockAnswerUtil.AnswerWithArguments() {
-            public void answer(WifiConfiguration config, int netId, IBinder binder,
-                    IActionListener callback, int callbackIdentifier, int callingUid) {
+            public void answer(WifiConfiguration config, int netId,
+                    IActionListener callback, int callingUid) {
                 try {
                     callback.onSuccess(); // return success
                 } catch (RemoteException e) { }
             }
-        }).when(mClientModeImpl).connect(
-                isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(), anyInt());
+        }).when(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
 
         assertTrue(mWifiServiceImpl.enableNetwork(TEST_NETWORK_ID, true, TEST_PACKAGE_NAME));
 
-        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(),
-                anyInt());
+        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
         verify(mWifiMetrics).incrementNumEnableNetworkCalls();
     }
 
@@ -4374,19 +4452,17 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 eq(Build.VERSION_CODES.Q), anyInt())).thenReturn(true);
 
         doAnswer(new MockAnswerUtil.AnswerWithArguments() {
-            public void answer(WifiConfiguration config, int netId, IBinder binder,
-                    IActionListener callback, int callbackIdentifier, int callingUid) {
+            public void answer(WifiConfiguration config, int netId,
+                    IActionListener callback, int callingUid) {
                 try {
                     callback.onSuccess(); // return success
                 } catch (RemoteException e) { }
             }
-        }).when(mClientModeImpl).connect(
-                isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(), anyInt());
+        }).when(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
 
         assertTrue(mWifiServiceImpl.enableNetwork(TEST_NETWORK_ID, true, TEST_PACKAGE_NAME));
 
-        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), any(), anyInt(),
-                anyInt());
+        verify(mClientModeImpl).connect(isNull(), eq(TEST_NETWORK_ID), any(), anyInt());
         verify(mWifiMetrics).incrementNumEnableNetworkCalls();
     }
 
@@ -4423,8 +4499,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         mWifiServiceImpl.enableNetwork(TEST_NETWORK_ID, true, TEST_PACKAGE_NAME);
 
-        verify(mClientModeImpl, never()).connect(isNull(), anyInt(), any(), any(), anyInt(),
-                anyInt());
+        verify(mClientModeImpl, never()).connect(isNull(), anyInt(), any(), anyInt());
         verify(mWifiMetrics, never()).incrementNumEnableNetworkCalls();
     }
 

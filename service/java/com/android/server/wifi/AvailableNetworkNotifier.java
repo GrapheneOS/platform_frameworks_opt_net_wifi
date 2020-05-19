@@ -34,7 +34,6 @@ import android.database.ContentObserver;
 import android.net.wifi.IActionListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
@@ -438,8 +437,8 @@ public class AvailableNetworkNotifier {
         if (result.isSuccess()) {
             mWifiMetrics.setNominatorForNetwork(result.netId, mNominatorId);
             ConnectActionListener connectActionListener = new ConnectActionListener();
-            mClientModeImplHolder.get().connect(null, result.netId, new Binder(),
-                    connectActionListener, connectActionListener.hashCode(), Process.SYSTEM_UID);
+            mClientModeImplHolder.get().connect(null, result.netId,
+                    connectActionListener, Process.SYSTEM_UID);
             addNetworkToBlacklist(mRecommendedNetwork.SSID);
         }
 
