@@ -4058,8 +4058,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * see {@link android.net.wifi.WifiManager#connect(int, WifiManager.ActionListener)}
      */
     @Override
-    public void connect(WifiConfiguration config, int netId, IBinder binder,
-            @Nullable IActionListener callback, int callbackIdentifier) {
+    public void connect(WifiConfiguration config, int netId, @Nullable IActionListener callback) {
         int uid = Binder.getCallingUid();
         if (!isPrivileged(Binder.getCallingPid(), uid)) {
             throw new SecurityException(TAG + ": Permission denied");
@@ -4076,8 +4075,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * WifiManager.ActionListener)}
      */
     @Override
-    public void save(WifiConfiguration config, IBinder binder, @Nullable IActionListener callback,
-            int callbackIdentifier) {
+    public void save(WifiConfiguration config, @Nullable IActionListener callback) {
         if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
             throw new SecurityException(TAG + ": Permission denied");
         }
@@ -4089,8 +4087,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * see {@link android.net.wifi.WifiManager#forget(int, WifiManager.ActionListener)}
      */
     @Override
-    public void forget(int netId, IBinder binder, @Nullable IActionListener callback,
-            int callbackIdentifier) {
+    public void forget(int netId, @Nullable IActionListener callback) {
         int uid = Binder.getCallingUid();
         if (!isPrivileged(Binder.getCallingPid(), uid)) {
             throw new SecurityException(TAG + ": Permission denied");

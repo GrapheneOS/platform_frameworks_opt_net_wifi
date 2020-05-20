@@ -572,21 +572,39 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    /** @deprecated migrate to {@link #connect(WifiConfiguration, int, IActionListener)} */
+    @Deprecated
     public void connect(WifiConfiguration config, int netId, IBinder binder,
             IActionListener callback, int callbackIdentifier) {
-        throw new UnsupportedOperationException();
+        connect(config, netId, callback);
     }
 
     @Override
+    public void connect(WifiConfiguration config, int netId, IActionListener callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    /** @deprecated migrate to {@link #save(WifiConfiguration, IActionListener)} */
+    @Deprecated
     public void save(WifiConfiguration config, IBinder binder, IActionListener callback,
             int callbackIdentifier) {
-        throw new UnsupportedOperationException();
+        save(config, callback);
     }
 
     @Override
+    public void save(WifiConfiguration config, IActionListener callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    /** @deprecated migrate to {@link #forget(int, IActionListener)} */
+    @Deprecated
     public void forget(int netId, IBinder binder, IActionListener callback,
             int callbackIdentifier) {
+        forget(netId, callback);
+    }
+
+    @Override
+    public void forget(int netId, IActionListener callback) {
         throw new UnsupportedOperationException();
     }
 
