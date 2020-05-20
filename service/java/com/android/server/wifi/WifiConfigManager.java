@@ -3369,4 +3369,18 @@ public class WifiConfigManager {
         }
         return true;
     }
+
+    /** See {@link WifiManager#save(WifiConfiguration, WifiManager.ActionListener)} */
+    public NetworkUpdateResult updateBeforeSaveNetwork(WifiConfiguration config, int callingUid) {
+        NetworkUpdateResult result = addOrUpdateNetwork(config, callingUid);
+        if (!result.isSuccess()) {
+            Log.e(TAG, "saveNetwork adding/updating config=" + config + " failed");
+            return result;
+        }
+        if (!enableNetwork(result.getNetworkId(), false, callingUid, null)) {
+            Log.e(TAG, "saveNetwork enabling config=" + config + " failed");
+            return NetworkUpdateResult.makeFailed();
+        }
+        return result;
+    }
 }
