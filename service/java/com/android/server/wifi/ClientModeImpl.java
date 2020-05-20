@@ -820,6 +820,7 @@ public class ClientModeImpl extends StateMachine {
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED)
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)
                 // TODO - needs to be a bit more dynamic
                 .setLinkUpstreamBandwidthKbps(1024 * 1024)
                 .setLinkDownstreamBandwidthKbps(1024 * 1024)
