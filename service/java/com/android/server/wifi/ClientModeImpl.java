@@ -6037,26 +6037,28 @@ public class ClientModeImpl extends StateMachine {
             @Nullable IActionListener callback, int callingUid) {
         mWifiThreadRunner.post(() -> {
             ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
-            NetworkUpdateResult result = null;
             if (config != null) {
-                result = mWifiConfigManager.addOrUpdateNetwork(config, callingUid);
+                NetworkUpdateResult result =
+                        mWifiConfigManager.addOrUpdateNetwork(config, callingUid);
                 if (!result.isSuccess()) {
                     loge("connectNetwork adding/updating config=" + config + " failed");
                     wrapper.sendFailure(WifiManager.ERROR);
                     return;
                 }
                 broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
+                final int networkId = result.getNetworkId();
+                mWifiConfigManager.updateBeforeConnectNetwork(networkId, callingUid);
+                sendConnectMessage(result, wrapper, callingUid);
             } else {
                 if (mWifiConfigManager.getConfiguredNetwork(netId) == null) {
                     loge("connectNetwork Invalid network Id=" + netId);
                     wrapper.sendFailure(WifiManager.ERROR);
                     return;
                 }
-                result = new NetworkUpdateResult(netId);
+                NetworkUpdateResult result = new NetworkUpdateResult(netId);
+                mWifiConfigManager.updateBeforeConnectNetwork(netId, callingUid);
+                sendConnectMessage(result, wrapper, callingUid);
             }
-            final int networkId = result.getNetworkId();
-            mWifiConfigManager.updateBeforeConnectNetwork(networkId, callingUid);
-            sendConnectMessage(result, wrapper, callingUid);
         });
     }
 
@@ -6081,24 +6083,15 @@ public class ClientModeImpl extends StateMachine {
                 return;
             }
             NetworkUpdateResult result =
-                    mWifiConfigManager.addOrUpdateNetwork(config, callingUid);
-            if (!result.isSuccess()) {
-                loge("saveNetwork adding/updating config=" + config + " failed");
+                    mWifiConfigManager.updateBeforeSaveNetwork(config, callingUid);
+            if (result.isSuccess()) {
+                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
+                sendSaveMessage(result, wrapper, callingUid);
+            } else {
                 wrapper.sendFailure(WifiManager.ERROR);
-                return;
             }
-            if (!mWifiConfigManager.enableNetwork(
-                    result.getNetworkId(), false, callingUid, null)) {
-                loge("saveNetwork enabling config=" + config + " failed");
-                wrapper.sendFailure(WifiManager.ERROR);
-                return;
-            }
-            broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
-            sendSaveMessage(result, wrapper, callingUid);
         });
     }
-
-
 
     private void sendSaveMessage(NetworkUpdateResult result, ActionListenerWrapper wrapper,
             int callingUid) {
