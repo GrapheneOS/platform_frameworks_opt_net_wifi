@@ -424,7 +424,8 @@ public class HostapdHal {
                     && !mForceApChannel;
             if (enableAcs) {
                 ifaceParams.channelParams.enableAcs = true;
-                ifaceParams.channelParams.acsShouldExcludeDfs = true;
+                ifaceParams.channelParams.acsShouldExcludeDfs = !mContext.getResources()
+                        .getBoolean(R.bool.config_wifiSoftapAcsIncludeDfs);
             }
             ifaceParams.channelParams.channel =
                     mForceApChannel ? mForcedApChannel : config.getChannel();

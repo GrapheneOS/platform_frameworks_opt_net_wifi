@@ -137,6 +137,7 @@ public class HostapdHalTest extends WifiBaseTest {
         mResources.setBoolean(R.bool.config_wifi_softap_ieee80211ac_supported, false);
         mResources.setBoolean(R.bool.config_wifiSoftapIeee80211axSupported, false);
         mResources.setBoolean(R.bool.config_wifiSoftap6ghzSupported, false);
+        mResources.setBoolean(R.bool.config_wifiSoftapAcsIncludeDfs, false);
         mResources.setString(R.string.config_wifiSoftap2gChannelList, "");
         mResources.setString(R.string.config_wifiSoftap5gChannelList, "");
         mResources.setString(R.string.config_wifiSoftap6gChannelList, "");
@@ -1039,6 +1040,44 @@ public class HostapdHalTest extends WifiBaseTest {
         assertFalse(mHostapdHal.addAccessPoint(IFACE_NAME,
                 configurationBuilder.build(),
                 () -> mSoftApListener.onFailure()));
+    }
+
+    /**
+     * Verifies the successful addition of access point when ACS is allowed to include DFS channels.
+     */
+    @Test
+    public void testAddAccessPointSuccess_WithACS_IncludeDFSChannels() throws Exception {
+        // Enable ACS in the config.
+        mResources.setBoolean(R.bool.config_wifi_softap_acs_supported, true);
+        mResources.setBoolean(R.bool.config_wifiSoftapAcsIncludeDfs, true);
+        mHostapdHal = new HostapdHalSpy();
+
+        executeAndValidateInitializationSequence();
+
+        Builder configurationBuilder = new SoftApConfiguration.Builder();
+        configurationBuilder.setSsid(NETWORK_SSID);
+        configurationBuilder.setHiddenSsid(false);
+        configurationBuilder.setPassphrase(NETWORK_PSK,
+                SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
+        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+
+        assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
+                configurationBuilder.build(),
+                () -> mSoftApListener.onFailure()));
+        verify(mIHostapdMock).addAccessPoint(any(), any());
+
+        assertEquals(IFACE_NAME, mIfaceParamsCaptor.getValue().ifaceName);
+        assertTrue(mIfaceParamsCaptor.getValue().hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptor.getValue().hwModeParams.enable80211AC);
+        assertEquals(IHostapd.Band.BAND_ANY, mIfaceParamsCaptor.getValue().channelParams.band);
+        assertTrue(mIfaceParamsCaptor.getValue().channelParams.enableAcs);
+        assertFalse(mIfaceParamsCaptor.getValue().channelParams.acsShouldExcludeDfs);
+
+        assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
+                mNetworkParamsCaptor.getValue().ssid);
+        assertFalse(mNetworkParamsCaptor.getValue().isHidden);
+        assertEquals(IHostapd.EncryptionType.WPA2, mNetworkParamsCaptor.getValue().encryptionType);
+        assertEquals(NETWORK_PSK, mNetworkParamsCaptor.getValue().pskPassphrase);
     }
 }
 
