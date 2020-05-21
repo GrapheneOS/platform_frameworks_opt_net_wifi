@@ -3199,7 +3199,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 WifiConfigManager.ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG, 0) == 1
                 ? true : false;
         mWifiMetrics.setEnhancedMacRandomizationForceEnabled(isEnhancedMacRandEnabled);
-        mWifiMetrics.setIsScanningAlwaysEnabled(isScanAlwaysAvailable());
+        mWifiMetrics.setIsScanningAlwaysEnabled(mSettingsStore.isScanAlwaysAvailable());
         mWifiMetrics.setVerboseLoggingEnabled(mVerboseLoggingEnabled);
         mWifiMetrics.setWifiWakeEnabled(mWifiInjector.getWakeupController().isEnabled());
     }
