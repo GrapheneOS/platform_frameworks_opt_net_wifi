@@ -70,7 +70,7 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
      * Calculates an individual candidate's score.
      */
     private ScoredCandidate scoreCandidate(Candidate candidate) {
-        int rssiSaturationThreshold = mScoringParams.getGoodRssi(candidate.getFrequency());
+        int rssiSaturationThreshold = mScoringParams.getSufficientRssi(candidate.getFrequency());
         int rssi = Math.min(candidate.getScanRssi(), rssiSaturationThreshold);
         int rssiBaseScore = (rssi + RSSI_SCORE_OFFSET) * RSSI_SCORE_SLOPE_IS_4;
 

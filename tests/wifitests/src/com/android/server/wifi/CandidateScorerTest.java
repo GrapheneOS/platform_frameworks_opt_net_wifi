@@ -156,8 +156,8 @@ public class CandidateScorerTest extends WifiBaseTest {
      */
     @Test
     public void testPreferHigherRssi() throws Exception {
-        assertThat(evaluate(mCandidate1.setScanRssi(-63)),
-                greaterThan(evaluate(mCandidate2.setScanRssi(-64))));
+        assertThat(evaluate(mCandidate1.setScanRssi(-70)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-71))));
     }
 
     /**
@@ -174,9 +174,9 @@ public class CandidateScorerTest extends WifiBaseTest {
      */
     @Test
     public void testPreferTheCurrentNetworkEvenIfRssiDifferenceIsSignificant() throws Exception {
-        assertThat(evaluate(mCandidate1.setScanRssi(-65).setCurrentNetwork(true)
+        assertThat(evaluate(mCandidate1.setScanRssi(-76).setCurrentNetwork(true)
                                     .setPredictedThroughputMbps(433)),
-                greaterThan(evaluate(mCandidate2.setScanRssi(-57)
+                greaterThan(evaluate(mCandidate2.setScanRssi(-69)
                                     .setPredictedThroughputMbps(433))));
     }
 
@@ -248,11 +248,14 @@ public class CandidateScorerTest extends WifiBaseTest {
      */
     @Test
     public void testAboveSaturationDoNotSwitchAwayEvenWithALargeRssiDifference() throws Exception {
-        int goodRssi = mScoringParams.getGoodRssi(mCandidate1.getFrequency());
+        int currentRssi = (mExpectedExpId == ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID)
+                ? mScoringParams.getSufficientRssi(mCandidate1.getFrequency()) :
+                mScoringParams.getGoodRssi(mCandidate1.getFrequency());
         int unbelievablyGoodRssi = -1;
-        assertThat(evaluate(mCandidate1.setScanRssi(goodRssi).setCurrentNetwork(true)),
+        assertThat(evaluate(mCandidate1.setScanRssi(currentRssi).setCurrentNetwork(true)),
                 greaterThan(evaluate(mCandidate2.setScanRssi(unbelievablyGoodRssi))));
     }
+
 
     /**
      * Prefer high throughput network.
