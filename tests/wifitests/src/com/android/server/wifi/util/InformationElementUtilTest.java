@@ -1706,5 +1706,39 @@ public class InformationElementUtilTest extends WifiBaseTest {
         assertEquals(true, vsa.IsOceCapable);
     }
 
+    /**
+     * verify determineMode for various combinations.
+     */
+    @Test
+    public void determineMode() throws Exception {
+        assertEquals(InformationElementUtil.WifiMode.MODE_11B,
+                InformationElementUtil.WifiMode.determineMode(
+                        2412, 11000000, false, false, false, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11G,
+                InformationElementUtil.WifiMode.determineMode(
+                        2412, 54000000, false, false, false, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11A,
+                InformationElementUtil.WifiMode.determineMode(
+                        5180, 54000000, false, false, false, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11G,
+                InformationElementUtil.WifiMode.determineMode(
+                        2412, 54000000, false, false, false, true));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11N,
+                InformationElementUtil.WifiMode.determineMode(
+                        2412, 72000000, false, false, true, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11N,
+                InformationElementUtil.WifiMode.determineMode(
+                        2412, 72000000, false, true, true, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11AC,
+                InformationElementUtil.WifiMode.determineMode(
+                        5180, 866000000, false, true, true, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11AX,
+                InformationElementUtil.WifiMode.determineMode(
+                       5180, 866000000, true, true, true, false));
+        assertEquals(InformationElementUtil.WifiMode.MODE_11AX,
+                InformationElementUtil.WifiMode.determineMode(
+                      2412, 72000000, true, true, true, false));
+    }
+
     // TODO: SAE, OWN, SUITE_B
 }
