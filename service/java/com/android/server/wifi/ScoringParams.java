@@ -91,7 +91,7 @@ public class ScoringParams {
         public int unmeteredNetworkBonus = 1000;
         public int currentNetworkBonusMin = 20;
         public int currentNetworkBonusPercent = 20;
-        public int secureNetworkBonus = 10;
+        public int secureNetworkBonus = 40;
         public int lastSelectionMinutes = 480;
         public static final int MIN_MINUTES = 1;
         public static final int MAX_MINUTES = Integer.MAX_VALUE / (60 * 1000);
