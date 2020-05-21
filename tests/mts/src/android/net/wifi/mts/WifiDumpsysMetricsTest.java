@@ -17,6 +17,7 @@
 package android.net.wifi.mts;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assume.assumeTrue;
 
@@ -26,7 +27,6 @@ import android.util.Base64;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.compatibility.common.util.ShellIdentityUtils;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLog;
 
 import org.junit.Before;
@@ -55,16 +55,20 @@ public class WifiDumpsysMetricsTest {
      */
     @Test
     public void testWifiDumpMetrics() throws Exception {
-        String rawDumpOutput = ShellIdentityUtils.invokeWithShellPermissions(
-                () -> StreamReader.runProcessCommand(WIFI_DUMP_PROTO_CMD));
+        // DO NOT run under shell identity. Shell has a lot more permissions.
+        // `dumpsys wifi wifiMetricsProto` should ONLY need `android.permission.DUMP`
+        String rawDumpOutput = StreamReader.runProcessCommand(WIFI_DUMP_PROTO_CMD);
 
         assertThat(rawDumpOutput).isNotNull();
 
         int protoStart = rawDumpOutput.indexOf(START_TAG);
         int protoEnd = rawDumpOutput.indexOf(END_TAG);
 
-        assertThat(protoStart).isAtLeast(0);
-        assertThat(protoEnd).isAtLeast(protoStart);
+        assertWithMessage("Expected to find \"WifiMetrics:\", but instead found: " + rawDumpOutput)
+                .that(protoStart).isAtLeast(0);
+        assertWithMessage(
+                "Expected to find \"EndWifiMetrics\", but instead found: " + rawDumpOutput)
+                .that(protoEnd).isAtLeast(protoStart);
 
         String protoString = rawDumpOutput.substring(protoStart + START_TAG.length(), protoEnd);
         byte[] protoBytes = Base64.decode(protoString, Base64.DEFAULT);
