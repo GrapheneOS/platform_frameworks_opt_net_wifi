@@ -101,7 +101,7 @@
     <!-- Integer specifying the percent bonus for current network. The percent is applied to
          the sum of rssi base score and throughput score-->
     <integer translatable="false" name="config_wifiFrameworkCurrentNetworkBonusPercent">20</integer>
-    <integer translatable="false" name="config_wifiFrameworkSecureNetworkBonus">10</integer>
+    <integer translatable="false" name="config_wifiFrameworkSecureNetworkBonus">40</integer>
 
     <!-- The duration in minutes to strongly favor the last-selected network over other options. -->
     <integer translatable="false" name="config_wifiFrameworkLastSelectionMinutes">480</integer>
