@@ -1494,13 +1494,15 @@ public class InformationElementUtil {
                 boolean foundVht, boolean foundHt, boolean foundErp) {
             if (foundHe) {
                 return MODE_11AX;
-            } else if (foundVht) {
+            } else if (!ScanResult.is24GHz(frequency) && foundVht) {
+                // Do not include subset of VHT on 2.4 GHz vendor extension
+                // in consideration for reporting VHT.
                 return MODE_11AC;
             } else if (foundHt) {
                 return MODE_11N;
             } else if (foundErp) {
                 return MODE_11G;
-            } else if (frequency < 3000) {
+            } else if (ScanResult.is24GHz(frequency)) {
                 if (maxRate < 24000000) {
                     return MODE_11B;
                 } else {

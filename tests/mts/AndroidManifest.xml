@@ -19,6 +19,9 @@
     package="android.net.wifi.mts"
     android:targetSandboxVersion="2">
 
+    <!-- Need DUMP permission to call `dumpsys wifi wifiMetricsProto` -->
+    <uses-permission android:name="android.permission.DUMP" />
+
     <application android:usesCleartextTraffic="true">
         <uses-library android:name="android.test.runner" />
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
