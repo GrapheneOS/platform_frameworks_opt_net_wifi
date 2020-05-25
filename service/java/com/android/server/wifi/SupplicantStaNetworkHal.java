@@ -303,62 +303,6 @@ public class SupplicantStaNetworkHal {
                     return false;
                 }
             }
-            /** Pre Shared Key */
-            // For PSK, this can either be quoted ASCII passphrase or hex string for raw psk.
-            // For SAE, password must be a quoted ASCII string
-            if (config.preSharedKey != null) {
-                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
-                    if (!setPskPassphrase(config.preSharedKey)) {
-                        Log.e(TAG, "failed to set wapi psk passphrase");
-                        return false;
-                    }
-                } else if (config.preSharedKey.startsWith("\"")) {
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-                        /* WPA3 case, field is SAE Password */
-                        if (!setSaePassword(
-                                NativeUtil.removeEnclosingQuotes(config.preSharedKey))) {
-                            Log.e(TAG, "failed to set sae password");
-                            return false;
-                        }
-                    } else {
-                        if (!setPskPassphrase(
-                                NativeUtil.removeEnclosingQuotes(config.preSharedKey))) {
-                            Log.e(TAG, "failed to set psk passphrase");
-                            return false;
-                        }
-                    }
-                } else {
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-                        return false;
-                    }
-                    if (!setPsk(NativeUtil.hexStringToByteArray(config.preSharedKey))) {
-                        Log.e(TAG, "failed to set psk");
-                        return false;
-                    }
-                }
-            }
-
-            /** Wep Keys */
-            boolean hasSetKey = false;
-            if (config.wepKeys != null) {
-                for (int i = 0; i < config.wepKeys.length; i++) {
-                    if (config.wepKeys[i] != null) {
-                        if (!setWepKey(
-                                i, NativeUtil.hexOrQuotedStringToBytes(config.wepKeys[i]))) {
-                            Log.e(TAG, "failed to set wep_key " + i);
-                            return false;
-                        }
-                        hasSetKey = true;
-                    }
-                }
-            }
-            /** Wep Tx Key Idx */
-            if (hasSetKey) {
-                if (!setWepTxKeyIdx(config.wepTxKeyIndex)) {
-                    Log.e(TAG, "failed to set wep_tx_keyidx: " + config.wepTxKeyIndex);
-                    return false;
-                }
-            }
             /** HiddenSSID */
             if (!setScanSsid(config.hiddenSSID)) {
                 Log.e(TAG, config.SSID + ": failed to set hiddenSSID: " + config.hiddenSSID);
@@ -413,6 +357,61 @@ public class SupplicantStaNetworkHal {
                     config.allowedPairwiseCiphers))) {
                 Log.e(TAG, "failed to set PairwiseCipher");
                 return false;
+            }
+            /** Pre Shared Key */
+            // For PSK, this can either be quoted ASCII passphrase or hex string for raw psk.
+            // For SAE, password must be a quoted ASCII string
+            if (config.preSharedKey != null) {
+                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                    if (!setPskPassphrase(config.preSharedKey)) {
+                        Log.e(TAG, "failed to set wapi psk passphrase");
+                        return false;
+                    }
+                } else if (config.preSharedKey.startsWith("\"")) {
+                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+                        /* WPA3 case, field is SAE Password */
+                        if (!setSaePassword(
+                                NativeUtil.removeEnclosingQuotes(config.preSharedKey))) {
+                            Log.e(TAG, "failed to set sae password");
+                            return false;
+                        }
+                    } else {
+                        if (!setPskPassphrase(
+                                NativeUtil.removeEnclosingQuotes(config.preSharedKey))) {
+                            Log.e(TAG, "failed to set psk passphrase");
+                            return false;
+                        }
+                    }
+                } else {
+                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+                        return false;
+                    }
+                    if (!setPsk(NativeUtil.hexStringToByteArray(config.preSharedKey))) {
+                        Log.e(TAG, "failed to set psk");
+                        return false;
+                    }
+                }
+            }
+            /** Wep Keys */
+            boolean hasSetKey = false;
+            if (config.wepKeys != null) {
+                for (int i = 0; i < config.wepKeys.length; i++) {
+                    if (config.wepKeys[i] != null) {
+                        if (!setWepKey(
+                                i, NativeUtil.hexOrQuotedStringToBytes(config.wepKeys[i]))) {
+                            Log.e(TAG, "failed to set wep_key " + i);
+                            return false;
+                        }
+                        hasSetKey = true;
+                    }
+                }
+            }
+            /** Wep Tx Key Idx */
+            if (hasSetKey) {
+                if (!setWepTxKeyIdx(config.wepTxKeyIndex)) {
+                    Log.e(TAG, "failed to set wep_tx_keyidx: " + config.wepTxKeyIndex);
+                    return false;
+                }
             }
             /** metadata: FQDN + ConfigKey + CreatorUid */
             final Map<String, String> metadata = new HashMap<String, String>();
