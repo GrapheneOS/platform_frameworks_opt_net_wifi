@@ -376,7 +376,7 @@ public class WifiInjector {
                 mWifiConnectivityHelper, mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, wifiHandler,
                 mClock, mConnectivityLocalLog, mWifiScoreCard, mBssidBlocklistMonitor,
-                mWifiChannelUtilizationScan, mPasspointManager);
+                mWifiChannelUtilizationScan, mPasspointManager, mDeviceConfigFacade);
         NotificationManager notificationManager =
                 mContext.getSystemService(NotificationManager.class);
         ConnectionFailureNotifier connectionFailureNotifier = new ConnectionFailureNotifier(
