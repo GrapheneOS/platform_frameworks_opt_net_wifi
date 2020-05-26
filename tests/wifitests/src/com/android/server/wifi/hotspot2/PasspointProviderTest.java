@@ -1250,6 +1250,17 @@ public class PasspointProviderTest extends WifiBaseTest {
         verifyWifiConfigWithTestData(config, mProvider.getWifiConfig());
     }
 
+    @Test
+    public void getWifiConfigWithWithAutojoinDisable() throws Exception {
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        mProvider = createProvider(config);
+
+        assertTrue(mProvider.getWifiConfig().allowAutojoin);
+        mProvider.setAutojoinEnabled(false);
+        assertFalse(mProvider.getWifiConfig().allowAutojoin);
+    }
+
     /**
      * Verify that the mac randomization setting will be included in the generated
      * WifiConfiguration.
