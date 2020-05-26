@@ -32,7 +32,6 @@ import static android.net.wifi.WifiManager.EXTRA_SUBSCRIPTION_REMEDIATION_METHOD
 import static android.net.wifi.WifiManager.EXTRA_URL;
 
 import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_EAP;
-import static com.android.server.wifi.WifiConfigurationTestUtil.TEST_NETWORK_ID;
 
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -174,6 +173,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final int TEST_CREATOR_UID = 1234;
     private static final int TEST_CREATOR_UID1 = 1235;
     private static final int TEST_UID = 1500;
+    private static final int TEST_NETWORK_ID = 2;
 
     @Mock Context mContext;
     @Mock WifiNative mWifiNative;
@@ -921,6 +921,7 @@ public class PasspointManagerTest extends WifiBaseTest {
                 origWifiConfig.getKey());
         verify(mWifiConfigManager).addOrUpdateNetwork(
                 argThat((c) -> c.FQDN.equals(TEST_FQDN)), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE));
+        verify(mWifiConfigManager).allowAutojoin(TEST_NETWORK_ID, origWifiConfig.allowAutojoin);
         verify(mWifiConfigManager).saveToStore(true);
         verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
         verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
@@ -2123,6 +2124,7 @@ public class PasspointManagerTest extends WifiBaseTest {
                 origWifiConfig.getKey());
         verify(mWifiConfigManager).addOrUpdateNetwork(
                 argThat((c) -> c.FQDN.equals(TEST_FQDN)), eq(TEST_CREATOR_UID), eq(TEST_PACKAGE));
+        verify(mWifiConfigManager).allowAutojoin(TEST_NETWORK_ID, origWifiConfig.allowAutojoin);
         verify(mWifiConfigManager).saveToStore(true);
         verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
         verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
