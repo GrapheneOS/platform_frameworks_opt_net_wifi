@@ -406,6 +406,7 @@ public class PasspointManager {
         if (!result.isSuccess()) {
             Log.e(TAG, "Failed to update config in WifiConfigManager");
         } else {
+            mWifiConfigManager.allowAutojoin(result.getNetworkId(), newConfig.allowAutojoin);
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "Updated config in WifiConfigManager");
             }
