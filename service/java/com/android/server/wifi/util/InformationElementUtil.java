@@ -20,6 +20,7 @@ import android.net.wifi.ScanResult.InformationElement;
 import android.net.wifi.WifiAnnotations.Cipher;
 import android.net.wifi.WifiAnnotations.KeyMgmt;
 import android.net.wifi.WifiAnnotations.Protocol;
+import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.NativeScanResult;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.util.Log;
@@ -279,8 +280,8 @@ public class InformationElementUtil {
             if (mCenterFreqIndex1 == 0 || mChannelMode == 0) {
                 return 0;
             } else {
-                //convert channel index to frequency in MHz, channel 36 is 5180MHz
-                return (mCenterFreqIndex1 - 36) * 5 + 5180;
+                return ScanResult.convertChannelToFrequencyMhz(mCenterFreqIndex1,
+                        WifiScanner.WIFI_BAND_5_GHZ);
             }
         }
 
@@ -294,8 +295,8 @@ public class InformationElementUtil {
             if (mCenterFreqIndex2 == 0 || mChannelMode == 0) {
                 return 0;
             } else {
-                //convert channel index to frequency in MHz, channel 36 is 5180MHz
-                return (mCenterFreqIndex2 - 36) * 5 + 5180;
+                return ScanResult.convertChannelToFrequencyMhz(mCenterFreqIndex2,
+                        WifiScanner.WIFI_BAND_5_GHZ);
             }
         }
 
@@ -392,7 +393,8 @@ public class InformationElementUtil {
          * Only applicable for 6GHz channels
          */
         public int getPrimaryFreq() {
-            return (mPrimaryChannel * 5) + 5940;
+            return ScanResult.convertChannelToFrequencyMhz(mPrimaryChannel,
+                        WifiScanner.WIFI_BAND_6_GHZ);
         }
 
         /**
@@ -404,7 +406,8 @@ public class InformationElementUtil {
                 if (mCenterFreqSeg0 == 0) {
                     return 0;
                 } else {
-                    return (mCenterFreqSeg0 * 5) + 5940;
+                    return ScanResult.convertChannelToFrequencyMhz(mCenterFreqSeg0,
+                            WifiScanner.WIFI_BAND_6_GHZ);
                 }
             } else {
                 return 0;
@@ -420,7 +423,8 @@ public class InformationElementUtil {
                 if (mCenterFreqSeg1 == 0) {
                     return 0;
                 } else {
-                    return (mCenterFreqSeg1 * 5) + 5940;
+                    return ScanResult.convertChannelToFrequencyMhz(mCenterFreqSeg1,
+                            WifiScanner.WIFI_BAND_6_GHZ);
                 }
             } else {
                 return 0;
