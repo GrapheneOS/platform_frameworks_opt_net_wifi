@@ -514,6 +514,7 @@ public class PasspointProvider {
             // Check server certificate using OCSP (Online Certificate Status Protocol).
             wifiConfig.enterpriseConfig.setOcsp(WifiEnterpriseConfig.OCSP_REQUIRE_CERT_STATUS);
         }
+        wifiConfig.allowAutojoin = isAutojoinEnabled();
         wifiConfig.shared = mIsShared;
         wifiConfig.fromWifiNetworkSuggestion = mIsFromSuggestion;
         wifiConfig.ephemeral = mIsFromSuggestion;
