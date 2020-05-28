@@ -1254,6 +1254,19 @@ public class WifiNetworkSuggestionsManager {
     }
 
     /**
+     * Returns a set of all network suggestions across all apps that have been approved by user.
+     */
+    public Set<WifiNetworkSuggestion> getAllApprovedNetworkSuggestions() {
+        final String activeScorerPackage = mNetworkScoreManager.getActiveScorerPackage();
+        return mActiveNetworkSuggestionsPerApp.values()
+                .stream()
+                .filter(e -> e.isApproved(activeScorerPackage))
+                .flatMap(e -> convertToWnsSet(e.extNetworkSuggestions)
+                        .stream())
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Get all user approved, non-passpoint networks from suggestion.
      */
     public List<WifiConfiguration> getAllScanOptimizationSuggestionNetworks() {
