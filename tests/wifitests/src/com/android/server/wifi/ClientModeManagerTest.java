@@ -260,7 +260,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
         checkWifiConnectModeStateChangedBroadcast(intents.get(1), WIFI_STATE_ENABLED,
                 WIFI_STATE_ENABLING);
 
-        verify(mListener, times(2)).onStarted();
+        verify(mListener).onStarted();
+        verify(mListener).onRoleChanged();
     }
 
     private void checkWifiConnectModeStateChangedBroadcast(
@@ -348,7 +349,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
         checkWifiConnectModeStateChangedBroadcast(intents.get(1), WIFI_STATE_ENABLED,
                 WIFI_STATE_ENABLING);
 
-        verify(mListener, times(2)).onStarted();
+        verify(mListener).onStarted();
+        verify(mListener).onRoleChanged();
     }
 
     /**
@@ -378,7 +380,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
 
         // Ensure that no public broadcasts were sent.
         verifyNoMoreInteractions(mContext);
-        verify(mListener, times(3)).onStarted();
+        verify(mListener).onStarted();
+        verify(mListener, times(2)).onRoleChanged();
     }
 
     /**
@@ -1220,6 +1223,6 @@ public class ClientModeManagerTest extends WifiBaseTest {
         // Change the connectivity role.
         mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SECONDARY);
         mLooper.dispatchAll();
-        verify(mListener).onStarted(); // callback sent.
+        verify(mListener).onRoleChanged(); // callback sent.
     }
 }

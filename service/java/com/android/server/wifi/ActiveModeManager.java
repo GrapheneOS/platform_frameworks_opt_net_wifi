@@ -36,13 +36,17 @@ public interface ActiveModeManager {
      */
     interface Listener {
         /**
-         * Invoked when mode manager completes start or on mode switch.
+         * Invoked when mode manager completes start.
          */
         void onStarted();
         /**
          * Invoked when mode manager completes stop.
          */
         void onStopped();
+        /**
+         * Invoked when mode manager completes a role switch.
+         */
+        void onRoleChanged();
         /**
          * Invoked when mode manager encountered a failure on start or on mode switch.
          */
