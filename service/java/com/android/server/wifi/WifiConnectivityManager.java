@@ -1635,7 +1635,7 @@ public class WifiConnectivityManager {
         }
 
         Set<WifiNetworkSuggestion> suggestionsNetworks =
-                mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
+                mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions();
         // If total size not equal to 1, then no need to proceed
         if (passpointNetworks.size() + savedNetworks.size() + suggestionsNetworks.size() != 1) {
             return false;
