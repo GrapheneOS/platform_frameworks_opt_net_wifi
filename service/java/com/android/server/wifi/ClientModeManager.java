@@ -62,7 +62,6 @@ public class ClientModeManager implements ActiveModeManager {
     private final Clock mClock;
     private final WifiNative mWifiNative;
     private final WifiMetrics mWifiMetrics;
-    private final SarManager mSarManager;
     private final WakeupController mWakeupController;
     private final Listener mModeListener;
     private final PrimaryClientModeImplHolder mClientModeImplHolder;
@@ -74,14 +73,13 @@ public class ClientModeManager implements ActiveModeManager {
     private int mTargetRole = ROLE_UNSPECIFIED;
 
     ClientModeManager(Context context, @NonNull Looper looper, Clock clock, WifiNative wifiNative,
-            Listener listener, WifiMetrics wifiMetrics, SarManager sarManager,
-            WakeupController wakeupController, PrimaryClientModeImplHolder clientModeImplHolder) {
+            Listener listener, WifiMetrics wifiMetrics, WakeupController wakeupController,
+            PrimaryClientModeImplHolder clientModeImplHolder) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
         mModeListener = listener;
         mWifiMetrics = wifiMetrics;
-        mSarManager = sarManager;
         mWakeupController = wakeupController;
         mClientModeImplHolder = clientModeImplHolder;
         mStateMachine = new ClientModeStateMachine(looper);
@@ -518,8 +516,6 @@ public class ClientModeManager implements ActiveModeManager {
                 mRole = ROLE_CLIENT_SCAN_ONLY;
                 mModeListener.onStarted();
 
-                // Inform sar manager that scan only is being enabled
-                mSarManager.setScanOnlyWifiState(WifiManager.WIFI_STATE_ENABLED);
                 mWakeupController.start();
             }
 
@@ -537,8 +533,6 @@ public class ClientModeManager implements ActiveModeManager {
 
             @Override
             public void exit() {
-                // Inform sar manager that scan only is being disabled
-                mSarManager.setScanOnlyWifiState(WifiManager.WIFI_STATE_DISABLED);
                 mWakeupController.stop();
             }
         }
@@ -552,9 +546,6 @@ public class ClientModeManager implements ActiveModeManager {
                 mModeListener.onStarted();
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
                         WifiManager.WIFI_STATE_ENABLING);
-
-                // Inform sar manager that wifi is Enabled
-                mSarManager.setClientWifiState(WifiManager.WIFI_STATE_ENABLED);
             }
 
             @Override
@@ -608,9 +599,6 @@ public class ClientModeManager implements ActiveModeManager {
             public void exit() {
                 updateConnectModeState(WifiManager.WIFI_STATE_DISABLED,
                         WifiManager.WIFI_STATE_DISABLING);
-
-                // Inform sar manager that wifi is being disabled
-                mSarManager.setClientWifiState(WifiManager.WIFI_STATE_DISABLED);
             }
         }
     }

@@ -126,7 +126,6 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Mock FrameworkFacade mFrameworkFacade;
     @Mock WifiApConfigStore mWifiApConfigStore;
     @Mock WifiMetrics mWifiMetrics;
-    @Mock SarManager mSarManager;
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
     @Mock NotificationManager mNotificationManager;
     @Mock SoftApNotifier mFakeSoftApNotifier;
@@ -195,7 +194,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            config,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
 
@@ -275,7 +273,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            nullApConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -323,7 +320,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            nullApConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -370,7 +366,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            nullApConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -415,7 +410,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 mWifiApConfigStore,
                 softApConfig,
                 mWifiMetrics,
-                mSarManager,
                 mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -464,7 +458,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            softApConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -589,7 +582,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            softApConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -630,7 +622,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            softApModeConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
 
         mLooper.dispatchAll();
@@ -655,7 +646,6 @@ public class SoftApManagerTest extends WifiBaseTest {
         /* Verify no state changes. */
         verify(mCallback, never()).onStateChanged(anyInt(), anyInt());
         verifyNoMoreInteractions(mListener);
-        verify(mSarManager, never()).setSapWifiState(anyInt());
         verify(mContext, never()).sendStickyBroadcastAsUser(any(), any());
         verify(mWifiNative, never()).teardownInterface(anyString());
     }
@@ -687,7 +677,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 softApModeConfig.getTargetMode());
 
         order.verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_DISABLED, 0);
-        verify(mSarManager).setSapWifiState(WifiManager.WIFI_AP_STATE_DISABLED);
         verify(mWifiDiagnostics).stopLogging(TEST_INTERFACE_NAME);
         order.verify(mContext).sendStickyBroadcastAsUser(intentCaptor.capture(),
                 eq(UserHandle.ALL));
@@ -1798,7 +1787,6 @@ public class SoftApManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
         order.verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLED, 0);
         order.verify(mCallback).onConnectedClientsChanged(new ArrayList<>());
-        verify(mSarManager).setSapWifiState(WifiManager.WIFI_AP_STATE_ENABLED);
         verify(mWifiDiagnostics).startLogging(TEST_INTERFACE_NAME);
         verify(mContext, times(2)).sendStickyBroadcastAsUser(intentCaptor.capture(),
                 eq(UserHandle.ALL));
@@ -1895,7 +1883,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            apConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
@@ -1932,7 +1919,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            apConfig,
                                                            mWifiMetrics,
-                                                           mSarManager,
                                                            mWifiDiagnostics);
         mLooper.dispatchAll();
         newSoftApManager.start();
