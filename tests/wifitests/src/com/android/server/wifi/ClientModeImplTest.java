@@ -3235,8 +3235,8 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testScoreCardNoteConnectionComplete() throws Exception {
-        Pair<String, String> l2KeyAndGroupHint = Pair.create("Wad", "Gab");
-        when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(l2KeyAndGroupHint);
+        Pair<String, String> l2KeyAndCluster = Pair.create("Wad", "Gab");
+        when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(l2KeyAndCluster);
         connect();
         mLooper.dispatchAll();
         verify(mWifiScoreCard).noteIpConfiguration(any());
@@ -3245,7 +3245,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mIpClient, atLeastOnce()).updateLayer2Information(captor.capture());
         final Layer2InformationParcelable info = captor.getValue();
         assertEquals(info.l2Key, "Wad");
-        assertEquals(info.groupHint, "Gab");
+        assertEquals(info.cluster, "Gab");
     }
 
     /**
