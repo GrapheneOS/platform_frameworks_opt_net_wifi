@@ -347,7 +347,7 @@ public class WakeupController {
         }
 
         Set<WifiNetworkSuggestion> networkSuggestions =
-                mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
+                mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions();
         for (WifiNetworkSuggestion suggestion : networkSuggestions) {
             // TODO(b/127799111): Do we need to filter the list similar to saved networks above?
             goodNetworks.add(
