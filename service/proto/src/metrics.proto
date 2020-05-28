@@ -1438,6 +1438,9 @@ message StaEvent {
 
   // Whether screen is on when the event happens
   optional bool screen_on = 24;
+
+  // Whether cellular data network is available
+  optional bool is_cellular_data_available = 25;
 }
 
 // Wi-Fi Aware metrics
