@@ -417,4 +417,17 @@
 
     <!-- Wifi driver Automatic channel selection (ACS) for softap to include DFS channels -->
     <bool translatable="false" name="config_wifiSoftapAcsIncludeDfs">false</bool>
+
+    <!-- Initial PNO scan interval, in milliseconds, when the device is moving (i.e.
+         WifiManager.DEVICE_MOBILITY_STATE_UNKNOWN, WifiManager.DEVICE_MOBILITY_STATE_HIGH_MVMT, or
+         WifiManager.DEVICE_MOBILITY_STATE_LOW_MVMT).
+         The scan interval backs off from this initial interval on subsequent scans.
+         This scan is performed when screen is off and disconnected. -->
+    <integer translatable="false" name="config_wifiMovingPnoScanIntervalMillis">20000</integer>
+
+    <!-- Initial PNO scan interval, in milliseconds, when the device is stationary (i.e.
+         WifiManager.DEVICE_MOBILITY_STATE_STATIONARY).
+         The scan interval backs off from this initial interval on subsequent scans.
+         This scan is performed when screen is off and disconnected. -->
+    <integer translatable="false" name="config_wifiStationaryPnoScanIntervalMillis">60000</integer>
 </resources>
