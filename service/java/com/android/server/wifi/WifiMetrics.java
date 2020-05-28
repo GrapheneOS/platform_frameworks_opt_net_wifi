@@ -4698,6 +4698,9 @@ public class WifiMetrics {
         staEvent.totalTxBytes = mFacade.getTotalTxBytes();
         staEvent.totalRxBytes = mFacade.getTotalRxBytes();
         staEvent.screenOn = mScreenOn;
+        if (mWifiDataStall != null) {
+            staEvent.isCellularDataAvailable = mWifiDataStall.isCellularDataAvailable();
+        }
         mSupplicantStateChangeBitmask = 0;
         mLastPollRssi = -127;
         mLastPollFreq = -1;
@@ -4913,6 +4916,7 @@ public class WifiMetrics {
         if (event.totalTxBytes > 0) sb.append(" totalTxBytes=").append(event.totalTxBytes);
         if (event.totalRxBytes > 0) sb.append(" totalRxBytes=").append(event.totalRxBytes);
         sb.append(" screenOn=").append(event.screenOn);
+        sb.append(" cellularData=").append(event.isCellularDataAvailable);
         if (event.supplicantStateChangesBitmask != 0) {
             sb.append(", ").append(supplicantStateChangesBitmaskToString(
                     event.supplicantStateChangesBitmask));
