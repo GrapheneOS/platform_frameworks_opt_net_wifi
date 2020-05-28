@@ -109,7 +109,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(WifiScanner.class)).thenReturn(mWifiScanner);
         when(mWifiNetworkSuggestionsManager.retrieveHiddenNetworkList())
                 .thenReturn(new ArrayList<>());
-        when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
+        when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>());
         when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
                 .thenReturn(new ArrayList<>());
@@ -1484,7 +1484,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiNetworkSuggestion.getWifiConfiguration()).thenReturn(mSuggestionConfig);
         Set<WifiNetworkSuggestion> suggestionNetworks = new HashSet<WifiNetworkSuggestion>();
         suggestionNetworks.add(mWifiNetworkSuggestion);
-        when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
+        when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(suggestionNetworks);
 
         // Prepare for no saved networks
@@ -1535,7 +1535,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiNetworkSuggestion.getWifiConfiguration()).thenReturn(mSuggestionConfig);
         Set<WifiNetworkSuggestion> suggestionNetworks = new HashSet<WifiNetworkSuggestion>();
         suggestionNetworks.add(mWifiNetworkSuggestion);
-        when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
+        when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(suggestionNetworks);
 
         // Prepare for a single passpoint network
