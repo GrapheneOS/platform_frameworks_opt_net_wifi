@@ -4018,6 +4018,53 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that we only return user approved suggestions.
+     */
+    @Test
+    public void testGetApprovedNetworkSuggestions() {
+        WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
+                wifiConfiguration, null, false, false, true, true);
+        // Reuse the same network credentials to ensure they both match.
+        WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
+                wifiConfiguration, null, false, false, true, true);
+
+        List<WifiNetworkSuggestion> networkSuggestionList1 =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion1);
+                }};
+        List<WifiNetworkSuggestion> networkSuggestionList2 =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion2);
+                }};
+
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList2, TEST_UID_2,
+                        TEST_PACKAGE_2, TEST_FEATURE));
+
+        // nothing approved, return empty.
+        assertTrue(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions().isEmpty());
+
+        mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
+        // only app 1 approved.
+        assertEquals(new HashSet<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion1);
+                }},
+                mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions());
+
+        mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_2);
+        // both app 1 & 2 approved.
+        assertEquals(new HashSet<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion1);
+                    add(networkSuggestion2);
+                }},
+                mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions());
+    }
+
+    /**
      * Helper function for creating a test configuration with user credential.
      *
      * @return {@link PasspointConfiguration}

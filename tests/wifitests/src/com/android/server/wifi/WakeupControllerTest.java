@@ -390,7 +390,7 @@ public class WakeupControllerTest extends WifiBaseTest {
         WifiConfiguration wepNetwork = WifiConfigurationTestUtil.createWepNetwork();
         WifiNetworkSuggestion wepNetworkSuggestion =
                 new WifiNetworkSuggestion(wepNetwork, null, false, false, true, true);
-        when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
+        when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>(Arrays.asList(
                         openNetworkSuggestion, wepNetworkSuggestion)));
 
@@ -432,7 +432,7 @@ public class WakeupControllerTest extends WifiBaseTest {
         WifiConfiguration oweNetwork = WifiConfigurationTestUtil.createOweNetwork(quotedSsid2);
         WifiNetworkSuggestion oweNetworkSuggestion =
                 new WifiNetworkSuggestion(oweNetwork, null, false, false, true, true);
-        when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
+        when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>(Arrays.asList(oweNetworkSuggestion)));
 
         // scan results from most recent scan
@@ -530,7 +530,7 @@ public class WakeupControllerTest extends WifiBaseTest {
                 .createOpenNetwork(ScanResultUtil.createQuotedSSID(SAVED_SSID));
         WifiNetworkSuggestion openNetworkSuggestion =
                 new WifiNetworkSuggestion(openNetwork, null, false, false, true, true);
-        when(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions())
+        when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>(Collections.singletonList(openNetworkSuggestion)));
 
         initializeWakeupController(true /* enabled */);
