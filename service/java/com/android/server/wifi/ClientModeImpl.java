@@ -4146,7 +4146,13 @@ public class ClientModeImpl extends StateMachine {
                                 // We switched from DHCP to static or from static to DHCP, or the
                                 // static IP address has changed.
                                 log("Reconfiguring IP on connection");
-                                transitionTo(mObtainingIpState);
+                                WifiConfiguration currentConfig = getCurrentWifiConfiguration();
+                                if (currentConfig != null) {
+                                    transitionTo(mObtainingIpState);
+                                } else {
+                                    Log.w(TAG, "CMD_SAVE_NETWORK Ip change - but no current "
+                                            + "Wi-Fi config");
+                                }
                             }
                         }
                     } else if (mWifiInfo.getNetworkId() == WifiConfiguration.INVALID_NETWORK_ID
