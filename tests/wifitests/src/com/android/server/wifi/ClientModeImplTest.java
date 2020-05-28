@@ -372,7 +372,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiInjector mWifiInjector;
     @Mock WifiLastResortWatchdog mWifiLastResortWatchdog;
     @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
-    @Mock SarManager mSarManager;
     @Mock WifiConfigManager mWifiConfigManager;
     @Mock WifiNative mWifiNative;
     @Mock WifiScoreCard mWifiScoreCard;
@@ -562,7 +561,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mUntrustedWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
                 mWifiLockManager, mSelfRecovery, mFrameworkFacade, mLooper.getLooper(),
                 mCountryCode, mWifiNative,
-                mWrongPasswordNotifier, mSarManager, mWifiTrafficPoller, mLinkProbeManager,
+                mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier);
         mCmi.start();
@@ -2091,7 +2090,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testWifiInfoCleanedUpEnteringExitingConnectableState() throws Exception {
         InOrder inOrder = inOrder(mWifiConnectivityManager, mWifiNetworkFactory);
-        InOrder inOrderSarMgr = inOrder(mSarManager);
         InOrder inOrderMetrics = inOrder(mWifiMetrics);
         Log.i(TAG, mCmi.getCurrentState().getName());
         String initialBSSID = "aa:bb:cc:dd:ee:ff";

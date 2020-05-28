@@ -3515,17 +3515,6 @@ public class WifiNative {
     }
 
     /**
-     * Select one of the pre-configured transmit power level scenarios or reset it back to normal.
-     * Primarily used for meeting SAR requirements.
-     *
-     * @param sarInfo The collection of inputs used to select the SAR scenario.
-     * @return true for success; false for failure or if the HAL version does not support this API.
-     */
-    public boolean selectTxPowerScenario(SarInfo sarInfo) {
-        return mWifiVendorHal.selectTxPowerScenario(sarInfo);
-    }
-
-    /**
      * Set MBO cellular data status
      *
      * @param ifaceName Name of the interface.
