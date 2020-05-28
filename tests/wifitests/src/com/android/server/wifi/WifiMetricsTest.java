@@ -2285,6 +2285,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         }
         mTestLooper.dispatchAll();
         wifiMetrics.setScreenState(true);
+        when(mWifiDataStall.isCellularDataAvailable()).thenReturn(true);
         for (int i = 0; i < mTestStaLogInts.length; i++) {
             int[] lia = mTestStaLogInts[i];
             wifiMetrics.logStaEvent(lia[0], lia[1], lia[2] == 1 ? mTestWifiConfig : null);
@@ -2324,6 +2325,7 @@ public class WifiMetricsTest extends WifiBaseTest {
             assertConfigInfoEqualsWifiConfig(
                     evs[7] == 1 ? mTestWifiConfig : null, event.configInfo);
             assertEquals(true, event.screenOn);
+            assertEquals(true, event.isCellularDataAvailable);
             j++;
         }
         assertEquals(mExpectedValues.length, j);
