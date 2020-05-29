@@ -1394,9 +1394,15 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         mMockLooper.dispatchAll();
 
         // (2) get confirmation OR timeout
+        boolean timeout = false;
         if (getConfirmation) {
+            int numConfigureAgentPropertiesFail = 0;
             if (numAddrValidationRetries > 0) {
                 when(mMockNetworkInterface.isAddressUsable(any())).thenReturn(false);
+                when(mMockNetworkInterface.configureAgentProperties(any(), any(), anyInt(),
+                        any(), any())).thenReturn(false);
+                // First retry will be ConfigureAgentProperties failure.
+                numConfigureAgentPropertiesFail = 1;
             }
             when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
 
@@ -1406,35 +1412,41 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
             inOrder.verify(mMockNetdWrapper).enableIpv6(anyString());
             inOrder.verify(mMockNetworkInterface).configureAgentProperties(any(), any(), anyInt(),
                     any(), any());
-            inOrder.verify(mMockCm).registerNetworkAgent(messengerCaptor.capture(), any(), any(),
-                    netCapCaptor.capture(), anyInt(), any(), anyInt());
-
-            inOrder.verify(mMockNetworkInterface).isAddressUsable(any());
-            boolean timedout = false;
+            if (numAddrValidationRetries <= 0) {
+                inOrder.verify(mMockNetworkInterface).isAddressUsable(any());
+            }
             for (int i = 0; i < numAddrValidationRetries; ++i) {
+                if (i == numConfigureAgentPropertiesFail) {
+                    when(mMockNetworkInterface.configureAgentProperties(any(), any(), anyInt(),
+                            any(), any())).thenReturn(true);
+                }
                 if (i == numAddrValidationRetries - 1) {
                     when(mMockNetworkInterface.isAddressUsable(any())).thenReturn(true);
                 }
-
                 long currentTime = (i + 1L)
                         * WifiAwareDataPathStateManager.ADDRESS_VALIDATION_RETRY_INTERVAL_MS;
                 when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTime);
                 mMockLooper.moveTimeForward(
                         WifiAwareDataPathStateManager.ADDRESS_VALIDATION_RETRY_INTERVAL_MS + 1);
                 mMockLooper.dispatchAll();
+                inOrder.verify(mMockNetworkInterface).configureAgentProperties(any(), any(),
+                        anyInt(), any(), any());
+                if (i < numConfigureAgentPropertiesFail) {
+                    continue;
+                }
                 inOrder.verify(mMockNetworkInterface).isAddressUsable(any());
-
                 if (currentTime > WifiAwareDataPathStateManager.ADDRESS_VALIDATION_TIMEOUT_MS) {
-                    timedout = true;
+                    timeout = true;
                     break;
                 }
             }
-
-            if (timedout) {
+            if (timeout) {
                 verifyRequestDeclaredUnfullfillable(nr);
                 inOrder.verify(mMockNative).endDataPath(transactionId.capture(), eq(ndpId));
                 mDut.onEndDataPathResponse(transactionId.getValue(), true, 0);
             } else {
+                inOrder.verify(mMockCm).registerNetworkAgent(messengerCaptor.capture(), any(),
+                        any(), netCapCaptor.capture(), anyInt(), any(), anyInt());
                 inOrder.verify(mMockNetworkInterface).setConnected(any());
                 inOrderM.verify(mAwareMetricsMock).recordNdpStatus(eq(NanStatusType.SUCCESS),
                         eq(useDirect), anyLong());
@@ -1458,7 +1470,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         }
 
         // (3) end data-path (unless didn't get confirmation)
-        if (getConfirmation) {
+        if (getConfirmation && !timeout) {
             Message endNetworkReqMsg = Message.obtain();
             endNetworkReqMsg.what = NetworkFactory.CMD_CANCEL_REQUEST;
             endNetworkReqMsg.obj = nr;
