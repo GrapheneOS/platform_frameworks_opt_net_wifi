@@ -430,4 +430,7 @@
          The scan interval backs off from this initial interval on subsequent scans.
          This scan is performed when screen is off and disconnected. -->
     <integer translatable="false" name="config_wifiStationaryPnoScanIntervalMillis">60000</integer>
+
+    <!-- integer indicating additional disconnect delay (in ms) after IMS onLost() indication is received -->
+    <integer translatable="false" name="config_wifiDelayDisconnectOnImsLostMs">0</integer>
 </resources>
