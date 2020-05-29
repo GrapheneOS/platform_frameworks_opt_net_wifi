@@ -440,6 +440,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_NETWORK_ABNORMAL_ASSOC_REJECTION = 2;
     private static final int NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY = 4;
     private static final int NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS = 5;
+    private static final int NUM_BSSID_SELECTION_DIFFERENT_BETWEEN_FRAMEWORK_FIRMWARE = 3;
 
     /** Number of notifications per "Connect to Network" notification type. */
     private static final int[] NUM_CONNECT_TO_NETWORK_NOTIFICATIONS = {0, 10, 20, 30, 40};
@@ -909,6 +910,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         for (int i = 0; i < NUM_PNO_FOUND_NETWORK_EVENTS; i++) {
             mWifiMetrics.incrementPnoFoundNetworkEventCount();
         }
+        for (int i = 0; i < NUM_BSSID_SELECTION_DIFFERENT_BETWEEN_FRAMEWORK_FIRMWARE; i++) {
+            mWifiMetrics.incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware();
+        }
 
         // set and increment "connect to network" notification metrics
         for (int i = 0; i < NUM_CONNECT_TO_NETWORK_NOTIFICATIONS.length; i++) {
@@ -1324,6 +1328,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.numPasspointProviderWithSelfSignedRootCa);
         assertEquals(NUM_PASSPOINT_PROVIDERS_WITH_EXPIRATION_DATE,
                 mDecodedProto.numPasspointProviderWithSubscriptionExpiration);
+        assertEquals(NUM_BSSID_SELECTION_DIFFERENT_BETWEEN_FRAMEWORK_FIRMWARE,
+                mDecodedProto.numBssidDifferentSelectionBetweenFrameworkAndFirmware);
 
         assertEquals(NUM_RADIO_MODE_CHANGE_TO_MCC, mDecodedProto.numRadioModeChangeToMcc);
         assertEquals(NUM_RADIO_MODE_CHANGE_TO_SCC, mDecodedProto.numRadioModeChangeToScc);
