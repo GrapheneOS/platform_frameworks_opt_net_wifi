@@ -40,17 +40,24 @@ import static org.mockito.Mockito.lenient;
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.ConnectivityManager.NetworkCallback;
+import android.net.NetworkRequest;
+import android.os.Handler;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
 import android.os.test.TestLooper;
 import android.telephony.AccessNetworkConstants;
 import android.telephony.CarrierConfigManager;
+import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.telephony.ims.ImsMmTelManager;
 import android.telephony.ims.RegistrationManager;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
+
+import com.android.wifi.resources.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -61,6 +68,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -73,6 +81,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
     private static final String TEST_INTERFACE_NAME = "testif0";
     private static final String OTHER_INTERFACE_NAME = "notTestIf";
     private static final int TEST_WIFI_OFF_DEFERRING_TIME_MS = 4000;
+    private static final int TEST_ACTIVE_SUBSCRIPTION_ID = 1;
 
     TestLooper mLooper;
 
@@ -90,12 +99,20 @@ public class ClientModeManagerTest extends WifiBaseTest {
     @Mock CarrierConfigManager mCarrierConfigManager;
     @Mock PersistableBundle mCarrierConfigBundle;
     @Mock ImsMmTelManager mImsMmTelManager;
+    @Mock ConnectivityManager mConnectivityManager;
+    @Mock SubscriptionManager mSubscriptionManager;
+    @Mock SubscriptionInfo mActiveSubscriptionInfo;
     private RegistrationManager.RegistrationCallback mImsMmTelManagerRegistrationCallback = null;
     private @RegistrationManager.ImsRegistrationState int mCurrentImsRegistrationState =
             RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
     private @AccessNetworkConstants.TransportType int mCurrentImsConnectionType =
             AccessNetworkConstants.TRANSPORT_TYPE_INVALID;
+    private NetworkRequest mImsRequest = null;
+    private NetworkCallback mImsNetworkCallback = null;
+    private Handler mImsNetworkCallbackHandler = null;
     private long mElapsedSinceBootMillis = 0L;
+    private List<SubscriptionInfo> mSubscriptionInfoList = new ArrayList<>();
+    private MockResources mResources;
 
     private MockitoSession mStaticMockSession = null;
 
@@ -110,6 +127,11 @@ public class ClientModeManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(TelephonyManager.class)).thenReturn(mTelephonyManager);
         when(mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
+        when(mContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
+                .thenReturn(mSubscriptionManager);
+        when(mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mConnectivityManager);
+        when(mContext.getResources()).thenReturn(mResources);
     }
 
     /*
@@ -124,6 +146,12 @@ public class ClientModeManagerTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+
+        // Prepare data
+        mResources = new MockResources();
+        mResources.setInteger(R.integer.config_wifiDelayDisconnectOnImsLostMs, 0);
+        mSubscriptionInfoList.add(mActiveSubscriptionInfo);
+
         setUpSystemServiceForContext();
 
         /**
@@ -136,11 +164,9 @@ public class ClientModeManagerTest extends WifiBaseTest {
             .mockStatic(ImsMmTelManager.class)
             .mockStatic(SubscriptionManager.class)
             .startMocking();
-        lenient().when(ImsMmTelManager.createForSubscriptionId(anyInt()))
+        lenient().when(ImsMmTelManager.createForSubscriptionId(eq(TEST_ACTIVE_SUBSCRIPTION_ID)))
                 .thenReturn(mImsMmTelManager);
-        lenient().when(SubscriptionManager.getDefaultVoiceSubscriptionId())
-                .thenReturn(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID);
-        lenient().when(SubscriptionManager.isValidSubscriptionId(anyInt()))
+        lenient().when(SubscriptionManager.isValidSubscriptionId(eq(TEST_ACTIVE_SUBSCRIPTION_ID)))
                 .thenReturn(true);
         doAnswer(new AnswerWithArguments() {
             public void answer(Executor executor, RegistrationManager.RegistrationCallback c) {
@@ -169,13 +195,29 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         when(mImsMmTelManager.isAvailable(anyInt(), anyInt())).thenReturn(false);
 
-        when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mTelephonyManager);
+        when(mActiveSubscriptionInfo.getSubscriptionId()).thenReturn(TEST_ACTIVE_SUBSCRIPTION_ID);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList())
+                .thenReturn(mSubscriptionInfoList);
+        when(mTelephonyManager.createForSubscriptionId(eq(TEST_ACTIVE_SUBSCRIPTION_ID)))
+                .thenReturn(mTelephonyManager);
         when(mTelephonyManager.getVoiceNetworkType())
                 .thenReturn(TelephonyManager.NETWORK_TYPE_UNKNOWN);
         when(mCarrierConfigManager.getConfigForSubId(anyInt())).thenReturn(mCarrierConfigBundle);
         when(mCarrierConfigBundle
                 .getInt(eq(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_MILLIS_INT)))
                 .thenReturn(0);
+        doAnswer(new AnswerWithArguments() {
+            public void answer(NetworkRequest req, NetworkCallback callback, Handler handler) {
+                mImsRequest = req;
+                mImsNetworkCallback = callback;
+                mImsNetworkCallbackHandler = handler;
+            }
+        }).when(mConnectivityManager).registerNetworkCallback(any(), any(), any());
+        doAnswer(new AnswerWithArguments() {
+            public void answer(NetworkCallback callback) {
+                if (mImsNetworkCallback == callback) mImsNetworkCallback = null;
+            }
+        }).when(mConnectivityManager).unregisterNetworkCallback(any(NetworkCallback.class));
         doAnswer(new AnswerWithArguments() {
             public long answer() {
                 return mElapsedSinceBootMillis;
@@ -369,6 +411,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME);
         verify(mSarManager, times(2)).setScanOnlyWifiState(WIFI_STATE_ENABLED);
 
+        verify(mContext).getSystemService(anyString());
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
 
@@ -686,12 +729,15 @@ public class ClientModeManagerTest extends WifiBaseTest {
         // Notify wifi service IMS service is de-registered.
         assertNotNull(mImsMmTelManagerRegistrationCallback);
         mImsMmTelManagerRegistrationCallback.onUnregistered(null);
+        assertNotNull(mImsNetworkCallback);
+        mImsNetworkCallback.onLost(null);
         mLooper.dispatchAll();
 
         // Now Wifi could be turned off actually.
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        assertNull(mImsNetworkCallback);
         verify(mListener).onStopped();
         verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
 
@@ -1003,6 +1049,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
         // Notify wifi service IMS service is de-registered.
         assertNotNull(mImsMmTelManagerRegistrationCallback);
         mImsMmTelManagerRegistrationCallback.onUnregistered(null);
+        assertNotNull(mImsNetworkCallback);
+        mImsNetworkCallback.onLost(null);
         mLooper.dispatchAll();
 
         // Now Wifi could be switched to scan mode actually.
@@ -1010,6 +1058,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
+        assertNull(mImsNetworkCallback);
         verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
     }
 
