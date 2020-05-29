@@ -6452,4 +6452,13 @@ public class WifiMetrics {
     public void noteSoftApClientBlocked(int maxClient) {
         mSoftApConfigLimitationMetrics.maxClientSettingWhenReachHistogram.increment(maxClient);
     }
+
+    /**
+     * Increment number of connection with different BSSID between framework and firmware selection.
+     */
+    public void incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware() {
+        synchronized (mLock) {
+            mWifiLogProto.numBssidDifferentSelectionBetweenFrameworkAndFirmware++;
+        }
+    }
 }
