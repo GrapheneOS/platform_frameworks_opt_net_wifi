@@ -146,6 +146,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     private boolean mVerboseLoggingEnabled = false;
     private boolean mPeriodicScanTimerSet = false;
     private boolean mConnectionTimeoutSet = false;
+    private boolean mIsPeriodicScanEnabled = false;
     private boolean mIsPeriodicScanPaused = false;
     // We sent a new connection request and are waiting for connection success.
     private boolean mPendingConnectionSuccess = false;
@@ -256,6 +257,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         public void onAlarm() {
             // Trigger the next scan.
             startScan();
+            mPeriodicScanTimerSet = false;
         }
     }
 
@@ -264,6 +266,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         public void onAlarm() {
             Log.e(TAG, "Timed-out connecting to network");
             handleNetworkConnectionFailure(mUserSelectedNetwork);
+            mConnectionTimeoutSet = false;
         }
     }
 
@@ -819,6 +822,7 @@ public class WifiNetworkFactory extends NetworkFactory {
 
         // Cancel the ongoing scans after user selection.
         cancelPeriodicScans();
+        mIsPeriodicScanEnabled = false;
 
         // Trigger connection attempts.
         handleConnectToNetworkUserSelectionInternal(network);
@@ -918,13 +922,13 @@ public class WifiNetworkFactory extends NetworkFactory {
     public void handleScreenStateChanged(boolean screenOn) {
         // If there is no active request or if the user has already selected a network,
         // ignore screen state changes.
-        if (mActiveSpecificNetworkRequest == null || mUserSelectedNetwork != null) return;
+        if (mActiveSpecificNetworkRequest == null || !mIsPeriodicScanEnabled) return;
 
         // Pause periodic scans when the screen is off & resume when the screen is on.
         if (screenOn) {
             if (mVerboseLoggingEnabled) Log.v(TAG, "Resuming scans on screen on");
-            startScan();
             mIsPeriodicScanPaused = false;
+            startScan();
         } else {
             if (mVerboseLoggingEnabled) Log.v(TAG, "Pausing scans on screen off");
             cancelPeriodicScans();
@@ -971,6 +975,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         mActiveSpecificNetworkRequestSpecifier = null;
         mUserSelectedNetwork = null;
         mUserSelectedNetworkConnectRetryCount = 0;
+        mIsPeriodicScanEnabled = false;
         mIsPeriodicScanPaused = false;
         mActiveMatchedScanResults = null;
         mPendingConnectionSuccess = false;
@@ -1075,6 +1080,7 @@ public class WifiNetworkFactory extends NetworkFactory {
             mScanSettings.hiddenNetworks.add(new WifiScanner.ScanSettings.HiddenNetwork(
                     addEnclosingQuotes(wns.ssidPatternMatcher.getPath())));
         }
+        mIsPeriodicScanEnabled = true;
         startScan();
     }
 
@@ -1101,6 +1107,10 @@ public class WifiNetworkFactory extends NetworkFactory {
     private void startScan() {
         if (mActiveSpecificNetworkRequestSpecifier == null) {
             Log.e(TAG, "Scan triggered when there is no active network request. Ignoring...");
+            return;
+        }
+        if (!mIsPeriodicScanEnabled) {
+            Log.e(TAG, "Scan triggered after user selected network. Ignoring...");
             return;
         }
         if (mVerboseLoggingEnabled) {
