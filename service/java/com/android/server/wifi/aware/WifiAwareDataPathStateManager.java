@@ -568,12 +568,7 @@ public class WifiAwareDataPathStateManager {
             nnri.peerDataMac = mac;
             nnri.channelInfo = channelInfo;
 
-            final NetworkCapabilities.Builder ncBuilder = new NetworkCapabilities.Builder(
-                    sNetworkCapabilitiesFilter);
-            LinkProperties linkProperties = new LinkProperties();
-
-            boolean interfaceUsedByAnotherNdp = isInterfaceUpAndUsedByAnotherNdp(nnri);
-            if (!interfaceUsedByAnotherNdp) {
+            if (!isInterfaceUpAndUsedByAnotherNdp(nnri)) {
                 try {
                     mNetdWrapper.setInterfaceUp(nnri.interfaceName);
                     mNetdWrapper.enableIpv6(nnri.interfaceName);
@@ -609,59 +604,8 @@ public class WifiAwareDataPathStateManager {
                 }
             }
 
-            try {
-                if (nnri.peerIpv6Override == null) {
-                    nnri.peerIpv6 = Inet6Address.getByAddress(null,
-                            MacAddress.fromBytes(mac).getLinkLocalIpv6FromEui48Mac().getAddress(),
-                            NetworkInterface.getByName(nnri.interfaceName));
-                } else {
-                    byte[] addr = new byte[16];
-
-                    addr[0] = (byte) 0xfe;
-                    addr[1] = (byte) 0x80;
-                    addr[8] = nnri.peerIpv6Override[0];
-                    addr[9] = nnri.peerIpv6Override[1];
-                    addr[10] = nnri.peerIpv6Override[2];
-                    addr[11] = nnri.peerIpv6Override[3];
-                    addr[12] = nnri.peerIpv6Override[4];
-                    addr[13] = nnri.peerIpv6Override[5];
-                    addr[14] = nnri.peerIpv6Override[6];
-                    addr[15] = nnri.peerIpv6Override[7];
-
-                    nnri.peerIpv6 = Inet6Address.getByAddress(null, addr,
-                            NetworkInterface.getByName(nnri.interfaceName));
-                }
-            } catch (SocketException | UnknownHostException e) {
-                Log.e(TAG, "onDataPathConfirm: error obtaining scoped IPv6 address -- " + e);
-                nnri.peerIpv6 = null;
-            }
-
-            if (nnri.peerIpv6 != null) {
-                final WifiAwareNetworkInfo ni = new WifiAwareNetworkInfo(
-                        nnri.peerIpv6, nnri.peerPort, nnri.peerTransportProtocol);
-                ncBuilder.setTransportInfo(ni);
-                if (VDBG) {
-                    Log.v(TAG, "onDataPathConfirm: AwareNetworkInfo=" + ni);
-                }
-            }
-
-            if (!mNiWrapper.configureAgentProperties(nnri, nnri.equivalentRequests, ndpId,
-                    ncBuilder, linkProperties)) {
-                declareUnfullfillableAndEndDp(nnri, ndpId);
-                return networkSpecifier;
-            }
-
-            final NetworkAgentConfig naConfig = new NetworkAgentConfig.Builder()
-                    .setLegacyType(ConnectivityManager.TYPE_NONE)
-                    .setLegacyTypeName(NETWORK_TAG)
-                    .build();
-
-            nnri.networkAgent = new WifiAwareNetworkAgent(mLooper, mContext,
-                    AGENT_TAG_PREFIX + nnri.ndpId, ncBuilder.build(),
-                    linkProperties, NETWORK_FACTORY_SCORE_AVAIL,
-                    naConfig, mNetworkFactory.getProvider(), nnri);
             nnri.startValidationTimestamp = mClock.getElapsedSinceBootMillis();
-            handleAddressValidation(nnri, linkProperties, ndpId, networkSpecifier.isOutOfBand());
+            handleAddressValidation(nnri, ndpId, networkSpecifier.isOutOfBand(), mac);
         } else {
             if (VDBG) {
                 Log.v(TAG, "onDataPathConfirm: data-path for networkSpecifier=" + networkSpecifier
@@ -676,29 +620,81 @@ public class WifiAwareDataPathStateManager {
         return networkSpecifier;
     }
 
-    private void handleAddressValidation(AwareNetworkRequestInformation nnri,
-            LinkProperties linkProperties, int ndpId, boolean isOutOfBand) {
-        if (mNiWrapper.isAddressUsable(linkProperties)) {
-            mNiWrapper.setConnected(nnri.networkAgent);
-
-            mAwareMetrics.recordNdpStatus(NanStatusType.SUCCESS, isOutOfBand, nnri.startTimestamp);
-            nnri.startTimestamp = mClock.getElapsedSinceBootMillis(); // update time-stamp
-            mAwareMetrics.recordNdpCreation(nnri.uid, nnri.packageName, mNetworkRequestsCache);
-        } else {
-            if (mClock.getElapsedSinceBootMillis() - nnri.startValidationTimestamp
-                    > ADDRESS_VALIDATION_TIMEOUT_MS) {
-                Log.e(TAG, "Timed-out while waiting for IPv6 address to be usable");
-
-                declareUnfullfillableAndEndDp(nnri, ndpId);
-                return;
+    private void getInet6Address(AwareNetworkRequestInformation nnri, byte[] mac) {
+        try {
+            byte[] addr;
+            if (nnri.peerIpv6Override == null) {
+                addr = MacAddress.fromBytes(mac).getLinkLocalIpv6FromEui48Mac().getAddress();
+            } else {
+                addr = new byte[16];
+                addr[0] = (byte) 0xfe;
+                addr[1] = (byte) 0x80;
+                addr[8] = nnri.peerIpv6Override[0];
+                addr[9] = nnri.peerIpv6Override[1];
+                addr[10] = nnri.peerIpv6Override[2];
+                addr[11] = nnri.peerIpv6Override[3];
+                addr[12] = nnri.peerIpv6Override[4];
+                addr[13] = nnri.peerIpv6Override[5];
+                addr[14] = nnri.peerIpv6Override[6];
+                addr[15] = nnri.peerIpv6Override[7];
             }
+            nnri.peerIpv6 = Inet6Address.getByAddress(null, addr,
+                    NetworkInterface.getByName(nnri.interfaceName));
+        } catch (SocketException | UnknownHostException e) {
+            if (mDbg) {
+                Log.d(TAG, "onDataPathConfirm: error obtaining scoped IPv6 address -- " + e);
+            }
+            nnri.peerIpv6 = null;
+        }
+    }
+
+    private void handleAddressValidation(AwareNetworkRequestInformation nnri, int ndpId,
+            boolean isOutOfBand, byte[] mac) {
+        final NetworkCapabilities.Builder ncBuilder = new NetworkCapabilities.Builder(
+                sNetworkCapabilitiesFilter);
+        LinkProperties linkProperties = new LinkProperties();
+        getInet6Address(nnri, mac);
+        if (nnri.peerIpv6 != null) {
+            final WifiAwareNetworkInfo ni = new WifiAwareNetworkInfo(
+                    nnri.peerIpv6, nnri.peerPort, nnri.peerTransportProtocol);
+            ncBuilder.setTransportInfo(ni);
+            if (VDBG) {
+                Log.v(TAG, "onDataPathConfirm: AwareNetworkInfo=" + ni);
+            }
+        }
+        if (!(mNiWrapper.configureAgentProperties(nnri, nnri.equivalentRequests, ndpId,
+                ncBuilder, linkProperties) && mNiWrapper.isAddressUsable(linkProperties))) {
             if (VDBG) {
                 Log.d(TAG, "Failed address validation");
             }
-            mHandler.postDelayed(() -> {
-                handleAddressValidation(nnri, linkProperties, ndpId, isOutOfBand);
-            }, ADDRESS_VALIDATION_RETRY_INTERVAL_MS);
+            if (!isAddressValidationExpired(nnri, ndpId)) {
+                mHandler.postDelayed(() -> {
+                    handleAddressValidation(nnri, ndpId, isOutOfBand, mac);
+                }, ADDRESS_VALIDATION_RETRY_INTERVAL_MS);
+            }
+            return;
         }
+        final NetworkAgentConfig naConfig = new NetworkAgentConfig.Builder()
+                .setLegacyType(ConnectivityManager.TYPE_NONE)
+                .setLegacyTypeName(NETWORK_TAG)
+                .build();
+        nnri.networkAgent = new WifiAwareNetworkAgent(mLooper, mContext,
+                AGENT_TAG_PREFIX + nnri.ndpId, ncBuilder.build(), linkProperties,
+                NETWORK_FACTORY_SCORE_AVAIL, naConfig, mNetworkFactory.getProvider(), nnri);
+        mNiWrapper.setConnected(nnri.networkAgent);
+        mAwareMetrics.recordNdpStatus(NanStatusType.SUCCESS, isOutOfBand, nnri.startTimestamp);
+        nnri.startTimestamp = mClock.getElapsedSinceBootMillis(); // update time-stamp
+        mAwareMetrics.recordNdpCreation(nnri.uid, nnri.packageName, mNetworkRequestsCache);
+    }
+
+    private boolean isAddressValidationExpired(AwareNetworkRequestInformation nnri, int ndpId) {
+        if (mClock.getElapsedSinceBootMillis() - nnri.startValidationTimestamp
+                > ADDRESS_VALIDATION_TIMEOUT_MS) {
+            Log.e(TAG, "Timed-out while waiting for IPv6 address to be usable");
+            declareUnfullfillableAndEndDp(nnri, ndpId);
+            return true;
+        }
+        return false;
     }
 
     private void declareUnfullfillableAndEndDp(AwareNetworkRequestInformation nnri, int ndpId) {
