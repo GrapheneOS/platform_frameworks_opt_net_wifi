@@ -212,7 +212,6 @@ public class ClientModeImpl extends StateMachine {
     private final WifiScoreCard mWifiScoreCard;
     private final WifiHealthMonitor mWifiHealthMonitor;
     private final WifiScoreReport mWifiScoreReport;
-    private final SarManager mSarManager;
     private final WifiTrafficPoller mWifiTrafficPoller;
     public WifiScoreReport getWifiScoreReport() {
         return mWifiScoreReport;
@@ -756,7 +755,6 @@ public class ClientModeImpl extends StateMachine {
             WifiCountryCode countryCode,
             WifiNative wifiNative,
             WrongPasswordNotifier wrongPasswordNotifier,
-            SarManager sarManager,
             WifiTrafficPoller wifiTrafficPoller,
             LinkProbeManager linkProbeManager,
             BatteryStatsManager batteryStatsManager,
@@ -775,7 +773,6 @@ public class ClientModeImpl extends StateMachine {
         mWrongPasswordNotifier = wrongPasswordNotifier;
         mEapFailureNotifier = eapFailureNotifier;
         mSimRequiredNotifier = simRequiredNotifier;
-        mSarManager = sarManager;
         mWifiTrafficPoller = wifiTrafficPoller;
         mLinkProbeManager = linkProbeManager;
         mMboOceController = mboOceController;
@@ -2269,8 +2266,6 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiLockManager.handleScreenStateChanged(screenOn);
 
-        mSarManager.handleScreenStateChanged(screenOn);
-
         if (mVerboseLoggingEnabled) log("handleScreenStateChanged Exit: " + screenOn);
     }
 
@@ -3338,7 +3333,6 @@ public class ClientModeImpl extends StateMachine {
                     // get other services that we need to manage
                     getAdditionalWifiServiceInterfaces();
                     registerNetworkFactory();
-                    mSarManager.handleBootCompleted();
                     break;
                 }
                 case CMD_SCREEN_STATE_CHANGED: {
@@ -3894,7 +3888,13 @@ public class ClientModeImpl extends StateMachine {
                                 // We switched from DHCP to static or from static to DHCP, or the
                                 // static IP address has changed.
                                 log("Reconfiguring IP on connection");
-                                transitionTo(mL3ProvisioningState);
+                                WifiConfiguration currentConfig = getCurrentWifiConfiguration();
+                                if (currentConfig != null) {
+                                    transitionTo(mL3ProvisioningState);
+                                } else {
+                                    Log.w(TAG, "CMD_SAVE_NETWORK Ip change - but no current "
+                                            + "Wi-Fi config");
+                                }
                             }
                         }
                     } else if (mWifiInfo.getNetworkId() == WifiConfiguration.INVALID_NETWORK_ID

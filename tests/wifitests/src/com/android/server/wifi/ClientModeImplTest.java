@@ -372,7 +372,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiInjector mWifiInjector;
     @Mock WifiLastResortWatchdog mWifiLastResortWatchdog;
     @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
-    @Mock SarManager mSarManager;
     @Mock WifiConfigManager mWifiConfigManager;
     @Mock WifiNative mWifiNative;
     @Mock WifiScoreCard mWifiScoreCard;
@@ -562,7 +561,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mUntrustedWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
                 mWifiLockManager, mSelfRecovery, mFrameworkFacade, mLooper.getLooper(),
                 mCountryCode, mWifiNative,
-                mWrongPasswordNotifier, mSarManager, mWifiTrafficPoller, mLinkProbeManager,
+                mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier);
         mCmi.start();
@@ -2091,7 +2090,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testWifiInfoCleanedUpEnteringExitingConnectableState() throws Exception {
         InOrder inOrder = inOrder(mWifiConnectivityManager, mWifiNetworkFactory);
-        InOrder inOrderSarMgr = inOrder(mSarManager);
         InOrder inOrderMetrics = inOrder(mWifiMetrics);
         Log.i(TAG, mCmi.getCurrentState().getName());
         String initialBSSID = "aa:bb:cc:dd:ee:ff";
@@ -3125,8 +3123,8 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testScoreCardNoteConnectionComplete() throws Exception {
-        Pair<String, String> l2KeyAndGroupHint = Pair.create("Wad", "Gab");
-        when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(l2KeyAndGroupHint);
+        Pair<String, String> l2KeyAndCluster = Pair.create("Wad", "Gab");
+        when(mWifiScoreCard.getL2KeyAndGroupHint(any())).thenReturn(l2KeyAndCluster);
         connect();
         mLooper.dispatchAll();
         verify(mWifiScoreCard).noteIpConfiguration(any());
@@ -3135,7 +3133,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mIpClient, atLeastOnce()).updateLayer2Information(captor.capture());
         final Layer2InformationParcelable info = captor.getValue();
         assertEquals(info.l2Key, "Wad");
-        assertEquals(info.groupHint, "Gab");
+        assertEquals(info.cluster, "Gab");
     }
 
     /**

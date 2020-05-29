@@ -87,16 +87,6 @@ public class WifiConnectivityManager {
     // it should comply to the minimum scan interval rule.
     private static final boolean SCAN_IMMEDIATELY = true;
     private static final boolean SCAN_ON_SCHEDULE = false;
-    // Initial PNO scan interval in milliseconds when the device is moving. The scan interval backs
-    // off from this initial interval on subsequent scans. This scan is performed when screen is
-    // off and disconnected.
-    @VisibleForTesting
-    static final int MOVING_PNO_SCAN_INTERVAL_MS = 20 * 1000; // 20 seconds
-    // Initial PNO scan interval in milliseconds when the device is stationary. The scan interval
-    // backs off from this initial interval on subsequent scans. This scan is performed when screen
-    // is off and disconnected.
-    @VisibleForTesting
-    static final int STATIONARY_PNO_SCAN_INTERVAL_MS = 60 * 1000; // 1 minute
 
     // PNO scan interval in milli-seconds. This is the scan
     // performed when screen is off and connected.
@@ -211,7 +201,6 @@ public class WifiConnectivityManager {
     private int[] mCurrentSingleScanScheduleSec;
 
     private int mCurrentSingleScanScheduleIndex;
-    private int mPnoScanIntervalMs = MOVING_PNO_SCAN_INTERVAL_MS;
     // Cached WifiCandidates used in high mobility state to avoid connecting to APs that are
     // moving relative to the user.
     private CachedWifiCandidates mCachedWifiCandidates = null;
@@ -1337,14 +1326,16 @@ public class WifiConnectivityManager {
         startPeriodicSingleScan();
     }
 
-    private static int deviceMobilityStateToPnoScanIntervalMs(@DeviceMobilityState int state) {
+    private int deviceMobilityStateToPnoScanIntervalMs(@DeviceMobilityState int state) {
         switch (state) {
             case WifiManager.DEVICE_MOBILITY_STATE_UNKNOWN:
             case WifiManager.DEVICE_MOBILITY_STATE_LOW_MVMT:
             case WifiManager.DEVICE_MOBILITY_STATE_HIGH_MVMT:
-                return MOVING_PNO_SCAN_INTERVAL_MS;
+                return mContext.getResources()
+                        .getInteger(R.integer.config_wifiMovingPnoScanIntervalMillis);
             case WifiManager.DEVICE_MOBILITY_STATE_STATIONARY:
-                return STATIONARY_PNO_SCAN_INTERVAL_MS;
+                return mContext.getResources()
+                        .getInteger(R.integer.config_wifiStationaryPnoScanIntervalMillis);
             default:
                 return -1;
         }
@@ -1359,16 +1350,18 @@ public class WifiConnectivityManager {
      * @param newState the new device mobility state
      */
     public void setDeviceMobilityState(@DeviceMobilityState int newState) {
-        mDeviceMobilityState = newState;
+        int oldDeviceMobilityState = mDeviceMobilityState;
         localLog("Device mobility state changed. state=" + newState);
-        mWifiChannelUtilization.setDeviceMobilityState(newState);
         int newPnoScanIntervalMs = deviceMobilityStateToPnoScanIntervalMs(newState);
         if (newPnoScanIntervalMs < 0) {
             Log.e(TAG, "Invalid device mobility state: " + newState);
             return;
         }
+        mDeviceMobilityState = newState;
+        mWifiChannelUtilization.setDeviceMobilityState(newState);
 
-        if (newPnoScanIntervalMs == mPnoScanIntervalMs) {
+        int oldPnoScanIntervalMs = deviceMobilityStateToPnoScanIntervalMs(oldDeviceMobilityState);
+        if (newPnoScanIntervalMs == oldPnoScanIntervalMs) {
             if (mPnoScanStarted) {
                 mWifiMetrics.logPnoScanStop();
                 mWifiMetrics.enterDeviceMobilityState(newState);
@@ -1377,8 +1370,7 @@ public class WifiConnectivityManager {
                 mWifiMetrics.enterDeviceMobilityState(newState);
             }
         } else {
-            mPnoScanIntervalMs = newPnoScanIntervalMs;
-            Log.d(TAG, "PNO Scan Interval changed to " + mPnoScanIntervalMs + " ms.");
+            Log.d(TAG, "PNO Scan Interval changed to " + newPnoScanIntervalMs + " ms.");
 
             if (mPnoScanStarted) {
                 Log.d(TAG, "Restarting PNO Scan with new scan interval");
@@ -1416,7 +1408,7 @@ public class WifiConnectivityManager {
         scanSettings.band = getScanBand();
         scanSettings.reportEvents = WifiScanner.REPORT_EVENT_NO_BATCH;
         scanSettings.numBssidsPerScan = 0;
-        scanSettings.periodInMs = mPnoScanIntervalMs;
+        scanSettings.periodInMs = deviceMobilityStateToPnoScanIntervalMs(mDeviceMobilityState);
 
         mPnoScanListener.clearScanDetails();
 
@@ -1652,7 +1644,7 @@ public class WifiConnectivityManager {
         }
 
         Set<WifiNetworkSuggestion> suggestionsNetworks =
-                mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
+                mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions();
         // If total size not equal to 1, then no need to proceed
         if (passpointNetworks.size() + savedNetworks.size() + suggestionsNetworks.size() != 1) {
             return false;

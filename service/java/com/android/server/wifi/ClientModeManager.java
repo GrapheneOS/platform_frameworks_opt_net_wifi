@@ -62,7 +62,6 @@ public class ClientModeManager implements ActiveModeManager {
     private final Clock mClock;
     private final WifiNative mWifiNative;
     private final WifiMetrics mWifiMetrics;
-    private final SarManager mSarManager;
     private final WakeupController mWakeupController;
     private final Listener mModeListener;
     private final PrimaryClientModeImplHolder mClientModeImplHolder;
@@ -74,14 +73,13 @@ public class ClientModeManager implements ActiveModeManager {
     private int mTargetRole = ROLE_UNSPECIFIED;
 
     ClientModeManager(Context context, @NonNull Looper looper, Clock clock, WifiNative wifiNative,
-            Listener listener, WifiMetrics wifiMetrics, SarManager sarManager,
-            WakeupController wakeupController, PrimaryClientModeImplHolder clientModeImplHolder) {
+            Listener listener, WifiMetrics wifiMetrics, WakeupController wakeupController,
+            PrimaryClientModeImplHolder clientModeImplHolder) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
         mModeListener = listener;
         mWifiMetrics = wifiMetrics;
-        mSarManager = sarManager;
         mWakeupController = wakeupController;
         mClientModeImplHolder = clientModeImplHolder;
         mStateMachine = new ClientModeStateMachine(looper);
@@ -386,6 +384,18 @@ public class ClientModeManager implements ActiveModeManager {
             start();
         }
 
+        private void setRoleInternalAndInvokeCallback(int newRole) {
+            if (newRole == mRole) return;
+            if (mRole == ROLE_UNSPECIFIED) {
+                Log.v(TAG, "ClientModeManager started in role: " + newRole);
+                mModeListener.onStarted();
+            } else {
+                Log.v(TAG, "ClientModeManager role changed: " + newRole);
+                mModeListener.onRoleChanged();
+            }
+            mRole = newRole;
+        }
+
         private class IdleState extends State {
             @Override
             public void enter() {
@@ -445,7 +455,8 @@ public class ClientModeManager implements ActiveModeManager {
                         // Already started, ignore this command.
                         break;
                     case CMD_SWITCH_TO_CONNECT_MODE:
-                        mRole = message.arg1; // could be any one of possible connect mode roles.
+                        // could be any one of possible connect mode roles.
+                        setRoleInternalAndInvokeCallback(message.arg1);
                         updateConnectModeState(WifiManager.WIFI_STATE_ENABLING,
                                 WifiManager.WIFI_STATE_DISABLED);
                         if (!mWifiNative.switchClientInterfaceToConnectivityMode(
@@ -515,11 +526,8 @@ public class ClientModeManager implements ActiveModeManager {
                 Log.d(TAG, "entering ScanOnlyModeState");
                 mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
                         mClientInterfaceName);
-                mRole = ROLE_CLIENT_SCAN_ONLY;
-                mModeListener.onStarted();
+                setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
 
-                // Inform sar manager that scan only is being enabled
-                mSarManager.setScanOnlyWifiState(WifiManager.WIFI_STATE_ENABLED);
                 mWakeupController.start();
             }
 
@@ -537,8 +545,6 @@ public class ClientModeManager implements ActiveModeManager {
 
             @Override
             public void exit() {
-                // Inform sar manager that scan only is being disabled
-                mSarManager.setScanOnlyWifiState(WifiManager.WIFI_STATE_DISABLED);
                 mWakeupController.stop();
             }
         }
@@ -549,24 +555,16 @@ public class ClientModeManager implements ActiveModeManager {
                 Log.d(TAG, "entering ConnectModeState");
                 mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.CONNECT_MODE,
                         mClientInterfaceName);
-                mModeListener.onStarted();
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
                         WifiManager.WIFI_STATE_ENABLING);
-
-                // Inform sar manager that wifi is Enabled
-                mSarManager.setClientWifiState(WifiManager.WIFI_STATE_ENABLED);
             }
 
             @Override
             public boolean processMessage(Message message) {
                 switch (message.what) {
                     case CMD_SWITCH_TO_CONNECT_MODE:
-                        int newRole = message.arg1;
                         // Already in connect mode, only switching the connectivity roles.
-                        if (newRole != mRole) {
-                            mRole = newRole;
-                            mModeListener.onStarted();
-                        }
+                        setRoleInternalAndInvokeCallback(message.arg1);
                         break;
                     case CMD_SWITCH_TO_SCAN_ONLY_MODE:
                         updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
@@ -608,9 +606,6 @@ public class ClientModeManager implements ActiveModeManager {
             public void exit() {
                 updateConnectModeState(WifiManager.WIFI_STATE_DISABLED,
                         WifiManager.WIFI_STATE_DISABLING);
-
-                // Inform sar manager that wifi is being disabled
-                mSarManager.setClientWifiState(WifiManager.WIFI_STATE_DISABLED);
             }
         }
     }

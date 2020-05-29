@@ -111,8 +111,6 @@ public class SoftApManager implements ActiveModeManager {
     private List<WifiClient> mConnectedClients = new ArrayList<>();
     private boolean mTimeoutEnabled = false;
 
-    private final SarManager mSarManager;
-
     private String mStartTimestamp;
 
     private long mDefaultShutDownTimeoutMills;
@@ -169,7 +167,6 @@ public class SoftApManager implements ActiveModeManager {
                          @NonNull WifiApConfigStore wifiApConfigStore,
                          @NonNull SoftApModeConfiguration apConfig,
                          @NonNull WifiMetrics wifiMetrics,
-                         @NonNull SarManager sarManager,
                          @NonNull BaseWifiDiagnostics wifiDiagnostics) {
         mContext = context;
         mFrameworkFacade = framework;
@@ -193,7 +190,6 @@ public class SoftApManager implements ActiveModeManager {
         mApConfig = new SoftApModeConfiguration(apConfig.getTargetMode(),
                 softApConfig, mCurrentSoftApCapability);
         mWifiMetrics = wifiMetrics;
-        mSarManager = sarManager;
         mWifiDiagnostics = wifiDiagnostics;
         mStateMachine = new SoftApStateMachine(looper);
         if (softApConfig != null) {
@@ -800,8 +796,6 @@ public class SoftApManager implements ActiveModeManager {
                         SOFT_AP_SEND_MESSAGE_TIMEOUT_TAG,
                         SoftApStateMachine.CMD_NO_ASSOCIATED_STATIONS_TIMEOUT);
 
-                mSarManager.setSapWifiState(WifiManager.WIFI_AP_STATE_ENABLED);
-
                 Log.d(TAG, "Resetting connected clients on start");
                 mConnectedClients.clear();
                 mEverReportMetricsForMaxClient = false;
@@ -832,7 +826,6 @@ public class SoftApManager implements ActiveModeManager {
                 updateApState(WifiManager.WIFI_AP_STATE_DISABLED,
                         WifiManager.WIFI_AP_STATE_DISABLING, 0);
 
-                mSarManager.setSapWifiState(WifiManager.WIFI_AP_STATE_DISABLED);
                 mApInterfaceName = null;
                 mIfaceIsUp = false;
                 mIfaceIsDestroyed = false;

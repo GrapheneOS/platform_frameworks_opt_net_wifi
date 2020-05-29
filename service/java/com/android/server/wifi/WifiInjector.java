@@ -161,7 +161,6 @@ public class WifiInjector {
     private final SelfRecovery mSelfRecovery;
     private final WakeupController mWakeupController;
     private final ScanRequestProxy mScanRequestProxy;
-    private final SarManager mSarManager;
     private final BaseWifiDiagnostics mWifiDiagnostics;
     private final WifiDataStall mWifiDataStall;
     private final WifiScoreCard mWifiScoreCard;
@@ -351,8 +350,6 @@ public class WifiInjector {
                 (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE),
                 this, mWifiConfigManager,
                 mWifiPermissionsUtil, mWifiMetrics, mClock, wifiHandler, mSettingsConfigStore);
-        mSarManager = new SarManager(mContext, makeTelephonyManager(), wifiLooper,
-                mWifiNative);
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, this, mWifiNative, mBuildProperties,
                 new LastMileLogger(this), mClock);
@@ -437,9 +434,9 @@ public class WifiInjector {
                 wifiNetworkFactory, untrustedWifiNetworkFactory, mWifiLastResortWatchdog,
                 mWakeupController, mLockManager, mSelfRecovery,
                 mFrameworkFacade, wifiLooper, mCountryCode, mWifiNative,
-                new WrongPasswordNotifier(mContext, mFrameworkFacade),
-                mSarManager, mWifiTrafficPoller, mLinkProbeManager, mBatteryStats,
-                supplicantStateTracker, mMboOceController, mWifiCarrierInfoManager,
+                new WrongPasswordNotifier(mContext, mFrameworkFacade), mWifiTrafficPoller,
+                mLinkProbeManager, mBatteryStats, supplicantStateTracker, mMboOceController,
+                mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 new SimRequiredNotifier(mContext, mFrameworkFacade));
         mClientModeImplHolder.set(clientModeImpl);
@@ -526,10 +523,6 @@ public class WifiInjector {
 
     public WifiApConfigStore getWifiApConfigStore() {
         return mWifiApConfigStore;
-    }
-
-    public SarManager getSarManager() {
-        return mSarManager;
     }
 
     /** Backdoor, only authorized for use by WifiServiceImpl. */
@@ -633,7 +626,7 @@ public class WifiInjector {
                                            @NonNull SoftApModeConfiguration config) {
         return new SoftApManager(mContext, mWifiHandlerThread.getLooper(),
                 mFrameworkFacade, mWifiNative, mCountryCode.getCountryCode(), listener, callback,
-                mWifiApConfigStore, config, mWifiMetrics, mSarManager, mWifiDiagnostics);
+                mWifiApConfigStore, config, mWifiMetrics, mWifiDiagnostics);
     }
 
     /**
@@ -644,7 +637,7 @@ public class WifiInjector {
      */
     public ClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
         return new ClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
-                mWifiNative, listener, mWifiMetrics, mSarManager, mWakeupController,
+                mWifiNative, listener, mWifiMetrics, mWakeupController,
                 mClientModeImplHolder);
     }
 
