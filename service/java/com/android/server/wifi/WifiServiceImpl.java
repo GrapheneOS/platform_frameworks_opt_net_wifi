@@ -3259,8 +3259,6 @@ public class WifiServiceImpl extends BaseWifiService {
             WifiScoreReport wifiScoreReport = mClientModeImpl.getWifiScoreReport();
             wifiScoreReport.dump(fd, pw, args);
             pw.println();
-            SarManager sarManager = mWifiInjector.getSarManager();
-            sarManager.dump(fd, pw, args);
             pw.println();
             mWifiThreadRunner.run(() -> {
                 mWifiInjector.getWifiNetworkScoreCache().dumpWithLatestScanResults(

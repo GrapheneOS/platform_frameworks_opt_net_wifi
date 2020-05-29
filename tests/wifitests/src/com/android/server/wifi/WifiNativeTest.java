@@ -866,28 +866,6 @@ public class WifiNativeTest extends WifiBaseTest {
     }
 
     /**
-     * Test that selectTxPowerScenario() calls into WifiVendorHal (success case)
-     */
-    @Test
-    public void testSelectTxPowerScenario_success() throws Exception {
-        when(mWifiVendorHal.selectTxPowerScenario(any(SarInfo.class))).thenReturn(true);
-        SarInfo sarInfo = new SarInfo();
-        assertTrue(mWifiNative.selectTxPowerScenario(sarInfo));
-        verify(mWifiVendorHal).selectTxPowerScenario(sarInfo);
-    }
-
-    /**
-     * Test that selectTxPowerScenario() calls into WifiVendorHal (failure case)
-     */
-    @Test
-    public void testSelectTxPowerScenario_failure() throws Exception {
-        when(mWifiVendorHal.selectTxPowerScenario(any(SarInfo.class))).thenReturn(false);
-        SarInfo sarInfo = new SarInfo();
-        assertFalse(mWifiNative.selectTxPowerScenario(sarInfo));
-        verify(mWifiVendorHal).selectTxPowerScenario(sarInfo);
-    }
-
-    /**
      * Test that setPowerSave() with true, results in calling into SupplicantStaIfaceHal
      */
     @Test

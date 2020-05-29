@@ -180,13 +180,6 @@
     <!-- Boolean indicating that wifi only link configuratios that have exact same credentials (i.e PSK) -->
     <bool translatable="false" name="config_wifi_only_link_same_credential_configurations">true</bool>
 
-    <!-- Boolean indicating whether framework needs to set the tx power limit for meeting SAR requirements -->
-    <bool translatable="false" name="config_wifi_framework_enable_sar_tx_power_limit">false</bool>
-
-    <!-- Boolean indicating whether framework should use detection of softAP mode to set the tx
-         power limit for meeting SAR requirements -->
-    <bool translatable="false" name="config_wifi_framework_enable_soft_ap_sar_tx_power_limit">false</bool>
-
     <!-- Wifi Hal supports force client disconnect for softap -->
     <bool translatable="false" name="config_wifiSofapClientForceDisconnectSupported">true</bool>
 
