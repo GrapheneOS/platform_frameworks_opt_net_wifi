@@ -706,6 +706,9 @@ message WifiLog {
 
   // User reaction to the carrier or suggestion app approval UI.
   optional UserReactionToApprovalUiEvent user_reaction_to_approval_ui_event = 198;
+
+  // Number of connection with different BSSID between framework and firmware selection.
+  optional int32 num_bssid_different_selection_between_framework_and_firmware = 199;
 }
 
 // Information that gets logged for every WiFi connection.

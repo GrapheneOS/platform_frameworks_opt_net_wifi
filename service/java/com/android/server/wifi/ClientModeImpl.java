@@ -2983,6 +2983,10 @@ public class ClientModeImpl extends StateMachine {
             mNetworkFactory.handleConnectionAttemptEnded(level2FailureCode, configuration);
             mWifiNetworkSuggestionsManager.handleConnectionAttemptEnded(
                     level2FailureCode, configuration, getCurrentBSSID());
+            ScanResult candidate = configuration.getNetworkSelectionStatus().getCandidate();
+            if (candidate != null && !TextUtils.equals(candidate.BSSID, getCurrentBSSID())) {
+                mWifiMetrics.incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware();
+            }
         }
         handleConnectionAttemptEndForDiagnostics(level2FailureCode);
     }
