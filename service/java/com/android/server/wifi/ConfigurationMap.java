@@ -49,8 +49,12 @@ public class ConfigurationMap {
         if (config.shared || currentUser.equals(creatorUser)
                 || mUserManager.isSameProfileGroup(currentUser, creatorUser)) {
             mPerIDForCurrentUser.put(config.networkId, config);
-            mScanResultMatchInfoMapForCurrentUser.put(
-                    ScanResultMatchInfo.fromWifiConfiguration(config), config);
+            // TODO (b/142035508): Add a more generic fix. This cache should only hold saved
+            // networks.
+            if (!config.fromWifiNetworkSpecifier) {
+                mScanResultMatchInfoMapForCurrentUser.put(
+                        ScanResultMatchInfo.fromWifiConfiguration(config), config);
+            }
         }
         return current;
     }
