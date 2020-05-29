@@ -466,6 +466,8 @@ public class WifiBackupRestore {
         public static final String SUPPLICANT_KEY_SSID = WifiConfiguration.ssidVarName;
         public static final String SUPPLICANT_KEY_HIDDEN = WifiConfiguration.hiddenSSIDVarName;
         public static final String SUPPLICANT_KEY_KEY_MGMT = WifiConfiguration.KeyMgmt.varName;
+        public static final String SUPPLICANT_KEY_AUTH_ALG =
+                WifiConfiguration.AuthAlgorithm.varName;
         public static final String SUPPLICANT_KEY_CLIENT_CERT =
                 WifiEnterpriseConfig.CLIENT_CERT_KEY;
         public static final String SUPPLICANT_KEY_CA_CERT = WifiEnterpriseConfig.CA_CERT_KEY;
@@ -535,6 +537,7 @@ public class WifiBackupRestore {
             private String mParsedSSIDLine;
             private String mParsedHiddenLine;
             private String mParsedKeyMgmtLine;
+            private String mParsedAuthAlgLine;
             private String mParsedPskLine;
             private String[] mParsedWepKeyLines = new String[4];
             private String mParsedWepTxKeyIdxLine;
@@ -581,6 +584,8 @@ public class WifiBackupRestore {
                     if (line.contains("EAP")) {
                         isEap = true;
                     }
+                } else if (line.startsWith(SUPPLICANT_KEY_AUTH_ALG + "=")) {
+                    mParsedAuthAlgLine = line;
                 } else if (line.startsWith(SUPPLICANT_KEY_CLIENT_CERT + "=")) {
                     certUsed = true;
                 } else if (line.startsWith(SUPPLICANT_KEY_CA_CERT + "=")) {
@@ -658,6 +663,16 @@ public class WifiBackupRestore {
                             configuration.allowedKeyManagement.set(
                                     WifiConfiguration.KeyMgmt.WAPI_CERT);
                         }
+                    }
+                }
+                if (mParsedAuthAlgLine != null) {
+                    if (mParsedAuthAlgLine.contains("OPEN")) {
+                        configuration.allowedAuthAlgorithms.set(
+                                WifiConfiguration.AuthAlgorithm.OPEN);
+                    }
+                    if (mParsedAuthAlgLine.contains("SHARED")) {
+                        configuration.allowedAuthAlgorithms.set(
+                                WifiConfiguration.AuthAlgorithm.SHARED);
                     }
                 }
                 if (mParsedPskLine != null) {
