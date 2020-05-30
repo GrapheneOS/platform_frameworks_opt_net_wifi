@@ -62,6 +62,7 @@ import com.android.server.wifi.hotspot2.Utils;
 import com.android.server.wifi.p2p.WifiP2pMetrics;
 import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.CarrierWifiMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ExperimentValues;
@@ -499,6 +500,9 @@ public class WifiMetrics {
 
     private final SoftApConfigLimitationMetrics mSoftApConfigLimitationMetrics =
             new SoftApConfigLimitationMetrics();
+
+    private final CarrierWifiMetrics mCarrierWifiMetrics =
+            new CarrierWifiMetrics();
 
     @VisibleForTesting
     static class NetworkSelectionExperimentResults {
@@ -1185,6 +1189,38 @@ public class WifiMetrics {
         }
     }
 
+    class CarrierWifiMetrics {
+        public int numConnectionSuccess = 0;
+        public int numConnectionAuthFailure = 0;
+        public int numConnectionNonAuthFailure = 0;
+
+        public WifiMetricsProto.CarrierWifiMetrics toProto() {
+            WifiMetricsProto.CarrierWifiMetrics proto =
+                    new WifiMetricsProto.CarrierWifiMetrics();
+            proto.numConnectionSuccess = numConnectionSuccess;
+            proto.numConnectionAuthFailure = numConnectionAuthFailure;
+            proto.numConnectionNonAuthFailure = numConnectionNonAuthFailure;
+            return proto;
+        }
+
+        public void clear() {
+            numConnectionSuccess = 0;
+            numConnectionAuthFailure = 0;
+            numConnectionNonAuthFailure = 0;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("numConnectionSuccess=")
+                    .append(numConnectionSuccess)
+                    .append(", numConnectionAuthFailure=")
+                    .append(numConnectionAuthFailure)
+                    .append(", numConnectionNonAuthFailure")
+                    .append(numConnectionNonAuthFailure);
+            return sb.toString();
+        }
+    }
 
     public WifiMetrics(Context context, FrameworkFacade facade, Clock clock, Looper looper,
             WifiAwareMetrics awareMetrics, RttMetrics rttMetrics,
@@ -3646,6 +3682,8 @@ public class WifiMetrics {
                         + mTxThroughputMbpsHistogramAbove2G);
                 pw.println("mRxThroughputMbpsHistogramAbove2G:\n"
                         + mRxThroughputMbpsHistogramAbove2G);
+                pw.println("mCarrierWifiMetrics:\n"
+                        + mCarrierWifiMetrics);
 
                 dumpInitPartialScanMetrics(pw);
             }
@@ -4321,6 +4359,8 @@ public class WifiMetrics {
             initialPartialScanStats.failedScanChannelCountHistogram =
                     mInitPartialScanFailureHistogram.toProto();
             mWifiLogProto.initPartialScanStats = initialPartialScanStats;
+
+            mWifiLogProto.carrierWifiMetrics = mCarrierWifiMetrics.toProto();
         }
     }
 
@@ -4538,6 +4578,7 @@ public class WifiMetrics {
             mInitPartialScanFailureCount = 0;
             mInitPartialScanSuccessHistogram.clear();
             mInitPartialScanFailureHistogram.clear();
+            mCarrierWifiMetrics.clear();
         }
     }
 
@@ -6459,6 +6500,33 @@ public class WifiMetrics {
     public void incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware() {
         synchronized (mLock) {
             mWifiLogProto.numBssidDifferentSelectionBetweenFrameworkAndFirmware++;
+        }
+    }
+
+    /**
+     * Note the carrier wifi network connected successfully.
+     */
+    public void incrementNumOfCarrierWifiConnectionSuccess() {
+        synchronized (mLock) {
+            mCarrierWifiMetrics.numConnectionSuccess++;
+        }
+    }
+
+    /**
+     * Note the carrier wifi network connection authentication failure.
+     */
+    public void incrementNumOfCarrierWifiConnectionAuthFailure() {
+        synchronized (mLock) {
+            mCarrierWifiMetrics.numConnectionAuthFailure++;
+        }
+    }
+
+    /**
+     * Note the carrier wifi network connection non-authentication failure.
+     */
+    public void incrementNumOfCarrierWifiConnectionNonAuthFailure() {
+        synchronized (mLock) {
+            mCarrierWifiMetrics.numConnectionNonAuthFailure++;
         }
     }
 }
