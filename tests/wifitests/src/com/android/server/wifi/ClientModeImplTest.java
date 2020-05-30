@@ -997,6 +997,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void connect() throws Exception {
         triggerConnect();
+        WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(FRAMEWORK_NETWORK_ID);
+        config.carrierId = CARRIER_ID_1;
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
                 .thenReturn(mScanDetailCache);
 
@@ -1045,6 +1047,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals("", mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
         verify(mWifiStateTracker).updateState(eq(WifiStateTracker.CONNECTED));
         assertEquals("ConnectedState", getCurrentState().getName());
+        verify(mWifiMetrics).incrementNumOfCarrierWifiConnectionSuccess();
         verify(mWifiLockManager).updateWifiClientConnected(true);
         verify(mWifiNative).getConnectionCapabilities(any());
         verify(mThroughputPredictor).predictMaxTxThroughput(any());
@@ -1703,6 +1706,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiConfiguration config = new WifiConfiguration();
         config.SSID = sSSID;
         config.getNetworkSelectionStatus().setHasEverConnected(false);
+        config.carrierId = CARRIER_ID_1;
         when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(config);
 
         mCmi.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
@@ -1712,7 +1716,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWrongPasswordNotifier).onWrongPasswordError(eq(sSSID));
         verify(mWifiConfigManager).updateNetworkSelectionStatus(anyInt(),
                 eq(WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD));
-
+        verify(mWifiMetrics).incrementNumOfCarrierWifiConnectionAuthFailure();
         assertEquals("DisconnectedState", getCurrentState().getName());
     }
 
@@ -3077,6 +3081,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testAssociationRejectionUpdatesWatchdog() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
+        WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(FRAMEWORK_NETWORK_ID);
+        config.carrierId = CARRIER_ID_1;
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
         mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
@@ -3084,6 +3090,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 anyString(), anyString(), anyInt());
         verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
                 BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION, false);
+        verify(mWifiMetrics).incrementNumOfCarrierWifiConnectionNonAuthFailure();
     }
 
     /**
