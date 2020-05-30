@@ -2965,6 +2965,20 @@ public class ClientModeImpl extends StateMachine {
             }
         }
 
+        if (configuration != null
+                && configuration.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+            if (level2FailureCode == WifiMetrics.ConnectionEvent.FAILURE_NONE) {
+                mWifiMetrics.incrementNumOfCarrierWifiConnectionSuccess();
+            } else if (level2FailureCode
+                            == WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE
+                    && level2FailureReason
+                            != WifiMetricsProto.ConnectionEvent.AUTH_FAILURE_NONE) {
+                mWifiMetrics.incrementNumOfCarrierWifiConnectionAuthFailure();
+            } else {
+                mWifiMetrics.incrementNumOfCarrierWifiConnectionNonAuthFailure();
+            }
+        }
+
         boolean isAssociationRejection = level2FailureCode
                 == WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION;
         boolean isAuthenticationFailure = level2FailureCode
