@@ -709,6 +709,9 @@ message WifiLog {
 
   // Number of connection with different BSSID between framework and firmware selection.
   optional int32 num_bssid_different_selection_between_framework_and_firmware = 199;
+
+  // Metrics about carrier wifi network.
+  optional CarrierWifiMetrics carrier_wifi_metrics = 200;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -3294,4 +3297,12 @@ message UserReactionToApprovalUiEvent {
 
   // Event of user reaction to the carrier approval UI.
   repeated UserReaction user_approval_carrier_ui_reaction = 2;
+}
+
+message CarrierWifiMetrics {
+  // Number of successful network connection using Carrier ID
+  optional int32 num_connection_success = 1;
+  // Number of failed authentication from network connection using Carrier ID
+  optional int32 num_connection_auth_failure = 2;
+  optional int32 num_connection_non_auth_failure = 3;
 }
