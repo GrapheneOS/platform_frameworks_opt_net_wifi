@@ -1324,6 +1324,24 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that startSoftAp() with valid config succeeds after a failed call
+     */
+    @Test
+    public void testStartSoftApWithValidConfigSucceedsAfterFailure() {
+        // First initiate a failed call
+        assertFalse(mWifiServiceImpl.startSoftAp(mApConfig));
+        verify(mActiveModeWarden, never()).startSoftAp(any());
+
+        // Next attempt a valid config
+        WifiConfiguration config = createValidWifiApConfiguration();
+        assertTrue(mWifiServiceImpl.startSoftAp(config));
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        WifiConfigurationTestUtil.assertConfigurationEqualForSoftAp(
+                config,
+                mSoftApModeConfigCaptor.getValue().getSoftApConfiguration().toWifiConfiguration());
+    }
+
+    /**
      * Verify caller with proper permission can call startTetheredHotspot.
      */
     @Test
@@ -1494,6 +1512,22 @@ public class WifiServiceImplTest extends WifiBaseTest {
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
         verify(mContext).enforceCallingOrSelfPermission(
                 eq(NetworkStack.PERMISSION_MAINLINE_NETWORK_STACK), any());
+    }
+
+    /**
+     * Verify a valied call to startTetheredHotspot succeeds after a failed call.
+     */
+    @Test
+    public void testStartTetheredHotspotWithValidConfigSucceedsAfterFailedCall() {
+        // First issue an invalid call
+        assertFalse(mWifiServiceImpl.startTetheredHotspot(
+                new SoftApConfiguration.Builder().build()));
+        verify(mActiveModeWarden, never()).startSoftAp(any());
+
+        // Now attempt a successful call
+        assertTrue(mWifiServiceImpl.startTetheredHotspot(null));
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        assertNull(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
     /**
