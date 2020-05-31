@@ -368,7 +368,7 @@ public class ClientModeImpl extends StateMachine {
     private String mTargetBssid = SUPPLICANT_BSSID_ANY;
     // This one is used to track the current target network ID. This is used for error
     // handling during connection setup since many error message from supplicant does not report
-    // SSID Once connected, it will be set to invalid
+    // SSID. Once connected, it will be set to invalid
     private int mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
     private long mLastDriverRoamAttempt = 0;
     private WifiConfiguration mTargetWifiConfiguration = null;
@@ -1211,8 +1211,8 @@ public class ClientModeImpl extends StateMachine {
     private void connectToUserSelectNetwork(int netId, int uid, boolean forceReconnect) {
         logd("connectToUserSelectNetwork netId " + netId + ", uid " + uid
                 + ", forceReconnect = " + forceReconnect);
-        if (!forceReconnect && mWifiInfo.getNetworkId() == netId) {
-            // We're already connected to the user specified network, don't trigger a
+        if (!forceReconnect && (mLastNetworkId == netId || mTargetNetworkId == netId)) {
+            // We're already connecting/connected to the user specified network, don't trigger a
             // reconnection unless it was forced.
             logi("connectToUserSelectNetwork already connecting/connected=" + netId);
         } else {
