@@ -333,4 +333,23 @@ public class ConfigurationMapTest extends WifiBaseTest {
         mConfigs.clear();
         assertNull(mConfigs.getByScanResultForCurrentUser(scanResult));
     }
+
+    @Test
+    public void testScanResultDoesNotMatchForWifiNetworkSpecifier() {
+        // Add regular saved network, this should create a scan result match info cache entry.
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        ScanResult scanResult = createScanResultForNetwork(config);
+        config.networkId = 5;
+        mConfigs.put(config);
+        assertNotNull(mConfigs.getByScanResultForCurrentUser(scanResult));
+
+        mConfigs.clear();
+
+        // Create WifiNetworkSpecifier network, this should not create a scan result match info
+        // cache entry.
+        config.ephemeral = true;
+        config.fromWifiNetworkSpecifier = true;
+        mConfigs.put(config);
+        assertNull(mConfigs.getByScanResultForCurrentUser(scanResult));
+    }
 }
