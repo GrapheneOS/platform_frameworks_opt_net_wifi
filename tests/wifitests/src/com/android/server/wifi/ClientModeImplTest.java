@@ -1538,6 +1538,60 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * If caller tries to connect to a network that is already connecting, the connection request
+     * should succeed.
+     *
+     * Test: Create and trigger connect to a network, then try to reconnect to the same network.
+     * Verify that connection request returns with CONNECT_NETWORK_SUCCEEDED and did not trigger a
+     * new connection.
+     */
+    @Test
+    public void reconnectToConnectingNetwork() throws Exception {
+        triggerConnect();
+
+        // try to reconnect to the same network (before connection is established).
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, FRAMEWORK_NETWORK_ID, mock(Binder.class), connectActionListener, 0,
+                Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        // Verify that we didn't trigger a second connection.
+        verify(mWifiNative, times(1)).connectToNetwork(eq(WIFI_IFACE_NAME), any());
+    }
+
+    /**
+     * If caller tries to connect to a network that is already connecting, the connection request
+     * should succeed.
+     *
+     * Test: Create and trigger connect to a network, then try to reconnect to the same network.
+     * Verify that connection request returns with CONNECT_NETWORK_SUCCEEDED and did trigger a new
+     * connection.
+     */
+    @Test
+    public void reconnectToConnectingNetworkWithCredentialChange() throws Exception {
+        triggerConnect();
+
+        // try to reconnect to the same network with a credential changed (before connection is
+        // established).
+        WifiConfiguration config = new WifiConfiguration();
+        config.networkId = FRAMEWORK_NETWORK_ID;
+        NetworkUpdateResult networkUpdateResult =
+                new NetworkUpdateResult(false /* ip */, false /* proxy */, true /* credential */);
+        networkUpdateResult.setNetworkId(FRAMEWORK_NETWORK_ID);
+        when(mWifiConfigManager.addOrUpdateNetwork(eq(config), anyInt()))
+                .thenReturn(networkUpdateResult);
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(config, WifiConfiguration.INVALID_NETWORK_ID, mock(Binder.class),
+                connectActionListener, 0, Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        // Verify that we triggered a second connection.
+        verify(mWifiNative, times(2)).connectToNetwork(eq(WIFI_IFACE_NAME), any());
+    }
+
+    /**
      * If caller tries to connect to a new network while still provisioning the current one,
      * the connection attempt should succeed.
      */
