@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 
@@ -106,6 +107,9 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
 
     /** Minimum dump period with same error code */
     public static final long MIN_DUMP_TIME_WINDOW_MILLIS = 10 * 60 * 1000; // 10 mins
+
+    // Timeout for logcat
+    private static final int LOGCAT_TIMEOUT_MILLIS = 500;
 
     private long mLastBugReportTime;
 
@@ -720,7 +724,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
             while ((line = reader.readLine()) != null) {
                 lines.add(line);
             }
-            process.waitFor();
+            process.waitFor(LOGCAT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException|IOException e) {
             mLog.dump("Exception while capturing logcat: %").c(e.toString()).flush();
         }
