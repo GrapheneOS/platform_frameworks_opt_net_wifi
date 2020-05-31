@@ -875,6 +875,9 @@ public class WifiNetworkSelector {
         }
         WifiConfiguration config =
                 mWifiConfigManager.getConfiguredNetwork(choice.candidateKey.networkId);
+        if (config == null) {
+            return;
+        }
         if (config.isPasspoint()) {
             config.SSID = choice.candidateKey.matchInfo.networkSsid;
             mWifiConfigManager.addOrUpdateNetwork(config, config.creatorUid, config.creatorName);
