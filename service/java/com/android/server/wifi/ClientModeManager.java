@@ -19,6 +19,11 @@ package com.android.server.wifi;
 import android.annotation.NonNull;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.ConnectivityManager.NetworkCallback;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.HandlerExecutor;
@@ -28,6 +33,7 @@ import android.os.PersistableBundle;
 import android.os.UserHandle;
 import android.telephony.AccessNetworkConstants;
 import android.telephony.CarrierConfigManager;
+import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.telephony.ims.ImsException;
@@ -45,9 +51,11 @@ import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
 import com.android.server.wifi.util.WifiHandler;
+import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * Manager WiFi in Client Mode where we connect to configured networks.
@@ -71,6 +79,7 @@ public class ClientModeManager implements ActiveModeManager {
     private @Role int mRole = ROLE_UNSPECIFIED;
     private DeferStopHandler mDeferStopHandler;
     private int mTargetRole = ROLE_UNSPECIFIED;
+    private int mActiveSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
 
     ClientModeManager(Context context, @NonNull Looper looper, Clock clock, WifiNative wifiNative,
             Listener listener, WifiMetrics wifiMetrics, SarManager sarManager,
@@ -120,6 +129,8 @@ public class ClientModeManager implements ActiveModeManager {
         private final Runnable mRunnable = () -> continueToStopWifi();
         private int mMaximumDeferringTimeMillis = 0;
         private long mDeferringStartTimeMillis = 0;
+        private NetworkRequest mImsRequest = null;
+        private ConnectivityManager mConnectivityManager = null;
 
         private RegistrationManager.RegistrationCallback mImsRegistrationCallback =
                 new RegistrationManager.RegistrationCallback() {
@@ -136,9 +147,39 @@ public class ClientModeManager implements ActiveModeManager {
                     @Override
                     public void onUnregistered(ImsReasonInfo imsReasonInfo) {
                         Log.d(TAG, "on IMS unregistered");
-                        if (mIsDeferring) continueToStopWifi();
+                        // Wait for onLost in NetworkCallback
                     }
                 };
+
+        private NetworkCallback mImsNetworkCallback = new NetworkCallback() {
+            private int mRegisteredImsNetworkCount = 0;
+            @Override
+            public void onAvailable(Network network) {
+                synchronized (this) {
+                    Log.d(TAG, "IMS network available: " + network);
+                    mRegisteredImsNetworkCount++;
+                }
+            }
+
+            @Override
+            public void onLost(Network network) {
+                synchronized (this) {
+                    Log.d(TAG, "IMS network lost: " + network
+                            + " ,isDeferring: " + mIsDeferring
+                            + " ,registered IMS network count: " + mRegisteredImsNetworkCount);
+                    mRegisteredImsNetworkCount--;
+                    if (mIsDeferring && mRegisteredImsNetworkCount <= 0) {
+                        mRegisteredImsNetworkCount = 0;
+                        // Add delay for targets where IMS PDN down at modem takes additional delay.
+                        int delay = mContext.getResources()
+                                .getInteger(R.integer.config_wifiDelayDisconnectOnImsLostMs);
+                        if (delay == 0 || !postDelayed(mRunnable, delay)) {
+                            continueToStopWifi();
+                        }
+                    }
+                }
+            }
+        };
 
         DeferStopHandler(String tag, Looper looper) {
             super(tag, looper);
@@ -156,8 +197,7 @@ public class ClientModeManager implements ActiveModeManager {
                 return;
             }
 
-            mImsMmTelManager = ImsMmTelManager.createForSubscriptionId(
-                    SubscriptionManager.getDefaultVoiceSubscriptionId());
+            mImsMmTelManager = ImsMmTelManager.createForSubscriptionId(mActiveSubId);
             if (mImsMmTelManager == null || !postDelayed(mRunnable, delayMs)) {
                 // if no delay or failed to add runnable, stop Wifi immediately.
                 continueToStopWifi();
@@ -166,7 +206,7 @@ public class ClientModeManager implements ActiveModeManager {
 
             mIsDeferring = true;
             Log.d(TAG, "Start DeferWifiOff handler with deferring time "
-                    + delayMs + " ms.");
+                    + delayMs + " ms for subId: " + mActiveSubId);
             try {
                 mImsMmTelManager.registerImsRegistrationCallback(
                         new HandlerExecutor(new Handler(mLooper)),
@@ -174,7 +214,19 @@ public class ClientModeManager implements ActiveModeManager {
             } catch (RuntimeException | ImsException e) {
                 Log.e(TAG, "registerImsRegistrationCallback failed", e);
                 continueToStopWifi();
+                return;
             }
+
+            mImsRequest = new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_IMS)
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .build();
+
+            mConnectivityManager =
+                    (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            mConnectivityManager.registerNetworkCallback(mImsRequest, mImsNetworkCallback,
+                                                         new Handler(mLooper));
         }
 
         private void continueToStopWifi() {
@@ -212,6 +264,11 @@ public class ClientModeManager implements ActiveModeManager {
                     Log.e(TAG, "unregisterImsRegistrationCallback failed", e);
                 }
             }
+
+            if (mConnectivityManager != null) {
+                mConnectivityManager.unregisterNetworkCallback(mImsNetworkCallback);
+            }
+
             mIsDeferring = false;
         }
     }
@@ -220,13 +277,35 @@ public class ClientModeManager implements ActiveModeManager {
      * Get deferring time before turning off WiFi.
      */
     private int getWifiOffDeferringTimeMs() {
-        int defaultVoiceSubId = SubscriptionManager.getDefaultVoiceSubscriptionId();
-        if (defaultVoiceSubId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+        SubscriptionManager subscriptionManager = (SubscriptionManager) mContext.getSystemService(
+                Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        if (subscriptionManager == null) {
             return 0;
         }
 
-        ImsMmTelManager imsMmTelManager = ImsMmTelManager.createForSubscriptionId(
-                defaultVoiceSubId);
+        List<SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();
+        if (subInfoList == null) {
+            return 0;
+        }
+
+        // Get the maximum delay for the active subscription latched on IWLAN.
+        int maxDelay = 0;
+        for (SubscriptionInfo subInfo : subInfoList) {
+            int curDelay = getWifiOffDeferringTimeMs(subInfo.getSubscriptionId());
+            if (curDelay > maxDelay) {
+                maxDelay = curDelay;
+                mActiveSubId = subInfo.getSubscriptionId();
+            }
+        }
+        return maxDelay;
+    }
+
+    private int getWifiOffDeferringTimeMs(int subId) {
+        if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            return 0;
+        }
+
+        ImsMmTelManager imsMmTelManager = ImsMmTelManager.createForSubscriptionId(subId);
         // If no wifi calling, no delay
         if (!imsMmTelManager.isAvailable(
                     MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VOICE,
@@ -236,7 +315,7 @@ public class ClientModeManager implements ActiveModeManager {
 
         TelephonyManager defaultVoiceTelephonyManager =
                 mContext.getSystemService(TelephonyManager.class)
-                        .createForSubscriptionId(defaultVoiceSubId);
+                        .createForSubscriptionId(subId);
         // if LTE is available, no delay needed as IMS will be registered over LTE
         if (defaultVoiceTelephonyManager.getVoiceNetworkType()
                 == TelephonyManager.NETWORK_TYPE_LTE) {
@@ -245,7 +324,7 @@ public class ClientModeManager implements ActiveModeManager {
 
         CarrierConfigManager configManager =
                 (CarrierConfigManager) mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE);
-        PersistableBundle config = configManager.getConfigForSubId(defaultVoiceSubId);
+        PersistableBundle config = configManager.getConfigForSubId(subId);
         return (config != null)
                 ? config.getInt(CarrierConfigManager.Ims.KEY_WIFI_OFF_DEFERRING_TIME_MILLIS_INT)
                 : 0;

@@ -644,6 +644,35 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
     }
 
     /**
+     * Verify the periodic scan back off to find a network matching the network specifier
+     * is cancelled when the user selects a network.
+     */
+    @Test
+    public void testPeriodicScanCancelOnUserSelectNetwork() throws Exception {
+        attachDefaultWifiNetworkSpecifierAndAppInfo(TEST_UID_1, false);
+        mWifiNetworkFactory.needNetworkFor(mNetworkRequest, 0);
+
+        mWifiNetworkFactory.addCallback(mAppBinder, mNetworkRequestMatchCallback,
+                TEST_CALLBACK_IDENTIFIER);
+        verify(mNetworkRequestMatchCallback).onUserSelectionCallbackRegistration(
+                mNetworkRequestUserSelectionCallback.capture());
+
+        verifyPeriodicScans(0,
+                PERIODIC_SCAN_INTERVAL_MS,     // 10s
+                PERIODIC_SCAN_INTERVAL_MS);    // 10s
+
+        // Now trigger user selection to one of the network.
+        mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        mSelectedNetwork.SSID = "\"" + TEST_SSID_1 + "\"";
+        sendUserSelectionSelect(mNetworkRequestUserSelectionCallback.getValue(), mSelectedNetwork);
+        mLooper.dispatchAll();
+
+        // Cancel the alarm set for the next scan.
+        verify(mAlarmManager).cancel(mPeriodicScanListenerArgumentCaptor.getValue());
+    }
+
+
+    /**
      * Verify callback registration/unregistration.
      */
     @Test
@@ -1345,7 +1374,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         }
 
         mInOrder = inOrder(mAlarmManager, mClientModeImpl);
-        validateConnectionRetryAttempts();
+        validateConnectionRetryAttempts(true);
 
         // Fail the request after all the retries are exhausted.
         verify(mNetworkRequestMatchCallback).onAbort();
@@ -1373,7 +1402,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         mInOrder = inOrder(mAlarmManager, mClientModeImpl);
-        validateConnectionRetryAttempts();
+        validateConnectionRetryAttempts(false);
 
         // Fail the request after all the retries are exhausted.
         verify(mNetworkRequestMatchCallback).onAbort();
@@ -1407,7 +1436,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         }
 
         mInOrder = inOrder(mAlarmManager, mClientModeImpl);
-        validateConnectionRetryAttempts();
+        validateConnectionRetryAttempts(false);
 
         verify(mNetworkRequestMatchCallback).onAbort();
         // Verify that we sent the connection failure callback.
@@ -1453,7 +1482,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         }
 
         mInOrder = inOrder(mAlarmManager, mClientModeImpl);
-        validateConnectionRetryAttempts();
+        validateConnectionRetryAttempts(false);
 
         // Verify that we sent the connection failure callback.
         verify(mNetworkRequestMatchCallback).onUserSelectionConnectFailure(
@@ -2783,11 +2812,13 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         }
     }
 
-    private void validateConnectionRetryAttempts() {
+    private void validateConnectionRetryAttempts(boolean onTimeout) {
         for (int i = 0; i < WifiNetworkFactory.USER_SELECTED_NETWORK_CONNECT_RETRY_MAX; i++) {
-            // Cancel the existing connection timeout.
-            mInOrder.verify(mAlarmManager).cancel(
-                    mConnectionTimeoutAlarmListenerArgumentCaptor.getValue());
+            if (!onTimeout) {
+                // Cancel the existing connection timeout.
+                mInOrder.verify(mAlarmManager).cancel(
+                        mConnectionTimeoutAlarmListenerArgumentCaptor.getValue());
+            }
 
             // Trigger new connection.
             mInOrder.verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID_1),
