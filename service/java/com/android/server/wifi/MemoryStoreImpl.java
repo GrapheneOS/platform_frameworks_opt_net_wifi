@@ -21,6 +21,7 @@ import android.annotation.Nullable;
 import android.content.Context;
 import android.net.IpMemoryStore;
 import android.net.ipmemorystore.Blob;
+import android.net.ipmemorystore.NetworkAttributes;
 import android.net.ipmemorystore.Status;
 import android.util.Log;
 
@@ -122,6 +123,35 @@ final class MemoryStoreImpl implements WifiScoreCard.MemoryStore {
                     name,
                     blob,
                     null /* no listener for now, just fire and forget */);
+        } catch (RuntimeException e) {
+            handleException(e);
+        }
+    }
+
+    @Override
+    public void setCluster(String key, String cluster) {
+        if (mBroken) return;
+        try {
+            NetworkAttributes attributes = new NetworkAttributes.Builder()
+                    .setCluster(cluster)
+                    .build();
+            mIpMemoryStore.storeNetworkAttributes(key, attributes, status -> {
+                Log.d(TAG, "Set cluster " + cluster + " for " + key + ": " + status);
+            });
+        } catch (RuntimeException e) {
+            handleException(e);
+        }
+    }
+
+    @Override
+    public void removeCluster(String cluster) {
+        if (mBroken) return;
+        try {
+            final boolean needWipe = true;
+            mIpMemoryStore.deleteCluster(cluster, needWipe, (status, deletedRecords) -> {
+                Log.d(TAG, "Remove cluster " + cluster + ": " + status
+                        + " deleted: " + deletedRecords);
+            });
         } catch (RuntimeException e) {
             handleException(e);
         }
