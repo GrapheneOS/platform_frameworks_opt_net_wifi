@@ -21,6 +21,8 @@ import android.net.wifi.WifiConfiguration;
 import android.os.UserHandle;
 import android.os.UserManager;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,6 +41,15 @@ public class ConfigurationMap {
 
     ConfigurationMap(UserManager userManager) {
         mUserManager = userManager;
+    }
+
+    /** Dump internal state for debugging. */
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println("mPerId=" + mPerID);
+        pw.println("mPerIDForCurrentUser=" + mPerIDForCurrentUser);
+        pw.println("mScanResultMatchInfoMapForCurrentUser="
+                + mScanResultMatchInfoMapForCurrentUser);
+        pw.println("mCurrentUserId=" + mCurrentUserId);
     }
 
     // RW methods:
