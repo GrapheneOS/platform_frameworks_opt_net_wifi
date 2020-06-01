@@ -136,6 +136,10 @@ public class WifiScoreCard {
         void read(String key, String name, BlobListener blobListener);
         /** Requests a write, does not wait for completion */
         void write(String key, String name, byte[] value);
+        /** Sets the cluster identifier */
+        void setCluster(String key, String cluster);
+        /** Requests removal of all entries matching the cluster */
+        void removeCluster(String cluster);
     }
     /** Asynchronous response to a read request */
     public interface BlobListener {
@@ -249,9 +253,15 @@ public class WifiScoreCard {
         if (perBssid == mDummyPerBssid) {
             return new Pair<>(null, null);
         }
-        final long groupIdHash = computeHashLong(
-                perBssid.ssid, mDummyPerBssid.bssid, mL2KeySeed);
-        return new Pair<>(perBssid.getL2Key(), groupHintFromLong(groupIdHash));
+        return new Pair<>(perBssid.getL2Key(), groupHintFromSsid(perBssid.ssid));
+    }
+
+    /**
+     * Computes the GroupHint associated with the given ssid.
+     */
+    public @NonNull String groupHintFromSsid(String ssid) {
+        final long groupIdHash = computeHashLong(ssid, mDummyPerBssid.bssid, mL2KeySeed);
+        return groupHintFromLong(groupIdHash);
     }
 
     /**
@@ -1447,6 +1457,7 @@ public class WifiScoreCard {
                 Log.e(TAG, "More answers than we expected!");
             }
         }
+
         /**
          * Handles (when convenient) the arrival of previously stored data.
          *
@@ -1458,7 +1469,6 @@ public class WifiScoreCard {
         byte[] finishPendingReadBytes() {
             return mPendingReadFromStore.getAndSet(null);
         }
-
 
         int idFromLong() {
             return (int) mHash & 0x7fffffff;
@@ -1552,10 +1562,9 @@ public class WifiScoreCard {
             return;
         }
         mApForNetwork.remove(ssid);
+        mApForBssid.entrySet().removeIf(entry -> ssid.equals(entry.getValue().ssid));
         if (mMemoryStore == null) return;
-        PerNetwork ans = new PerNetwork(ssid);
-        byte[] serialized = {};
-        mMemoryStore.write(ans.getL2Key(), PER_NETWORK_DATA_NAME, serialized);
+        mMemoryStore.removeCluster(groupHintFromSsid(ssid));
     }
 
     void requestReadNetwork(final PerNetwork perNetwork) {
@@ -1586,7 +1595,9 @@ public class WifiScoreCard {
             if (perBssid.changed) {
                 perBssid.finishPendingRead();
                 byte[] serialized = perBssid.toAccessPoint(/* No BSSID */ true).toByteArray();
+                mMemoryStore.setCluster(perBssid.getL2Key(), groupHintFromSsid(perBssid.ssid));
                 mMemoryStore.write(perBssid.getL2Key(), PER_BSSID_DATA_NAME, serialized);
+
                 perBssid.changed = false;
                 count++;
                 bytes += serialized.length;
@@ -1606,6 +1617,7 @@ public class WifiScoreCard {
             if (perNetwork.changed) {
                 perNetwork.finishPendingRead();
                 byte[] serialized = perNetwork.toNetworkStats().toByteArray();
+                mMemoryStore.setCluster(perNetwork.getL2Key(), groupHintFromSsid(perNetwork.ssid));
                 mMemoryStore.write(perNetwork.getL2Key(), PER_NETWORK_DATA_NAME, serialized);
                 perNetwork.changed = false;
                 count++;
