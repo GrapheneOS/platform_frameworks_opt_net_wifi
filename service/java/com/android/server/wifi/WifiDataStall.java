@@ -41,9 +41,6 @@ public class WifiDataStall {
     private static final String TAG = "WifiDataStall";
     private boolean mVerboseLoggingEnabled = false;
     public static final int INVALID_THROUGHPUT = -1;
-    // At low traffic, link speed values below the following threshold
-    // are ignored because it could be due to low rate management frames
-    public static final int LINK_SPEED_LOW_THRESHOLD_MBPS = 9;
     // Maximum time gap between two WifiLinkLayerStats to trigger a data stall
     public static final int MAX_MS_DELTA_FOR_DATA_STALL = 60 * 1000; // 1 minute
     // Maximum time that a data stall start time stays valid.
@@ -306,7 +303,8 @@ public class WifiDataStall {
 
         if (txLinkSpeedMbps > 0) {
             // Exclude update with low rate management frames
-            if (isTxTrafficHigh || txLinkSpeedMbps > LINK_SPEED_LOW_THRESHOLD_MBPS) {
+            if (isTxTrafficHigh
+                    || txLinkSpeedMbps > mDeviceConfigFacade.getTxLinkSpeedLowThresholdMbps()) {
                 mTxTputKbps = (int) ((long) txLinkSpeedMbps * 1000 * (100 - txPer) / 100
                         * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE);
             }
@@ -317,7 +315,8 @@ public class WifiDataStall {
 
         if (rxLinkSpeedMbps > 0) {
             // Exclude update with low rate management frames
-            if (isRxTrafficHigh || rxLinkSpeedMbps > LINK_SPEED_LOW_THRESHOLD_MBPS) {
+            if (isRxTrafficHigh
+                    || rxLinkSpeedMbps > mDeviceConfigFacade.getRxLinkSpeedLowThresholdMbps()) {
                 mRxTputKbps = (int) ((long) rxLinkSpeedMbps * 1000
                         * (CHANNEL_UTILIZATION_SCALE  - ccaLevel) / CHANNEL_UTILIZATION_SCALE);
             }
@@ -438,8 +437,8 @@ public class WifiDataStall {
         mLastTxBytes = txBytes;
         mLastRxBytes = rxBytes;
 
-        boolean isTxTputSufficient = isL2ThroughputSufficient(l2TxTputKbps, l3TxTputKbps);
-        boolean isRxTputSufficient = isL2ThroughputSufficient(l2RxTputKbps, l3RxTputKbps);
+        boolean isTxTputSufficient = isL2ThroughputSufficient(l2TxTputKbps, l3TxTputKbps, false);
+        boolean isRxTputSufficient = isL2ThroughputSufficient(l2RxTputKbps, l3RxTputKbps, true);
         isTxTputSufficient = detectAndOverrideFalseInSufficient(
                 isTxTputSufficient, isTxTrafficHigh, mIsThroughputSufficient);
         isRxTputSufficient = detectAndOverrideFalseInSufficient(
@@ -466,17 +465,20 @@ public class WifiDataStall {
      * 3) L3 tput is not low and L2 tput is above its high threshold
      * 4) L2 tput is invalid
      */
-    private boolean isL2ThroughputSufficient(int l2TputKbps, int l3TputKbps) {
+    private boolean isL2ThroughputSufficient(int l2TputKbps, int l3TputKbps, boolean isForRxTput) {
         if (l2TputKbps == INVALID_THROUGHPUT) return true;
+        int tputSufficientLowThrKbps = mDeviceConfigFacade.getTxTputSufficientLowThrKbps();
+        int tputSufficientHighThrKbps = mDeviceConfigFacade.getTxTputSufficientHighThrKbps();
+        if (isForRxTput) {
+            tputSufficientLowThrKbps = mDeviceConfigFacade.getRxTputSufficientLowThrKbps();
+            tputSufficientHighThrKbps = mDeviceConfigFacade.getRxTputSufficientHighThrKbps();
+        }
         boolean isL3TputLow = (l3TputKbps * mDeviceConfigFacade.getTputSufficientRatioThrDen())
-                < (mDeviceConfigFacade.getTputSufficientLowThrKbps()
-                * mDeviceConfigFacade.getTputSufficientRatioThrNum());
-        boolean isL2TputAboveLowThr =
-                l2TputKbps >= mDeviceConfigFacade.getTputSufficientLowThrKbps();
+                < (tputSufficientLowThrKbps * mDeviceConfigFacade.getTputSufficientRatioThrNum());
+        boolean isL2TputAboveLowThr = l2TputKbps >= tputSufficientLowThrKbps;
         if (isL3TputLow) return isL2TputAboveLowThr;
 
-        boolean isL2TputAboveHighThr =
-                l2TputKbps >= mDeviceConfigFacade.getTputSufficientHighThrKbps();
+        boolean isL2TputAboveHighThr = l2TputKbps >= tputSufficientHighThrKbps;
         boolean isL2L3TputRatioAboveThr =
                 (l2TputKbps * mDeviceConfigFacade.getTputSufficientRatioThrDen())
                 >= (l3TputKbps * mDeviceConfigFacade.getTputSufficientRatioThrNum());
