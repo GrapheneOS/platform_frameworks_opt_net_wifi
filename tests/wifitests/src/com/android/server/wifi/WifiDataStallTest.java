@@ -107,10 +107,14 @@ public class WifiDataStallTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_DATA_STALL_TX_PER_THR);
         when(mDeviceConfigFacade.getDataStallCcaLevelThr()).thenReturn(
                 DeviceConfigFacade.DEFAULT_DATA_STALL_CCA_LEVEL_THR);
-        when(mDeviceConfigFacade.getTputSufficientLowThrKbps()).thenReturn(
-                DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_THR_LOW_KBPS);
-        when(mDeviceConfigFacade.getTputSufficientHighThrKbps()).thenReturn(
-                DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_THR_HIGH_KBPS);
+        when(mDeviceConfigFacade.getTxTputSufficientLowThrKbps()).thenReturn(
+                DeviceConfigFacade.DEFAULT_TX_TPUT_SUFFICIENT_THR_LOW_KBPS);
+        when(mDeviceConfigFacade.getTxTputSufficientHighThrKbps()).thenReturn(
+                DeviceConfigFacade.DEFAULT_TX_TPUT_SUFFICIENT_THR_HIGH_KBPS);
+        when(mDeviceConfigFacade.getRxTputSufficientLowThrKbps()).thenReturn(
+                DeviceConfigFacade.DEFAULT_RX_TPUT_SUFFICIENT_THR_LOW_KBPS);
+        when(mDeviceConfigFacade.getRxTputSufficientHighThrKbps()).thenReturn(
+                DeviceConfigFacade.DEFAULT_RX_TPUT_SUFFICIENT_THR_HIGH_KBPS);
         when(mDeviceConfigFacade.getTputSufficientRatioThrNum()).thenReturn(
                 DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_RATIO_THR_NUM);
         when(mDeviceConfigFacade.getTputSufficientRatioThrDen()).thenReturn(
@@ -119,6 +123,10 @@ public class WifiDataStallTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_TX_PACKET_PER_SECOND_THR);
         when(mDeviceConfigFacade.getRxPktPerSecondThr()).thenReturn(
                 DeviceConfigFacade.DEFAULT_RX_PACKET_PER_SECOND_THR);
+        when(mDeviceConfigFacade.getTxLinkSpeedLowThresholdMbps()).thenReturn(
+                DeviceConfigFacade.DEFAULT_TX_LINK_SPEED_LOW_THRESHOLD_MBPS);
+        when(mDeviceConfigFacade.getRxLinkSpeedLowThresholdMbps()).thenReturn(
+                DeviceConfigFacade.DEFAULT_RX_LINK_SPEED_LOW_THRESHOLD_MBPS);
 
         when(mWifiInfo.getLinkSpeed()).thenReturn(10);
         when(mWifiInfo.getRxLinkSpeedMbps()).thenReturn(10);
