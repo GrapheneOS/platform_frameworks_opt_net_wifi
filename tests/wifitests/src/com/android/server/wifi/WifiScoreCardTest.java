@@ -688,6 +688,14 @@ public class WifiScoreCardTest extends WifiBaseTest {
             public void write(String key, String name, byte[] value) {
                 // ignore for now
             }
+            @Override
+            public void setCluster(String key, String cluster) {
+                // ignore for now
+            }
+            @Override
+            public void removeCluster(String cluster) {
+                // ignore for now
+            }
         });
 
         // Now make some changes
@@ -723,6 +731,13 @@ public class WifiScoreCardTest extends WifiBaseTest {
             public void write(String key, String name, byte[] value) {
                 mKeys.add(key);
                 mBlobs.add(value);
+            }
+            @Override
+            public void setCluster(String key, String cluster) {
+            }
+            @Override
+            public void removeCluster(String cluster) {
+                // ignore for now
             }
         });
 
