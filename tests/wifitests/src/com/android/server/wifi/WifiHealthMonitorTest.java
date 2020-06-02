@@ -110,6 +110,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     private WifiConfiguration mWifiConfig;
     private String mDriverVersion;
     private String mFirmwareVersion;
+    private static final long MODULE_VERSION = 1L;
     private TestAlarmManager mAlarmManager;
     private TestLooper mLooper = new TestLooper();
     private List<WifiConfiguration> mConfiguredNetworks;
@@ -152,7 +153,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
 
         mDriverVersion = "build 1.1";
         mFirmwareVersion = "HW 1.1";
-        mPackageInfo.versionCode = 1;
+        when(mPackageInfo.getLongVersionCode()).thenReturn(MODULE_VERSION);
         when(mContext.getPackageName()).thenReturn("WifiAPK");
         when(mPackageManager.getPackageInfo(anyString(), anyInt())).thenReturn(mPackageInfo);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
@@ -310,6 +311,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         // trigger extractCurrentSoftwareBuildInfo() call to update currSoftwareBuildInfo
         mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
         mWifiHealthMonitor.setWifiEnabled(true);
+        assertEquals(0, mWifiHealthMonitor.getWifiStackVersion());
         millisecondsPass(5000);
         mWifiScanner.startScan(mScanSettings, mScanListener);
         mAlarmManager.dispatch(WifiHealthMonitor.POST_BOOT_DETECTION_TIMER_TAG);
@@ -365,6 +367,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
                 .getWifiFirmwareVersion());
         assertEquals(mFirmwareVersion, wifiSystemInfoStats.getPrevSoftwareBuildInfo()
                 .getWifiFirmwareVersion());
+        assertEquals(MODULE_VERSION, mWifiHealthMonitor.getWifiStackVersion());
 
         // Check write
         String writtenHex = hexStringFromByteArray(mBlobs.get(mKeys.size() - 1));
@@ -395,8 +398,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         SystemInfoStats systemInfoStats = SystemInfoStats.parseFrom(serialized);
         WifiSoftwareBuildInfo currSoftwareBuildInfoFromMemory = wifiSystemInfoStats
                 .fromSoftwareBuildInfo(systemInfoStats.getCurrSoftwareBuildInfo());
-        assertEquals(mPackageInfo.versionCode,
-                currSoftwareBuildInfoFromMemory.getWifiStackVersion());
+        assertEquals(MODULE_VERSION, currSoftwareBuildInfoFromMemory.getWifiStackVersion());
         assertEquals(mDriverVersion, currSoftwareBuildInfoFromMemory.getWifiDriverVersion());
         assertEquals(mFirmwareVersion, currSoftwareBuildInfoFromMemory.getWifiFirmwareVersion());
         assertEquals(Build.DISPLAY, currSoftwareBuildInfoFromMemory.getOsBuildVersion());

@@ -441,6 +441,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY = 4;
     private static final int NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS = 5;
     private static final int NUM_BSSID_SELECTION_DIFFERENT_BETWEEN_FRAMEWORK_FIRMWARE = 3;
+    private static final long WIFI_MAINLINE_MODULE_VERSION = 123456L;
 
     /** Number of notifications per "Connect to Network" notification type. */
     private static final int[] NUM_CONNECT_TO_NETWORK_NOTIFICATIONS = {0, 10, 20, 30, 40};
@@ -1010,6 +1011,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         metrics.numNetworkSufficientRecentStatsOnly = NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY;
         metrics.numNetworkSufficientRecentPrevStats = NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS;
         when(mWifiHealthMonitor.buildProto()).thenReturn(metrics);
+        when(mWifiHealthMonitor.getWifiStackVersion()).thenReturn(WIFI_MAINLINE_MODULE_VERSION);
     }
 
     private void addSoftApEventsToMetrics() {
@@ -1412,6 +1414,7 @@ public class WifiMetricsTest extends WifiBaseTest {
                 mDecodedProto.numConnectRequestWithFilsAkm);
         assertEquals(NUM_L2_CONNECTION_THROUGH_FILS_AUTHENTICATION,
                 mDecodedProto.numL2ConnectionThroughFilsAuthentication);
+        assertEquals(WIFI_MAINLINE_MODULE_VERSION, mDecodedProto.mainlineModuleVersion);
 
     }
 

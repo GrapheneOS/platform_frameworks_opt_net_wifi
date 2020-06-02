@@ -146,7 +146,7 @@ message SoftwareBuildInfo {
   // Android OS build version
   optional string os_build_version = 1;
   // WiFi stack APK version, 0 means not available.
-  optional int32 wifi_stack_version = 2;
+  optional int64 wifi_stack_version = 2;
   // WiFi driver version
   optional string wifi_driver_version = 3;
   // WiFi firmware version
