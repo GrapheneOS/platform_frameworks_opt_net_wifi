@@ -124,10 +124,14 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getDataStallTxPerThr());
         assertEquals(DeviceConfigFacade.DEFAULT_DATA_STALL_CCA_LEVEL_THR,
                 mDeviceConfigFacade.getDataStallCcaLevelThr());
-        assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_THR_LOW_KBPS,
-                mDeviceConfigFacade.getTputSufficientLowThrKbps());
-        assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_THR_HIGH_KBPS,
-                mDeviceConfigFacade.getTputSufficientHighThrKbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_TX_TPUT_SUFFICIENT_THR_LOW_KBPS,
+                mDeviceConfigFacade.getTxTputSufficientLowThrKbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_TX_TPUT_SUFFICIENT_THR_HIGH_KBPS,
+                mDeviceConfigFacade.getTxTputSufficientHighThrKbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_RX_TPUT_SUFFICIENT_THR_LOW_KBPS,
+                mDeviceConfigFacade.getRxTputSufficientLowThrKbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_RX_TPUT_SUFFICIENT_THR_HIGH_KBPS,
+                mDeviceConfigFacade.getRxTputSufficientHighThrKbps());
         assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_RATIO_THR_NUM,
                 mDeviceConfigFacade.getTputSufficientRatioThrNum());
         assertEquals(DeviceConfigFacade.DEFAULT_TPUT_SUFFICIENT_RATIO_THR_DEN,
@@ -179,6 +183,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(false, mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled());
         assertEquals(DeviceConfigFacade.DEFAULT_OVERLAPPING_CONNECTION_DURATION_THRESHOLD_MS,
                 mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs());
+        assertEquals(DeviceConfigFacade.DEFAULT_TX_LINK_SPEED_LOW_THRESHOLD_MBPS,
+                mDeviceConfigFacade.getTxLinkSpeedLowThresholdMbps());
+        assertEquals(DeviceConfigFacade.DEFAULT_RX_LINK_SPEED_LOW_THRESHOLD_MBPS,
+                mDeviceConfigFacade.getRxLinkSpeedLowThresholdMbps());
     }
 
     /**
@@ -205,6 +213,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(4000);
         when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_high_thr_kbps"),
                 anyInt())).thenReturn(8000);
+        when(DeviceConfig.getInt(anyString(), eq("rx_tput_sufficient_low_thr_kbps"),
+                anyInt())).thenReturn(5000);
+        when(DeviceConfig.getInt(anyString(), eq("rx_tput_sufficient_high_thr_kbps"),
+                anyInt())).thenReturn(9000);
         when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_ratio_thr_num"),
                 anyInt())).thenReturn(3);
         when(DeviceConfig.getInt(anyString(), eq("tput_sufficient_ratio_thr_den"),
@@ -261,6 +273,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyBoolean())).thenReturn(true);
         when(DeviceConfig.getInt(anyString(), eq("overlapping_connection_duration_threshold_ms"),
                 anyInt())).thenReturn(50000);
+        when(DeviceConfig.getInt(anyString(), eq("tx_link_speed_low_threshold_mbps"),
+                anyInt())).thenReturn(9);
+        when(DeviceConfig.getInt(anyString(), eq("rx_link_speed_low_threshold_mbps"),
+                anyInt())).thenReturn(10);
 
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
@@ -275,8 +291,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(1500, mDeviceConfigFacade.getDataStallRxTputThrKbps());
         assertEquals(95, mDeviceConfigFacade.getDataStallTxPerThr());
         assertEquals(80, mDeviceConfigFacade.getDataStallCcaLevelThr());
-        assertEquals(4000, mDeviceConfigFacade.getTputSufficientLowThrKbps());
-        assertEquals(8000, mDeviceConfigFacade.getTputSufficientHighThrKbps());
+        assertEquals(4000, mDeviceConfigFacade.getTxTputSufficientLowThrKbps());
+        assertEquals(8000, mDeviceConfigFacade.getTxTputSufficientHighThrKbps());
+        assertEquals(5000, mDeviceConfigFacade.getRxTputSufficientLowThrKbps());
+        assertEquals(9000, mDeviceConfigFacade.getRxTputSufficientHighThrKbps());
         assertEquals(3, mDeviceConfigFacade.getTputSufficientRatioThrNum());
         assertEquals(2, mDeviceConfigFacade.getTputSufficientRatioThrDen());
         assertEquals(10, mDeviceConfigFacade.getTxPktPerSecondThr());
@@ -306,5 +324,7 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(1000, mDeviceConfigFacade.getBugReportMinWindowMs());
         assertEquals(true, mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled());
         assertEquals(50000, mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs());
+        assertEquals(9, mDeviceConfigFacade.getTxLinkSpeedLowThresholdMbps());
+        assertEquals(10, mDeviceConfigFacade.getRxLinkSpeedLowThresholdMbps());
     }
 }
