@@ -3192,6 +3192,9 @@ public class WifiConfigManager {
             pw.println(network);
         }
         pw.println("WifiConfigManager - Configured networks End ----");
+        pw.println("WifiConfigManager - ConfigurationMap Begin ----");
+        mConfiguredNetworks.dump(fd, pw, args);
+        pw.println("WifiConfigManager - ConfigurationMap End ----");
         pw.println("WifiConfigManager - Next network ID to be allocated " + mNextNetworkId);
         pw.println("WifiConfigManager - Last selected network ID " + mLastSelectedNetworkId);
         pw.println("WifiConfigManager - PNO scan frequency culling enabled = "
