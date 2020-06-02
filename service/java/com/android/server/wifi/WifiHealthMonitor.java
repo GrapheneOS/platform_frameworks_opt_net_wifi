@@ -326,6 +326,15 @@ public class WifiHealthMonitor {
         pw.println("WifiHealthMonitor - Log End ----");
     }
 
+    /**
+     * Get current wifi mainline module long version code
+     * @Return a non-zero value if version code is available, 0 otherwise.
+     */
+    public long getWifiStackVersion() {
+        WifiSoftwareBuildInfo currentBuild = getWifiSystemInfoStats().getCurrSoftwareBuildInfo();
+        return (currentBuild == null) ? 0 : currentBuild.getWifiStackVersion();
+    }
+
     private synchronized void dailyDetectionHandler() {
         logd("Run daily detection");
         // Clear daily detection result
@@ -533,12 +542,12 @@ public class WifiHealthMonitor {
             return null;
         }
         PackageManager packageManager = mContext.getPackageManager();
-        int wifiStackVersion = 0;
+        long wifiStackVersion = 0;
         try {
             wifiStackVersion = packageManager.getPackageInfo(
-                    WIFI_APK_PACKAGE_NAME, PackageManager.MATCH_APEX).versionCode;
+                    WIFI_APK_PACKAGE_NAME, PackageManager.MATCH_APEX).getLongVersionCode();
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, " hit PackageManager nameNotFoundException");
+            Log.e(TAG, " Hit PackageManager exception", e);
         }
         String osBuildVersion = replaceNullByEmptyString(Build.DISPLAY);
         if (mWifiNative == null) {
@@ -629,10 +638,10 @@ public class WifiHealthMonitor {
      */
     final class WifiSoftwareBuildInfo {
         private String mOsBuildVersion;
-        private int mWifiStackVersion;
+        private long mWifiStackVersion;
         private String mWifiDriverVersion;
         private String mWifiFirmwareVersion;
-        WifiSoftwareBuildInfo(@NonNull String osBuildVersion, int wifiStackVersion,
+        WifiSoftwareBuildInfo(@NonNull String osBuildVersion, long wifiStackVersion,
                 @NonNull String wifiDriverVersion, @NonNull String wifiFirmwareVersion) {
             mOsBuildVersion = osBuildVersion;
             mWifiStackVersion = wifiStackVersion;
@@ -648,7 +657,7 @@ public class WifiHealthMonitor {
         String getOsBuildVersion() {
             return mOsBuildVersion;
         }
-        int getWifiStackVersion() {
+        long getWifiStackVersion() {
             return mWifiStackVersion;
         }
         String getWifiDriverVersion() {
@@ -842,7 +851,7 @@ public class WifiHealthMonitor {
                 @NonNull SoftwareBuildInfo softwareBuildInfo) {
             String osBuildVersion = softwareBuildInfo.hasOsBuildVersion()
                     ? softwareBuildInfo.getOsBuildVersion() : "NA";
-            int stackVersion = softwareBuildInfo.hasWifiStackVersion()
+            long stackVersion = softwareBuildInfo.hasWifiStackVersion()
                     ? softwareBuildInfo.getWifiStackVersion() : 0;
             String driverVersion = softwareBuildInfo.hasWifiDriverVersion()
                     ? softwareBuildInfo.getWifiDriverVersion() : "NA";
