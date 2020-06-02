@@ -712,6 +712,9 @@ message WifiLog {
 
   // Metrics about carrier wifi network.
   optional CarrierWifiMetrics carrier_wifi_metrics = 200;
+
+  // Long version code of wifi mainline module, 0 means not available.
+  optional int64 mainline_module_version = 201;
 }
 
 // Information that gets logged for every WiFi connection.
