@@ -332,6 +332,14 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
                 mKeys.add(key);
                 mBlobs.add(value);
             }
+
+            @Override
+            public void setCluster(String key, String cluster) {
+            }
+
+            @Override
+            public void removeCluster(String cluster) {
+            }
         });
         mBlobListeners.get(0).onBlobRetrieved(serialized);
 
@@ -688,10 +696,19 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
             public void read(String key, String name, WifiScoreCard.BlobListener listener) {
                 mBlobListeners.add(listener);
             }
+
             @Override
             public void write(String key, String name, byte[] value) {
                 mKeys.add(key);
                 mBlobs.add(value);
+            }
+
+            @Override
+            public void setCluster(String key, String cluster) {
+            }
+
+            @Override
+            public void removeCluster(String cluster) {
             }
         });
         mBlobListeners.get(0).onBlobRetrieved(serialized);
