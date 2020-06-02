@@ -4359,8 +4359,9 @@ public class WifiMetrics {
             initialPartialScanStats.failedScanChannelCountHistogram =
                     mInitPartialScanFailureHistogram.toProto();
             mWifiLogProto.initPartialScanStats = initialPartialScanStats;
-
             mWifiLogProto.carrierWifiMetrics = mCarrierWifiMetrics.toProto();
+            mWifiLogProto.mainlineModuleVersion = mWifiHealthMonitor.getWifiStackVersion();
+
         }
     }
 
