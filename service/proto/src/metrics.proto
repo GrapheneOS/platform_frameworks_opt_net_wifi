@@ -715,6 +715,24 @@ message WifiLog {
 
   // Long version code of wifi mainline module, 0 means not available.
   optional int64 mainline_module_version = 201;
+
+  // Histogram of Tx link speed at 6G low band
+  repeated Int32Count tx_link_speed_count_6g_low = 202;
+
+  // Histogram of Tx link speed at 6G middle band
+  repeated Int32Count tx_link_speed_count_6g_mid = 203;
+
+  // Histogram of Tx link speed at 6G high band
+  repeated Int32Count tx_link_speed_count_6g_high = 204;
+
+  // Histogram of Rx link speed at 6G low band
+  repeated Int32Count rx_link_speed_count_6g_low = 205;
+
+  // Histogram of Rx link speed at 6G middle band
+  repeated Int32Count rx_link_speed_count_6g_mid = 206;
+
+  // Histogram of Rx link speed at 6G high band
+  repeated Int32Count rx_link_speed_count_6g_high = 207;
 }
 
 // Information that gets logged for every WiFi connection.
