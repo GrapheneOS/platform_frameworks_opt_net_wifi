@@ -59,6 +59,11 @@ public interface ActiveModeManager {
      */
     void stop();
 
+    /**
+     * Method used to indicate if the mode manager is still stopping.
+     */
+    boolean isStopping();
+
     /** Roles assigned to each mode manager. */
     int ROLE_UNSPECIFIED = -1;
     // SoftApManager - Tethering, will respond to public APIs.

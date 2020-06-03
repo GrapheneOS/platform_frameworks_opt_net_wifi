@@ -282,6 +282,16 @@ public class ActiveModeWarden {
     }
 
     /**
+     * @return true if any mode manager is stopping
+     */
+    private boolean hasAnyModeManagerStopping() {
+        for (ActiveModeManager manager : mActiveModeManagers) {
+            if (manager.isStopping()) return true;
+        }
+        return false;
+    }
+
+    /**
      * @return true if all the client mode managers are in scan only role,
      * false if there are no client mode managers present or if any of them are not in scan only
      * role.
@@ -886,8 +896,16 @@ public class ActiveModeWarden {
                         if (mSettingsStore.isAirplaneModeOn()) {
                             return NOT_HANDLED;
                         } else {
-                            // when airplane mode is toggled off, but wifi is on, we can keep it on
-                            log("airplane mode toggled - and airplane mode is off. return handled");
+                            if (hasAnyModeManagerStopping()) {
+                                // previous airplane mode toggle on is being processed, defer the
+                                // message toggle off until previous processing is completed.
+                                deferMessage(msg);
+                            } else {
+                                // when airplane mode is toggled off, but wifi is on, we can keep it
+                                // on
+                                log("airplane mode toggled - and airplane mode is off. return "
+                                        + "handled");
+                            }
                             return HANDLED;
                         }
                     case CMD_AP_STOPPED:
