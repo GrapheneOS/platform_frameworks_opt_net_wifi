@@ -2172,4 +2172,112 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         when(mWifiNative.isStaApConcurrencySupported()).thenReturn(true);
         assertTrue(mActiveModeWarden.isStaApConcurrencySupported());
     }
+
+    @Test
+    public void airplaneModeToggleOnDisablesWifi() throws Exception {
+        enterClientModeActiveState();
+        assertInEnabledState();
+
+        assertWifiShutDown(() -> {
+            when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
+            mActiveModeWarden.airplaneModeToggled();
+            mLooper.dispatchAll();
+        });
+
+        mClientListener.onStopped();
+        mLooper.dispatchAll();
+        assertInDisabledState();
+    }
+
+    @Test
+    public void airplaneModeToggleOnDisablesSoftAp() throws Exception {
+        enterSoftApActiveMode();
+        assertInEnabledState();
+
+        assertWifiShutDown(() -> {
+            when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
+            mActiveModeWarden.airplaneModeToggled();
+            mLooper.dispatchAll();
+        });
+
+        mSoftApListener.onStopped();
+        mLooper.dispatchAll();
+        assertInDisabledState();
+    }
+
+    @Test
+    public void airplaneModeToggleOffIsDeferredWhileProcessingToggleOnWithOneModeManager()
+            throws Exception {
+        enterClientModeActiveState();
+        assertInEnabledState();
+
+        // APM toggle on
+        assertWifiShutDown(() -> {
+            when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
+            mActiveModeWarden.airplaneModeToggled();
+            mLooper.dispatchAll();
+        });
+
+
+        // APM toggle off before the stop is complete.
+        assertInEnabledState();
+        when(mClientModeManager.isStopping()).thenReturn(true);
+        when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
+        mActiveModeWarden.airplaneModeToggled();
+        mLooper.dispatchAll();
+
+        mClientListener.onStopped();
+        mLooper.dispatchAll();
+
+        verify(mClientModeManager, times(2)).start();
+        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_PRIMARY);
+
+        mClientListener.onStarted();
+        mLooper.dispatchAll();
+
+        // We should be back to enabled state.
+        assertInEnabledState();
+    }
+
+    @Test
+    public void airplaneModeToggleOffIsDeferredWhileProcessingToggleOnWithTwoModeManager()
+            throws Exception {
+        enterClientModeActiveState();
+        enterSoftApActiveMode();
+        assertInEnabledState();
+
+        // APM toggle on
+        assertWifiShutDown(() -> {
+            when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
+            mActiveModeWarden.airplaneModeToggled();
+            mLooper.dispatchAll();
+        });
+
+
+        // APM toggle off before the stop is complete.
+        assertInEnabledState();
+        when(mClientModeManager.isStopping()).thenReturn(true);
+        when(mSoftApManager.isStopping()).thenReturn(true);
+        when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
+        mActiveModeWarden.airplaneModeToggled();
+        mLooper.dispatchAll();
+
+        // AP stopped, should not process APM toggle.
+        mSoftApListener.onStopped();
+        mLooper.dispatchAll();
+        verify(mClientModeManager, times(1)).start();
+        verify(mClientModeManager, times(1)).setRole(ROLE_CLIENT_PRIMARY);
+
+        // STA also stopped, should process APM toggle.
+        mClientListener.onStopped();
+        mLooper.dispatchAll();
+        verify(mClientModeManager, times(2)).start();
+        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_PRIMARY);
+
+        mClientListener.onStarted();
+        mLooper.dispatchAll();
+
+        // We should be back to enabled state.
+        assertInEnabledState();
+    }
 }
