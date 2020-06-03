@@ -272,10 +272,17 @@ public class WifiMetrics {
     private final IntCounter mTxLinkSpeedCount5gLow = new IntCounter();
     private final IntCounter mTxLinkSpeedCount5gMid = new IntCounter();
     private final IntCounter mTxLinkSpeedCount5gHigh = new IntCounter();
+    private final IntCounter mTxLinkSpeedCount6gLow = new IntCounter();
+    private final IntCounter mTxLinkSpeedCount6gMid = new IntCounter();
+    private final IntCounter mTxLinkSpeedCount6gHigh = new IntCounter();
+
     private final IntCounter mRxLinkSpeedCount2g = new IntCounter();
     private final IntCounter mRxLinkSpeedCount5gLow = new IntCounter();
     private final IntCounter mRxLinkSpeedCount5gMid = new IntCounter();
     private final IntCounter mRxLinkSpeedCount5gHigh = new IntCounter();
+    private final IntCounter mRxLinkSpeedCount6gLow = new IntCounter();
+    private final IntCounter mRxLinkSpeedCount6gMid = new IntCounter();
+    private final IntCounter mRxLinkSpeedCount6gHigh = new IntCounter();
 
     /** RSSI of the scan result for the last connection event*/
     private int mScanResultRssi = 0;
@@ -2159,8 +2166,14 @@ public class WifiMetrics {
                 mTxLinkSpeedCount5gLow.increment(txLinkSpeed);
             } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_MID_END_FREQ) {
                 mTxLinkSpeedCount5gMid.increment(txLinkSpeed);
-            } else {
+            } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_HIGH_END_FREQ) {
                 mTxLinkSpeedCount5gHigh.increment(txLinkSpeed);
+            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_LOW_END_FREQ) {
+                mTxLinkSpeedCount6gLow.increment(txLinkSpeed);
+            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_MID_END_FREQ) {
+                mTxLinkSpeedCount6gMid.increment(txLinkSpeed);
+            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_HIGH_END_FREQ) {
+                mTxLinkSpeedCount6gHigh.increment(txLinkSpeed);
             }
         }
     }
@@ -2184,8 +2197,14 @@ public class WifiMetrics {
                 mRxLinkSpeedCount5gLow.increment(rxLinkSpeed);
             } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_MID_END_FREQ) {
                 mRxLinkSpeedCount5gMid.increment(rxLinkSpeed);
-            } else {
+            } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_HIGH_END_FREQ) {
                 mRxLinkSpeedCount5gHigh.increment(rxLinkSpeed);
+            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_LOW_END_FREQ) {
+                mRxLinkSpeedCount6gLow.increment(rxLinkSpeed);
+            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_MID_END_FREQ) {
+                mRxLinkSpeedCount6gMid.increment(rxLinkSpeed);
+            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_HIGH_END_FREQ) {
+                mRxLinkSpeedCount6gHigh.increment(rxLinkSpeed);
             }
         }
     }
@@ -3656,10 +3675,18 @@ public class WifiMetrics {
                 pw.println("mWifiLogProto.txLinkSpeedCount5gLow=" + mTxLinkSpeedCount5gLow);
                 pw.println("mWifiLogProto.txLinkSpeedCount5gMid=" + mTxLinkSpeedCount5gMid);
                 pw.println("mWifiLogProto.txLinkSpeedCount5gHigh=" + mTxLinkSpeedCount5gHigh);
+                pw.println("mWifiLogProto.txLinkSpeedCount6gLow=" + mTxLinkSpeedCount6gLow);
+                pw.println("mWifiLogProto.txLinkSpeedCount6gMid=" + mTxLinkSpeedCount6gMid);
+                pw.println("mWifiLogProto.txLinkSpeedCount6gHigh=" + mTxLinkSpeedCount6gHigh);
+
                 pw.println("mWifiLogProto.rxLinkSpeedCount2g=" + mRxLinkSpeedCount2g);
                 pw.println("mWifiLogProto.rxLinkSpeedCount5gLow=" + mRxLinkSpeedCount5gLow);
                 pw.println("mWifiLogProto.rxLinkSpeedCount5gMid=" + mRxLinkSpeedCount5gMid);
                 pw.println("mWifiLogProto.rxLinkSpeedCount5gHigh=" + mRxLinkSpeedCount5gHigh);
+                pw.println("mWifiLogProto.rxLinkSpeedCount6gLow=" + mRxLinkSpeedCount6gLow);
+                pw.println("mWifiLogProto.rxLinkSpeedCount6gMid=" + mRxLinkSpeedCount6gMid);
+                pw.println("mWifiLogProto.rxLinkSpeedCount6gHigh=" + mRxLinkSpeedCount6gHigh);
+
                 pw.println("mWifiLogProto.numIpRenewalFailure="
                         + mWifiLogProto.numIpRenewalFailure);
                 pw.println("mWifiLogProto.connectionDurationStats="
@@ -4116,9 +4143,9 @@ public class WifiMetrics {
             for (int i = 0; i < mConnectToNetworkNotificationActionCount.size(); i++) {
                 ConnectToNetworkNotificationAndActionCount keyVal =
                         new ConnectToNetworkNotificationAndActionCount();
-                int key = mConnectToNetworkNotificationActionCount.keyAt(i);
-                keyVal.notification = key / CONNECT_TO_NETWORK_NOTIFICATION_ACTION_KEY_MULTIPLIER;
-                keyVal.action = key % CONNECT_TO_NETWORK_NOTIFICATION_ACTION_KEY_MULTIPLIER;
+                int k = mConnectToNetworkNotificationActionCount.keyAt(i);
+                keyVal.notification =  k / CONNECT_TO_NETWORK_NOTIFICATION_ACTION_KEY_MULTIPLIER;
+                keyVal.action = k % CONNECT_TO_NETWORK_NOTIFICATION_ACTION_KEY_MULTIPLIER;
                 keyVal.recommender =
                         ConnectToNetworkNotificationAndActionCount.RECOMMENDER_OPEN;
                 keyVal.count = mConnectToNetworkNotificationActionCount.valueAt(i);
@@ -4319,10 +4346,18 @@ public class WifiMetrics {
             mWifiLogProto.txLinkSpeedCount5GLow = mTxLinkSpeedCount5gLow.toProto();
             mWifiLogProto.txLinkSpeedCount5GMid = mTxLinkSpeedCount5gMid.toProto();
             mWifiLogProto.txLinkSpeedCount5GHigh = mTxLinkSpeedCount5gHigh.toProto();
+            mWifiLogProto.txLinkSpeedCount6GLow = mTxLinkSpeedCount6gLow.toProto();
+            mWifiLogProto.txLinkSpeedCount6GMid = mTxLinkSpeedCount6gMid.toProto();
+            mWifiLogProto.txLinkSpeedCount6GHigh = mTxLinkSpeedCount6gHigh.toProto();
+
             mWifiLogProto.rxLinkSpeedCount2G = mRxLinkSpeedCount2g.toProto();
             mWifiLogProto.rxLinkSpeedCount5GLow = mRxLinkSpeedCount5gLow.toProto();
             mWifiLogProto.rxLinkSpeedCount5GMid = mRxLinkSpeedCount5gMid.toProto();
             mWifiLogProto.rxLinkSpeedCount5GHigh = mRxLinkSpeedCount5gHigh.toProto();
+            mWifiLogProto.rxLinkSpeedCount6GLow = mRxLinkSpeedCount6gLow.toProto();
+            mWifiLogProto.rxLinkSpeedCount6GMid = mRxLinkSpeedCount6gMid.toProto();
+            mWifiLogProto.rxLinkSpeedCount6GHigh = mRxLinkSpeedCount6gHigh.toProto();
+
             HealthMonitorMetrics healthMonitorMetrics = mWifiHealthMonitor.buildProto();
             if (healthMonitorMetrics != null) {
                 mWifiLogProto.healthMonitorMetrics = healthMonitorMetrics;
@@ -4468,10 +4503,16 @@ public class WifiMetrics {
             mTxLinkSpeedCount5gLow.clear();
             mTxLinkSpeedCount5gMid.clear();
             mTxLinkSpeedCount5gHigh.clear();
+            mTxLinkSpeedCount6gLow.clear();
+            mTxLinkSpeedCount6gMid.clear();
+            mTxLinkSpeedCount6gHigh.clear();
             mRxLinkSpeedCount2g.clear();
             mRxLinkSpeedCount5gLow.clear();
             mRxLinkSpeedCount5gMid.clear();
             mRxLinkSpeedCount5gHigh.clear();
+            mRxLinkSpeedCount6gLow.clear();
+            mRxLinkSpeedCount6gMid.clear();
+            mRxLinkSpeedCount6gHigh.clear();
             mWifiAlertReasonCounts.clear();
             mWifiScoreCounts.clear();
             mWifiUsabilityScoreCounts.clear();

@@ -400,9 +400,15 @@ public class WifiNetworkSelector {
 
             // Skip network with too weak signals.
             if (isSignalTooWeak(scanResult)) {
-                lowRssi.append(scanId).append("(")
-                        .append(scanResult.is24GHz() ? "2.4GHz" : "5GHz")
-                        .append(")").append(scanResult.level).append(" / ");
+                lowRssi.append(scanId);
+                if (scanResult.is24GHz()) {
+                    lowRssi.append("(2.4GHz)");
+                } else if (scanResult.is5GHz()) {
+                    lowRssi.append("(5GHz)");
+                } else if (scanResult.is6GHz()) {
+                    lowRssi.append("(6GHz)");
+                }
+                lowRssi.append(scanResult.level).append(" / ");
                 continue;
             }
 
