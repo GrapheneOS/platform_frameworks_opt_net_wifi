@@ -122,6 +122,7 @@ public class SoftApManager implements ActiveModeManager {
     private BaseWifiDiagnostics mWifiDiagnostics;
 
     private @Role int mRole = ROLE_UNSPECIFIED;
+    private @Role int mTargetRole = ROLE_UNSPECIFIED;
 
     private boolean mEverReportMetricsForMaxClient = false;
 
@@ -219,6 +220,7 @@ public class SoftApManager implements ActiveModeManager {
     @Override
     public void stop() {
         Log.d(TAG, " currentstate: " + getCurrentStateName());
+        mTargetRole = ROLE_UNSPECIFIED;
         if (mApInterfaceName != null) {
             if (mIfaceIsUp) {
                 updateApState(WifiManager.WIFI_AP_STATE_DISABLING,
@@ -232,6 +234,11 @@ public class SoftApManager implements ActiveModeManager {
     }
 
     @Override
+    public boolean isStopping() {
+        return mTargetRole == ROLE_UNSPECIFIED && mRole != ROLE_UNSPECIFIED;
+    }
+
+    @Override
     public @Role int getRole() {
         return mRole;
     }
@@ -241,6 +248,7 @@ public class SoftApManager implements ActiveModeManager {
         // softap does not allow in-place switching of roles.
         Preconditions.checkState(mRole == ROLE_UNSPECIFIED);
         Preconditions.checkState(SOFTAP_ROLES.contains(role));
+        mTargetRole = role;
         mRole = role;
     }
 

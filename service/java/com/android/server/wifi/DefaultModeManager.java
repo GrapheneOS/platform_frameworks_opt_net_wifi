@@ -45,6 +45,11 @@ public class DefaultModeManager implements ActiveModeManager {
     @Override
     public void stop() { };
 
+    @Override
+    public boolean isStopping() {
+        return false;
+    }
+
     /**
      * No role specified in default mode.
      */
