@@ -373,10 +373,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     if (ApConfigUtil.isWpa3SaeSupported(mContext)) {
                         pw.println("wifi_softap_wpa3_sae_supported");
                     }
-                    break;
+                    return 0;
                 case "settings-reset":
                     mWifiService.factoryReset(SHELL_PACKAGE_NAME);
-                    break;
+                    return 0;
                 case "list-scan-results":
                     List<ScanResult> scanResults =
                             mWifiService.getScanResults(SHELL_PACKAGE_NAME, null);
@@ -386,10 +386,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         ScanResultUtil.dumpScanResults(pw, scanResults,
                                 SystemClock.elapsedRealtime());
                     }
-                    break;
+                    return 0;
                 case "start-scan":
                     mWifiService.startScan(SHELL_PACKAGE_NAME, null);
-                    break;
+                    return 0;
                 case "list-networks":
                     ParceledListSlice<WifiConfiguration> networks =
                             mWifiService.getConfiguredNetworks(SHELL_PACKAGE_NAME, null);
@@ -415,7 +415,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                     securityType));
                         }
                     }
-                    break;
+                    return 0;
                 case "connect-network": {
                     CountDownLatch countDownLatch = new CountDownLatch(1);
                     IActionListener.Stub actionListener = new IActionListener.Stub() {
@@ -436,7 +436,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
                     setAutoJoin(pw, config.SSID, config.allowAutojoin);
-                    break;
+                    return 0;
                 }
                 case "add-network": {
                     CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -458,7 +458,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
                     setAutoJoin(pw, config.SSID, config.allowAutojoin);
-                    break;
+                    return 0;
                 }
                 case "forget-network": {
                     String networkId = getNextArgRequired();
@@ -479,21 +479,21 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.forget(Integer.parseInt(networkId), actionListener);
                     // wait for status.
                     countDownLatch.await(500, TimeUnit.MILLISECONDS);
-                    break;
+                    return 0;
                 }
                 case "status":
                     printStatus(pw);
-                    break;
+                    return 0;
                 case "set-verbose-logging": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
                     mWifiService.enableVerboseLogging(enabled ? 1 : 0);
-                    break;
+                    return 0;
                 }
                 case "add-suggestion": {
                     WifiNetworkSuggestion suggestion = buildSuggestion(pw);
                     mWifiService.addNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME, null);
-                    break;
+                    return 0;
                 }
                 case "remove-suggestion": {
                     String ssid = getNextArgRequired();
@@ -509,12 +509,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     }
                     mWifiService.removeNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME);
-                    break;
+                    return 0;
                 }
                 case "remove-all-suggestions":
                     mWifiService.removeNetworkSuggestions(
                             Collections.emptyList(), SHELL_PACKAGE_NAME);
-                    break;
+                    return 0;
                 case "list-suggestions": {
                     List<WifiNetworkSuggestion> suggestions =
                             mWifiService.getNetworkSuggestions(SHELL_PACKAGE_NAME);
@@ -545,7 +545,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                     securityType));
                         }
                     }
-                    break;
+                    return 0;
                 }
                 case "add-request": {
                     NetworkRequest networkRequest = buildNetworkRequest(pw);
@@ -555,7 +555,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mConnectivityManager.requestNetwork(networkRequest, networkCallback);
                     String ssid = getAllArgs()[1];
                     sActiveRequests.put(ssid, Pair.create(networkRequest, networkCallback));
-                    break;
+                    return 0;
                 }
                 case "remove-request": {
                     String ssid = getNextArgRequired();
@@ -567,7 +567,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     }
                     pw.println("Removing request: " + nrAndNc.first);
                     mConnectivityManager.unregisterNetworkCallback(nrAndNc.second);
-                    break;
+                    return 0;
                 }
                 case "remove-all-requests":
                     if (sActiveRequests.isEmpty()) {
@@ -580,7 +580,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         mConnectivityManager.unregisterNetworkCallback(nrAndNc.second);
                     }
                     sActiveRequests.clear();
-                    break;
+                    return 0;
                 case "list-requests":
                     if (sActiveRequests.isEmpty()) {
                         pw.println("No active requests");
@@ -593,7 +593,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                     entry.getKey(), entry.getValue().first));
                         }
                     }
-                    break;
+                    return 0;
                 case "network-requests-set-user-approved": {
                     String packageName = getNextArgRequired();
                     boolean approved = getNextArgRequiredTrueOrFalse("yes", "no");
@@ -664,11 +664,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             }
         } catch (IllegalArgumentException e) {
             pw.println("Invalid args for " + cmd + ": " + e);
+            return -1;
         } catch (Exception e) {
             pw.println("Exception while executing WifiShellCommand: ");
             e.printStackTrace(pw);
+            return -1;
         }
-        return -1;
     }
 
     private boolean getNextArgRequiredTrueOrFalse(String trueString, String falseString)
