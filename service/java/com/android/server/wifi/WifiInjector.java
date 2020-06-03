@@ -277,8 +277,8 @@ public class WifiInjector {
                 mWifiConfigManager, mClock, mConnectivityLocalLog, mWifiConnectivityHelper,
                 subscriptionManager);
         mWifiNetworkSuggestionsManager = new WifiNetworkSuggestionsManager(mContext,
-                new Handler(mWifiCoreHandlerThread.getLooper()), this,
-                mWifiPermissionsUtil, mWifiConfigManager, mWifiConfigStore, mWifiMetrics);
+                new Handler(mWifiCoreHandlerThread.getLooper()), this, mWifiPermissionsUtil,
+                mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mWifiKeyStore);
         mNetworkSuggestionEvaluator = new NetworkSuggestionEvaluator(mWifiNetworkSuggestionsManager,
                 mWifiConfigManager, mConnectivityLocalLog);
         mScoredNetworkEvaluator = new ScoredNetworkEvaluator(context, clientModeImplLooper,

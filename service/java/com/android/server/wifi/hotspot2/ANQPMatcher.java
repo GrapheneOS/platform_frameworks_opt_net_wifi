@@ -75,10 +75,11 @@ public class ANQPMatcher {
      *
      * @param element The Roaming Consortium ANQP element
      * @param providerOIs The roaming consortium OIs of the provider
+     * @param matchAll Indicates if a match with all OIs must be done
      * @return true if a match is found
      */
     public static boolean matchRoamingConsortium(RoamingConsortiumElement element,
-            long[] providerOIs) {
+            long[] providerOIs, boolean matchAll) {
         if (element == null) {
             return false;
         }
@@ -88,10 +89,14 @@ public class ANQPMatcher {
         List<Long> rcOIs = element.getOIs();
         for (long oi : providerOIs) {
             if (rcOIs.contains(oi)) {
-                return true;
+                if (!matchAll) {
+                    return true;
+                }
+            } else if (matchAll) {
+                return false;
             }
         }
-        return false;
+        return matchAll;
     }
 
     /**
@@ -100,27 +105,19 @@ public class ANQPMatcher {
      *
      * @param element The NAI Realm ANQP element
      * @param realm The realm of the provider's credential
-     * @param eapMethodID The EAP Method ID of the provider's credential
-     * @param authParam The authentication parameter of the provider's credential
      * @return an integer indicating the match status
      */
-    public static int matchNAIRealm(NAIRealmElement element, String realm, int eapMethodID,
-            AuthParam authParam) {
+    public static boolean matchNAIRealm(NAIRealmElement element, String realm) {
         if (element == null || element.getRealmDataList().isEmpty()) {
-            return AuthMatch.INDETERMINATE;
+            return false;
         }
 
-        int bestMatch = AuthMatch.NONE;
         for (NAIRealmData realmData : element.getRealmDataList()) {
-            int match = matchNAIRealmData(realmData, realm, eapMethodID, authParam);
-            if (match > bestMatch) {
-                bestMatch = match;
-                if (bestMatch == AuthMatch.EXACT) {
-                    break;
-                }
+            if (matchNAIRealmData(realmData, realm)) {
+                return true;
             }
         }
-        return bestMatch;
+        return false;
     }
 
     /**
@@ -172,42 +169,16 @@ public class ANQPMatcher {
      *
      * @param realmData The NAI Realm data
      * @param realm The realm of the provider's credential
-     * @param eapMethodID The EAP Method ID of the provider's credential
-     * @param authParam The authentication parameter of the provider's credential
-     * @return an integer indicating the match status
+     * @return true if a match is found
      */
-    private static int matchNAIRealmData(NAIRealmData realmData, String realm, int eapMethodID,
-            AuthParam authParam) {
+    private static boolean matchNAIRealmData(NAIRealmData realmData, String realm) {
         // Check for realm domain name match.
-        int realmMatch = AuthMatch.NONE;
         for (String realmStr : realmData.getRealms()) {
             if (DomainMatcher.arg2SubdomainOfArg1(realm, realmStr)) {
-                realmMatch = AuthMatch.REALM;
-                break;
+                return true;
             }
         }
-
-        if (realmData.getEAPMethods().isEmpty()) {
-            return realmMatch;
-        }
-
-        // Check for EAP method match.
-        int eapMethodMatch = AuthMatch.NONE;
-        for (EAPMethod eapMethod : realmData.getEAPMethods()) {
-            eapMethodMatch = matchEAPMethod(eapMethod, eapMethodID, authParam);
-            if (eapMethodMatch != AuthMatch.NONE) {
-                break;
-            }
-        }
-
-        if (eapMethodMatch == AuthMatch.NONE) {
-            return AuthMatch.NONE;
-        }
-
-        if (realmMatch == AuthMatch.NONE) {
-            return eapMethodMatch;
-        }
-        return realmMatch | eapMethodMatch;
+        return false;
     }
 
     private static int getEapMethodForNAIRealmWithCarrier(String realm,

@@ -478,9 +478,10 @@ public class PasspointProviderTest {
     }
 
     /**
-     * Verify that there is no match when the provider's FQDN matches a domain name in the
-     * Domain Name ANQP element but the provider's credential doesn't match the authentication
-     * method provided in the NAI realm.
+     * Verify that Home provider is matched even when the provider's FQDN matches a domain name in
+     * the Domain Name ANQP element but the provider's credential doesn't match the authentication
+     * method provided in the NAI realm. This can happen when the infrastructure provider is not
+     * the identity provider, and authentication method matching is not required in the spec.
      *
      * @throws Exception
      */
@@ -509,7 +510,8 @@ public class PasspointProviderTest {
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(testRealm, EAPConstants.EAP_TLS, null));
 
-        assertEquals(PasspointMatch.None, mProvider.match(anqpElementMap, mRoamingConsortium));
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
     }
 
     /**
@@ -657,8 +659,8 @@ public class PasspointProviderTest {
     }
 
     /**
-     * Verify that there is no match when a roaming consortium OI matches an OI
-     * in the roaming consortium ANQP element and but NAI realm is not matched.
+     * Verify that there is Roaming provider match when a roaming consortium OI matches an OI
+     * in the roaming consortium ANQP element and regardless of NAI realm mismatch.
      *
      * @throws Exception
      */
@@ -689,7 +691,7 @@ public class PasspointProviderTest {
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(testRealm, EAPConstants.EAP_TLS, null));
 
-        assertEquals(PasspointMatch.None,
+        assertEquals(PasspointMatch.RoamingProvider,
                 mProvider.match(anqpElementMap, mRoamingConsortium));
     }
 
@@ -766,8 +768,14 @@ public class PasspointProviderTest {
     }
 
     /**
-     * Verify that there is no match when a roaming consortium OI matches an OI
+     * Verify that there is Roaming provider match when a roaming consortium OI matches an OI
      * in the roaming consortium information element, but NAI realm is not matched.
+     * This can happen in roaming federation where the infrastructure provider is not the
+     * identity provider.
+     * Page 133 in the Hotspot2.0 specification states:
+     * Per subclause 11.25.8 of [2], if the value of HomeOI matches an OI in the Roaming
+     * Consortium advertised by a hotspot operator, successful authentication with that hotspot
+     * is possible.
      *
      * @throws Exception
      */
@@ -799,7 +807,7 @@ public class PasspointProviderTest {
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(testRealm, EAPConstants.EAP_TLS, null));
 
-        assertEquals(PasspointMatch.None,
+        assertEquals(PasspointMatch.RoamingProvider,
                 mProvider.match(anqpElementMap, mRoamingConsortium));
     }
 
@@ -1353,5 +1361,168 @@ public class PasspointProviderTest {
         assertFalse(mProvider.getHasEverConnected());
         mProvider.setHasEverConnected(true);
         assertTrue(mProvider.getHasEverConnected());
+    }
+
+    /**
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
+     * with a user credential.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchOtherPartnersDomainName() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = new PasspointConfiguration();
+        HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("test1.com");
+        homeSp.setOtherHomePartners(new String [] {"test3.com"});
+        config.setHomeSp(homeSp);
+        Credential credential = new Credential();
+        credential.setUserCredential(new Credential.UserCredential());
+        config.setCredential(credential);
+        mProvider = createProvider(config);
+        verifyInstalledConfig(config, true);
+
+        // Setup Domain Name ANQP element to test2.com and test3.com
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[] {"test2.com", "test3.com"}));
+
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
+    }
+
+    /**
+     * Verify that matching Any HomeOI results in a Home Provider match
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAnyHomeOi() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = new PasspointConfiguration();
+        HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("test1.com");
+        homeSp.setMatchAnyOis(new long[] {0x1234L, 0x2345L});
+        homeSp.setRoamingConsortiumOis(null);
+        config.setHomeSp(homeSp);
+        Credential credential = new Credential();
+        credential.setUserCredential(new Credential.UserCredential());
+        config.setCredential(credential);
+        mProvider = createProvider(config);
+        verifyInstalledConfig(config, true);
+        Long[] anqpOis = new Long[] {0x1234L, 0xdeadL, 0xf0cdL};
+
+        // Setup Domain Name ANQP element to test2.com and test3.com
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[] {"test2.com", "test3.com"}));
+        // Setup RCOIs advertised by the AP
+        anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
+                createRoamingConsortiumElement(anqpOis));
+
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
+    }
+
+    /**
+     * Verify that non-matching Any HomeOI results in a None Provider match
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAnyHomeOiNegative() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = new PasspointConfiguration();
+        HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("test1.com");
+        homeSp.setMatchAnyOis(new long[] {0x1234L, 0x2345L});
+        homeSp.setRoamingConsortiumOis(null);
+        config.setHomeSp(homeSp);
+        Credential credential = new Credential();
+        credential.setUserCredential(new Credential.UserCredential());
+        config.setCredential(credential);
+        mProvider = createProvider(config);
+        verifyInstalledConfig(config, true);
+        Long[] anqpOis = new Long[] {0x12a4L, 0xceadL, 0xf0cdL};
+
+        // Setup Domain Name ANQP element to test2.com and test3.com
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[] {"test2.com", "test3.com"}));
+        // Setup RCOIs advertised by the AP
+        anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
+                createRoamingConsortiumElement(anqpOis));
+
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
+    }
+
+    /**
+     * Verify that matching All HomeOI results in a Home Provider match
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAllHomeOi() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = new PasspointConfiguration();
+        HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("test1.com");
+        homeSp.setMatchAllOis(new long[] {0x1234L, 0x2345L});
+        homeSp.setRoamingConsortiumOis(null);
+        config.setHomeSp(homeSp);
+        Credential credential = new Credential();
+        credential.setUserCredential(new Credential.UserCredential());
+        config.setCredential(credential);
+        mProvider = createProvider(config);
+        verifyInstalledConfig(config, true);
+        Long[] anqpOis = new Long[] {0x1234L, 0x2345L, 0xabcdL, 0xdeadL, 0xf0cdL};
+
+        // Setup Domain Name ANQP element to test2.com and test3.com
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[] {"test2.com", "test3.com"}));
+        // Setup RCOIs advertised by the AP
+        anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
+                createRoamingConsortiumElement(anqpOis));
+
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
+    }
+
+    /**
+     * Verify that non-matching All HomeOI results in a None Provider match
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchAllHomeOiNegative() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = new PasspointConfiguration();
+        HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("test1.com");
+        homeSp.setMatchAllOis(new long[] {0x1234L, 0x2345L});
+        homeSp.setRoamingConsortiumOis(null);
+        config.setHomeSp(homeSp);
+        Credential credential = new Credential();
+        credential.setUserCredential(new Credential.UserCredential());
+        config.setCredential(credential);
+        mProvider = createProvider(config);
+        verifyInstalledConfig(config, true);
+
+        // 0x1234 matches, but 0x2345 does not
+        Long[] anqpOis = new Long[] {0x1234L, 0x5678L, 0xdeadL, 0xf0cdL};
+
+        // Setup Domain Name ANQP element to test2.com and test3.com
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[] {"test2.com", "test3.com"}));
+        // Setup RCOIs advertised by the AP
+        anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
+                createRoamingConsortiumElement(anqpOis));
+
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium));
     }
 }
