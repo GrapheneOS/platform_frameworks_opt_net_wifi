@@ -29,7 +29,6 @@ import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ISoftApCallback;
 import android.net.wifi.ISuggestionConnectionStatusListener;
 import android.net.wifi.ITrafficStateCallback;
-import android.net.wifi.ITxPacketCountListener;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.IWifiManager;
 import android.net.wifi.ScanResult;
@@ -45,7 +44,6 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 import android.os.WorkSource;
-import android.os.connectivity.WifiActivityEnergyInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -72,18 +70,6 @@ public class BaseWifiService extends IWifiManager.Stub {
 
     @Override
     public long getSupportedFeatures() {
-        throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated use {@link #getWifiActivityEnergyInfoAsync} instead */
-    @Deprecated
-    public WifiActivityEnergyInfo reportActivityInfo() {
-        throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated use {@link #getWifiActivityEnergyInfoAsync} instead */
-    @Deprecated
-    public void requestActivityInfo(ResultReceiver result) {
         throw new UnsupportedOperationException();
     }
 
@@ -156,12 +142,6 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    /** @deprecated dead code */
-    @Deprecated
-    public void deauthenticateNetwork(long holdoff, boolean ess) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public boolean removeNetwork(int netId, String packageName) {
         throw new UnsupportedOperationException();
@@ -194,12 +174,6 @@ public class BaseWifiService extends IWifiManager.Stub {
 
     @Override
     public void setMacRandomizationSettingPasspointEnabled(String fqdn, boolean enable) {
-        throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated use {@link #setPasspointMeteredOverride} instead */
-    @Deprecated
-    public void setMeteredOverridePasspoint(String fqdn, int meteredOverride) {
         throw new UnsupportedOperationException();
     }
 
@@ -253,12 +227,6 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    /** @deprecated use {@link #is5GHzBandSupported} instead */
-    @Deprecated
-    public boolean isDualBandSupported() {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public boolean is5GHzBandSupported() {
         throw new UnsupportedOperationException();
@@ -271,12 +239,6 @@ public class BaseWifiService extends IWifiManager.Stub {
 
     @Override
     public boolean isWifiStandardSupported(int standard) {
-        throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated use {@link WifiManager#isStaApConcurrencySupported()} */
-    @Deprecated
-    public boolean needs5GHzToAnyApBandConversion() {
         throw new UnsupportedOperationException();
     }
 
@@ -426,12 +388,6 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    /** @deprecated use {@link #allowAutojoinGlobal(boolean)} instead */
-    @Deprecated
-    public void enableWifiConnectivityManager(boolean enabled) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public void disableEphemeralNetwork(String SSID, String packageName) {
         throw new UnsupportedOperationException();
@@ -572,23 +528,9 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    /** @deprecated migrate to {@link #connect(WifiConfiguration, int, IActionListener)} */
-    @Deprecated
-    public void connect(WifiConfiguration config, int netId, IBinder binder,
-            IActionListener callback, int callbackIdentifier) {
-        connect(config, netId, callback);
-    }
-
     @Override
     public void connect(WifiConfiguration config, int netId, IActionListener callback) {
         throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated migrate to {@link #save(WifiConfiguration, IActionListener)} */
-    @Deprecated
-    public void save(WifiConfiguration config, IBinder binder, IActionListener callback,
-            int callbackIdentifier) {
-        save(config, callback);
     }
 
     @Override
@@ -596,25 +538,8 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    /** @deprecated migrate to {@link #forget(int, IActionListener)} */
-    @Deprecated
-    public void forget(int netId, IBinder binder, IActionListener callback,
-            int callbackIdentifier) {
-        forget(netId, callback);
-    }
-
     @Override
     public void forget(int netId, IActionListener callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @deprecated was only used by CTS test, now fully removed. Please also remove
-     * ITxPacketCountListener.aidl when removing this method.
-     */
-    @Deprecated
-    public void getTxPacketCount(String packageName, IBinder binder,
-            ITxPacketCountListener callback, int callbackIdentifier) {
         throw new UnsupportedOperationException();
     }
 
