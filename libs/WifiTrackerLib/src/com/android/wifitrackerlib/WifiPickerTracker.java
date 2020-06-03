@@ -218,7 +218,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
-        // TODO(b/70983952): Handle Passpoint configurations here
         checkNotNull(intent, "Intent cannot be null!");
 
         final WifiConfiguration config =
