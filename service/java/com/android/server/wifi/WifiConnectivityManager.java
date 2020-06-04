@@ -35,6 +35,7 @@ import android.net.wifi.WifiScanner.ScanSettings;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.os.HandlerExecutor;
+import android.os.PowerManager;
 import android.os.Process;
 import android.os.WorkSource;
 import android.util.ArrayMap;
@@ -115,6 +116,7 @@ public class WifiConnectivityManager {
     private static final int TEMP_BSSID_BLOCK_DURATION = 10 * 1000; // 10 seconds
     // Maximum age of frequencies last seen to be included in pno scans. (30 days)
     private static final long MAX_PNO_SCAN_FREQUENCY_AGE_MS = (long) 1000 * 3600 * 24 * 30;
+    private static final int POWER_SAVE_SCAN_INTERVAL_MULTIPLIER = 2;
     // ClientModeImpl has a bunch of states. From the
     // WifiConnectivityManager's perspective it only cares
     // if it is in Connected state, Disconnected state or in
@@ -155,6 +157,8 @@ public class WifiConnectivityManager {
     private final PasspointManager mPasspointManager;
     private final WifiScoreCard mWifiScoreCard;
     private final WifiChannelUtilization mWifiChannelUtilization;
+    private final PowerManager mPowerManager;
+    private final DeviceConfigFacade mDeviceConfigFacade;
 
     private WifiScanner mScanner;
     private boolean mDbg = false;
@@ -779,7 +783,8 @@ public class WifiConnectivityManager {
             WifiScoreCard scoreCard,
             BssidBlocklistMonitor bssidBlocklistMonitor,
             WifiChannelUtilization wifiChannelUtilization,
-            PasspointManager passpointManager) {
+            PasspointManager passpointManager,
+            DeviceConfigFacade deviceConfigFacade) {
         mContext = context;
         mScoringParams = scoringParams;
         mClientModeImplHolder = clientModeImplHolder;
@@ -798,8 +803,10 @@ public class WifiConnectivityManager {
         mBssidBlocklistMonitor = bssidBlocklistMonitor;
         mWifiChannelUtilization = wifiChannelUtilization;
         mPasspointManager = passpointManager;
+        mDeviceConfigFacade = deviceConfigFacade;
 
         mAlarmManager = context.getSystemService(AlarmManager.class);
+        mPowerManager = mContext.getSystemService(PowerManager.class);
 
         // Listen to WifiConfigManager network update events
         mConfigManager.addOnNetworkUpdateListener(new OnNetworkUpdateListener());
@@ -1205,9 +1212,17 @@ public class WifiConnectivityManager {
             if (index >= mCurrentSingleScanScheduleSec.length) {
                 index = mCurrentSingleScanScheduleSec.length - 1;
             }
-
-            return mCurrentSingleScanScheduleSec[index] * 1000;
+            return getScanIntervalWithPowerSaveMultiplier(
+                    mCurrentSingleScanScheduleSec[index] * 1000);
         }
+    }
+
+    private int getScanIntervalWithPowerSaveMultiplier(int interval) {
+        if (!mDeviceConfigFacade.isWifiBatterySaverEnabled()) {
+            return interval;
+        }
+        return mPowerManager.isPowerSaveMode()
+                ? POWER_SAVE_SCAN_INTERVAL_MULTIPLIER * interval : interval;
     }
 
     // Set the single scanning schedule
@@ -1331,11 +1346,11 @@ public class WifiConnectivityManager {
             case WifiManager.DEVICE_MOBILITY_STATE_UNKNOWN:
             case WifiManager.DEVICE_MOBILITY_STATE_LOW_MVMT:
             case WifiManager.DEVICE_MOBILITY_STATE_HIGH_MVMT:
-                return mContext.getResources()
-                        .getInteger(R.integer.config_wifiMovingPnoScanIntervalMillis);
+                return getScanIntervalWithPowerSaveMultiplier(mContext.getResources()
+                        .getInteger(R.integer.config_wifiMovingPnoScanIntervalMillis));
             case WifiManager.DEVICE_MOBILITY_STATE_STATIONARY:
-                return mContext.getResources()
-                        .getInteger(R.integer.config_wifiStationaryPnoScanIntervalMillis);
+                return getScanIntervalWithPowerSaveMultiplier(mContext.getResources()
+                        .getInteger(R.integer.config_wifiStationaryPnoScanIntervalMillis));
             default:
                 return -1;
         }

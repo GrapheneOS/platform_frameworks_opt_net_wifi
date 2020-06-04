@@ -44,6 +44,9 @@ import android.net.wifi.WifiScanner.ScanSettings;
 import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
+import android.os.IPowerManager;
+import android.os.IThermalService;
+import android.os.PowerManager;
 import android.os.Process;
 import android.os.SystemClock;
 import android.os.WorkSource;
@@ -113,6 +116,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 .thenReturn(new HashSet<>());
         when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
                 .thenReturn(new ArrayList<>());
+        mPowerManagerService = mock(IPowerManager.class);
+        PowerManager powerManager =
+                new PowerManager(mContext, mPowerManagerService, mock(IThermalService.class),
+                        new Handler());
+        when(mContext.getSystemService(PowerManager.class)).thenReturn(powerManager);
+
         mWifiConnectivityManager = createConnectivityManager();
         verify(mWifiConfigManager).addOnNetworkUpdateListener(
                 mNetworkUpdateListenerCaptor.capture());
@@ -196,6 +205,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Mock private PasspointConfiguration mPasspointConfiguration;
     @Mock private WifiConfiguration mSuggestionConfig;
     @Mock private WifiNetworkSuggestion mWifiNetworkSuggestion;
+    @Mock private IPowerManager mPowerManagerService;
+    @Mock private DeviceConfigFacade mDeviceConfigFacade;
     @Mock WifiCandidates.Candidate mCandidate1;
     @Mock WifiCandidates.Candidate mCandidate2;
     private List<WifiCandidates.Candidate> mCandidateList;
@@ -236,6 +247,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final int CHANNEL_CACHE_AGE_MINS = 14400;
     private static final int MOVING_PNO_SCAN_INTERVAL_MILLIS = 20_000;
     private static final int STATIONARY_PNO_SCAN_INTERVAL_MILLIS = 60_000;
+    private static final int POWER_SAVE_SCAN_INTERVAL_MULTIPLIER = 2;
 
     Context mockContext() {
         Context context = mock(Context.class);
@@ -396,7 +408,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
                 mLocalLog, mWifiScoreCard, mBssidBlocklistMonitor, mWifiChannelUtilization,
-                mPasspointManager);
+                mPasspointManager, mDeviceConfigFacade);
     }
 
     void setWifiStateConnected() {
@@ -1136,7 +1148,24 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         checkWorkingWithDefaultSchedule();
     }
 
+    /**
+     * Verify that when power save mode in on, the periodic scan interval is increased.
+     */
+    @Test
+    public void checkPeriodicScanIntervalWhenDisconnectAndPowerSaveModeOn() throws Exception {
+        mResources.setIntArray(
+                R.array.config_wifiDisconnectedScanIntervalScheduleSec,
+                INVALID_SCHEDULE_ZERO_VALUES_SEC);
+        when(mDeviceConfigFacade.isWifiBatterySaverEnabled()).thenReturn(true);
+        when(mPowerManagerService.isPowerSaveMode()).thenReturn(true);
+        checkWorkingWithDefaultScheduleWithMultiplier(POWER_SAVE_SCAN_INTERVAL_MULTIPLIER);
+    }
+
     private void checkWorkingWithDefaultSchedule() {
+        checkWorkingWithDefaultScheduleWithMultiplier(1);
+    }
+
+    private void checkWorkingWithDefaultScheduleWithMultiplier(float multiplier) {
         long currentTimeStamp = CURRENT_SYSTEM_TIME_MS;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
 
@@ -1160,7 +1189,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         long firstIntervalMs = mAlarmManager
                 .getTriggerTimeMillis(WifiConnectivityManager.PERIODIC_SCAN_TIMER_TAG)
                 - currentTimeStamp;
-        assertEquals(DEFAULT_SINGLE_SCAN_SCHEDULE_SEC[0] * 1000, firstIntervalMs);
+        int expected = (int) (DEFAULT_SINGLE_SCAN_SCHEDULE_SEC[0] * 1000 * multiplier);
+        assertEquals(expected, firstIntervalMs);
 
         currentTimeStamp += firstIntervalMs;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
@@ -1175,7 +1205,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 - currentTimeStamp;
 
         // Verify the intervals are exponential back off
-        assertEquals(DEFAULT_SINGLE_SCAN_SCHEDULE_SEC[1] * 1000, secondIntervalMs);
+        expected = (int) (DEFAULT_SINGLE_SCAN_SCHEDULE_SEC[1] * 1000 * multiplier);
+        assertEquals(expected, secondIntervalMs);
 
         currentTimeStamp += secondIntervalMs;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
@@ -1192,8 +1223,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
             when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
         }
 
-        assertEquals(DEFAULT_SINGLE_SCAN_SCHEDULE_SEC[DEFAULT_SINGLE_SCAN_SCHEDULE_SEC.length - 1]
-                * 1000, intervalMs);
+        expected = (int) (DEFAULT_SINGLE_SCAN_SCHEDULE_SEC[DEFAULT_SINGLE_SCAN_SCHEDULE_SEC.length
+                - 1] * 1000 * multiplier);
+        assertEquals(expected, intervalMs);
     }
 
     /**
@@ -2746,6 +2778,57 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Enable untrusted connection. This should trigger a pno scan for auto-join.
         mWifiConnectivityManager.setUntrustedConnectionAllowed(true);
         verify(mWifiScanner, times(3)).startDisconnectedPnoScan(any(), any(), any(), any());
+    }
+
+    /**
+     * Verify that the increased PNO interval is used when power save is on.
+     */
+    @Test
+    public void testPnoIntervalPowerSaveEnabled() throws Exception {
+        when(mDeviceConfigFacade.isWifiBatterySaverEnabled()).thenReturn(true);
+        when(mPowerManagerService.isPowerSaveMode()).thenReturn(true);
+        verifyPnoScanWithInterval(
+                MOVING_PNO_SCAN_INTERVAL_MILLIS * POWER_SAVE_SCAN_INTERVAL_MULTIPLIER);
+    }
+
+    /**
+     * Verify that the normal PNO interval is used when power save is off.
+     */
+    @Test
+    public void testPnoIntervalPowerSaveDisabled() throws Exception {
+        when(mDeviceConfigFacade.isWifiBatterySaverEnabled()).thenReturn(true);
+        when(mPowerManagerService.isPowerSaveMode()).thenReturn(false);
+        verifyPnoScanWithInterval(MOVING_PNO_SCAN_INTERVAL_MILLIS);
+    }
+
+    /**
+     * Verify that the normal PNO interval is used when the power save feature is disabled.
+     */
+    @Test
+    public void testPnoIntervalPowerSaveEnabled_FeatureDisabled() throws Exception {
+        when(mDeviceConfigFacade.isWifiBatterySaverEnabled()).thenReturn(false);
+        when(mPowerManagerService.isPowerSaveMode()).thenReturn(true);
+        verifyPnoScanWithInterval(MOVING_PNO_SCAN_INTERVAL_MILLIS);
+    }
+
+
+    /**
+     * Verify PNO scan is started with the given scan interval.
+     */
+    private void verifyPnoScanWithInterval(int interval) throws Exception {
+        mWifiConnectivityManager.setWifiEnabled(true);
+        // starts a PNO scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+        mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+
+        ArgumentCaptor<ScanSettings> scanSettingsCaptor = ArgumentCaptor.forClass(
+                ScanSettings.class);
+        InOrder inOrder = inOrder(mWifiScanner);
+
+        inOrder.verify(mWifiScanner).startDisconnectedPnoScan(
+                scanSettingsCaptor.capture(), any(), any(), any());
+        assertEquals(interval, scanSettingsCaptor.getValue().periodInMs);
     }
 
     /**
