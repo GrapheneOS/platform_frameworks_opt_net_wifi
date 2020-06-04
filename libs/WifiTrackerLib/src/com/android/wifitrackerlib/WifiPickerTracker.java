@@ -319,13 +319,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             || connectedState == CONNECTED_STATE_CONNECTING;
                 }).findAny().orElse(null /* other */);
             }
-            if (mConnectedWifiEntry == null) {
-                mConnectedWifiEntry = mOsuWifiEntryCache.values().stream().filter(entry -> {
-                    final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
-                    return connectedState == CONNECTED_STATE_CONNECTED
-                            || connectedState == CONNECTED_STATE_CONNECTING;
-                }).findAny().orElse(null /* other */);
-            }
             if (mConnectedWifiEntry == null && mNetworkRequestEntry != null
                     && mNetworkRequestEntry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
                 mConnectedWifiEntry = mNetworkRequestEntry;
