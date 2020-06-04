@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
+import android.util.Log;
 
 import com.android.server.wifi.util.KalmanFilter;
 import com.android.server.wifi.util.Matrix;
@@ -28,6 +29,7 @@ import com.android.server.wifi.util.Matrix;
  */
 public class VelocityBasedConnectedScore extends ConnectedScore {
 
+    public static final String TAG = "WifiVelocityBasedConnectedScore";
     private final ScoringParams mScoringParams;
 
     private int mFrequency = ScanResult.BAND_5_GHZ_START_FREQ_MHZ;
@@ -80,20 +82,25 @@ public class VelocityBasedConnectedScore extends ConnectedScore {
     @Override
     public void updateUsingRssi(int rssi, long millis, double standardDeviation) {
         if (millis <= 0) return;
-        if (mLastMillis <= 0 || millis < mLastMillis || mFilter.mx == null) {
-            double initialVariance = 9.0 * standardDeviation * standardDeviation;
-            mFilter.mx = new Matrix(1, new double[]{rssi, 0.0});
-            mFilter.mP = new Matrix(2, new double[]{initialVariance, 0.0, 0.0, 0.0});
-        } else {
-            double dt = (millis - mLastMillis) * 0.001;
-            mFilter.mR.put(0, 0, standardDeviation * standardDeviation);
-            setDeltaTimeSeconds(dt);
-            mFilter.predict();
-            mFilter.update(new Matrix(1, new double[]{rssi}));
+        try {
+            if (mLastMillis <= 0 || millis < mLastMillis || mFilter.mx == null) {
+                double initialVariance = 9.0 * standardDeviation * standardDeviation;
+                mFilter.mx = new Matrix(1, new double[]{rssi, 0.0});
+                mFilter.mP = new Matrix(2, new double[]{initialVariance, 0.0, 0.0, 0.0});
+            } else {
+                double dt = (millis - mLastMillis) * 0.001;
+                mFilter.mR.put(0, 0, standardDeviation * standardDeviation);
+                setDeltaTimeSeconds(dt);
+                mFilter.predict();
+                mFilter.update(new Matrix(1, new double[]{rssi}));
+            }
+            mLastMillis = millis;
+            mFilteredRssi = mFilter.mx.get(0, 0);
+            mEstimatedRateOfRssiChange = mFilter.mx.get(1, 0);
+        } catch (RuntimeException e) {
+            Log.wtf(TAG, e);
+            reset();
         }
-        mLastMillis = millis;
-        mFilteredRssi = mFilter.mx.get(0, 0);
-        mEstimatedRateOfRssiChange = mFilter.mx.get(1, 0);
     }
 
     /**
@@ -116,7 +123,7 @@ public class VelocityBasedConnectedScore extends ConnectedScore {
     private double mEstimatedRateOfRssiChange;
 
     /**
-     * Returns the most recently computed extimate of the RSSI.
+     * Returns the most recently computed estimate of the RSSI.
      */
     public double getFilteredRssi() {
         return mFilteredRssi;
