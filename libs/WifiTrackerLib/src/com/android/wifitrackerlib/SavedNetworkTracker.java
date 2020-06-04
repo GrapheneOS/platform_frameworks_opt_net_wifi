@@ -143,7 +143,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleScanResultsAvailableAction(@Nullable Intent intent) {
-        //TODO(b/70983952): Add PasspointWifiEntry and update their scans here.
         checkNotNull(intent, "Intent cannot be null!");
         conditionallyUpdateScanResults(intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED,
                 true /* defaultValue */));
@@ -158,7 +157,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
 
         final WifiConfiguration config =
                 (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (config != null) {
+        if (config != null && !config.isPasspoint()) {
             updateStandardWifiEntryConfig(
                     config, (Integer) intent.getExtra(WifiManager.EXTRA_CHANGE_REASON));
         } else {

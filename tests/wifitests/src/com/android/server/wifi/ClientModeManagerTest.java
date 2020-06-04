@@ -28,6 +28,7 @@ import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -469,8 +470,10 @@ public class ClientModeManagerTest extends WifiBaseTest {
         reset(mContext, mListener);
         setUpSystemServiceForContext();
         mClientModeManager.stop();
+        assertTrue(mClientModeManager.isStopping());
         mLooper.dispatchAll();
         verify(mListener).onStopped();
+        assertFalse(mClientModeManager.isStopping());
 
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());

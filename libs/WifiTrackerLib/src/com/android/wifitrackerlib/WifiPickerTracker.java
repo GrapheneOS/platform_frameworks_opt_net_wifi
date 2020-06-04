@@ -218,7 +218,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
-        // TODO(b/70983952): Handle Passpoint configurations here
         checkNotNull(intent, "Intent cannot be null!");
 
         final WifiConfiguration config =
@@ -315,13 +314,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
             }
             if (mConnectedWifiEntry == null) {
                 mConnectedWifiEntry = mPasspointWifiEntryCache.values().stream().filter(entry -> {
-                    final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
-                    return connectedState == CONNECTED_STATE_CONNECTED
-                            || connectedState == CONNECTED_STATE_CONNECTING;
-                }).findAny().orElse(null /* other */);
-            }
-            if (mConnectedWifiEntry == null) {
-                mConnectedWifiEntry = mOsuWifiEntryCache.values().stream().filter(entry -> {
                     final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
                     return connectedState == CONNECTED_STATE_CONNECTED
                             || connectedState == CONNECTED_STATE_CONNECTING;
