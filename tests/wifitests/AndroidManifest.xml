@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!--
   ~ Copyright (C) 2015 The Android Open Source Project
   ~
@@ -17,27 +16,27 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.server.wifi.test">
+     package="com.android.server.wifi.test">
 
-    <application
-        android:debuggable="true"
-        android:largeHeap="true">
-        <uses-library android:name="android.test.runner" />
+    <application android:debuggable="true"
+         android:largeHeap="true">
+        <uses-library android:name="android.test.runner"/>
         <activity android:label="WifiTestDummyLabel"
-                  android:name="WifiTestDummyName">
+             android:name="WifiTestDummyName"
+             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
     </application>
 
     <instrumentation android:name="com.android.server.wifi.CustomTestRunner"
-        android:targetPackage="com.android.server.wifi.test"
-        android:label="Frameworks Wifi Tests">
+         android:targetPackage="com.android.server.wifi.test"
+         android:label="Frameworks Wifi Tests">
     </instrumentation>
 
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
 </manifest>
