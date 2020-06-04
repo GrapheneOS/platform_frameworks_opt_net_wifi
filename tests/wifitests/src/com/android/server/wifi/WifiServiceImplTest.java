@@ -2168,18 +2168,26 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartLocalOnlyHotspotAt2Ghz() {
         registerLOHSRequestFull();
-        verifyLohsBand(WifiConfiguration.AP_BAND_2GHZ);
+        verifyLohsBand(SoftApConfiguration.BAND_2GHZ);
     }
 
     /**
-     * Verify that startLocalOnlyHotspot will start access point at 5 GHz if properly configured.
+     * Verify that startLocalOnlyHotspot will start access point at 6 GHz if properly configured
+     * and if feasible, even if the 5GHz is enabled.
      */
     @Test
-    public void testStartLocalOnlyHotspotAt5Ghz() {
+    public void testStartLocalOnlyHotspotAt6Ghz() {
         when(mResources.getBoolean(
                 eq(R.bool.config_wifi_local_only_hotspot_5ghz)))
                 .thenReturn(true);
+        when(mResources.getBoolean(
+                eq(R.bool.config_wifiLocalOnlyHotspot6ghz)))
+                .thenReturn(true);
         when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(true);
+        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ)).thenReturn(true);
+        when(mResources.getBoolean(
+                eq(R.bool.config_wifiSoftap6ghzSupported)))
+                .thenReturn(true);
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)).thenReturn(true);
 
         verify(mAsyncChannel).connect(any(), mHandlerCaptor.capture(), any(Handler.class));
@@ -2189,15 +2197,44 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         mLooper.startAutoDispatch();
         registerLOHSRequestFull();
-        verifyLohsBand(WifiConfiguration.AP_BAND_5GHZ);
+        verifyLohsBand(SoftApConfiguration.BAND_6GHZ);
+    }
+
+    /**
+     * Verify that startLocalOnlyHotspot will start access point at 5 GHz if both 5GHz and 6GHz
+     * are enabled, but SoftAp is not supported for 6GHz.
+     */
+    @Test
+    public void testStartLocalOnlyHotspotAt5Ghz() {
+        when(mResources.getBoolean(
+                eq(R.bool.config_wifi_local_only_hotspot_5ghz)))
+                .thenReturn(true);
+        when(mResources.getBoolean(
+                eq(R.bool.config_wifiLocalOnlyHotspot6ghz)))
+                .thenReturn(true);
+        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_5_GHZ)).thenReturn(true);
+        when(mClientModeImpl.isWifiBandSupported(WifiScanner.WIFI_BAND_6_GHZ)).thenReturn(true);
+        when(mResources.getBoolean(
+                eq(R.bool.config_wifiSoftap6ghzSupported)))
+                .thenReturn(false);
+        when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)).thenReturn(true);
+
+        verify(mAsyncChannel).connect(any(), mHandlerCaptor.capture(), any(Handler.class));
+        final Handler handler = mHandlerCaptor.getValue();
+        handler.handleMessage(handler.obtainMessage(
+                AsyncChannel.CMD_CHANNEL_HALF_CONNECTED, AsyncChannel.STATUS_SUCCESSFUL, 0));
+
+        mLooper.startAutoDispatch();
+        registerLOHSRequestFull();
+        verifyLohsBand(SoftApConfiguration.BAND_5GHZ);
     }
 
     private void verifyLohsBand(int expectedBand) {
         verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
-        final WifiConfiguration configuration =
-                mSoftApModeConfigCaptor.getValue().getSoftApConfiguration().toWifiConfiguration();
+        final SoftApConfiguration configuration =
+                mSoftApModeConfigCaptor.getValue().getSoftApConfiguration();
         assertNotNull(configuration);
-        assertEquals(expectedBand, configuration.apBand);
+        assertEquals(expectedBand, configuration.getBand());
     }
 
     private static class FakeLohsCallback extends ILocalOnlyHotspotCallback.Stub {
