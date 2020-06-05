@@ -187,6 +187,7 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getTxLinkSpeedLowThresholdMbps());
         assertEquals(DeviceConfigFacade.DEFAULT_RX_LINK_SPEED_LOW_THRESHOLD_MBPS,
                 mDeviceConfigFacade.getRxLinkSpeedLowThresholdMbps());
+        assertEquals(false, mDeviceConfigFacade.isWifiBatterySaverEnabled());
     }
 
     /**
@@ -277,6 +278,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(9);
         when(DeviceConfig.getInt(anyString(), eq("rx_link_speed_low_threshold_mbps"),
                 anyInt())).thenReturn(10);
+        when(DeviceConfig.getBoolean(anyString(), eq("battery_saver_enabled"), anyBoolean()))
+                .thenReturn(true);
 
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
@@ -326,5 +329,6 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(50000, mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs());
         assertEquals(9, mDeviceConfigFacade.getTxLinkSpeedLowThresholdMbps());
         assertEquals(10, mDeviceConfigFacade.getRxLinkSpeedLowThresholdMbps());
+        assertEquals(true, mDeviceConfigFacade.isWifiBatterySaverEnabled());
     }
 }
