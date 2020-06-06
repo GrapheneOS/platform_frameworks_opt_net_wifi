@@ -19,6 +19,7 @@
 <!-- Manifest for wifi resources APK -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.android.wifi.resources"
+          coreApp="true"
           android:versionCode="1"
           android:versionName="R-initial">
     <application
