@@ -179,7 +179,9 @@ public class HalDeviceManager {
      */
     public void stop() {
         stopWifi();
-        mWifi = null;
+        synchronized (mLock) { // prevents race condition
+            mWifi = null;
+        }
     }
 
     /**
