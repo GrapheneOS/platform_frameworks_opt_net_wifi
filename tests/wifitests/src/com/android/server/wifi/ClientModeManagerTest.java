@@ -1269,4 +1269,36 @@ public class ClientModeManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mListener).onRoleChanged(); // callback sent.
     }
+
+    @Test
+    public void setRoleBeforeInvokingListener() throws Exception {
+        when(mWifiNative.setupInterfaceForClientInScanMode(any()))
+                .thenReturn(TEST_INTERFACE_NAME);
+        when(mWifiNative.switchClientInterfaceToConnectivityMode(any()))
+                .thenReturn(true);
+
+        doAnswer(new AnswerWithArguments() {
+            public void answer() throws Exception {
+                assertEquals(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY, mClientModeManager.getRole());
+            }
+        }).when(mListener).onStarted();
+        mClientModeManager.start();
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).setupInterfaceForClientInScanMode(
+                mInterfaceCallbackCaptor.capture());
+        mInterfaceCallbackCaptor.getValue().onUp(TEST_INTERFACE_NAME);
+        mLooper.dispatchAll();
+        verify(mListener).onStarted(); // callback sent.
+
+        // Change to connectivity role.
+        doAnswer(new AnswerWithArguments() {
+            public void answer() throws Exception {
+                assertEquals(ActiveModeManager.ROLE_CLIENT_PRIMARY, mClientModeManager.getRole());
+            }
+        }).when(mListener).onRoleChanged();
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+        verify(mListener).onRoleChanged(); // callback sent.
+    }
 }
