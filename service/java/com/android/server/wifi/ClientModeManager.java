@@ -472,12 +472,13 @@ public class ClientModeManager implements ActiveModeManager {
             if (newRole == mRole) return;
             if (mRole == ROLE_UNSPECIFIED) {
                 Log.v(TAG, "ClientModeManager started in role: " + newRole);
+                mRole = newRole;
                 mModeListener.onStarted();
             } else {
                 Log.v(TAG, "ClientModeManager role changed: " + newRole);
+                mRole = newRole;
                 mModeListener.onRoleChanged();
             }
-            mRole = newRole;
         }
 
         private class IdleState extends State {

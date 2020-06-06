@@ -17,7 +17,7 @@
 package com.android.server.wifi.util;
 
 /**
- * Utility for doing basic matix calculations
+ * Utility for doing basic matrix calculations
  */
 public class Matrix {
     public final int n;
@@ -202,7 +202,7 @@ public class Matrix {
      */
     public Matrix dot(Matrix that, Matrix result) {
         if (!(this.n == result.n && this.m == that.n && that.m == result.m)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("shape error" + this + that + result);
         }
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < that.m; j++) {
