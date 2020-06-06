@@ -1485,6 +1485,60 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * If caller tries to connect to a network that previously failed connection, the connection
+     * request should succeed.
+     *
+     * Test: Create and trigger connect to a network, then fail the connection. Now try to reconnect
+     * to the same network. Verify that connection request returns with CONNECT_NETWORK_SUCCEEDED
+     * and did trigger a new * connection.
+     */
+    @Test
+    public void connectAfterAssociationRejection() throws Exception {
+        triggerConnect();
+
+        // fail the connection.
+        mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT,
+                new AssocRejectEventInfo(mConnectedNetwork.SSID, sBSSID,
+                        ISupplicantStaIfaceCallback.StatusCode.AP_UNABLE_TO_HANDLE_NEW_STA, false));
+        mLooper.dispatchAll();
+
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, FRAMEWORK_NETWORK_ID, connectActionListener, Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        // Verify that we triggered a second connection.
+        verify(mWifiNative, times(2)).connectToNetwork(eq(WIFI_IFACE_NAME), any());
+    }
+
+    /**
+     * If caller tries to connect to a network that previously failed connection, the connection
+     * request should succeed.
+     *
+     * Test: Create and trigger connect to a network, then fail the connection. Now try to reconnect
+     * to the same network. Verify that connection request returns with CONNECT_NETWORK_SUCCEEDED
+     * and did trigger a new * connection.
+     */
+    @Test
+    public void connectAfterConnectionFailure() throws Exception {
+        triggerConnect();
+
+        // fail the connection.
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(mConnectedNetwork.SSID, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, FRAMEWORK_NETWORK_ID, connectActionListener, Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        // Verify that we triggered a second connection.
+        verify(mWifiNative, times(2)).connectToNetwork(eq(WIFI_IFACE_NAME), any());
+    }
+
+    /**
      * If caller tries to connect to a new network while still provisioning the current one,
      * the connection attempt should succeed.
      */
