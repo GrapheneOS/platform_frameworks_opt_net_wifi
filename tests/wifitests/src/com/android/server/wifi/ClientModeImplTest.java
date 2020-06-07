@@ -1592,6 +1592,59 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * If caller tries to connect to a network that previously failed connection, the connection
+     * request should succeed.
+     *
+     * Test: Create and trigger connect to a network, then fail the connection. Now try to reconnect
+     * to the same network. Verify that connection request returns with CONNECT_NETWORK_SUCCEEDED
+     * and did trigger a new * connection.
+     */
+    @Test
+    public void connectAfterAssociationRejection() throws Exception {
+        triggerConnect();
+
+        // fail the connection.
+        mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT, 0,
+                ISupplicantStaIfaceCallback.StatusCode.AP_UNABLE_TO_HANDLE_NEW_STA, sBSSID);
+        mLooper.dispatchAll();
+
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, FRAMEWORK_NETWORK_ID, mock(Binder.class), connectActionListener, 0,
+                Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        // Verify that we triggered a second connection.
+        verify(mWifiNative, times(2)).connectToNetwork(eq(WIFI_IFACE_NAME), any());
+    }
+
+    /**
+     * If caller tries to connect to a network that previously failed connection, the connection
+     * request should succeed.
+     *
+     * Test: Create and trigger connect to a network, then fail the connection. Now try to reconnect
+     * to the same network. Verify that connection request returns with CONNECT_NETWORK_SUCCEEDED
+     * and did trigger a new * connection.
+     */
+    @Test
+    public void connectAfterConnectionFailure() throws Exception {
+        triggerConnect();
+
+        // fail the connection.
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, FRAMEWORK_NETWORK_ID, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, FRAMEWORK_NETWORK_ID, mock(Binder.class), connectActionListener, 0,
+                Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+
+        // Verify that we triggered a second connection.
+        verify(mWifiNative, times(2)).connectToNetwork(eq(WIFI_IFACE_NAME), any());
+    }
+
+    /**
      * If caller tries to connect to a new network while still provisioning the current one,
      * the connection attempt should succeed.
      */
@@ -2420,18 +2473,20 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals("DisconnectedState", getCurrentState().getName());
 
         // Simulate an AUTHENTICATION_FAILURE_EVENT, which should clear the ExtraFailureReason
-        reset(mWifiConfigManager);
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
         mCmi.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT, 0, 0, null);
         mLooper.dispatchAll();
-        verify(mWifiConfigManager).clearRecentFailureReason(eq(0));
-        verify(mWifiConfigManager, never()).setRecentFailureAssociationStatus(anyInt(), anyInt());
+        verify(mWifiConfigManager, times(1)).clearRecentFailureReason(eq(0));
+        verify(mWifiConfigManager, times(1)).setRecentFailureAssociationStatus(anyInt(), anyInt());
 
         // Simulate a NETWORK_CONNECTION_EVENT which should clear the ExtraFailureReason
-        reset(mWifiConfigManager);
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, null);
         mLooper.dispatchAll();
-        verify(mWifiConfigManager).clearRecentFailureReason(eq(0));
-        verify(mWifiConfigManager, never()).setRecentFailureAssociationStatus(anyInt(), anyInt());
+        verify(mWifiConfigManager, times(2)).clearRecentFailureReason(eq(0));
+        verify(mWifiConfigManager, times(1)).setRecentFailureAssociationStatus(anyInt(), anyInt());
     }
 
     private WifiConfiguration makeLastSelectedWifiConfiguration(int lastSelectedNetworkId,
@@ -4026,6 +4081,8 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // Verifies that WifiLastResortWatchdog be notified
         // for FOURWAY_HANDSHAKE_TIMEOUT.
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
         mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 15, sBSSID);
         mLooper.dispatchAll();
 
@@ -5121,6 +5178,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative, never()).removeNetworkCachedData(anyInt());
 
         // got 4WAY_HANDSHAKE_TIMEOUT during this connection attempt
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
         mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, 0, 15, sBSSID);
         mLooper.dispatchAll();
 
