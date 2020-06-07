@@ -3878,6 +3878,7 @@ public class ClientModeImpl extends StateMachine {
                                         getTargetSsid(), bssid,
                                         WifiLastResortWatchdog.FAILURE_CODE_ASSOCIATION);
                     }
+                    mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
                     break;
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
                     stopIpClient();
@@ -5677,6 +5678,7 @@ public class ClientModeImpl extends StateMachine {
                                         WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
                     }
                     clearNetworkCachedDataIfNeeded(getTargetWifiConfiguration(), message.arg2);
+                    mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
                     break;
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                     StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
