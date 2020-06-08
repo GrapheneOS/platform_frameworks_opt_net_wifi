@@ -145,6 +145,11 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             }
             Set<ExtendedWifiNetworkSuggestion> autojoinEnableSuggestions = new HashSet<>();
             for (ExtendedWifiNetworkSuggestion ewns : matchingExtNetworkSuggestions) {
+                // Ignore insecure enterprise config.
+                if (ewns.wns.wifiConfiguration.isEnterprise()
+                        && ewns.wns.wifiConfiguration.enterpriseConfig.isInsecure()) {
+                    continue;
+                }
                 // If untrusted network is not allowed, ignore untrusted suggestion.
                 WifiConfiguration config = ewns.wns.wifiConfiguration;
                 if (!untrustedNetworkAllowed && !config.trusted) {
