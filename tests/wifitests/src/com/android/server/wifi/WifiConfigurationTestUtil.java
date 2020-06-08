@@ -86,6 +86,8 @@ public class WifiConfigurationTestUtil {
     public static final String TEST_STATIC_PROXY_EXCLUSION_LIST = "";
     public static final String TEST_PAC_PROXY_LOCATION = "http://";
     public static final String TEST_CA_CERT_ALIAS = "WifiConfigurationTestUtilCaCertAlias";
+    public static final String TEST_CA_CERT_PATH = "caPath";
+    public static final String TEST_DOM_SUBJECT_MATCH = "domSubjectMatch";
 
     private static final int MAX_SSID_LENGTH = 32;
     /**
@@ -162,6 +164,8 @@ public class WifiConfigurationTestUtil {
                 config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
                 config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
                 config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.TTLS);
+                config.enterpriseConfig.setCaPath(TEST_CA_CERT_PATH);
+                config.enterpriseConfig.setDomainSuffixMatch(TEST_DOM_SUBJECT_MATCH);
             }
 
             if ((security & SECURITY_EAP_SUITE_B) != 0) {
@@ -488,6 +492,7 @@ public class WifiConfigurationTestUtil {
         config.setPhase2Method(WifiEnterpriseConfig.Phase2.GTC);
         config.setCaCertificateAliases(new String[] {TEST_CA_CERT_ALIAS + "PEAP"});
         config.setCaCertificates(new X509Certificate[] {FakeKeys.CA_CERT0, FakeKeys.CA_CERT1});
+        config.setDomainSuffixMatch(TEST_DOM_SUBJECT_MATCH);
         return config;
     }
 
@@ -497,6 +502,7 @@ public class WifiConfigurationTestUtil {
         config.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
         config.setCaCertificateAliases(new String[] {TEST_CA_CERT_ALIAS + "TLS"});
         config.setCaCertificates(new X509Certificate[] {FakeKeys.CA_CERT0, FakeKeys.CA_CERT1});
+        config.setDomainSuffixMatch(TEST_DOM_SUBJECT_MATCH);
         return config;
     }
 
@@ -504,6 +510,7 @@ public class WifiConfigurationTestUtil {
         WifiEnterpriseConfig config = new WifiEnterpriseConfig();
         config.setEapMethod(WifiEnterpriseConfig.Eap.TLS);
         config.setPhase2Method(WifiEnterpriseConfig.Phase2.AKA);
+        config.setDomainSuffixMatch(TEST_DOM_SUBJECT_MATCH);
         return config;
     }
 
