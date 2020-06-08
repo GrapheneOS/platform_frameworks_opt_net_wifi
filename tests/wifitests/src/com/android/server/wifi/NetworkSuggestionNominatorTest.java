@@ -163,10 +163,48 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
 
-
         validateConnectableNetworks(connectableNetworks, scanSsids[0]);
-
         verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+    }
+
+    @Test
+    public void testSelectNetworkSuggestionForOneMatchWithInsecureEnterpriseSuggestion() {
+        String[] scanSsids = {"test1"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3"};
+        int[] freqs = {2470};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_EAP};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser);
+        WifiConfiguration config = suggestions[0].wns.wifiConfiguration;
+        config.enterpriseConfig.setCaPath(null);
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+        // setup config manager interactions.
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+        // Verify no network is nominated.
+        assertTrue(connectableNetworks.isEmpty());
     }
 
     /**
