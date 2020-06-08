@@ -183,8 +183,8 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<string name=\"EngineId\"></string>\n"
                     + "<string name=\"PrivateKeyId\"></string>\n"
                     + "<string name=\"AltSubjectMatch\"></string>\n"
-                    + "<string name=\"DomSuffixMatch\"></string>\n"
-                    + "<string name=\"CaPath\"></string>\n"
+                    + "<string name=\"DomSuffixMatch\">%s</string>\n"
+                    + "<string name=\"CaPath\">%s</string>\n"
                     + "<int name=\"EapMethod\" value=\"2\" />\n"
                     + "<int name=\"Phase2Method\" value=\"0\" />\n"
                     + "<string name=\"PLMN\"></string>\n"
@@ -413,7 +413,9 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                 eapNetwork.getKey().replaceAll("\"", "&quot;"),
                 eapNetwork.SSID.replaceAll("\"", "&quot;"),
                 eapNetwork.shared, eapNetwork.creatorUid,
-                eapNetwork.creatorName, eapNetwork.getRandomizedMacAddress());
+                eapNetwork.creatorName, eapNetwork.getRandomizedMacAddress(),
+                eapNetwork.enterpriseConfig.getDomainSuffixMatch(),
+                eapNetwork.enterpriseConfig.getCaPath());
         String saeNetworkXml = String.format(SINGLE_SAE_NETWORK_DATA_XML_STRING_FORMAT,
                 saeNetwork.getKey().replaceAll("\"", "&quot;"),
                 saeNetwork.SSID.replaceAll("\"", "&quot;"),
