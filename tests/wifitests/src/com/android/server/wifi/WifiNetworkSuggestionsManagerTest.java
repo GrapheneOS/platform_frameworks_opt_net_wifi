@@ -429,6 +429,25 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         verify(mLruConnectionTracker).removeNetwork(any());
     }
 
+    @Test
+    public void testAddInsecureEnterpriseNetworkSuggestion() {
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+        networkSuggestion.wifiConfiguration.enterpriseConfig.setCaPath(null);
+        List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+        networkSuggestion.wifiConfiguration.enterpriseConfig.setDomainSuffixMatch("");
+        networkSuggestionList = Arrays.asList(networkSuggestion);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+    }
+
     /**
      * Verify successful removal of all network suggestions.
      */
