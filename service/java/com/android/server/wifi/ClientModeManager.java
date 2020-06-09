@@ -285,11 +285,13 @@ public class ClientModeManager implements ActiveModeManager {
         SubscriptionManager subscriptionManager = (SubscriptionManager) mContext.getSystemService(
                 Context.TELEPHONY_SUBSCRIPTION_SERVICE);
         if (subscriptionManager == null) {
+            Log.d(TAG, "SubscriptionManager not found");
             return 0;
         }
 
         List<SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();
         if (subInfoList == null) {
+            Log.d(TAG, "Active SubscriptionInfo list not found");
             return 0;
         }
 
@@ -307,6 +309,7 @@ public class ClientModeManager implements ActiveModeManager {
 
     private int getWifiOffDeferringTimeMs(int subId) {
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            Log.d(TAG, "Invalid Subscription ID: " + subId);
             return 0;
         }
 
@@ -315,6 +318,7 @@ public class ClientModeManager implements ActiveModeManager {
         if (!imsMmTelManager.isAvailable(
                     MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VOICE,
                     ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN)) {
+            Log.d(TAG, "IMS not registered over IWLAN for subId: " + subId);
             return 0;
         }
 
@@ -324,6 +328,7 @@ public class ClientModeManager implements ActiveModeManager {
         // if LTE is available, no delay needed as IMS will be registered over LTE
         if (defaultVoiceTelephonyManager.getVoiceNetworkType()
                 == TelephonyManager.NETWORK_TYPE_LTE) {
+            Log.d(TAG, "LTE available and is default voice network type");
             return 0;
         }
 
