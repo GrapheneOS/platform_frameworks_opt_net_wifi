@@ -4382,7 +4382,8 @@ public class ClientModeImpl extends StateMachine {
                     // state is DISCONNECTED, but the agent is not disconnected, we
                     // need to handle a disconnection
                     if (mVerboseLoggingEnabled) {
-                        log("ConnectingState: Supplicant State change " + stateChangeResult);
+                        log("ConnectingOrConnectedState: Supplicant State change "
+                                + stateChangeResult);
                     }
                     if (state == SupplicantState.DISCONNECTED && mNetworkAgent != null) {
                         if (mVerboseLoggingEnabled) {
@@ -4394,8 +4395,6 @@ public class ClientModeImpl extends StateMachine {
                             transitionTo(mDisconnectedState);
                         }
                     }
-                    sendNetworkChangeBroadcast(
-                            WifiInfo.getDetailedStateOf(stateChangeResult.state));
                     if (state == SupplicantState.COMPLETED) {
                         mWifiScoreReport.noteIpCheck();
                     }
@@ -4707,6 +4706,8 @@ public class ClientModeImpl extends StateMachine {
                             mWifiInfo.setProviderFriendlyName(config.providerFriendlyName);
                         }
                     }
+                    sendNetworkChangeBroadcast(
+                            WifiInfo.getDetailedStateOf(stateChangeResult.state));
                     // Let the parent state handle the rest of the state changed.
                     handleStatus = NOT_HANDLED;
                     break;
