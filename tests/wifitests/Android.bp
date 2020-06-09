@@ -23,6 +23,8 @@ android_test {
     	// will be used when tests. Otherwise the tests would run against the installed
     	// system.
         ":wifi-service-srcs",
+        // This is required because wifi-jarjar-rules touches them
+        ":framework-services-net-module-wifi-shared-srcs",
     ],
 
     dxflags: ["--multi-dex"],
@@ -59,7 +61,7 @@ android_test {
 	// the necessary core platform APIs.
         "libprotobuf-java-lite",
         "libnanohttpd",
-        "services.net-module-wifi",
+        "services.net",
         "services.core",
         "wifi-lite-protos",
         "wifi-nano-protos",
