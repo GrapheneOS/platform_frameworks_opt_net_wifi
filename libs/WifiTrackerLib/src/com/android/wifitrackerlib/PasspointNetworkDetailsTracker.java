@@ -20,6 +20,7 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
+import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +32,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.text.TextUtils;
@@ -54,6 +56,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "PasspointNetworkDetailsTracker";
 
     private final PasspointWifiEntry mChosenEntry;
+    private OsuWifiEntry mOsuWifiEntry;
 
     PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
@@ -187,6 +190,43 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                 null /* roamingScanResults */);
     }
 
+    @WorkerThread
+    private void updateOsuWifiEntryScans(@NonNull List<ScanResult> scanResults) {
+        checkNotNull(scanResults, "Scan Result list should not be null!");
+
+        Map<OsuProvider, List<ScanResult>> osuProviderToScans =
+                mWifiManager.getMatchingOsuProviders(scanResults);
+        Map<OsuProvider, PasspointConfiguration> osuProviderToPasspointConfig =
+                mWifiManager.getMatchingPasspointConfigsForOsuProviders(
+                        osuProviderToScans.keySet());
+
+        if (mOsuWifiEntry != null) {
+            mOsuWifiEntry.updateScanResultInfo(osuProviderToScans.get(
+                    mOsuWifiEntry.getOsuProvider()));
+        } else {
+            // Create a new OsuWifiEntry to link to the chosen PasspointWifiEntry
+            for (OsuProvider provider : osuProviderToScans.keySet()) {
+                PasspointConfiguration provisionedConfig =
+                        osuProviderToPasspointConfig.get(provider);
+                if (provisionedConfig != null && TextUtils.equals(mChosenEntry.getKey(),
+                        uniqueIdToPasspointWifiEntryKey(provisionedConfig.getUniqueId()))) {
+                    mOsuWifiEntry = new OsuWifiEntry(mContext, mMainHandler, provider, mWifiManager,
+                            mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+                    mOsuWifiEntry.updateScanResultInfo(osuProviderToScans.get(provider));
+                    mOsuWifiEntry.setAlreadyProvisioned(true);
+                    mChosenEntry.setOsuWifiEntry(mOsuWifiEntry);
+                    return;
+                }
+            }
+        }
+
+        // Remove mOsuWifiEntry if it is no longer reachable
+        if (mOsuWifiEntry != null && mOsuWifiEntry.getLevel() == WIFI_LEVEL_UNREACHABLE) {
+            mChosenEntry.setOsuWifiEntry(null);
+            mOsuWifiEntry = null;
+        }
+    }
+
     /**
      * Updates the tracked entry's scan results up to the max scan age (or more, if the last scan
      * was unsuccessful). If Wifi is disabled, the tracked entry's level will be cleared.
@@ -207,7 +247,9 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
             scanAgeWindow += mScanIntervalMillis;
         }
 
-        updatePasspointWifiEntryScans(mScanResultUpdater.getScanResults(scanAgeWindow));
+        List<ScanResult> currentScans = mScanResultUpdater.getScanResults(scanAgeWindow);
+        updatePasspointWifiEntryScans(currentScans);
+        updateOsuWifiEntryScans(currentScans);
     }
 
     /**
