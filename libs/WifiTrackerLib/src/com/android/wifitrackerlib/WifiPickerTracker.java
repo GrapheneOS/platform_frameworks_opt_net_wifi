@@ -348,7 +348,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mWifiEntries.addAll(mPasspointWifiEntryCache.values().stream().filter(entry ->
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             mWifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED
+                            && !entry.isAlreadyProvisioned()).collect(toList()));
             Collections.sort(mWifiEntries);
             if (isVerboseLoggingEnabled()) {
                 Log.v(TAG, "Connected WifiEntry: " + mConnectedWifiEntry);
@@ -500,9 +501,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         Map<OsuProvider, List<ScanResult>> osuProviderToScans =
                 mWifiManager.getMatchingOsuProviders(scanResults);
-        Set<OsuProvider> alreadyProvisioned =
-                mWifiManager.getMatchingPasspointConfigsForOsuProviders(osuProviderToScans.keySet())
-                        .keySet();
+        Map<OsuProvider, PasspointConfiguration> osuProviderToPasspointConfig =
+                mWifiManager.getMatchingPasspointConfigsForOsuProviders(
+                        osuProviderToScans.keySet());
         // Update each OsuWifiEntry with new scans (or empty scans).
         for (OsuWifiEntry entry : mOsuWifiEntryCache.values()) {
             entry.updateScanResultInfo(osuProviderToScans.remove(entry.getOsuProvider()));
@@ -516,10 +517,27 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mOsuWifiEntryCache.put(osuProviderToOsuWifiEntryKey(provider), newEntry);
         }
 
-        // Remove entries that are now unreachable or already provisioned
+        // Pass a reference of each OsuWifiEntry to any matching provisioned PasspointWifiEntries
+        // for expiration handling.
+        mOsuWifiEntryCache.values().forEach(osuEntry -> {
+            PasspointConfiguration provisionedConfig =
+                    osuProviderToPasspointConfig.get(osuEntry.getOsuProvider());
+            if (provisionedConfig == null) {
+                osuEntry.setAlreadyProvisioned(false);
+                return;
+            }
+            osuEntry.setAlreadyProvisioned(true);
+            PasspointWifiEntry provisionedEntry = mPasspointWifiEntryCache.get(
+                    uniqueIdToPasspointWifiEntryKey(provisionedConfig.getUniqueId()));
+            if (provisionedEntry == null) {
+                return;
+            }
+            provisionedEntry.setOsuWifiEntry(osuEntry);
+        });
+
+        // Remove entries that are now unreachable
         mOsuWifiEntryCache.entrySet()
-                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE
-                        || alreadyProvisioned.contains(entry.getValue().getOsuProvider()));
+                .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
     }
 
     @WorkerThread
