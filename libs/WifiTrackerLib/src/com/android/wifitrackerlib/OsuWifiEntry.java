@@ -61,6 +61,7 @@ class OsuWifiEntry extends WifiEntry {
     @NonNull private final Context mContext;
     @NonNull private OsuProvider mOsuProvider;
     private String mOsuStatusString;
+    private boolean mIsAlreadyProvisioned = false;
 
     /**
      * Create n OsuWifiEntry with the associated OsuProvider
@@ -92,8 +93,13 @@ class OsuWifiEntry extends WifiEntry {
     @Override
     public String getSummary(boolean concise) {
         // TODO(b/70983952): Add verbose summary
-        return mOsuStatusString != null
-                ? mOsuStatusString : mContext.getString(R.string.tap_to_sign_up);
+        if (mOsuStatusString != null) {
+            return mOsuStatusString;
+        } else if (isAlreadyProvisioned()) {
+            return mContext.getString(R.string.tap_to_renew_subscription_and_connect);
+        } else {
+            return mContext.getString(R.string.tap_to_sign_up);
+        }
     }
 
     @Override
@@ -306,6 +312,14 @@ class OsuWifiEntry extends WifiEntry {
 
     OsuProvider getOsuProvider() {
         return mOsuProvider;
+    }
+
+    boolean isAlreadyProvisioned() {
+        return mIsAlreadyProvisioned;
+    }
+
+    void setAlreadyProvisioned(boolean isAlreadyProvisioned) {
+        mIsAlreadyProvisioned = isAlreadyProvisioned;
     }
 
     class OsuWifiEntryProvisioningCallback extends ProvisioningCallback {
