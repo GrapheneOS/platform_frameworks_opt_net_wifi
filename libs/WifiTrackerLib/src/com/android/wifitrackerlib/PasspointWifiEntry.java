@@ -62,7 +62,7 @@ import java.util.StringJoiner;
  * WifiEntry representation of a subscribed Passpoint network, uniquely identified by FQDN.
  */
 @VisibleForTesting
-public class PasspointWifiEntry extends WifiEntry {
+public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntryCallback {
     static final String KEY_PREFIX = "PasspointWifiEntry:";
 
     private final Object mLock = new Object();
@@ -81,6 +81,7 @@ public class PasspointWifiEntry extends WifiEntry {
     @Nullable private WifiConfiguration mWifiConfig;
     private @Security int mSecurity = SECURITY_EAP;
     private boolean mIsRoaming = false;
+    private OsuWifiEntry mOsuWifiEntry;
 
     protected long mSubscriptionExpirationTimeInMillis;
 
@@ -143,19 +144,33 @@ public class PasspointWifiEntry extends WifiEntry {
     }
 
     @Override
+    @ConnectedState
+    public int getConnectedState() {
+        if (isExpired()) {
+            if (super.getConnectedState() == CONNECTED_STATE_DISCONNECTED
+                    && mOsuWifiEntry != null) {
+                return mOsuWifiEntry.getConnectedState();
+            }
+        }
+        return super.getConnectedState();
+    }
+
+    @Override
     public String getTitle() {
         return mFriendlyName;
     }
 
     @Override
     public String getSummary(boolean concise) {
-        if (isExpired()) {
-            return mContext.getString(R.string.wifi_passpoint_expired);
-        }
-
         StringJoiner sj = new StringJoiner(mContext.getString(R.string.summary_separator));
 
-        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+        if (isExpired()) {
+            if (mOsuWifiEntry != null) {
+                sj.add(mOsuWifiEntry.getSummary());
+            } else {
+                sj.add(mContext.getString(R.string.wifi_passpoint_expired));
+            }
+        } else if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
             String disconnectDescription = getDisconnectedStateDescription(mContext, this);
             if (TextUtils.isEmpty(disconnectDescription)) {
                 if (concise) {
@@ -257,7 +272,6 @@ public class PasspointWifiEntry extends WifiEntry {
     @Override
     @Security
     public int getSecurity() {
-        // TODO(b/70983952): Fill this method in
         return mSecurity;
     }
 
@@ -280,7 +294,6 @@ public class PasspointWifiEntry extends WifiEntry {
 
     @Override
     public boolean isSuggestion() {
-        // TODO(b/70983952): Fill this method in when passpoint suggestions are in
         return mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion;
     }
 
@@ -296,12 +309,23 @@ public class PasspointWifiEntry extends WifiEntry {
 
     @Override
     public boolean canConnect() {
+        if (isExpired()) {
+            return mOsuWifiEntry != null && mOsuWifiEntry.canConnect();
+        }
+
         return mLevel != WIFI_LEVEL_UNREACHABLE
                 && getConnectedState() == CONNECTED_STATE_DISCONNECTED && mWifiConfig != null;
     }
 
     @Override
     public void connect(@Nullable ConnectCallback callback) {
+        if (isExpired()) {
+            if (mOsuWifiEntry != null) {
+                mOsuWifiEntry.connect(callback);
+                return;
+            }
+        }
+
         mConnectCallback = callback;
 
         if (mWifiConfig == null) {
@@ -592,5 +616,17 @@ public class PasspointWifiEntry extends WifiEntry {
     @Override
     String getNetworkSelectionDescription() {
         return Utils.getNetworkSelectionDescription(mWifiConfig);
+    }
+
+    /** Pass a reference to a matching OsuWifiEntry for expiration handling */
+    void setOsuWifiEntry(OsuWifiEntry osuWifiEntry) {
+        mOsuWifiEntry = osuWifiEntry;
+        mOsuWifiEntry.setListener(this);
+    }
+
+    /** Callback for updates to the linked OsuWifiEntry */
+    @Override
+    public void onUpdated() {
+        notifyOnUpdated();
     }
 }
