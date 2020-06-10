@@ -96,7 +96,8 @@ class OsuWifiEntry extends WifiEntry {
         if (mOsuStatusString != null) {
             return mOsuStatusString;
         } else if (isAlreadyProvisioned()) {
-            return mContext.getString(R.string.tap_to_renew_subscription_and_connect);
+            return concise ? mContext.getString(R.string.wifi_passpoint_expired)
+                    : mContext.getString(R.string.tap_to_renew_subscription_and_connect);
         } else {
             return mContext.getString(R.string.tap_to_sign_up);
         }
