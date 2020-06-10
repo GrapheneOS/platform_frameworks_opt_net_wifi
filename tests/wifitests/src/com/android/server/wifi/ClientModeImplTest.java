@@ -5204,4 +5204,29 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
         assertEquals("DisconnectedState", mCmi.getCurrentState().getName());
     }
+
+    @Test
+    public void testRoamAfterConnectDoesNotUpdateNetworkInfoInNetworkStateChangeBroadcast()
+            throws Exception {
+        connect();
+
+        // The last NETWORK_STATE_CHANGED_ACTION should be to mark the network connected.
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mContext, atLeastOnce()).sendStickyBroadcastAsUser(intentCaptor.capture(), any());
+        Intent intent = intentCaptor.getValue();
+        assertNotNull(intent);
+        assertEquals(WifiManager.NETWORK_STATE_CHANGED_ACTION, intent.getAction());
+        NetworkInfo networkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        assertTrue(networkInfo.isConnected());
+
+        reset(mContext);
+
+        // send roam event
+        mCmi.sendMessage(WifiMonitor.ASSOCIATED_BSSID_EVENT, 0, 0, sBSSID1);
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, sWifiSsid, sBSSID1, SupplicantState.COMPLETED));
+        mLooper.dispatchAll();
+
+        verify(mContext, never()).sendStickyBroadcastAsUser(any(), any());
+    }
 }
