@@ -166,7 +166,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
 
         if (isExpired()) {
             if (mOsuWifiEntry != null) {
-                sj.add(mOsuWifiEntry.getSummary());
+                sj.add(mOsuWifiEntry.getSummary(concise));
             } else {
                 sj.add(mContext.getString(R.string.wifi_passpoint_expired));
             }
