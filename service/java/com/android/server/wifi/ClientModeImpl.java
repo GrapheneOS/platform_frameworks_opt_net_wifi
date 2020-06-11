@@ -104,7 +104,6 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
-import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.MessageUtils;
@@ -436,9 +435,7 @@ public class ClientModeImpl extends StateMachine {
 
     private WifiNetworkFactory mNetworkFactory;
     private UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
-    @GuardedBy("mNetworkAgentLock")
     private WifiNetworkAgent mNetworkAgent;
-    private final Object mNetworkAgentLock = new Object();
 
     private byte[] mRssiRanges;
 
@@ -614,6 +611,9 @@ public class ClientModeImpl extends StateMachine {
 
     /* Start connection to FILS AP*/
     static final int CMD_START_FILS_CONNECTION                          = BASE + 262;
+
+    private static final int CMD_GET_CURRENT_NETWORK                    = BASE + 263;
+
     // For message logging.
     private static final Class[] sMessageClasses = {
             AsyncChannel.class, ClientModeImpl.class };
@@ -1732,17 +1732,27 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Get Network object of current wifi network
+     * Should only be used internally.
+     * External callers should use {@link #syncGetCurrentNetwork(AsyncChannel)}.
+     */
+    private Network getCurrentNetwork() {
+        if (mNetworkAgent != null) {
+            return mNetworkAgent.getNetwork();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get Network object of currently connected wifi network, or null if not connected.
      * @return Network object of current wifi network
      */
-    public Network getCurrentNetwork() {
-        synchronized (mNetworkAgentLock) {
-            if (mNetworkAgent != null) {
-                return mNetworkAgent.getNetwork();
-            } else {
-                return null;
-            }
-        }
+    public Network syncGetCurrentNetwork(AsyncChannel channel) {
+        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_CURRENT_NETWORK);
+        if (messageIsNull(resultMsg)) return null;
+        Network network = (Network) resultMsg.obj;
+        resultMsg.recycle();
+        return network;
     }
 
     /**
@@ -2676,11 +2686,9 @@ public class ClientModeImpl extends StateMachine {
         mIsAutoRoaming = false;
 
         sendNetworkChangeBroadcast(DetailedState.DISCONNECTED);
-        synchronized (mNetworkAgentLock) {
-            if (mNetworkAgent != null) {
-                mNetworkAgent.unregister();
-                mNetworkAgent = null;
-            }
+        if (mNetworkAgent != null) {
+            mNetworkAgent.unregister();
+            mNetworkAgent = null;
         }
 
         /* Clear network properties */
@@ -3412,8 +3420,9 @@ public class ClientModeImpl extends StateMachine {
                     replyToMessage(message, message.what, Long.valueOf(featureSet));
                     break;
                 }
-                case CMD_GET_LINK_LAYER_STATS: {
-                    // Not supported hence reply with error message
+                case CMD_GET_LINK_LAYER_STATS:
+                case CMD_GET_CURRENT_NETWORK: {
+                    // Not supported hence reply with null message.obj
                     replyToMessage(message, message.what, null);
                     break;
                 }
@@ -4846,16 +4855,14 @@ public class ClientModeImpl extends StateMachine {
                     .setPartialConnectivityAcceptable(config.noInternetAccessExpected)
                     .build();
             final NetworkCapabilities nc = getCapabilities(getCurrentWifiConfiguration());
-            synchronized (mNetworkAgentLock) {
-                // This should never happen.
-                if (mNetworkAgent != null) {
-                    Log.wtf(TAG, "mNetworkAgent is not null: " + mNetworkAgent);
-                    mNetworkAgent.unregister();
-                }
-                mNetworkAgent = new WifiNetworkAgent(mContext, getHandler().getLooper(),
-                        "WifiNetworkAgent", nc, mLinkProperties, 60, naConfig,
-                        mNetworkFactory.getProvider());
+            // This should never happen.
+            if (mNetworkAgent != null) {
+                Log.wtf(TAG, "mNetworkAgent is not null: " + mNetworkAgent);
+                mNetworkAgent.unregister();
             }
+            mNetworkAgent = new WifiNetworkAgent(mContext, getHandler().getLooper(),
+                    "WifiNetworkAgent", nc, mLinkProperties, 60, naConfig,
+                    mNetworkFactory.getProvider());
             mWifiScoreReport.setNetworkAgent(mNetworkAgent);
 
             // We must clear the config BSSID, as the wifi chipset may decide to roam
@@ -5415,6 +5422,10 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
+                case CMD_GET_CURRENT_NETWORK: {
+                    replyToMessage(message, message.what, getCurrentNetwork());
+                    break;
+                }
                 default: {
                     handleStatus = NOT_HANDLED;
                     break;
@@ -5629,6 +5640,10 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_IP_CONFIGURATION_LOST: {
                     mWifiMetrics.incrementIpRenewalFailure();
                     handleStatus = NOT_HANDLED;
+                    break;
+                }
+                case CMD_GET_CURRENT_NETWORK: {
+                    replyToMessage(message, message.what, getCurrentNetwork());
                     break;
                 }
                 default: {
