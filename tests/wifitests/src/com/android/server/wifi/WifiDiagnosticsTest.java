@@ -26,6 +26,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -72,6 +73,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Mock WifiMetrics mWifiMetrics;
     @Mock Clock mClock;
     @Mock BugreportManager mBugreportManager;
+    private long mBootTimeMs = 0L;
     MockResources mResources;
     WifiDiagnostics mWifiDiagnostics;
 
@@ -135,6 +137,13 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
         when(mWifiInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
         when(mDeviceConfigFacade.getBugReportMinWindowMs()).thenReturn(BUG_REPORT_MIN_WINDOW_MS);
+        // needed to for the loop in WifiDiagnostics.readLogcatStreamLinesWithTimeout().
+        doAnswer(new AnswerWithArguments() {
+            public long answer() throws Exception {
+                mBootTimeMs += WifiDiagnostics.LOGCAT_READ_TIMEOUT_MILLIS / 2;
+                return mBootTimeMs;
+            }
+        }).when(mClock).getElapsedSinceBootMillis();
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
         mWifiNative.enableVerboseLogging(0);
