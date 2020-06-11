@@ -96,6 +96,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     // NetworkRequestEntry representing a network that was connected through the NetworkRequest API
     private NetworkRequestEntry mNetworkRequestEntry;
 
+    private NetworkInfo mCurrentNetworkInfo;
     // Cache containing saved WifiConfigurations mapped by StandardWifiEntry key
     private final Map<String, WifiConfiguration> mWifiConfigCache = new HashMap<>();
     // Cache containing suggested WifiConfigurations mapped by StandardWifiEntry key
@@ -192,7 +193,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
         final Network currentNetwork = mWifiManager.getCurrentNetwork();
-        updateConnectionInfo(wifiInfo, mConnectivityManager.getNetworkInfo(currentNetwork));
+        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
+        updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
         handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
@@ -245,9 +247,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
         final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        final NetworkInfo networkInfo =
-                (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
-        updateConnectionInfo(wifiInfo, networkInfo);
+        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
         updateWifiEntries();
     }
 
@@ -256,9 +257,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     protected void handleRssiChangedAction() {
         if (mConnectedWifiEntry != null) {
             final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-            final NetworkInfo networkInfo = mConnectivityManager.getNetworkInfo(
-                    mWifiManager.getCurrentNetwork());
-            mConnectedWifiEntry.updateConnectionInfo(wifiInfo, networkInfo);
+            mConnectedWifiEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
         }
     }
 
