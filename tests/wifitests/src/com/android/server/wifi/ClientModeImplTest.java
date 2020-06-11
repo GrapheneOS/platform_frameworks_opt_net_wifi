@@ -411,6 +411,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock ThroughputPredictor mThroughputPredictor;
     @Mock ScanRequestProxy mScanRequestProxy;
     @Mock DeviceConfigFacade mDeviceConfigFacade;
+    @Mock Network mNetwork;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -478,7 +479,7 @@ public class ClientModeImplTest extends WifiBaseTest {
             return null;
         }).when(mIpClient).shutdown();
         when(mConnectivityManager.registerNetworkAgent(any(), any(), any(), any(), anyInt(), any(),
-                anyInt())).thenReturn(mock(Network.class));
+                anyInt())).thenReturn(mNetwork);
         List<SubscriptionInfo> subList = Arrays.asList(mock(SubscriptionInfo.class));
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subList);
         when(mSubscriptionManager.getActiveSubscriptionIdList())
@@ -2039,6 +2040,21 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.stopAutoDispatch();
         verify(mPasspointManager, never()).startSubscriptionProvisioning(
                 anyInt(), any(OsuProvider.class), any(IProvisioningCallback.class));
+    }
+
+    @Test
+    public void testSyncGetCurrentNetwork() throws Exception {
+        // syncGetCurrentNetwork() returns null when disconnected
+        mLooper.startAutoDispatch();
+        assertNull(mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
+        mLooper.stopAutoDispatch();
+
+        connect();
+
+        // syncGetCurrentNetwork() returns non-null Network when connected
+        mLooper.startAutoDispatch();
+        assertEquals(mNetwork, mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
+        mLooper.stopAutoDispatch();
     }
 
     /**
