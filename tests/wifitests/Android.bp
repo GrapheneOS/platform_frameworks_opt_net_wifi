@@ -17,13 +17,7 @@
 android_test {
     name: "FrameworksWifiTests",
 
-    srcs: [
-        "**/*.java",
-    	// wifi-service sources must be included here so that the latest changes
-    	// will be used when tests. Otherwise the tests would run against the installed
-    	// system.
-        ":wifi-service-srcs",
-    ],
+    srcs: [ "**/*.java" ],
 
     dxflags: ["--multi-dex"],
 
@@ -34,35 +28,14 @@ android_test {
         "hamcrest-library",
         "mockito-target-extended-minus-junit4",
         "frameworks-base-testutils",
-	"truth-prebuilt",
+        "truth-prebuilt",
 
-        // Libraries needed by wifi-service
-        "android.hardware.wifi-V1.0-java",
-        "android.hardware.wifi-V1.1-java",
-        "android.hardware.wifi-V1.2-java",
-        "android.hardware.wifi-V1.3-java",
-        "android.hardware.wifi-V1.4-java",
-        "android.hardware.wifi.hostapd-V1.0-java",
-        "android.hardware.wifi.hostapd-V1.1-java",
-        "android.hardware.wifi.hostapd-V1.2-java",
-        "android.hardware.wifi.supplicant-V1.0-java",
-        "android.hardware.wifi.supplicant-V1.1-java",
-        "android.hardware.wifi.supplicant-V1.2-java",
-        "android.hardware.wifi.supplicant-V1.3-java",
-        "android.hidl.manager-V1.2-java",
-        "androidx.annotation_annotation",
-        "bouncycastle-unbundled",
-        "ksoap2",
-	// Note: libprotobuf-java-lite uses a few core platform APIs which
-	// does show up as @hide API usage. But, this can be safely ignored
-	// since the library uses reflection to ensure that the OS does provide
-	// the necessary core platform APIs.
-        "libprotobuf-java-lite",
-        "libnanohttpd",
-        "services.net-module-wifi",
-        "services.core",
-        "wifi-lite-protos",
-        "wifi-nano-protos",
+        // Statically link wifi-service-pre-jarjar since we want to test the working copy of
+        // service-wifi, not the on-device copy.
+        // Use pre-jarjar version so that we can reference symbols before they are renamed.
+        // Then, the jarjar_rules here will perform the rename for the entire APK
+        // i.e. service-wifi + test code
+        "wifi-service-pre-jarjar",
     ],
 
     jarjar_rules: ":wifi-jarjar-rules",
@@ -80,14 +53,8 @@ android_test {
         "android.test.runner",
         "android.test.base",
         "android.test.mock",
-
-        // Libraries needed by wifi-service
-        "error_prone_annotations",
-        "jsr305",
-        "services",
         // load the resources from the resources APK.
         "ServiceWifiResources",
-        "unsupportedappusage",
     ],
 
     // These must be explicitly included because they are not normally accessible

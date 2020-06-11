@@ -25,7 +25,6 @@ import android.os.Process;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.net.IpConfigStore;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import org.junit.After;
@@ -1183,8 +1182,11 @@ public class WifiBackupRestoreTest extends WifiBaseTest {
             out.writeInt(configStoreVersion);
             for (WifiConfiguration configuration : configurations) {
                 // TODO: store configKey as a string instead of calculating its hash
-                IpConfigStore.writeConfig(out, String.valueOf(configuration.getKey().hashCode()),
-                        configuration.getIpConfiguration(), configStoreVersion);
+                IpConfigStoreTestWriter.writeConfig(
+                        out,
+                        String.valueOf(configuration.getKey().hashCode()),
+                        configuration.getIpConfiguration(),
+                        configStoreVersion);
             }
             out.flush();
             return bos.toByteArray();
