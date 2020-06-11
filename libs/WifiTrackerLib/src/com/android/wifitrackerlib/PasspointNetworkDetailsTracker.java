@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
+import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
@@ -57,6 +58,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     private final PasspointWifiEntry mChosenEntry;
     private OsuWifiEntry mOsuWifiEntry;
+    private NetworkInfo mCurrentNetworkInfo;
 
     PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
@@ -104,8 +106,9 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
         final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        final NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
-        mChosenEntry.updateConnectionInfo(wifiInfo, networkInfo);
+        final Network currentNetwork = mWifiManager.getCurrentNetwork();
+        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
+        mChosenEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
         handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(
                 mWifiManager.getCurrentNetwork()));
     }
@@ -141,16 +144,15 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleRssiChangedAction() {
-        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
-                mConnectivityManager.getActiveNetworkInfo());
+        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
     }
 
     @WorkerThread
     @Override
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(),
-                (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO));
+        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
     }
 
     @WorkerThread
