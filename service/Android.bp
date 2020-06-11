@@ -15,7 +15,7 @@
 //
 java_defaults {
     name: "wifi-service-common",
-    min_sdk_version: "29",
+    defaults: ["wifi-module-sdk-version-defaults"],
     errorprone: {
         javacflags: ["-Xep:CheckReturnValue:ERROR"],
     },
