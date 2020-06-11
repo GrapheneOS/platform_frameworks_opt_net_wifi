@@ -30,6 +30,7 @@ import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.DhcpResults;
+import android.net.DhcpResultsParcelable;
 import android.net.InterfaceConfiguration;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -40,6 +41,7 @@ import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
 import android.net.shared.ProvisioningConfiguration;
+import android.net.util.DhcpResultsCompatUtil;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.IWifiP2pManager;
@@ -581,8 +583,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             mP2pStateMachine.sendMessage(IPC_POST_DHCP_ACTION);
         }
         @Override
-        public void onNewDhcpResults(DhcpResults dhcpResults) {
-            mP2pStateMachine.sendMessage(IPC_DHCP_RESULTS, dhcpResults);
+        public void onNewDhcpResults(DhcpResultsParcelable dhcpResults) {
+            mP2pStateMachine.sendMessage(IPC_DHCP_RESULTS,
+                    DhcpResultsCompatUtil.fromStableParcelable(dhcpResults));
         }
         @Override
         public void onProvisioningSuccess(LinkProperties newLp) {

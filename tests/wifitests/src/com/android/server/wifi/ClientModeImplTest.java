@@ -39,8 +39,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.UserInfo;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.net.ConnectivityManager;
-import android.net.DhcpResults;
+import android.net.DhcpResultsParcelable;
+import android.net.InetAddresses;
 import android.net.Layer2InformationParcelable;
+import android.net.LinkAddress;
 import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.Network;
@@ -49,6 +51,7 @@ import android.net.NetworkAgentConfig;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkSpecifier;
+import android.net.StaticIpConfiguration;
 import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.wifi.ScanResult;
@@ -309,14 +312,14 @@ public class ClientModeImplTest {
         return list;
     }
 
-    private void injectDhcpSuccess(DhcpResults dhcpResults) {
+    private void injectDhcpSuccess(DhcpResultsParcelable dhcpResults) {
         mIpClientCallback.onNewDhcpResults(dhcpResults);
         mIpClientCallback.onProvisioningSuccess(new LinkProperties());
     }
 
     private void injectDhcpFailure() {
         // TODO: Change argument type to DhcpResultsParcelable after migration.
-        mIpClientCallback.onNewDhcpResults((DhcpResults) null);
+        mIpClientCallback.onNewDhcpResults((DhcpResultsParcelable) null);
         mIpClientCallback.onProvisioningFailure(new LinkProperties());
     }
 
@@ -1014,11 +1017,13 @@ public class ClientModeImplTest {
 
         assertEquals("ObtainingIpState", getCurrentState().getName());
 
-        DhcpResults dhcpResults = new DhcpResults();
-        dhcpResults.setGateway("1.2.3.4");
-        dhcpResults.setIpAddress("192.168.1.100", 0);
-        dhcpResults.addDns("8.8.8.8");
-        dhcpResults.setLeaseDuration(3600);
+        DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
+        dhcpResults.baseConfiguration = new StaticIpConfiguration();
+        dhcpResults.baseConfiguration.gateway = InetAddresses.parseNumericAddress("1.2.3.4");
+        dhcpResults.baseConfiguration.ipAddress =
+                new LinkAddress(InetAddresses.parseNumericAddress("192.168.1.100"), 0);
+        dhcpResults.baseConfiguration.dnsServers.add(InetAddresses.parseNumericAddress("8.8.8.8"));
+        dhcpResults.leaseDuration = 3600;
 
         injectDhcpSuccess(dhcpResults);
         mLooper.dispatchAll();
@@ -2071,11 +2076,13 @@ public class ClientModeImplTest {
 
         when(mWifiConfigManager.getConfiguredNetwork(FRAMEWORK_NETWORK_ID)).thenReturn(null);
 
-        DhcpResults dhcpResults = new DhcpResults();
-        dhcpResults.setGateway("1.2.3.4");
-        dhcpResults.setIpAddress("192.168.1.100", 0);
-        dhcpResults.addDns("8.8.8.8");
-        dhcpResults.setLeaseDuration(3600);
+        DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
+        dhcpResults.baseConfiguration = new StaticIpConfiguration();
+        dhcpResults.baseConfiguration.gateway = InetAddresses.parseNumericAddress("1.2.3.4");
+        dhcpResults.baseConfiguration.ipAddress =
+                new LinkAddress(InetAddresses.parseNumericAddress("192.168.1.100"), 0);
+        dhcpResults.baseConfiguration.dnsServers.add(InetAddresses.parseNumericAddress("8.8.8.8"));
+        dhcpResults.leaseDuration = 3600;
 
         injectDhcpSuccess(dhcpResults);
         mLooper.dispatchAll();
