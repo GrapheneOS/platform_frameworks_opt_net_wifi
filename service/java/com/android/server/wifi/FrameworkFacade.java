@@ -32,6 +32,7 @@ import android.net.TrafficStats;
 import android.net.Uri;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
+import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.util.Log;
@@ -173,12 +174,14 @@ public class FrameworkFacade {
 
     public boolean getConfigWiFiDisableInECBM(Context context) {
         CarrierConfigManager configManager = getCarrierConfigManager(context);
-        if (configManager != null) {
-            return configManager.getConfig().getBoolean(
-                    CarrierConfigManager.KEY_CONFIG_WIFI_DISABLE_IN_ECBM);
+        if (configManager == null) {
+            return false;
         }
-        /* Default to TRUE */
-        return true;
+        PersistableBundle bundle = configManager.getConfig();
+        if (bundle == null) {
+            return false;
+        }
+        return bundle.getBoolean(CarrierConfigManager.KEY_CONFIG_WIFI_DISABLE_IN_ECBM);
     }
 
     public long getTxPackets(String iface) {
