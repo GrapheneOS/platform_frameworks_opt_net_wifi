@@ -43,6 +43,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -108,8 +109,11 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     /** Minimum dump period with same error code */
     public static final long MIN_DUMP_TIME_WINDOW_MILLIS = 10 * 60 * 1000; // 10 mins
 
-    // Timeout for logcat
-    private static final int LOGCAT_TIMEOUT_MILLIS = 500;
+    // Timeout for logcat process termination
+    private static final long LOGCAT_PROC_TIMEOUT_MILLIS = 500;
+    // Timeout for logcat read from input/error stream each.
+    @VisibleForTesting
+    public static final long LOGCAT_READ_TIMEOUT_MILLIS = 500;
 
     private long mLastBugReportTime;
 
@@ -708,23 +712,30 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         return result;
     }
 
+    private void readLogcatStreamLinesWithTimeout(
+            BufferedReader inReader, List<String> outLinesList) throws IOException {
+        long startTimeMs = mClock.getElapsedSinceBootMillis();
+        while (mClock.getElapsedSinceBootMillis() < startTimeMs + LOGCAT_READ_TIMEOUT_MILLIS) {
+            // If there is a burst of data, continue reading without checking for timeout.
+            while (inReader.ready()) {
+                String line = inReader.readLine();
+                if (line == null) return; // end of stream.
+                outLinesList.add(line);
+            }
+            mClock.sleep(LOGCAT_READ_TIMEOUT_MILLIS / 10);
+        }
+    }
+
     private ArrayList<String> getLogcat(String logcatSections, int maxLines) {
         ArrayList<String> lines = new ArrayList<>(maxLines);
         try {
             Process process = mJavaRuntime.exec(
                     String.format("logcat -b %s -t %d", logcatSections, maxLines));
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-            reader = new BufferedReader(
-                    new InputStreamReader(process.getErrorStream()));
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-            process.waitFor(LOGCAT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            readLogcatStreamLinesWithTimeout(
+                    new BufferedReader(new InputStreamReader(process.getInputStream())), lines);
+            readLogcatStreamLinesWithTimeout(
+                    new BufferedReader(new InputStreamReader(process.getErrorStream())), lines);
+            process.waitFor(LOGCAT_PROC_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException|IOException e) {
             mLog.dump("Exception while capturing logcat: %").c(e.toString()).flush();
         }
