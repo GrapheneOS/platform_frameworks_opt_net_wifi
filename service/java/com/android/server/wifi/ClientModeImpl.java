@@ -1065,9 +1065,9 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private void stopIpClient() {
-        if (mVerboseLoggingEnabled) {
-            log("stopIpClient IpClientWithPreConnection: " + mIpClientWithPreConnection);
-        }
+        // TODO(b/157943924): Adding more log to debug the issue.
+        Log.v(TAG, "stopIpClient IpClientWithPreConnection: " + mIpClientWithPreConnection,
+                new Throwable());
         if (mIpClient != null) {
             if (mIpClientWithPreConnection) {
                 mIpClient.notifyPreconnectionComplete(false);
