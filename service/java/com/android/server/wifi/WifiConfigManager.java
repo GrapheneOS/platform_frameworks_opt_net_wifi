@@ -3358,7 +3358,7 @@ public class WifiConfigManager {
     }
 
     /** Update WifiConfigManager before connecting to a network. */
-    public boolean updateBeforeConnectNetwork(int networkId, int callingUid) {
+    private boolean updateBeforeConnectNetwork(int networkId, int callingUid) {
         if (!userEnabledNetwork(networkId)) {
             return false;
         }
@@ -3392,5 +3392,29 @@ public class WifiConfigManager {
             return NetworkUpdateResult.makeFailed();
         }
         return result;
+    }
+
+    /** Update WifiConfigManager before connecting to a new network. */
+    public NetworkUpdateResult updateBeforeConnectToNewNetwork(
+            WifiConfiguration config, int callingUid) {
+        NetworkUpdateResult result = addOrUpdateNetwork(config, callingUid);
+        if (!result.isSuccess()) {
+            return result;
+        }
+        if (!updateBeforeConnectNetwork(result.getNetworkId(), callingUid)) {
+            return NetworkUpdateResult.makeFailed();
+        }
+        return result;
+    }
+
+    /** Update WifiConfigManager before connecting to an existing network. */
+    public NetworkUpdateResult updateBeforeConnectToExistingNetwork(int netId, int callingUid) {
+        if (getConfiguredNetwork(netId) == null) {
+            return NetworkUpdateResult.makeFailed();
+        }
+        if (!updateBeforeConnectNetwork(netId, callingUid)) {
+            return NetworkUpdateResult.makeFailed();
+        }
+        return new NetworkUpdateResult(netId);
     }
 }

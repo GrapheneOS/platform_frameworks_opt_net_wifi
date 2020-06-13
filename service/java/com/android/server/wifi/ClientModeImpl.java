@@ -1069,9 +1069,9 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private void stopIpClient() {
-        if (mVerboseLoggingEnabled) {
-            log("stopIpClient IpClientWithPreConnection: " + mIpClientWithPreConnection);
-        }
+        // TODO(b/157943924): Adding more log to debug the issue.
+        Log.v(TAG, "stopIpClient IpClientWithPreConnection: " + mIpClientWithPreConnection,
+                new Throwable());
         if (mIpClient != null) {
             if (mIpClientWithPreConnection) {
                 mIpClient.notifyPreconnectionComplete(false);
@@ -6077,25 +6077,23 @@ public class ClientModeImpl extends StateMachine {
             ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
             if (config != null) {
                 NetworkUpdateResult result =
-                        mWifiConfigManager.addOrUpdateNetwork(config, callingUid);
-                if (!result.isSuccess()) {
+                        mWifiConfigManager.updateBeforeConnectToNewNetwork(config, callingUid);
+                if (result.isSuccess()) {
+                    broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
+                    sendConnectMessage(result, wrapper, callingUid);
+                } else {
                     loge("connectNetwork adding/updating config=" + config + " failed");
                     wrapper.sendFailure(WifiManager.ERROR);
-                    return;
                 }
-                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
-                final int networkId = result.getNetworkId();
-                mWifiConfigManager.updateBeforeConnectNetwork(networkId, callingUid);
-                sendConnectMessage(result, wrapper, callingUid);
             } else {
-                if (mWifiConfigManager.getConfiguredNetwork(netId) == null) {
+                NetworkUpdateResult result =
+                        mWifiConfigManager.updateBeforeConnectToExistingNetwork(netId, callingUid);
+                if (result.isSuccess()) {
+                    sendConnectMessage(result, wrapper, callingUid);
+                } else {
                     loge("connectNetwork Invalid network Id=" + netId);
                     wrapper.sendFailure(WifiManager.ERROR);
-                    return;
                 }
-                NetworkUpdateResult result = new NetworkUpdateResult(netId);
-                mWifiConfigManager.updateBeforeConnectNetwork(netId, callingUid);
-                sendConnectMessage(result, wrapper, callingUid);
             }
         });
     }

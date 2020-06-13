@@ -805,6 +805,9 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(config);
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(
                 eq(config.networkId))).thenReturn(config);
+        when(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
+                eq(config.networkId), anyInt()))
+                .thenReturn(new NetworkUpdateResult(config.networkId));
 
         verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
 
@@ -816,7 +819,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     private void validateSuccessfulConnectSequence(WifiConfiguration config) {
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(config.networkId), anyInt());
+        verify(mWifiConfigManager)
+                .updateBeforeConnectToExistingNetwork(eq(config.networkId), anyInt());
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager).getConfiguredNetworkWithoutMasking(eq(config.networkId));
         verify(mWifiNative).connectToNetwork(eq(WIFI_IFACE_NAME), eq(config));
@@ -824,7 +828,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     private void validateFailureConnectSequence(WifiConfiguration config) {
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(config.networkId), anyInt());
+        verify(mWifiConfigManager)
+                .updateBeforeConnectToExistingNetwork(eq(config.networkId), anyInt());
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager, never())
                 .getConfiguredNetworkWithoutMasking(eq(config.networkId));
@@ -864,7 +869,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(Process.myUid()))
                 .thenReturn(false);
         setupAndStartConnectSequence(config);
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(config.networkId), anyInt());
+        verify(mWifiConfigManager)
+                .updateBeforeConnectToExistingNetwork(eq(config.networkId), anyInt());
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager).getConfiguredNetworkWithoutMasking(eq(config.networkId));
         verify(mWifiNative).connectToNetwork(eq(WIFI_IFACE_NAME), eq(config));
@@ -1362,7 +1368,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.networkId = FRAMEWORK_NETWORK_ID + 1;
         setupAndStartConnectSequence(config);
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(config.networkId), anyInt());
+        verify(mWifiConfigManager)
+                .updateBeforeConnectToExistingNetwork(eq(config.networkId), anyInt());
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager, never())
                 .getConfiguredNetworkWithoutMasking(eq(config.networkId));
@@ -1373,16 +1380,16 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void enableWithInvalidNetworkId() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
-        when(mWifiConfigManager.getConfiguredNetwork(eq(0))).thenReturn(null);
-
         verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
+
+        when(mWifiConfigManager.getConfiguredNetwork(0)).thenReturn(null);
+        when(mWifiConfigManager.updateBeforeConnectToExistingNetwork(eq(0), anyInt()))
+                .thenReturn(NetworkUpdateResult.makeFailed());
 
         IActionListener connectActionListener = mock(IActionListener.class);
         mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
         mLooper.dispatchAll();
         verify(connectActionListener).onFailure(anyInt());
-
-        verify(mWifiConfigManager, never()).updateBeforeConnectNetwork(anyInt(), anyInt());
     }
 
     /**
@@ -1422,10 +1429,14 @@ public class ClientModeImplTest extends WifiBaseTest {
         config.networkId = FRAMEWORK_NETWORK_ID;
         when(mWifiConfigManager.addOrUpdateNetwork(eq(config), anyInt()))
                 .thenReturn(new NetworkUpdateResult(FRAMEWORK_NETWORK_ID));
+        when(mWifiConfigManager.updateBeforeConnectToNewNetwork(eq(config), anyInt()))
+                .thenReturn(new NetworkUpdateResult(config.networkId));
         IActionListener connectActionListener = mock(IActionListener.class);
+        int callingUid = Binder.getCallingUid();
         mCmi.connect(config, WifiConfiguration.INVALID_NETWORK_ID,
-                connectActionListener, Binder.getCallingUid());
+                connectActionListener, callingUid);
         mLooper.dispatchAll();
+        verify(mWifiConfigManager).updateBeforeConnectToNewNetwork(config, callingUid);
         verify(connectActionListener).onSuccess();
 
         // Verify that we didn't trigger a second connection.
@@ -1473,7 +1484,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         NetworkUpdateResult networkUpdateResult =
                 new NetworkUpdateResult(false /* ip */, false /* proxy */, true /* credential */);
         networkUpdateResult.setNetworkId(FRAMEWORK_NETWORK_ID);
-        when(mWifiConfigManager.addOrUpdateNetwork(eq(config), anyInt()))
+        when(mWifiConfigManager.updateBeforeConnectToNewNetwork(eq(config), anyInt()))
                 .thenReturn(networkUpdateResult);
         IActionListener connectActionListener = mock(IActionListener.class);
         mCmi.connect(config, WifiConfiguration.INVALID_NETWORK_ID, connectActionListener,
@@ -1549,12 +1560,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
@@ -1567,18 +1573,13 @@ public class ClientModeImplTest extends WifiBaseTest {
         reset(mWifiNative);
 
         // Connect to a different network
-        WifiConfiguration config = new WifiConfiguration();
-        config.networkId = TEST_NETWORK_ID;
-        when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID)).thenReturn(config);
-
-        mCmi.connect(null, TEST_NETWORK_ID, null, Binder.getCallingUid());
-        mLooper.dispatchAll();
+        startConnectSuccess(TEST_NETWORK_ID);
 
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.DISCONNECTED));
         mLooper.dispatchAll();
 
-        verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
+        verify(mWifiConnectivityManager).prepareForForcedConnection(TEST_NETWORK_ID);
 
     }
 
@@ -1592,6 +1593,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = TEST_NETWORK_ID;
         when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID)).thenReturn(config);
+        when(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
+                eq(TEST_NETWORK_ID), anyInt()))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
 
         IActionListener connectActionListener = mock(IActionListener.class);
         mCmi.connect(null, TEST_NETWORK_ID, connectActionListener,
@@ -1603,16 +1607,27 @@ public class ClientModeImplTest extends WifiBaseTest {
                 WifiMetricsProto.ConnectionEvent.NOMINATOR_MANUAL);
     }
 
+    private void startConnectSuccess() throws Exception {
+        startConnectSuccess(FRAMEWORK_NETWORK_ID);
+    }
+
+    private void startConnectSuccess(int networkId) throws Exception {
+        when(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
+                eq(networkId), anyInt()))
+                .thenReturn(new NetworkUpdateResult(networkId));
+        IActionListener connectActionListener = mock(IActionListener.class);
+        mCmi.connect(null, networkId, connectActionListener, Binder.getCallingUid());
+        mLooper.dispatchAll();
+        verify(connectActionListener).onSuccess();
+        verify(mWifiConfigManager)
+                .updateBeforeConnectToExistingNetwork(eq(networkId), anyInt());
+    }
+
     @Test
     public void testDhcpFailure() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.ASSOCIATED));
@@ -1667,12 +1682,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testWrongPasswordWithPreviouslyConnected() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         WifiConfiguration config = createTestNetwork(false);
         config.getNetworkSelectionStatus().setHasEverConnected(true);
@@ -1701,12 +1711,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testWrongPasswordWithNeverConnected() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         WifiConfiguration config = new WifiConfiguration();
         config.SSID = sSSID;
@@ -1739,12 +1744,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiMetrics.startConnectionEvent(any(), anyString(), anyInt())).thenReturn(80000);
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         WifiConfiguration config = new WifiConfiguration();
         config.SSID = sSSID;
@@ -1783,12 +1783,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testEapTlsErrorVendorSpecific() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         WifiConfiguration config = new WifiConfiguration();
         config.getNetworkSelectionStatus().setHasEverConnected(true);
@@ -1812,12 +1807,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testEapSimNoSubscribedError() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(null);
 
@@ -1835,12 +1825,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testBadNetworkEvent() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         DisconnectEventInfo disconnectEventInfo =
                 new DisconnectEventInfo(sSSID, sBSSID, 0, false);
@@ -2067,10 +2052,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
+        startConnectSuccess();
 
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
                 .thenReturn(mScanDetailCache);
@@ -2090,7 +2072,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals("L3ProvisioningState", getCurrentState().getName());
 
         // now remove the config
-        reset(connectActionListener);
+        IActionListener connectActionListener = mock(IActionListener.class);
         when(mWifiConfigManager.removeNetwork(eq(FRAMEWORK_NETWORK_ID), anyInt(), any()))
                 .thenReturn(true);
         mCmi.forget(FRAMEWORK_NETWORK_ID, connectActionListener, Binder.getCallingUid());
@@ -4080,12 +4062,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
@@ -5030,12 +5007,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiNative).removeAllNetworks(WIFI_IFACE_NAME);
 
-        IActionListener connectActionListener = mock(IActionListener.class);
-        mCmi.connect(null, 0, connectActionListener, Binder.getCallingUid());
-        mLooper.dispatchAll();
-        verify(connectActionListener).onSuccess();
-
-        verify(mWifiConfigManager).updateBeforeConnectNetwork(eq(0), anyInt());
+        startConnectSuccess();
 
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
