@@ -595,7 +595,8 @@ public class ClientModeManager implements ActiveModeManager {
              */
             @Override
             public void exit() {
-                mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+                mClientModeImplHolder.get().setOperationalMode(
+                        ClientModeImpl.DISABLED_MODE, null, null);
 
                 if (mClientInterfaceName != null) {
                     mWifiNative.teardownInterface(mClientInterfaceName);
@@ -615,7 +616,7 @@ public class ClientModeManager implements ActiveModeManager {
             public void enter() {
                 Log.d(TAG, "entering ScanOnlyModeState");
                 mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
-                        mClientInterfaceName);
+                        mClientInterfaceName, ClientModeManager.this);
                 setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
 
                 mWakeupController.start();
@@ -644,7 +645,7 @@ public class ClientModeManager implements ActiveModeManager {
             public void enter() {
                 Log.d(TAG, "entering ConnectModeState");
                 mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.CONNECT_MODE,
-                        mClientInterfaceName);
+                        mClientInterfaceName, ClientModeManager.this);
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
                         WifiManager.WIFI_STATE_ENABLING);
             }
