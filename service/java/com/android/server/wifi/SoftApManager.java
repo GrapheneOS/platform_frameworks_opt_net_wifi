@@ -341,14 +341,15 @@ public class SoftApManager implements ActiveModeManager {
             if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
                 Log.w(TAG, "failed to reset to factory MAC address; continuing with current MAC");
             }
-            return SUCCESS;
-        }
-
-        // We're configuring a random/custom MAC address. In this case, driver support is mandatory.
-        if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+        } else if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+            // We're configuring a random/custom MAC address. In this case,
+            // driver support is mandatory.
             Log.e(TAG, "failed to set explicitly requested MAC address");
             return ERROR_GENERIC;
         }
+
+        mCurrentSoftApInfo.setBssid(mac);
+
         return SUCCESS;
     }
 
@@ -754,6 +755,9 @@ public class SoftApManager implements ActiveModeManager {
 
                 mCurrentSoftApInfo.setFrequency(freq);
                 mCurrentSoftApInfo.setBandwidth(apBandwidth);
+                if (freq == 0) { // reset bssid to null when freq is 0 (disable)
+                    mCurrentSoftApInfo.setBssid(null);
+                }
                 mSoftApCallback.onInfoChanged(mCurrentSoftApInfo);
 
                 // ignore invalid freq and softap disable case for metrics
