@@ -251,7 +251,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mWifiNative).setupInterfaceForClientInScanMode(
                 mInterfaceCallbackCaptor.capture());
         verify(mClientModeImpl).setOperationalMode(
-                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME);
+                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME, mClientModeManager);
 
         // now mark the interface as up
         mInterfaceCallbackCaptor.getValue().onUp(TEST_INTERFACE_NAME);
@@ -273,7 +273,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mWifiNative).setupInterfaceForClientInScanMode(
                 mInterfaceCallbackCaptor.capture());
         verify(mClientModeImpl).setOperationalMode(
-                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME);
+                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME, mClientModeManager);
         mLooper.dispatchAll();
 
         mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
@@ -281,7 +281,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
 
         verify(mWifiNative).switchClientInterfaceToConnectivityMode(TEST_INTERFACE_NAME);
         verify(mClientModeImpl).setOperationalMode(
-                ClientModeImpl.CONNECT_MODE, TEST_INTERFACE_NAME);
+                ClientModeImpl.CONNECT_MODE, TEST_INTERFACE_NAME, mClientModeManager);
 
         // now mark the interface as up
         mInterfaceCallbackCaptor.getValue().onUp(TEST_INTERFACE_NAME);
@@ -370,9 +370,9 @@ public class ClientModeManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mClientModeImpl).setOperationalMode(
-                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME);
+                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME, mClientModeManager);
         verify(mClientModeImpl).setOperationalMode(
-                ClientModeImpl.CONNECT_MODE, TEST_INTERFACE_NAME);
+                ClientModeImpl.CONNECT_MODE, TEST_INTERFACE_NAME, mClientModeManager);
 
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(mContext, atLeastOnce()).sendStickyBroadcastAsUser(intentCaptor.capture(),
@@ -408,7 +408,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
                 mInterfaceCallbackCaptor.capture());
         verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
         verify(mClientModeImpl, times(2)).setOperationalMode(
-                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME);
+                ClientModeImpl.SCAN_ONLY_MODE, TEST_INTERFACE_NAME, mClientModeManager);
 
         verify(mContext).getSystemService(anyString());
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
