@@ -97,7 +97,7 @@ public class SoftApManager implements ActiveModeManager {
 
     private final WifiMetrics mWifiMetrics;
 
-    private boolean mIsRandomizeBssid;
+    private boolean mIsUnsetBssid;
 
     @NonNull
     private SoftApModeConfiguration mApConfig;
@@ -185,7 +185,7 @@ public class SoftApManager implements ActiveModeManager {
             // may still be null if we fail to load the default config
         }
         if (softApConfig != null) {
-            mIsRandomizeBssid = softApConfig.getBssid() == null;
+            mIsUnsetBssid = softApConfig.getBssid() == null;
             softApConfig = mWifiApConfigStore.randomizeBssidIfUnset(mContext, softApConfig);
         }
         mApConfig = new SoftApModeConfiguration(apConfig.getTargetMode(),
@@ -945,8 +945,8 @@ public class SoftApManager implements ActiveModeManager {
                     case CMD_UPDATE_CONFIG:
                         SoftApConfiguration newConfig = (SoftApConfiguration) message.obj;
                         SoftApConfiguration currentConfig = mApConfig.getSoftApConfiguration();
-                        if (mIsRandomizeBssid) {
-                            // Current bssid is ramdon because unset. Set back to null..
+                        if (mIsUnsetBssid) {
+                            // Current bssid is ramdonized because unset. Set back to null.
                             currentConfig = new SoftApConfiguration.Builder(currentConfig)
                                     .setBssid(null)
                                     .build();
