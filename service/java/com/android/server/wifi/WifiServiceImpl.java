@@ -4099,8 +4099,13 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_EVENT_TYPE,
                 wifiCredentialEventType);
-        mContext.sendBroadcastAsUser(intent, UserHandle.CURRENT,
-                android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE);
+        mContext.createContextAsUser(UserHandle.CURRENT, 0)
+                .sendBroadcastWithMultiplePermissions(
+                        intent,
+                        new String[]{
+                                android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        });
     }
 
     /**

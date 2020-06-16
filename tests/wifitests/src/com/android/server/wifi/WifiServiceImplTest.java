@@ -49,6 +49,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalAnswers.returnsSecondArg;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
@@ -263,6 +264,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     final ArgumentCaptor<Handler> mHandlerCaptor = ArgumentCaptor.forClass(Handler.class);
 
     @Mock Context mContext;
+    @Mock Context mContextAsUser;
     @Mock WifiInjector mWifiInjector;
     @Mock WifiCountryCode mWifiCountryCode;
     @Mock Clock mClock;
@@ -371,6 +373,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 new PowerManager(mContext, powerManagerService, thermalService, new Handler());
         when(mContext.getSystemServiceName(PowerManager.class)).thenReturn(Context.POWER_SERVICE);
         when(mContext.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
+        when(mContext.createContextAsUser(eq(UserHandle.CURRENT), anyInt()))
+                .thenReturn(mContextAsUser);
         WifiAsyncChannel wifiAsyncChannel = new WifiAsyncChannel("WifiServiceImplTest");
         wifiAsyncChannel.setWifiLog(mLog);
         when(mFrameworkFacade.makeWifiAsyncChannel(anyString())).thenReturn(wifiAsyncChannel);
@@ -3761,10 +3765,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).addOrUpdateNetwork(eq(mWifiConfig), anyInt());
 
         verify(mConnectHelper).connectToNetwork(eq(result), any(), anyInt());
-        verify(mContext).sendBroadcastAsUser(
+        verify(mContextAsUser).sendBroadcastWithMultiplePermissions(
                 mIntentCaptor.capture(),
-                eq(UserHandle.CURRENT),
-                eq(android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE));
+                aryEq(new String[]{
+                        android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                }));
 
         Intent intent = mIntentCaptor.getValue();
         assertThat(intent.getAction()).isEqualTo(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
@@ -3789,7 +3795,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).addOrUpdateNetwork(eq(mWifiConfig), anyInt());
 
         verify(mClientModeImpl, never()).connectNetwork(any(), any(), anyInt());
-        verify(mContext, never()).sendBroadcastAsUser(any(), any(), any());
+        verify(mContextAsUser, never()).sendBroadcastWithMultiplePermissions(any(), any());
         verify(mActionListener).onFailure(WifiManager.ERROR);
         verify(mActionListener, never()).onSuccess();
     }
@@ -3807,7 +3813,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         verify(mConnectHelper).connectToNetwork(
                 eq(new NetworkUpdateResult(TEST_NETWORK_ID)), any(), anyInt());
-        verify(mContext, never()).sendBroadcastAsUser(any(), any(), any());
+        verify(mContextAsUser, never()).sendBroadcastWithMultiplePermissions(any(), any());
     }
 
     /**
@@ -3841,10 +3847,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).updateBeforeSaveNetwork(eq(mWifiConfig), anyInt());
 
         verify(mClientModeImpl).saveNetwork(eq(result), any(), anyInt());
-        verify(mContext).sendBroadcastAsUser(
+        verify(mContextAsUser).sendBroadcastWithMultiplePermissions(
                 mIntentCaptor.capture(),
-                eq(UserHandle.CURRENT),
-                eq(android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE));
+                aryEq(new String[]{
+                        android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                }));
 
         Intent intent = mIntentCaptor.getValue();
         assertThat(intent.getAction()).isEqualTo(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
@@ -3868,7 +3876,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).updateBeforeSaveNetwork(eq(mWifiConfig), anyInt());
 
         verify(mClientModeImpl, never()).saveNetwork(any(), any(), anyInt());
-        verify(mContext, never()).sendBroadcastAsUser(any(), any(), any());
+        verify(mContext, never()).sendBroadcastWithMultiplePermissions(any(), any());
         verify(mActionListener).onFailure(WifiManager.ERROR);
         verify(mActionListener, never()).onSuccess();
     }
@@ -3909,10 +3917,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mActionListener).onSuccess();
         verify(mActionListener, never()).onFailure(WifiManager.ERROR);
 
-        verify(mContext).sendBroadcastAsUser(
+        verify(mContextAsUser).sendBroadcastWithMultiplePermissions(
                 mIntentCaptor.capture(),
-                eq(UserHandle.CURRENT),
-                eq(android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE));
+                aryEq(new String[]{
+                        android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                }));
 
         Intent intent = mIntentCaptor.getValue();
         assertThat(intent.getAction()).isEqualTo(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
@@ -3939,10 +3949,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mActionListener).onSuccess();
         verify(mActionListener, never()).onFailure(WifiManager.ERROR);
 
-        verify(mContext).sendBroadcastAsUser(
+        verify(mContextAsUser).sendBroadcastWithMultiplePermissions(
                 mIntentCaptor.capture(),
-                eq(UserHandle.CURRENT),
-                eq(android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE));
+                aryEq(new String[]{
+                        android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                }));
 
         Intent intent = mIntentCaptor.getValue();
         assertThat(intent.getAction()).isEqualTo(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
@@ -3966,7 +3978,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mActionListener, never()).onSuccess();
         verify(mActionListener).onFailure(WifiManager.ERROR);
         verify(mWifiConfigManager).removeNetwork(eq(TEST_NETWORK_ID), anyInt(), any());
-        verify(mContext, never()).sendBroadcastAsUser(any(), any(), any());
+        verify(mContextAsUser, never()).sendBroadcastWithMultiplePermissions(any(), any());
     }
 
     /**
