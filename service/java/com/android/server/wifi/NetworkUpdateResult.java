@@ -18,6 +18,8 @@ package com.android.server.wifi;
 
 import static android.net.wifi.WifiConfiguration.INVALID_NETWORK_ID;
 
+import java.util.Objects;
+
 public class NetworkUpdateResult {
     int netId;
     boolean ipChanged;
@@ -74,5 +76,22 @@ public class NetworkUpdateResult {
 
     public boolean isSuccess() {
         return netId != INVALID_NETWORK_ID;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NetworkUpdateResult that = (NetworkUpdateResult) o;
+        return netId == that.netId
+                && ipChanged == that.ipChanged
+                && proxyChanged == that.proxyChanged
+                && credentialChanged == that.credentialChanged
+                && isNewNetwork == that.isNewNetwork;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(netId, ipChanged, proxyChanged, credentialChanged, isNewNetwork);
     }
 }

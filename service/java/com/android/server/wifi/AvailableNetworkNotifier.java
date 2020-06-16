@@ -45,9 +45,8 @@ import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
-import com.android.server.wifi.proto.nano.WifiMetricsProto
-        .ConnectToNetworkNotificationAndActionCount;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
+import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.FileDescriptor;
@@ -125,7 +124,7 @@ public class AvailableNetworkNotifier {
     private final WifiMetrics mWifiMetrics;
     private final Clock mClock;
     private final WifiConfigManager mConfigManager;
-    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final ConnectHelper mConnectHelper;
     private final ConnectToNetworkNotificationBuilder mNotificationBuilder;
 
     private ScanResult mRecommendedNetwork;
@@ -160,7 +159,7 @@ public class AvailableNetworkNotifier {
             WifiMetrics wifiMetrics,
             WifiConfigManager wifiConfigManager,
             WifiConfigStore wifiConfigStore,
-            PrimaryClientModeImplHolder clientModeImplHolder,
+            ConnectHelper connectHelper,
             ConnectToNetworkNotificationBuilder connectToNetworkNotificationBuilder) {
         mTag = tag;
         mStoreDataIdentifier = storeDataIdentifier;
@@ -173,7 +172,7 @@ public class AvailableNetworkNotifier {
         mWifiMetrics = wifiMetrics;
         mClock = clock;
         mConfigManager = wifiConfigManager;
-        mClientModeImplHolder = clientModeImplHolder;
+        mConnectHelper = connectHelper;
         mNotificationBuilder = connectToNetworkNotificationBuilder;
         mScreenOn = false;
         wifiConfigStore.registerStoreData(new SsidSetStoreData(mStoreDataIdentifier,
@@ -436,9 +435,11 @@ public class AvailableNetworkNotifier {
         NetworkUpdateResult result = mConfigManager.addOrUpdateNetwork(network, Process.WIFI_UID);
         if (result.isSuccess()) {
             mWifiMetrics.setNominatorForNetwork(result.netId, mNominatorId);
-            ConnectActionListener connectActionListener = new ConnectActionListener();
-            mClientModeImplHolder.get().connect(null, result.netId,
-                    connectActionListener, Process.SYSTEM_UID);
+            ConnectActionListener listener = new ConnectActionListener();
+            mConnectHelper.connectToNetwork(
+                    new NetworkUpdateResult(result.netId), // only keep netId, discard other fields
+                    new ActionListenerWrapper(listener),
+                    Process.SYSTEM_UID);
             addNetworkToBlacklist(mRecommendedNetwork.SSID);
         }
 
