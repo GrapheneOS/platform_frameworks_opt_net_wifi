@@ -63,6 +63,7 @@ java_library {
         // compile time
         "framework-wifi-pre-jarjar",
         "framework-statsd.stubs.module_lib",
+        "framework-tethering.stubs.module_lib",
         "unsupportedappusage",
     ],
 
