@@ -35,7 +35,6 @@ import android.telephony.AccessNetworkConstants;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
 import android.telephony.ims.ImsException;
 import android.telephony.ims.ImsMmTelManager;
 import android.telephony.ims.ImsReasonInfo;
@@ -319,16 +318,6 @@ public class ClientModeManager implements ActiveModeManager {
                     MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VOICE,
                     ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN)) {
             Log.d(TAG, "IMS not registered over IWLAN for subId: " + subId);
-            return 0;
-        }
-
-        TelephonyManager defaultVoiceTelephonyManager =
-                mContext.getSystemService(TelephonyManager.class)
-                        .createForSubscriptionId(subId);
-        // if LTE is available, no delay needed as IMS will be registered over LTE
-        if (defaultVoiceTelephonyManager.getVoiceNetworkType()
-                == TelephonyManager.NETWORK_TYPE_LTE) {
-            Log.d(TAG, "LTE available and is default voice network type");
             return 0;
         }
 
