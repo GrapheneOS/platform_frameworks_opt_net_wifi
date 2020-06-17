@@ -69,7 +69,6 @@ import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
 import android.net.util.MacAddressUtils;
 import android.net.util.NetUtils;
-import android.net.wifi.IActionListener;
 import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -5771,26 +5770,6 @@ public class ClientModeImpl extends StateMachine {
         return msg;
     }
 
-    /**
-     * Notify interested parties if a wifi config has been changed.
-     *
-     * @param wifiCredentialEventType WIFI_CREDENTIAL_SAVED or WIFI_CREDENTIAL_FORGOT
-     * @param config Must have a WifiConfiguration object to succeed
-     * TODO: b/35258354 investigate if this can be removed.  Is the broadcast sent by
-     * WifiConfigManager sufficient?
-     */
-    private void broadcastWifiCredentialChanged(int wifiCredentialEventType,
-            WifiConfiguration config) {
-        if (config != null && config.preSharedKey != null) {
-            Intent intent = new Intent(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
-            intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_SSID, config.SSID);
-            intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_EVENT_TYPE,
-                    wifiCredentialEventType);
-            mContext.sendBroadcastAsUser(intent, UserHandle.CURRENT,
-                    android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE);
-        }
-    }
-
     void handleGsmAuthRequest(SimAuthRequestData requestData) {
         if (mTargetWifiConfiguration != null
                 && mTargetWifiConfiguration.networkId
@@ -6070,40 +6049,8 @@ public class ClientModeImpl extends StateMachine {
         }
     }
 
-    /**
-     * Trigger network connection and provide status via the provided callback.
-     *
-     * For a new network, a config is passed to create and connect, and netId is ignored.
-     * For an existing network, a network id is passed along with a null config.
-     */
-    public void connect(WifiConfiguration config, int netId,
-            @Nullable IActionListener callback, int callingUid) {
-        mWifiThreadRunner.post(() -> {
-            ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
-            if (config != null) {
-                NetworkUpdateResult result =
-                        mWifiConfigManager.updateBeforeConnectToNewNetwork(config, callingUid);
-                if (result.isSuccess()) {
-                    broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
-                    sendConnectMessage(result, wrapper, callingUid);
-                } else {
-                    loge("connectNetwork adding/updating config=" + config + " failed");
-                    wrapper.sendFailure(WifiManager.ERROR);
-                }
-            } else {
-                NetworkUpdateResult result =
-                        mWifiConfigManager.updateBeforeConnectToExistingNetwork(netId, callingUid);
-                if (result.isSuccess()) {
-                    sendConnectMessage(result, wrapper, callingUid);
-                } else {
-                    loge("connectNetwork Invalid network Id=" + netId);
-                    wrapper.sendFailure(WifiManager.ERROR);
-                }
-            }
-        });
-    }
-
-    private void sendConnectMessage(NetworkUpdateResult result, ActionListenerWrapper wrapper,
+    /** Trigger network connection and provide status via the provided callback. */
+    public void connectNetwork(NetworkUpdateResult result, ActionListenerWrapper wrapper,
             int callingUid) {
         Message message =
                 obtainMessage(CMD_CONNECT_NETWORK, new ConnectNetworkMessage(result, wrapper));
@@ -6111,52 +6058,13 @@ public class ClientModeImpl extends StateMachine {
         sendMessage(message);
     }
 
-    /**
-     * Trigger network save and provide status via the provided callback.
-     */
-    public void save(WifiConfiguration config, @Nullable IActionListener callback, int callingUid) {
-        mWifiThreadRunner.post(() -> {
-            ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
-            if (config == null) {
-                loge("saveNetwork with null configuration my state "
-                        + getCurrentState().getName());
-                wrapper.sendFailure(WifiManager.ERROR);
-                return;
-            }
-            NetworkUpdateResult result =
-                    mWifiConfigManager.updateBeforeSaveNetwork(config, callingUid);
-            if (result.isSuccess()) {
-                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
-                sendSaveMessage(result, wrapper, callingUid);
-            } else {
-                wrapper.sendFailure(WifiManager.ERROR);
-            }
-        });
-    }
-
-    private void sendSaveMessage(NetworkUpdateResult result, ActionListenerWrapper wrapper,
+    /** Trigger network save and provide status via the provided callback. */
+    public void saveNetwork(NetworkUpdateResult result, ActionListenerWrapper wrapper,
             int callingUid) {
         Message message =
                 obtainMessage(CMD_SAVE_NETWORK, new ConnectNetworkMessage(result, wrapper));
         message.sendingUid = callingUid;
         sendMessage(message);
-    }
-
-    /**
-     * Trigger network forget and provide status via the provided callback.
-     */
-    public void forget(int netId, @Nullable IActionListener callback, int callingUid) {
-        mWifiThreadRunner.post(() -> {
-            boolean success = mWifiConfigManager.removeNetwork(netId, callingUid, null);
-            ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
-            if (success) {
-                wrapper.sendSuccess();
-                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_FORGOT, null);
-            } else {
-                loge("Failed to remove network");
-                wrapper.sendFailure(WifiManager.ERROR);
-            }
-        });
     }
 
     /**

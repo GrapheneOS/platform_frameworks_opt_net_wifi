@@ -21,7 +21,6 @@ import android.os.Looper;
 import android.provider.Settings;
 
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 
 /**
@@ -43,13 +42,13 @@ public class OpenNetworkNotifier extends AvailableNetworkNotifier {
             WifiMetrics wifiMetrics,
             WifiConfigManager wifiConfigManager,
             WifiConfigStore wifiConfigStore,
-            PrimaryClientModeImplHolder clientModeImplHolder,
+            ConnectHelper connectHelper,
             ConnectToNetworkNotificationBuilder connectToNetworkNotificationBuilder) {
         super(TAG, STORE_DATA_IDENTIFIER, TOGGLE_SETTINGS_NAME,
                 SystemMessage.NOTE_NETWORK_AVAILABLE,
                 WifiMetricsProto.ConnectionEvent.NOMINATOR_OPEN_NETWORK_AVAILABLE,
                 context, looper, framework, clock,
-                wifiMetrics, wifiConfigManager, wifiConfigStore, clientModeImplHolder,
+                wifiMetrics, wifiConfigManager, wifiConfigStore, connectHelper,
                 connectToNetworkNotificationBuilder);
     }
 }

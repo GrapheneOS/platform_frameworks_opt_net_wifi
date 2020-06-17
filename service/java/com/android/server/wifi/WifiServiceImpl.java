@@ -113,6 +113,7 @@ import com.android.internal.util.AsyncChannel;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvider;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
+import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.RssiUtil;
@@ -190,6 +191,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final PasspointManager mPasspointManager;
     private final WifiLog mLog;
     private final WifiConnectivityManager mWifiConnectivityManager;
+    private final ConnectHelper mConnectHelper;
     /**
      * Verbose logging flag. Toggled by developer options.
      */
@@ -338,6 +340,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
         mWifiDataStall = wifiInjector.getWifiDataStall();
         mWifiNative = wifiInjector.getWifiNative();
+        mConnectHelper = wifiInjector.getConnectHelper();
     }
 
     /**
@@ -2491,7 +2494,12 @@ public class WifiServiceImpl extends BaseWifiService {
                 countDownLatch.countDown();
             }
         };
-        mClientModeImpl.connect(null, netId, connectListener, callingUid);
+        mWifiThreadRunner.post(() ->
+                mConnectHelper.connectToNetwork(
+                        new NetworkUpdateResult(netId),
+                        new ActionListenerWrapper(connectListener),
+                        callingUid)
+        );
         // now wait for response.
         try {
             countDownLatch.await(RUN_WITH_SCISSORS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
@@ -4078,6 +4086,29 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * Notify interested parties if a wifi config has been changed.
+     *
+     * @param wifiCredentialEventType WIFI_CREDENTIAL_SAVED or WIFI_CREDENTIAL_FORGOT
+     * @param config Must have a WifiConfiguration object to succeed
+     */
+    private void broadcastWifiCredentialChanged(int wifiCredentialEventType,
+            WifiConfiguration config) {
+        Intent intent = new Intent(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
+        if (config != null && config.SSID != null && mWifiPermissionsUtil.isLocationModeEnabled()) {
+            intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_SSID, config.SSID);
+        }
+        intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_EVENT_TYPE,
+                wifiCredentialEventType);
+        mContext.createContextAsUser(UserHandle.CURRENT, 0)
+                .sendBroadcastWithMultiplePermissions(
+                        intent,
+                        new String[]{
+                                android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        });
+    }
+
+    /**
      * see {@link android.net.wifi.WifiManager#connect(int, WifiManager.ActionListener)}
      */
     @Override
@@ -4087,7 +4118,23 @@ public class WifiServiceImpl extends BaseWifiService {
             throw new SecurityException(TAG + ": Permission denied");
         }
         mLog.info("connect uid=%").c(uid).flush();
-        mClientModeImpl.connect(config, netId, callback, uid);
+        mWifiThreadRunner.post(() -> {
+            ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
+            final NetworkUpdateResult result;
+            // if connecting using WifiConfiguration, save the network first
+            if (config != null) {
+                result = mWifiConfigManager.addOrUpdateNetwork(config, uid);
+                if (!result.isSuccess()) {
+                    Log.e(TAG, "connect adding/updating config=" + config + " failed");
+                    wrapper.sendFailure(WifiManager.ERROR);
+                    return;
+                }
+                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
+            } else {
+                result = new NetworkUpdateResult(netId);
+            }
+            mConnectHelper.connectToNetwork(result, wrapper, uid);
+        });
         if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
             mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
         }
@@ -4099,11 +4146,22 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     @Override
     public void save(WifiConfiguration config, @Nullable IActionListener callback) {
-        if (!isPrivileged(Binder.getCallingPid(), Binder.getCallingUid())) {
+        int uid = Binder.getCallingUid();
+        if (!isPrivileged(Binder.getCallingPid(), uid)) {
             throw new SecurityException(TAG + ": Permission denied");
         }
-        mLog.info("save uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.save(config, callback, Binder.getCallingUid());
+        mLog.info("save uid=%").c(uid).flush();
+        mWifiThreadRunner.post(() -> {
+            ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
+            NetworkUpdateResult result =
+                    mWifiConfigManager.updateBeforeSaveNetwork(config, uid);
+            if (result.isSuccess()) {
+                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
+                mClientModeImpl.saveNetwork(result, wrapper, uid);
+            } else {
+                wrapper.sendFailure(WifiManager.ERROR);
+            }
+        });
     }
 
     /**
@@ -4121,7 +4179,18 @@ public class WifiServiceImpl extends BaseWifiService {
             // the netId becomes invalid after the forget operation.
             mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_FORGET_WIFI, netId);
         }
-        mClientModeImpl.forget(netId, callback, uid);
+        mWifiThreadRunner.post(() -> {
+            WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(netId);
+            boolean success = mWifiConfigManager.removeNetwork(netId, uid, null);
+            ActionListenerWrapper wrapper = new ActionListenerWrapper(callback);
+            if (success) {
+                wrapper.sendSuccess();
+                broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_FORGOT, config);
+            } else {
+                Log.e(TAG, "Failed to remove network");
+                wrapper.sendFailure(WifiManager.ERROR);
+            }
+        });
     }
 
     /**

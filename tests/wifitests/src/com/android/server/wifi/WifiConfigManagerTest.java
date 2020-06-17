@@ -1538,7 +1538,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
 
         mWifiConfigManager
-                .updateBeforeConnectToExistingNetwork(result.getNetworkId(), TEST_CREATOR_UID);
+                .updateBeforeConnect(result.getNetworkId(), TEST_CREATOR_UID);
 
         WifiConfiguration retrievedNetwork =
                 mWifiConfigManager.getConfiguredNetwork(result.getNetworkId());
@@ -1606,8 +1606,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 result.getNetworkId() + 1, TEST_CREATOR_UID, TEST_CREATOR_NAME));
         assertFalse(mWifiConfigManager.updateNetworkSelectionStatus(
                 result.getNetworkId() + 1, NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER));
-        assertFalse(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
-                result.getNetworkId() + 1, TEST_CREATOR_UID).isSuccess());
+        assertFalse(mWifiConfigManager.updateBeforeConnect(
+                result.getNetworkId() + 1, TEST_CREATOR_UID));
     }
 
     /**
@@ -5591,8 +5591,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(TEST_CREATOR_UID))
                 .thenReturn(true);
 
-        assertTrue(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
-                config.networkId, TEST_CREATOR_UID).isSuccess());
+        assertTrue(mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_CREATOR_UID));
 
         config = mWifiConfigManager.getConfiguredNetwork(config.networkId);
         // network became enabled
@@ -5628,8 +5627,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(TEST_CREATOR_UID))
                 .thenReturn(false);
 
-        assertTrue(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
-                config.networkId, TEST_CREATOR_UID).isSuccess());
+        assertTrue(mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_CREATOR_UID));
 
         config = mWifiConfigManager.getConfiguredNetwork(config.networkId);
         // network became enabled
@@ -5663,8 +5661,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 .thenReturn(false);
         when(mUserManager.isSameProfileGroup(any(), any())).thenReturn(false);
 
-        assertFalse(mWifiConfigManager.updateBeforeConnectToExistingNetwork(
-                config.networkId, TEST_OTHER_USER_UID).isSuccess());
+        assertFalse(mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_OTHER_USER_UID));
 
         // network still disabled
         assertFalse(config.getNetworkSelectionStatus().isNetworkEnabled());
@@ -5672,41 +5669,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertNotEquals(TEST_OTHER_USER_UID, config.lastConnectUid);
         // connect choice wasn't changed
         assertEquals("bogusKey", config.getNetworkSelectionStatus().getConnectChoice());
-    }
-
-    @Test
-    public void updateBeforeConnectToNewNetworkFailsWithInvalidUid() throws Exception {
-        // initialize WifiConfigManager and start off with one network
-        verifyAddNetworkToWifiConfigManager(WifiConfigurationTestUtil.createOpenNetwork());
-
-        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-
-        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(TEST_OTHER_USER_UID))
-                .thenReturn(false);
-
-        NetworkUpdateResult result =
-                mWifiConfigManager.updateBeforeConnectToNewNetwork(config, TEST_OTHER_USER_UID);
-
-        assertFalse(result.isSuccess());
-        assertNull(mWifiConfigManager.getConfiguredNetwork(config.networkId));
-    }
-
-    @Test
-    public void updateBeforeConnectToNewNetworkSuccess() throws Exception {
-        // initialize WifiConfigManager and start off with one network
-        verifyAddNetworkToWifiConfigManager(WifiConfigurationTestUtil.createOpenNetwork());
-
-        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-
-        NetworkUpdateResult result =
-                mWifiConfigManager.updateBeforeConnectToNewNetwork(config, TEST_CREATOR_UID);
-
-        assertTrue(result.isSuccess());
-
-        config = mWifiConfigManager.getConfiguredNetwork(result.getNetworkId());
-
-        assertNotNull(config);
-        assertTrue(config.getNetworkSelectionStatus().isNetworkEnabled());
     }
 
     @Test
@@ -5743,5 +5705,17 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         assertFalse(result.isSuccess());
         assertNull(mWifiConfigManager.getConfiguredNetwork(config.networkId));
+    }
+
+    /** Verifies that save fails with a null config. */
+    @Test
+    public void updateBeforeSaveNetworkNullConfigFails() throws Exception {
+        // initialize WifiConfigManager and start off with one network
+        verifyAddNetworkToWifiConfigManager(WifiConfigurationTestUtil.createOpenNetwork());
+
+        NetworkUpdateResult result =
+                mWifiConfigManager.updateBeforeSaveNetwork(null, TEST_OTHER_USER_UID);
+
+        assertFalse(result.isSuccess());
     }
 }
