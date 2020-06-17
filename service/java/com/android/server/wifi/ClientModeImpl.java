@@ -843,7 +843,6 @@ public class ClientModeImpl extends StateMachine {
                     @Override
                     public void onReceive(Context context, Intent intent) {
                         String action = intent.getAction();
-
                         if (action.equals(Intent.ACTION_SCREEN_ON)) {
                             sendMessage(CMD_SCREEN_STATE_CHANGED, 1);
                         } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
@@ -2271,7 +2270,6 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiMetrics.setScreenState(screenOn);
 
-        mWifiConnectivityManager.handleScreenStateChanged(screenOn);
         mNetworkFactory.handleScreenStateChanged(screenOn);
 
         mWifiLockManager.handleScreenStateChanged(screenOn);
@@ -2918,7 +2916,8 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiMetrics.endConnectionEvent(level2FailureCode, connectivityFailureCode,
                 level2FailureReason);
-        mWifiConnectivityManager.handleConnectionAttemptEnded(level2FailureCode, bssid, ssid);
+        mWifiConnectivityManager.handleConnectionAttemptEnded(
+                mActiveModeManager, level2FailureCode, bssid, ssid);
         if (configuration != null) {
             mNetworkFactory.handleConnectionAttemptEnded(level2FailureCode, configuration);
             mWifiNetworkSuggestionsManager.handleConnectionAttemptEnded(
@@ -3733,7 +3732,6 @@ public class ClientModeImpl extends StateMachine {
             sendNetworkChangeBroadcast(DetailedState.DISCONNECTED);
 
             // Inform WifiConnectivityManager that Wifi is enabled
-            mWifiConnectivityManager.setWifiEnabled(true);
             mNetworkFactory.setWifiState(true);
             // Inform metrics that Wifi is Enabled (but not yet connected)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
@@ -3748,7 +3746,6 @@ public class ClientModeImpl extends StateMachine {
             mOperationalMode = DISABLED_MODE;
 
             // Inform WifiConnectivityManager that Wifi is disabled
-            mWifiConnectivityManager.setWifiEnabled(false);
             mNetworkFactory.setWifiState(false);
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
@@ -5464,6 +5461,7 @@ public class ClientModeImpl extends StateMachine {
                     WifiMetricsProto.ConnectionEvent.HLF_NONE,
                     WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
             mWifiConnectivityManager.handleConnectionStateChanged(
+                    mActiveModeManager,
                     WifiConnectivityManager.WIFI_STATE_CONNECTED);
             registerConnected();
             mLastConnectAttemptTimestamp = 0;
@@ -5671,6 +5669,7 @@ public class ClientModeImpl extends StateMachine {
         public void exit() {
             logd("ClientModeImpl: Leaving Connected state");
             mWifiConnectivityManager.handleConnectionStateChanged(
+                     mActiveModeManager,
                      WifiConnectivityManager.WIFI_STATE_TRANSITIONING);
 
             mWifiLastResortWatchdog.connectedStateTransition(false);
@@ -5697,6 +5696,7 @@ public class ClientModeImpl extends StateMachine {
             mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
 
             mWifiConnectivityManager.handleConnectionStateChanged(
+                    mActiveModeManager,
                     WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
         }
 
@@ -5737,6 +5737,7 @@ public class ClientModeImpl extends StateMachine {
         @Override
         public void exit() {
             mWifiConnectivityManager.handleConnectionStateChanged(
+                     mActiveModeManager,
                      WifiConnectivityManager.WIFI_STATE_TRANSITIONING);
         }
     }
