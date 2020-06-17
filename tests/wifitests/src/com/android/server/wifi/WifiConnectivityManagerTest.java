@@ -60,7 +60,6 @@ import android.util.LocalLog;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -127,6 +126,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                         new Handler());
         when(mContext.getSystemService(PowerManager.class)).thenReturn(powerManager);
         when(powerManager.isInteractive()).thenReturn(false);
+        when(mPrimaryClientModeManager.getImpl()).thenReturn(mClientModeImpl);
         when(mPrimaryClientModeManager.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
 
         mWifiConnectivityManager = createConnectivityManager();
@@ -407,10 +407,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     WifiConnectivityManager createConnectivityManager() {
-        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
-        holder.set(mClientModeImpl);
         WifiConnectivityManager wCm = new WifiConnectivityManager(mContext, mScoringParams,
-                holder, mWifiConfigManager, mWifiNetworkSuggestionsManager,
+                mWifiConfigManager, mWifiNetworkSuggestionsManager,
                 mWifiInfo, mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,

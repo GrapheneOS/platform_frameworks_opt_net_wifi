@@ -377,7 +377,7 @@ public class WifiInjector {
                 mContext, mClientModeImplHolder, mSettingsStore, mFrameworkFacade,
                 mWifiPermissionsUtil);
         mWifiConnectivityManager = new WifiConnectivityManager(
-                mContext, mScoringParams, mClientModeImplHolder, mWifiConfigManager,
+                mContext, mScoringParams, mWifiConfigManager,
                 mWifiNetworkSuggestionsManager, mWifiInfo, mWifiNetworkSelector,
                 mWifiConnectivityHelper, mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, wifiHandler,
