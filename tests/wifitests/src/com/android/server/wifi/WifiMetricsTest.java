@@ -1947,10 +1947,10 @@ public class WifiMetricsTest extends WifiBaseTest {
     }
 
     /**
-     * Test logging to WestWorld when a connection event finishes.
+     * Test logging to statsd when a connection event finishes.
      */
     @Test
-    public void testLogWifiConnectionResultWestworld() throws Exception {
+    public void testLogWifiConnectionResultStatsd() throws Exception {
         // static mocking for WifiStatsLog
         mSession = ExtendedMockito.mockitoSession()
                 .strictness(Strictness.LENIENT)
