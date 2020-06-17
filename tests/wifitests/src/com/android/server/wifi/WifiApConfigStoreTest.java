@@ -535,6 +535,21 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
                 MacAddress.fromString("11:22:33:44:55:66"));
     }
 
+    @Test
+    public void randomizeBssid__usesFactoryMacWhenRandomizationOffInConfig() throws Exception {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+            return;
+        }
+        mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, true);
+        SoftApConfiguration baseConfig = new SoftApConfiguration.Builder()
+                .setMacRandomizationSetting(SoftApConfiguration.RANDOMIZATION_NONE).build();
+
+        WifiApConfigStore store = createWifiApConfigStore();
+        SoftApConfiguration config = store.randomizeBssidIfUnset(mContext, baseConfig);
+
+        assertThat(config.getBssid()).isNull();
+    }
+
     /**
      * Helper method to generate random SSIDs.
      *

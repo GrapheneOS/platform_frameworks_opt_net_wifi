@@ -168,6 +168,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         mTestSoftApInfo = new SoftApInfo();
         mTestSoftApInfo.setFrequency(TEST_AP_FREQUENCY);
         mTestSoftApInfo.setBandwidth(TEST_AP_BANDWIDTH_IN_SOFTAPINFO);
+        mTestSoftApInfo.setBssid(TEST_MAC_ADDRESS);
         // Default set up all features support.
         long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD
@@ -1025,6 +1026,7 @@ public class SoftApManagerTest extends WifiBaseTest {
 
         mTestSoftApInfo.setFrequency(0);
         mTestSoftApInfo.setBandwidth(SoftApInfo.CHANNEL_WIDTH_INVALID);
+        mTestSoftApInfo.setBssid(null);
 
         order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
         order.verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(0,
@@ -2109,5 +2111,43 @@ public class SoftApManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
         // Verify just update metrics one time
         verify(mWifiMetrics, times(2)).noteSoftApClientBlocked(1);
+    }
+
+    /**
+     * If SoftApManager gets an update for the ap channal and the frequency, it will trigger
+     * callbacks to update softap information with bssid field.
+     */
+    @Test
+    public void testBssidUpdatedWhenSoftApInfoUpdate() throws Exception {
+        MacAddress testBssid = MacAddress.fromString("aa:bb:cc:11:22:33");
+        SoftApConfiguration customizedBssidConfig = new SoftApConfiguration
+                .Builder(mDefaultApConfig).setBssid(testBssid).build();
+        when(mWifiNative.setMacAddress(eq(TEST_INTERFACE_NAME), eq(testBssid))).thenReturn(true);
+        mTestSoftApInfo.setBssid(testBssid);
+        InOrder order = inOrder(mCallback, mWifiMetrics);
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
+                customizedBssidConfig, mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+
+        mSoftApListenerCaptor.getValue().onSoftApChannelSwitched(
+                TEST_AP_FREQUENCY, TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK);
+        mLooper.dispatchAll();
+
+        order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
+        order.verify(mWifiMetrics).addSoftApChannelSwitchedEvent(TEST_AP_FREQUENCY,
+                TEST_AP_BANDWIDTH_IN_SOFTAPINFO, apConfig.getTargetMode());
+
+        // Verify stop will set bssid back to null
+        mSoftApManager.stop();
+        mLooper.dispatchAll();
+
+        mTestSoftApInfo.setFrequency(0);
+        mTestSoftApInfo.setBandwidth(SoftApInfo.CHANNEL_WIDTH_INVALID);
+        mTestSoftApInfo.setBssid(null);
+
+        order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
+        order.verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(0,
+                SoftApInfo.CHANNEL_WIDTH_INVALID, apConfig.getTargetMode());
     }
 }

@@ -412,6 +412,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock ScanRequestProxy mScanRequestProxy;
     @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Mock Network mNetwork;
+    @Mock ClientModeManager mClientModeManager;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -627,7 +628,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals("DefaultState", getCurrentState().getName());
         assertEquals(ClientModeImpl.DISABLED_MODE, mCmi.getOperationalModeForTest());
 
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
         assertEquals(ClientModeImpl.DISABLED_MODE, mCmi.getOperationalModeForTest());
         assertEquals("DefaultState", getCurrentState().getName());
@@ -641,7 +642,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(ClientModeImpl.DISABLED_MODE, mCmi.getOperationalModeForTest());
 
         // But if someone tells us to enter connect mode, we start up supplicant
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
         mLooper.dispatchAll();
         assertEquals("DisconnectedState", getCurrentState().getName());
     }
@@ -666,7 +667,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // now disable wifi and verify the reported wifi state
         mCmi.setWifiStateForApiCalls(WifiManager.WIFI_STATE_DISABLED);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
         assertEquals(ClientModeImpl.DISABLED_MODE, mCmi.getOperationalModeForTest());
         assertEquals("DefaultState", getCurrentState().getName());
@@ -765,7 +766,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     private void startSupplicantAndDispatchMessages() throws Exception {
         mCmi.setWifiStateForApiCalls(WifiManager.WIFI_STATE_ENABLED);
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
 
         mLooper.dispatchAll();
 
@@ -1317,7 +1318,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void verifyWifiStateTrackerUpdatedWhenDisabled() throws Exception {
         connect();
 
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
         verify(mWifiStateTracker).updateState(eq(WifiStateTracker.DISCONNECTED));
     }
@@ -2224,7 +2225,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Set CMI to DISABLED_MODE, verify state and wifi disabled in ConnectivityManager, and
         // WifiInfo is reset() and state set to DISCONNECTED
         mCmi.setWifiStateForApiCalls(WifiManager.WIFI_STATE_DISABLED);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
 
         assertEquals(ClientModeImpl.DISABLED_MODE, mCmi.getOperationalModeForTest());
@@ -3278,7 +3279,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // disabling while disconnected should note wifi disabled
         mCmi.setWifiStateForApiCalls(WifiManager.WIFI_STATE_DISABLED);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
         verify(mWifiScoreCard, times(2)).resetConnectionState();
         verify(mWifiHealthMonitor).setWifiEnabled(false);
@@ -3297,7 +3298,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // disabling while connected should note wifi disabled
         mCmi.setWifiStateForApiCalls(WifiManager.WIFI_STATE_DISABLED);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
 
         verify(mWifiScoreCard).noteWifiDisabled(any());
@@ -3310,24 +3311,24 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void quickTogglesDoNotCrash() throws Exception {
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
 
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
         mLooper.dispatchAll();
 
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
         mLooper.dispatchAll();
 
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
     }
 
@@ -3374,7 +3375,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void verifyIpClientShutdownWhenDisabled() throws Exception {
         loadComponentsInStaMode();
 
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
         verify(mIpClient).shutdown();
         verify(mWifiConfigManager).removeAllEphemeralOrPasspointConfiguredNetworks();
@@ -3726,7 +3727,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void verifySetPowerSaveTrueSuccess() throws Exception {
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
         assertTrue(mCmi.setPowerSave(true));
         verify(mWifiNative).setPowerSave(WIFI_IFACE_NAME, true);
     }
@@ -3737,7 +3738,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void verifySetPowerSaveFalseSuccess() throws Exception {
-        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME);
+        mCmi.setOperationalMode(ClientModeImpl.CONNECT_MODE, WIFI_IFACE_NAME, mClientModeManager);
         assertTrue(mCmi.setPowerSave(false));
         verify(mWifiNative).setPowerSave(WIFI_IFACE_NAME, false);
     }
@@ -3749,7 +3750,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void verifySetPowerSaveFailure() throws Exception {
         boolean powerSave = true;
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         assertFalse(mCmi.setPowerSave(powerSave));
         verify(mWifiNative, never()).setPowerSave(anyString(), anyBoolean());
     }
@@ -4160,7 +4161,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         startSupplicantAndDispatchMessages();
         verify(mMboOceController).enable();
         verify(mWifiDataStall).enablePhoneStateListener();
-        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null);
+        mCmi.setOperationalMode(ClientModeImpl.DISABLED_MODE, null, null);
         mLooper.dispatchAll();
         verify(mMboOceController).disable();
         verify(mWifiDataStall).disablePhoneStateListener();

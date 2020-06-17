@@ -97,7 +97,7 @@ public class SoftApManager implements ActiveModeManager {
 
     private final WifiMetrics mWifiMetrics;
 
-    private boolean mIsRandomizeBssid;
+    private boolean mIsUnsetBssid;
 
     @NonNull
     private SoftApModeConfiguration mApConfig;
@@ -185,7 +185,7 @@ public class SoftApManager implements ActiveModeManager {
             // may still be null if we fail to load the default config
         }
         if (softApConfig != null) {
-            mIsRandomizeBssid = softApConfig.getBssid() == null;
+            mIsUnsetBssid = softApConfig.getBssid() == null;
             softApConfig = mWifiApConfigStore.randomizeBssidIfUnset(mContext, softApConfig);
         }
         mApConfig = new SoftApModeConfiguration(apConfig.getTargetMode(),
@@ -341,14 +341,15 @@ public class SoftApManager implements ActiveModeManager {
             if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
                 Log.w(TAG, "failed to reset to factory MAC address; continuing with current MAC");
             }
-            return SUCCESS;
-        }
-
-        // We're configuring a random/custom MAC address. In this case, driver support is mandatory.
-        if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+        } else if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+            // We're configuring a random/custom MAC address. In this case,
+            // driver support is mandatory.
             Log.e(TAG, "failed to set explicitly requested MAC address");
             return ERROR_GENERIC;
         }
+
+        mCurrentSoftApInfo.setBssid(mac);
+
         return SUCCESS;
     }
 
@@ -754,6 +755,9 @@ public class SoftApManager implements ActiveModeManager {
 
                 mCurrentSoftApInfo.setFrequency(freq);
                 mCurrentSoftApInfo.setBandwidth(apBandwidth);
+                if (freq == 0) { // reset bssid to null when freq is 0 (disable)
+                    mCurrentSoftApInfo.setBssid(null);
+                }
                 mSoftApCallback.onInfoChanged(mCurrentSoftApInfo);
 
                 // ignore invalid freq and softap disable case for metrics
@@ -945,8 +949,8 @@ public class SoftApManager implements ActiveModeManager {
                     case CMD_UPDATE_CONFIG:
                         SoftApConfiguration newConfig = (SoftApConfiguration) message.obj;
                         SoftApConfiguration currentConfig = mApConfig.getSoftApConfiguration();
-                        if (mIsRandomizeBssid) {
-                            // Current bssid is ramdon because unset. Set back to null..
+                        if (mIsUnsetBssid) {
+                            // Current bssid is ramdonized because unset. Set back to null.
                             currentConfig = new SoftApConfiguration.Builder(currentConfig)
                                     .setBssid(null)
                                     .build();

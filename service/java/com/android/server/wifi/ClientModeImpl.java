@@ -240,7 +240,10 @@ public class ClientModeImpl extends StateMachine {
 
     private boolean mScreenOn = false;
 
+    // TODO (b/116233964): This should be sent in via constructor when ClientModeImpl is dynamically
+    // created by ClientModeManager.
     private String mInterfaceName;
+    private ActiveModeManager mActiveModeManager;
 
     private int mLastSignalLevel = -1;
     private String mLastBssid;
@@ -287,9 +290,6 @@ public class ClientModeImpl extends StateMachine {
     * In SCAN_ONLY_WIFI_OFF_MODE, the STA can only scan for access points with wifi toggle being off
     */
     private int mOperationalMode = DISABLED_MODE;
-
-    // variable indicating we are expecting a mode switch - do not attempt recovery for failures
-    private boolean mModeChange = false;
 
     private ClientModeManager.Listener mClientModeCallback = null;
 
@@ -1533,11 +1533,11 @@ public class ClientModeImpl extends StateMachine {
     /**
      * TODO: doc
      */
-    public void setOperationalMode(int mode, String ifaceName) {
+    public void setOperationalMode(int mode, @Nullable String ifaceName,
+                @Nullable ActiveModeManager activeModeManager) {
         if (mVerboseLoggingEnabled) {
             log("setting operational mode to " + String.valueOf(mode) + " for iface: " + ifaceName);
         }
-        mModeChange = true;
         if (mode != CONNECT_MODE) {
             // we are disabling client mode...   need to exit connect mode now
             transitionTo(mDefaultState);
@@ -1545,6 +1545,7 @@ public class ClientModeImpl extends StateMachine {
             // do a quick sanity check on the iface name, make sure it isn't null
             if (ifaceName != null) {
                 mInterfaceName = ifaceName;
+                mActiveModeManager = activeModeManager;
                 updateInterfaceCapabilities(ifaceName);
                 transitionTo(mDisconnectedState);
                 mWifiScoreReport.setInterfaceName(ifaceName);
@@ -3620,6 +3621,7 @@ public class ClientModeImpl extends StateMachine {
         }
         mCountryCode.setReadyForChange(false);
         mInterfaceName = null;
+        mActiveModeManager = null;
         mWifiScoreReport.setInterfaceName(null);
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(false);
@@ -5794,6 +5796,9 @@ public class ClientModeImpl extends StateMachine {
                 && mTargetWifiConfiguration.networkId
                 == requestData.networkId) {
             logd("id matches targetWifiConfiguration");
+        } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
+                && mLastNetworkId == requestData.networkId) {
+            logd("id matches currentWifiConfiguration");
         } else {
             logd("id does not match targetWifiConfiguration");
             return;
@@ -6491,5 +6496,4 @@ public class ClientModeImpl extends StateMachine {
 
         return true;
     }
-
 }
