@@ -541,7 +541,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     }
 
     /**
-     * Check WestWorld logging after one daily detection with high non-local disconnection rate
+     * Check statsd logging after one daily detection with high non-local disconnection rate
      */
     @Test
     public void testWifiStatsLogWrite() throws Exception {

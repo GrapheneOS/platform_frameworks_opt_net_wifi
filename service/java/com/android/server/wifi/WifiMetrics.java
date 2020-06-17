@@ -1590,7 +1590,7 @@ public class WifiMetrics {
                         connectivityFailureCode;
                 mCurrentConnectionEvent.mConnectionEvent.level2FailureReason = level2FailureReason;
 
-                // Write metrics to WestWorld
+                // Write metrics to statsd
                 int wwFailureCode = getConnectionResultFailureCode(level2FailureCode,
                         level2FailureReason);
                 if (wwFailureCode != -1) {
