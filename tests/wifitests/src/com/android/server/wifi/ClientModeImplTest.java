@@ -521,6 +521,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 RssiUtilTest.RSSI_THRESHOLDS);
         mResources.setInteger(R.integer.config_wifiPollRssiIntervalMilliseconds, 3000);
         when(mContext.getResources()).thenReturn(mResources);
+        when(mContext.createContextAsUser(any(), anyInt())).thenReturn(mContext);
 
         when(mFrameworkFacade.getIntegerSetting(mContext,
                 Settings.Global.WIFI_FREQUENCY_BAND,

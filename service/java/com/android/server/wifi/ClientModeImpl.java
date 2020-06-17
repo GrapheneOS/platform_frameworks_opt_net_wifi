@@ -5808,12 +5808,17 @@ public class ClientModeImpl extends StateMachine {
     private void broadcastWifiCredentialChanged(int wifiCredentialEventType,
             WifiConfiguration config) {
         Intent intent = new Intent(WifiManager.WIFI_CREDENTIAL_CHANGED_ACTION);
-        if (config != null && config.SSID != null) {
+        if (config != null && config.SSID != null && mWifiPermissionsUtil.isLocationModeEnabled()) {
             intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_SSID, config.SSID);
         }
         intent.putExtra(WifiManager.EXTRA_WIFI_CREDENTIAL_EVENT_TYPE, wifiCredentialEventType);
-        mContext.sendBroadcastAsUser(intent, UserHandle.CURRENT,
-                android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE);
+        mContext.createContextAsUser(UserHandle.CURRENT, 0)
+                .sendBroadcastWithMultiplePermissions(
+                        intent,
+                        new String[]{
+                                android.Manifest.permission.RECEIVE_WIFI_CREDENTIAL_CHANGE,
+                                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        });
     }
 
     void handleGsmAuthRequest(SimAuthRequestData requestData) {
