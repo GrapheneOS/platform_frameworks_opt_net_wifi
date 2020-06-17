@@ -28,6 +28,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -38,6 +39,7 @@ import android.net.InetAddresses;
 import android.net.LinkProperties;
 import android.net.NetworkInfo;
 import android.net.NetworkStack;
+import android.net.TetheringManager;
 import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
@@ -101,10 +103,14 @@ import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -221,6 +227,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     private static final int IPC_PROVISIONING_SUCCESS       =   BASE + 33;
     private static final int IPC_PROVISIONING_FAILURE       =   BASE + 34;
 
+    private static final int GROUP_OWNER_TETHER_READY       =   BASE + 35;
+
     public static final int ENABLED                         = 1;
     public static final int DISABLED                        = 0;
 
@@ -263,10 +271,6 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
 
     // clients(application) channel list
     private Map<IBinder, Messenger> mClientChannelList = new HashMap<IBinder, Messenger>();
-
-    // Is chosen as a unique address to avoid conflict with
-    // the ranges defined in Tethering.java
-    private static final String SERVER_ADDRESS = "192.168.49.1";
 
     // The empty device address set by wpa_supplicant.
     private static final String EMPTY_DEVICE_ADDRESS = "00:00:00:00:00:00";
@@ -855,6 +859,22 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         }
                     }
                 }, new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
+                // Register for tethering state
+                mContext.registerReceiver(new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (mGroup == null) return;
+                        if (!mGroup.isGroupOwner()) return;
+                        if (TextUtils.isEmpty(mGroup.getInterface())) return;
+
+                        final ArrayList<String> interfaces = intent.getStringArrayListExtra(
+                                TetheringManager.EXTRA_ACTIVE_LOCAL_ONLY);
+
+                        if (interfaces.contains(mGroup.getInterface())) {
+                            sendMessage(GROUP_OWNER_TETHER_READY);
+                        }
+                    }
+                }, new IntentFilter(TetheringManager.ACTION_TETHER_STATE_CHANGED));
                 // Register for interface availability from HalDeviceManager
                 mWifiNative.registerInterfaceAvailableListener((boolean isAvailable) -> {
                     mIsHalInterfaceAvailable = isAvailable;
@@ -1122,6 +1142,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                     case IPC_DHCP_RESULTS:
                     case IPC_PROVISIONING_SUCCESS:
                     case IPC_PROVISIONING_FAILURE:
+                    case GROUP_OWNER_TETHER_READY:
                     case WifiP2pMonitor.P2P_PROV_DISC_FAILURE_EVENT:
                     case SET_MIRACAST_MODE:
                     case WifiP2pManager.START_LISTEN:
@@ -2407,26 +2428,45 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                             // {@link com.android.server.connectivity.Tethering} listens to
                             // {@link WifiP2pManager#WIFI_P2P_CONNECTION_CHANGED_ACTION}
                             // events and takes over the DHCP server management automatically.
-                        } else {
-                            mWifiNative.setP2pGroupIdle(mGroup.getInterface(), GROUP_IDLE_TIME_S);
-                            startIpClient(mGroup.getInterface(), getHandler());
-                            WifiP2pDevice groupOwner = mGroup.getOwner();
-                            WifiP2pDevice peer = mPeers.get(groupOwner.deviceAddress);
-                            if (peer != null) {
-                                // update group owner details with peer details found at discovery
-                                groupOwner.updateSupplicantDetails(peer);
-                                mPeers.updateStatus(groupOwner.deviceAddress,
-                                        WifiP2pDevice.CONNECTED);
-                                sendPeersChangedBroadcast();
+                            // Because tethering service introduces random IP range, P2P could not
+                            // hard-coded group owner IP and needs to wait for tethering completion.
+                            // As a result, P2P sends a unicast intent to tether service to trigger
+                            // the whole flow before entering GroupCreatedState.
+                            setWifiP2pInfoOnGroupFormation(null);
+                            String tetheringServicePackage = findTetheringServicePackage();
+                            if (!TextUtils.isEmpty(tetheringServicePackage)) {
+                                sendP2pTetherRequestBroadcast(tetheringServicePackage);
                             } else {
-                                // A supplicant bug can lead to reporting an invalid
-                                // group owner address (all zeroes) at times. Avoid a
-                                // crash, but continue group creation since it is not
-                                // essential.
-                                logw("Unknown group owner " + groupOwner);
+                                loge("No valid tethering service, remove " + mGroup);
+                                mWifiNative.p2pGroupRemove(mGroup.getInterface());
                             }
+                            break;
+                        }
+
+                        mWifiNative.setP2pGroupIdle(mGroup.getInterface(), GROUP_IDLE_TIME_S);
+                        startIpClient(mGroup.getInterface(), getHandler());
+                        WifiP2pDevice groupOwner = mGroup.getOwner();
+                        WifiP2pDevice peer = mPeers.get(groupOwner.deviceAddress);
+                        if (peer != null) {
+                            // update group owner details with peer details found at discovery
+                            groupOwner.updateSupplicantDetails(peer);
+                            mPeers.updateStatus(groupOwner.deviceAddress,
+                                    WifiP2pDevice.CONNECTED);
+                            sendPeersChangedBroadcast();
+                        } else {
+                            // A supplicant bug can lead to reporting an invalid
+                            // group owner address (all zeroes) at times. Avoid a
+                            // crash, but continue group creation since it is not
+                            // essential.
+                            logw("Unknown group owner " + groupOwner);
                         }
                         transitionTo(mGroupCreatedState);
+                        break;
+                    case GROUP_OWNER_TETHER_READY:
+                        if (mGroup != null && mGroup.isGroupOwner()) {
+                            Log.d(TAG, "tether " + mGroup.getInterface() + " ready");
+                            transitionTo(mGroupCreatedState);
+                        }
                         break;
                     case WifiP2pMonitor.P2P_GO_NEGOTIATION_FAILURE_EVENT:
                         P2pStatus status = (P2pStatus) message.obj;
@@ -2491,6 +2531,15 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                             transitionTo(mInactiveState);
                         }
                         break;
+                    case WifiP2pMonitor.AP_STA_CONNECTED_EVENT:
+                    case WifiP2pMonitor.AP_STA_DISCONNECTED_EVENT:
+                        // Group owner needs to wait for tethering completion before
+                        // moving to GroupCreatedState. If native layer reports STA event
+                        // earlier, defer it.
+                        if (mGroup != null && mGroup.isGroupOwner()) {
+                            deferMessage(message);
+                            break;
+                        }
                     default:
                         return NOT_HANDLED;
                 }
@@ -2606,7 +2655,14 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
 
                 // DHCP server has already been started if I am a group owner
                 if (mGroup.isGroupOwner()) {
-                    setWifiP2pInfoOnGroupFormation(SERVER_ADDRESS);
+                    Inet4Address addr = getInterfaceAddress(mGroup.getInterface());
+                    if (addr != null) {
+                        setWifiP2pInfoOnGroupFormation(addr.getHostAddress());
+                        Log.d(TAG, "Group owner address: " + addr.getHostAddress()
+                                + " at " + mGroup.getInterface());
+                    } else {
+                        mWifiNative.p2pGroupRemove(mGroup.getInterface());
+                    }
                 }
 
                 // In case of a negotiation group, connection changed is sent
@@ -3063,6 +3119,49 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             } else {
                 loge("sendP2pConnectionChangedBroadcast(): WifiChannel is null");
             }
+        }
+
+        private boolean isPackageExisted(String pkgName) {
+            PackageManager pm = mContext.getPackageManager();
+            try {
+                PackageInfo info = pm.getPackageInfo(pkgName, PackageManager.GET_META_DATA);
+            } catch (PackageManager.NameNotFoundException e) {
+                return false;
+            }
+            return true;
+        }
+
+        private String findTetheringServicePackage() {
+            ArrayList<String> possiblePackageNames = new ArrayList<>();
+            // AOSP
+            possiblePackageNames.add("com.android.networkstack.tethering");
+            // mainline release
+            possiblePackageNames.add("com.google.android.networkstack.tethering");
+            // Android Go
+            possiblePackageNames.add("com.android.networkstack.tethering.inprocess");
+
+            for (String pkgName: possiblePackageNames) {
+                if (isPackageExisted(pkgName)) {
+                    Log.d(TAG, "Tethering service package: " + pkgName);
+                    return pkgName;
+                }
+            }
+            Log.w(TAG, "Cannot find tethering service package!");
+            return null;
+        }
+
+        private void sendP2pTetherRequestBroadcast(String tetheringServicePackage) {
+            if (mVerboseLoggingEnabled) logd("sending p2p tether request broadcast");
+
+            Intent intent = new Intent(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+            intent.setPackage(tetheringServicePackage);
+            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                    | Intent.FLAG_RECEIVER_REPLACE_PENDING);
+            intent.putExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO, new WifiP2pInfo(mWifiP2pInfo));
+            intent.putExtra(WifiP2pManager.EXTRA_NETWORK_INFO, makeNetworkInfo());
+            intent.putExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP, eraseOwnDeviceAddress(mGroup));
+
+            sendBroadcastMultiplePermissions(intent);
         }
 
         private void sendP2pPersistentGroupsChangedBroadcast() {
@@ -3587,6 +3686,27 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             mWifiNative.setP2pClientList(netId, modifiedClientList.toString());
             mWifiNative.saveConfig();
             return true;
+        }
+
+        private Inet4Address getInterfaceAddress(String interfaceName) {
+            NetworkInterface iface;
+            try {
+                iface = NetworkInterface.getByName(interfaceName);
+            } catch (SocketException ex) {
+                Log.w(TAG, "Could not obtain address of network interface "
+                        + interfaceName, ex);
+                return null;
+            }
+            Enumeration<InetAddress> addrs = iface.getInetAddresses();
+            while (addrs.hasMoreElements()) {
+                InetAddress addr = addrs.nextElement();
+                if (addr instanceof Inet4Address) {
+                    return (Inet4Address) addr;
+                }
+            }
+            Log.w(TAG, "Could not obtain address of network interface "
+                    + interfaceName + " because it had no IPv4 addresses.");
+            return null;
         }
 
         private void setWifiP2pInfoOnGroupFormation(String serverAddress) {

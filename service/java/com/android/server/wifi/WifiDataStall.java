@@ -492,7 +492,7 @@ public class WifiDataStall {
     }
 
     /**
-     * Report the latest Wifi connection health to WestWorld
+     * Report the latest Wifi connection health to statsd
      */
     private void reportWifiHealthStat(int frequency, int timeDeltaLastTwoPollsMs,
             boolean isThroughputSufficient,
