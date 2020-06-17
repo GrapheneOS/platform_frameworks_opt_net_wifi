@@ -535,7 +535,7 @@ public class WifiDataStallTest extends WifiBaseTest {
     }
 
     /**
-     * Check WestWorld logging
+     * Check statsd logging
      */
     @Test
     public void testWifiStatsLogWrite() throws Exception {
