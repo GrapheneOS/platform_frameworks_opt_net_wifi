@@ -824,24 +824,26 @@ public class WifiAwareDataPathStateManager {
                         + score);
             }
 
+            NetworkSpecifier networkSpecifierBase = request.getNetworkSpecifier();
+            if (!(networkSpecifierBase instanceof WifiAwareNetworkSpecifier)) {
+                Log.w(TAG, "WifiAwareNetworkFactory.acceptRequest: request=" + request
+                        + " - not a WifiAwareNetworkSpecifier");
+                return false;
+            }
+
             if (!mMgr.isUsageEnabled()) {
                 if (VDBG) {
                     Log.v(TAG, "WifiAwareNetworkFactory.acceptRequest: request=" + request
                             + " -- Aware disabled");
                 }
+                releaseRequestAsUnfulfillableByAnyFactory(request);
                 return false;
             }
 
             if (mInterfaces.isEmpty()) {
                 Log.w(TAG, "WifiAwareNetworkFactory.acceptRequest: request=" + request
                         + " -- No Aware interfaces are up");
-                return false;
-            }
-
-            NetworkSpecifier networkSpecifierBase = request.getNetworkSpecifier();
-            if (!(networkSpecifierBase instanceof WifiAwareNetworkSpecifier)) {
-                Log.w(TAG, "WifiAwareNetworkFactory.acceptRequest: request=" + request
-                        + " - not a WifiAwareNetworkSpecifier");
+                releaseRequestAsUnfulfillableByAnyFactory(request);
                 return false;
             }
 

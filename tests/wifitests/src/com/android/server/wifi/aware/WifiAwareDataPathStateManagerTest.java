@@ -33,6 +33,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -1968,5 +1969,29 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         }
 
         return tlvc.getArray();
+    }
+
+    @Test
+    public void testAcceptRequestWhenAwareNotReadyWillReleaseRequest() throws Exception {
+        final int clientId = 123;
+        final byte[] peerDiscoveryMac = HexEncoding.decode("000102030405".toCharArray(), false);
+        ArgumentCaptor<NetworkProvider> networkProviderCaptor =
+                ArgumentCaptor.forClass(NetworkProvider.class);
+        verify(mMockCm).registerNetworkProvider(networkProviderCaptor.capture());
+        NetworkProvider awareProvider = networkProviderCaptor.getValue();
+        collector.checkThat("factory name", "WIFI_AWARE_FACTORY",
+                equalTo(awareProvider.getName()));
+        NetworkRequest networkRequest = getDirectNetworkRequest(clientId,
+                WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_INITIATOR, peerDiscoveryMac, null,
+                null, 1);
+        // Aware usage is not enabled, should declare unfullfillable.
+        awareProvider.onNetworkRequested(networkRequest, 0, awareProvider.getProviderId());
+        verifyRequestDeclaredUnfullfillable(networkRequest);
+        reset(mMockCm);
+        // Aware usage is enabled but interface not ready, should declare unfullfillable.
+        mDut.enableUsage();
+        mMockLooper.dispatchAll();
+        awareProvider.onNetworkRequested(networkRequest, 0, awareProvider.getProviderId());
+        verifyRequestDeclaredUnfullfillable(networkRequest);
     }
 }
