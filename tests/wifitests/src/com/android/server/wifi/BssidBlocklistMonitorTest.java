@@ -662,4 +662,24 @@ public class BssidBlocklistMonitorTest {
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
         assertEquals(2, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
     }
+
+    /**
+     * Verify that invalid inputs are handled and result in no-op.
+     */
+    @Test
+    public void testBlockBssidForDurationMsInvalidInputs() {
+        // test invalid BSSID
+        when(mClock.getWallClockMillis()).thenReturn(0L);
+        long testDuration = 5500L;
+        mBssidBlocklistMonitor.blockBssidForDurationMs(null, TEST_SSID_1, testDuration);
+        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+
+        // test invalid SSID
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, null, testDuration);
+        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+
+        // test invalid duration
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, -1);
+        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+    }
 }
