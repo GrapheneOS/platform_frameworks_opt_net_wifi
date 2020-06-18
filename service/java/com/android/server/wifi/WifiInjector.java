@@ -186,6 +186,7 @@ public class WifiInjector {
     private final SettingsMigrationDataHolder mSettingsMigrationDataHolder;
     private final LruConnectionTracker mLruConnectionTracker;
     private final WifiConnectivityManager mWifiConnectivityManager;
+    private final ConnectHelper mConnectHelper;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -308,6 +309,7 @@ public class WifiInjector {
                 mSettingsMigrationDataHolder, mWifiConfigManager, mWifiConfigStore);
         mSettingsStore = new WifiSettingsStore(mContext, mSettingsConfigStore);
         mWifiMetrics.setWifiConfigManager(mWifiConfigManager);
+        mConnectHelper = new ConnectHelper(mClientModeImplHolder, mWifiConfigManager);
 
         mScoringParams = new ScoringParams(mContext);
         mWifiMetrics.setScoringParams(mScoringParams);
@@ -368,7 +370,7 @@ public class WifiInjector {
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
         mOpenNetworkNotifier = new OpenNetworkNotifier(mContext,
                 wifiLooper, mFrameworkFacade, mClock, mWifiMetrics,
-                mWifiConfigManager, mWifiConfigStore, mClientModeImplHolder,
+                mWifiConfigManager, mWifiConfigStore, mConnectHelper,
                 new ConnectToNetworkNotificationBuilder(mContext, this, mFrameworkFacade));
         mWifiConnectivityManager = new WifiConnectivityManager(
                 mContext, mScoringParams, mClientModeImplHolder, mWifiConfigManager,
@@ -393,7 +395,8 @@ public class WifiInjector {
                 (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE),
                 (AppOpsManager) mContext.getSystemService(Context.APP_OPS_SERVICE),
                 mClock, this, mWifiConnectivityManager, mWifiConfigManager,
-                mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mActiveModeWarden);
+                mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mActiveModeWarden,
+                mConnectHelper);
         UntrustedWifiNetworkFactory untrustedWifiNetworkFactory = new UntrustedWifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER, mWifiConnectivityManager);
         mWifiScanAlwaysAvailableSettingsCompatibility =
@@ -831,5 +834,9 @@ public class WifiInjector {
 
     public WifiConnectivityManager getWifiConnectivityManager() {
         return mWifiConnectivityManager;
+    }
+
+    public ConnectHelper getConnectHelper() {
+        return mConnectHelper;
     }
 }

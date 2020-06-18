@@ -375,7 +375,7 @@ public class WifiHealthMonitor {
         logd("#networks w/ sufficient recent stats: " + mNumNetworkSufficientRecentStatsOnly);
         logd("#networks w/ sufficient recent and prev stats: "
                 + mNumNetworkSufficientRecentPrevStats);
-        // Write metrics to WestWorld
+        // Write metrics to statsd
         writeToWifiStatsLog();
         doWrites();
         mWifiScoreCard.doWrites();

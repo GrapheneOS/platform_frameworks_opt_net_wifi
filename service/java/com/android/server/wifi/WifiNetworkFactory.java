@@ -57,6 +57,7 @@ import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
+import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.ScanResultUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -121,6 +122,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     private final NetworkFactoryScanListener mScanListener;
     private final PeriodicScanAlarmListener mPeriodicScanTimerListener;
     private final ConnectionTimeoutAlarmListener mConnectionTimeoutAlarmListener;
+    private final ConnectHelper mConnectHelper;
     private final ExternalCallbackTracker<INetworkRequestMatchCallback> mRegisteredCallbacks;
     // Store all user approved access points for apps.
     @VisibleForTesting
@@ -374,7 +376,8 @@ public class WifiNetworkFactory extends NetworkFactory {
             WifiConfigStore configStore,
             WifiPermissionsUtil wifiPermissionsUtil,
             WifiMetrics wifiMetrics,
-            ActiveModeWarden activeModeWarden) {
+            ActiveModeWarden activeModeWarden,
+            ConnectHelper connectHelper) {
         super(looper, context, TAG, nc);
         mContext = context;
         mActivityManager = activityManager;
@@ -389,6 +392,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mWifiMetrics = wifiMetrics;
         mActiveModeWarden = activeModeWarden;
+        mConnectHelper = connectHelper;
         // Create the scan settings.
         mScanSettings = new WifiScanner.ScanSettings();
         mScanSettings.type = WifiScanner.SCAN_TYPE_HIGH_ACCURACY;
@@ -804,8 +808,10 @@ public class WifiNetworkFactory extends NetworkFactory {
 
         // Send the connect request to ClientModeImpl.
         // TODO(b/117601161): Refactor this.
-        ConnectActionListener connectActionListener = new ConnectActionListener();
-        mClientModeManager.getImpl().connect(null, networkId, connectActionListener,
+        ConnectActionListener listener = new ConnectActionListener();
+        mConnectHelper.connectToNetwork(
+                new NetworkUpdateResult(networkId),
+                new ActionListenerWrapper(listener),
                 mActiveSpecificNetworkRequest.getRequestorUid());
 
         // Post an alarm to handle connection timeout.
