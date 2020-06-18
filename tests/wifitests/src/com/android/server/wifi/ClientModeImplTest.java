@@ -1678,6 +1678,33 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * It is observed sometimes the WifiMonitor.NETWORK_DISCONNECTION_EVENT is observed before the
+     * actual connection failure messages while making a connection.
+     * The test make sure that make sure that the connection event is ended properly in the above
+     * case.
+     */
+    @Test
+    public void testDisconnectionEventInL2ConnectingStateEndsConnectionEvent() throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+
+        startConnectSuccess();
+
+        WifiConfiguration config = createTestNetwork(false);
+        config.getNetworkSelectionStatus().setHasEverConnected(true);
+        when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(config);
+
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(sSSID, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+
+        verify(mWifiMetrics).endConnectionEvent(
+                eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION), anyInt(), anyInt());
+        verify(mWifiConnectivityManager).handleConnectionAttemptEnded(anyInt(), any(), any());
+        assertEquals("DisconnectedState", getCurrentState().getName());
+    }
+
+    /**
      * Verify that the network selection status will be updated with DISABLED_BY_WRONG_PASSWORD
      * when wrong password authentication failure is detected and the network has never been
      * connected.
