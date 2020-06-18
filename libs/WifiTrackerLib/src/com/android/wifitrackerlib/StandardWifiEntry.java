@@ -161,7 +161,6 @@ public class StandardWifiEntry extends WifiEntry {
             @NonNull String key, @NonNull WifiManager wifiManager,
             @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) {
-        // TODO: second argument (isSaved = false) is bogus in this context
         super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
         mContext = context;
@@ -305,7 +304,6 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     @Security
     public int getSecurity() {
-        // TODO(b/70983952): Fill this method in
         return mSecurity;
     }
 
@@ -495,23 +493,6 @@ public class StandardWifiEntry extends WifiEntry {
             default:
                 return false;
         }
-    }
-
-    @Override
-    public String getQrCodeString() {
-        // TODO(b/70983952): Fill this method in
-        return null;
-    }
-
-    @Override
-    public boolean canSetPassword() {
-        // TODO(b/70983952): Fill this method in
-        return false;
-    }
-
-    @Override
-    public void setPassword(@NonNull String password) {
-        // TODO(b/70983952): Fill this method in
     }
 
     @Override
@@ -904,7 +885,6 @@ public class StandardWifiEntry extends WifiEntry {
         }
         description.append("=").append(scanResult.frequency);
         description.append(",").append(scanResult.level);
-        // TODO(b/70983952): Append speed of the ScanResult here.
         final int ageSeconds = (int) (nowMs - scanResult.timestamp / 1000) / 1000;
         description.append(",").append(ageSeconds).append("s");
         description.append("}");
