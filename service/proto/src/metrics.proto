@@ -2140,6 +2140,9 @@ message ExperimentValues {
 
   // Threshold of CCA level above which to trigger a data stall in percentage
   optional int32 data_stall_cca_level_thr = 9;
+
+  // Health monitor RSSI poll valid time in ms
+  optional int32 health_monitor_rssi_poll_valid_time_ms = 10;
 }
 
 message BssidBlocklistStats {

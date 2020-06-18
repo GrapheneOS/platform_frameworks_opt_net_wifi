@@ -104,7 +104,6 @@ public class WifiScoreCardTest extends WifiBaseTest {
     void millisecondsPass(long ms) {
         mMilliSecondsSinceBoot += ms;
         when(mClock.getElapsedSinceBootMillis()).thenReturn(mMilliSecondsSinceBoot);
-        when(mClock.getWallClockMillis()).thenReturn(mMilliSecondsSinceBoot + 1_500_000_000_000L);
     }
 
     void secondsPass(long s) {
@@ -158,6 +157,13 @@ public class WifiScoreCardTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_RATIO_THR_NUMERATOR);
         when(mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
+        when(mDeviceConfigFacade.getHealthMonitorShortConnectionDurationThrMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_SHORT_CONNECTION_DURATION_THR_MS);
+        when(mDeviceConfigFacade.getAbnormalDisconnectionReasonCodeMask()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ABNORMAL_DISCONNECTION_REASON_CODE_MASK);
+        when(mDeviceConfigFacade.getHealthMonitorRssiPollValidTimeMs()).thenReturn(3000);
+        // Disable FW alert time check by default
+        when(mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs()).thenReturn(-1);
         when(mDeviceConfigFacade.getBugReportThresholdExtraRatio()).thenReturn(1);
         mWifiScoreCard.enableVerboseLogging(true);
     }
@@ -916,7 +922,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
 
         // Disconnect from SSID_1
         millisecondsPass(100);
-        int disconnectionReason = 3;
+        int disconnectionReason = 4;
         mWifiScoreCard.noteNonlocalDisconnect(disconnectionReason);
         millisecondsPass(100);
         mWifiScoreCard.resetConnectionState();
@@ -954,7 +960,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         checkShortConnectionExample(dailyStats, 0);
     }
 
-    private void makeShortConnectionExample() {
+    private void makeShortConnectionExample(boolean addFwAlert) {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(5000);
         mWifiInfo.setTxLinkSpeedMbps(100);
@@ -964,8 +970,11 @@ public class WifiScoreCardTest extends WifiBaseTest {
         millisecondsPass(1000);
         mWifiScoreCard.noteSignalPoll(mWifiInfo);
         millisecondsPass(2000);
-        int disconnectionReason = 3;
+        int disconnectionReason = 34;
         mWifiScoreCard.noteNonlocalDisconnect(disconnectionReason);
+        if (addFwAlert) {
+            mWifiScoreCard.noteFirmwareAlert(6);
+        }
         millisecondsPass(1000);
         mWifiScoreCard.resetConnectionState();
     }
@@ -1007,12 +1016,13 @@ public class WifiScoreCardTest extends WifiBaseTest {
     }
 
     /**
-     * Check network stats after RSSI poll and disconnection.
+     * Check network stats after RSSI poll and disconnection, pass FW alert check
      */
     @Test
-    public void testNetworkRssiPollShortNonlocalDisconnection() throws Exception {
+    public void testNetworkRssiPollShortNonlocalDisconnectionPassFwAlertCheck() throws Exception {
+        when(mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs()).thenReturn(2000);
         // 1st connection session
-        makeShortConnectionExample();
+        makeShortConnectionExample(/*addFwAlert*/true);
         // 2nd connection session
         makeNormalConnectionExample();
 
@@ -1026,6 +1036,23 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(0, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
         assertEquals(1, dailyStats.getCount(CNT_SHORT_CONNECTION_NONLOCAL));
         assertEquals(1, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL));
+    }
+
+    /**
+     * Check network stats after RSSI poll and disconnection, fail FW alert check
+     */
+    @Test
+    public void testNetworkRssiPollShortNonlocalDisconnectionFailFwAlertCheck() throws Exception {
+        when(mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs()).thenReturn(2000);
+        // 1st connection session
+        makeShortConnectionExample(/*addFwAlert*/false);
+        // 2nd connection session
+        makeNormalConnectionExample();
+
+        PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
+        assertEquals(0, dailyStats.getCount(CNT_SHORT_CONNECTION_NONLOCAL));
+        assertEquals(0, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL));
     }
 
     /**
@@ -1130,7 +1157,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
     @Test
     public void testUpdateAfterDailyDetection() throws Exception {
         for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
-            makeShortConnectionExample();
+            makeShortConnectionExample(/*addFwAlert*/false);
         }
 
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
@@ -1145,7 +1172,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
     @Test
     public void testUpdateAfterSwBuildChange() throws Exception {
         for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
-            makeShortConnectionExample();
+            makeShortConnectionExample(/*addFwAlert*/false);
         }
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         perNetwork.updateAfterDailyDetection();
@@ -1165,7 +1192,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
 
     private void makeRecentStatsWithShortConnection() {
         for (int i = 0; i < DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT; i++) {
-            makeShortConnectionExample();
+            makeShortConnectionExample(/*addFwAlert*/false);
         }
     }
 
@@ -1196,7 +1223,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
     @Test
     public void testDailyDetectionWithInsufficientRecentStats() throws Exception {
         PerNetwork perNetwork = mWifiScoreCard.lookupNetwork(mWifiInfo.getSSID());
-        makeShortConnectionExample();
+        makeShortConnectionExample(/*addFwAlert*/false);
 
         FailureStats statsDec = new FailureStats();
         FailureStats statsInc = new FailureStats();
@@ -1269,7 +1296,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         makeRecentStatsWithGoodConnection();
         // Add a small number of failures for each failure type after the SW build change
         for (int i = 0; i < mDeviceConfigFacade.getAuthFailureCountMin() - 1; i++) {
-            makeShortConnectionExample();
+            makeShortConnectionExample(/*addFwAlert*/false);
             makeAssocTimeOutExample();
             makeAuthFailureExample();
         }
