@@ -4496,7 +4496,7 @@ public class ClientModeImpl extends StateMachine {
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {
                     DisconnectEventInfo eventInfo = (DisconnectEventInfo) message.obj;
                     if (mVerboseLoggingEnabled) {
-                        log("ConnectingState: Network disconnection " + eventInfo);
+                        log("ConnectingOrConnectedState: Network disconnection " + eventInfo);
                     }
                     if (eventInfo.reasonCode == ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT) {
                         String bssid = !isValidBssid(eventInfo.bssid)
@@ -4507,7 +4507,10 @@ public class ClientModeImpl extends StateMachine {
                     }
                     clearNetworkCachedDataIfNeeded(
                             getTargetWifiConfiguration(), eventInfo.reasonCode);
-                    boolean newConnectionInProgress = !eventInfo.ssid.equals(getTargetSsid());
+                    String targetSsid = getTargetSsid();
+                    // If network is removed while connecting, targetSsid can be null.
+                    boolean newConnectionInProgress =
+                            targetSsid != null && !eventInfo.ssid.equals(targetSsid);
                     handleNetworkDisconnect(newConnectionInProgress);
                     if (!newConnectionInProgress) {
                         transitionTo(mDisconnectedState);
