@@ -199,21 +199,6 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getQrCodeString() {
-        return null;
-    }
-
-    @Override
-    public boolean canSetPassword() {
-        return false;
-    }
-
-    @Override
-    public void setPassword(@NonNull String password) {
-        // Do nothing.
-    }
-
-    @Override
     @MeteredChoice
     public int getMeteredChoice() {
         // Metered choice is meaningless for OSU entries

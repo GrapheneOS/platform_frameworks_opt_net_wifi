@@ -220,6 +220,12 @@ public class BssidBlocklistMonitor {
      */
     public void blockBssidForDurationMs(@NonNull String bssid, @NonNull String ssid,
             long durationMs) {
+        if (bssid == null || ssid == null || WifiManager.UNKNOWN_SSID.equals(ssid)
+                || bssid.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY) || durationMs <= 0) {
+            Log.e(TAG, "Invalid input: BSSID=" + bssid + ", SSID=" + ssid
+                    + ", durationMs=" + durationMs);
+            return;
+        }
         BssidStatus status = getOrCreateBssidStatus(bssid, ssid);
         if (status.isInBlocklist
                 && status.blocklistEndTimeMs - mClock.getWallClockMillis() > durationMs) {
@@ -407,6 +413,9 @@ public class BssidBlocklistMonitor {
         int prevSize = mBssidStatusMap.size();
         mBssidStatusMap.entrySet().removeIf(e -> {
             BssidStatus status = e.getValue();
+            if (status.ssid == null) {
+                return false;
+            }
             if (status.ssid.equals(ssid)) {
                 mBssidStatusHistoryLogger.add(status, "clearBssidBlocklistForSsid");
                 return true;
