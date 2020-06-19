@@ -73,6 +73,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Mock WifiMetrics mWifiMetrics;
     @Mock Clock mClock;
     @Mock BugreportManager mBugreportManager;
+    @Mock WifiScoreCard mWifiScoreCard;
     private long mBootTimeMs = 0L;
     MockResources mResources;
     WifiDiagnostics mWifiDiagnostics;
@@ -136,6 +137,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         when(mWifiInjector.getJavaRuntime()).thenReturn(mJavaRuntime);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
         when(mWifiInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
+        when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
         when(mDeviceConfigFacade.getBugReportMinWindowMs()).thenReturn(BUG_REPORT_MIN_WINDOW_MS);
         // needed to for the loop in WifiDiagnostics.readLogcatStreamLinesWithTimeout().
         doAnswer(new AnswerWithArguments() {
@@ -744,6 +746,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         assertArrayEquals(ALERT_DATA, alertReport.alertData);
 
         verify(mWifiMetrics).logFirmwareAlert(ALERT_REASON_CODE);
+        verify(mWifiScoreCard).noteFirmwareAlert(ALERT_REASON_CODE);
     }
 
     /** Verifies that we skip the firmware and driver dumps if verbose is not enabled. */

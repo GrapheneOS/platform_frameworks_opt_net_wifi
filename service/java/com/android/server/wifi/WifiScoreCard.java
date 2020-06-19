@@ -70,7 +70,6 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -102,11 +101,6 @@ public class WifiScoreCard {
 
     public static final String PER_BSSID_DATA_NAME = "scorecard.proto";
     public static final String PER_NETWORK_DATA_NAME = "perNetworkData";
-    // Maximum connection duration in seconds to qualify short connection
-    private static final int SHORT_CONNECTION_DURATION_MAX_SEC = 20;
-    // Maximum interval between last RSSI poll and disconnection to qualify
-    // disconnection stats collection.
-    private static final int LAST_RSSI_POLL_MAX_INTERVAL_MS = 3_100;
 
     static final int INSUFFICIENT_RECENT_STATS = 0;
     static final int SUFFICIENT_RECENT_STATS_ONLY = 1;
@@ -233,6 +227,8 @@ public class WifiScoreCard {
     private boolean mNonlocalDisconnection = false;
     private int mDisconnectionReason;
 
+    private long mFirmwareAlertTimeMs = TS_NONE;
+
     /**
      * @param clock is the time source
      * @param l2KeySeed is for making our L2Keys usable only on this device
@@ -292,6 +288,7 @@ public class WifiScoreCard {
         mPolled = false;
         mValidatedThisConnectionAtLeastOnce = false;
         mNonlocalDisconnection = false;
+        mFirmwareAlertTimeMs = TS_NONE;
     }
 
     /**
@@ -410,6 +407,7 @@ public class WifiScoreCard {
         mPolled = false;
         mSsidPrev = mSsidCurr;
         mSsidCurr = ssid;
+        mFirmwareAlertTimeMs = TS_NONE;
 
         updatePerNetwork(Event.CONNECTION_ATTEMPT, ssid, scanRssi, LINK_SPEED_UNKNOWN,
                 UNKNOWN_REASON);
@@ -433,6 +431,14 @@ public class WifiScoreCard {
         mNonlocalDisconnection = true;
         mDisconnectionReason = reason;
         logd("nonlocal disconnection with reason: " + reason);
+    }
+
+    /**
+     * Record firmware alert timestamp and error code
+     */
+    public void noteFirmwareAlert(int errorCode) {
+        mFirmwareAlertTimeMs = mClock.getElapsedSinceBootMillis();
+        logd("firmware alert with error code: " + errorCode);
     }
 
     /**
@@ -870,7 +876,7 @@ public class WifiScoreCard {
 
         void updateEventStats(Event event, int rssi, int txSpeed, int failureReason) {
             finishPendingRead();
-            long currTimeMs = mClock.getWallClockMillis();
+            long currTimeMs = mClock.getElapsedSinceBootMillis();
             switch (event) {
                 case SIGNAL_POLL:
                     mLastRssiPoll = rssi;
@@ -927,11 +933,9 @@ public class WifiScoreCard {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("SSID: ").append(ssid).append("\n");
-            Calendar c = Calendar.getInstance();
             if (mLastRssiPollTimeMs != TS_NONE) {
                 sb.append(" LastRssiPollTime: ");
-                c.setTimeInMillis(mLastRssiPollTimeMs);
-                sb.append(String.format("%tm-%td %tH:%tM:%tS", c, c, c, c, c));
+                sb.append(mLastRssiPollTimeMs);
             }
             sb.append(" LastRssiPoll: " + mLastRssiPoll);
             sb.append(" LastTxSpeedPoll: " + mLastTxSpeedPoll);
@@ -943,21 +947,33 @@ public class WifiScoreCard {
         }
         private void handleDisconnection() {
             if (mConnectionSessionStartTimeMs > TS_NONE) {
-                long currTimeMs = mClock.getWallClockMillis();
-                int currSessionDurationSec = (int) ((currTimeMs
-                        - mConnectionSessionStartTimeMs) / 1000);
+                long currTimeMs = mClock.getElapsedSinceBootMillis();
+                int currSessionDurationMs = (int) (currTimeMs - mConnectionSessionStartTimeMs);
+                int currSessionDurationSec = currSessionDurationMs / 1000;
                 mRecentStats.accumulate(CNT_CONNECTION_DURATION_SEC, currSessionDurationSec);
                 long timeSinceLastRssiPollMs = currTimeMs - mLastRssiPollTimeMs;
-                boolean hasRecentRssiPoll = (mLastRssiPollTimeMs > TS_NONE
-                        && timeSinceLastRssiPollMs <= LAST_RSSI_POLL_MAX_INTERVAL_MS);
+                boolean hasRecentRssiPoll = mLastRssiPollTimeMs > TS_NONE
+                        && timeSinceLastRssiPollMs <= mDeviceConfigFacade
+                        .getHealthMonitorRssiPollValidTimeMs();
                 if (hasRecentRssiPoll) {
                     mRecentStats.incrementCount(CNT_DISCONNECTION);
                 }
+                int fwAlertValidTimeMs = mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs();
+                long timeSinceLastFirmAlert = currTimeMs - mFirmwareAlertTimeMs;
+                boolean isInvalidFwAlertTime = mFirmwareAlertTimeMs == TS_NONE;
+                boolean disableFwAlertCheck = fwAlertValidTimeMs == -1;
+                boolean passFirmwareAlertCheck = disableFwAlertCheck ? true : (isInvalidFwAlertTime
+                        ? false : timeSinceLastFirmAlert < fwAlertValidTimeMs);
+                boolean hasHighRssiOrHighTxSpeed =
+                        mLastRssiPoll >= mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()
+                        || mLastTxSpeedPoll >= HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS;
                 if (mNonlocalDisconnection && hasRecentRssiPoll
-                        && (mLastRssiPoll >= mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()
-                        || mLastTxSpeedPoll >= HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS)) {
+                        && isAbnormalDisconnectionReason(mDisconnectionReason)
+                        && passFirmwareAlertCheck
+                        && hasHighRssiOrHighTxSpeed) {
                     mRecentStats.incrementCount(CNT_DISCONNECTION_NONLOCAL);
-                    if (currSessionDurationSec <= SHORT_CONNECTION_DURATION_MAX_SEC) {
+                    if (currSessionDurationMs <= mDeviceConfigFacade
+                            .getHealthMonitorShortConnectionDurationThrMs()) {
                         mRecentStats.incrementCount(CNT_SHORT_CONNECTION_NONLOCAL);
                     }
                 }
@@ -968,6 +984,13 @@ public class WifiScoreCard {
             mConnectionSessionStartTimeMs = TS_NONE;
             mLastRssiPollTimeMs = TS_NONE;
         }
+
+        private boolean isAbnormalDisconnectionReason(int disconnectionReason) {
+            long mask = mDeviceConfigFacade.getAbnormalDisconnectionReasonCodeMask();
+            return disconnectionReason >= 0 && disconnectionReason <= 63
+                    && ((mask >> disconnectionReason) & 0x1) == 0x1;
+        }
+
         @NonNull NetworkConnectionStats getRecentStats() {
             return mRecentStats;
         }

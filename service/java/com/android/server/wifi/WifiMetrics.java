@@ -6416,6 +6416,15 @@ public class WifiMetrics {
     }
 
     /**
+     * Sets health monitor RSSI poll valid time in ms
+     */
+    public void setHealthMonitorRssiPollValidTimeMs(int rssiPollValidTimeMs) {
+        synchronized (mLock) {
+            mExperimentValues.healthMonitorRssiPollValidTimeMs = rssiPollValidTimeMs;
+        }
+    }
+
+    /**
      * Increment connection duration while link layer stats report are on
      */
     public void incrementConnectionDuration(int timeDeltaLastTwoPollsMs,
