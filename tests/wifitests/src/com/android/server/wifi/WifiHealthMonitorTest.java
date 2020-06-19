@@ -200,6 +200,18 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_RATIO_THR_NUMERATOR);
         when(mDeviceConfigFacade.getHealthMonitorMinNumConnectionAttempt()).thenReturn(
                 DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_MIN_NUM_CONNECTION_ATTEMPT);
+        when(mDeviceConfigFacade.getHealthMonitorShortConnectionDurationThrMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_SHORT_CONNECTION_DURATION_THR_MS);
+        when(mDeviceConfigFacade.getAbnormalDisconnectionReasonCodeMask()).thenReturn(
+                DeviceConfigFacade.DEFAULT_ABNORMAL_DISCONNECTION_REASON_CODE_MASK);
+        when(mDeviceConfigFacade.getHealthMonitorRssiPollValidTimeMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_RSSI_POLL_VALID_TIME_MS);
+        when(mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_FW_ALERT_VALID_TIME_MS);
+        when(mDeviceConfigFacade.getNonstationaryScanRssiValidTimeMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_NONSTATIONARY_SCAN_RSSI_VALID_TIME_MS);
+        when(mDeviceConfigFacade.getStationaryScanRssiValidTimeMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_STATIONARY_SCAN_RSSI_VALID_TIME_MS);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, mWifiInjector, mClock,
                 mWifiConfigManager, mWifiScoreCard, new Handler(mLooper.getLooper()), mWifiNative,
                 "some seed", mDeviceConfigFacade);
@@ -294,7 +306,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         millisecondsPass(1000);
         mWifiScoreCard.noteSignalPoll(mWifiInfo);
         millisecondsPass(2000);
-        int disconnectionReason = 3;
+        int disconnectionReason = 0;
         mWifiScoreCard.noteNonlocalDisconnect(disconnectionReason);
         millisecondsPass(10);
         mWifiScoreCard.resetConnectionState();

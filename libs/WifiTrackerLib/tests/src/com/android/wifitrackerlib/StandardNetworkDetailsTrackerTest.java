@@ -23,7 +23,6 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -102,36 +101,6 @@ public class StandardNetworkDetailsTrackerTest {
         when(mMockClock.millis()).thenReturn(START_MILLIS);
         when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
                 .thenReturn(mMockNetworkScoreManager);
-    }
-
-    /**
-     * Tests that a key without the correct prefix throws an error in the constructor.
-     */
-    @Test
-    public void testConstructor_malformedPrefix_throwsError() {
-        final String key = "IncorrectPrefix:ssid,0";
-        try {
-            final StandardNetworkDetailsTracker tracker =
-                    createTestStandardNetworkDetailsTracker(key);
-            fail("Incorrect prefix in key argument should throw an error!");
-        } catch (IllegalArgumentException e) {
-            // Test Succeeded
-        }
-    }
-
-    /**
-     * Tests that a key without a security type throws an error in the constructor.
-     */
-    @Test
-    public void testConstructor_malformedSecurity_throwsError() {
-        final String key = StandardWifiEntry.KEY_PREFIX + "ssid";
-        try {
-            final StandardNetworkDetailsTracker tracker =
-                    createTestStandardNetworkDetailsTracker(key);
-            fail("Incorrect security type in key argument should throw an error!");
-        } catch (IllegalArgumentException e) {
-            // Test Succeeded
-        }
     }
 
     /**
