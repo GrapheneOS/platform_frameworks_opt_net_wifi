@@ -107,7 +107,28 @@ public class DeviceConfigFacade {
     // At low traffic, Rx link speed values below the following threshold
     // are ignored because it could be due to low rate management frames
     static final int DEFAULT_RX_LINK_SPEED_LOW_THRESHOLD_MBPS = 9;
+    // Default health monitor short connection duration threshold in ms
+    static final int DEFAULT_HEALTH_MONITOR_SHORT_CONNECTION_DURATION_THR_MS = 20_000;
 
+    // Default mask for abnormal disconnection reason codes.
+    // Each bit of mask corresponds to a reason code defined in 802.11 standard section 9.4.1.7
+    // For example, b0 for reason code 0, b1 for reason code 1, etc.
+    // Bits below are abnormal disconnection reasons and thus are set to 1
+    // b0: reserved (e.g., STA heartbeat failure)
+    // b2: invalid auth
+    // b4: disassociated due to inactivity
+    // b6 and b7: invalid class 2 and 3 frames
+    // b34: disassociated due to missing ACKs
+    static final long DEFAULT_ABNORMAL_DISCONNECTION_REASON_CODE_MASK = 0x4_0000_00d5L;
+    // Default maximum interval between last RSSI poll and disconnection
+    static final int DEFAULT_HEALTH_MONITOR_RSSI_POLL_VALID_TIME_MS = 2_100;
+    // Default maximum interval between scan and connection attempt in non-stationary state
+    static final int DEFAULT_NONSTATIONARY_SCAN_RSSI_VALID_TIME_MS = 5_000;
+    // Default maximum interval between scan and connection attempt in stationary state
+    static final int DEFAULT_STATIONARY_SCAN_RSSI_VALID_TIME_MS = 8_000;
+    // Default health monitor firmware alert valid time.
+    // -1 disables firmware alert time check
+    static final int DEFAULT_HEALTH_MONITOR_FW_ALERT_VALID_TIME_MS = -1;
     // Cached values of fields updated via updateDeviceConfigFlags()
     private boolean mIsAbnormalConnectionBugreportEnabled;
     private int mAbnormalConnectionDurationMs;
@@ -150,6 +171,12 @@ public class DeviceConfigFacade {
     private int mOverlappingConnectionDurationThresholdMs;
     private int mTxLinkSpeedLowThresholdMbps;
     private int mRxLinkSpeedLowThresholdMbps;
+    private int mHealthMonitorShortConnectionDurationThrMs;
+    private long mAbnormalDisconnectionReasonCodeMask;
+    private int mHealthMonitorRssiPollValidTimeMs;
+    private int mNonstationaryScanRssiValidTimeMs;
+    private int mStationaryScanRssiValidTimeMs;
+    private int mHealthMonitorFwAlertValidTimeMs;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -278,6 +305,26 @@ public class DeviceConfigFacade {
         mRxLinkSpeedLowThresholdMbps = DeviceConfig.getInt(NAMESPACE,
                 "rx_link_speed_low_threshold_mbps",
                 DEFAULT_RX_LINK_SPEED_LOW_THRESHOLD_MBPS);
+        mHealthMonitorShortConnectionDurationThrMs = DeviceConfig.getInt(NAMESPACE,
+                "health_monitor_short_connection_duration_thr_ms",
+                DEFAULT_HEALTH_MONITOR_SHORT_CONNECTION_DURATION_THR_MS);
+        mAbnormalDisconnectionReasonCodeMask = DeviceConfig.getLong(NAMESPACE,
+                "abnormal_disconnection_reason_code_mask",
+                DEFAULT_ABNORMAL_DISCONNECTION_REASON_CODE_MASK);
+        mHealthMonitorRssiPollValidTimeMs = DeviceConfig.getInt(NAMESPACE,
+                "health_monitor_rssi_poll_valid_time_ms",
+                DEFAULT_HEALTH_MONITOR_RSSI_POLL_VALID_TIME_MS);
+        mNonstationaryScanRssiValidTimeMs = DeviceConfig.getInt(NAMESPACE,
+                "nonstationary_scan_rssi_valid_time_ms",
+                DEFAULT_NONSTATIONARY_SCAN_RSSI_VALID_TIME_MS);
+        mStationaryScanRssiValidTimeMs = DeviceConfig.getInt(NAMESPACE,
+                "stationary_scan_rssi_valid_time_ms",
+                DEFAULT_STATIONARY_SCAN_RSSI_VALID_TIME_MS);
+        mHealthMonitorFwAlertValidTimeMs = DeviceConfig.getInt(NAMESPACE,
+                "health_monitor_fw_alert_valid_time_ms",
+                DEFAULT_HEALTH_MONITOR_FW_ALERT_VALID_TIME_MS);
+        mWifiMetrics.setHealthMonitorRssiPollValidTimeMs(mHealthMonitorRssiPollValidTimeMs);
+
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -582,5 +629,48 @@ public class DeviceConfigFacade {
      */
     public int getRxLinkSpeedLowThresholdMbps() {
         return mRxLinkSpeedLowThresholdMbps;
+    }
+
+    /**
+     * Gets health monitor short connection duration threshold in ms
+     */
+    public int getHealthMonitorShortConnectionDurationThrMs() {
+        return mHealthMonitorShortConnectionDurationThrMs;
+    }
+
+    /**
+     * Gets abnormal disconnection reason code mask
+     */
+    public long getAbnormalDisconnectionReasonCodeMask() {
+        return mAbnormalDisconnectionReasonCodeMask;
+    }
+
+    /**
+     * Gets health monitor RSSI poll valid time in ms
+     */
+    public int getHealthMonitorRssiPollValidTimeMs() {
+        return mHealthMonitorRssiPollValidTimeMs;
+    }
+
+    /**
+     * Gets scan rssi valid time in ms when device is in non-stationary state
+     */
+    public int getNonstationaryScanRssiValidTimeMs() {
+        return mNonstationaryScanRssiValidTimeMs;
+    }
+
+    /**
+     * Gets scan rssi valid time in ms when device is in stationary state
+     */
+    public int getStationaryScanRssiValidTimeMs() {
+        return mStationaryScanRssiValidTimeMs;
+    }
+
+    /**
+     * Gets health monitor firmware alert valid time in ms,
+     * -1 disables firmware alert time check
+     */
+    public int getHealthMonitorFwAlertValidTimeMs() {
+        return mHealthMonitorFwAlertValidTimeMs;
     }
 }

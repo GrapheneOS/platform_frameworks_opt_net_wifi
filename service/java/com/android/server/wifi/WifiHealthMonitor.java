@@ -94,14 +94,11 @@ public class WifiHealthMonitor {
     private static final int MIN_NUM_BSSID_SCAN_2G = 2;
     // Minimum number of BSSIDs found above 2G with a normal scan
     private static final int MIN_NUM_BSSID_SCAN_ABOVE_2G = 2;
-    static final int DEFAULT_SCAN_RSSI_VALID_TIME_MS = 5_000;
-    static final int STATIONARY_SCAN_RSSI_VALID_TIME_MS = 20_000;
-
     // Minimum Tx speed in Mbps for disconnection stats collection
-    // Disconnection events with Tx speed below this threshold are not
-    // included in connection stats collection.
     static final int HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS = 54;
-    static final int HEALTH_MONITOR_MIN_TX_PACKET_PER_SEC = 2;
+    // Minimum Tx packet per seconds for disconnection stats collection
+    static final int HEALTH_MONITOR_MIN_TX_PACKET_PER_SEC = 4;
+
     private final Context mContext;
     private final WifiConfigManager mWifiConfigManager;
     private final WifiScoreCard mWifiScoreCard;
@@ -222,7 +219,8 @@ public class WifiHealthMonitor {
      */
     public int getScanRssiValidTimeMs() {
         return (mDeviceMobilityState == WifiManager.DEVICE_MOBILITY_STATE_STATIONARY)
-                ? STATIONARY_SCAN_RSSI_VALID_TIME_MS : DEFAULT_SCAN_RSSI_VALID_TIME_MS;
+                ? mDeviceConfigFacade.getStationaryScanRssiValidTimeMs() :
+                mDeviceConfigFacade.getNonstationaryScanRssiValidTimeMs();
     }
 
     /**
