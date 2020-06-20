@@ -4498,6 +4498,10 @@ public class ClientModeImpl extends StateMachine {
                     if (mVerboseLoggingEnabled) {
                         log("ConnectingOrConnectedState: Network disconnection " + eventInfo);
                     }
+                    reportConnectionAttemptEnd(
+                            WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION,
+                            WifiMetricsProto.ConnectionEvent.HLF_NONE,
+                            WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
                     if (eventInfo.reasonCode == ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT) {
                         String bssid = !isValidBssid(eventInfo.bssid)
                                 ? mTargetBssid : eventInfo.bssid;
