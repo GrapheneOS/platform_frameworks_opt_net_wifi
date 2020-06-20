@@ -47,6 +47,8 @@ public class BssidBlocklistMonitorTest {
     private static final String TEST_BSSID_1 = "0a:08:5c:67:89:00";
     private static final String TEST_BSSID_2 = "0a:08:5c:67:89:01";
     private static final String TEST_BSSID_3 = "0a:08:5c:67:89:02";
+    private static final int TEST_FRAMEWORK_BLOCK_REASON =
+            BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE;
     private static final int TEST_L2_FAILURE = BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION;
     private static final int TEST_DHCP_FAILURE = BssidBlocklistMonitor.REASON_DHCP_FAILURE;
     private static final long BASE_BLOCKLIST_DURATION = TimeUnit.MINUTES.toMillis(5); // 5 minutes
@@ -673,7 +675,8 @@ public class BssidBlocklistMonitorTest {
     public void testBlockBssidForDurationMs() {
         when(mClock.getWallClockMillis()).thenReturn(0L);
         long testDuration = 5500L;
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
+                TEST_FRAMEWORK_BLOCK_REASON);
         assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that the BSSID is removed from blocklist by clearBssidBlocklistForSsid
@@ -682,7 +685,8 @@ public class BssidBlocklistMonitorTest {
         assertEquals(1, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
 
         // Add the BSSID to blocklist again.
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
+                TEST_FRAMEWORK_BLOCK_REASON);
         assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that the BSSID is removed from blocklist once the specified duration is over.
@@ -699,15 +703,18 @@ public class BssidBlocklistMonitorTest {
         // test invalid BSSID
         when(mClock.getWallClockMillis()).thenReturn(0L);
         long testDuration = 5500L;
-        mBssidBlocklistMonitor.blockBssidForDurationMs(null, TEST_SSID_1, testDuration);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(null, TEST_SSID_1, testDuration,
+                TEST_FRAMEWORK_BLOCK_REASON);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // test invalid SSID
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, null, testDuration);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, null, testDuration,
+                TEST_FRAMEWORK_BLOCK_REASON);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // test invalid duration
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, -1);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, -1,
+                TEST_FRAMEWORK_BLOCK_REASON);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 }

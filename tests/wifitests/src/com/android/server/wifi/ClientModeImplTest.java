@@ -4349,8 +4349,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiMetrics, times(1)).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
-        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(sBSSID, sSSID,
-                btmFrmData.mBlackListDurationMs);
+        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
+                eq(btmFrmData.mBlackListDurationMs), anyInt());
     }
 
     /**
@@ -4373,8 +4373,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
         mLooper.dispatchAll();
 
-        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(sBSSID, sSSID,
-                btmFrmData.mBlackListDurationMs);
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
+                eq(btmFrmData.mBlackListDurationMs), anyInt());
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
         verify(mWifiMetrics, times(1)).incrementMboCellularSwitchRequestCount();
         verify(mWifiMetrics, times(1))

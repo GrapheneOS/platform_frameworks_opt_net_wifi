@@ -64,8 +64,15 @@ public class BssidBlocklistMonitor {
     public static final int REASON_DHCP_FAILURE = 7;
     // Abnormal disconnect error
     public static final int REASON_ABNORMAL_DISCONNECT = 8;
+    // AP initiated disconnect for a given duration.
+    public static final int REASON_FRAMEWORK_DISCONNECT_MBO_OCE = 9;
+    // Avoid connecting to the failed AP when trying to reconnect on other available candidates.
+    public static final int REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT = 10;
+    // The connected scorer has disconnected this network.
+    public static final int REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE = 11;
     // Constant being used to keep track of how many failure reasons there are.
-    public static final int NUMBER_REASON_CODES = 9;
+    public static final int NUMBER_REASON_CODES = 12;
+    public static final int INVALID_REASON = -1;
 
     @IntDef(prefix = { "REASON_" }, value = {
             REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
@@ -75,7 +82,11 @@ public class BssidBlocklistMonitor {
             REASON_ASSOCIATION_REJECTION,
             REASON_ASSOCIATION_TIMEOUT,
             REASON_AUTHENTICATION_FAILURE,
-            REASON_DHCP_FAILURE
+            REASON_DHCP_FAILURE,
+            REASON_ABNORMAL_DISCONNECT,
+            REASON_FRAMEWORK_DISCONNECT_MBO_OCE,
+            REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT,
+            REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface FailureReason {}
@@ -92,10 +103,11 @@ public class BssidBlocklistMonitor {
             "REASON_ASSOCIATION_TIMEOUT",
             "REASON_AUTHENTICATION_FAILURE",
             "REASON_DHCP_FAILURE",
-            "REASON_ABNORMAL_DISCONNECT"
+            "REASON_ABNORMAL_DISCONNECT",
+            "REASON_FRAMEWORK_DISCONNECT_MBO_OCE",
+            "REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT",
+            "REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE"
     };
-    private static final String FAILURE_BSSID_BLOCKED_BY_FRAMEWORK_REASON_STRING =
-            "BlockedByFramework";
     private static final long ABNORMAL_DISCONNECT_RESET_TIME_MS = TimeUnit.HOURS.toMillis(3);
     private static final String TAG = "BssidBlocklistMonitor";
 
@@ -161,10 +173,11 @@ public class BssidBlocklistMonitor {
         mBssidStatusHistoryLogger.dump(pw);
     }
 
-    private void addToBlocklist(@NonNull BssidStatus entry, long durationMs, String reasonString) {
-        entry.addToBlocklist(durationMs, reasonString);
+    private void addToBlocklist(@NonNull BssidStatus entry, long durationMs,
+            @FailureReason int reason) {
+        entry.addToBlocklist(durationMs, reason);
         localLog(TAG + " addToBlocklist: bssid=" + entry.bssid + ", ssid=" + entry.ssid
-                + ", durationMs=" + durationMs + ", reason=" + reasonString);
+                + ", durationMs=" + durationMs + ", reason=" + getFailureReasonString(reason));
     }
 
     /**
@@ -218,13 +231,18 @@ public class BssidBlocklistMonitor {
 
     /**
      * Block any attempts to auto-connect to the BSSID for the specified duration.
+     * This is meant to be used by features that need wifi to avoid a BSSID for a certain duration,
+     * and thus will not increase the failure streak counters.
+     * @param bssid identifies the AP to block.
+     * @param ssid identifies the SSID the AP belongs to.
+     * @param durationMs duration in millis to block.
+     * @param blockReason reason for blocking the BSSID.
      */
     public void blockBssidForDurationMs(@NonNull String bssid, @NonNull String ssid,
-            long durationMs) {
-        if (bssid == null || ssid == null || WifiManager.UNKNOWN_SSID.equals(ssid)
-                || bssid.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY) || durationMs <= 0) {
+            long durationMs, @FailureReason int blockReason) {
+        if (durationMs <= 0 || !isValidNetworkAndFailureReason(bssid, ssid, blockReason)) {
             Log.e(TAG, "Invalid input: BSSID=" + bssid + ", SSID=" + ssid
-                    + ", durationMs=" + durationMs);
+                    + ", durationMs=" + durationMs + ", blockReason=" + blockReason);
             return;
         }
         BssidStatus status = getOrCreateBssidStatus(bssid, ssid);
@@ -233,11 +251,13 @@ public class BssidBlocklistMonitor {
             // Return because this BSSID is already being blocked for a longer time.
             return;
         }
-        addToBlocklist(status, durationMs, FAILURE_BSSID_BLOCKED_BY_FRAMEWORK_REASON_STRING);
+        addToBlocklist(status, durationMs, blockReason);
     }
 
     private String getFailureReasonString(@FailureReason int reasonCode) {
-        if (reasonCode >= FAILURE_REASON_STRINGS.length) {
+        if (reasonCode == INVALID_REASON) {
+            return "INVALID_REASON";
+        } else if (reasonCode < 0 || reasonCode >= FAILURE_REASON_STRINGS.length) {
             return "REASON_UNKNOWN";
         }
         return FAILURE_REASON_STRINGS[reasonCode];
@@ -298,7 +318,7 @@ public class BssidBlocklistMonitor {
             }
             addToBlocklist(entry,
                     getBlocklistDurationWithExponentialBackoff(currentStreak, baseBlockDurationMs),
-                    getFailureReasonString(reasonCode));
+                    reasonCode);
             mWifiScoreCard.incrementBssidBlocklistStreak(ssid, bssid, reasonCode);
             return true;
         }
@@ -593,7 +613,7 @@ public class BssidBlocklistMonitor {
         public final String bssid;
         public final String ssid;
         public final int[] failureCount = new int[NUMBER_REASON_CODES];
-        private String mBlockReason = ""; // reason of blocking for logging only
+        private int mBlockReason = INVALID_REASON; // reason of blocking this BSSID
 
         // The following are used to flag how long this BSSID stays in the blocklist.
         public boolean isInBlocklist;
@@ -616,8 +636,9 @@ public class BssidBlocklistMonitor {
         /**
          * Add this BSSID to blocklist for the specified duration.
          * @param durationMs
+         * @param blockReason
          */
-        public void addToBlocklist(long durationMs, String blockReason) {
+        public void addToBlocklist(long durationMs, @FailureReason int blockReason) {
             isInBlocklist = true;
             blocklistStartTimeMs = mClock.getWallClockMillis();
             blocklistEndTimeMs = blocklistStartTimeMs + durationMs;
@@ -632,7 +653,7 @@ public class BssidBlocklistMonitor {
             isInBlocklist = false;
             blocklistStartTimeMs = 0;
             blocklistEndTimeMs = 0;
-            mBlockReason = "";
+            mBlockReason = INVALID_REASON;
             localLog(TAG + " removeFromBlocklist BSSID=" + bssid);
         }
 
@@ -643,7 +664,7 @@ public class BssidBlocklistMonitor {
             sb.append(", SSID=" + ssid);
             sb.append(", isInBlocklist=" + isInBlocklist);
             if (isInBlocklist) {
-                sb.append(", blockReason=" + mBlockReason);
+                sb.append(", blockReason=" + getFailureReasonString(mBlockReason));
                 mCalendar.setTimeInMillis(blocklistStartTimeMs);
                 sb.append(", blocklistStartTimeMs="
                         + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,

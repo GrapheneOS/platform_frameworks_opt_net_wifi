@@ -802,7 +802,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong());
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong(),
+                anyInt());
     }
 
     /**
@@ -826,7 +827,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(any(), any(), anyLong());
+        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(any(), any(), anyLong(), anyInt());
     }
 
     /**
@@ -852,7 +853,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong());
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong(),
+                anyInt());
     }
 
     /**
