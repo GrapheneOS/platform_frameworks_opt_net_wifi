@@ -63,7 +63,6 @@ import android.net.Uri;
 import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientManager;
-import android.net.shared.Inet4AddressUtils;
 import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
@@ -109,6 +108,7 @@ import com.android.internal.util.MessageUtils;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.android.net.module.util.Inet4AddressUtils;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
@@ -4496,7 +4496,7 @@ public class ClientModeImpl extends StateMachine {
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {
                     DisconnectEventInfo eventInfo = (DisconnectEventInfo) message.obj;
                     if (mVerboseLoggingEnabled) {
-                        log("ConnectingState: Network disconnection " + eventInfo);
+                        log("ConnectingOrConnectedState: Network disconnection " + eventInfo);
                     }
                     if (eventInfo.reasonCode == ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT) {
                         String bssid = !isValidBssid(eventInfo.bssid)
@@ -4507,7 +4507,10 @@ public class ClientModeImpl extends StateMachine {
                     }
                     clearNetworkCachedDataIfNeeded(
                             getTargetWifiConfiguration(), eventInfo.reasonCode);
-                    boolean newConnectionInProgress = !eventInfo.ssid.equals(getTargetSsid());
+                    String targetSsid = getTargetSsid();
+                    // If network is removed while connecting, targetSsid can be null.
+                    boolean newConnectionInProgress =
+                            targetSsid != null && !eventInfo.ssid.equals(targetSsid);
                     handleNetworkDisconnect(newConnectionInProgress);
                     if (!newConnectionInProgress) {
                         transitionTo(mDisconnectedState);
