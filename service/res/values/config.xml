@@ -137,6 +137,9 @@
     <!-- Integer indicating maximum hardware supported client number of soft ap -->
     <integer translatable="false" name="config_wifiHardwareSoftapMaxClientCount">16</integer>
 
+    <!-- boolean indicating whether reset channel configuration or not during cloud configuration restore -->
+    <bool translatable="false" name ="config_wifiSoftapResetChannelConfig">true</bool>
+
     <!-- List of allowed channels in 2GHz band for softap. If the device doesn't want to restrict
          channels this should be empty. Values is a comma separated channel string and/or channel
          range string like '1-6,11'. -->

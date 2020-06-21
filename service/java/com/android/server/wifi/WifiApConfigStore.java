@@ -183,6 +183,16 @@ public class WifiApConfigStore {
                     SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
             Log.e(TAG, "Device doesn't support WPA3-SAE, reset config to WPA2");
         }
+
+        if (mContext.getResources().getBoolean(R.bool.config_wifiSoftapResetChannelConfig)) {
+            // The device might not support customize channel or forced channel might not
+            // work in some countries. Need to reset it.
+            if (config.getChannel() != 0) {
+                // Add 2.4G by default
+                configBuilder.setBand(SoftApConfiguration.BAND_2GHZ | config.getBand());
+                Log.i(TAG, "Reset SAP channel configuration");
+            }
+        }
         mWifiMetrics.noteSoftApConfigReset(config, configBuilder.build());
         return configBuilder.build();
     }
