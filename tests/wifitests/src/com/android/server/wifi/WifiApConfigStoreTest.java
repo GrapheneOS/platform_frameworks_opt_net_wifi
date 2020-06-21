@@ -661,16 +661,21 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
     public void testResetToDefaultForUnsupportedConfig() throws Exception {
         mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, false);
         mResources.setBoolean(R.bool.config_wifi_softap_sae_supported, false);
+        mResources.setBoolean(R.bool.config_wifiSoftapResetChannelConfig, true);
         SoftApConfiguration sae_config = new SoftApConfiguration.Builder()
                 .setPassphrase("secretsecret", SoftApConfiguration.SECURITY_TYPE_WPA3_SAE)
                 .setMaxNumberOfClients(10)
                 .setClientControlByUserEnabled(true)
+                .setChannel(149, SoftApConfiguration.BAND_5GHZ)
                 .build();
         WifiApConfigStore store = createWifiApConfigStore();
 
         SoftApConfiguration resetedConfig = store.resetToDefaultForUnsupportedConfig(sae_config);
         assertEquals(resetedConfig.getMaxNumberOfClients(), 0);
         assertFalse(resetedConfig.isClientControlByUserEnabled());
+        assertEquals(resetedConfig.getChannel(), 0);
+        assertEquals(resetedConfig.getBand(),
+                SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ);
         verify(mWifiMetrics).noteSoftApConfigReset(sae_config, resetedConfig);
     }
 
