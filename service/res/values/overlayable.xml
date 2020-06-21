@@ -57,6 +57,7 @@
           <item type="integer" name="config_wifiFrameworkScoreLowRssiThreshold6ghz" />
           <item type="integer" name="config_wifiFrameworkScoreGoodRssiThreshold6ghz" />
           <item type="integer" name="config_wifiFrameworkSoftApShutDownTimeoutMilliseconds" />
+          <item type="bool" name="config_wifiSoftapResetChannelConfig" />
           <item type="string"  name="config_wifiSoftap2gChannelList" />
           <item type="string"  name="config_wifiSoftap5gChannelList" />
           <item type="string"  name="config_wifiSoftap6gChannelList" />
