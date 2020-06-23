@@ -20,16 +20,6 @@ import static android.app.AppOpsManager.MODE_IGNORED;
 import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_NOT_METERED;
-import static android.net.wifi.WifiManager.ACTION_PASSPOINT_DEAUTH_IMMINENT;
-import static android.net.wifi.WifiManager.ACTION_PASSPOINT_ICON;
-import static android.net.wifi.WifiManager.ACTION_PASSPOINT_SUBSCRIPTION_REMEDIATION;
-import static android.net.wifi.WifiManager.EXTRA_BSSID_LONG;
-import static android.net.wifi.WifiManager.EXTRA_DELAY;
-import static android.net.wifi.WifiManager.EXTRA_ESS;
-import static android.net.wifi.WifiManager.EXTRA_FILENAME;
-import static android.net.wifi.WifiManager.EXTRA_ICON;
-import static android.net.wifi.WifiManager.EXTRA_SUBSCRIPTION_REMEDIATION_METHOD;
-import static android.net.wifi.WifiManager.EXTRA_URL;
 
 import static com.android.server.wifi.WifiConfigurationTestUtil.SECURITY_EAP;
 
@@ -60,7 +50,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.net.wifi.EAPConstants;
 import android.net.wifi.ScanResult;
@@ -139,7 +128,6 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final long BSSID = 0x112233445566L;
     private static final String TEST_PACKAGE = "com.android.test";
     private static final String TEST_PACKAGE1 = "com.android.test1";
-    private static final String ICON_FILENAME = "test";
     private static final String TEST_FQDN = "test1.test.com";
     private static final String TEST_FQDN2 = "test2.test.com";
     private static final String TEST_FRIENDLY_NAME = "friendly name";
@@ -253,30 +241,6 @@ public class PasspointManagerTest extends WifiBaseTest {
         // SIM is absent
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
-    }
-
-    /**
-     * Verify {@link WifiManager#ACTION_PASSPOINT_ICON} broadcast intent.
-     * @param bssid BSSID of the AP
-     * @param fileName Name of the icon file
-     * @param data icon data byte array
-     */
-    private void verifyIconIntent(long bssid, String fileName, byte[] data) {
-        ArgumentCaptor<Intent> intent = ArgumentCaptor.forClass(Intent.class);
-        verify(mContext).sendBroadcastAsUser(intent.capture(), eq(UserHandle.ALL),
-                eq(android.Manifest.permission.ACCESS_WIFI_STATE));
-        assertEquals(ACTION_PASSPOINT_ICON, intent.getValue().getAction());
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_BSSID_LONG));
-        assertEquals(bssid, intent.getValue().getExtras().getLong(EXTRA_BSSID_LONG));
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_FILENAME));
-        assertEquals(fileName, intent.getValue().getExtras().getString(EXTRA_FILENAME));
-        if (data != null) {
-            assertTrue(intent.getValue().getExtras().containsKey(EXTRA_ICON));
-            Icon icon = (Icon) intent.getValue().getExtras().getParcelable(EXTRA_ICON);
-            assertTrue(Arrays.equals(data, icon.getDataBytes()));
-        } else {
-            assertFalse(intent.getValue().getExtras().containsKey(EXTRA_ICON));
-        }
     }
 
     /**
@@ -509,84 +473,6 @@ public class PasspointManagerTest extends WifiBaseTest {
         mCallbacks.onANQPResponse(TEST_BSSID, null);
         verify(mAnqpCache, never()).addEntry(any(ANQPNetworkKey.class), anyMap());
 
-    }
-
-    /**
-     * Validate the broadcast intent when icon file retrieval succeeded.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void iconResponseSuccess() throws Exception {
-        byte[] iconData = new byte[] {0x00, 0x11};
-        mCallbacks.onIconResponse(BSSID, ICON_FILENAME, iconData);
-        verifyIconIntent(BSSID, ICON_FILENAME, iconData);
-    }
-
-    /**
-     * Validate the broadcast intent when icon file retrieval failed.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void iconResponseFailure() throws Exception {
-        mCallbacks.onIconResponse(BSSID, ICON_FILENAME, null);
-        verifyIconIntent(BSSID, ICON_FILENAME, null);
-    }
-
-    /**
-     * Validate the broadcast intent {@link WifiManager#ACTION_PASSPOINT_DEAUTH_IMMINENT} when
-     * Deauth Imminent WNM frame is received.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void onDeauthImminentReceived() throws Exception {
-        String reasonUrl = "test.com";
-        int delay = 123;
-        boolean ess = true;
-
-        mCallbacks.onWnmFrameReceived(new WnmData(BSSID, reasonUrl, ess, delay));
-        // Verify the broadcast intent.
-        ArgumentCaptor<Intent> intent = ArgumentCaptor.forClass(Intent.class);
-        verify(mContext).sendBroadcastAsUser(intent.capture(), eq(UserHandle.ALL),
-                eq(android.Manifest.permission.ACCESS_WIFI_STATE));
-        assertEquals(ACTION_PASSPOINT_DEAUTH_IMMINENT, intent.getValue().getAction());
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_BSSID_LONG));
-        assertEquals(BSSID, intent.getValue().getExtras().getLong(EXTRA_BSSID_LONG));
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_ESS));
-        assertEquals(ess, intent.getValue().getExtras().getBoolean(EXTRA_ESS));
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_DELAY));
-        assertEquals(delay, intent.getValue().getExtras().getInt(EXTRA_DELAY));
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_URL));
-        assertEquals(reasonUrl, intent.getValue().getExtras().getString(EXTRA_URL));
-    }
-
-    /**
-     * Validate the broadcast intent {@link WifiManager#ACTION_PASSPOINT_SUBSCRIPTION_REMEDIATION}
-     * when Subscription Remediation WNM frame is received.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void onSubscriptionRemediationReceived() throws Exception {
-        int serverMethod = 1;
-        String serverUrl = "testUrl";
-
-        mCallbacks.onWnmFrameReceived(new WnmData(BSSID, serverUrl, serverMethod));
-        // Verify the broadcast intent.
-        ArgumentCaptor<Intent> intent = ArgumentCaptor.forClass(Intent.class);
-        verify(mContext).sendBroadcastAsUser(intent.capture(), eq(UserHandle.ALL),
-                eq(android.Manifest.permission.ACCESS_WIFI_STATE));
-        assertEquals(ACTION_PASSPOINT_SUBSCRIPTION_REMEDIATION, intent.getValue().getAction());
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_BSSID_LONG));
-        assertEquals(BSSID, intent.getValue().getExtras().getLong(EXTRA_BSSID_LONG));
-        assertTrue(intent.getValue().getExtras().containsKey(
-                EXTRA_SUBSCRIPTION_REMEDIATION_METHOD));
-        assertEquals(serverMethod, intent.getValue().getExtras().getInt(
-                EXTRA_SUBSCRIPTION_REMEDIATION_METHOD));
-        assertTrue(intent.getValue().getExtras().containsKey(EXTRA_URL));
-        assertEquals(serverUrl, intent.getValue().getExtras().getString(EXTRA_URL));
     }
 
     /**

@@ -18,24 +18,12 @@ package com.android.server.wifi.hotspot2;
 
 import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
 import static android.net.wifi.WifiConfiguration.MeteredOverride;
-import static android.net.wifi.WifiManager.ACTION_PASSPOINT_DEAUTH_IMMINENT;
-import static android.net.wifi.WifiManager.ACTION_PASSPOINT_ICON;
-import static android.net.wifi.WifiManager.ACTION_PASSPOINT_SUBSCRIPTION_REMEDIATION;
-import static android.net.wifi.WifiManager.EXTRA_BSSID_LONG;
-import static android.net.wifi.WifiManager.EXTRA_DELAY;
-import static android.net.wifi.WifiManager.EXTRA_ESS;
-import static android.net.wifi.WifiManager.EXTRA_FILENAME;
-import static android.net.wifi.WifiManager.EXTRA_ICON;
-import static android.net.wifi.WifiManager.EXTRA_SUBSCRIPTION_REMEDIATION_METHOD;
-import static android.net.wifi.WifiManager.EXTRA_URL;
 
 import static java.security.cert.PKIXReason.NO_TRUST_ANCHOR;
 
 import android.annotation.NonNull;
 import android.app.AppOpsManager;
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.drawable.Icon;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -47,7 +35,6 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
-import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
@@ -169,38 +156,12 @@ public class PasspointManager {
 
         @Override
         public void onIconResponse(long bssid, String fileName, byte[] data) {
-            Intent intent = new Intent(ACTION_PASSPOINT_ICON);
-            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-            intent.putExtra(EXTRA_BSSID_LONG, bssid);
-            intent.putExtra(EXTRA_FILENAME, fileName);
-            if (data != null) {
-                intent.putExtra(EXTRA_ICON, Icon.createWithData(data, 0, data.length));
-            }
-            mContext.sendBroadcastAsUser(intent, UserHandle.ALL,
-                    android.Manifest.permission.ACCESS_WIFI_STATE);
+            // Empty
         }
 
         @Override
         public void onWnmFrameReceived(WnmData event) {
-            // %012x HS20-SUBSCRIPTION-REMEDIATION "%u %s", osu_method, url
-            // %012x HS20-DEAUTH-IMMINENT-NOTICE "%u %u %s", code, reauth_delay, url
-            Intent intent;
-            if (event.isDeauthEvent()) {
-                intent = new Intent(ACTION_PASSPOINT_DEAUTH_IMMINENT);
-                intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-                intent.putExtra(EXTRA_BSSID_LONG, event.getBssid());
-                intent.putExtra(EXTRA_URL, event.getUrl());
-                intent.putExtra(EXTRA_ESS, event.isEss());
-                intent.putExtra(EXTRA_DELAY, event.getDelay());
-            } else {
-                intent = new Intent(ACTION_PASSPOINT_SUBSCRIPTION_REMEDIATION);
-                intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-                intent.putExtra(EXTRA_BSSID_LONG, event.getBssid());
-                intent.putExtra(EXTRA_SUBSCRIPTION_REMEDIATION_METHOD, event.getMethod());
-                intent.putExtra(EXTRA_URL, event.getUrl());
-            }
-            mContext.sendBroadcastAsUser(intent, UserHandle.ALL,
-                    android.Manifest.permission.ACCESS_WIFI_STATE);
+            // Empty
         }
     }
 
