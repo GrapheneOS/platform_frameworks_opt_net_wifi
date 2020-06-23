@@ -204,9 +204,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         when(mContext.getSystemService(ActivityManager.class))
                 .thenReturn(mock(ActivityManager.class));
-        Context mockContext = mock(Context.class);
-        PackageManager mockPackageManager = mock(PackageManager.class);
-        when(mockContext.getPackageManager()).thenReturn(mockPackageManager);
 
         when(mWifiKeyStore
                 .updateNetworkKeys(any(WifiConfiguration.class), any()))
@@ -418,8 +415,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
         assertTrue(result.isNewNetwork());
 
-        verifyNetworkRemoveBroadcast(ephemeralNetwork);
-        verifyNetworkAddBroadcast(openNetwork);
+        verifyNetworkRemoveBroadcast();
+        verifyNetworkAddBroadcast();
 
         // Verify that the config store write was triggered with this new configuration.
         verifyNetworkInConfigStoreData(openNetwork);
@@ -449,7 +446,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         NetworkUpdateResult result = addNetworkToWifiConfigManager(ephemeralNetwork2);
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
-        verifyNetworkUpdateBroadcast(ephemeralNetwork);
+        verifyNetworkUpdateBroadcast();
 
         // Ensure that the write was not invoked for ephemeral network addition.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
@@ -1161,7 +1158,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Verify keys are not being removed.
         verify(mWifiKeyStore, never()).removeKeys(any(WifiEnterpriseConfig.class));
-        verifyNetworkRemoveBroadcast(passpointNetwork);
+        verifyNetworkRemoveBroadcast();
         // Ensure that the write was not invoked for Passpoint network remove.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
 
@@ -1723,7 +1720,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertFalse(result.isNewNetwork());
 
         // Verify no changes to the original network configuration.
-        verifyNetworkUpdateBroadcast(originalNetwork);
+        verifyNetworkUpdateBroadcast();
         verifyNetworkInConfigStoreData(originalNetwork);
         assertFalse(result.hasIpChanged());
         assertFalse(result.hasProxyChanged());
@@ -4911,57 +4908,55 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      * Verifies that the network was present in the network change broadcast and returns the
      * change reason.
      */
-    private int verifyNetworkInBroadcastAndReturnReason(WifiConfiguration configuration) {
+    private int verifyNetworkInBroadcastAndReturnReason() {
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        ArgumentCaptor<UserHandle> userHandleCaptor = ArgumentCaptor.forClass(UserHandle.class);
-        mContextConfigStoreMockOrder.verify(mContext)
-                .sendBroadcastAsUser(intentCaptor.capture(), userHandleCaptor.capture());
+        mContextConfigStoreMockOrder.verify(mContext).sendBroadcastAsUser(
+                intentCaptor.capture(),
+                eq(UserHandle.ALL),
+                eq(android.Manifest.permission.ACCESS_WIFI_STATE));
 
-        assertEquals(userHandleCaptor.getValue(), UserHandle.ALL);
         Intent intent = intentCaptor.getValue();
 
-        int changeReason = intent.getIntExtra(WifiManager.EXTRA_CHANGE_REASON, -1);
         WifiConfiguration retrievedConfig =
                 (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        assertEquals(retrievedConfig.getKey(), configuration.getKey());
+        assertNull(retrievedConfig);
 
-        // Verify that all the passwords are masked in the broadcast configuration.
-        assertPasswordsMaskedInWifiConfiguration(retrievedConfig);
-
-        return changeReason;
+        return intent.getIntExtra(WifiManager.EXTRA_CHANGE_REASON, -1);
     }
 
     /**
      * Verifies that we sent out an add broadcast with the provided network.
      */
-    private void verifyNetworkAddBroadcast(WifiConfiguration configuration) {
+    private void verifyNetworkAddBroadcast() {
         assertEquals(
-                verifyNetworkInBroadcastAndReturnReason(configuration),
+                verifyNetworkInBroadcastAndReturnReason(),
                 WifiManager.CHANGE_REASON_ADDED);
     }
 
     /**
      * Verifies that we sent out an update broadcast with the provided network.
      */
-    private void verifyNetworkUpdateBroadcast(WifiConfiguration configuration) {
+    private void verifyNetworkUpdateBroadcast() {
         assertEquals(
-                verifyNetworkInBroadcastAndReturnReason(configuration),
+                verifyNetworkInBroadcastAndReturnReason(),
                 WifiManager.CHANGE_REASON_CONFIG_CHANGE);
     }
 
     /**
      * Verifies that we sent out a remove broadcast with the provided network.
      */
-    private void verifyNetworkRemoveBroadcast(WifiConfiguration configuration) {
+    private void verifyNetworkRemoveBroadcast() {
         assertEquals(
-                verifyNetworkInBroadcastAndReturnReason(configuration),
+                verifyNetworkInBroadcastAndReturnReason(),
                 WifiManager.CHANGE_REASON_REMOVED);
     }
 
     private void verifyWifiConfigStoreRead() {
         assertTrue(mWifiConfigManager.loadFromStore());
-        mContextConfigStoreMockOrder.verify(mContext)
-                .sendBroadcastAsUser(any(Intent.class), any(UserHandle.class));
+        mContextConfigStoreMockOrder.verify(mContext).sendBroadcastAsUser(
+                any(Intent.class),
+                any(UserHandle.class),
+                eq(android.Manifest.permission.ACCESS_WIFI_STATE));
     }
 
     private void triggerStoreReadIfNeeded() {
@@ -5022,7 +5017,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(result.hasIpChanged());
         assertTrue(result.hasProxyChanged());
 
-        verifyNetworkAddBroadcast(configuration);
+        verifyNetworkAddBroadcast();
         // Verify that the config store write was triggered with this new configuration.
         verifyNetworkInConfigStoreData(configuration);
         return result;
@@ -5039,7 +5034,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(result.hasIpChanged());
         assertTrue(result.hasProxyChanged());
 
-        verifyNetworkAddBroadcast(configuration);
+        verifyNetworkAddBroadcast();
         // Ensure that the write was not invoked for ephemeral network addition.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
         return result;
@@ -5057,7 +5052,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(result.hasIpChanged());
         assertTrue(result.hasProxyChanged());
 
-        verifyNetworkAddBroadcast(configuration);
+        verifyNetworkAddBroadcast();
         // Ensure that the write was not invoked for ephemeral network addition.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
         return result;
@@ -5077,7 +5072,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Verify keys are not being installed.
         verify(mWifiKeyStore, never()).updateNetworkKeys(any(WifiConfiguration.class),
                 any(WifiConfiguration.class));
-        verifyNetworkAddBroadcast(configuration);
+        verifyNetworkAddBroadcast();
         // Ensure that the write was not invoked for Passpoint network addition.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
         return result;
@@ -5108,7 +5103,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
         assertFalse(result.isNewNetwork());
 
-        verifyNetworkUpdateBroadcast(configuration);
+        verifyNetworkUpdateBroadcast();
         // Verify that the config store write was triggered with this new configuration.
         verifyNetworkInConfigStoreData(configuration);
         return result;
@@ -5146,7 +5141,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.removeNetwork(
                 configuration.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME));
 
-        verifyNetworkRemoveBroadcast(configuration);
+        verifyNetworkRemoveBroadcast();
         // Verify if the config store write was triggered without this new configuration.
         verifyNetworkNotInConfigStoreData(configuration);
         verify(mBssidBlocklistMonitor, atLeastOnce()).handleNetworkRemoved(configuration.SSID);
@@ -5160,7 +5155,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.removeNetwork(
                 configuration.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME));
 
-        verifyNetworkRemoveBroadcast(configuration);
+        verifyNetworkRemoveBroadcast();
         // Ensure that the write was not invoked for ephemeral network remove.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
     }
@@ -5175,7 +5170,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Verify keys are not being removed.
         verify(mWifiKeyStore, never()).removeKeys(any(WifiEnterpriseConfig.class));
-        verifyNetworkRemoveBroadcast(configuration);
+        verifyNetworkRemoveBroadcast();
         // Ensure that the write was not invoked for Passpoint network remove.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, never()).write(anyBoolean());
     }
@@ -5186,7 +5181,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     private void verifyUpdateNetworkStatus(WifiConfiguration configuration, int status) {
         assertEquals(status, configuration.status);
-        verifyNetworkUpdateBroadcast(configuration);
+        verifyNetworkUpdateBroadcast();
     }
 
     /**
