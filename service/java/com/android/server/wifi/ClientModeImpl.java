@@ -1564,7 +1564,7 @@ public class ClientModeImpl extends StateMachine {
                 String bugTitle = "Wi-Fi BugReport";
                 String bugDetail = "Detect abnormal "
                         + WifiHealthMonitor.FAILURE_REASON_NAME[reasonCode];
-                takeBugReport(bugTitle, bugDetail);
+                mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
             }
         }
     }
@@ -1576,16 +1576,9 @@ public class ClientModeImpl extends StateMachine {
                 String bugTitle = "Wi-Fi BugReport";
                 String bugDetail = "Detect abnormal "
                         + WifiHealthMonitor.FAILURE_REASON_NAME[reasonCode];
-                takeBugReport(bugTitle, bugDetail);
+                mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
             }
         }
-    }
-
-    /**
-     * Initiates a system-level bugreport, in a non-blocking fashion.
-     */
-    public void takeBugReport(String bugTitle, String bugDetail) {
-        mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
     }
 
     /**
@@ -2829,7 +2822,7 @@ public class ClientModeImpl extends StateMachine {
                 > mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs()) {
             String bugTitle = "Wi-Fi BugReport";
             String bugDetail = "Detect abnormal overlapping connection";
-            takeBugReport(bugTitle, bugDetail);
+            mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
         }
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
         mWrongPasswordNotifier.onNewConnectionAttempt();

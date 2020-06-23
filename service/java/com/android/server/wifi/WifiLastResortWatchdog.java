@@ -29,7 +29,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
@@ -115,7 +114,7 @@ public class WifiLastResortWatchdog {
 
     private final WifiInjector mWifiInjector;
     private final WifiMetrics mWifiMetrics;
-    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final BaseWifiDiagnostics mWifiDiagnostics;
     private final Clock mClock;
     private final Context mContext;
     private final DeviceConfigFacade mDeviceConfigFacade;
@@ -132,7 +131,7 @@ public class WifiLastResortWatchdog {
             WifiInjector wifiInjector,
             Context context, Clock clock,
             WifiMetrics wifiMetrics,
-            PrimaryClientModeImplHolder clientModeImplHolder,
+            BaseWifiDiagnostics wifiDiagnostics,
             Looper clientModeImplLooper,
             DeviceConfigFacade deviceConfigFacade,
             WifiThreadRunner wifiThreadRunner,
@@ -140,7 +139,7 @@ public class WifiLastResortWatchdog {
         mWifiInjector = wifiInjector;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
-        mClientModeImplHolder = clientModeImplHolder;
+        mWifiDiagnostics = wifiDiagnostics;
         mContext = context;
         mDeviceConfigFacade = deviceConfigFacade;
         mWifiThreadRunner = wifiThreadRunner;
@@ -185,7 +184,7 @@ public class WifiLastResortWatchdog {
                                 + "Actually took " + durationMs + " milliseconds.";
                         logv("Triggering bug report for abnormal connection time.");
                         mWifiThreadRunner.post(() ->
-                                mClientModeImplHolder.get().takeBugReport(bugTitle, bugDetail));
+                                mWifiDiagnostics.takeBugReport(bugTitle, bugDetail));
                     }
                 }
                 // Should reset last connection time after each connection regardless if bugreport
@@ -397,7 +396,7 @@ public class WifiLastResortWatchdog {
         if (mBugReportProbability <= Math.random()) {
             return;
         }
-        mHandler.post(() -> mClientModeImplHolder.get().takeBugReport(BUGREPORT_TITLE, bugDetail));
+        mHandler.post(() -> mWifiDiagnostics.takeBugReport(BUGREPORT_TITLE, bugDetail));
     }
 
     /**
