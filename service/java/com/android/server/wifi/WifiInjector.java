@@ -372,23 +372,24 @@ public class WifiInjector {
                 wifiLooper, mFrameworkFacade, mClock, mWifiMetrics,
                 mWifiConfigManager, mWifiConfigStore, mConnectHelper,
                 new ConnectToNetworkNotificationBuilder(mContext, this, mFrameworkFacade));
+        mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
+                mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
+                mContext, mClientModeImplHolder, mSettingsStore, mFrameworkFacade,
+                mWifiPermissionsUtil);
         mWifiConnectivityManager = new WifiConnectivityManager(
-                mContext, mScoringParams, mClientModeImplHolder, mWifiConfigManager,
+                mContext, mScoringParams, mWifiConfigManager,
                 mWifiNetworkSuggestionsManager, mWifiInfo, mWifiNetworkSelector,
                 mWifiConnectivityHelper, mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, wifiHandler,
                 mClock, mConnectivityLocalLog, mWifiScoreCard, mBssidBlocklistMonitor,
-                mWifiChannelUtilizationScan, mPasspointManager, mDeviceConfigFacade);
+                mWifiChannelUtilizationScan, mPasspointManager, mDeviceConfigFacade,
+                mActiveModeWarden);
         NotificationManager notificationManager =
                 mContext.getSystemService(NotificationManager.class);
         ConnectionFailureNotifier connectionFailureNotifier = new ConnectionFailureNotifier(
                 mContext, mFrameworkFacade, mWifiConfigManager,
                 mWifiConnectivityManager, wifiHandler,
                 notificationManager, mConnectionFailureNotificationBuilder);
-        mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
-                mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
-                mContext, mClientModeImplHolder, mSettingsStore, mFrameworkFacade,
-                mWifiPermissionsUtil);
         WifiNetworkFactory wifiNetworkFactory = new WifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER,
                 (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE),
