@@ -195,7 +195,7 @@ public class UtilsTest {
         config.SSID = "\"ssid\"";
         config.allowAutojoin = true;
         final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.auto_connect_disable))
+        when(mMockResources.getString(R.string.wifitrackerlib_auto_connect_disable))
                 .thenReturn(LABEL_AUTO_CONNECTION_DISABLED);
 
         final String autoConnectDescription = getAutoConnectDescription(mMockContext, entry);
@@ -209,7 +209,7 @@ public class UtilsTest {
         config.SSID = "\"ssid\"";
         config.allowAutojoin = false;
         final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.auto_connect_disable))
+        when(mMockResources.getString(R.string.wifitrackerlib_auto_connect_disable))
                 .thenReturn(LABEL_AUTO_CONNECTION_DISABLED);
 
         final String autoConnectDescription = getAutoConnectDescription(mMockContext, entry);
@@ -236,7 +236,8 @@ public class UtilsTest {
         config.SSID = "\"ssid\"";
         config.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
         final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.wifi_metered_label)).thenReturn(LABEL_METERED);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_metered_label))
+                .thenReturn(LABEL_METERED);
 
         final String meteredDescription = getMeteredDescription(mMockContext, entry);
 
@@ -251,7 +252,8 @@ public class UtilsTest {
         config.meteredHint = true;
         config.meteredOverride = WifiConfiguration.METERED_OVERRIDE_NONE;
         final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.wifi_metered_label)).thenReturn(LABEL_METERED);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_metered_label))
+                .thenReturn(LABEL_METERED);
 
         final String meteredDescription = getMeteredDescription(mMockContext, entry);
 
@@ -265,7 +267,8 @@ public class UtilsTest {
         config.meteredHint = true;
         config.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
         final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.wifi_metered_label)).thenReturn(LABEL_METERED);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_metered_label))
+                .thenReturn(LABEL_METERED);
 
         final String meteredDescription = getMeteredDescription(mMockContext, entry);
 
@@ -279,7 +282,8 @@ public class UtilsTest {
         config.meteredHint = true;
         config.meteredOverride = WifiConfiguration.METERED_OVERRIDE_NOT_METERED;
         final StandardWifiEntry entry = getStandardWifiEntry(config);
-        when(mMockResources.getString(R.string.wifi_unmetered_label)).thenReturn(LABEL_UNMETERED);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_unmetered_label))
+                .thenReturn(LABEL_UNMETERED);
 
         final String meteredDescription = getMeteredDescription(mMockContext, entry);
 

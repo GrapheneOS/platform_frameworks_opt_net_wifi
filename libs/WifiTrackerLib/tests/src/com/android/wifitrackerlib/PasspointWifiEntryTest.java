@@ -81,7 +81,7 @@ public class PasspointWifiEntryTest {
         when(mMockNetworkInfo.getDetailedState()).thenReturn(
                 NetworkInfo.DetailedState.DISCONNECTED);
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockResources.getString(R.string.summary_separator)).thenReturn("/");
+        when(mMockResources.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
         when(mMockScoreCache.getScoredNetwork((ScanResult) any())).thenReturn(mMockScoredNetwork);
         when(mMockScoreCache.getScoredNetwork((NetworkKey) any())).thenReturn(mMockScoredNetwork);
     }
@@ -91,7 +91,8 @@ public class PasspointWifiEntryTest {
         // default SubscriptionExpirationTimeInMillis is unset
         PasspointConfiguration passpointConfiguration = getPasspointConfiguration();
         String expired = "Expired";
-        when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_passpoint_expired))
+                .thenReturn(expired);
 
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
                 passpointConfiguration, mMockWifiManager, mMockScoreCache,
@@ -104,7 +105,8 @@ public class PasspointWifiEntryTest {
     public void testGetSummary_expired_showExpired() {
         PasspointConfiguration passpointConfiguration = getPasspointConfiguration();
         String expired = "Expired";
-        when(mMockResources.getString(R.string.wifi_passpoint_expired)).thenReturn(expired);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_passpoint_expired))
+                .thenReturn(expired);
         PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
                 passpointConfiguration, mMockWifiManager, mMockScoreCache,
                 false /* forSavedNetworksPage */);
@@ -142,8 +144,10 @@ public class PasspointWifiEntryTest {
 
         Resources mockResources = mock(Resources.class);
         when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.summary_separator)).thenReturn(summarySeparator);
-        when(mockResources.getStringArray(R.array.wifi_status)).thenReturn(wifiStatusArray);
+        when(mockResources.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(summarySeparator);
+        when(mockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(wifiStatusArray);
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mockConnectivityManager);
