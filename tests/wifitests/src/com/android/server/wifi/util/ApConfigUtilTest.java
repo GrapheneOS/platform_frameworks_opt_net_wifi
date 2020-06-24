@@ -479,9 +479,9 @@ public class ApConfigUtilTest extends WifiBaseTest {
 
     @Test
     public void testCheckConfigurationChangeNeedToRestart() throws Exception {
+        MacAddress testBssid = MacAddress.fromString("aa:22:33:44:55:66");
         SoftApConfiguration currentConfig = new SoftApConfiguration.Builder()
                 .setSsid("TestSSid")
-                .setBssid(MacAddress.fromString("11:22:33:44:55:66"))
                 .setPassphrase("testpassphrase", SoftApConfiguration.SECURITY_TYPE_WPA2_PSK)
                 .setBand(SoftApConfiguration.BAND_2GHZ)
                 .setChannel(11, SoftApConfiguration.BAND_2GHZ)
@@ -492,7 +492,6 @@ public class ApConfigUtilTest extends WifiBaseTest {
         // DO NOT use copy constructor to copy to test since it's instance is the same.
         SoftApConfiguration newConfig_noChange = new SoftApConfiguration.Builder()
                 .setSsid("TestSSid")
-                .setBssid(MacAddress.fromString("11:22:33:44:55:66"))
                 .setPassphrase("testpassphrase", SoftApConfiguration.SECURITY_TYPE_WPA2_PSK)
                 .setBand(SoftApConfiguration.BAND_2GHZ)
                 .setChannel(11, SoftApConfiguration.BAND_2GHZ)
@@ -510,7 +509,7 @@ public class ApConfigUtilTest extends WifiBaseTest {
         // Test BSSID changed
         SoftApConfiguration newConfig_bssidChanged = new SoftApConfiguration
                 .Builder(newConfig_noChange)
-                .setBssid(MacAddress.fromString("aa:bb:cc:dd:ee:ff")).build();
+                .setBssid(testBssid).build();
         assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
                 newConfig_bssidChanged));
         // Test Passphrase Changed
