@@ -3240,9 +3240,11 @@ public class WifiConfigManager {
                 mWifiPermissionsUtil.checkNetworkSettingsPermission(uid);
         final boolean hasNetworkSetupWizardPermission =
                 mWifiPermissionsUtil.checkNetworkSetupWizardPermission(uid);
+        final boolean hasNetworkManagedProvisioningPermission =
+                mWifiPermissionsUtil.checkNetworkManagedProvisioningPermission(uid);
         // If |uid| corresponds to the device owner, allow all modifications.
         if (isProfileOwner || isDeviceOwner || hasNetworkSettingsPermission
-                || hasNetworkSetupWizardPermission) {
+                || hasNetworkSetupWizardPermission || hasNetworkManagedProvisioningPermission) {
             return true;
         }
         if (mVerboseLoggingEnabled) {
