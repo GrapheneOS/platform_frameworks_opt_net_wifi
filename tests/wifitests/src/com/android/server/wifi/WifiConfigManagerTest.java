@@ -4003,6 +4003,33 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 true, // assertSuccess
                 WifiConfiguration.INVALID_NETWORK_ID); // Update networkID
     }
+
+    /**
+     * Verifies that adding a network with a PAC or STATIC proxy, while having the
+     * {@link android.Manifest.permission#NETWORK_MANAGED_PROVISIONING} permission is successful
+     */
+    @Test
+    public void testAddNetworkWithProxyWithNetworkManagedPermission() {
+        verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(
+                false, // withNetworkSettings
+                false, // withNetworkSetupWizard
+                true, // withNetworkManagedProvisioning
+                false, // withProfileOwnerPolicy
+                false, // withDeviceOwnerPolicy
+                WifiConfigurationTestUtil.createDHCPIpConfigurationWithPacProxy(),
+                true, // assertSuccess
+                WifiConfiguration.INVALID_NETWORK_ID); // Update networkID
+        verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(
+                false,  // withNetworkSettings
+                false, // withNetworkSetupWizard
+                true, // withNetworkManagedProvisioning
+                false, // withProfileOwnerPolicy
+                false, // withDeviceOwnerPolicy
+                WifiConfigurationTestUtil.createDHCPIpConfigurationWithStaticProxy(),
+                true, // assertSuccess
+                WifiConfiguration.INVALID_NETWORK_ID); // Update networkID
+    }
+
     /**
      * Verifies that updating a network (that has no proxy) and adding a PAC or STATIC proxy fails
      * without being able to override configs, or holding Device or Profile owner policies.
@@ -4052,7 +4079,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(
                 false, // withNetworkSettings
                 true, // withNetworkSetupWizard
-                false, // withProfileOwnerPolicy
+                false, false, // withProfileOwnerPolicy
                 false, // withDeviceOwnerPolicy
                 WifiConfigurationTestUtil.createDHCPIpConfigurationWithPacProxy(),
                 true, // assertSuccess
@@ -4633,13 +4660,14 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             boolean assertSuccess,
             int networkId) {
         return verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(withNetworkSettings,
-                false, withProfileOwnerPolicy, withDeviceOwnerPolicy, ipConfiguration,
+                false, false, withProfileOwnerPolicy, withDeviceOwnerPolicy, ipConfiguration,
                 assertSuccess, networkId);
     }
 
     private NetworkUpdateResult verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(
             boolean withNetworkSettings,
             boolean withNetworkSetupWizard,
+            boolean withNetworkManagedProvisioning,
             boolean withProfileOwnerPolicy,
             boolean withDeviceOwnerPolicy,
             IpConfiguration ipConfiguration,
@@ -4660,7 +4688,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 .thenReturn(withNetworkSettings);
         when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt()))
                 .thenReturn(withNetworkSetupWizard);
-        int uid = withNetworkSettings || withNetworkSetupWizard
+        when(mWifiPermissionsUtil.checkNetworkManagedProvisioningPermission(anyInt()))
+                .thenReturn(withNetworkManagedProvisioning);
+        int uid = withNetworkSettings || withNetworkSetupWizard || withNetworkManagedProvisioning
                 ? TEST_CREATOR_UID
                 : TEST_NO_PERM_UID;
         NetworkUpdateResult result = addNetworkToWifiConfigManager(network, uid);
