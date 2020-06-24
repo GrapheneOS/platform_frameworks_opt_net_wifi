@@ -659,24 +659,107 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
 
     @Test
     public void testResetToDefaultForUnsupportedConfig() throws Exception {
-        mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, false);
-        mResources.setBoolean(R.bool.config_wifi_softap_sae_supported, false);
-        mResources.setBoolean(R.bool.config_wifiSoftapResetChannelConfig, true);
-        SoftApConfiguration sae_config = new SoftApConfiguration.Builder()
-                .setPassphrase("secretsecret", SoftApConfiguration.SECURITY_TYPE_WPA3_SAE)
-                .setMaxNumberOfClients(10)
-                .setClientControlByUserEnabled(true)
-                .setChannel(149, SoftApConfiguration.BAND_5GHZ)
-                .build();
-        WifiApConfigStore store = createWifiApConfigStore();
+        mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, true);
+        mResources.setBoolean(R.bool.config_wifi_softap_sae_supported, true);
+        mResources.setBoolean(R.bool.config_wifi6ghzSupport, true);
+        mResources.setBoolean(R.bool.config_wifi5ghzSupport, true);
 
-        SoftApConfiguration resetedConfig = store.resetToDefaultForUnsupportedConfig(sae_config);
-        assertEquals(resetedConfig.getMaxNumberOfClients(), 0);
-        assertFalse(resetedConfig.isClientControlByUserEnabled());
+        // Test all of the features support and all of the reset config are false.
+        String testPassphrase = "secretsecret";
+        SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setPassphrase(testPassphrase, SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
+        WifiApConfigStore store = createWifiApConfigStore();
+        SoftApConfiguration resetedConfig = store.resetToDefaultForUnsupportedConfig(
+                configBuilder.build());
+        assertEquals(resetedConfig, configBuilder.build());
+
+        verify(mWifiMetrics).noteSoftApConfigReset(configBuilder.build(), resetedConfig);
+
+        // Test SAE not support case.
+        mResources.setBoolean(R.bool.config_wifi_softap_sae_supported, false);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertEquals(resetedConfig.getSecurityType(), SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
+        // Test force channel
+        configBuilder.setChannel(149, SoftApConfiguration.BAND_5GHZ);
+        mResources.setBoolean(
+                R.bool.config_wifiSoftapResetChannelConfig, true);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
         assertEquals(resetedConfig.getChannel(), 0);
         assertEquals(resetedConfig.getBand(),
                 SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ);
-        verify(mWifiMetrics).noteSoftApConfigReset(sae_config, resetedConfig);
+
+        // Test forced channel band doesn't support.
+        mResources.setBoolean(R.bool.config_wifi5ghzSupport, false);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertEquals(resetedConfig.getChannel(), 0);
+        assertEquals(resetedConfig.getBand(),
+                SoftApConfiguration.BAND_2GHZ);
+
+        // Test band not support with auto channel
+        configBuilder.setBand(SoftApConfiguration.BAND_5GHZ);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertEquals(resetedConfig.getBand(), SoftApConfiguration.BAND_2GHZ);
+
+        // Test reset hidden network
+        mResources.setBoolean(
+                R.bool.config_wifiSoftapResetHiddenConfig, true);
+        configBuilder.setHiddenSsid(true);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertFalse(resetedConfig.isHiddenSsid());
+
+        // Test auto shutdown timer
+        mResources.setBoolean(
+                R.bool.config_wifiSoftapResetAutoShutdownTimerConfig, true);
+        configBuilder.setShutdownTimeoutMillis(8888);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertEquals(resetedConfig.getShutdownTimeoutMillis(), 0);
+
+        // Test max client setting when force client disconnect doesn't support
+        mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, false);
+        configBuilder.setMaxNumberOfClients(10);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertEquals(resetedConfig.getMaxNumberOfClients(), 0);
+
+        // Test client control setting when force client disconnect doesn't support
+        mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, false);
+        ArrayList<MacAddress> blockedClientList = new ArrayList<>();
+        ArrayList<MacAddress> allowedClientList = new ArrayList<>();
+        blockedClientList.add(MacAddress.fromString("11:22:33:44:55:66"));
+        allowedClientList.add(MacAddress.fromString("aa:bb:cc:dd:ee:ff"));
+        configBuilder.setBlockedClientList(blockedClientList);
+        configBuilder.setAllowedClientList(allowedClientList);
+
+        configBuilder.setClientControlByUserEnabled(true);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertFalse(resetedConfig.isClientControlByUserEnabled());
+        // The blocked list will be clean
+        assertEquals(resetedConfig.getBlockedClientList().size(), 0);
+        // The allowed list will be keep
+        assertEquals(resetedConfig.getAllowedClientList(), allowedClientList);
+
+        // Test max client setting when reset enabled but force client disconnect supported
+        mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, true);
+        mResources.setBoolean(
+                R.bool.config_wifiSoftapResetMaxClientSettingConfig, true);
+        assertEquals(resetedConfig.getMaxNumberOfClients(), 0);
+
+        // Test client control setting when reset enabled but force client disconnect supported
+        mResources.setBoolean(R.bool.config_wifiSofapClientForceDisconnectSupported, true);
+        mResources.setBoolean(
+                R.bool.config_wifiSoftapResetUserControlConfig, true);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertFalse(resetedConfig.isClientControlByUserEnabled());
+        assertEquals(resetedConfig.getBlockedClientList().size(), 0);
+        assertEquals(resetedConfig.getAllowedClientList(), allowedClientList);
+
+        // Test blocked list setting will be reset even if client control disabled
+        mResources.setBoolean(
+                R.bool.config_wifiSoftapResetUserControlConfig, true);
+        configBuilder.setClientControlByUserEnabled(false);
+        resetedConfig = store.resetToDefaultForUnsupportedConfig(configBuilder.build());
+        assertFalse(resetedConfig.isClientControlByUserEnabled());
+        assertEquals(resetedConfig.getBlockedClientList().size(), 0);
+        assertEquals(resetedConfig.getAllowedClientList(), allowedClientList);
     }
 
     /**

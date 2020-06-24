@@ -1190,6 +1190,92 @@ public class SoftApManagerTest extends WifiBaseTest {
     }
 
     @Test
+    public void testClientConnectFailureWhenClientInBlcokedListAndClientAuthorizationDisabled()
+            throws Exception {
+        ArrayList<MacAddress> blockedClientList = new ArrayList<>();
+        mTestSoftApCapability.setMaxSupportedClients(10);
+        Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+        configBuilder.setSsid(TEST_SSID);
+        configBuilder.setClientControlByUserEnabled(false);
+        // Client in blocked list
+        blockedClientList.add(TEST_MAC_ADDRESS);
+        configBuilder.setBlockedClientList(blockedClientList);
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
+                configBuilder.build(), mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+
+        verify(mCallback).onConnectedClientsChanged(new ArrayList<>());
+
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT, true);
+        mLooper.dispatchAll();
+
+        // Client is not allow verify
+        verify(mWifiNative).forceClientDisconnect(
+                        TEST_INTERFACE_NAME, TEST_MAC_ADDRESS,
+                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
+        verify(mWifiMetrics, never()).addSoftApNumAssociatedStationsChangedEvent(
+                1, apConfig.getTargetMode());
+        verify(mCallback, never()).onConnectedClientsChanged(
+                Mockito.argThat((List<WifiClient> clients) ->
+                        clients.contains(TEST_CONNECTED_CLIENT))
+        );
+
+    }
+
+    @Test
+    public void testClientDisconnectWhenClientInBlcokedLisUpdatedtAndClientAuthorizationDisabled()
+            throws Exception {
+        ArrayList<MacAddress> blockedClientList = new ArrayList<>();
+        mTestSoftApCapability.setMaxSupportedClients(10);
+        Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+        configBuilder.setSsid(TEST_SSID);
+        configBuilder.setClientControlByUserEnabled(false);
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
+                configBuilder.build(), mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+
+        verify(mCallback).onConnectedClientsChanged(new ArrayList<>());
+
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT, true);
+        mLooper.dispatchAll();
+
+        // Client connected check
+        verify(mWifiNative, never()).forceClientDisconnect(
+                        TEST_INTERFACE_NAME, TEST_MAC_ADDRESS,
+                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
+        verify(mWifiMetrics).addSoftApNumAssociatedStationsChangedEvent(
+                1, apConfig.getTargetMode());
+        verify(mCallback, times(2)).onConnectedClientsChanged(
+                Mockito.argThat((List<WifiClient> clients) ->
+                        clients.contains(TEST_CONNECTED_CLIENT))
+        );
+
+        reset(mCallback);
+        reset(mWifiNative);
+        // Update configuration
+        blockedClientList.add(TEST_MAC_ADDRESS);
+        configBuilder.setBlockedClientList(blockedClientList);
+        mSoftApManager.updateConfiguration(configBuilder.build());
+        mLooper.dispatchAll();
+        // Client difconnected
+        verify(mWifiNative).forceClientDisconnect(
+                        TEST_INTERFACE_NAME, TEST_MAC_ADDRESS,
+                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
+        // The callback should not trigger in configuration update case.
+        verify(mCallback, never()).onBlockedClientConnecting(TEST_CONNECTED_CLIENT,
+                WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
+
+    }
+
+
+
+    @Test
     public void testForceClientDisconnectInvokeBecauseClientAuthorizationEnabled()
             throws Exception {
         mTestSoftApCapability.setMaxSupportedClients(10);

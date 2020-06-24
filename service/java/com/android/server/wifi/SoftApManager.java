@@ -469,12 +469,17 @@ public class SoftApManager implements ActiveModeManager {
             return true;
         }
 
+        if (mBlockedClientList.contains(newClient.getMacAddress())) {
+            Log.d(TAG, "Force disconnect for client: " + newClient + "in blocked list");
+            mWifiNative.forceClientDisconnect(
+                    mApInterfaceName, newClient.getMacAddress(),
+                    WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
+            return false;
+        }
         if (config.isClientControlByUserEnabled()
                 && !mAllowedClientList.contains(newClient.getMacAddress())) {
-            if (!mBlockedClientList.contains(newClient.getMacAddress())) {
-                mSoftApCallback.onBlockedClientConnecting(newClient,
-                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
-            }
+            mSoftApCallback.onBlockedClientConnecting(newClient,
+                    WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
             Log.d(TAG, "Force disconnect for unauthorized client: " + newClient);
             mWifiNative.forceClientDisconnect(
                     mApInterfaceName, newClient.getMacAddress(),
@@ -667,25 +672,22 @@ public class SoftApManager implements ActiveModeManager {
                 }
                 int targetDisconnectClientNumber = mConnectedClients.size() - finalMaxClientCount;
                 List<WifiClient> allowedConnectedList = new ArrayList<>();
-                if (mApConfig.getSoftApConfiguration().isClientControlByUserEnabled()) {
-                    // Check allow list first
-                    Iterator<WifiClient> iterator = mConnectedClients.iterator();
-                    while (iterator.hasNext()) {
-                        WifiClient client = iterator.next();
-                        if (mAllowedClientList.contains(client.getMacAddress())) {
-                            allowedConnectedList.add(client);
-                        } else {
-                            Log.d(TAG, "Force disconnect for not allowed client: " + client);
-                            mWifiNative.forceClientDisconnect(
-                                    mApInterfaceName, client.getMacAddress(),
-                                    WifiManager
-                                    .SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
-                            targetDisconnectClientNumber--;
-                        }
+                Iterator<WifiClient> iterator = mConnectedClients.iterator();
+                while (iterator.hasNext()) {
+                    WifiClient client = iterator.next();
+                    if (mBlockedClientList.contains(client.getMacAddress())
+                              || (mApConfig.getSoftApConfiguration().isClientControlByUserEnabled()
+                              && !mAllowedClientList.contains(client.getMacAddress()))) {
+                        Log.d(TAG, "Force disconnect for not allowed client: " + client);
+                        mWifiNative.forceClientDisconnect(
+                                mApInterfaceName, client.getMacAddress(),
+                                WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_BLOCKED_BY_USER);
+                        targetDisconnectClientNumber--;
+                    } else {
+                        allowedConnectedList.add(client);
                     }
-                } else {
-                    allowedConnectedList = new ArrayList<>(mConnectedClients);
                 }
+
                 if (targetDisconnectClientNumber > 0) {
                     Iterator<WifiClient> allowedClientIterator = allowedConnectedList.iterator();
                     while (allowedClientIterator.hasNext()) {
