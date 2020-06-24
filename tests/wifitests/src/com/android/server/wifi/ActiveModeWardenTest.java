@@ -64,7 +64,6 @@ import android.util.Log;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiNative.InterfaceAvailableForRequestListener;
 import com.android.server.wifi.util.GeneralUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -114,7 +113,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Mock SelfRecovery mSelfRecovery;
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
     @Mock ScanRequestProxy mScanRequestProxy;
-    @Mock ClientModeImpl mClientModeImpl;
     @Mock FrameworkFacade mFacade;
     @Mock WifiSettingsStore mSettingsStore;
     @Mock WifiPermissionsUtil mWifiPermissionsUtil;
@@ -225,8 +223,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     private ActiveModeWarden createActiveModeWarden() {
-        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
-        holder.set(mClientModeImpl);
         ActiveModeWarden warden = new ActiveModeWarden(
                 mWifiInjector,
                 mLooper.getLooper(),
@@ -235,7 +231,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 mBatteryStats,
                 mWifiDiagnostics,
                 mContext,
-                holder,
                 mSettingsStore,
                 mFacade,
                 mWifiPermissionsUtil);
@@ -1933,7 +1928,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enableWifi();
         mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
         mLooper.dispatchAll();
-        verify(mClientModeImpl).takeBugReport(anyString(), anyString());
+        verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
     }
 
     @Test
@@ -1941,7 +1936,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enableWifi();
         mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
         mLooper.dispatchAll();
-        verify(mClientModeImpl, never()).takeBugReport(anyString(), anyString());
+        verify(mWifiDiagnostics, never()).takeBugReport(anyString(), anyString());
     }
 
     /**
