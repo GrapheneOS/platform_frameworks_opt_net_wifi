@@ -180,7 +180,7 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
      * values.
      */
     @Test
-    public void testValidatePositiveCases_Ascii() {
+    public void testValidatePositiveCases_AsciiSsidString() {
         assertTrue(WifiConfigurationUtil.validate(
                 WifiConfigurationTestUtil.createOpenNetwork(),
                 WifiConfigurationUtil.VALIDATE_FOR_ADD));
@@ -209,11 +209,23 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
      * values.
      */
     @Test
-    public void testValidatePositiveCases_Hex() {
+    public void testValidatePositiveCases_HexSsidString() {
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
         config.SSID = "abcd1234555a";
         config.preSharedKey = "abcd123455151234556788990034556667332345667322344556676743233445";
         assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+    }
+
+    /**
+     * Verify that the validate method validates WifiConfiguration with "any" in the BSSID field.
+     */
+    @Test
+    public void testValidatePositiveCases_AnyBssidString() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        config.BSSID = "any";
+        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+        assertTrue(WifiConfigurationUtil.validate(
+                config, WifiConfigurationUtil.VALIDATE_FOR_UPDATE));
     }
 
     /**

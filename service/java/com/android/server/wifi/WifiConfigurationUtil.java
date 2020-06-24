@@ -378,6 +378,8 @@ public class WifiConfigurationUtil {
             Log.e(TAG, "validateBssid failed: empty string");
             return false;
         }
+        // Allow reset of bssid with "any".
+        if (bssid.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY)) return true;
         MacAddress bssidMacAddress;
         try {
             bssidMacAddress = MacAddress.fromString(bssid);
