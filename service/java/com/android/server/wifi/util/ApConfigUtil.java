@@ -529,7 +529,8 @@ public class ApConfigUtil {
             SoftApCapability capability) {
         if (!capability.areFeaturesSupported(
                 SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT)
-                && (config.getMaxNumberOfClients() != 0 || config.isClientControlByUserEnabled())) {
+                && (config.getMaxNumberOfClients() != 0 || config.isClientControlByUserEnabled()
+                || config.getBlockedClientList().size() != 0)) {
             Log.d(TAG, "Error, Client control requires HAL support");
             return false;
         }
