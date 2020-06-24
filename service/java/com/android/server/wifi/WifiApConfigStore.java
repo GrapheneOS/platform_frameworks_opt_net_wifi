@@ -33,6 +33,7 @@ import com.android.wifi.resources.R;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Random;
 
 import javax.annotation.Nullable;
@@ -153,10 +154,13 @@ public class WifiApConfigStore {
 
     /**
      * Returns SoftApConfiguration in which some parameters might be reset to supported default
-     * config.
+     * config since it depends on UI or HW.
      *
-     * MaxNumberOfClients and setClientControlByUserEnabled will need HAL support client force
-     * disconnect. Reset to default when device doesn't support it.
+     * MaxNumberOfClients and isClientControlByUserEnabled will need HAL support client force
+     * disconnect, and Band setting (5g/6g) need HW support.
+     *
+     * HiddenSsid, Channel, ShutdownTimeoutMillis and AutoShutdownEnabled are features
+     * which need UI(Setting) support.
      *
      * SAE/SAE-Transition need hardware support, reset to secured WPA2 security type when device
      * doesn't support it.
@@ -164,15 +168,22 @@ public class WifiApConfigStore {
     public SoftApConfiguration resetToDefaultForUnsupportedConfig(
             @NonNull SoftApConfiguration config) {
         SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder(config);
-        if (!ApConfigUtil.isClientForceDisconnectSupported(mContext)) {
-            configBuilder.setMaxNumberOfClients(0);
+        if ((!ApConfigUtil.isClientForceDisconnectSupported(mContext)
+                || mContext.getResources().getBoolean(
+                R.bool.config_wifiSoftapResetUserControlConfig))
+                && (config.isClientControlByUserEnabled()
+                || config.getBlockedClientList().size() != 0)) {
             configBuilder.setClientControlByUserEnabled(false);
-            if (config.getMaxNumberOfClients() != 0) {
-                Log.e(TAG, "Reset MaxNumberOfClients to 0 due to device doesn't support");
-            }
-            if (config.isClientControlByUserEnabled()) {
-                Log.e(TAG, "Reset ClientControlByUser to false due to device doesn't support");
-            }
+            configBuilder.setBlockedClientList(new ArrayList<>());
+            Log.i(TAG, "Reset ClientControlByUser to false due to device doesn't support");
+        }
+
+        if ((!ApConfigUtil.isClientForceDisconnectSupported(mContext)
+                || mContext.getResources().getBoolean(
+                R.bool.config_wifiSoftapResetMaxClientSettingConfig))
+                && config.getMaxNumberOfClients() != 0) {
+            configBuilder.setMaxNumberOfClients(0);
+            Log.i(TAG, "Reset MaxNumberOfClients to 0 due to device doesn't support");
         }
 
         if (!ApConfigUtil.isWpa3SaeSupported(mContext) && (config.getSecurityType()
@@ -181,18 +192,51 @@ public class WifiApConfigStore {
                 == SoftApConfiguration.SECURITY_TYPE_WPA3_SAE_TRANSITION)) {
             configBuilder.setPassphrase(generatePassword(),
                     SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
-            Log.e(TAG, "Device doesn't support WPA3-SAE, reset config to WPA2");
+            Log.i(TAG, "Device doesn't support WPA3-SAE, reset config to WPA2");
         }
 
-        if (mContext.getResources().getBoolean(R.bool.config_wifiSoftapResetChannelConfig)) {
+        if (mContext.getResources().getBoolean(R.bool.config_wifiSoftapResetChannelConfig)
+                && config.getChannel() != 0) {
             // The device might not support customize channel or forced channel might not
             // work in some countries. Need to reset it.
-            if (config.getChannel() != 0) {
-                // Add 2.4G by default
-                configBuilder.setBand(SoftApConfiguration.BAND_2GHZ | config.getBand());
-                Log.i(TAG, "Reset SAP channel configuration");
-            }
+            // Add 2.4G by default
+            configBuilder.setBand(config.getBand() | SoftApConfiguration.BAND_2GHZ);
+            Log.i(TAG, "Reset SAP channel configuration");
         }
+
+        int newBand = config.getBand();
+        if (!mContext.getResources().getBoolean(R.bool.config_wifi6ghzSupport)
+                && (newBand & SoftApConfiguration.BAND_6GHZ) != 0) {
+            newBand &= ~SoftApConfiguration.BAND_6GHZ;
+            Log.i(TAG, "Device doesn't support 6g, remove 6G band from band setting");
+        }
+
+        if (!mContext.getResources().getBoolean(R.bool.config_wifi5ghzSupport)
+                && (newBand & SoftApConfiguration.BAND_5GHZ) != 0) {
+            newBand &= ~SoftApConfiguration.BAND_5GHZ;
+            Log.i(TAG, "Device doesn't support 5g, remove 5G band from band setting");
+        }
+
+        if (newBand != config.getBand()) {
+            // Always added 2.4G by default when reset the band.
+            Log.i(TAG, "Reset band from " + config.getBand() + " to "
+                    + (newBand | SoftApConfiguration.BAND_2GHZ));
+            configBuilder.setBand(newBand | SoftApConfiguration.BAND_2GHZ);
+        }
+
+        if (mContext.getResources().getBoolean(R.bool.config_wifiSoftapResetHiddenConfig)
+                && config.isHiddenSsid()) {
+            configBuilder.setHiddenSsid(false);
+            Log.i(TAG, "Reset SAP Hidden Network configuration");
+        }
+
+        if (mContext.getResources().getBoolean(
+                R.bool.config_wifiSoftapResetAutoShutdownTimerConfig)
+                && config.getShutdownTimeoutMillis() != 0) {
+            configBuilder.setShutdownTimeoutMillis(0);
+            Log.i(TAG, "Reset SAP auto shutdown configuration");
+        }
+
         mWifiMetrics.noteSoftApConfigReset(config, configBuilder.build());
         return configBuilder.build();
     }
