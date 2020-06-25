@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,7 +29,6 @@ import android.net.wifi.WifiManager;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.util.ActionListenerWrapper;
 
 import org.junit.Before;
@@ -58,10 +58,12 @@ public class ConnectHelperTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
-        holder.set(mClientModeImpl);
-        mConnectHelper = new ConnectHelper(holder, mWifiConfigManager);
+        ActiveModeWarden activeModeWarden = mock(ActiveModeWarden.class);
+        ClientModeManager clientModeManager = mock(ClientModeManager.class);
+        when(activeModeWarden.getPrimaryClientModeManager()).thenReturn(clientModeManager);
+        when(clientModeManager.getImpl()).thenReturn(mClientModeImpl);
 
+        mConnectHelper = new ConnectHelper(activeModeWarden, mWifiConfigManager);
         mWifiConfig = new WifiConfiguration();
         mWifiConfig.SSID = TEST_SSID;
         mWifiConfig.networkId = TEST_NETWORK_ID;

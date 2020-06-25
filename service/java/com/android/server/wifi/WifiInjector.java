@@ -312,7 +312,6 @@ public class WifiInjector {
                 mSettingsMigrationDataHolder, mWifiConfigManager, mWifiConfigStore);
         mSettingsStore = new WifiSettingsStore(mContext, mSettingsConfigStore);
         mWifiMetrics.setWifiConfigManager(mWifiConfigManager);
-        mConnectHelper = new ConnectHelper(mClientModeImplHolder, mWifiConfigManager);
 
         mScoringParams = new ScoringParams(mContext);
         mWifiMetrics.setScoringParams(mScoringParams);
@@ -367,13 +366,14 @@ public class WifiInjector {
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
+        mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
+                mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
+                mContext, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil);
+        mConnectHelper = new ConnectHelper(mActiveModeWarden, mWifiConfigManager);
         mOpenNetworkNotifier = new OpenNetworkNotifier(mContext,
                 wifiLooper, mFrameworkFacade, mClock, mWifiMetrics,
                 mWifiConfigManager, mWifiConfigStore, mConnectHelper,
                 new ConnectToNetworkNotificationBuilder(mContext, this, mFrameworkFacade));
-        mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
-                mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
-                mContext, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil);
         mWifiConnectivityManager = new WifiConnectivityManager(
                 mContext, mScoringParams, mWifiConfigManager,
                 mWifiNetworkSuggestionsManager, mWifiInfo, mWifiNetworkSelector,
@@ -413,11 +413,10 @@ public class WifiInjector {
                 new WakeupEvaluator(mScoringParams), wakeupOnboarding, mWifiConfigManager,
                 mWifiConfigStore, mWifiNetworkSuggestionsManager, mWifiMetrics.getWakeupMetrics(),
                 this, mFrameworkFacade, mClock);
-        mLockManager = new WifiLockManager(mContext, mBatteryStats, mClientModeImplHolder,
+        mLockManager = new WifiLockManager(mContext, mBatteryStats, mActiveModeWarden,
                 mFrameworkFacade, wifiHandler, mWifiNative, mClock, mWifiMetrics);
         mSelfRecovery = new SelfRecovery(mContext, mActiveModeWarden, mClock);
-        mWifiMulticastLockManager = new WifiMulticastLockManager(
-                mClientModeImplHolder, mBatteryStats);
+        mWifiMulticastLockManager = new WifiMulticastLockManager(mActiveModeWarden, mBatteryStats);
         mDppManager = new DppManager(wifiHandler, mWifiNative,
                 mWifiConfigManager, mContext, mDppMetrics, mScanRequestProxy);
 
