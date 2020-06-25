@@ -96,10 +96,11 @@ class OsuWifiEntry extends WifiEntry {
         if (mOsuStatusString != null) {
             return mOsuStatusString;
         } else if (isAlreadyProvisioned()) {
-            return concise ? mContext.getString(R.string.wifi_passpoint_expired)
-                    : mContext.getString(R.string.tap_to_renew_subscription_and_connect);
+            return concise ? mContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired)
+                    : mContext.getString(
+                    R.string.wifitrackerlib_tap_to_renew_subscription_and_connect);
         } else {
-            return mContext.getString(R.string.tap_to_sign_up);
+            return mContext.getString(R.string.wifitrackerlib_tap_to_sign_up);
         }
     }
 
@@ -312,10 +313,11 @@ class OsuWifiEntry extends WifiEntry {
         @Override
         @MainThread public void onProvisioningFailure(int status) {
             if (TextUtils.equals(
-                    mOsuStatusString, mContext.getString(R.string.osu_completing_sign_up))) {
-                mOsuStatusString = mContext.getString(R.string.osu_sign_up_failed);
+                    mOsuStatusString, mContext.getString(
+                    R.string.wifitrackerlib_osu_completing_sign_up))) {
+                mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_sign_up_failed);
             } else {
-                mOsuStatusString = mContext.getString(R.string.osu_connect_failed);
+                mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_connect_failed);
             }
             if (mConnectCallback != null) {
                 mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
@@ -335,14 +337,15 @@ class OsuWifiEntry extends WifiEntry {
                 case OSU_STATUS_INIT_SOAP_EXCHANGE:
                 case OSU_STATUS_WAITING_FOR_REDIRECT_RESPONSE:
                     newStatusString = String.format(mContext.getString(
-                            R.string.osu_opening_provider),
+                            R.string.wifitrackerlib_osu_opening_provider),
                             mOsuProvider.getFriendlyName());
                     break;
                 case OSU_STATUS_REDIRECT_RESPONSE_RECEIVED:
                 case OSU_STATUS_SECOND_SOAP_EXCHANGE:
                 case OSU_STATUS_THIRD_SOAP_EXCHANGE:
                 case OSU_STATUS_RETRIEVING_TRUST_ROOT_CERTS:
-                    newStatusString = mContext.getString(R.string.osu_completing_sign_up);
+                    newStatusString = mContext.getString(
+                    R.string.wifitrackerlib_osu_completing_sign_up);
                     break;
             }
             boolean updated = !TextUtils.equals(mOsuStatusString, newStatusString);
@@ -354,7 +357,7 @@ class OsuWifiEntry extends WifiEntry {
 
         @Override
         @MainThread public void onProvisioningComplete() {
-            mOsuStatusString = mContext.getString(R.string.osu_sign_up_complete);
+            mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_sign_up_complete);
             notifyOnUpdated();
 
             PasspointConfiguration passpointConfig = mWifiManager
