@@ -158,6 +158,12 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             android.Manifest.permission.ACCESS_WIFI_STATE
     };
 
+    private static final String[] RECEIVER_PERMISSIONS_FOR_BROADCAST_LOCATION_OFF = {
+            android.Manifest.permission.NETWORK_SETTINGS,
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_WIFI_STATE
+    };
+
     // Maximum number of bytes allowed for a network name, i.e. SSID.
     private static final int MAX_NETWORK_NAME_BYTES = 32;
     // Minimum number of bytes for a network name, i.e. DIRECT-xy.
@@ -3085,8 +3091,12 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
 
         private void sendBroadcastMultiplePermissions(Intent intent) {
             Context context = mContext.createContextAsUser(UserHandle.ALL, 0);
+            String[] permissions = RECEIVER_PERMISSIONS_FOR_BROADCAST;
+            if (!mWifiPermissionsUtil.isLocationModeEnabled()) {
+                permissions = RECEIVER_PERMISSIONS_FOR_BROADCAST_LOCATION_OFF;
+            }
             context.sendBroadcastWithMultiplePermissions(
-                    intent, RECEIVER_PERMISSIONS_FOR_BROADCAST);
+                    intent, permissions);
         }
 
         private void sendThisDeviceChangedBroadcast() {
