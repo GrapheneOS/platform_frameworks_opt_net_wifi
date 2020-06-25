@@ -48,6 +48,7 @@ import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -384,6 +385,16 @@ public class ActiveModeWarden {
     }
 
     /**
+     * Returns all instances of ClientModeManager in
+     * {@link ActiveModeManager#CLIENT_INTERNET_CONNECTIVITY_ROLES} roles.
+     * @return List of {@link ClientModeManager}.
+     */
+    @NonNull
+    public List<ClientModeManager> getInternetConnectivityClientModeManagers() {
+        return getClientModeManagersInRoles(ActiveModeManager.CLIENT_INTERNET_CONNECTIVITY_ROLES);
+    }
+
+    /**
      * Returns scan only client mode manager, if any.
      * This mode manager will only allow scanning.
      * @return Instance of {@link ClientModeManager} or null if none present.
@@ -428,7 +439,7 @@ public class ActiveModeWarden {
     /**
      * @return true if any mode managers in one of the specified roles.
      */
-    private boolean hasAnyModeManagerInOneOfRoles(List<Integer> rolesList) {
+    private boolean hasAnyModeManagerInOneOfRoles(Collection<Integer> rolesList) {
         for (ActiveModeManager manager : mActiveModeManagers) {
             if (rolesList.contains(manager.getRole())) return true;
         }
@@ -481,6 +492,17 @@ public class ActiveModeWarden {
             if (manager.getRole() == role) return (ClientModeManager) manager;
         }
         return null;
+    }
+
+    @NonNull
+    private List<ClientModeManager> getClientModeManagersInRoles(Collection<Integer> rolesList) {
+        List<ClientModeManager> modeManagers = new ArrayList<>();
+        for (ActiveModeManager manager : mActiveModeManagers) {
+            if (rolesList.contains(manager.getRole())) {
+                modeManagers.add((ClientModeManager) manager);
+            }
+        }
+        return modeManagers;
     }
 
     @Nullable

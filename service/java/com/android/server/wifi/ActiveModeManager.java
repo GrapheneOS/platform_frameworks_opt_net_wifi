@@ -70,24 +70,30 @@ public interface ActiveModeManager {
 
     /** Roles assigned to each mode manager. */
     int ROLE_UNSPECIFIED = -1;
-    // SoftApManager - Tethering, will respond to public APIs.
+    /** SoftApManager - Tethering, will respond to public APIs. */
     int ROLE_SOFTAP_TETHERED = 0;
-    // SoftApManager - Local only hotspot.
+    /** SoftApManager - Local only hotspot. */
     int ROLE_SOFTAP_LOCAL_ONLY = 1;
-    // ClientModeManager, primary STA, will respond to public APIs
+    /** ClientModeManager, primary STA, will respond to public WifiManager APIs */
     int ROLE_CLIENT_PRIMARY = 2;
-    // ClientModeManager, secondary STA, can switch to primary later.
-    int ROLE_CLIENT_SECONDARY = 3;
-    // ClientModeManager, secondary STA created for local connection (no internet connectivity).
-    int ROLE_CLIENT_LOCAL_ONLY = 4;
-    // ClientModeManager, STA created for scans only.
-    int ROLE_CLIENT_SCAN_ONLY = 5;
+    /**
+     * ClientModeManager, secondary STA used for duplication/bonding use cases, will not respond to
+     * public WifiManager API's.
+     */
+    int ROLE_CLIENT_SECONDARY_LONG_LIVED = 3;
+    /** ClientModeManager, secondary STA used for make before break, can switch to primary later. */
+    int ROLE_CLIENT_SECONDARY_TRANSIENT = 4;
+    /** ClientModeManager, secondary STA created for local connection (no internet connectivity). */
+    int ROLE_CLIENT_LOCAL_ONLY = 5;
+    /** ClientModeManager, STA created for scans only. */
+    int ROLE_CLIENT_SCAN_ONLY = 6;
 
     @IntDef(prefix = { "ROLE_" }, value = {
             ROLE_SOFTAP_TETHERED,
             ROLE_SOFTAP_LOCAL_ONLY,
             ROLE_CLIENT_PRIMARY,
-            ROLE_CLIENT_SECONDARY,
+            ROLE_CLIENT_SECONDARY_TRANSIENT,
+            ROLE_CLIENT_SECONDARY_LONG_LIVED,
             ROLE_CLIENT_LOCAL_ONLY,
             ROLE_CLIENT_SCAN_ONLY
     })
@@ -97,18 +103,23 @@ public interface ActiveModeManager {
     /** List of Client roles */
     List<Integer> CLIENT_ROLES = Arrays.asList(
             ROLE_CLIENT_PRIMARY,
-            ROLE_CLIENT_SECONDARY,
+            ROLE_CLIENT_SECONDARY_TRANSIENT,
+            ROLE_CLIENT_SECONDARY_LONG_LIVED,
             ROLE_CLIENT_LOCAL_ONLY,
             ROLE_CLIENT_SCAN_ONLY);
     /** List of Client roles that could initiate a wifi connection */
     List<Integer> CLIENT_CONNECTIVITY_ROLES = Arrays.asList(
             ROLE_CLIENT_PRIMARY,
-            ROLE_CLIENT_SECONDARY,
+            ROLE_CLIENT_SECONDARY_TRANSIENT,
+            ROLE_CLIENT_SECONDARY_LONG_LIVED,
             ROLE_CLIENT_LOCAL_ONLY);
-    /** List of Client roles that could initiate a wifi connection for internet connectivity */
+    /**
+     * List of long running Client roles that could initiate a wifi connection for internet
+     * connectivity
+     */
     List<Integer> CLIENT_INTERNET_CONNECTIVITY_ROLES = Arrays.asList(
             ROLE_CLIENT_PRIMARY,
-            ROLE_CLIENT_SECONDARY);
+            ROLE_CLIENT_SECONDARY_LONG_LIVED);
     /** List of SoftAp roles */
     List<Integer> SOFTAP_ROLES = Arrays.asList(
             ROLE_SOFTAP_LOCAL_ONLY,
