@@ -133,12 +133,23 @@
          are no connected devices. -->
     <integer translatable="false" name="config_wifiFrameworkSoftApShutDownTimeoutMilliseconds">600000</integer>
 
-
     <!-- Integer indicating maximum hardware supported client number of soft ap -->
     <integer translatable="false" name="config_wifiHardwareSoftapMaxClientCount">16</integer>
 
-    <!-- boolean indicating whether reset channel configuration or not during cloud configuration restore -->
+    <!-- boolean indicating whether or not to reset channel configuration during cloud configuration restore -->
     <bool translatable="false" name ="config_wifiSoftapResetChannelConfig">true</bool>
+
+    <!-- boolean indicating whether or not to reset hiddenSsid configuration during cloud configuration restore -->
+    <bool translatable="false" name ="config_wifiSoftapResetHiddenConfig">true</bool>
+
+    <!-- boolean indicating whether or not to reset user control configuration during cloud configuration restore -->
+    <bool translatable="false" name ="config_wifiSoftapResetUserControlConfig">true</bool>
+
+    <!-- boolean indicating whether or not to reset auto shotdown configuration during cloud configuration restore -->
+    <bool translatable="false" name ="config_wifiSoftapResetAutoShutdownTimerConfig">true</bool>
+
+    <!-- boolean indicating whether or not to reset max client setting configuration during cloud configuration restore -->
+    <bool translatable="false" name ="config_wifiSoftapResetMaxClientSettingConfig">true</bool>
 
     <!-- List of allowed channels in 2GHz band for softap. If the device doesn't want to restrict
          channels this should be empty. Values is a comma separated channel string and/or channel

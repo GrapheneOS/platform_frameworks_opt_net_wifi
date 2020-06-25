@@ -2532,12 +2532,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWakeupController).dump(null, writer, null);
     }
 
-    @Test
-    public void takeBugReportCallsWifiDiagnostics() {
-        mCmi.takeBugReport(anyString(), anyString());
-        verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
-    }
-
     /**
      * Verify that Rssi Monitoring is started and the callback registered after connecting.
      */
