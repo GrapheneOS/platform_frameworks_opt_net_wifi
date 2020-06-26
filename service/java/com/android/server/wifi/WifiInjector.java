@@ -209,9 +209,8 @@ public class WifiInjector {
         Looper wifiLooper = mWifiHandlerThread.getLooper();
         Handler wifiHandler = new Handler(wifiLooper);
 
-        mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock);
-
         mContext = context;
+        mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
         mWifiInfo = new ExtendedWifiInfo(context);
         mSettingsMigrationDataHolder = new SettingsMigrationDataHolder(mContext);
         mConnectionFailureNotificationBuilder = new ConnectionFailureNotificationBuilder(
@@ -353,7 +352,8 @@ public class WifiInjector {
                 (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE),
                 this, mWifiConfigManager,
                 mWifiPermissionsUtil, mWifiMetrics, mClock, wifiHandler, mSettingsConfigStore);
-        WifiChannelUtilization wifiChannelUtilizationConnected = new WifiChannelUtilization(mClock);
+        WifiChannelUtilization wifiChannelUtilizationConnected =
+                new WifiChannelUtilization(mClock, mContext);
         mWifiDataStall = new WifiDataStall(mFrameworkFacade, mWifiMetrics, mContext,
                 mDeviceConfigFacade, wifiChannelUtilizationConnected, mClock, wifiHandler,
                 mThroughputPredictor);
