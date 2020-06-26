@@ -151,6 +151,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Implementation of ClientMode.  Event handling for Client mode logic is done here,
  * and all changes in connectivity state are initiated here.
+ *
+ * Note: No external modules should be calling into {@link ClientModeImpl}. Please plumb it via
+ * {@link ClientModeManager} until b/160014176 is fixed.
  */
 public class ClientModeImpl extends StateMachine {
     private static final String NETWORKTYPE = "WIFI";

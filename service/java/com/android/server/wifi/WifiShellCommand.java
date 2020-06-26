@@ -106,7 +106,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private static final Map<String, Pair<NetworkRequest, ConnectivityManager.NetworkCallback>>
             sActiveRequests = new ConcurrentHashMap<>();
 
-    private final ClientModeImpl mClientModeImpl;
+    private final ClientModeManager mClientModeManager;
     private final WifiLockManager mWifiLockManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private final WifiConfigManager mWifiConfigManager;
@@ -120,8 +120,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context,
-            ClientModeImpl clientModeImpl) {
-        mClientModeImpl = clientModeImpl;
+            ClientModeManager clientModeManager) {
+        mClientModeManager = clientModeManager;
         mWifiLockManager = wifiInjector.getWifiLockManager();
         mWifiNetworkSuggestionsManager = wifiInjector.getWifiNetworkSuggestionsManager();
         mWifiConfigManager = wifiInjector.getWifiConfigManager();
@@ -155,12 +155,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             switch (cmd) {
                 case "set-ipreach-disconnect": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
-                    mClientModeImpl.setIpReachabilityDisconnectEnabled(enabled);
+                    mClientModeManager.setIpReachabilityDisconnectEnabled(enabled);
                     return 0;
                 }
                 case "get-ipreach-disconnect":
                     pw.println("IPREACH_DISCONNECT state is "
-                            + mClientModeImpl.getIpReachabilityDisconnectEnabled());
+                            + mClientModeManager.getIpReachabilityDisconnectEnabled());
                     return 0;
                 case "set-poll-rssi-interval-msecs":
                     int newPollIntervalMsecs;
@@ -180,11 +180,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         return -1;
                     }
 
-                    mClientModeImpl.setPollRssiIntervalMsecs(newPollIntervalMsecs);
+                    mClientModeManager.setPollRssiIntervalMsecs(newPollIntervalMsecs);
                     return 0;
                 case "get-poll-rssi-interval-msecs":
-                    pw.println("ClientModeImpl.mPollRssiIntervalMsecs = "
-                            + mClientModeImpl.getPollRssiIntervalMsecs());
+                    pw.println("ClientModeManager.mPollRssiIntervalMsecs = "
+                            + mClientModeManager.getPollRssiIntervalMsecs());
                     return 0;
                 case "force-hi-perf-mode": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
@@ -261,7 +261,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 }
                 case "network-requests-remove-user-approved-access-points": {
                     String packageName = getNextArgRequired();
-                    mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+                    mClientModeManager.removeNetworkRequestUserApprovedAccessPointsForApp(
+                            packageName);
                     return 0;
                 }
                 case "clear-user-disabled-networks": {
@@ -597,13 +598,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "network-requests-set-user-approved": {
                     String packageName = getNextArgRequired();
                     boolean approved = getNextArgRequiredTrueOrFalse("yes", "no");
-                    mClientModeImpl.setNetworkRequestUserApprovedApp(packageName, approved);
+                    mClientModeManager.setNetworkRequestUserApprovedApp(packageName, approved);
                     return 0;
                 }
                 case "network-requests-has-user-approved": {
                     String packageName = getNextArgRequired();
                     boolean hasUserApproved =
-                            mClientModeImpl.hasNetworkRequestUserApprovedApp(packageName);
+                            mClientModeManager.hasNetworkRequestUserApprovedApp(packageName);
                     pw.println(hasUserApproved ? "yes" : "no");
                     return 0;
                 }
@@ -865,7 +866,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         final int sendMgmtFrameTimeoutMs = 1000;
 
         ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
-        mClientModeImpl.probeLink(new WifiNl80211Manager.SendMgmtFrameCallback() {
+        mClientModeManager.probeLink(new WifiNl80211Manager.SendMgmtFrameCallback() {
             @Override
             public void onAck(int elapsedTimeMs) {
                 queue.offer("Link probe succeeded after " + elapsedTimeMs + " ms");

@@ -21,16 +21,27 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
+import android.net.DhcpResultsParcelable;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.wifi.INetworkRequestMatchCallback;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiAnnotations;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.hotspot2.IProvisioningCallback;
+import android.net.wifi.hotspot2.OsuProvider;
+import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.HandlerExecutor;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
+import android.os.WorkSource;
 import android.telephony.AccessNetworkConstants;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
@@ -50,6 +61,7 @@ import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
+import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.WifiHandler;
 import com.android.wifi.resources.R;
 
@@ -59,6 +71,7 @@ import java.util.List;
 
 /**
  * Manager WiFi in Client Mode where we connect to configured networks.
+ * TODO (b/160014176): Merge {@link ClientModeManager} and {@link ClientModeImpl}
  */
 public class ClientModeManager implements ActiveModeManager {
     private static final String TAG = "WifiClientModeManager";
@@ -125,14 +138,6 @@ public class ClientModeManager implements ActiveModeManager {
         return mTargetRole == ROLE_UNSPECIFIED && mRole != ROLE_UNSPECIFIED;
     }
 
-    /**
-     * @return Returns the client mode impl associated with this instance of
-     * {@link ClientModeManager}.
-     */
-    public ClientModeImpl getImpl() {
-        return mClientModeImplHolder.get();
-    }
-
     private class DeferStopHandler extends WifiHandler {
         private boolean mIsDeferring = false;
         private ImsMmTelManager mImsMmTelManager = null;
@@ -164,6 +169,7 @@ public class ClientModeManager implements ActiveModeManager {
 
         private NetworkCallback mImsNetworkCallback = new NetworkCallback() {
             private int mRegisteredImsNetworkCount = 0;
+
             @Override
             public void onAvailable(Network network) {
                 synchronized (this) {
@@ -229,15 +235,15 @@ public class ClientModeManager implements ActiveModeManager {
             }
 
             mImsRequest = new NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_IMS)
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                .build();
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_IMS)
+                    .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    .build();
 
             mConnectivityManager =
                     (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 
             mConnectivityManager.registerNetworkCallback(mImsRequest, mImsNetworkCallback,
-                                                         new Handler(mLooper));
+                    new Handler(mLooper));
         }
 
         private void continueToStopWifi() {
@@ -322,8 +328,8 @@ public class ClientModeManager implements ActiveModeManager {
         ImsMmTelManager imsMmTelManager = ImsMmTelManager.createForSubscriptionId(subId);
         // If no wifi calling, no delay
         if (!imsMmTelManager.isAvailable(
-                    MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VOICE,
-                    ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN)) {
+                MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VOICE,
+                ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN)) {
             Log.d(TAG, "IMS not registered over IWLAN for subId: " + subId);
             return 0;
         }
@@ -368,6 +374,9 @@ public class ClientModeManager implements ActiveModeManager {
         pw.println("mClientInterfaceName: " + mClientInterfaceName);
         pw.println("mIfaceIsUp: " + mIfaceIsUp);
         mStateMachine.dump(fd, pw, args);
+        pw.println();
+        mClientModeImplHolder.get().dump(fd, pw, args);
+        pw.println();
     }
 
     private String getCurrentStateName() {
@@ -382,7 +391,8 @@ public class ClientModeManager implements ActiveModeManager {
 
     /**
      * Update Wifi state and send the broadcast.
-     * @param newState new Wifi state
+     *
+     * @param newState     new Wifi state
      * @param currentState current wifi state
      */
     private void updateConnectModeState(int newState, int currentState) {
@@ -490,7 +500,7 @@ public class ClientModeManager implements ActiveModeManager {
                         // Always start in scan mode first.
                         mClientInterfaceName =
                                 mWifiNative.setupInterfaceForClientInScanMode(
-                                mWifiNativeInterfaceCallback);
+                                        mWifiNativeInterfaceCallback);
                         if (TextUtils.isEmpty(mClientInterfaceName)) {
                             Log.e(TAG, "Failed to create ClientInterface. Sit in Idle");
                             mModeListener.onStartFailure();
@@ -529,7 +539,7 @@ public class ClientModeManager implements ActiveModeManager {
 
             @Override
             public boolean processMessage(Message message) {
-                switch(message.what) {
+                switch (message.what) {
                     case CMD_START:
                         // Already started, ignore this command.
                         break;
@@ -688,5 +698,205 @@ public class ClientModeManager implements ActiveModeManager {
                         WifiManager.WIFI_STATE_DISABLING);
             }
         }
+    }
+
+    /***
+     * Note: These are simple wrappers over methods to {@link ClientModeImpl}.
+     */
+
+    public void connectNetwork(NetworkUpdateResult result, ActionListenerWrapper wrapper,
+            int callingUid) {
+        mClientModeImplHolder.get().connectNetwork(result, wrapper, callingUid);
+    }
+
+    public void saveNetwork(NetworkUpdateResult result, ActionListenerWrapper wrapper,
+            int callingUid) {
+        mClientModeImplHolder.get().saveNetwork(result, wrapper, callingUid);
+    }
+
+    public void disconnect() {
+        mClientModeImplHolder.get().disconnectCommand();
+    }
+
+    public void reconnect(WorkSource ws) {
+        mClientModeImplHolder.get().reconnectCommand(ws);
+    }
+
+    public void reassociate() {
+        mClientModeImplHolder.get().reassociateCommand();
+    }
+
+    public void startConnectToNetwork(int networkId, int uid, String bssid) {
+        mClientModeImplHolder.get().startConnectToNetwork(networkId, uid, bssid);
+    }
+
+    public void startRoamToNetwork(int networkId, ScanResult scanResult) {
+        mClientModeImplHolder.get().startRoamToNetwork(networkId, scanResult);
+    }
+
+    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
+    public WifiScoreReport getWifiScoreReport() {
+        return mClientModeImplHolder.get().getWifiScoreReport();
+    }
+
+    public void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) {
+        mClientModeImplHolder.get().resetSimAuthNetworks(resetReason);
+    }
+
+    public void sendBluetoothAdapterConnectionStateChange(int state) {
+        mClientModeImplHolder.get().sendBluetoothAdapterConnectionStateChange(state);
+    }
+
+    public void sendBluetoothAdapterStateChange(int state) {
+        mClientModeImplHolder.get().sendBluetoothAdapterStateChange(state);
+    }
+
+    public void handleBootCompleted() {
+        mClientModeImplHolder.get().handleBootCompleted();
+    }
+
+    public int syncGetWifiState() {
+        return mClientModeImplHolder.get().syncGetWifiState();
+    }
+
+    public WifiLinkLayerStats syncGetLinkLayerStats() {
+        return mClientModeImplHolder.get().syncGetLinkLayerStats();
+    }
+
+    public WifiInfo syncRequestConnectionInfo() {
+        return mClientModeImplHolder.get().syncRequestConnectionInfo();
+    }
+
+    public boolean syncQueryPasspointIcon(long bssid, String fileName) {
+        return mClientModeImplHolder.get().syncQueryPasspointIcon(bssid, fileName);
+    }
+
+    public Network syncGetCurrentNetwork() {
+        return mClientModeImplHolder.get().syncGetCurrentNetwork();
+    }
+
+    public DhcpResultsParcelable syncGetDhcpResultsParcelable() {
+        return mClientModeImplHolder.get().syncGetDhcpResultsParcelable();
+    }
+
+    public String syncGetWifiStateByName() {
+        return mClientModeImplHolder.get().syncGetWifiStateByName();
+    }
+
+    public long syncGetSupportedFeatures() {
+        return mClientModeImplHolder.get().syncGetSupportedFeatures();
+    }
+
+    public boolean syncStartSubscriptionProvisioning(int callingUid, OsuProvider provider,
+            IProvisioningCallback callback) {
+        return mClientModeImplHolder.get().syncStartSubscriptionProvisioning(
+                callingUid, provider, callback);
+    }
+
+    public boolean isWifiStandardSupported(@WifiAnnotations.WifiStandard int standard) {
+        return mClientModeImplHolder.get().isWifiStandardSupported(standard);
+    }
+
+    public void enableTdls(String remoteMacAddress, boolean enable) {
+        mClientModeImplHolder.get().enableTdls(remoteMacAddress, enable);
+    }
+
+
+    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
+    public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) {
+        mClientModeImplHolder.get().removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+    }
+
+    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
+    public void clearNetworkRequestUserApprovedAccessPoints() {
+        mClientModeImplHolder.get().clearNetworkRequestUserApprovedAccessPoints();
+    }
+
+    public void addNetworkRequestMatchCallback(IBinder binder,
+            INetworkRequestMatchCallback callback,
+            int callbackIdentifier) {
+        mClientModeImplHolder.get().addNetworkRequestMatchCallback(
+                binder, callback, callbackIdentifier);
+    }
+
+    public void removeNetworkRequestMatchCallback(int callbackIdentifier) {
+        mClientModeImplHolder.get().removeNetworkRequestMatchCallback(callbackIdentifier);
+    }
+
+    public void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args) {
+        mClientModeImplHolder.get().dumpIpClient(fd, pw, args);
+    }
+
+    public void updateLinkLayerStatsRssiAndScoreReport() {
+        mClientModeImplHolder.get().updateLinkLayerStatsRssiAndScoreReport();
+    }
+
+    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
+    public void enableVerboseLogging(int verbose) {
+        mClientModeImplHolder.get().enableVerboseLogging(verbose);
+    }
+
+    public String getFactoryMacAddress() {
+        return mClientModeImplHolder.get().getFactoryMacAddress();
+    }
+
+    public WifiConfiguration getCurrentWifiConfiguration() {
+        return mClientModeImplHolder.get().getCurrentWifiConfiguration();
+    }
+
+    WifiLinkLayerStats getWifiLinkLayerStats() {
+        return mClientModeImplHolder.get().getWifiLinkLayerStats();
+    }
+
+    public boolean setPowerSave(boolean ps) {
+        return mClientModeImplHolder.get().setPowerSave(ps);
+    }
+
+    public boolean setLowLatencyMode(boolean enabled) {
+        return mClientModeImplHolder.get().setLowLatencyMode(enabled);
+    }
+
+    public WifiMulticastLockManager.FilterController getMcastLockManagerFilterController() {
+        return mClientModeImplHolder.get().getMcastLockManagerFilterController();
+    }
+
+    public boolean isConnected() {
+        return mClientModeImplHolder.get().isConnected();
+    }
+
+    public boolean isDisconnected() {
+        return mClientModeImplHolder.get().isDisconnected();
+    }
+
+    public boolean isSupplicantTransientState() {
+        return mClientModeImplHolder.get().isSupplicantTransientState();
+    }
+
+    public boolean getIpReachabilityDisconnectEnabled() {
+        return mClientModeImplHolder.get().getIpReachabilityDisconnectEnabled();
+    }
+
+    public void setIpReachabilityDisconnectEnabled(boolean enabled) {
+        mClientModeImplHolder.get().setIpReachabilityDisconnectEnabled(enabled);
+    }
+
+    int getPollRssiIntervalMsecs() {
+        return mClientModeImplHolder.get().getPollRssiIntervalMsecs();
+    }
+
+    void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
+        mClientModeImplHolder.get().setPollRssiIntervalMsecs(newPollIntervalMsecs);
+    }
+
+    public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) {
+        mClientModeImplHolder.get().setNetworkRequestUserApprovedApp(packageName, approved);
+    }
+
+    public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
+        return mClientModeImplHolder.get().hasNetworkRequestUserApprovedApp(packageName);
+    }
+
+    public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
+        mClientModeImplHolder.get().probeLink(callback, mcs);
     }
 }

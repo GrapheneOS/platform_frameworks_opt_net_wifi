@@ -27,6 +27,9 @@ import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLED;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLING;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_FAILED;
 
+import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED;
+import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED;
+import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 
 import android.annotation.CheckResult;
@@ -159,7 +162,6 @@ public class WifiServiceImpl extends BaseWifiService {
     /** Max wait time for posting blocking runnables */
     private static final int RUN_WITH_SCISSORS_TIMEOUT_MILLIS = 4000;
 
-    private final ClientModeImpl mClientModeImpl;
     private final ActiveModeWarden mActiveModeWarden;
     private final ScanRequestProxy mScanRequestProxy;
 
@@ -256,9 +258,6 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiTrafficPoller = mWifiInjector.getWifiTrafficPoller();
         mUserManager = mWifiInjector.getUserManager();
         mCountryCode = mWifiInjector.getWifiCountryCode();
-        // Assume that ClientModeImpl is a singleton and PrimaryClientModeImplHolder's value never
-        // changing. Assumption will no longer be valid when STA+STA implementation is complete.
-        mClientModeImpl = Objects.requireNonNull(mWifiInjector.getClientModeImplHolder().get());
         mActiveModeWarden = mWifiInjector.getActiveModeWarden();
         mScanRequestProxy = mWifiInjector.getScanRequestProxy();
         mSettingsStore = mWifiInjector.getWifiSettingsStore();
@@ -320,8 +319,8 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_ABSENT == state) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
-                                mClientModeImpl.resetSimAuthNetworks(
-                                        ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
+                                mActiveModeWarden.getPrimaryClientModeManager()
+                                        .resetSimAuthNetworks(RESET_SIM_REASON_SIM_REMOVED);
                             }
                         }
                     },
@@ -335,8 +334,8 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_LOADED == state) {
                                 Log.d(TAG, "resetting networks because SIM was loaded");
-                                mClientModeImpl.resetSimAuthNetworks(
-                                        ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED);
+                                mActiveModeWarden.getPrimaryClientModeManager()
+                                        .resetSimAuthNetworks(RESET_SIM_REASON_SIM_INSERTED);
                             }
                         }
                     },
@@ -351,8 +350,9 @@ public class WifiServiceImpl extends BaseWifiService {
                                     SubscriptionManager.INVALID_SUBSCRIPTION_ID);
                             if (subId != mLastSubId) {
                                 Log.d(TAG, "resetting networks as default data SIM is changed");
-                                mClientModeImpl.resetSimAuthNetworks(
-                                        ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
+                                mActiveModeWarden.getPrimaryClientModeManager()
+                                        .resetSimAuthNetworks(
+                                                RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
                                 mLastSubId = subId;
                             }
                         }
@@ -409,11 +409,13 @@ public class WifiServiceImpl extends BaseWifiService {
                     } else if (action.equals(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)) {
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
                                 BluetoothAdapter.STATE_DISCONNECTED);
-                        mClientModeImpl.sendBluetoothAdapterConnectionStateChange(state);
+                        mActiveModeWarden.getPrimaryClientModeManager()
+                                .sendBluetoothAdapterConnectionStateChange(state);
                     } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                                 BluetoothAdapter.STATE_OFF);
-                        mClientModeImpl.sendBluetoothAdapterStateChange(state);
+                        mActiveModeWarden.getPrimaryClientModeManager()
+                                .sendBluetoothAdapterStateChange(state);
                     } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
                         handleIdleModeChanged();
                     } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
@@ -424,7 +426,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mMemoryStoreImpl.start();
             mPasspointManager.initializeProvisioner(
                     mWifiInjector.getPasspointProvisionerHandlerThread().getLooper());
-            mClientModeImpl.handleBootCompleted();
+            mActiveModeWarden.getPrimaryClientModeManager().handleBootCompleted();
         });
     }
 
@@ -805,7 +807,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getWifiEnabledState uid=%").c(Binder.getCallingUid()).flush();
         }
-        return mClientModeImpl.syncGetWifiState();
+        return mActiveModeWarden.getPrimaryClientModeManager().syncGetWifiState();
     }
 
     /**
@@ -2029,7 +2031,7 @@ public class WifiServiceImpl extends BaseWifiService {
             return false;
         }
         mLog.info("disconnect uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.disconnectCommand();
+        mActiveModeWarden.getPrimaryClientModeManager().disconnect();
         return true;
     }
 
@@ -2048,7 +2050,8 @@ public class WifiServiceImpl extends BaseWifiService {
             return false;
         }
         mLog.info("reconnect uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.reconnectCommand(new WorkSource(Binder.getCallingUid()));
+        mActiveModeWarden.getPrimaryClientModeManager().reconnect(
+                new WorkSource(Binder.getCallingUid()));
         return true;
     }
 
@@ -2067,7 +2070,7 @@ public class WifiServiceImpl extends BaseWifiService {
             return false;
         }
         mLog.info("reassociate uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.reassociateCommand();
+        mActiveModeWarden.getPrimaryClientModeManager().reassociate();
         return true;
     }
 
@@ -2107,7 +2110,8 @@ public class WifiServiceImpl extends BaseWifiService {
         if ((getSupportedFeatures() & WifiManager.WIFI_FEATURE_LINK_LAYER_STATS) == 0) {
             return null;
         }
-        WifiLinkLayerStats stats = mClientModeImpl.syncGetLinkLayerStats();
+        WifiLinkLayerStats stats =
+                mActiveModeWarden.getPrimaryClientModeManager().syncGetLinkLayerStats();
         if (stats == null) {
             return null;
         }
@@ -2704,7 +2708,8 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         long ident = Binder.clearCallingIdentity();
         try {
-            WifiInfo result = mClientModeImpl.syncRequestConnectionInfo();
+            WifiInfo result =
+                    mActiveModeWarden.getPrimaryClientModeManager().syncRequestConnectionInfo();
             boolean hideDefaultMacAddress = true;
             boolean hideBssidSsidNetworkIdAndFqdn = true;
 
@@ -2902,7 +2907,8 @@ public class WifiServiceImpl extends BaseWifiService {
     public void queryPasspointIcon(long bssid, String fileName) {
         enforceAccessPermission();
         mLog.info("queryPasspointIcon uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.syncQueryPasspointIcon(bssid, fileName);
+        mActiveModeWarden.getPrimaryClientModeManager().syncQueryPasspointIcon(
+                bssid, fileName);
     }
 
     /**
@@ -2970,7 +2976,8 @@ public class WifiServiceImpl extends BaseWifiService {
     @Override
     public boolean isWifiStandardSupported(@WifiStandard int standard) {
         return mWifiThreadRunner.call(
-                () -> mClientModeImpl.isWifiStandardSupported(standard), false);
+                () -> mActiveModeWarden.getPrimaryClientModeManager().isWifiStandardSupported(
+                        standard), false);
     }
 
     /**
@@ -2986,7 +2993,8 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getDhcpInfo uid=%").c(Binder.getCallingUid()).flush();
         }
-        DhcpResultsParcelable dhcpResults = mClientModeImpl.syncGetDhcpResultsParcelable();
+        DhcpResultsParcelable dhcpResults =
+                mActiveModeWarden.getPrimaryClientModeManager().syncGetDhcpResultsParcelable();
 
         DhcpInfo info = new DhcpInfo();
 
@@ -3110,7 +3118,7 @@ public class WifiServiceImpl extends BaseWifiService {
           throw new IllegalArgumentException("remoteMacAddress cannot be null");
         }
 
-        mClientModeImpl.enableTdls(remoteMacAddress, enable);
+        mActiveModeWarden.getPrimaryClientModeManager().enableTdls(remoteMacAddress, enable);
     }
 
     /**
@@ -3170,7 +3178,8 @@ public class WifiServiceImpl extends BaseWifiService {
 
                     // Remove all suggestions from the package.
                     mWifiNetworkSuggestionsManager.removeApp(pkgName);
-                    mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(pkgName);
+                    mActiveModeWarden.getPrimaryClientModeManager()
+                            .removeNetworkRequestUserApprovedAccessPointsForApp(pkgName);
 
                     // Remove all Passpoint profiles from package.
                     mWifiInjector.getPasspointManager().removePasspointProviderWithPackage(
@@ -3206,7 +3215,8 @@ public class WifiServiceImpl extends BaseWifiService {
     public int handleShellCommand(@NonNull ParcelFileDescriptor in,
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new WifiShellCommand(mWifiInjector, this, mContext, mClientModeImpl).exec(
+        return new WifiShellCommand(mWifiInjector, this, mContext,
+                mActiveModeWarden.getPrimaryClientModeManager()).exec(
                 this, in.getFileDescriptor(), out.getFileDescriptor(), err.getFileDescriptor(),
                 args);
     }
@@ -3243,9 +3253,10 @@ public class WifiServiceImpl extends BaseWifiService {
             // IpClient dump was requested. Pass it along and take no further action.
             String[] ipClientArgs = new String[args.length - 1];
             System.arraycopy(args, 1, ipClientArgs, 0, ipClientArgs.length);
-            mClientModeImpl.dumpIpClient(fd, pw, ipClientArgs);
+            mActiveModeWarden.getPrimaryClientModeManager().dumpIpClient(fd, pw, ipClientArgs);
         } else if (args != null && args.length > 0 && WifiScoreReport.DUMP_ARG.equals(args[0])) {
-            WifiScoreReport wifiScoreReport = mClientModeImpl.getWifiScoreReport();
+            WifiScoreReport wifiScoreReport =
+                    mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
             if (wifiScoreReport != null) wifiScoreReport.dump(fd, pw, args);
         } else if (args != null && args.length > 0 && WifiScoreCard.DUMP_ARG.equals(args[0])) {
             WifiScoreCard wifiScoreCard = mWifiInjector.getWifiScoreCard();
@@ -3255,8 +3266,10 @@ public class WifiServiceImpl extends BaseWifiService {
         } else {
             // Polls link layer stats and RSSI. This allows the stats to show up in
             // WifiScoreReport's dump() output when taking a bug report even if the screen is off.
-            mClientModeImpl.updateLinkLayerStatsRssiAndScoreReport();
-            pw.println("Wi-Fi is " + mClientModeImpl.syncGetWifiStateByName());
+            mActiveModeWarden.getPrimaryClientModeManager()
+                    .updateLinkLayerStatsRssiAndScoreReport();
+            pw.println("Wi-Fi is "
+                    + mActiveModeWarden.getPrimaryClientModeManager().syncGetWifiStateByName());
             pw.println("Verbose logging is " + (mVerboseLoggingEnabled ? "on" : "off"));
             pw.println("Stay-awake conditions: " +
                     mFacade.getIntegerSetting(mContext,
@@ -3272,8 +3285,6 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiMulticastLockManager.dump(pw);
             pw.println();
             mActiveModeWarden.dump(fd, pw, args);
-            pw.println();
-            mClientModeImpl.dump(fd, pw, args);
             pw.println();
             WifiScoreCard wifiScoreCard = mWifiInjector.getWifiScoreCard();
             String networkListBase64 = mWifiThreadRunner.call(() ->
@@ -3292,7 +3303,8 @@ public class WifiServiceImpl extends BaseWifiService {
             pw.println("ScoringParams: " + mWifiInjector.getScoringParams());
             pw.println();
             pw.println("WifiScoreReport:");
-            WifiScoreReport wifiScoreReport = mClientModeImpl.getWifiScoreReport();
+            WifiScoreReport wifiScoreReport =
+                    mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
             wifiScoreReport.dump(fd, pw, args);
             pw.println();
             pw.println();
@@ -3396,7 +3408,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
     private void enableVerboseLoggingInternal(int verbose) {
         mVerboseLoggingEnabled = verbose > 0;
-        mClientModeImpl.enableVerboseLogging(verbose);
+        mActiveModeWarden.getPrimaryClientModeManager().enableVerboseLogging(verbose);
         mWifiLockManager.enableVerboseLogging(verbose);
         mWifiMulticastLockManager.enableVerboseLogging(verbose);
         mWifiInjector.enableVerboseLogging(verbose);
@@ -3452,7 +3464,8 @@ public class WifiServiceImpl extends BaseWifiService {
             mPasspointManager.clearAnqpRequestsAndFlushCache();
             mWifiConfigManager.clearUserTemporarilyDisabledList();
             mWifiConfigManager.removeAllEphemeralOrPasspointConfiguredNetworks();
-            mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
+            mActiveModeWarden.getPrimaryClientModeManager()
+                    .clearNetworkRequestUserApprovedAccessPoints();
             mWifiNetworkSuggestionsManager.clear();
             mWifiInjector.getWifiScoreCard().clear();
             mWifiHealthMonitor.clear();
@@ -3492,7 +3505,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getCurrentNetwork uid=%").c(Binder.getCallingUid()).flush();
         }
-        return mClientModeImpl.syncGetCurrentNetwork();
+        return mActiveModeWarden.getPrimaryClientModeManager().syncGetCurrentNetwork();
     }
 
     public static String toHexString(String s) {
@@ -3646,7 +3659,8 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         final int uid = Binder.getCallingUid();
         mLog.trace("startSubscriptionProvisioning uid=%").c(uid).flush();
-        if (mClientModeImpl.syncStartSubscriptionProvisioning(uid, provider, callback)) {
+        if (mActiveModeWarden.getPrimaryClientModeManager().syncStartSubscriptionProvisioning(
+                uid, provider, callback)) {
             mLog.trace("Subscription provisioning started with %")
                     .c(provider.toString()).flush();
         }
@@ -3704,7 +3718,8 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private long getSupportedFeaturesInternal() {
-        long supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures();
+        long supportedFeatureSet =
+                mActiveModeWarden.getPrimaryClientModeManager().syncGetSupportedFeatures();
         // Mask the feature set against system properties.
         boolean rttSupported = mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_WIFI_RTT);
@@ -3772,8 +3787,9 @@ public class WifiServiceImpl extends BaseWifiService {
                     .c(Binder.getCallingUid()).flush();
         }
         // Post operation to handler thread
-        mWifiThreadRunner.post(() -> mClientModeImpl.addNetworkRequestMatchCallback(
-                binder, callback, callbackIdentifier));
+        mWifiThreadRunner.post(() ->
+                mActiveModeWarden.getPrimaryClientModeManager().addNetworkRequestMatchCallback(
+                        binder, callback, callbackIdentifier));
     }
 
     /**
@@ -3793,7 +3809,8 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         // Post operation to handler thread
         mWifiThreadRunner.post(() ->
-                mClientModeImpl.removeNetworkRequestMatchCallback(callbackIdentifier));
+                mActiveModeWarden.getPrimaryClientModeManager().removeNetworkRequestMatchCallback(
+                        callbackIdentifier));
     }
 
     /**
@@ -3881,7 +3898,8 @@ public class WifiServiceImpl extends BaseWifiService {
             throw new SecurityException("App not allowed to get Wi-Fi factory MAC address "
                     + "(uid = " + uid + ")");
         }
-        String result = mWifiThreadRunner.call(mClientModeImpl::getFactoryMacAddress, null);
+        String result = mWifiThreadRunner.call(
+                mActiveModeWarden.getPrimaryClientModeManager()::getFactoryMacAddress, null);
         // result can be empty array if either: WifiThreadRunner.call() timed out, or
         // ClientModeImpl.getFactoryMacAddress() returned null.
         // In this particular instance, we don't differentiate the two types of nulls.
@@ -4155,7 +4173,7 @@ public class WifiServiceImpl extends BaseWifiService {
                     mWifiConfigManager.updateBeforeSaveNetwork(config, uid);
             if (result.isSuccess()) {
                 broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
-                mClientModeImpl.saveNetwork(result, wrapper, uid);
+                mActiveModeWarden.getPrimaryClientModeManager().saveNetwork(result, wrapper, uid);
             } else {
                 wrapper.sendFailure(WifiManager.ERROR);
             }
@@ -4297,7 +4315,8 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("setWifiConnectedNetworkScorer uid=%").c(Binder.getCallingUid()).flush();
         }
         // Post operation to handler thread
-        WifiScoreReport wifiScoreReport = mClientModeImpl.getWifiScoreReport();
+        WifiScoreReport wifiScoreReport =
+                mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
         return mWifiThreadRunner.call(() -> wifiScoreReport.setWifiConnectedNetworkScorer(
                 binder, scorer), false);
     }
@@ -4313,7 +4332,8 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("clearWifiConnectedNetworkScorer uid=%").c(Binder.getCallingUid()).flush();
         }
         // Post operation to handler thread
-        WifiScoreReport wifiScoreReport = mClientModeImpl.getWifiScoreReport();
+        WifiScoreReport wifiScoreReport =
+                mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
         mWifiThreadRunner.post(() ->
                 wifiScoreReport.clearWifiConnectedNetworkScorer());
     }
