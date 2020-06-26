@@ -59,8 +59,6 @@ import com.android.internal.util.IState;
 import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImpl;
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
 import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.WifiHandler;
@@ -85,7 +83,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WifiMetrics mWifiMetrics;
     private final WakeupController mWakeupController;
     private final Listener mModeListener;
-    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final ClientModeImpl mClientModeImpl;
 
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
@@ -96,17 +94,22 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     ConcreteClientModeManager(Context context, @NonNull Looper looper, Clock clock,
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
-            WakeupController wakeupController,
-            PrimaryClientModeImplHolder clientModeImplHolder) {
+            WakeupController wakeupController, ClientModeImpl clientModeImpl) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
         mModeListener = listener;
         mWifiMetrics = wifiMetrics;
         mWakeupController = wakeupController;
-        mClientModeImplHolder = clientModeImplHolder;
+        mClientModeImpl = clientModeImpl;
         mStateMachine = new ClientModeStateMachine(looper);
         mDeferStopHandler = new DeferStopHandler(TAG, looper);
+
+        /**
+         * TODO(b/117601161): Start {@link ClientModeImpl} from the enter method of
+         * {@link ClientModeStateMachine.ConnectModeState}
+         */
+        mClientModeImpl.start();
     }
 
     /**
@@ -377,7 +380,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         pw.println("mIfaceIsUp: " + mIfaceIsUp);
         mStateMachine.dump(fd, pw, args);
         pw.println();
-        mClientModeImplHolder.get().dump(fd, pw, args);
+        mClientModeImpl.dump(fd, pw, args);
         pw.println();
     }
 
@@ -407,7 +410,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             return;
         }
 
-        mClientModeImplHolder.get().setWifiStateForApiCalls(newState);
+        mClientModeImpl.setWifiStateForApiCalls(newState);
 
         final Intent intent = new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
@@ -439,7 +442,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     // we must immediately clean up state in ClientModeImpl to unregister
                     // all client mode related objects
                     // Note: onDestroyed is only called from the main Wifi thread
-                    mClientModeImplHolder.get().handleIfaceDestroyed();
+                    mClientModeImpl.handleIfaceDestroyed();
 
                     sendMessage(CMD_INTERFACE_DESTROYED);
                 }
@@ -572,7 +575,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     case CMD_INTERFACE_DOWN:
                         Log.e(TAG, "Detected an interface down, reporting failure to "
                                 + "SelfRecovery");
-                        mClientModeImplHolder.get()
+                        mClientModeImpl
                                 .failureDetected(SelfRecovery.REASON_STA_IFACE_DOWN);
                         transitionTo(mIdleState);
                         break;
@@ -596,7 +599,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
              */
             @Override
             public void exit() {
-                mClientModeImplHolder.get().setOperationalMode(
+                mClientModeImpl.setOperationalMode(
                         ClientModeImpl.DISABLED_MODE, null, null);
 
                 if (mClientInterfaceName != null) {
@@ -616,7 +619,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             @Override
             public void enter() {
                 Log.d(TAG, "entering ScanOnlyModeState");
-                mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
+                mClientModeImpl.setOperationalMode(ClientModeImpl.SCAN_ONLY_MODE,
                         mClientInterfaceName, ConcreteClientModeManager.this);
                 setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
 
@@ -645,7 +648,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             @Override
             public void enter() {
                 Log.d(TAG, "entering ConnectModeState");
-                mClientModeImplHolder.get().setOperationalMode(ClientModeImpl.CONNECT_MODE,
+                mClientModeImpl.setOperationalMode(ClientModeImpl.CONNECT_MODE,
                         mClientInterfaceName, ConcreteClientModeManager.this);
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
                         WifiManager.WIFI_STATE_ENABLING);
@@ -672,7 +675,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                             break;  // no change
                         }
                         if (!isUp) {
-                            if (!mClientModeImplHolder.get().isConnectedMacRandomizationEnabled()) {
+                            if (!mClientModeImpl.isConnectedMacRandomizationEnabled()) {
                                 // Handle the error case where our underlying interface went down if
                                 // we do not have mac randomization enabled (b/72459123).
                                 // if the interface goes down we should exit and go back to idle
@@ -709,237 +712,237 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void connectNetwork(NetworkUpdateResult result, ActionListenerWrapper wrapper,
             int callingUid) {
-        mClientModeImplHolder.get().connectNetwork(result, wrapper, callingUid);
+        mClientModeImpl.connectNetwork(result, wrapper, callingUid);
     }
 
     @Override
     public void saveNetwork(NetworkUpdateResult result, ActionListenerWrapper wrapper,
             int callingUid) {
-        mClientModeImplHolder.get().saveNetwork(result, wrapper, callingUid);
+        mClientModeImpl.saveNetwork(result, wrapper, callingUid);
     }
 
     @Override
     public void disconnect() {
-        mClientModeImplHolder.get().disconnectCommand();
+        mClientModeImpl.disconnectCommand();
     }
 
     @Override
     public void reconnect(WorkSource ws) {
-        mClientModeImplHolder.get().reconnectCommand(ws);
+        mClientModeImpl.reconnectCommand(ws);
     }
 
     @Override
     public void reassociate() {
-        mClientModeImplHolder.get().reassociateCommand();
+        mClientModeImpl.reassociateCommand();
     }
 
     @Override
     public void startConnectToNetwork(int networkId, int uid, String bssid) {
-        mClientModeImplHolder.get().startConnectToNetwork(networkId, uid, bssid);
+        mClientModeImpl.startConnectToNetwork(networkId, uid, bssid);
     }
 
     @Override
     public void startRoamToNetwork(int networkId, ScanResult scanResult) {
-        mClientModeImplHolder.get().startRoamToNetwork(networkId, scanResult);
+        mClientModeImpl.startRoamToNetwork(networkId, scanResult);
     }
 
     @Override
     public WifiScoreReport getWifiScoreReport() {
-        return mClientModeImplHolder.get().getWifiScoreReport();
+        return mClientModeImpl.getWifiScoreReport();
     }
 
     @Override
     public void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) {
-        mClientModeImplHolder.get().resetSimAuthNetworks(resetReason);
+        mClientModeImpl.resetSimAuthNetworks(resetReason);
     }
 
     @Override
     public void sendBluetoothAdapterConnectionStateChange(int state) {
-        mClientModeImplHolder.get().sendBluetoothAdapterConnectionStateChange(state);
+        mClientModeImpl.sendBluetoothAdapterConnectionStateChange(state);
     }
 
     @Override
     public void sendBluetoothAdapterStateChange(int state) {
-        mClientModeImplHolder.get().sendBluetoothAdapterStateChange(state);
+        mClientModeImpl.sendBluetoothAdapterStateChange(state);
     }
 
     @Override
     public void handleBootCompleted() {
-        mClientModeImplHolder.get().handleBootCompleted();
+        mClientModeImpl.handleBootCompleted();
     }
 
     @Override
     public int syncGetWifiState() {
-        return mClientModeImplHolder.get().syncGetWifiState();
+        return mClientModeImpl.syncGetWifiState();
     }
 
     @Override
     public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return mClientModeImplHolder.get().syncGetLinkLayerStats();
+        return mClientModeImpl.syncGetLinkLayerStats();
     }
 
     @Override
     public WifiInfo syncRequestConnectionInfo() {
-        return mClientModeImplHolder.get().syncRequestConnectionInfo();
+        return mClientModeImpl.syncRequestConnectionInfo();
     }
 
     @Override
     public boolean syncQueryPasspointIcon(long bssid, String fileName) {
-        return mClientModeImplHolder.get().syncQueryPasspointIcon(bssid, fileName);
+        return mClientModeImpl.syncQueryPasspointIcon(bssid, fileName);
     }
 
     @Override
     public Network syncGetCurrentNetwork() {
-        return mClientModeImplHolder.get().syncGetCurrentNetwork();
+        return mClientModeImpl.syncGetCurrentNetwork();
     }
 
     @Override
     public DhcpResultsParcelable syncGetDhcpResultsParcelable() {
-        return mClientModeImplHolder.get().syncGetDhcpResultsParcelable();
+        return mClientModeImpl.syncGetDhcpResultsParcelable();
     }
 
     @Override
     public String syncGetWifiStateByName() {
-        return mClientModeImplHolder.get().syncGetWifiStateByName();
+        return mClientModeImpl.syncGetWifiStateByName();
     }
 
     @Override
     public long syncGetSupportedFeatures() {
-        return mClientModeImplHolder.get().syncGetSupportedFeatures();
+        return mClientModeImpl.syncGetSupportedFeatures();
     }
 
     @Override
     public boolean syncStartSubscriptionProvisioning(int callingUid, OsuProvider provider,
             IProvisioningCallback callback) {
-        return mClientModeImplHolder.get().syncStartSubscriptionProvisioning(
+        return mClientModeImpl.syncStartSubscriptionProvisioning(
                 callingUid, provider, callback);
     }
 
     @Override
     public boolean isWifiStandardSupported(@WifiAnnotations.WifiStandard int standard) {
-        return mClientModeImplHolder.get().isWifiStandardSupported(standard);
+        return mClientModeImpl.isWifiStandardSupported(standard);
     }
 
     @Override
     public void enableTdls(String remoteMacAddress, boolean enable) {
-        mClientModeImplHolder.get().enableTdls(remoteMacAddress, enable);
+        mClientModeImpl.enableTdls(remoteMacAddress, enable);
     }
 
     @Override
     public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) {
-        mClientModeImplHolder.get().removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+        mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
     }
 
     @Override
     public void clearNetworkRequestUserApprovedAccessPoints() {
-        mClientModeImplHolder.get().clearNetworkRequestUserApprovedAccessPoints();
+        mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
     }
 
     @Override
     public void addNetworkRequestMatchCallback(IBinder binder,
             INetworkRequestMatchCallback callback,
             int callbackIdentifier) {
-        mClientModeImplHolder.get().addNetworkRequestMatchCallback(
+        mClientModeImpl.addNetworkRequestMatchCallback(
                 binder, callback, callbackIdentifier);
     }
 
     @Override
     public void removeNetworkRequestMatchCallback(int callbackIdentifier) {
-        mClientModeImplHolder.get().removeNetworkRequestMatchCallback(callbackIdentifier);
+        mClientModeImpl.removeNetworkRequestMatchCallback(callbackIdentifier);
     }
 
     @Override
     public void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args) {
-        mClientModeImplHolder.get().dumpIpClient(fd, pw, args);
+        mClientModeImpl.dumpIpClient(fd, pw, args);
     }
 
     @Override
     public void updateLinkLayerStatsRssiAndScoreReport() {
-        mClientModeImplHolder.get().updateLinkLayerStatsRssiAndScoreReport();
+        mClientModeImpl.updateLinkLayerStatsRssiAndScoreReport();
     }
 
     @Override
     public void enableVerboseLogging(int verbose) {
-        mClientModeImplHolder.get().enableVerboseLogging(verbose);
+        mClientModeImpl.enableVerboseLogging(verbose);
     }
 
     @Override
     public String getFactoryMacAddress() {
-        return mClientModeImplHolder.get().getFactoryMacAddress();
+        return mClientModeImpl.getFactoryMacAddress();
     }
 
     @Override
     public WifiConfiguration getCurrentWifiConfiguration() {
-        return mClientModeImplHolder.get().getCurrentWifiConfiguration();
+        return mClientModeImpl.getCurrentWifiConfiguration();
     }
 
     @Override
     public WifiLinkLayerStats getWifiLinkLayerStats() {
-        return mClientModeImplHolder.get().getWifiLinkLayerStats();
+        return mClientModeImpl.getWifiLinkLayerStats();
     }
 
     @Override
     public boolean setPowerSave(boolean ps) {
-        return mClientModeImplHolder.get().setPowerSave(ps);
+        return mClientModeImpl.setPowerSave(ps);
     }
 
     @Override
     public boolean setLowLatencyMode(boolean enabled) {
-        return mClientModeImplHolder.get().setLowLatencyMode(enabled);
+        return mClientModeImpl.setLowLatencyMode(enabled);
     }
 
     @Override
     public WifiMulticastLockManager.FilterController getMcastLockManagerFilterController() {
-        return mClientModeImplHolder.get().getMcastLockManagerFilterController();
+        return mClientModeImpl.getMcastLockManagerFilterController();
     }
 
     @Override
     public boolean isConnected() {
-        return mClientModeImplHolder.get().isConnected();
+        return mClientModeImpl.isConnected();
     }
 
     @Override
     public boolean isDisconnected() {
-        return mClientModeImplHolder.get().isDisconnected();
+        return mClientModeImpl.isDisconnected();
     }
 
     @Override
     public boolean isSupplicantTransientState() {
-        return mClientModeImplHolder.get().isSupplicantTransientState();
+        return mClientModeImpl.isSupplicantTransientState();
     }
 
     @Override
     public boolean getIpReachabilityDisconnectEnabled() {
-        return mClientModeImplHolder.get().getIpReachabilityDisconnectEnabled();
+        return mClientModeImpl.getIpReachabilityDisconnectEnabled();
     }
 
     @Override
     public void setIpReachabilityDisconnectEnabled(boolean enabled) {
-        mClientModeImplHolder.get().setIpReachabilityDisconnectEnabled(enabled);
+        mClientModeImpl.setIpReachabilityDisconnectEnabled(enabled);
     }
 
     @Override
     public int getPollRssiIntervalMsecs() {
-        return mClientModeImplHolder.get().getPollRssiIntervalMsecs();
+        return mClientModeImpl.getPollRssiIntervalMsecs();
     }
 
     @Override
     public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
-        mClientModeImplHolder.get().setPollRssiIntervalMsecs(newPollIntervalMsecs);
+        mClientModeImpl.setPollRssiIntervalMsecs(newPollIntervalMsecs);
     }
 
     @Override
     public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) {
-        mClientModeImplHolder.get().setNetworkRequestUserApprovedApp(packageName, approved);
+        mClientModeImpl.setNetworkRequestUserApprovedApp(packageName, approved);
     }
 
     @Override
     public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
-        return mClientModeImplHolder.get().hasNetworkRequestUserApprovedApp(packageName);
+        return mClientModeImpl.hasNetworkRequestUserApprovedApp(packageName);
     }
 
     @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
-        mClientModeImplHolder.get().probeLink(callback, mcs);
+        mClientModeImpl.probeLink(callback, mcs);
     }
 }

@@ -154,6 +154,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * Note: No external modules should be calling into {@link ClientModeImpl}. Please plumb it via
  * {@link ClientModeManager} until b/160014176 is fixed.
+ *
+ * TODO(b/117601161): Remove the {@link DefaultState} and make {@link ConnectableState} the parent
+ * state once ClientModeImpl is fully disposable.
  */
 public class ClientModeImpl extends StateMachine {
     private static final String NETWORKTYPE = "WIFI";

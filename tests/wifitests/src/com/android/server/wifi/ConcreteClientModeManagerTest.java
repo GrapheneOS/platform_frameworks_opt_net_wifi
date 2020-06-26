@@ -57,7 +57,6 @@ import android.telephony.ims.RegistrationManager;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.wifi.resources.R;
 
 import org.junit.After;
@@ -229,10 +228,8 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     }
 
     private ClientModeManager createClientModeManager() {
-        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
-        holder.set(mClientModeImpl);
         return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
-                mListener, mWifiMetrics, mWakeupController, holder);
+                mListener, mWifiMetrics, mWakeupController, mClientModeImpl);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {

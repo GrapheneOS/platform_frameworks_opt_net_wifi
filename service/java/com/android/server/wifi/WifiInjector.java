@@ -17,7 +17,6 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AppOpsManager;
@@ -123,8 +122,6 @@ public class WifiInjector {
     private final HostapdHal mHostapdHal;
     private final WifiVendorHal mWifiVendorHal;
     private final ScoringParams mScoringParams;
-    private final PrimaryClientModeImplHolder mClientModeImplHolder =
-            new PrimaryClientModeImplHolder();
     private final ActiveModeWarden mActiveModeWarden;
     private final WifiSettingsStore mSettingsStore;
     private OpenNetworkNotifier mOpenNetworkNotifier;
@@ -187,6 +184,10 @@ public class WifiInjector {
     private final LruConnectionTracker mLruConnectionTracker;
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final ConnectHelper mConnectHelper;
+    private final ConnectionFailureNotifier mConnectionFailureNotifier;
+    private final WifiNetworkFactory mWifiNetworkFactory;
+    private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
+    private final SupplicantStateTracker mSupplicantStateTracker;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -360,7 +361,7 @@ public class WifiInjector {
         mWifiMetrics.setWifiDataStall(mWifiDataStall);
         mLinkProbeManager = new LinkProbeManager(mClock, mWifiNative, mWifiMetrics,
                 mFrameworkFacade, wifiHandler, mContext);
-        SupplicantStateTracker supplicantStateTracker = new SupplicantStateTracker(
+        mSupplicantStateTracker = new SupplicantStateTracker(
                 mContext, mWifiConfigManager, mBatteryStats, wifiHandler);
         mMboOceController = new MboOceController(makeTelephonyManager(), mWifiNative);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
@@ -384,11 +385,11 @@ public class WifiInjector {
                 mActiveModeWarden);
         NotificationManager notificationManager =
                 mContext.getSystemService(NotificationManager.class);
-        ConnectionFailureNotifier connectionFailureNotifier = new ConnectionFailureNotifier(
+        mConnectionFailureNotifier = new ConnectionFailureNotifier(
                 mContext, mFrameworkFacade, mWifiConfigManager,
                 mWifiConnectivityManager, wifiHandler,
                 notificationManager, mConnectionFailureNotificationBuilder);
-        WifiNetworkFactory wifiNetworkFactory = new WifiNetworkFactory(
+        mWifiNetworkFactory = new WifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER,
                 (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE),
                 (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE),
@@ -396,7 +397,7 @@ public class WifiInjector {
                 mClock, this, mWifiConnectivityManager, mWifiConfigManager,
                 mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mActiveModeWarden,
                 mConnectHelper);
-        UntrustedWifiNetworkFactory untrustedWifiNetworkFactory = new UntrustedWifiNetworkFactory(
+        mUntrustedWifiNetworkFactory = new UntrustedWifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER, mWifiConnectivityManager);
         mWifiScanAlwaysAvailableSettingsCompatibility =
                 new WifiScanAlwaysAvailableSettingsCompatibility(mContext, wifiHandler,
@@ -424,24 +425,6 @@ public class WifiInjector {
         mWifiNetworkSelector.registerNetworkNominator(mSavedNetworkNominator);
         mWifiNetworkSelector.registerNetworkNominator(mNetworkSuggestionNominator);
         mWifiNetworkSelector.registerNetworkNominator(mScoredNetworkNominator);
-
-        ClientModeImpl clientModeImpl = new ClientModeImpl(mContext, mWifiMetrics, mClock,
-                mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
-                mPasspointManager, mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper,
-                mWifiDataStall, mScoringParams, mWifiThreadRunner,
-                mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
-                mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
-                mBssidBlocklistMonitor, connectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
-                wifiNetworkFactory, untrustedWifiNetworkFactory, mWifiLastResortWatchdog,
-                mWakeupController, mLockManager, mSelfRecovery,
-                mFrameworkFacade, wifiLooper, mCountryCode, mWifiNative,
-                new WrongPasswordNotifier(mContext, mFrameworkFacade), mWifiTrafficPoller,
-                mLinkProbeManager, mBatteryStats, supplicantStateTracker, mMboOceController,
-                mWifiCarrierInfoManager,
-                new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
-                new SimRequiredNotifier(mContext, mFrameworkFacade));
-        mClientModeImplHolder.set(clientModeImpl);
-        clientModeImpl.start();
     }
 
     /**
@@ -526,11 +509,6 @@ public class WifiInjector {
         return mWifiApConfigStore;
     }
 
-    /** Backdoor, only authorized for use by WifiServiceImpl. */
-    public PrimaryClientModeImplHolder getClientModeImplHolder() {
-        return mClientModeImplHolder;
-    }
-
     public ActiveModeWarden getActiveModeWarden() {
         return mActiveModeWarden;
     }
@@ -596,28 +574,6 @@ public class WifiInjector {
     }
 
     /**
-     * Used to hold the primary instance of ClientModeImpl (i.e. the instance that is visible to
-     * users/apps).
-     *
-     * TODO(b/116233964): this is temporary, the primary ClientModeImpl instance should be
-     *  maintained by {@link ActiveModeWarden}.
-     */
-    public static class PrimaryClientModeImplHolder {
-        private ClientModeImpl mClientModeImpl = null;
-
-        /** Get the instance of ClientModeImpl. */
-        @Nullable
-        public ClientModeImpl get() {
-            return mClientModeImpl;
-        }
-
-        /** Set the instance of ClientModeImpl */
-        public void set(@Nullable ClientModeImpl clientModeImpl) {
-            mClientModeImpl = clientModeImpl;
-        }
-    }
-
-    /**
      * Create a SoftApManager.
      * @param config SoftApModeConfiguration object holding the config and mode
      * @return an instance of SoftApManager
@@ -637,9 +593,24 @@ public class WifiInjector {
      * @return a new instance of ClientModeManager
      */
     public ClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
+        ClientModeImpl clientModeImpl = new ClientModeImpl(mContext, mWifiMetrics, mClock,
+                mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
+                mPasspointManager, mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper,
+                mWifiDataStall, mScoringParams, mWifiThreadRunner,
+                mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
+                mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
+                mBssidBlocklistMonitor, mConnectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
+                mWifiNetworkFactory, mUntrustedWifiNetworkFactory, mWifiLastResortWatchdog,
+                mWakeupController, mLockManager, mSelfRecovery,
+                mFrameworkFacade, mWifiHandlerThread.getLooper(), mCountryCode, mWifiNative,
+                new WrongPasswordNotifier(mContext, mFrameworkFacade), mWifiTrafficPoller,
+                mLinkProbeManager, mBatteryStats, mSupplicantStateTracker, mMboOceController,
+                mWifiCarrierInfoManager,
+                new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
+                new SimRequiredNotifier(mContext, mFrameworkFacade));
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
-                mClientModeImplHolder);
+                clientModeImpl);
     }
 
     /**
