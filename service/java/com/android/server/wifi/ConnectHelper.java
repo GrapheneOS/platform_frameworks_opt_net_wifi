@@ -20,7 +20,6 @@ import android.annotation.Nullable;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.util.ActionListenerWrapper;
 
 /**
@@ -30,13 +29,13 @@ import com.android.server.wifi.util.ActionListenerWrapper;
 public class ConnectHelper {
     private static final String TAG = "WifiConnectHelper";
 
-    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final ActiveModeWarden mActiveModeWarden;
     private final WifiConfigManager mWifiConfigManager;
 
     public ConnectHelper(
-            PrimaryClientModeImplHolder clientModeImplHolder,
+            ActiveModeWarden activeModeWarden,
             WifiConfigManager wifiConfigManager) {
-        mClientModeImplHolder = clientModeImplHolder;
+        mActiveModeWarden = activeModeWarden;
         mWifiConfigManager = wifiConfigManager;
     }
 
@@ -48,7 +47,8 @@ public class ConnectHelper {
         int netId = result.getNetworkId();
         boolean success = mWifiConfigManager.updateBeforeConnect(netId, callingUid);
         if (success) {
-            mClientModeImplHolder.get().connectNetwork(result, wrapper, callingUid);
+            mActiveModeWarden.getPrimaryClientModeManager().getImpl().connectNetwork(
+                    result, wrapper, callingUid);
         } else {
             Log.e(TAG, "connectToNetwork Invalid network Id=" + netId);
             wrapper.sendFailure(WifiManager.ERROR);
