@@ -44,6 +44,7 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Base64;
 import android.util.Log;
@@ -1111,6 +1112,7 @@ public class WifiMetrics {
                 }
                 sb.append(", numConsecutiveConnectionFailure="
                         + mConnectionEvent.numConsecutiveConnectionFailure);
+                sb.append(", isOsuProvisioned=" + mConnectionEvent.isOsuProvisioned);
             }
             return sb.toString();
         }
@@ -1460,9 +1462,12 @@ public class WifiMetrics {
                         mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(config.SSID);
                 mCurrentConnectionEvent.mConnectionEvent.networkType =
                         WifiMetricsProto.ConnectionEvent.TYPE_UNKNOWN;
+                mCurrentConnectionEvent.mConnectionEvent.isOsuProvisioned = false;
                 if (config.isPasspoint()) {
                     mCurrentConnectionEvent.mConnectionEvent.networkType =
                             WifiMetricsProto.ConnectionEvent.TYPE_PASSPOINT;
+                    mCurrentConnectionEvent.mConnectionEvent.isOsuProvisioned =
+                            !TextUtils.isEmpty(config.updateIdentifier);
                 } else if (WifiConfigurationUtil.isConfigForSaeNetwork(config)) {
                     mCurrentConnectionEvent.mConnectionEvent.networkType =
                             WifiMetricsProto.ConnectionEvent.TYPE_WPA3;
@@ -3097,7 +3102,7 @@ public class WifiMetrics {
                 for (ConnectionEvent event : mConnectionEventList) {
                     String eventLine = event.toString();
                     if (event == mCurrentConnectionEvent) {
-                        eventLine += "CURRENTLY OPEN EVENT";
+                        eventLine += " CURRENTLY OPEN EVENT";
                     }
                     pw.println(eventLine);
                 }
