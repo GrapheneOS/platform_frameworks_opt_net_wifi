@@ -584,8 +584,10 @@ public class StandardWifiEntryTest {
 
         final Resources mockResources = mock(Resources.class);
         when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.summary_separator)).thenReturn(summarySeparator);
-        when(mockResources.getStringArray(R.array.wifi_status)).thenReturn(wifiStatusArray);
+        when(mockResources.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(summarySeparator);
+        when(mockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(wifiStatusArray);
         final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mockConnectivityManager);
@@ -616,7 +618,7 @@ public class StandardWifiEntryTest {
         final String wifiSecurityShortWpa2Wpa3 = "WPA2/WPA3";
         final Resources mockResources = mock(Resources.class);
         when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifi_security_short_wpa2_wpa3))
+        when(mockResources.getString(R.string.wifitrackerlib_wifi_security_short_wpa2_wpa3))
                 .thenReturn(wifiSecurityShortWpa2Wpa3);
 
         entry.updateScanResultInfo(Arrays.asList(bestScanResult));
@@ -634,7 +636,7 @@ public class StandardWifiEntryTest {
         final String wifiSecurityEapWpa = "WPA-Enterprise";
         final Resources mockResources = mock(Resources.class);
         when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifi_security_eap_wpa))
+        when(mockResources.getString(R.string.wifitrackerlib_wifi_security_eap_wpa))
                 .thenReturn(wifiSecurityEapWpa);
 
         entry.updateScanResultInfo(Arrays.asList(bestScanResult));
