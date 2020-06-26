@@ -38,7 +38,7 @@ def is_in_aosp():
 def is_commit_msg_valid(commit_msg):
     for line in commit_msg.splitlines():
         line = line.strip().lower()
-        if line.startswith('updated-pdd') and 'true' in line:
+        if line.startswith('updated-pdd'):
             return True
 
     return False
@@ -65,10 +65,15 @@ def main():
         return 0
 
     print('This commit has changed {metrics_file}.'.format(metrics_file=metrics_file))
-    print('Please update the Wifi Metrics Privacy Design Doc (PDD) at go/wifi-metrics-pdd')
+    print('If this change added/changed/removed metrics collected from the device,')
+    print('please update the Wifi Metrics Privacy Design Doc (PDD) at go/wifi-metrics-pdd')
     print('and acknowledge you have done so by adding this line to your commit message:')
     print()
     print('Updated-PDD: TRUE')
+    print()
+    print('Otherwise, please explain why the PDD does not need to be updated:')
+    print()
+    print('Updated-PDD: Not applicable - reformatted file')
     print()
     print('Please reach out to the OWNERS for more information about the Wifi Metrics PDD.')
     return 1
