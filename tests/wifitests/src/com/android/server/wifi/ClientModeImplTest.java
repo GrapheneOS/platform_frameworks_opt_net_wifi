@@ -353,7 +353,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     HandlerThread mWifiCoreThread;
     HandlerThread mP2pThread;
     HandlerThread mSyncThread;
-    AsyncChannel  mCmiAsyncChannel;
     AsyncChannel  mNetworkAgentAsyncChannel;
     TestAlarmManager mAlarmManager;
     MockWifiMonitor mWifiMonitor;
@@ -570,10 +569,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
-        registerAsyncChannel((x) -> {
-            mCmiAsyncChannel = x;
-        }, mCmi.getMessenger());
-
         mBinderToken = Binder.clearCallingIdentity();
 
         /* Send the BOOT_COMPLETED message to setup some CMI state. */
@@ -601,7 +596,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mWifiCoreThread = null;
         mP2pThread = null;
         mSyncThread = null;
-        mCmiAsyncChannel = null;
         mNetworkAgentAsyncChannel = null;
         mNetworkAgentHandler = null;
         mCmi = null;
@@ -1996,52 +1990,25 @@ public class ClientModeImplTest extends WifiBaseTest {
                 any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         mLooper.startAutoDispatch();
         assertTrue(mCmi.syncStartSubscriptionProvisioning(
-                OTHER_USER_UID, mOsuProvider, mProvisioningCallback, mCmiAsyncChannel));
+                OTHER_USER_UID, mOsuProvider, mProvisioningCallback));
         verify(mPasspointManager).startSubscriptionProvisioning(OTHER_USER_UID, mOsuProvider,
                 mProvisioningCallback);
         mLooper.stopAutoDispatch();
     }
 
-    /**
-     * Verify that syncStartSubscriptionProvisioning will be a no-op and return false before
-     * SUPPLICANT_START command is received by the CMI.
-     */
-    @Test
-    public void syncStartSubscriptionProvisioningBeforeSupplicantOrAPStart() throws Exception {
-        mLooper.startAutoDispatch();
-        assertFalse(mCmi.syncStartSubscriptionProvisioning(
-                OTHER_USER_UID, mOsuProvider, mProvisioningCallback, mCmiAsyncChannel));
-        mLooper.stopAutoDispatch();
-        verify(mPasspointManager, never()).startSubscriptionProvisioning(
-                anyInt(), any(OsuProvider.class), any(IProvisioningCallback.class));
-    }
-
-    /**
-     * Verify that syncStartSubscriptionProvisioning will be a no-op and return false when not in
-     * client mode.
-     */
-    @Test
-    public void syncStartSubscriptionProvisioningNoOpWifiDisabled() throws Exception {
-        mLooper.startAutoDispatch();
-        assertFalse(mCmi.syncStartSubscriptionProvisioning(
-                OTHER_USER_UID, mOsuProvider, mProvisioningCallback, mCmiAsyncChannel));
-        mLooper.stopAutoDispatch();
-        verify(mPasspointManager, never()).startSubscriptionProvisioning(
-                anyInt(), any(OsuProvider.class), any(IProvisioningCallback.class));
-    }
-
     @Test
     public void testSyncGetCurrentNetwork() throws Exception {
+        loadComponentsInStaMode();
         // syncGetCurrentNetwork() returns null when disconnected
         mLooper.startAutoDispatch();
-        assertNull(mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
+        assertNull(mCmi.syncGetCurrentNetwork());
         mLooper.stopAutoDispatch();
 
         connect();
 
         // syncGetCurrentNetwork() returns non-null Network when connected
         mLooper.startAutoDispatch();
-        assertEquals(mNetwork, mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
+        assertEquals(mNetwork, mCmi.syncGetCurrentNetwork());
         mLooper.stopAutoDispatch();
     }
 

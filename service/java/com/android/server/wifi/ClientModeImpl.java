@@ -83,7 +83,6 @@ import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.BatteryStatsManager;
-import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.IBinder;
 import android.os.Looper;
@@ -161,9 +160,6 @@ public class ClientModeImpl extends StateMachine {
 
     private static final String TAG = "WifiClientModeImpl";
 
-    private static final String EXTRA_OSU_ICON_QUERY_BSSID = "BSSID";
-    private static final String EXTRA_OSU_ICON_QUERY_FILENAME = "FILENAME";
-    private static final String EXTRA_OSU_PROVIDER = "OsuProvider";
     private static final int IPCLIENT_STARTUP_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes!
     private static final int IPCLIENT_SHUTDOWN_TIMEOUT_MS = 60_000; // 60 seconds
     @VisibleForTesting public static final long CONNECTING_WATCHDOG_TIMEOUT_MS = 30_000; // 30 secs.
@@ -448,10 +444,6 @@ public class ClientModeImpl extends StateMachine {
     /* BT connection state change, e.g., connected or disconnected */
     static final int CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE      = BASE + 32;
 
-    /* Get adaptors */
-    static final int CMD_GET_SUPPORTED_FEATURES                         = BASE + 61;
-    /* Get Link Layer Stats thru HAL */
-    static final int CMD_GET_LINK_LAYER_STATS                           = BASE + 63;
     /* Supplicant commands after driver start*/
     /* Set operational mode. CONNECT, SCAN ONLY, SCAN_ONLY with Wi-Fi off mode */
     static final int CMD_SET_OPERATIONAL_MODE                           = BASE + 72;
@@ -514,9 +506,6 @@ public class ClientModeImpl extends StateMachine {
     static final int RESET_SIM_REASON_SIM_REMOVED              = 0;
     static final int RESET_SIM_REASON_SIM_INSERTED             = 1;
     static final int RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED = 2;
-
-    /* OSU APIs */
-    static final int CMD_QUERY_OSU_ICON                                 = BASE + 104;
 
     /* Commands from/to the SupplicantStateTracker */
     /* Reset the supplicant state tracker */
@@ -597,9 +586,6 @@ public class ClientModeImpl extends StateMachine {
     /* Indicates that diagnostics should time out a connection start event. */
     static final int CMD_DIAGS_CONNECT_TIMEOUT                          = BASE + 252;
 
-    // Start subscription provisioning with a given provider
-    private static final int CMD_START_SUBSCRIPTION_PROVISIONING        = BASE + 254;
-
     @VisibleForTesting
     static final int CMD_PRE_DHCP_ACTION                                = BASE + 255;
     private static final int CMD_PRE_DHCP_ACTION_COMPLETE               = BASE + 256;
@@ -610,8 +596,6 @@ public class ClientModeImpl extends StateMachine {
 
     /* Start connection to FILS AP*/
     static final int CMD_START_FILS_CONNECTION                          = BASE + 262;
-
-    private static final int CMD_GET_CURRENT_NETWORK                    = BASE + 263;
 
     // For message logging.
     private static final Class[] sMessageClasses = {
@@ -1599,20 +1583,14 @@ public class ClientModeImpl extends StateMachine {
     /**
      * Blocking method to retrieve the passpoint icon.
      *
-     * @param channel AsyncChannel for the response
      * @param bssid representation of the bssid as a long
      * @param fileName name of the file
      *
      * @return boolean returning the result of the call
      */
-    public boolean syncQueryPasspointIcon(AsyncChannel channel, long bssid, String fileName) {
-        Bundle bundle = new Bundle();
-        bundle.putLong(EXTRA_OSU_ICON_QUERY_BSSID, bssid);
-        bundle.putString(EXTRA_OSU_ICON_QUERY_FILENAME, fileName);
-        Message resultMsg = channel.sendMessageSynchronously(CMD_QUERY_OSU_ICON, bundle);
-        int result = resultMsg.arg1;
-        resultMsg.recycle();
-        return result == 1;
+    public boolean syncQueryPasspointIcon(long bssid, String fileName) {
+        return mWifiThreadRunner.call(
+                () -> mPasspointManager.queryPasspointIcon(bssid, fileName), false);
     }
 
     /**
@@ -1661,39 +1639,26 @@ public class ClientModeImpl extends StateMachine {
      * @return boolean true indicates provisioning was started, false otherwise
      */
     public boolean syncStartSubscriptionProvisioning(int callingUid, OsuProvider provider,
-            IProvisioningCallback callback, AsyncChannel channel) {
-        Message msg = Message.obtain();
-        msg.what = CMD_START_SUBSCRIPTION_PROVISIONING;
-        msg.arg1 = callingUid;
-        msg.obj = callback;
-        msg.getData().putParcelable(EXTRA_OSU_PROVIDER, provider);
-        Message resultMsg = channel.sendMessageSynchronously(msg);
-        if (messageIsNull(resultMsg)) return false;
-        boolean result = resultMsg.arg1 != 0;
-        resultMsg.recycle();
-        return result;
+            IProvisioningCallback callback) {
+        return mWifiThreadRunner.call(
+                () -> mPasspointManager.startSubscriptionProvisioning(
+                        callingUid, provider, callback), false);
     }
 
     /**
      * Get the supported feature set synchronously
      */
-    public long syncGetSupportedFeatures(AsyncChannel channel) {
-        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_SUPPORTED_FEATURES);
-        if (messageIsNull(resultMsg)) return 0;
-        long supportedFeatureSet = ((Long) resultMsg.obj).longValue();
-        resultMsg.recycle();
-        return supportedFeatureSet;
+    public long syncGetSupportedFeatures() {
+        return mWifiThreadRunner.call(
+                () -> mWifiNative.getSupportedFeatureSet(mInterfaceName), 0L);
     }
 
     /**
      * Get link layers stats for adapter synchronously
      */
-    public WifiLinkLayerStats syncGetLinkLayerStats(AsyncChannel channel) {
-        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_LINK_LAYER_STATS);
-        if (messageIsNull(resultMsg)) return null;
-        WifiLinkLayerStats result = (WifiLinkLayerStats) resultMsg.obj;
-        resultMsg.recycle();
-        return result;
+    public WifiLinkLayerStats syncGetLinkLayerStats() {
+        return mWifiThreadRunner.call(
+                () -> getWifiLinkLayerStats(), null);
     }
 
     /**
@@ -1725,7 +1690,7 @@ public class ClientModeImpl extends StateMachine {
 
     /**
      * Should only be used internally.
-     * External callers should use {@link #syncGetCurrentNetwork(AsyncChannel)}.
+     * External callers should use {@link #syncGetCurrentNetwork()}.
      */
     private Network getCurrentNetwork() {
         if (mNetworkAgent != null) {
@@ -1739,12 +1704,15 @@ public class ClientModeImpl extends StateMachine {
      * Get Network object of currently connected wifi network, or null if not connected.
      * @return Network object of current wifi network
      */
-    public Network syncGetCurrentNetwork(AsyncChannel channel) {
-        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_CURRENT_NETWORK);
-        if (messageIsNull(resultMsg)) return null;
-        Network network = (Network) resultMsg.obj;
-        resultMsg.recycle();
-        return network;
+    public Network syncGetCurrentNetwork() {
+        return mWifiThreadRunner.call(
+                () -> {
+                    if (getCurrentState() == mL3ConnectedState
+                            || getCurrentState() == mRoamingState) {
+                        return getCurrentNetwork();
+                    }
+                    return null;
+                }, null);
     }
 
     /**
@@ -3407,17 +3375,6 @@ public class ClientModeImpl extends StateMachine {
                     cnm.listener.sendSuccess();
                     break;
                 }
-                case CMD_GET_SUPPORTED_FEATURES: {
-                    long featureSet = mWifiNative.getSupportedFeatureSet(mInterfaceName);
-                    replyToMessage(message, message.what, Long.valueOf(featureSet));
-                    break;
-                }
-                case CMD_GET_LINK_LAYER_STATS:
-                case CMD_GET_CURRENT_NETWORK: {
-                    // Not supported hence reply with null message.obj
-                    replyToMessage(message, message.what, null);
-                    break;
-                }
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {
                     NetworkInfo info = (NetworkInfo) message.obj;
                     mP2pConnected.set(info.isConnected());
@@ -3431,10 +3388,6 @@ public class ClientModeImpl extends StateMachine {
                 /* Link configuration (IP address, DNS, ...) changes notified via netlink */
                 case CMD_UPDATE_LINKPROPERTIES: {
                     updateLinkProperties((LinkProperties) message.obj);
-                    break;
-                }
-                case CMD_START_SUBSCRIPTION_PROVISIONING: {
-                    replyToMessage(message, message.what, 0);
                     break;
                 }
                 case CMD_IP_CONFIGURATION_SUCCESSFUL:
@@ -3460,13 +3413,6 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case CMD_STOP_RSSI_MONITORING_OFFLOAD: {
                     mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case CMD_QUERY_OSU_ICON: {
-                    /* reply with arg1 = 0 - it returns API failure to the calling app
-                     * (message.what is not looked at)
-                     */
-                    replyToMessage(message, message.what);
                     break;
                 }
                 case CMD_RESET_SIM_NETWORKS: {
@@ -3771,15 +3717,6 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case CMD_START_SUBSCRIPTION_PROVISIONING: {
-                    IProvisioningCallback callback = (IProvisioningCallback) message.obj;
-                    OsuProvider provider =
-                            (OsuProvider) message.getData().getParcelable(EXTRA_OSU_PROVIDER);
-                    int res = mPasspointManager.startSubscriptionProvisioning(
-                            message.arg1, provider, callback) ? 1 : 0;
-                    replyToMessage(message, message.what, res);
-                    break;
-                }
                 case CMD_RECONNECT: {
                     WorkSource workSource = (WorkSource) message.obj;
                     mWifiConnectivityManager.forceConnectivityScan(workSource);
@@ -3922,17 +3859,6 @@ public class ClientModeImpl extends StateMachine {
                         startConnectToNetwork(netId, message.sendingUid, SUPPLICANT_BSSID_ANY);
                     }
                     cnm.listener.sendSuccess();
-                    break;
-                }
-                case CMD_QUERY_OSU_ICON: {
-                    mPasspointManager.queryPasspointIcon(
-                            ((Bundle) message.obj).getLong(EXTRA_OSU_ICON_QUERY_BSSID),
-                            ((Bundle) message.obj).getString(EXTRA_OSU_ICON_QUERY_FILENAME));
-                    break;
-                }
-                case CMD_GET_LINK_LAYER_STATS: {
-                    WifiLinkLayerStats stats = getWifiLinkLayerStats();
-                    replyToMessage(message, message.what, stats);
                     break;
                 }
                 case CMD_RESET_SIM_NETWORKS: {
@@ -5425,10 +5351,6 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case CMD_GET_CURRENT_NETWORK: {
-                    replyToMessage(message, message.what, getCurrentNetwork());
-                    break;
-                }
                 default: {
                     handleStatus = NOT_HANDLED;
                     break;
@@ -5644,10 +5566,6 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_IP_CONFIGURATION_LOST: {
                     mWifiMetrics.incrementIpRenewalFailure();
                     handleStatus = NOT_HANDLED;
-                    break;
-                }
-                case CMD_GET_CURRENT_NETWORK: {
-                    replyToMessage(message, message.what, getCurrentNetwork());
                     break;
                 }
                 default: {

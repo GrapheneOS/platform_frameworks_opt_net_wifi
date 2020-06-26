@@ -71,7 +71,6 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
@@ -133,7 +132,6 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.IPowerManager;
 import android.os.IThermalService;
-import android.os.Message;
 import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
@@ -149,7 +147,6 @@ import android.telephony.TelephonyManager;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.os.PowerProfile;
-import com.android.internal.util.AsyncChannel;
 import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.WifiServiceImpl.LocalOnlyRequestorCallback;
 import com.android.server.wifi.hotspot2.PasspointManager;
@@ -157,7 +154,6 @@ import com.android.server.wifi.hotspot2.PasspointProvisioningTestUtil;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.ApConfigUtil;
-import com.android.server.wifi.util.WifiAsyncChannel;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
@@ -239,7 +235,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private static final int TEST_NETWORK_ID = 567;
 
     private SoftApInfo mTestSoftApInfo;
-    private AsyncChannel mAsyncChannel;
     private WifiServiceImpl mWifiServiceImpl;
     private TestLooper mLooper;
     private PowerManager mPowerManager;
@@ -255,10 +250,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
     private final ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
-    final ArgumentCaptor<IntentFilter> mIntentFilterCaptor =
-            ArgumentCaptor.forClass(IntentFilter.class);
 
-    final ArgumentCaptor<Message> mMessageCaptor = ArgumentCaptor.forClass(Message.class);
     final ArgumentCaptor<SoftApModeConfiguration> mSoftApModeConfigCaptor =
             ArgumentCaptor.forClass(SoftApModeConfiguration.class);
     final ArgumentCaptor<Handler> mHandlerCaptor = ArgumentCaptor.forClass(Handler.class);
@@ -335,7 +327,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Before public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         mLooper = new TestLooper();
-        mAsyncChannel = spy(new AsyncChannel());
         mApplicationInfo = new ApplicationInfo();
         mApplicationInfo.targetSdkVersion = Build.VERSION_CODES.CUR_DEVELOPMENT;
         when(mResources.getInteger(
@@ -352,7 +343,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getClientModeImplHolder()).thenReturn(holder);
         when(mClientModeImpl.getHandler()).thenReturn(new Handler());
         when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
-        when(mWifiInjector.getAsyncChannelHandlerThread()).thenReturn(mHandlerThread);
         when(mWifiInjector.getWifiHandlerThread()).thenReturn(mHandlerThread);
         when(mHandlerThread.getThreadHandler()).thenReturn(new Handler(mLooper.getLooper()));
         when(mHandlerThread.getLooper()).thenReturn(mLooper.getLooper());
@@ -375,9 +365,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
         when(mContext.createContextAsUser(eq(UserHandle.CURRENT), anyInt()))
                 .thenReturn(mContextAsUser);
-        WifiAsyncChannel wifiAsyncChannel = new WifiAsyncChannel("WifiServiceImplTest");
-        wifiAsyncChannel.setWifiLog(mLog);
-        when(mFrameworkFacade.makeWifiAsyncChannel(anyString())).thenReturn(wifiAsyncChannel);
         when(mWifiInjector.getFrameworkFacade()).thenReturn(mFrameworkFacade);
         when(mWifiInjector.getWifiLockManager()).thenReturn(mLockManager);
         when(mWifiInjector.getWifiMulticastLockManager()).thenReturn(mWifiMulticastLockManager);
@@ -413,7 +400,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiNative()).thenReturn(mWifiNative);
         when(mWifiInjector.getConnectHelper()).thenReturn(mConnectHelper);
         when(mClientModeImpl.syncStartSubscriptionProvisioning(anyInt(),
-                any(OsuProvider.class), any(IProvisioningCallback.class), any())).thenReturn(true);
+                any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
         mOsuProvider = PasspointProvisioningTestUtil.generateOsuProvider(true);
         when(mContext.getOpPackageName()).thenReturn(TEST_PACKAGE_NAME);
@@ -483,7 +470,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private WifiServiceImpl makeWifiServiceImpl() {
         reset(mActiveModeWarden);
         WifiServiceImpl wifiServiceImpl =
-                new WifiServiceImpl(mContext, mWifiInjector, mAsyncChannel);
+                new WifiServiceImpl(mContext, mWifiInjector);
         ArgumentCaptor<SoftApCallback> softApCallbackCaptor =
                 ArgumentCaptor.forClass(SoftApCallback.class);
         verify(mActiveModeWarden).registerSoftApCallback(softApCallbackCaptor.capture());
@@ -1844,8 +1831,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
 
-        mWifiServiceImpl.mClientModeImplChannel = mAsyncChannel;
-
         mLooper.startAutoDispatch();
         ParceledListSlice<WifiConfiguration> configs =
                 mWifiServiceImpl.getConfiguredNetworks(TEST_PACKAGE, TEST_FEATURE_ID);
@@ -2312,11 +2297,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(true);
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)).thenReturn(true);
 
-        verify(mAsyncChannel).connect(any(), mHandlerCaptor.capture(), any(Handler.class));
-        final Handler handler = mHandlerCaptor.getValue();
-        handler.handleMessage(handler.obtainMessage(
-                AsyncChannel.CMD_CHANNEL_HALF_CONNECTED, AsyncChannel.STATUS_SUCCESSFUL, 0));
-
         mLooper.startAutoDispatch();
         registerLOHSRequestFull();
         verifyLohsBand(SoftApConfiguration.BAND_6GHZ);
@@ -2343,11 +2323,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(true);
 
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)).thenReturn(true);
-
-        verify(mAsyncChannel).connect(any(), mHandlerCaptor.capture(), any(Handler.class));
-        final Handler handler = mHandlerCaptor.getValue();
-        handler.handleMessage(handler.obtainMessage(
-                AsyncChannel.CMD_CHANNEL_HALF_CONNECTED, AsyncChannel.STATUS_SUCCESSFUL, 0));
 
         mLooper.startAutoDispatch();
         registerLOHSRequestFull();
@@ -3449,7 +3424,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         mWifiServiceImpl.startSubscriptionProvisioning(mOsuProvider, mProvisioningCallback);
         verify(mClientModeImpl).syncStartSubscriptionProvisioning(anyInt(),
-                eq(mOsuProvider), eq(mProvisioningCallback), any());
+                eq(mOsuProvider), eq(mProvisioningCallback));
     }
 
     /**
@@ -4503,7 +4478,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         credential.setRealm("example.com");
         config.setCredential(credential);
 
-        mWifiServiceImpl.mClientModeImplChannel = mAsyncChannel;
         when(mWifiConfigManager.getSavedNetworks(anyInt()))
                 .thenReturn(Arrays.asList(network));
         when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
@@ -5727,7 +5701,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         stats.rx_time = 2;
         stats.tx_time_per_level = new int[] {3, 4, 5};
         stats.on_time_scan = 6;
-        when(mClientModeImpl.syncGetLinkLayerStats(any())).thenReturn(stats);
+        when(mClientModeImpl.syncGetLinkLayerStats()).thenReturn(stats);
         when(mPowerProfile.getAveragePower(PowerProfile.POWER_WIFI_CONTROLLER_IDLE))
                 .thenReturn(7.0);
         when(mPowerProfile.getAveragePower(PowerProfile.POWER_WIFI_CONTROLLER_RX))
@@ -5766,7 +5740,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void getWifiActivityEnergyInfoAsyncFeatureUnsupported() throws Exception {
-        when(mClientModeImpl.syncGetSupportedFeatures(any())).thenReturn(0L);
+        when(mClientModeImpl.syncGetSupportedFeatures()).thenReturn(0L);
         mWifiServiceImpl.getWifiActivityEnergyInfoAsync(mOnWifiActivityEnergyInfoListener);
         verify(mOnWifiActivityEnergyInfoListener).onWifiActivityEnergyInfo(null);
     }
@@ -5777,7 +5751,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void getWifiActivityEnergyInfoAsyncSuccess() throws Exception {
-        when(mClientModeImpl.syncGetSupportedFeatures(any())).thenReturn(Long.MAX_VALUE);
+        when(mClientModeImpl.syncGetSupportedFeatures()).thenReturn(Long.MAX_VALUE);
         setupReportActivityInfo();
         mWifiServiceImpl.getWifiActivityEnergyInfoAsync(mOnWifiActivityEnergyInfoListener);
         ArgumentCaptor<WifiActivityEnergyInfo> infoCaptor =
@@ -5956,7 +5930,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             long supportedFeaturesFromClientModeImpl, boolean rttDisabled) {
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_WIFI_RTT)).thenReturn(
                 !rttDisabled);
-        when(mClientModeImpl.syncGetSupportedFeatures(any()))
+        when(mClientModeImpl.syncGetSupportedFeatures())
                 .thenReturn(supportedFeaturesFromClientModeImpl);
         mLooper.startAutoDispatch();
         long supportedFeatures = mWifiServiceImpl.getSupportedFeatures();
@@ -6014,8 +5988,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mResources.getBoolean(
                 R.bool.config_wifi_p2p_mac_randomization_supported))
                 .thenReturn(p2pMacRandomizationEnabled);
-        when(mClientModeImpl.syncGetSupportedFeatures(
-                any())).thenReturn(supportedFeaturesFromClientModeImpl);
+        when(mClientModeImpl.syncGetSupportedFeatures())
+                .thenReturn(supportedFeaturesFromClientModeImpl);
         mLooper.startAutoDispatch();
         long supportedFeatures = mWifiServiceImpl.getSupportedFeatures();
         mLooper.stopAutoDispatchAndIgnoreExceptions();
@@ -6051,8 +6025,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void syncGetSupportedFeaturesForStaApConcurrency() {
         long supportedFeaturesFromClientModeImpl = WifiManager.WIFI_FEATURE_OWE;
-        when(mClientModeImpl.syncGetSupportedFeatures(
-                any())).thenReturn(supportedFeaturesFromClientModeImpl);
+        when(mClientModeImpl.syncGetSupportedFeatures())
+                .thenReturn(supportedFeaturesFromClientModeImpl);
 
         when(mActiveModeWarden.isStaApConcurrencySupported())
                 .thenReturn(false);

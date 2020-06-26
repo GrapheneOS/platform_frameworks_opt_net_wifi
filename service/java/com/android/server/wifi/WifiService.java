@@ -22,7 +22,6 @@ import android.content.Context;
 import android.util.Log;
 
 import com.android.server.SystemService;
-import com.android.server.wifi.util.WifiAsyncChannel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +45,7 @@ public final class WifiService extends SystemService {
         super(contextBase);
         mWifiContext = new WifiContext(contextBase);
         WifiInjector injector = new WifiInjector(mWifiContext);
-        WifiAsyncChannel channel =  new WifiAsyncChannel(TAG);
-        mImpl = new WifiServiceImpl(mWifiContext, injector, channel);
+        mImpl = new WifiServiceImpl(mWifiContext, injector);
     }
 
     @Override

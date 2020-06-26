@@ -87,7 +87,6 @@ import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.PersistableBundle;
 import android.os.PowerManager;
@@ -108,7 +107,6 @@ import android.util.MutableBoolean;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.internal.util.AsyncChannel;
 import com.android.net.module.util.Inet4AddressUtils;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvider;
@@ -118,7 +116,6 @@ import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.RssiUtil;
 import com.android.server.wifi.util.ScanResultUtil;
-import com.android.server.wifi.util.WifiHandler;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -197,12 +194,6 @@ public class WifiServiceImpl extends BaseWifiService {
      */
     private boolean mVerboseLoggingEnabled = false;
 
-    /**
-     * Asynchronous channel to ClientModeImpl
-     */
-    @VisibleForTesting
-    AsyncChannel mClientModeImplChannel;
-
     private final FrameworkFacade mFrameworkFacade;
 
     private final WifiPermissionsUtil mWifiPermissionsUtil;
@@ -228,46 +219,6 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
-     * Handles interaction with ClientModeImpl
-     */
-    private class ClientModeImplHandler extends WifiHandler {
-        private AsyncChannel mCmiChannel;
-
-        ClientModeImplHandler(String tag, Looper looper, AsyncChannel asyncChannel) {
-            super(tag, looper);
-            mCmiChannel = asyncChannel;
-            mCmiChannel.connect(mContext, this, mClientModeImpl.getHandler());
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case AsyncChannel.CMD_CHANNEL_HALF_CONNECTED: {
-                    if (msg.arg1 == AsyncChannel.STATUS_SUCCESSFUL) {
-                        mClientModeImplChannel = mCmiChannel;
-                    } else {
-                        Log.e(TAG, "ClientModeImpl connection failure, error=" + msg.arg1);
-                        mClientModeImplChannel = null;
-                    }
-                    break;
-                }
-                case AsyncChannel.CMD_CHANNEL_DISCONNECTED: {
-                    Log.e(TAG, "ClientModeImpl channel lost, msg.arg1 =" + msg.arg1);
-                    mClientModeImplChannel = null;
-                    //Re-establish connection to state machine
-                    mCmiChannel.connect(mContext, this, mClientModeImpl.getHandler());
-                    break;
-                }
-                default: {
-                    Log.d(TAG, "ClientModeImplHandler.handleMessage ignoring msg=" + msg);
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
      * Listen for phone call state events to get active data subcription id.
      */
     private class WifiPhoneStateListener extends PhoneStateListener {
@@ -284,7 +235,6 @@ public class WifiServiceImpl extends BaseWifiService {
         }
     }
 
-    private final ClientModeImplHandler mClientModeImplHandler;
     private final WifiLockManager mWifiLockManager;
     private final WifiMulticastLockManager mWifiMulticastLockManager;
     private final DppManager mDppManager;
@@ -296,7 +246,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiDataStall mWifiDataStall;
     private final WifiNative mWifiNative;
 
-    public WifiServiceImpl(Context context, WifiInjector wifiInjector, AsyncChannel asyncChannel) {
+    public WifiServiceImpl(Context context, WifiInjector wifiInjector) {
         mContext = context;
         mWifiInjector = wifiInjector;
         mClock = wifiInjector.getClock();
@@ -316,8 +266,6 @@ public class WifiServiceImpl extends BaseWifiService {
         mAppOps = (AppOpsManager) mContext.getSystemService(Context.APP_OPS_SERVICE);
         mWifiLockManager = mWifiInjector.getWifiLockManager();
         mWifiMulticastLockManager = mWifiInjector.getWifiMulticastLockManager();
-        mClientModeImplHandler = new ClientModeImplHandler(TAG,
-                mWifiInjector.getAsyncChannelHandlerThread().getLooper(), asyncChannel);
         mWifiBackupRestore = mWifiInjector.getWifiBackupRestore();
         mSoftApBackupRestore = mWifiInjector.getSoftApBackupRestore();
         mWifiApConfigStore = mWifiInjector.getWifiApConfigStore();
@@ -1192,7 +1140,8 @@ public class WifiServiceImpl extends BaseWifiService {
         }
 
         private final ExternalCallbackTracker<ISoftApCallback> mRegisteredSoftApCallbacks =
-                new ExternalCallbackTracker<>(mClientModeImplHandler);
+                new ExternalCallbackTracker<>(
+                        new Handler(mWifiInjector.getWifiHandlerThread().getLooper()));
 
         public boolean registerSoftApCallback(IBinder binder, ISoftApCallback callback,
                 int callbackIdentifier) {
@@ -2158,11 +2107,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if ((getSupportedFeatures() & WifiManager.WIFI_FEATURE_LINK_LAYER_STATS) == 0) {
             return null;
         }
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return null;
-        }
-        WifiLinkLayerStats stats = mClientModeImpl.syncGetLinkLayerStats(mClientModeImplChannel);
+        WifiLinkLayerStats stats = mClientModeImpl.syncGetLinkLayerStats();
         if (stats == null) {
             return null;
         }
@@ -2957,7 +2902,7 @@ public class WifiServiceImpl extends BaseWifiService {
     public void queryPasspointIcon(long bssid, String fileName) {
         enforceAccessPermission();
         mLog.info("queryPasspointIcon uid=%").c(Binder.getCallingUid()).flush();
-        mClientModeImpl.syncQueryPasspointIcon(mClientModeImplChannel, bssid, fileName);
+        mClientModeImpl.syncQueryPasspointIcon(bssid, fileName);
     }
 
     /**
@@ -3547,7 +3492,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("getCurrentNetwork uid=%").c(Binder.getCallingUid()).flush();
         }
-        return mClientModeImpl.syncGetCurrentNetwork(mClientModeImplChannel);
+        return mClientModeImpl.syncGetCurrentNetwork();
     }
 
     public static String toHexString(String s) {
@@ -3701,8 +3646,7 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         final int uid = Binder.getCallingUid();
         mLog.trace("startSubscriptionProvisioning uid=%").c(uid).flush();
-        if (mClientModeImpl.syncStartSubscriptionProvisioning(uid, provider,
-                callback, mClientModeImplChannel)) {
+        if (mClientModeImpl.syncStartSubscriptionProvisioning(uid, provider, callback)) {
             mLog.trace("Subscription provisioning started with %")
                     .c(provider.toString()).flush();
         }
@@ -3760,11 +3704,7 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     private long getSupportedFeaturesInternal() {
-        if (mClientModeImplChannel == null) {
-            Log.e(TAG, "mClientModeImplChannel is not initialized");
-            return 0L;
-        }
-        long supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures(mClientModeImplChannel);
+        long supportedFeatureSet = mClientModeImpl.syncGetSupportedFeatures();
         // Mask the feature set against system properties.
         boolean rttSupported = mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_WIFI_RTT);
