@@ -1187,7 +1187,7 @@ public class ClientModeManagerTest extends WifiBaseTest {
         verify(mListener, never()).onStarted(); // no callback sent.
 
         // Change the connectivity role.
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SECONDARY);
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT);
         mLooper.dispatchAll();
         verify(mListener).onRoleChanged(); // callback sent.
     }

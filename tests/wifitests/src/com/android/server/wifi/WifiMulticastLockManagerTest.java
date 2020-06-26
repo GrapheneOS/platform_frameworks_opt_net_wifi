@@ -27,8 +27,6 @@ import android.os.WorkSource;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -56,9 +54,11 @@ public class WifiMulticastLockManagerTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(mClientModeImpl.getMcastLockManagerFilterController()).thenReturn(mHandler);
-        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
-        holder.set(mClientModeImpl);
-        mManager = new WifiMulticastLockManager(holder, mBatteryStats);
+        ActiveModeWarden activeModeWarden = mock(ActiveModeWarden.class);
+        ClientModeManager clientModeManager = mock(ClientModeManager.class);
+        when(activeModeWarden.getPrimaryClientModeManager()).thenReturn(clientModeManager);
+        when(clientModeManager.getImpl()).thenReturn(mClientModeImpl);
+        mManager = new WifiMulticastLockManager(activeModeWarden, mBatteryStats);
     }
 
     /**
