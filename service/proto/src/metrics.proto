@@ -1109,6 +1109,9 @@ message ConnectionEvent {
   // middle won't break the streak count. The count is cleared after
   // a network disconnection event.
   optional int32 num_consecutive_connection_failure = 19 [default = -1];
+
+  // Indicates if the profile used for the connection was provisioned by Passpoint OSU server
+  optional bool is_osu_provisioned = 20;
 }
 
 // Number of occurrences of a specific RSSI poll rssi value
