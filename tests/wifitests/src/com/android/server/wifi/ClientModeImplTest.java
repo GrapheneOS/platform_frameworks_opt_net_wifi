@@ -696,14 +696,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * Verifies that configs can be saved when not in client mode.
-     */
-    @Test
-    public void canSaveNetworkConfigWhenWifiDisabled() throws Exception {
-        canSaveNetworkConfig();
-    }
-
-    /**
      * Verifies that configs can be saved when in client mode.
      */
     @Test

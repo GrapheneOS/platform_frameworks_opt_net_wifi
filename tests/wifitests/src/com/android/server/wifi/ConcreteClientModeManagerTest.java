@@ -74,10 +74,10 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
- * Unit tests for {@link ClientModeManager}.
+ * Unit tests for {@link ConcreteClientModeManager}.
  */
 @SmallTest
-public class ClientModeManagerTest extends WifiBaseTest {
+public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private static final String TAG = "ClientModeManagerTest";
     private static final String TEST_INTERFACE_NAME = "testif0";
     private static final String OTHER_INTERFACE_NAME = "notTestIf";
@@ -231,8 +231,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
     private ClientModeManager createClientModeManager() {
         PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
         holder.set(mClientModeImpl);
-        return new ClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative, mListener,
-                mWifiMetrics, mWakeupController, holder);
+        return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
+                mListener, mWifiMetrics, mWakeupController, holder);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {

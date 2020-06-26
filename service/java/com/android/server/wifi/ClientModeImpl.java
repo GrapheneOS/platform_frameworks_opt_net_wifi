@@ -3328,9 +3328,6 @@ public class ClientModeImpl extends StateMachine {
                     handleScreenStateChanged(message.arg1 != 0);
                     break;
                 }
-                case CMD_DISCONNECT:
-                case CMD_RECONNECT:
-                case CMD_REASSOCIATE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
@@ -3344,8 +3341,6 @@ public class ClientModeImpl extends StateMachine {
                 case WifiMonitor.SUP_REQUEST_IDENTITY:
                 case WifiMonitor.SUP_REQUEST_SIM_AUTH:
                 case WifiMonitor.TARGET_BSSID_EVENT:
-                case CMD_START_CONNECT:
-                case CMD_START_ROAM:
                 case WifiMonitor.ASSOCIATED_BSSID_EVENT:
                 case CMD_UNWANTED_NETWORK:
                 case CMD_CONNECTING_WATCHDOG_TIMER:
@@ -3364,18 +3359,6 @@ public class ClientModeImpl extends StateMachine {
                     } else {
                         setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, false);
                     }
-                    break;
-                }
-                case CMD_CONNECT_NETWORK: {
-                    // wifi off, can't connect.
-                    ConnectNetworkMessage cnm = (ConnectNetworkMessage) message.obj;
-                    cnm.listener.sendFailure(WifiManager.BUSY);
-                    break;
-                }
-                case CMD_SAVE_NETWORK: {
-                    // wifi off, nothing more to do here.
-                    ConnectNetworkMessage cnm = (ConnectNetworkMessage) message.obj;
-                    cnm.listener.sendSuccess();
                     break;
                 }
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {

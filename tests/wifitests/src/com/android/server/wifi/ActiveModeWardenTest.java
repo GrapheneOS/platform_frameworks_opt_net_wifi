@@ -106,9 +106,9 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Mock Resources mResources;
     @Mock WifiNative mWifiNative;
     @Mock WifiApConfigStore mWifiApConfigStore;
-    @Mock ClientModeManager mClientModeManager;
+    @Mock ConcreteClientModeManager mClientModeManager;
     @Mock SoftApManager mSoftApManager;
-    @Mock DefaultModeManager mDefaultModeManager;
+    @Mock DefaultClientModeManager mDefaultClientModeManager;
     @Mock BatteryStatsManager mBatteryStats;
     @Mock SelfRecovery mSelfRecovery;
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
@@ -227,7 +227,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 mWifiInjector,
                 mLooper.getLooper(),
                 mWifiNative,
-                mDefaultModeManager,
+                mDefaultClientModeManager,
                 mBatteryStats,
                 mWifiDiagnostics,
                 mContext,
@@ -393,6 +393,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         if (fromState.equals(ENABLED_STATE_STRING)) {
             verify(mScanRequestProxy).enableScanning(false, false);
         }
+        // Ensure we return the default client mode manager when wifi is off.
+        assertEquals(mDefaultClientModeManager, mActiveModeWarden.getPrimaryClientModeManager());
     }
 
     private void shutdownWifi() {
@@ -612,7 +614,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enterSoftApActiveMode();
         enterScanOnlyModeActiveState();
 
-        reset(mDefaultModeManager);
+        reset(mDefaultClientModeManager);
         enterStaDisabledMode(true);
         verify(mSoftApManager, never()).stop();
         verify(mBatteryStats, never()).reportWifiOff();

@@ -63,9 +63,8 @@ public class ActiveModeWarden {
     // Holder for active mode managers
     private final ArraySet<ActiveModeManager> mActiveModeManagers;
     private final ArraySet<ModeChangeCallback> mCallbacks;
-    // DefaultModeManager used to service API calls when there are not active mode managers.
-    private final DefaultModeManager mDefaultModeManager;
-
+    // DefaultModeManager used to service API calls when there are no active client mode managers.
+    private final DefaultClientModeManager mDefaultClientModeManager;
     private final WifiInjector mWifiInjector;
     private final Looper mLooper;
     private final Handler mHandler;
@@ -130,7 +129,7 @@ public class ActiveModeWarden {
     ActiveModeWarden(WifiInjector wifiInjector,
                      Looper looper,
                      WifiNative wifiNative,
-                     DefaultModeManager defaultModeManager,
+                     DefaultClientModeManager defaultClientModeManager,
                      BatteryStatsManager batteryStatsManager,
                      BaseWifiDiagnostics wifiDiagnostics,
                      Context context,
@@ -147,7 +146,7 @@ public class ActiveModeWarden {
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mActiveModeManagers = new ArraySet<>();
         mCallbacks = new ArraySet<>();
-        mDefaultModeManager = defaultModeManager;
+        mDefaultClientModeManager = defaultClientModeManager;
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
         mWifiNative = wifiNative;
@@ -374,14 +373,18 @@ public class ActiveModeWarden {
     }
 
     /**
-     * Returns primary client mode manager, if any.
+     * Returns primary client mode manager if any, else returns an instance of
+     * {@link ClientModeManager}.
      * This mode manager can be the default route on the device & will handle all external API
      * calls.
-     * @return Instance of {@link ClientModeManager} or null if none present.
+     * @return Instance of {@link ClientModeManager}.
      */
-    @Nullable
+    @NonNull
     public ClientModeManager getPrimaryClientModeManager() {
-        return getClientModeManagerInRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        ClientModeManager cm = getClientModeManagerInRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        if (cm != null) return cm;
+        // If there is no primary client manager, return the default one.
+        return mDefaultClientModeManager;
     }
 
     /**
