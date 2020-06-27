@@ -30,7 +30,6 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.util.WorkSourceUtil;
 
@@ -60,7 +59,7 @@ public class WifiLockManager {
     private final Context mContext;
     private final BatteryStatsManager mBatteryStats;
     private final FrameworkFacade mFrameworkFacade;
-    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final ActiveModeWarden mActiveModeWarden;
     private final ActivityManager mActivityManager;
     private final Handler mHandler;
     private final WifiMetrics mWifiMetrics;
@@ -85,11 +84,11 @@ public class WifiLockManager {
     private long mCurrentSessionStartTimeMs;
 
     WifiLockManager(Context context, BatteryStatsManager batteryStats,
-            PrimaryClientModeImplHolder clientModeImplHolder, FrameworkFacade frameworkFacade,
+            ActiveModeWarden activeModeWarden, FrameworkFacade frameworkFacade,
             Handler handler, WifiNative wifiNative, Clock clock, WifiMetrics wifiMetrics) {
         mContext = context;
         mBatteryStats = batteryStats;
-        mClientModeImplHolder = clientModeImplHolder;
+        mActiveModeWarden = activeModeWarden;
         mFrameworkFacade = frameworkFacade;
         mActivityManager = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
         mCurrentOpMode = WifiManager.WIFI_MODE_NO_LOCKS_HELD;
@@ -579,7 +578,7 @@ public class WifiLockManager {
         // Otherwise, we need to change current mode, first reset it to normal
         switch (mCurrentOpMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mClientModeImplHolder.get().setPowerSave(true)) {
+                if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(true)) {
                     Log.e(TAG, "Failed to reset the OpMode from hi-perf to Normal");
                     return false;
                 }
@@ -608,7 +607,8 @@ public class WifiLockManager {
         // Now switch to the new opMode
         switch (newLockMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mClientModeImplHolder.get().setPowerSave(false)) {
+                if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(
+                        false)) {
                     Log.e(TAG, "Failed to set the OpMode to hi-perf");
                     return false;
                 }
@@ -667,20 +667,22 @@ public class WifiLockManager {
         }
 
         if (lowLatencySupport == LOW_LATENCY_SUPPORTED) {
-            if (!mClientModeImplHolder.get().setLowLatencyMode(enabled)) {
+            if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setLowLatencyMode(
+                    enabled)) {
                 Log.e(TAG, "Failed to set low latency mode");
                 return false;
             }
 
-            if (!mClientModeImplHolder.get().setPowerSave(!enabled)) {
+            if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(!enabled)) {
                 Log.e(TAG, "Failed to set power save mode");
                 // Revert the low latency mode
-                mClientModeImplHolder.get().setLowLatencyMode(!enabled);
+                mActiveModeWarden.getPrimaryClientModeManager().getImpl().setLowLatencyMode(
+                        !enabled);
                 return false;
             }
         } else if (lowLatencySupport == LOW_LATENCY_NOT_SUPPORTED) {
             // Only set power save mode
-            if (!mClientModeImplHolder.get().setPowerSave(!enabled)) {
+            if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(!enabled)) {
                 Log.e(TAG, "Failed to set power save mode");
                 return false;
             }

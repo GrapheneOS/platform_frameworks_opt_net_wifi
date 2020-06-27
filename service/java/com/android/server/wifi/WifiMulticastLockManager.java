@@ -23,7 +23,6 @@ import android.os.RemoteException;
 import android.os.WorkSource;
 import android.util.Log;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.server.wifi.proto.WifiStatsLog;
 
 import java.io.PrintWriter;
@@ -43,7 +42,7 @@ public class WifiMulticastLockManager {
     private int mMulticastDisabled = 0;
     private boolean mVerboseLoggingEnabled = false;
     private final BatteryStatsManager mBatteryStats;
-    private final PrimaryClientModeImplHolder mClientModeImplHolder;
+    private final ActiveModeWarden mActiveModeWarden;
 
     /** Delegate for handling state change events for multicast filtering. */
     public interface FilterController {
@@ -54,10 +53,10 @@ public class WifiMulticastLockManager {
         void stopFilteringMulticastPackets();
     }
 
-    public WifiMulticastLockManager(PrimaryClientModeImplHolder clientModeImplHolder,
+    public WifiMulticastLockManager(ActiveModeWarden activeModeWarden,
             BatteryStatsManager batteryStats) {
         mBatteryStats = batteryStats;
-        mClientModeImplHolder = clientModeImplHolder;
+        mActiveModeWarden = activeModeWarden;
     }
 
     private class Multicaster implements IBinder.DeathRecipient {
@@ -127,7 +126,7 @@ public class WifiMulticastLockManager {
         synchronized (mMulticasters) {
             // if anybody had requested filters be off, leave off
             if (mMulticasters.size() == 0) {
-                mClientModeImplHolder.get()
+                mActiveModeWarden.getPrimaryClientModeManager().getImpl()
                         .getMcastLockManagerFilterController()
                         .startFilteringMulticastPackets();
             }
@@ -147,7 +146,7 @@ public class WifiMulticastLockManager {
             // our new size == 1 (first call), but this function won't
             // be called often and by making the stopPacket call each
             // time we're less fragile and self-healing.
-            mClientModeImplHolder.get()
+            mActiveModeWarden.getPrimaryClientModeManager().getImpl()
                     .getMcastLockManagerFilterController()
                     .stopFilteringMulticastPackets();
         }
@@ -184,7 +183,7 @@ public class WifiMulticastLockManager {
             removed.unlinkDeathRecipient();
         }
         if (mMulticasters.size() == 0) {
-            mClientModeImplHolder.get()
+            mActiveModeWarden.getPrimaryClientModeManager().getImpl()
                     .getMcastLockManagerFilterController()
                     .startFilteringMulticastPackets();
         }

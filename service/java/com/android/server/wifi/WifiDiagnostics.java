@@ -473,6 +473,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     synchronized void onWifiAlert(int errorCode, @NonNull byte[] buffer) {
         captureAlertData(errorCode, buffer);
         mWifiMetrics.logFirmwareAlert(errorCode);
+        mWifiInjector.getWifiScoreCard().noteFirmwareAlert(errorCode);
     }
 
     /**
