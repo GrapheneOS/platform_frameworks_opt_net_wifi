@@ -47,7 +47,7 @@
     <string name="wifi_watchdog_network_disabled" msgid="688248897654073438">"Problem prilikom spajanja na WiFi mrežu"</string>
     <string name="wifi_watchdog_network_disabled_detailed" msgid="2946200607682633112">" ima lošu internetsku vezu."</string>
     <string name="wifi_connect_alert_title" msgid="6144470472092017636">"Želite li dozvoliti povezivanje?"</string>
-    <string name="wifi_connect_alert_message" msgid="3123801378559831220">"Aplikacija %1$s se želi povezati na WiFi mrežu %2$s"</string>
+    <string name="wifi_connect_alert_message" msgid="3123801378559831220">"Aplikacija %1$s se želi povezati s WiFi mrežom %2$s"</string>
     <string name="wifi_connect_default_application" msgid="6164721692891325243">"Aplikacija"</string>
     <string name="accept" msgid="5931271886782610829">"Prihvati"</string>
     <string name="decline" msgid="6874256900873707640">"Odbijte"</string>

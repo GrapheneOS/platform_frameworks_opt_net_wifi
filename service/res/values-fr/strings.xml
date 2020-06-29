@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifiResourcesAppLabel" product="default" msgid="4965162975090543792">"Ressources Wi-Fi du système"</string>
-    <string name="wifi_available_title" msgid="2844963247498642107">"Se connecter pour ouvrir le réseau Wi-Fi"</string>
+    <string name="wifi_available_title" msgid="2844963247498642107">"Connexion à un réseau Wi-Fi ouvert"</string>
     <string name="wifi_available_title_connecting" msgid="4308431577637294026">"Connexion au réseau Wi-Fi"</string>
     <string name="wifi_available_title_connected" msgid="922603556292157664">"Connecté au réseau Wi-Fi"</string>
     <string name="wifi_available_title_failed_to_connect" msgid="2304443371893419545">"Impossible de se connecter au réseau Wi-Fi"</string>
