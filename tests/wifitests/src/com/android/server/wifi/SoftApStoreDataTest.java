@@ -60,7 +60,7 @@ import java.util.ArrayList;
 @SmallTest
 public class SoftApStoreDataTest extends WifiBaseTest {
     private static final String TEST_SSID = "SSID";
-    private static final String TEST_BSSID = "11:22:33:aa:bb:cc";
+    private static final String TEST_BSSID = "aa:22:33:aa:bb:cc";
     private static final String TEST_PASSPHRASE = "TestPassphrase";
     private static final String TEST_WPA2_PASSPHRASE = "Wpa2Test";
     private static final int TEST_CHANNEL = 0;
