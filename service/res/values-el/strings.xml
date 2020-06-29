@@ -47,7 +47,7 @@
     <string name="wifi_watchdog_network_disabled" msgid="688248897654073438">"Δεν είναι δυνατή η σύνδεση στο Wi-Fi"</string>
     <string name="wifi_watchdog_network_disabled_detailed" msgid="2946200607682633112">" έχει κακή σύνδεση Διαδικτύου."</string>
     <string name="wifi_connect_alert_title" msgid="6144470472092017636">"Να επιτρέπεται η σύνδεση;"</string>
-    <string name="wifi_connect_alert_message" msgid="3123801378559831220">"Η εφαρμογή %1$s θα ήθελε να συνδεθεί με το δίκτυο WiFi %2$s"</string>
+    <string name="wifi_connect_alert_message" msgid="3123801378559831220">"Η εφαρμογή %1$s θα ήθελε να συνδεθεί με το δίκτυο Wi-Fi %2$s"</string>
     <string name="wifi_connect_default_application" msgid="6164721692891325243">"Μια εφαρμογή"</string>
     <string name="accept" msgid="5931271886782610829">"Αποδοχή"</string>
     <string name="decline" msgid="6874256900873707640">"Απόρριψη"</string>
