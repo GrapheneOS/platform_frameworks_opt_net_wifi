@@ -207,7 +207,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     private void enableDebugLogs() {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
     }
 
     private FrameworkFacade getFrameworkFacade() throws Exception {
@@ -581,7 +581,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mConfigUpdateListenerCaptor.capture());
         assertNotNull(mConfigUpdateListenerCaptor.getValue());
 
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         mLooper.dispatchAll();
     }
 
@@ -1907,7 +1907,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void normalLogRecSizeIsUsedByDefault() {
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(false);
         assertEquals(ClientModeImpl.NUM_LOG_RECS_NORMAL, mCmi.getLogRecMaxSize());
     }
 
@@ -1916,7 +1916,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void enablingVerboseLoggingUpdatesLogRecSize() {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         assertEquals(LOG_REC_LIMIT_IN_VERBOSE_MODE, mCmi.getLogRecMaxSize());
     }
 
@@ -1926,14 +1926,14 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         assertTrue(mCmi.getLogRecSize() >= 1);
 
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(false);
         assertEquals(0, mCmi.getLogRecSize());
     }
 
     @Test
     public void disablingVerboseLoggingUpdatesLogRecSize() {
-        mCmi.enableVerboseLogging(1);
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(true);
+        mCmi.enableVerboseLogging(false);
         assertEquals(ClientModeImpl.NUM_LOG_RECS_NORMAL, mCmi.getLogRecMaxSize());
     }
 
@@ -1951,7 +1951,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void logRecsExcludeRssiPollCommandByDefault() {
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(false);
         mCmi.sendMessage(ClientModeImpl.CMD_RSSI_POLL);
         mLooper.dispatchAll();
         assertEquals(0, mCmi.copyLogRecs()
@@ -1962,7 +1962,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void logRecsIncludeRssiPollCommandWhenVerboseLoggingIsEnabled() {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         mCmi.sendMessage(ClientModeImpl.CMD_RSSI_POLL);
         mLooper.dispatchAll();
         assertEquals(1, mCmi.copyLogRecs()
@@ -2568,7 +2568,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void verifyConnectedModeRssiPollingWithVerboseLogging() throws Exception {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         verifyConnectedModeRssiPolling();
     }
 

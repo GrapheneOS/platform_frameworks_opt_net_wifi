@@ -1241,7 +1241,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.checkAndStartWifi();
         mLooper.dispatchAll();
         verify(mWifiConfigManager).loadFromStore();
-        verify(mClientModeManager).enableVerboseLogging(1);
+        verify(mActiveModeWarden).enableVerboseLogging(true);
         verify(mActiveModeWarden).start();
     }
 
@@ -3633,7 +3633,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         reset(mClientModeManager);
         mWifiServiceImpl.enableVerboseLogging(1);
         verify(mWifiSettingsConfigStore).put(WIFI_VERBOSE_LOGGING_ENABLED, true);
-        verify(mClientModeManager).enableVerboseLogging(anyInt());
+        verify(mActiveModeWarden).enableVerboseLogging(anyBoolean());
     }
 
     /**
@@ -3651,7 +3651,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.enableVerboseLogging(1);
         verify(mWifiSettingsConfigStore, never()).put(
                 WIFI_VERBOSE_LOGGING_ENABLED, anyBoolean());
-        verify(mClientModeManager, never()).enableVerboseLogging(anyInt());
+        verify(mActiveModeWarden, never()).enableVerboseLogging(anyBoolean());
     }
 
     /**

@@ -84,6 +84,7 @@ public class ActiveModeWarden {
     private boolean mCanRequestMoreClientModeManagers = false;
     private boolean mCanRequestMoreSoftApManagers = false;
     private boolean mIsShuttingdown = false;
+    private boolean mVerboseLoggingEnabled = false;
 
     /**
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
@@ -194,6 +195,16 @@ public class ActiveModeWarden {
     private void invokeOnRoleChangedCallbacks(@NonNull ActiveModeManager activeModeManager) {
         for (ModeChangeCallback callback : mCallbacks) {
             callback.onActiveModeManagerRoleChanged(activeModeManager);
+        }
+    }
+
+    /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
+        for (ActiveModeManager modeManager : mActiveModeManagers) {
+            modeManager.enableVerboseLogging(verbose);
         }
     }
 
@@ -547,6 +558,7 @@ public class ActiveModeWarden {
         listener.setActiveModeManager(manager);
         manager.start();
         manager.setRole(getRoleForSoftApIpMode(softApConfig.getTargetMode()));
+        manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mActiveModeManagers.add(manager);
     }
 
@@ -601,6 +613,7 @@ public class ActiveModeWarden {
         if (!switchPrimaryOrScanOnlyClientModeManagerRole(manager)) {
             return false;
         }
+        manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mActiveModeManagers.add(manager);
         return true;
     }
@@ -666,6 +679,7 @@ public class ActiveModeWarden {
         listener.setActiveModeManager(manager);
         manager.start();
         manager.setRole(ActiveModeManager.ROLE_CLIENT_LOCAL_ONLY);
+        manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mActiveModeManagers.add(manager);
         return true;
     }

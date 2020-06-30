@@ -862,7 +862,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void enableVerboseLogging(int verbose) {
+    public void enableVerboseLogging(boolean verbose) {
         mClientModeImpl.enableVerboseLogging(verbose);
     }
 

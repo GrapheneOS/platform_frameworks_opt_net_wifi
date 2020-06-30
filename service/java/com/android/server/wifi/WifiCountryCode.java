@@ -73,12 +73,8 @@ public class WifiCountryCode {
     /**
      * Enable verbose logging for WifiCountryCode.
      */
-    public void enableVerboseLogging(int verbose) {
-        if (verbose > 0) {
-            DBG = true;
-        } else {
-            DBG = false;
-        }
+    public void enableVerboseLogging(boolean verbose) {
+        DBG = verbose;
     }
 
     private void initializeTelephonyCountryCodeIfNeeded() {

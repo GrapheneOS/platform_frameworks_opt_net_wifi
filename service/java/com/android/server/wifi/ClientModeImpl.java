@@ -1163,8 +1163,8 @@ public class ClientModeImpl extends StateMachine {
      *
      * @param verbose int logging level to use
      */
-    public void enableVerboseLogging(int verbose) {
-        if (verbose > 0) {
+    public void enableVerboseLogging(boolean verbose) {
+        if (verbose) {
             mVerboseLoggingEnabled = true;
             setLogRecSize(mActivityManager.isLowRamDevice()
                     ? NUM_LOG_RECS_VERBOSE_LOW_MEMORY : NUM_LOG_RECS_VERBOSE);

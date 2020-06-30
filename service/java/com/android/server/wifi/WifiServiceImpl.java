@@ -3408,7 +3408,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
     private void enableVerboseLoggingInternal(int verbose) {
         mVerboseLoggingEnabled = verbose > 0;
-        mActiveModeWarden.getPrimaryClientModeManager().enableVerboseLogging(verbose);
+        mActiveModeWarden.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiLockManager.enableVerboseLogging(verbose);
         mWifiMulticastLockManager.enableVerboseLogging(verbose);
         mWifiInjector.enableVerboseLogging(verbose);

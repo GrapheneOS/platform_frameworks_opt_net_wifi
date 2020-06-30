@@ -2077,6 +2077,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enableWifi();
         assertInEnabledState();
         verify(mClientModeManager).start();
+        verify(mClientModeManager).enableVerboseLogging(false);
         verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
 
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
@@ -2447,5 +2448,16 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         // We should be back to enabled state.
         assertInEnabledState();
+    }
+
+    @Test
+    public void propagateVerboseLoggingFlagToClientModeManager() throws Exception {
+        mActiveModeWarden.enableVerboseLogging(true);
+        enterClientModeActiveState();
+        assertInEnabledState();
+        verify(mClientModeManager).enableVerboseLogging(true);
+
+        mActiveModeWarden.enableVerboseLogging(false);
+        verify(mClientModeManager).enableVerboseLogging(false);
     }
 }

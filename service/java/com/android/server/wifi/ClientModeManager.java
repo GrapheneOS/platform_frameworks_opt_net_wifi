@@ -103,9 +103,6 @@ public interface ClientModeManager extends ActiveModeManager {
 
     void updateLinkLayerStatsRssiAndScoreReport();
 
-    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
-    void enableVerboseLogging(int verbose);
-
     String getFactoryMacAddress();
 
     WifiConfiguration getCurrentWifiConfiguration();

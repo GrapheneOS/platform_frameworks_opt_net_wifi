@@ -421,8 +421,8 @@ public class WifiNetworkFactory extends NetworkFactory {
     /**
      * Enable verbose logging.
      */
-    public void enableVerboseLogging(int verbose) {
-        mVerboseLoggingEnabled = (verbose > 0);
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     /**

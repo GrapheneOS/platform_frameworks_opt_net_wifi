@@ -148,7 +148,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         }).when(mClock).getElapsedSinceBootMillis();
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
-        mWifiNative.enableVerboseLogging(0);
+        mWifiNative.enableVerboseLogging(false);
     }
 
     /** Verifies that startLogging() registers a logging event handler. */
@@ -468,7 +468,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.enableVerboseLogging(verbose);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiNative.enableVerboseLogging(verbose ? 1 : 0);
+        mWifiNative.enableVerboseLogging(verbose);
         when(mWifiNative.getTxPktFates(any(), anyObject())).then(new AnswerWithArguments() {
             public boolean answer(String ifaceName, WifiNative.TxFateReport[] fates) {
                 fates[0] = new WifiNative.TxFateReport(

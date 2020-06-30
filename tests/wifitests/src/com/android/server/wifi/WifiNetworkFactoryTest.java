@@ -232,7 +232,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
 
         // Setup with wifi on.
         mWifiNetworkFactory.setWifiState(true);
-        mWifiNetworkFactory.enableVerboseLogging(1);
+        mWifiNetworkFactory.enableVerboseLogging(true);
     }
 
     /**

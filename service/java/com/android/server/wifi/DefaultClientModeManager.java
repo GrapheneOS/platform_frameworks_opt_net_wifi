@@ -184,7 +184,7 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void updateLinkLayerStatsRssiAndScoreReport() { }
 
     @Override
-    public void enableVerboseLogging(int verbose) { }
+    public void enableVerboseLogging(boolean verbose) { }
 
     @Override
     public String getFactoryMacAddress() {
