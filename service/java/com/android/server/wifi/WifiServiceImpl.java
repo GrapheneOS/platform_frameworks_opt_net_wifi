@@ -279,7 +279,7 @@ public class WifiServiceImpl extends BaseWifiService {
         public void onActiveDataSubscriptionIdChanged(int subId) {
             Log.d(TAG, "OBSERVED active data subscription change, subId: " + subId);
 
-            mTetheredSoftApTracker.updateSoftApCapability(subId);
+            mTetheredSoftApTracker.updateSoftApCapabilityWhenCarrierConfigChanged(subId);
             mActiveModeWarden.updateSoftApCapability(mTetheredSoftApTracker.getSoftApCapability());
         }
     }
@@ -410,6 +410,19 @@ public class WifiServiceImpl extends BaseWifiService {
                         }
                     },
                     new IntentFilter(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED));
+
+            mContext.registerReceiver(
+                    new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String countryCode = intent.getStringExtra(
+                                TelephonyManager.EXTRA_NETWORK_COUNTRY);
+                        Log.d(TAG, "Country code changed to :" + countryCode);
+                        mCountryCode.setCountryCodeAndUpdate(countryCode);
+                        mTetheredSoftApTracker.updateSoftApCapabilityWhenCountryCodeChanged();
+                        mActiveModeWarden.updateSoftApCapability(
+                                mTetheredSoftApTracker.getSoftApCapability());
+                    }}, new IntentFilter(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED));
 
             // Adding optimizations of only receiving broadcasts when wifi is enabled
             // can result in race conditions when apps toggle wifi in the background
@@ -1106,12 +1119,54 @@ public class WifiServiceImpl extends BaseWifiService {
             synchronized (mLock) {
                 if (mTetheredSoftApCapability == null) {
                     mTetheredSoftApCapability = ApConfigUtil.updateCapabilityFromResource(mContext);
+                    // Default country code
+                    mTetheredSoftApCapability = updateSoftApCapabilityWithAvailableChannelList(
+                            mTetheredSoftApCapability);
                 }
                 return mTetheredSoftApCapability;
             }
         }
 
-        public void updateSoftApCapability(int subId) {
+        private SoftApCapability updateSoftApCapabilityWithAvailableChannelList(
+                @NonNull SoftApCapability softApCapability) {
+            SoftApCapability newSoftApCapability = new SoftApCapability(softApCapability);
+            List<Integer> supportedChannelList = ApConfigUtil.getAvailableChannelFreqsForBand(
+                    SoftApConfiguration.BAND_2GHZ, mWifiNative, mContext.getResources(), false);
+            if (supportedChannelList != null) {
+                newSoftApCapability.setSupportedChannelList(
+                        SoftApConfiguration.BAND_2GHZ,
+                        supportedChannelList.stream().mapToInt(Integer::intValue).toArray());
+            }
+            if (is5GhzBandSupportedInternal()) {
+                supportedChannelList = ApConfigUtil.getAvailableChannelFreqsForBand(
+                        SoftApConfiguration.BAND_5GHZ, mWifiNative, mContext.getResources(), false);
+                if (supportedChannelList != null) {
+                    newSoftApCapability.setSupportedChannelList(
+                            SoftApConfiguration.BAND_5GHZ,
+                            supportedChannelList.stream().mapToInt(Integer::intValue).toArray());
+                }
+            }
+            if (is6GhzBandSupportedInternal()) {
+                supportedChannelList = ApConfigUtil.getAvailableChannelFreqsForBand(
+                        SoftApConfiguration.BAND_6GHZ, mWifiNative, mContext.getResources(), false);
+                if (supportedChannelList != null) {
+                    newSoftApCapability.setSupportedChannelList(
+                            SoftApConfiguration.BAND_6GHZ,
+                            supportedChannelList.stream().mapToInt(Integer::intValue).toArray());
+                }
+            }
+            return newSoftApCapability;
+        }
+
+        public void updateSoftApCapabilityWhenCountryCodeChanged() {
+            synchronized (mLock) {
+                mTetheredSoftApCapability = updateSoftApCapabilityWithAvailableChannelList(
+                        getSoftApCapability());
+            }
+            onCapabilityChanged(mTetheredSoftApCapability);
+        }
+
+        public void updateSoftApCapabilityWhenCarrierConfigChanged(int subId) {
             synchronized (mLock) {
                 CarrierConfigManager carrierConfigManager =
                         (CarrierConfigManager) mContext.getSystemService(
@@ -1233,6 +1288,9 @@ public class WifiServiceImpl extends BaseWifiService {
         @Override
         public void onCapabilityChanged(SoftApCapability capability) {
             synchronized (mLock) {
+                if (Objects.equals(capability, mTetheredSoftApCapability)) {
+                    return;
+                }
                 mTetheredSoftApCapability = new SoftApCapability(capability);
             }
 
@@ -3186,7 +3244,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 final int subId = SubscriptionManager.getActiveDataSubscriptionId();
                 Log.d(TAG, "ACTION_CARRIER_CONFIG_CHANGED, active subId: " + subId);
 
-                mTetheredSoftApTracker.updateSoftApCapability(subId);
+                mTetheredSoftApTracker.updateSoftApCapabilityWhenCarrierConfigChanged(subId);
                 mActiveModeWarden.updateSoftApCapability(
                         mTetheredSoftApTracker.getSoftApCapability());
             }
