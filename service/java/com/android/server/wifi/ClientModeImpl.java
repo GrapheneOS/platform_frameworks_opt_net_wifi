@@ -815,12 +815,12 @@ public class ClientModeImpl extends StateMachine {
         mScoringParams = scoringParams;
         mWifiThreadRunner = wifiThreadRunner;
         mScanRequestProxy = scanRequestProxy;
-        mWifiScoreReport = new WifiScoreReport(scoringParams, mClock,
-                mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor, wifiThreadRunner);
+        mWifiScoreReport = new WifiScoreReport(scoringParams, mClock, mWifiMetrics,
+                mWifiInfo, mWifiNative, mBssidBlocklistMonitor, wifiThreadRunner, mWifiDataStall);
 
         mNetworkCapabilitiesFilter = networkCapabilitiesFilter;
-
         mNetworkFactory = networkFactory;
+
         // We can't filter untrusted network in the capabilities filter because a trusted
         // network would still satisfy a request that accepts untrusted ones.
         // We need a second network factory for untrusted network requests because we need a
@@ -4996,41 +4996,14 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case CMD_ONESHOT_RSSI_POLL: {
                     if (!mEnableRssiPolling) {
-                        updateLinkLayerStatsRssiAndScoreReportInternal();
+                        updateLinkLayerStatsRssiDataStallScoreReport();
                     }
                     break;
                 }
                 case CMD_RSSI_POLL: {
                     if (message.arg1 == mRssiPollToken) {
-                        WifiLinkLayerStats stats = updateLinkLayerStatsRssiAndScoreReportInternal();
-                        mWifiMetrics.updateWifiUsabilityStatsEntries(mWifiInfo, stats);
-                        if (mWifiScoreReport.shouldCheckIpLayer()) {
-                            if (mIpClient != null) {
-                                mIpClient.confirmConfiguration();
-                            }
-                            mWifiScoreReport.noteIpCheck();
-                        }
-                        int statusDataStall = mWifiDataStall.checkDataStallAndThroughputSufficiency(
-                                mLastLinkLayerStats, stats, mWifiInfo);
-                        if (mDataStallTriggerTimeMs == -1
-                                && statusDataStall != WifiIsUnusableEvent.TYPE_UNKNOWN) {
-                            mDataStallTriggerTimeMs = mClock.getElapsedSinceBootMillis();
-                            mLastStatusDataStall = statusDataStall;
-                        }
-                        if (mDataStallTriggerTimeMs != -1) {
-                            long elapsedTime = mClock.getElapsedSinceBootMillis()
-                                    - mDataStallTriggerTimeMs;
-                            if (elapsedTime >= DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS) {
-                                mDataStallTriggerTimeMs = -1;
-                                mWifiMetrics.addToWifiUsabilityStatsList(
-                                        WifiUsabilityStats.LABEL_BAD,
-                                        convertToUsabilityStatsTriggerType(mLastStatusDataStall),
-                                        -1);
-                                mLastStatusDataStall = WifiIsUnusableEvent.TYPE_UNKNOWN;
-                            }
-                        }
-                        mWifiMetrics.incrementWifiLinkLayerUsageStats(stats);
-                        mLastLinkLayerStats = stats;
+                        WifiLinkLayerStats stats =
+                                updateLinkLayerStatsRssiDataStallScoreReport();
                         mWifiScoreCard.noteSignalPoll(mWifiInfo);
                         mLinkProbeManager.updateConnectionStats(
                                 mWifiInfo, mInterfaceName);
@@ -5164,14 +5137,46 @@ public class ClientModeImpl extends StateMachine {
         }
 
         /**
-         * Fetches link stats and updates Wifi Score Report.
+         * Fetches link stats, updates Wifi Data Stall and Score Report.
          */
-        private WifiLinkLayerStats updateLinkLayerStatsRssiAndScoreReportInternal() {
+        private WifiLinkLayerStats updateLinkLayerStatsRssiDataStallScoreReport() {
             WifiLinkLayerStats stats = getWifiLinkLayerStats();
             // Get Info and continue polling
             fetchRssiLinkSpeedAndFrequencyNative();
+            mWifiMetrics.updateWifiUsabilityStatsEntries(mWifiInfo, stats);
+            // checkDataStallAndThroughputSufficiency() should be called before
+            // mWifiScoreReport.calculateAndReportScore() which needs the latest throughput
+            int statusDataStall = mWifiDataStall.checkDataStallAndThroughputSufficiency(
+                    mLastLinkLayerStats, stats, mWifiInfo);
+            if (mDataStallTriggerTimeMs == -1
+                    && statusDataStall != WifiIsUnusableEvent.TYPE_UNKNOWN) {
+                mDataStallTriggerTimeMs = mClock.getElapsedSinceBootMillis();
+                mLastStatusDataStall = statusDataStall;
+            }
+            if (mDataStallTriggerTimeMs != -1) {
+                long elapsedTime =  mClock.getElapsedSinceBootMillis()
+                        - mDataStallTriggerTimeMs;
+                if (elapsedTime >= DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS) {
+                    mDataStallTriggerTimeMs = -1;
+                    mWifiMetrics.addToWifiUsabilityStatsList(
+                            WifiUsabilityStats.LABEL_BAD,
+                            convertToUsabilityStatsTriggerType(mLastStatusDataStall),
+                            -1);
+                    mLastStatusDataStall = WifiIsUnusableEvent.TYPE_UNKNOWN;
+                }
+            }
             // Send the update score to network agent.
             mWifiScoreReport.calculateAndReportScore();
+
+            if (mWifiScoreReport.shouldCheckIpLayer()) {
+                if (mIpClient != null) {
+                    mIpClient.confirmConfiguration();
+                }
+                mWifiScoreReport.noteIpCheck();
+            }
+
+            mWifiMetrics.incrementWifiLinkLayerUsageStats(stats);
+            mLastLinkLayerStats = stats;
             return stats;
         }
     }
