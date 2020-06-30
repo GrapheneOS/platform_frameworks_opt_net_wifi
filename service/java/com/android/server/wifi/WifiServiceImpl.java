@@ -3178,8 +3178,8 @@ public class WifiServiceImpl extends BaseWifiService {
 
                     // Remove all suggestions from the package.
                     mWifiNetworkSuggestionsManager.removeApp(pkgName);
-                    mActiveModeWarden.getPrimaryClientModeManager()
-                            .removeNetworkRequestUserApprovedAccessPointsForApp(pkgName);
+                    mWifiInjector.getWifiNetworkFactory().removeUserApprovedAccessPointsForApp(
+                            pkgName);
 
                     // Remove all Passpoint profiles from package.
                     mWifiInjector.getPasspointManager().removePasspointProviderWithPackage(
@@ -3464,8 +3464,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mPasspointManager.clearAnqpRequestsAndFlushCache();
             mWifiConfigManager.clearUserTemporarilyDisabledList();
             mWifiConfigManager.removeAllEphemeralOrPasspointConfiguredNetworks();
-            mActiveModeWarden.getPrimaryClientModeManager()
-                    .clearNetworkRequestUserApprovedAccessPoints();
+            mWifiInjector.getWifiNetworkFactory().clear();
             mWifiNetworkSuggestionsManager.clear();
             mWifiInjector.getWifiScoreCard().clear();
             mWifiHealthMonitor.clear();
@@ -3788,7 +3787,7 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         // Post operation to handler thread
         mWifiThreadRunner.post(() ->
-                mActiveModeWarden.getPrimaryClientModeManager().addNetworkRequestMatchCallback(
+                mWifiInjector.getWifiNetworkFactory().addCallback(
                         binder, callback, callbackIdentifier));
     }
 
@@ -3809,8 +3808,7 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         // Post operation to handler thread
         mWifiThreadRunner.post(() ->
-                mActiveModeWarden.getPrimaryClientModeManager().removeNetworkRequestMatchCallback(
-                        callbackIdentifier));
+                mWifiInjector.getWifiNetworkFactory().removeCallback(callbackIdentifier));
     }
 
     /**

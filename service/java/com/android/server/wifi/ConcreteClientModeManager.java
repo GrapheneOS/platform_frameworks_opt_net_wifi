@@ -25,7 +25,6 @@ import android.net.DhcpResultsParcelable;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
-import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
@@ -36,7 +35,6 @@ import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.HandlerExecutor;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PersistableBundle;
@@ -829,29 +827,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) {
-        mClientModeImpl.removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
-    }
-
-    @Override
-    public void clearNetworkRequestUserApprovedAccessPoints() {
-        mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
-    }
-
-    @Override
-    public void addNetworkRequestMatchCallback(IBinder binder,
-            INetworkRequestMatchCallback callback,
-            int callbackIdentifier) {
-        mClientModeImpl.addNetworkRequestMatchCallback(
-                binder, callback, callbackIdentifier);
-    }
-
-    @Override
-    public void removeNetworkRequestMatchCallback(int callbackIdentifier) {
-        mClientModeImpl.removeNetworkRequestMatchCallback(callbackIdentifier);
-    }
-
-    @Override
     public void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args) {
         mClientModeImpl.dumpIpClient(fd, pw, args);
     }
@@ -929,16 +904,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
         mClientModeImpl.setPollRssiIntervalMsecs(newPollIntervalMsecs);
-    }
-
-    @Override
-    public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) {
-        mClientModeImpl.setNetworkRequestUserApprovedApp(packageName, approved);
-    }
-
-    @Override
-    public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
-        return mClientModeImpl.hasNetworkRequestUserApprovedApp(packageName);
     }
 
     @Override

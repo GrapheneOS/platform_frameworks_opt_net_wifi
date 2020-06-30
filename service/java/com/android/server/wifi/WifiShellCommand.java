@@ -118,6 +118,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final Context mContext;
     private final ConnectivityManager mConnectivityManager;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
+    private final WifiNetworkFactory mWifiNetworkFactory;
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context,
             ClientModeManager clientModeManager) {
@@ -133,6 +134,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         mContext = context;
         mConnectivityManager = context.getSystemService(ConnectivityManager.class);
         mWifiCarrierInfoManager = wifiInjector.getWifiCarrierInfoManager();
+        mWifiNetworkFactory = wifiInjector.getWifiNetworkFactory();
     }
 
     @Override
@@ -261,8 +263,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 }
                 case "network-requests-remove-user-approved-access-points": {
                     String packageName = getNextArgRequired();
-                    mClientModeManager.removeNetworkRequestUserApprovedAccessPointsForApp(
-                            packageName);
+                    mWifiNetworkFactory.removeUserApprovedAccessPointsForApp(packageName);
                     return 0;
                 }
                 case "clear-user-disabled-networks": {
@@ -598,13 +599,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "network-requests-set-user-approved": {
                     String packageName = getNextArgRequired();
                     boolean approved = getNextArgRequiredTrueOrFalse("yes", "no");
-                    mClientModeManager.setNetworkRequestUserApprovedApp(packageName, approved);
+                    mWifiNetworkFactory.setUserApprovedApp(packageName, approved);
                     return 0;
                 }
                 case "network-requests-has-user-approved": {
                     String packageName = getNextArgRequired();
-                    boolean hasUserApproved =
-                            mClientModeManager.hasNetworkRequestUserApprovedApp(packageName);
+                    boolean hasUserApproved = mWifiNetworkFactory.hasUserApprovedApp(packageName);
                     pw.println(hasUserApproved ? "yes" : "no");
                     return 0;
                 }

@@ -315,6 +315,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiNative mWifiNative;
     @Mock ConnectHelper mConnectHelper;
     @Mock IActionListener mActionListener;
+    @Mock WifiNetworkFactory mWifiNetworkFactory;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -336,6 +337,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getUserManager()).thenReturn(mUserManager);
         when(mWifiInjector.getWifiCountryCode()).thenReturn(mWifiCountryCode);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
+        when(mWifiInjector.getWifiNetworkFactory()).thenReturn(mWifiNetworkFactory);
         when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
         when(mWifiInjector.getWifiHandlerThread()).thenReturn(mHandlerThread);
         when(mHandlerThread.getThreadHandler()).thenReturn(new Handler(mLooper.getLooper()));
@@ -4074,7 +4076,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         verify(mScanRequestProxy).clearScanRequestTimestampsForApp(packageName, uid);
         verify(mWifiNetworkSuggestionsManager).removeApp(packageName);
-        verify(mClientModeManager).removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+        verify(mWifiNetworkFactory).removeUserApprovedAccessPointsForApp(packageName);
         verify(mPasspointManager).removePasspointProviderWithPackage(packageName);
     }
 
@@ -4104,7 +4106,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         verify(mScanRequestProxy).clearScanRequestTimestampsForApp(packageName, uid);
         verify(mWifiNetworkSuggestionsManager).removeApp(packageName);
-        verify(mClientModeManager).removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+        verify(mWifiNetworkFactory).removeUserApprovedAccessPointsForApp(packageName);
         verify(mPasspointManager).removePasspointProviderWithPackage(packageName);
     }
 
@@ -4136,7 +4138,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         verify(mScanRequestProxy).clearScanRequestTimestampsForApp(packageName, uid);
         verify(mWifiNetworkSuggestionsManager).removeApp(packageName);
-        verify(mClientModeManager).removeNetworkRequestUserApprovedAccessPointsForApp(packageName);
+        verify(mWifiNetworkFactory).removeUserApprovedAccessPointsForApp(packageName);
         verify(mPasspointManager).removePasspointProviderWithPackage(packageName);
     }
 
@@ -4159,8 +4161,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mScanRequestProxy, never()).clearScanRequestTimestampsForApp(anyString(), anyInt());
         verify(mWifiNetworkSuggestionsManager, never()).removeApp(anyString());
-        verify(mClientModeManager, never()).removeNetworkRequestUserApprovedAccessPointsForApp(
-                packageName);
+        verify(mWifiNetworkFactory, never()).removeUserApprovedAccessPointsForApp(anyString());
         verify(mPasspointManager, never()).removePasspointProviderWithPackage(anyString());
     }
 
@@ -4183,8 +4184,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mScanRequestProxy, never()).clearScanRequestTimestampsForApp(anyString(), anyInt());
         verify(mWifiNetworkSuggestionsManager, never()).removeApp(anyString());
-        verify(mClientModeManager, never()).removeNetworkRequestUserApprovedAccessPointsForApp(
-                anyString());
+        verify(mWifiNetworkFactory, never()).removeUserApprovedAccessPointsForApp(anyString());
         verify(mPasspointManager, never()).removePasspointProviderWithPackage(anyString());
     }
 
@@ -4438,7 +4438,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 mAppBinder, mNetworkRequestMatchCallback,
                 TEST_NETWORK_REQUEST_MATCH_CALLBACK_IDENTIFIER);
         mLooper.dispatchAll();
-        verify(mClientModeManager).addNetworkRequestMatchCallback(
+        verify(mWifiNetworkFactory).addCallback(
                 mAppBinder, mNetworkRequestMatchCallback,
                 TEST_NETWORK_REQUEST_MATCH_CALLBACK_IDENTIFIER);
     }
@@ -4452,7 +4452,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.unregisterNetworkRequestMatchCallback(
                 TEST_NETWORK_REQUEST_MATCH_CALLBACK_IDENTIFIER);
         mLooper.dispatchAll();
-        verify(mClientModeManager).removeNetworkRequestMatchCallback(
+        verify(mWifiNetworkFactory).removeCallback(
                 TEST_NETWORK_REQUEST_MATCH_CALLBACK_IDENTIFIER);
     }
 
@@ -4493,7 +4493,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mPasspointManager).clearAnqpRequestsAndFlushCache();
         verify(mWifiConfigManager).clearUserTemporarilyDisabledList();
         verify(mWifiConfigManager).removeAllEphemeralOrPasspointConfiguredNetworks();
-        verify(mClientModeManager).clearNetworkRequestUserApprovedAccessPoints();
+        verify(mWifiNetworkFactory).clear();
         verify(mWifiNetworkSuggestionsManager).clear();
         verify(mWifiScoreCard).clear();
         verify(mWifiHealthMonitor).clear();

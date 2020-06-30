@@ -18,10 +18,8 @@ package com.android.server.wifi;
 
 import static android.net.wifi.nl80211.WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_UNKNOWN;
 
-import android.annotation.NonNull;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
-import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
@@ -30,7 +28,6 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
-import android.os.IBinder;
 import android.os.WorkSource;
 
 import com.android.server.wifi.util.ActionListenerWrapper;
@@ -164,20 +161,6 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void enableTdls(String remoteMacAddress, boolean enable) { }
 
     @Override
-    public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) { }
-
-    @Override
-    public void clearNetworkRequestUserApprovedAccessPoints() { }
-
-    @Override
-    public void addNetworkRequestMatchCallback(IBinder binder,
-            INetworkRequestMatchCallback callback,
-            int callbackIdentifier) { }
-
-    @Override
-    public void removeNetworkRequestMatchCallback(int callbackIdentifier) { }
-
-    @Override
     public void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args) { }
 
     @Override
@@ -246,14 +229,6 @@ public class DefaultClientModeManager implements ClientModeManager {
 
     @Override
     public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) { }
-
-    @Override
-    public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) { }
-
-    @Override
-    public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
-        return false;
-    }
 
     @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {

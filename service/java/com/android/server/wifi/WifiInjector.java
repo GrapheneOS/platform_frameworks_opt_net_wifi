@@ -428,10 +428,10 @@ public class WifiInjector {
     }
 
     /**
-     *  Obtain an instance of the WifiInjector class.
+     * Obtain an instance of the WifiInjector class.
      *
-     *  This is the generic method to get an instance of the class. The first instance should be
-     *  retrieved using the getInstanceWithContext method.
+     * This is the generic method to get an instance of the class. The first instance should be
+     * retrieved using the getInstanceWithContext method.
      */
     public static WifiInjector getInstance() {
         if (sWifiInjector == null) {
@@ -575,12 +575,13 @@ public class WifiInjector {
 
     /**
      * Create a SoftApManager.
+     *
      * @param config SoftApModeConfiguration object holding the config and mode
      * @return an instance of SoftApManager
      */
     public SoftApManager makeSoftApManager(@NonNull ActiveModeManager.Listener listener,
-                                           @NonNull WifiManager.SoftApCallback callback,
-                                           @NonNull SoftApModeConfiguration config) {
+            @NonNull WifiManager.SoftApCallback callback,
+            @NonNull SoftApModeConfiguration config) {
         return new SoftApManager(mContext, mWifiHandlerThread.getLooper(),
                 mFrameworkFacade, mWifiNative, mCountryCode.getCountryCode(), listener, callback,
                 mWifiApConfigStore, config, mWifiMetrics, mWifiDiagnostics);
@@ -615,6 +616,7 @@ public class WifiInjector {
 
     /**
      * Create a WifiLog instance.
+     *
      * @param tag module name to include in all log messages
      */
     public WifiLog makeLog(String tag) {
@@ -762,7 +764,7 @@ public class WifiInjector {
     }
 
     public String getWifiStackPackageName() {
-       return mContext.getPackageName();
+        return mContext.getPackageName();
     }
 
     public WifiThreadRunner getWifiThreadRunner() {
@@ -807,5 +809,9 @@ public class WifiInjector {
 
     public ConnectHelper getConnectHelper() {
         return mConnectHelper;
+    }
+
+    public WifiNetworkFactory getWifiNetworkFactory() {
+        return mWifiNetworkFactory;
     }
 }

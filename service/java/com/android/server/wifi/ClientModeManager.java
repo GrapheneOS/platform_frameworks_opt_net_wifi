@@ -16,10 +16,8 @@
 
 package com.android.server.wifi;
 
-import android.annotation.NonNull;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
-import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
@@ -27,7 +25,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
-import android.os.IBinder;
 import android.os.WorkSource;
 
 import com.android.server.wifi.util.ActionListenerWrapper;
@@ -87,18 +84,6 @@ public interface ClientModeManager extends ActiveModeManager {
 
     void enableTdls(String remoteMacAddress, boolean enable);
 
-    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
-    void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName);
-
-    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
-    void clearNetworkRequestUserApprovedAccessPoints();
-
-    void addNetworkRequestMatchCallback(IBinder binder,
-            INetworkRequestMatchCallback callback,
-            int callbackIdentifier);
-
-    void removeNetworkRequestMatchCallback(int callbackIdentifier);
-
     void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args);
 
     void updateLinkLayerStatsRssiAndScoreReport();
@@ -128,10 +113,6 @@ public interface ClientModeManager extends ActiveModeManager {
     int getPollRssiIntervalMsecs();
 
     void setPollRssiIntervalMsecs(int newPollIntervalMsecs);
-
-    void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved);
-
-    boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName);
 
     void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs);
 }

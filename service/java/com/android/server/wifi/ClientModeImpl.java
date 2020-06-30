@@ -68,7 +68,6 @@ import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
 import android.net.util.MacAddressUtils;
 import android.net.util.NetUtils;
-import android.net.wifi.INetworkRequestMatchCallback;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiAnnotations.WifiStandard;
@@ -84,7 +83,6 @@ import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.BatteryStatsManager;
 import android.os.ConditionVariable;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
@@ -5880,52 +5878,6 @@ public class ClientModeImpl extends StateMachine {
      */
     public void setIpReachabilityDisconnectEnabled(boolean enabled) {
         mIpReachabilityDisconnectEnabled = enabled;
-    }
-
-    /**
-     * Add a network request match callback to {@link WifiNetworkFactory}.
-     */
-    public void addNetworkRequestMatchCallback(IBinder binder,
-                                               INetworkRequestMatchCallback callback,
-                                               int callbackIdentifier) {
-        mNetworkFactory.addCallback(binder, callback, callbackIdentifier);
-    }
-
-    /**
-     * Remove a network request match callback from {@link WifiNetworkFactory}.
-     */
-    public void removeNetworkRequestMatchCallback(int callbackIdentifier) {
-        mNetworkFactory.removeCallback(callbackIdentifier);
-    }
-
-    /**
-     * Approve all access points from {@link WifiNetworkFactory} for the provided package.
-     * Used by shell commands.
-     */
-    public void setNetworkRequestUserApprovedApp(@NonNull String packageName, boolean approved) {
-        mNetworkFactory.setUserApprovedApp(packageName, approved);
-    }
-
-    /**
-     * Whether all access points are approved for the specified app.
-     * Used by shell commands.
-     */
-    public boolean hasNetworkRequestUserApprovedApp(@NonNull String packageName) {
-        return mNetworkFactory.hasUserApprovedApp(packageName);
-    }
-
-    /**
-     * Remove all approved access points from {@link WifiNetworkFactory} for the provided package.
-     */
-    public void removeNetworkRequestUserApprovedAccessPointsForApp(@NonNull String packageName) {
-        mNetworkFactory.removeUserApprovedAccessPointsForApp(packageName);
-    }
-
-    /**
-     * Clear all approved access points from {@link WifiNetworkFactory}.
-     */
-    public void clearNetworkRequestUserApprovedAccessPoints() {
-        mNetworkFactory.clear();
     }
 
     /**

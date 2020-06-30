@@ -65,6 +65,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
     @Mock Context mContext;
     @Mock ConnectivityManager mConnectivityManager;
     @Mock WifiCarrierInfoManager mWifiCarrierInfoManager;
+    @Mock WifiNetworkFactory mWifiNetworkFactory;
 
     WifiShellCommand mWifiShellCommand;
 
@@ -81,6 +82,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
         when(mWifiInjector.getWifiCountryCode()).thenReturn(mWifiCountryCode);
         when(mWifiInjector.getWifiLastResortWatchdog()).thenReturn(mWifiLastResortWatchdog);
         when(mWifiInjector.getWifiCarrierInfoManager()).thenReturn(mWifiCarrierInfoManager);
+        when(mWifiInjector.getWifiNetworkFactory()).thenReturn(mWifiNetworkFactory);
 
         mWifiShellCommand = new WifiShellCommand(mWifiInjector, mWifiService, mContext,
                 mClientModeManager);
@@ -355,7 +357,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"network-requests-set-user-approved", TEST_PACKAGE, "yes"});
-        verify(mClientModeManager, never()).setNetworkRequestUserApprovedApp(
+        verify(mWifiNetworkFactory, never()).setUserApprovedApp(
                 anyString(), anyBoolean());
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
 
@@ -364,12 +366,12 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"network-requests-set-user-approved", TEST_PACKAGE, "yes"});
-        verify(mClientModeManager).setNetworkRequestUserApprovedApp(TEST_PACKAGE, true);
+        verify(mWifiNetworkFactory).setUserApprovedApp(TEST_PACKAGE, true);
 
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"network-requests-set-user-approved", TEST_PACKAGE, "no"});
-        verify(mClientModeManager).setNetworkRequestUserApprovedApp(TEST_PACKAGE, false);
+        verify(mWifiNetworkFactory).setUserApprovedApp(TEST_PACKAGE, false);
     }
 
     @Test
@@ -378,25 +380,25 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"network-requests-has-user-approved", TEST_PACKAGE});
-        verify(mClientModeManager, never()).hasNetworkRequestUserApprovedApp(anyString());
+        verify(mWifiNetworkFactory, never()).hasUserApprovedApp(anyString());
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
 
         BinderUtil.setUid(Process.ROOT_UID);
 
-        when(mClientModeManager.hasNetworkRequestUserApprovedApp(TEST_PACKAGE))
+        when(mWifiNetworkFactory.hasUserApprovedApp(TEST_PACKAGE))
                 .thenReturn(true);
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"network-requests-has-user-approved", TEST_PACKAGE});
-        verify(mClientModeManager).hasNetworkRequestUserApprovedApp(TEST_PACKAGE);
+        verify(mWifiNetworkFactory).hasUserApprovedApp(TEST_PACKAGE);
         mWifiShellCommand.getOutPrintWriter().toString().contains("yes");
 
-        when(mClientModeManager.hasNetworkRequestUserApprovedApp(TEST_PACKAGE))
+        when(mWifiNetworkFactory.hasUserApprovedApp(TEST_PACKAGE))
                 .thenReturn(false);
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"network-requests-has-user-approved", TEST_PACKAGE});
-        verify(mClientModeManager, times(2)).hasNetworkRequestUserApprovedApp(TEST_PACKAGE);
+        verify(mWifiNetworkFactory, times(2)).hasUserApprovedApp(TEST_PACKAGE);
         mWifiShellCommand.getOutPrintWriter().toString().contains("no");
     }
 
