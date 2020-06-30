@@ -229,15 +229,18 @@ public class ApConfigUtil {
     }
 
     /**
-     * Get channel frequencies for band that are allowed by both regulatory and OEM configuration
+     * Get channels or frequencies for band that are allowed by both regulatory
+     * and OEM configuration.
      *
      * @param band to get channels for
      * @param wifiNative reference used to get regulatory restrictionsimport java.util.Arrays;
      * @param resources used to get OEM restrictions
+     * @param inFrequencyMHz true to convert channel to frequency.
      * @return A list of frequencies that are allowed, null on error.
      */
     public static List<Integer> getAvailableChannelFreqsForBand(
-            @BandType int band, WifiNative wifiNative, Resources resources) {
+            @BandType int band, WifiNative wifiNative, Resources resources,
+            boolean inFrequencyMHz) {
         if (!isBandValid(band) || isMultiband(band)) {
             return null;
         }
@@ -268,20 +271,26 @@ public class ApConfigUtil {
         int[] regulatoryArray = wifiNative.getChannelsForBand(scannerBand);
         List<Integer> regulatoryList = new ArrayList<Integer>();
         for (int freq : regulatoryArray) {
-            regulatoryList.add(freq);
+            if (inFrequencyMHz) {
+                regulatoryList.add(freq);
+            } else {
+                regulatoryList.add(ScanResult.convertFrequencyMhzToChannel(freq));
+            }
         }
 
         if (configuredList == null || configuredList.isEmpty()) {
             return regulatoryList;
         }
-
         List<Integer> filteredList = new ArrayList<Integer>();
         // Otherwise, filter the configured list
         for (int channel : configuredList) {
-            int channelFreq = convertChannelToFrequency(channel, band);
-
-            if (regulatoryList.contains(channelFreq)) {
-                filteredList.add(channelFreq);
+            if (inFrequencyMHz) {
+                int channelFreq = convertChannelToFrequency(channel, band);
+                if (regulatoryList.contains(channelFreq)) {
+                    filteredList.add(channelFreq);
+                }
+            } else if (regulatoryList.contains(channel)) {
+                filteredList.add(channel);
             }
         }
         return filteredList;
@@ -304,7 +313,7 @@ public class ApConfigUtil {
 
         if ((apBand & SoftApConfiguration.BAND_6GHZ) != 0) {
             allowedFreqList = getAvailableChannelFreqsForBand(SoftApConfiguration.BAND_6GHZ,
-                    wifiNative, resources);
+                    wifiNative, resources, true);
             if (allowedFreqList != null && allowedFreqList.size() > 0) {
                 return allowedFreqList.get(sRandom.nextInt(allowedFreqList.size())).intValue();
             }
@@ -312,7 +321,7 @@ public class ApConfigUtil {
 
         if ((apBand & SoftApConfiguration.BAND_5GHZ) != 0) {
             allowedFreqList = getAvailableChannelFreqsForBand(SoftApConfiguration.BAND_5GHZ,
-                    wifiNative, resources);
+                    wifiNative, resources, true);
             if (allowedFreqList != null && allowedFreqList.size() > 0) {
                 return allowedFreqList.get(sRandom.nextInt(allowedFreqList.size())).intValue();
             }
@@ -320,7 +329,7 @@ public class ApConfigUtil {
 
         if ((apBand & SoftApConfiguration.BAND_2GHZ) != 0) {
             allowedFreqList = getAvailableChannelFreqsForBand(SoftApConfiguration.BAND_2GHZ,
-                    wifiNative, resources);
+                    wifiNative, resources, true);
             if (allowedFreqList != null && allowedFreqList.size() > 0) {
                 return allowedFreqList.get(sRandom.nextInt(allowedFreqList.size())).intValue();
             }

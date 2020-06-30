@@ -20,14 +20,11 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Handler;
 import android.telephony.TelephonyManager;
 
@@ -37,7 +34,6 @@ import com.android.wifi.resources.R;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -60,8 +56,6 @@ public class WifiCountryCodeTest extends WifiBaseTest {
     @Mock TelephonyManager mTelephonyManager;
     @Mock Handler mHandler;
     @Mock WifiNative mWifiNative;
-    private ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
-            ArgumentCaptor.forClass(BroadcastReceiver.class);
     private WifiCountryCode mWifiCountryCode;
 
     /**
@@ -87,15 +81,6 @@ public class WifiCountryCodeTest extends WifiBaseTest {
                 mHandler,
                 mWifiNative,
                 mDefaultCountryCode);
-        verify(mContext, atLeastOnce()).registerReceiver(
-                mBroadcastReceiverCaptor.capture(), any(), any(), any());
-    }
-
-    private void sendCountryCodeChangedBroadcast(String countryCode) {
-        Intent intent = new Intent(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED);
-        intent.putExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY, countryCode);
-        assertNotNull(mBroadcastReceiverCaptor.getValue());
-        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
     }
 
     /**
@@ -133,7 +118,7 @@ public class WifiCountryCodeTest extends WifiBaseTest {
      */
     @Test
     public void useTelephonyCountryCodeOnChange() throws Exception {
-        sendCountryCodeChangedBroadcast(mTelephonyCountryCode);
+        mWifiCountryCode.setCountryCodeAndUpdate(mTelephonyCountryCode);
         assertEquals(null, mWifiCountryCode.getCountryCodeSentToDriver());
         // Supplicant started.
         mWifiCountryCode.setReadyForChange(true);
@@ -153,7 +138,7 @@ public class WifiCountryCodeTest extends WifiBaseTest {
         mWifiCountryCode.setReadyForChange(true);
         assertEquals(mDefaultCountryCode, mWifiCountryCode.getCountryCodeSentToDriver());
         // Telephony country code arrives.
-        sendCountryCodeChangedBroadcast(mTelephonyCountryCode);
+        mWifiCountryCode.setCountryCodeAndUpdate(mTelephonyCountryCode);
         // Wifi get L2 connected.
         mWifiCountryCode.setReadyForChange(false);
         verify(mWifiNative, times(2)).setCountryCode(any(), anyString());
@@ -171,7 +156,7 @@ public class WifiCountryCodeTest extends WifiBaseTest {
         // Wifi get L2 connected.
         mWifiCountryCode.setReadyForChange(false);
         // Telephony country code arrives.
-        sendCountryCodeChangedBroadcast(mTelephonyCountryCode);
+        mWifiCountryCode.setCountryCodeAndUpdate(mTelephonyCountryCode);
         // Telephony coutry code won't be applied at this time.
         assertEquals(mDefaultCountryCode, mWifiCountryCode.getCountryCodeSentToDriver());
         mWifiCountryCode.setReadyForChange(true);
@@ -190,10 +175,10 @@ public class WifiCountryCodeTest extends WifiBaseTest {
     @Test
     public void resetCountryCodeWhenOutOfService() throws Exception {
         assertEquals(mDefaultCountryCode, mWifiCountryCode.getCountryCode());
-        sendCountryCodeChangedBroadcast(mTelephonyCountryCode);
+        mWifiCountryCode.setCountryCodeAndUpdate(mTelephonyCountryCode);
         assertEquals(mTelephonyCountryCode, mWifiCountryCode.getCountryCode());
         // Out of service.
-        sendCountryCodeChangedBroadcast("");
+        mWifiCountryCode.setCountryCodeAndUpdate("");
         assertEquals(mDefaultCountryCode, mWifiCountryCode.getCountryCode());
     }
 
@@ -212,10 +197,10 @@ public class WifiCountryCodeTest extends WifiBaseTest {
         createWifiCountryCode();
 
         assertEquals(mDefaultCountryCode, mWifiCountryCode.getCountryCode());
-        sendCountryCodeChangedBroadcast(mTelephonyCountryCode);
+        mWifiCountryCode.setCountryCodeAndUpdate(mTelephonyCountryCode);
         assertEquals(mTelephonyCountryCode, mWifiCountryCode.getCountryCode());
         // Out of service.
-        sendCountryCodeChangedBroadcast("");
+        mWifiCountryCode.setCountryCodeAndUpdate("");
         assertEquals(mTelephonyCountryCode, mWifiCountryCode.getCountryCode());
     }
 
@@ -241,7 +226,7 @@ public class WifiCountryCodeTest extends WifiBaseTest {
         verify(mWifiNative).setCountryCode(any(), eq(oemCountryCodeUpper));
 
         // Now trigger a country code change using the telephony country code.
-        sendCountryCodeChangedBroadcast(telephonyCountryCodeLower);
+        mWifiCountryCode.setCountryCodeAndUpdate(telephonyCountryCodeLower);
         verify(mWifiNative).setCountryCode(any(), eq(telephonyCountryCodeUpper));
     }
     /**
