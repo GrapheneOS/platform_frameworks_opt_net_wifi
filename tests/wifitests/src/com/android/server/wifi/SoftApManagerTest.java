@@ -1678,7 +1678,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
         configBuilder.setSsid(TEST_SSID);
-        configBuilder.setBssid(MacAddress.fromString("23:34:45:56:67:78"));
+        configBuilder.setBssid(TEST_MAC_ADDRESS);
         SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
                 IFACE_IP_MODE_LOCAL_ONLY, configBuilder.build(), mTestSoftApCapability);
         ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
@@ -1686,7 +1686,7 @@ public class SoftApManagerTest extends WifiBaseTest {
 
         startSoftApAndVerifyEnabled(apConfig);
 
-        assertThat(mac.getValue()).isEqualTo(MacAddress.fromString("23:34:45:56:67:78"));
+        assertThat(mac.getValue()).isEqualTo(TEST_MAC_ADDRESS);
     }
 
     @Test
