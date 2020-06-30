@@ -296,7 +296,8 @@ public class WifiDataStall {
         }
         logd(" ccaLevel = " + ccaLevel);
 
-        int txPer = updateTxPer(txSuccessDelta, txRetriesDelta, isSameBssidAndFreq);
+        int txPer = updateTxPer(txSuccessDelta, txRetriesDelta, isSameBssidAndFreq,
+                isTxTrafficHigh);
 
         boolean isTxTputLow = false;
         boolean isRxTputLow = false;
@@ -397,12 +398,13 @@ public class WifiDataStall {
         return WifiIsUnusableEvent.TYPE_UNKNOWN;
     }
 
-    private int updateTxPer(long txSuccessDelta, long txRetriesDelta, boolean isSameBssidAndFreq) {
+    private int updateTxPer(long txSuccessDelta, long txRetriesDelta, boolean isSameBssidAndFreq,
+            boolean isTxTrafficHigh) {
         if (!isSameBssidAndFreq) {
             return DEFAULT_TX_PACKET_ERROR_RATE;
         }
         long txAttempts = txSuccessDelta + txRetriesDelta;
-        if (txAttempts <= 0) {
+        if (txAttempts <= 0 || !isTxTrafficHigh) {
             return DEFAULT_TX_PACKET_ERROR_RATE;
         }
         return (int) (txRetriesDelta * 100 / txAttempts);
