@@ -465,6 +465,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mTestSoftApInfo = new SoftApInfo();
         mTestSoftApInfo.setFrequency(TEST_AP_FREQUENCY);
         mTestSoftApInfo.setBandwidth(TEST_AP_BANDWIDTH);
+        when(mWifiNative.getChannelsForBand(anyInt())).thenReturn(new int[0]);
 
         mWifiConfig = new WifiConfiguration();
         mWifiConfig.SSID = TEST_SSID;
@@ -6164,5 +6165,24 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private List<ScanResult> createScanResultList() {
         return Collections.singletonList(new ScanResult(WifiSsid.createFromAsciiEncoded(TEST_SSID),
                 TEST_SSID, TEST_BSSID, 1245, 0, TEST_CAP, -78, 2450, 1025, 22, 33, 20, 0, 0, true));
+    }
+
+    private void sendCountryCodeChangedBroadcast(String countryCode) {
+        Intent intent = new Intent(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED);
+        intent.putExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY, countryCode);
+        assertNotNull(mBroadcastReceiverCaptor.getValue());
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+    }
+
+    @Test
+    public void testCountryCodeBroadcastHanding() {
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED)));
+        sendCountryCodeChangedBroadcast("US");
+        verify(mWifiCountryCode).setCountryCodeAndUpdate(any());
+        verify(mActiveModeWarden).updateSoftApCapability(any());
     }
 }

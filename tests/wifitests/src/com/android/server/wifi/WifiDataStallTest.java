@@ -212,7 +212,7 @@ public class WifiDataStallTest extends WifiBaseTest {
     }
 
     /**
-     * Verify throughtput when Rx link speed is unavailable.
+     * Verify throughput when Rx link speed is unavailable.
      * Also verify the logging of channel utilization and throughput.
      */
     @Test
@@ -342,7 +342,7 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(true, mWifiDataStall.isThroughputSufficient());
-        assertEquals(4804, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(9128, mWifiDataStall.getTxThroughputKbps());
         assertEquals(-1, mWifiDataStall.getRxThroughputKbps());
         verify(mWifiMetrics, never()).logWifiIsUnusableEvent(anyInt());
     }
@@ -400,7 +400,7 @@ public class WifiDataStallTest extends WifiBaseTest {
         assertEquals(WifiIsUnusableEvent.TYPE_UNKNOWN, mWifiDataStall
                 .checkDataStallAndThroughputSufficiency(mOldLlStats, mNewLlStats, mWifiInfo));
         assertEquals(true, mWifiDataStall.isThroughputSufficient());
-        assertEquals(4707, mWifiDataStall.getTxThroughputKbps());
+        assertEquals(8943, mWifiDataStall.getTxThroughputKbps());
         assertEquals(9414, mWifiDataStall.getRxThroughputKbps());
     }
 

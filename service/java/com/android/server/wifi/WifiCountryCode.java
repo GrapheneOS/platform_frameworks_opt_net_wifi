@@ -16,10 +16,7 @@
 
 package com.android.server.wifi;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Handler;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -69,13 +66,6 @@ public class WifiCountryCode {
         if (!TextUtils.isEmpty(oemDefaultCountryCode)) {
             mDefaultCountryCode = oemDefaultCountryCode.toUpperCase(Locale.US);
         }
-        context.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String countryCode = intent.getStringExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY);
-                Log.d(TAG, "Country code changed");
-                setCountryCodeAndUpdate(countryCode);
-            }}, new IntentFilter(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED), null, handler);
 
         Log.d(TAG, "mDefaultCountryCode " + mDefaultCountryCode);
     }
@@ -183,7 +173,7 @@ public class WifiCountryCode {
      * otherwise we think it is from other applications.
      * @return Returns true if the country code passed in is acceptable.
      */
-    private boolean setCountryCodeAndUpdate(String countryCode) {
+    public boolean setCountryCodeAndUpdate(String countryCode) {
         if (!setCountryCode(countryCode)) return false;
         // If wpa_supplicant is ready we set the country code now, otherwise it will be
         // set once wpa_supplicant is ready.

@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.WifiDataStall.INVALID_THROUGHPUT;
+
 import android.net.Network;
 import android.net.NetworkAgent;
 import android.net.wifi.IScoreUpdateObserver;
@@ -62,6 +64,7 @@ public class WifiScoreReport {
     private int mSessionNumber = 0; // not to be confused with sessionid, this just counts resets
     private String mInterfaceName;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final WifiDataStall mWifiDataStall;
     private long mLastScoreBreachLowTimeMillis = -1;
 
     ConnectedScore mAggressiveConnectedScore;
@@ -84,9 +87,9 @@ public class WifiScoreReport {
                         || sessionId == INVALID_SESSION_ID
                         || sessionId != getCurrentSessionId()) {
                     Log.w(TAG, "Ignoring stale/invalid external score"
-                             + " sessionId=" + sessionId
-                             + " currentSessionId=" + getCurrentSessionId()
-                             + " score=" + score);
+                            + " sessionId=" + sessionId
+                            + " currentSessionId=" + getCurrentSessionId()
+                            + " score=" + score);
                     return;
                 }
                 if (mNetworkAgent != null) {
@@ -115,9 +118,9 @@ public class WifiScoreReport {
                         || sessionId != getCurrentSessionId()
                         || mInterfaceName == null) {
                     Log.w(TAG, "Ignoring triggerUpdateOfWifiUsabilityStats"
-                             + " sessionId=" + sessionId
-                             + " currentSessionId=" + getCurrentSessionId()
-                             + " interfaceName=" + mInterfaceName);
+                            + " sessionId=" + sessionId
+                            + " currentSessionId=" + getCurrentSessionId()
+                            + " interfaceName=" + mInterfaceName);
                     return;
                 }
                 WifiLinkLayerStats stats = mWifiNative.getWifiLinkLayerStats(mInterfaceName);
@@ -250,8 +253,9 @@ public class WifiScoreReport {
     private WifiConnectedNetworkScorerHolder mWifiConnectedNetworkScorerHolder;
 
     WifiScoreReport(ScoringParams scoringParams, Clock clock, WifiMetrics wifiMetrics,
-            WifiInfo wifiInfo, WifiNative wifiNative, BssidBlocklistMonitor bssidBlocklistMonitor,
-            WifiThreadRunner wifiThreadRunner) {
+                    WifiInfo wifiInfo, WifiNative wifiNative,
+                    BssidBlocklistMonitor bssidBlocklistMonitor,
+                    WifiThreadRunner wifiThreadRunner, WifiDataStall wifiDataStall) {
         mScoringParams = scoringParams;
         mClock = clock;
         mAggressiveConnectedScore = new AggressiveConnectedScore(scoringParams, clock);
@@ -261,6 +265,7 @@ public class WifiScoreReport {
         mWifiNative = wifiNative;
         mBssidBlocklistMonitor = bssidBlocklistMonitor;
         mWifiThreadRunner = wifiThreadRunner;
+        mWifiDataStall = wifiDataStall;
     }
 
     /**
@@ -315,9 +320,9 @@ public class WifiScoreReport {
         if (mWifiInfo.getScore() > ConnectedScore.WIFI_TRANSITION_SCORE
                 && score <= ConnectedScore.WIFI_TRANSITION_SCORE
                 && mWifiInfo.getSuccessfulTxPacketsPerSecond()
-                        >= mScoringParams.getYippeeSkippyPacketsPerSecond()
+                >= mScoringParams.getYippeeSkippyPacketsPerSecond()
                 && mWifiInfo.getSuccessfulRxPacketsPerSecond()
-                        >= mScoringParams.getYippeeSkippyPacketsPerSecond()
+                >= mScoringParams.getYippeeSkippyPacketsPerSecond()
         ) {
             score = ConnectedScore.WIFI_TRANSITION_SCORE + 1;
         }
@@ -495,6 +500,8 @@ public class WifiScoreReport {
         int freq = mWifiInfo.getFrequency();
         int txLinkSpeed = mWifiInfo.getLinkSpeed();
         int rxLinkSpeed = mWifiInfo.getRxLinkSpeedMbps();
+        int txThroughputMbps = convertKbpsToMbps(mWifiDataStall.getTxThroughputKbps());
+        int rxThroughputMbps = convertKbpsToMbps(mWifiDataStall.getRxThroughputKbps());
         double txSuccessRate = mWifiInfo.getSuccessfulTxPacketsPerSecond();
         double txRetriesRate = mWifiInfo.getRetriedTxPacketsPerSecond();
         double txBadRate = mWifiInfo.getLostTxPacketsPerSecond();
@@ -503,12 +510,14 @@ public class WifiScoreReport {
         try {
             String timestamp = new SimpleDateFormat("MM-dd HH:mm:ss.SSS").format(new Date(now));
             s = String.format(Locale.US, // Use US to avoid comma/decimal confusion
-                    "%s,%d,%d,%.1f,%.1f,%.1f,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%d,%d,%d",
+                    "%s,%d,%d,%.1f,%.1f,%.1f,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%d,%d,%d",
                     timestamp, mSessionNumber, netId,
                     rssi, filteredRssi, rssiThreshold, freq, txLinkSpeed, rxLinkSpeed,
+                    txThroughputMbps, rxThroughputMbps,
                     txSuccessRate, txRetriesRate, txBadRate, rxSuccessRate,
                     mNudYes, mNudCount,
                     s1, s2, score);
+
         } catch (Exception e) {
             Log.e(TAG, "format problem", e);
             return;
@@ -519,6 +528,10 @@ public class WifiScoreReport {
                 mLinkMetricsHistory.removeFirst();
             }
         }
+    }
+
+    private int convertKbpsToMbps(int throughputKbps) {
+        return (throughputKbps == INVALID_THROUGHPUT) ? INVALID_THROUGHPUT : throughputKbps / 1000;
     }
 
     /**
@@ -538,7 +551,8 @@ public class WifiScoreReport {
             history = new LinkedList<>(mLinkMetricsHistory);
         }
         pw.println("time,session,netid,rssi,filtered_rssi,rssi_threshold,freq,txLinkSpeed,"
-                + "rxLinkSpeed,tx_good,tx_retry,tx_bad,rx_pps,nudrq,nuds,s1,s2,score");
+                + "rxLinkSpeed,txTput,rxTput,tx_good,tx_retry,tx_bad,rx_pps,nudrq,nuds,"
+                + "s1,s2,score");
         for (String line : history) {
             pw.println(line);
         }
