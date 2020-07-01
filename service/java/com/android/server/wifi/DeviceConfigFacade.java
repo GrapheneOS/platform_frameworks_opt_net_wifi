@@ -66,7 +66,7 @@ public class DeviceConfigFacade {
     // Denominator part of default threshold of L2 throughput over L3 throughput ratio
     public static final int DEFAULT_TPUT_SUFFICIENT_RATIO_THR_DEN = 1;
     // Default threshold of Tx packet per second
-    public static final int DEFAULT_TX_PACKET_PER_SECOND_THR = 1;
+    public static final int DEFAULT_TX_PACKET_PER_SECOND_THR = 2;
     // Default threshold of Rx packet per second
     public static final int DEFAULT_RX_PACKET_PER_SECOND_THR = 1;
     // Default high threshold values for various connection/disconnection cases
