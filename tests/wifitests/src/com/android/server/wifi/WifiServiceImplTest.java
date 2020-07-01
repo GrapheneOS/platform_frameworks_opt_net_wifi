@@ -316,6 +316,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock ConnectHelper mConnectHelper;
     @Mock IActionListener mActionListener;
     @Mock WifiNetworkFactory mWifiNetworkFactory;
+    @Mock UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
+    @Mock BaseWifiDiagnostics mWifiDiagnostics;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -338,6 +340,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiCountryCode()).thenReturn(mWifiCountryCode);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
         when(mWifiInjector.getWifiNetworkFactory()).thenReturn(mWifiNetworkFactory);
+        when(mWifiInjector.getUntrustedWifiNetworkFactory())
+                .thenReturn(mUntrustedWifiNetworkFactory);
+        when(mWifiInjector.getWifiDiagnostics()).thenReturn(mWifiDiagnostics);
         when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
         when(mWifiInjector.getWifiHandlerThread()).thenReturn(mHandlerThread);
         when(mHandlerThread.getThreadHandler()).thenReturn(new Handler(mLooper.getLooper()));
@@ -537,32 +542,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.startAutoDispatch();
         mWifiServiceImpl.dump(new FileDescriptor(), new PrintWriter(new StringWriter()), null);
         mLooper.stopAutoDispatchAndIgnoreExceptions();
-    }
-
-    /**
-     * Ensure that WifiServiceImpl.dump() calls
-     * {@link ClientModeManager#updateLinkLayerStatsRssiAndScoreReport()}, then calls
-     * mWifiInjector.getClientModeManagerHandler().runWithScissors() at least once before calling
-     * {@link WifiScoreReport#dump(FileDescriptor, PrintWriter, String[])}.
-     *
-     * runWithScissors() needs to be called at least once so that we know that the async call
-     * {@link ClientModeManager#updateLinkLayerStatsRssiAndScoreReport()} has completed, since
-     * runWithScissors() blocks the current thread until the call completes, which includes all
-     * previous calls posted to that thread.
-     *
-     * This ensures that WifiScoreReport will always get updated RSSI and link layer stats before
-     * dumping during a bug report, no matter if the screen is on or not.
-     */
-    @Test
-    public void testWifiScoreReportDump() {
-        mLooper.startAutoDispatch();
-        mWifiServiceImpl.dump(new FileDescriptor(), new PrintWriter(new StringWriter()), null);
-        mLooper.stopAutoDispatchAndIgnoreExceptions();
-
-        InOrder inOrder = inOrder(mClientModeManager, mWifiScoreReport);
-
-        inOrder.verify(mClientModeManager).updateLinkLayerStatsRssiAndScoreReport();
-        inOrder.verify(mWifiScoreReport).dump(any(), any(), any());
     }
 
     /**
@@ -6154,5 +6133,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
         sendCountryCodeChangedBroadcast("US");
         verify(mWifiCountryCode).setCountryCodeAndUpdate(any());
         verify(mActiveModeWarden).updateSoftApCapability(any());
+    }
+
+    @Test
+    public void testDumpShouldDumpWakeupController() {
+        mLooper.startAutoDispatch();
+        mWifiServiceImpl.dump(new FileDescriptor(), new PrintWriter(new StringWriter()), null);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        verify(mWakeupController).dump(any(), any(), any());
     }
 }

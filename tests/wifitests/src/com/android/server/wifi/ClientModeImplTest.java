@@ -147,7 +147,9 @@ import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -413,6 +415,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Mock Network mNetwork;
     @Mock ClientModeManager mClientModeManager;
+    @Mock WifiScoreReport mWifiScoreReport;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -565,7 +568,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
-                mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier);
+                mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
+                mWifiScoreReport);
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
@@ -2478,17 +2482,6 @@ public class ClientModeImplTest extends WifiBaseTest {
             assertTrue(agentConfig.acceptUnvalidated);
             assertTrue(agentConfig.acceptPartialConnectivity);
         }, (cap) -> { });
-    }
-
-    /**
-     * Verify that CMI dump includes WakeupController.
-     */
-    @Test
-    public void testDumpShouldDumpWakeupController() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        PrintWriter writer = new PrintWriter(stream);
-        mCmi.dump(null, writer, null);
-        verify(mWakeupController).dump(null, writer, null);
     }
 
     /**
@@ -5165,5 +5158,28 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mContext, never()).sendStickyBroadcastAsUser(any(), any());
+    }
+
+
+    /**
+     * Ensure that {@link ClientModeImpl#dump(FileDescriptor, PrintWriter, String[])}
+     * {@link ClientModeImpl#updateLinkLayerStatsRssiAndScoreReport()}, at least once before calling
+     * {@link WifiScoreReport#dump(FileDescriptor, PrintWriter, String[])}.
+     *
+     * This ensures that WifiScoreReport will always get updated RSSI and link layer stats before
+     * dumping during a bug report, no matter if the screen is on or not.
+     */
+    @Test
+    public void testWifiScoreReportDump() throws Exception {
+        connect();
+
+        mLooper.startAutoDispatch();
+        mCmi.dump(new FileDescriptor(), new PrintWriter(new StringWriter()), null);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+
+        InOrder inOrder = inOrder(mWifiNative, mWifiScoreReport);
+
+        inOrder.verify(mWifiNative).getWifiLinkLayerStats(any());
+        inOrder.verify(mWifiScoreReport).dump(any(), any(), any());
     }
 }

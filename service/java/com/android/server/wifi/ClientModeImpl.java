@@ -749,7 +749,8 @@ public class ClientModeImpl extends StateMachine {
             MboOceController mboOceController,
             WifiCarrierInfoManager wifiCarrierInfoManager,
             EapFailureNotifier eapFailureNotifier,
-            SimRequiredNotifier simRequiredNotifier) {
+            SimRequiredNotifier simRequiredNotifier,
+            WifiScoreReport wifiScoreReport) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
         mClock = clock;
@@ -803,8 +804,7 @@ public class ClientModeImpl extends StateMachine {
         mScoringParams = scoringParams;
         mWifiThreadRunner = wifiThreadRunner;
         mScanRequestProxy = scanRequestProxy;
-        mWifiScoreReport = new WifiScoreReport(scoringParams, mClock, mWifiMetrics,
-                mWifiInfo, mWifiNative, mBssidBlocklistMonitor, wifiThreadRunner, mWifiDataStall);
+        mWifiScoreReport = wifiScoreReport;
 
         mNetworkCapabilitiesFilter = networkCapabilitiesFilter;
         mNetworkFactory = networkFactory;
@@ -1769,6 +1769,10 @@ public class ClientModeImpl extends StateMachine {
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         super.dump(fd, pw, args);
         mSupplicantStateTracker.dump(fd, pw, args);
+        // Polls link layer stats and RSSI. This allows the stats to show up in
+        // WifiScoreReport's dump() output when taking a bug report even if the screen is off.
+        updateLinkLayerStatsRssiAndScoreReport();
+        pw.println("Wi-Fi is " + syncGetWifiStateByName());
         pw.println("mLinkProperties " + mLinkProperties);
         pw.println("mWifiInfo " + mWifiInfo);
         pw.println("mDhcpResultsParcelable "
@@ -1782,24 +1786,11 @@ public class ClientModeImpl extends StateMachine {
         pw.println("mSuspendOptimizationsEnabled " + mContext.getResources().getBoolean(
                 R.bool.config_wifiSuspendOptimizationsEnabled));
         pw.println("mSuspendOptNeedsDisabled " + mSuspendOptNeedsDisabled);
-        mCountryCode.dump(fd, pw, args);
-        mNetworkFactory.dump(fd, pw, args);
-        mUntrustedNetworkFactory.dump(fd, pw, args);
-        pw.println("Wlan Wake Reasons:" + mWifiNative.getWlanWakeReasonCount());
-        pw.println();
-
-        mWifiConfigManager.dump(fd, pw, args);
-        pw.println();
-        mPasspointManager.dump(pw);
-        pw.println();
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_USER_ACTION);
-        mWifiDiagnostics.dump(fd, pw, args);
         dumpIpClient(fd, pw, args);
-        mWifiConnectivityManager.dump(fd, pw, args);
-        mWifiHealthMonitor.dump(fd, pw, args);
-        mWakeupController.dump(fd, pw, args);
         mLinkProbeManager.dump(fd, pw, args);
-        mWifiLastResortWatchdog.dump(fd, pw, args);
+        pw.println("WifiScoreReport:");
+        mWifiScoreReport.dump(fd, pw, args);
+        pw.println();
     }
 
     /**

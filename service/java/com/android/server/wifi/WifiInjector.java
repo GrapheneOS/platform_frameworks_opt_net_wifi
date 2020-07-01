@@ -608,7 +608,9 @@ public class WifiInjector {
                 mLinkProbeManager, mBatteryStats, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
-                new SimRequiredNotifier(mContext, mFrameworkFacade));
+                new SimRequiredNotifier(mContext, mFrameworkFacade),
+                new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo, mWifiNative,
+                        mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall));
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
                 clientModeImpl);
@@ -813,5 +815,13 @@ public class WifiInjector {
 
     public WifiNetworkFactory getWifiNetworkFactory() {
         return mWifiNetworkFactory;
+    }
+
+    public UntrustedWifiNetworkFactory getUntrustedWifiNetworkFactory() {
+        return mUntrustedWifiNetworkFactory;
+    }
+
+    public BaseWifiDiagnostics getWifiDiagnostics() {
+        return mWifiDiagnostics;
     }
 }
