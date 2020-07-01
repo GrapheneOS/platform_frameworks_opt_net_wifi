@@ -3255,9 +3255,7 @@ public class WifiServiceImpl extends BaseWifiService {
             System.arraycopy(args, 1, ipClientArgs, 0, ipClientArgs.length);
             mActiveModeWarden.getPrimaryClientModeManager().dumpIpClient(fd, pw, ipClientArgs);
         } else if (args != null && args.length > 0 && WifiScoreReport.DUMP_ARG.equals(args[0])) {
-            WifiScoreReport wifiScoreReport =
-                    mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
-            if (wifiScoreReport != null) wifiScoreReport.dump(fd, pw, args);
+            mActiveModeWarden.getPrimaryClientModeManager().dumpWifiScoreReport(fd, pw, args);
         } else if (args != null && args.length > 0 && WifiScoreCard.DUMP_ARG.equals(args[0])) {
             WifiScoreCard wifiScoreCard = mWifiInjector.getWifiScoreCard();
             String networkListBase64 = mWifiThreadRunner.call(() ->
@@ -4296,7 +4294,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
     /**
      * See {@link android.net.wifi.WifiManager#setWifiConnectedNetworkScorer(Executor,
-     * WifiConnectedNetworkScorer)}
+     * WifiManager.WifiConnectedNetworkScorer)}
      *
      * @param binder IBinder instance to allow cleanup if the app dies.
      * @param scorer Wifi connected network scorer to set.
@@ -4320,14 +4318,12 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("setWifiConnectedNetworkScorer uid=%").c(Binder.getCallingUid()).flush();
         }
         // Post operation to handler thread
-        WifiScoreReport wifiScoreReport =
-                mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
-        return mWifiThreadRunner.call(() -> wifiScoreReport.setWifiConnectedNetworkScorer(
-                binder, scorer), false);
+        return mWifiThreadRunner.call(
+                () -> mActiveModeWarden.setWifiConnectedNetworkScorer(binder, scorer), false);
     }
+
     /**
-     * See {@link android.net.wifi.WifiManager#clearWifiConnectedNetworkScorer(
-     * WifiConnectedNetworkScorer)}
+     * See {@link WifiManager#clearWifiConnectedNetworkScorer()}
      */
     @Override
     public void clearWifiConnectedNetworkScorer() {
@@ -4337,10 +4333,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("clearWifiConnectedNetworkScorer uid=%").c(Binder.getCallingUid()).flush();
         }
         // Post operation to handler thread
-        WifiScoreReport wifiScoreReport =
-                mActiveModeWarden.getPrimaryClientModeManager().getWifiScoreReport();
-        mWifiThreadRunner.post(() ->
-                wifiScoreReport.clearWifiConnectedNetworkScorer());
+        mWifiThreadRunner.post(() -> mActiveModeWarden.clearWifiConnectedNetworkScorer());
     }
 
     /**

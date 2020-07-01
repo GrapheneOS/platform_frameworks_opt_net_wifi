@@ -26,16 +26,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.BatteryStatsManager;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.telephony.TelephonyManager;
 import android.util.ArraySet;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.IState;
@@ -52,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 
 /**
  * This class provides the implementation for different WiFi operating modes.
@@ -85,6 +89,8 @@ public class ActiveModeWarden {
     private boolean mCanRequestMoreSoftApManagers = false;
     private boolean mIsShuttingdown = false;
     private boolean mVerboseLoggingEnabled = false;
+    /** Cache to store the external scorer for primary client mode manager. */
+    @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mPrimaryClientModeManagerScorer;
 
     /**
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
@@ -206,6 +212,24 @@ public class ActiveModeWarden {
         for (ActiveModeManager modeManager : mActiveModeManagers) {
             modeManager.enableVerboseLogging(verbose);
         }
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#setWifiConnectedNetworkScorer(Executor,
+     * WifiManager.WifiConnectedNetworkScorer)}
+     */
+    public boolean setWifiConnectedNetworkScorer(IBinder binder,
+            IWifiConnectedNetworkScorer scorer) {
+        mPrimaryClientModeManagerScorer = Pair.create(binder, scorer);
+        return getPrimaryClientModeManager().setWifiConnectedNetworkScorer(binder, scorer);
+    }
+
+    /**
+     * See {@link WifiManager#clearWifiConnectedNetworkScorer()}
+     */
+    public void clearWifiConnectedNetworkScorer() {
+        mPrimaryClientModeManagerScorer = null;
+        getPrimaryClientModeManager().clearWifiConnectedNetworkScorer();
     }
 
     /**
@@ -614,6 +638,13 @@ public class ActiveModeWarden {
             return false;
         }
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
+        if (mPrimaryClientModeManagerScorer != null) {
+            // TODO (b/160346062): Clear the connected scorer from this mode manager when
+            // we switch it out of primary role for the MBB use-case.
+            // Also vice versa, we need to set the scorer on the new primary mode manager.
+            manager.setWifiConnectedNetworkScorer(
+                    mPrimaryClientModeManagerScorer.first, mPrimaryClientModeManagerScorer.second);
+        }
         mActiveModeManagers.add(manager);
         return true;
     }

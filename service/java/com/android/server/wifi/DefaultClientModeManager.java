@@ -20,6 +20,7 @@ import static android.net.wifi.nl80211.WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_
 
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
@@ -28,6 +29,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
+import android.os.IBinder;
 import android.os.WorkSource;
 
 import com.android.server.wifi.util.ActionListenerWrapper;
@@ -91,9 +93,14 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void startRoamToNetwork(int networkId, ScanResult scanResult) { }
 
     @Override
-    public WifiScoreReport getWifiScoreReport() {
-        return null;
+    public boolean setWifiConnectedNetworkScorer(
+            IBinder binder, IWifiConnectedNetworkScorer scorer) {
+        // don't fail the public API when wifi is off.
+        return true;
     }
+
+    @Override
+    public void clearWifiConnectedNetworkScorer() { }
 
     @Override
     public void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) { }
@@ -162,6 +169,9 @@ public class DefaultClientModeManager implements ClientModeManager {
 
     @Override
     public void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args) { }
+
+    @Override
+    public void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args) { }
 
     @Override
     public void updateLinkLayerStatsRssiAndScoreReport() { }

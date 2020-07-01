@@ -297,7 +297,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock TelephonyManager mTelephonyManager;
     @Mock IOnWifiUsabilityStatsListener mOnWifiUsabilityStatsListener;
     @Mock WifiConfigManager mWifiConfigManager;
-    @Mock WifiScoreReport mWifiScoreReport;
     @Mock WifiScoreCard mWifiScoreCard;
     @Mock WifiHealthMonitor mWifiHealthMonitor;
     @Mock PasspointManager mPasspointManager;
@@ -387,7 +386,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
         when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
         when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
-        when(mClientModeManager.getWifiScoreReport()).thenReturn(mWifiScoreReport);
         when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
         when(mWifiInjector.getWifiHealthMonitor()).thenReturn(mWifiHealthMonitor);
         when(mWifiInjector.getWifiNetworkScoreCache())
@@ -5887,8 +5885,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testSetWifiConnectedNetworkScorerAndVerify() throws Exception {
         mWifiServiceImpl.setWifiConnectedNetworkScorer(mAppBinder, mWifiConnectedNetworkScorer);
         mLooper.dispatchAll();
-        verify(mWifiScoreReport).setWifiConnectedNetworkScorer(mAppBinder,
-                mWifiConnectedNetworkScorer);
+        verify(mActiveModeWarden).setWifiConnectedNetworkScorer(
+                mAppBinder, mWifiConnectedNetworkScorer);
     }
 
     /**
@@ -5898,7 +5896,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testClearWifiConnectedNetworkScorerAndVerify() throws Exception {
         mWifiServiceImpl.clearWifiConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mWifiScoreReport).clearWifiConnectedNetworkScorer();
+        verify(mActiveModeWarden).clearWifiConnectedNetworkScorer();
     }
 
     private long testGetSupportedFeaturesCaseForRtt(

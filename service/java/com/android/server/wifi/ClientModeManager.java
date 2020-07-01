@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
@@ -25,6 +26,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
+import android.os.IBinder;
 import android.os.WorkSource;
 
 import com.android.server.wifi.util.ActionListenerWrapper;
@@ -50,8 +52,9 @@ public interface ClientModeManager extends ActiveModeManager {
 
     void startRoamToNetwork(int networkId, ScanResult scanResult);
 
-    // TODO (b/159060934): Need to handle this genuinely when wifi is off.
-    WifiScoreReport getWifiScoreReport();
+    boolean setWifiConnectedNetworkScorer(IBinder binder, IWifiConnectedNetworkScorer scorer);
+
+    void clearWifiConnectedNetworkScorer();
 
     void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason);
 
@@ -85,6 +88,8 @@ public interface ClientModeManager extends ActiveModeManager {
     void enableTdls(String remoteMacAddress, boolean enable);
 
     void dumpIpClient(FileDescriptor fd, PrintWriter pw, String[] args);
+
+    void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args);
 
     void updateLinkLayerStatsRssiAndScoreReport();
 
