@@ -126,7 +126,7 @@ public class DefaultClientModeManager implements ClientModeManager {
 
     @Override
     public WifiInfo syncRequestConnectionInfo() {
-        return null;
+        return new WifiInfo();
     }
 
     @Override
@@ -141,7 +141,7 @@ public class DefaultClientModeManager implements ClientModeManager {
 
     @Override
     public DhcpResultsParcelable syncGetDhcpResultsParcelable() {
-        return null;
+        return new DhcpResultsParcelable();
     }
 
     @Override
@@ -206,7 +206,12 @@ public class DefaultClientModeManager implements ClientModeManager {
 
     @Override
     public WifiMulticastLockManager.FilterController getMcastLockManagerFilterController() {
-        return null;
+        return new WifiMulticastLockManager.FilterController() {
+            @Override
+            public void startFilteringMulticastPackets() { }
+            @Override
+            public void stopFilteringMulticastPackets() { }
+        };
     }
 
     @Override
