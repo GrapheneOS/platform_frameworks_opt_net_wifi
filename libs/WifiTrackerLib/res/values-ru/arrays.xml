@@ -22,16 +22,16 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string-array name="wifitrackerlib_wifi_status">
     <item msgid="4878873480828298657"></item>
-    <item msgid="5782995872855767551">"Skeniranje…"</item>
-    <item msgid="9055468790485684083">"Povezivanje…"</item>
-    <item msgid="6099499723199990208">"Autentifikacija…"</item>
-    <item msgid="6794055951297347103">"Dobivanje IP adrese…"</item>
-    <item msgid="5450920562291300229">"Povezano"</item>
-    <item msgid="6332116533879646145">"Obustavljeno"</item>
-    <item msgid="294459081501073818">"Prekidanje veze…"</item>
-    <item msgid="1577368920272598676">"Veza je prekinuta"</item>
-    <item msgid="7655843177582495451">"Neuspješno"</item>
-    <item msgid="8953752690917593623">"Blokirano"</item>
-    <item msgid="4400457817750243671">"Privremeno izbjegavanje veze lošeg kvaliteta"</item>
+    <item msgid="5782995872855767551">"Поиск…"</item>
+    <item msgid="9055468790485684083">"Подключение…"</item>
+    <item msgid="6099499723199990208">"Аутентификация…"</item>
+    <item msgid="6794055951297347103">"Получение IP-адреса…"</item>
+    <item msgid="5450920562291300229">"Подключено"</item>
+    <item msgid="6332116533879646145">"Приостановлено"</item>
+    <item msgid="294459081501073818">"Отключение…"</item>
+    <item msgid="1577368920272598676">"Не подключено"</item>
+    <item msgid="7655843177582495451">"Сбой"</item>
+    <item msgid="8953752690917593623">"Заблокировано"</item>
+    <item msgid="4400457817750243671">"Временно отключено из-за плохого соединения"</item>
   </string-array>
 </resources>
