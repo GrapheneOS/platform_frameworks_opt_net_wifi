@@ -2478,4 +2478,24 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.setWifiConnectedNetworkScorer(iBinder, iScorer);
         verify(mClientModeManager, times(2)).setWifiConnectedNetworkScorer(iBinder, iScorer);
     }
+
+    @Test
+    public void propagateBootCompletedToExistingPrimaryClientModeManager() throws Exception {
+        enterClientModeActiveState();
+        assertInEnabledState();
+        verify(mClientModeManager, never()).initialize();
+
+        mActiveModeWarden.handleBootCompleted();
+        verify(mClientModeManager).initialize();
+    }
+
+    @Test
+    public void propagateBootCompletedToNewPrimaryClientModeManager() throws Exception {
+        mActiveModeWarden.handleBootCompleted();
+
+        enterClientModeActiveState();
+        assertInEnabledState();
+
+        verify(mClientModeManager).initialize();
+    }
 }

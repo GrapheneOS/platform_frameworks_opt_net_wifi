@@ -112,7 +112,7 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void sendBluetoothAdapterStateChange(int state) { }
 
     @Override
-    public void handleBootCompleted() { }
+    public void initialize() { }
 
     @Override
     public int syncGetWifiState() {

@@ -426,7 +426,9 @@ public class WifiServiceImpl extends BaseWifiService {
             mMemoryStoreImpl.start();
             mPasspointManager.initializeProvisioner(
                     mWifiInjector.getPasspointProvisionerHandlerThread().getLooper());
-            mActiveModeWarden.getPrimaryClientModeManager().handleBootCompleted();
+            mWifiInjector.getWifiNetworkFactory().register();
+            mWifiInjector.getUntrustedWifiNetworkFactory().register();
+            mActiveModeWarden.handleBootCompleted();
         });
     }
 

@@ -576,11 +576,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         mBinderToken = Binder.clearCallingIdentity();
 
         /* Send the BOOT_COMPLETED message to setup some CMI state. */
-        mCmi.handleBootCompleted();
+        mCmi.initialize();
         mLooper.dispatchAll();
 
-        verify(mWifiNetworkFactory, atLeastOnce()).register();
-        verify(mUntrustedWifiNetworkFactory, atLeastOnce()).register();
         verify(mWifiConfigManager, atLeastOnce()).addOnNetworkUpdateListener(
                 mConfigUpdateListenerCaptor.capture());
         assertNotNull(mConfigUpdateListenerCaptor.getValue());
@@ -610,7 +608,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void createNew() throws Exception {
         assertEquals("DefaultState", getCurrentState().getName());
 
-        mCmi.handleBootCompleted();
+        mCmi.initialize();
         mLooper.dispatchAll();
         assertEquals("DefaultState", getCurrentState().getName());
     }

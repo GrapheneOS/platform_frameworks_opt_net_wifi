@@ -89,6 +89,7 @@ public class ActiveModeWarden {
     private boolean mCanRequestMoreSoftApManagers = false;
     private boolean mIsShuttingdown = false;
     private boolean mVerboseLoggingEnabled = false;
+    private boolean mBootCompleted = false;
     /** Cache to store the external scorer for primary client mode manager. */
     @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mPrimaryClientModeManagerScorer;
 
@@ -230,6 +231,19 @@ public class ActiveModeWarden {
     public void clearWifiConnectedNetworkScorer() {
         mPrimaryClientModeManagerScorer = null;
         getPrimaryClientModeManager().clearWifiConnectedNetworkScorer();
+    }
+
+    /**
+     * Handle boot completed event and store this state.
+     * Will be propagated to the primary client mode manager instance wheneve they're created.
+     */
+    public void handleBootCompleted() {
+        mBootCompleted = true;
+        for (ActiveModeManager modeManager : mActiveModeManagers) {
+            if (modeManager instanceof ClientModeManager) {
+                ((ClientModeManager) modeManager).initialize();
+            }
+        }
     }
 
     /**
@@ -638,6 +652,7 @@ public class ActiveModeWarden {
             return false;
         }
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
+        if (mBootCompleted) manager.initialize();
         if (mPrimaryClientModeManagerScorer != null) {
             // TODO (b/160346062): Clear the connected scorer from this mode manager when
             // we switch it out of primary role for the MBB use-case.

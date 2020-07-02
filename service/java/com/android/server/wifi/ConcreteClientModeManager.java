@@ -773,8 +773,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void handleBootCompleted() {
-        mClientModeImpl.handleBootCompleted();
+    public void initialize() {
+        mClientModeImpl.initialize();
     }
 
     @Override

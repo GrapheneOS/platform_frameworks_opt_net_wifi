@@ -5527,8 +5527,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.handleBootCompleted();
         mLooper.dispatchAll();
 
+        verify(mWifiNetworkFactory).register();
+        verify(mUntrustedWifiNetworkFactory).register();
         verify(mPasspointManager).initializeProvisioner(any());
-        verify(mClientModeManager).handleBootCompleted();
+        verify(mActiveModeWarden).handleBootCompleted();
     }
 
     /**

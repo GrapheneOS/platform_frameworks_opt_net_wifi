@@ -62,7 +62,7 @@ public interface ClientModeManager extends ActiveModeManager {
 
     void sendBluetoothAdapterStateChange(int state);
 
-    void handleBootCompleted();
+    void initialize();
 
     int syncGetWifiState();
 

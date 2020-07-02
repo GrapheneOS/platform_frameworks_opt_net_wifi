@@ -519,10 +519,10 @@ public class ClientModeImpl extends StateMachine {
     private int mConnectingWatchdogCount = 0;
 
     /**
-     * Indicates the end of boot process, should be used to trigger load from config store,
-     * initiate connection attempt, etc.
-     * */
-    static final int CMD_BOOT_COMPLETED                                 = BASE + 134;
+     * Indicates the end of boot process, should be used to register network factory, initiate
+     * connection attempt, etc.
+     */
+    static final int CMD_INITIALIZE                                 = BASE + 134;
 
     /* We now have a valid IP configuration. */
     static final int CMD_IP_CONFIGURATION_SUCCESSFUL                    = BASE + 138;
@@ -1794,10 +1794,10 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Trigger message to handle boot completed event.
+     * Trigger message to initialize connect operations (post boot completed).
      */
-    public void handleBootCompleted() {
-        sendMessage(CMD_BOOT_COMPLETED);
+    public void initialize() {
+        sendMessage(CMD_INITIALIZE);
     }
 
     /**
@@ -3128,12 +3128,6 @@ public class ClientModeImpl extends StateMachine {
         return true;
     }
 
-    void registerNetworkFactory() {
-        if (!checkAndSetConnectivityInstance()) return;
-        mNetworkFactory.register();
-        mUntrustedNetworkFactory.register();
-    }
-
     /**
      * ClientModeImpl needs to enable/disable other services when wifi is in client mode.  This
      * method allows ClientModeImpl to get these additional system services.
@@ -3310,10 +3304,9 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case CMD_BOOT_COMPLETED: {
+                case CMD_INITIALIZE: {
                     // get other services that we need to manage
                     getAdditionalWifiServiceInterfaces();
-                    registerNetworkFactory();
                     break;
                 }
                 case CMD_SCREEN_STATE_CHANGED: {
