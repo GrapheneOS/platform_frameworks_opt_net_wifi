@@ -1324,10 +1324,10 @@ public class HalDeviceManager {
             mEventHandler.post(() -> {
                 Log.e(TAG, "IWifiEventCallback.onFailure: " + statusString(status));
                 synchronized (mLock) {
+                    mIsReady = false;
                     teardownInternal();
                 }
             });
-            // No need to do anything else: listeners may (will) re-start Wi-Fi
         }
     }
 
