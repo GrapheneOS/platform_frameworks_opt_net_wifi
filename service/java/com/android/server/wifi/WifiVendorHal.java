@@ -273,6 +273,10 @@ public class WifiVendorHal {
         String methodName = niceMethodName(Thread.currentThread().getStackTrace(), 3);
         mVerboseLog.err("% RemoteException in HIDL call %").c(methodName).c(e.toString()).flush();
         clearState();
+        // Trigger self recovery
+        if (mDeathEventHandler != null) {
+            mDeathEventHandler.onDeath();
+        }
     }
 
     private WifiNative.VendorHalDeathEventHandler mDeathEventHandler;
