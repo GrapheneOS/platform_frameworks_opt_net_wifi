@@ -2240,6 +2240,43 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     @Test
+    public void airplaneModeToggleOffIsDeferredWhileProcessingToggleOnWithOneModeManager2()
+            throws Exception {
+        enterClientModeActiveState();
+        assertInEnabledState();
+
+        // APM toggle on
+        assertWifiShutDown(() -> {
+            when(mSettingsStore.isAirplaneModeOn()).thenReturn(true);
+            mActiveModeWarden.airplaneModeToggled();
+            mLooper.dispatchAll();
+        });
+
+
+        // APM toggle off before the stop is complete.
+        assertInEnabledState();
+        when(mClientModeManager.isStopping()).thenReturn(true);
+        when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
+        mActiveModeWarden.airplaneModeToggled();
+        // This test is identical to
+        // airplaneModeToggleOffIsDeferredWhileProcessingToggleOnWithOneModeManager, except the
+        // dispatchAll() here is removed. There could be a race between airplaneModeToggled and
+        // mClientListener.onStopped(). See b/160105640#comment5.
+
+        mClientListener.onStopped();
+        mLooper.dispatchAll();
+
+        verify(mClientModeManager, times(2)).start();
+        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_PRIMARY);
+
+        mClientListener.onStarted();
+        mLooper.dispatchAll();
+
+        // We should be back to enabled state.
+        assertInEnabledState();
+    }
+
+    @Test
     public void airplaneModeToggleOffIsDeferredWhileProcessingToggleOnWithTwoModeManager()
             throws Exception {
         enterClientModeActiveState();
