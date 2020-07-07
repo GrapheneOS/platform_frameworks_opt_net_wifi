@@ -132,6 +132,10 @@
           <item type="integer" name="config_wifiHighMovementNetworkSelectionOptimizationRssiDelta" />
           <item type="integer" name="config_wifiRttBackgroundExecGapMs" />
           <item type="integer" name="config_wifiPollRssiIntervalMilliseconds" />
+          <item type="bool" name="config_wifiChannelUtilizationOverrideEnabled" />
+          <item type="integer" name="config_wifiChannelUtilizationOverride2g" />
+          <item type="integer" name="config_wifiChannelUtilizationOverride5g" />
+          <item type="integer" name="config_wifiChannelUtilizationOverride6g" />
           <item type="bool" name="config_wifiSaeUpgradeEnabled" />
           <item type="bool" name="config_wifiSaeUpgradeOffloadEnabled" />
           <item type="integer" name="config_wifiMaxNativeFailureSelfRecoveryPerHour" />
