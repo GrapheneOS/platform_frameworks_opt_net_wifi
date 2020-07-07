@@ -87,7 +87,6 @@ public class OsuServerConnectionTest extends WifiBaseTest {
     private static final String PROVIDER_NAME_VALID = "Boingo";
     private static final String PROVIDER_NAME_INVALID = "Boingo1";
     private static final String TEST_PROVIDER_CHINESE_NAME = "宝音阁";
-    private static final int ENABLE_VERBOSE_LOGGING = 1;
     private static final int TEST_SESSION_ID = 1;
 
     private TestLooper mLooper = new TestLooper();
@@ -117,7 +116,7 @@ public class OsuServerConnectionTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         mOsuServerConnection = new OsuServerConnection(mLooper.getLooper());
-        mOsuServerConnection.enableVerboseLogging(ENABLE_VERBOSE_LOGGING);
+        mOsuServerConnection.enableVerboseLogging(true);
         mProviderIdentities.add(Pair.create(Locale.US, PROVIDER_NAME_VALID));
         mServerUrl = new URL(TEST_VALID_URL);
         when(mWfaKeyStore.get()).thenReturn(mKeyStore);

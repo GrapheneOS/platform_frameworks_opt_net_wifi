@@ -578,12 +578,8 @@ public class WifiConfigManager {
     /**
      * Enable/disable verbose logging in WifiConfigManager & its helper classes.
      */
-    public void enableVerboseLogging(int verbose) {
-        if (verbose > 0) {
-            mVerboseLoggingEnabled = true;
-        } else {
-            mVerboseLoggingEnabled = false;
-        }
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
         mWifiConfigStore.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiKeyStore.enableVerboseLogging(mVerboseLoggingEnabled);
     }

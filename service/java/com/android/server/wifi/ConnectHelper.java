@@ -47,7 +47,7 @@ public class ConnectHelper {
         int netId = result.getNetworkId();
         boolean success = mWifiConfigManager.updateBeforeConnect(netId, callingUid);
         if (success) {
-            mActiveModeWarden.getPrimaryClientModeManager().getImpl().connectNetwork(
+            mActiveModeWarden.getPrimaryClientModeManager().connectNetwork(
                     result, wrapper, callingUid);
         } else {
             Log.e(TAG, "connectToNetwork Invalid network Id=" + netId);

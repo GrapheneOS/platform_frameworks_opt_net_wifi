@@ -4707,7 +4707,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                         mRandomizedMacStoreData,
                         mFrameworkFacade, mDeviceConfigFacade,
                         mWifiScoreCard, mLruConnectionTracker);
-        mWifiConfigManager.enableVerboseLogging(1);
+        mWifiConfigManager.enableVerboseLogging(true);
     }
 
     /**

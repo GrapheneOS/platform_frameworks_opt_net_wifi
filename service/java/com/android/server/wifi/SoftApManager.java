@@ -291,6 +291,9 @@ public class SoftApManager implements ActiveModeManager {
         mStateMachine.dump(fd, pw, args);
     }
 
+    @Override
+    public void enableVerboseLogging(boolean verbose) { /* unused */ }
+
     private String getCurrentStateName() {
         IState currentState = mStateMachine.getCurrentState();
 

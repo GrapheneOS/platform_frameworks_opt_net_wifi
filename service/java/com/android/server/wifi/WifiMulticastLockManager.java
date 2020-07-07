@@ -126,7 +126,7 @@ public class WifiMulticastLockManager {
         synchronized (mMulticasters) {
             // if anybody had requested filters be off, leave off
             if (mMulticasters.size() == 0) {
-                mActiveModeWarden.getPrimaryClientModeManager().getImpl()
+                mActiveModeWarden.getPrimaryClientModeManager()
                         .getMcastLockManagerFilterController()
                         .startFilteringMulticastPackets();
             }
@@ -146,7 +146,7 @@ public class WifiMulticastLockManager {
             // our new size == 1 (first call), but this function won't
             // be called often and by making the stopPacket call each
             // time we're less fragile and self-healing.
-            mActiveModeWarden.getPrimaryClientModeManager().getImpl()
+            mActiveModeWarden.getPrimaryClientModeManager()
                     .getMcastLockManagerFilterController()
                     .stopFilteringMulticastPackets();
         }
@@ -183,7 +183,7 @@ public class WifiMulticastLockManager {
             removed.unlinkDeathRecipient();
         }
         if (mMulticasters.size() == 0) {
-            mActiveModeWarden.getPrimaryClientModeManager().getImpl()
+            mActiveModeWarden.getPrimaryClientModeManager()
                     .getMcastLockManagerFilterController()
                     .startFilteringMulticastPackets();
         }

@@ -132,12 +132,12 @@ public class PasspointProvisioner {
     /**
      * Enable verbose logging to help debug failures
      *
-     * @param level integer indicating verbose logging enabled if > 0
+     * @param verbose enables verbose logging.
      */
-    public void enableVerboseLogging(int level) {
-        mVerboseLoggingEnabled = (level > 0) ? true : false;
-        mOsuNetworkConnection.enableVerboseLogging(level);
-        mOsuServerConnection.enableVerboseLogging(level);
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
+        mOsuNetworkConnection.enableVerboseLogging(verbose);
+        mOsuServerConnection.enableVerboseLogging(verbose);
     }
 
     /**

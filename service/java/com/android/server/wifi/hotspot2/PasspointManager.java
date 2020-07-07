@@ -183,7 +183,7 @@ public class PasspointManager {
         public void setProviders(List<PasspointProvider> providers) {
             mProviders.clear();
             for (PasspointProvider provider : providers) {
-                provider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
+                provider.enableVerboseLogging(mVerboseLoggingEnabled);
                 mProviders.put(provider.getConfig().getUniqueId(), provider);
                 if (provider.getPackageName() != null) {
                     startTrackingAppOpsChange(provider.getPackageName(),
@@ -325,10 +325,10 @@ public class PasspointManager {
 
     /**
      * Enable verbose logging
-     * @param verbose more than 0 enables verbose logging
+     * @param verbose enables verbose logging
      */
-    public void enableVerboseLogging(int verbose) {
-        mVerboseLoggingEnabled = (verbose > 0) ? true : false;
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
         mPasspointProvisioner.enableVerboseLogging(verbose);
         for (PasspointProvider provider : mProviders.values()) {
             provider.enableVerboseLogging(verbose);
@@ -456,7 +456,7 @@ public class PasspointManager {
                         newProvider.getWifiConfig(), uid, packageName, isFromSuggestion);
             }
         }
-        newProvider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
+        newProvider.enableVerboseLogging(mVerboseLoggingEnabled);
         mProviders.put(config.getUniqueId(), newProvider);
         mWifiConfigManager.saveToStore(true /* forceWrite */);
         if (!isFromSuggestion && newProvider.getPackageName() != null) {
@@ -1191,7 +1191,7 @@ public class PasspointManager {
                 mProviderIndex++, wifiConfig.creatorUid, null, false,
                 Arrays.asList(enterpriseConfig.getCaCertificateAlias()),
                 enterpriseConfig.getClientCertificateAlias(), null, false, false);
-        provider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
+        provider.enableVerboseLogging(mVerboseLoggingEnabled);
         mProviders.put(passpointConfig.getUniqueId(), provider);
         return true;
     }
