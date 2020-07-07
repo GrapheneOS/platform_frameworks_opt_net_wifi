@@ -158,10 +158,10 @@ public class OsuServerConnection {
     /**
      * Enables verbose logging
      *
-     * @param verbose a value greater than zero enables verbose logging
+     * @param verbose enables verbose logging
      */
-    public void enableVerboseLogging(int verbose) {
-        mVerboseLoggingEnabled = verbose > 0 ? true : false;
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     /**

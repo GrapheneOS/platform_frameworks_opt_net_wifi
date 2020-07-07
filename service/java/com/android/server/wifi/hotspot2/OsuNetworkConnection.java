@@ -233,10 +233,10 @@ public class OsuNetworkConnection {
     /**
      * Method to update logging level in this class
      *
-     * @param verbose more than 0 enables verbose logging
+     * @param verbose enables verbose logging
      */
-    public void enableVerboseLogging(int verbose) {
-        mVerboseLoggingEnabled = verbose > 0 ? true : false;
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     private class ConnectivityCallbacks extends ConnectivityManager.NetworkCallback {

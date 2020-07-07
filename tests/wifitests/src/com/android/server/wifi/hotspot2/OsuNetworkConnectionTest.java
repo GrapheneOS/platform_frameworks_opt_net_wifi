@@ -65,8 +65,6 @@ import java.net.InetAddress;
 @SmallTest
 public class OsuNetworkConnectionTest extends WifiBaseTest {
     private static final String TAG = "OsuNetworkConnectionTest";
-    private static final int ENABLE_LOGGING = 1;
-    private static final int DISABLE_LOGGING = 0;
 
     private static final int TEST_NETWORK_ID = 6;
     private static final String TEST_NAI = null;
@@ -100,7 +98,7 @@ public class OsuNetworkConnectionTest extends WifiBaseTest {
         mLooper = new TestLooper();
         mHandler = new Handler(mLooper.getLooper());
         mNetworkConnection = new OsuNetworkConnection(mContext);
-        mNetworkConnection.enableVerboseLogging(ENABLE_LOGGING);
+        mNetworkConnection.enableVerboseLogging(true);
     }
 
     private LinkProperties createProvisionedLinkProperties() {

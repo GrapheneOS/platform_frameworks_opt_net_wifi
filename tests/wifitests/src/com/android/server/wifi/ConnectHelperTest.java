@@ -49,7 +49,7 @@ public class ConnectHelperTest extends WifiBaseTest {
     @Mock
     private WifiConfigManager mWifiConfigManager;
     @Mock
-    private ClientModeImpl mClientModeImpl;
+    private ClientModeManager mClientModeManager;
     @Mock
     private ActionListenerWrapper mActionListener;
 
@@ -59,9 +59,7 @@ public class ConnectHelperTest extends WifiBaseTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         ActiveModeWarden activeModeWarden = mock(ActiveModeWarden.class);
-        ClientModeManager clientModeManager = mock(ClientModeManager.class);
-        when(activeModeWarden.getPrimaryClientModeManager()).thenReturn(clientModeManager);
-        when(clientModeManager.getImpl()).thenReturn(mClientModeImpl);
+        when(activeModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
 
         mConnectHelper = new ConnectHelper(activeModeWarden, mWifiConfigManager);
         mWifiConfig = new WifiConfiguration();
@@ -80,8 +78,8 @@ public class ConnectHelperTest extends WifiBaseTest {
         verify(mWifiConfigManager)
                 .updateBeforeConnect(TEST_NETWORK_ID, TEST_CALLING_UID);
 
-        verify(mClientModeImpl).connectNetwork(eq(result), any(), eq(TEST_CALLING_UID));
-        // success is sent by ClientModeImpl, not sent by ConnectHelper
+        verify(mClientModeManager).connectNetwork(eq(result), any(), eq(TEST_CALLING_UID));
+        // success is sent by ClientModeManager, not sent by ConnectHelper
         verify(mActionListener, never()).sendSuccess();
         verify(mActionListener, never()).sendFailure(anyInt());
     }
@@ -97,7 +95,7 @@ public class ConnectHelperTest extends WifiBaseTest {
         verify(mWifiConfigManager)
                 .updateBeforeConnect(TEST_NETWORK_ID, TEST_CALLING_UID);
 
-        verify(mClientModeImpl, never()).connectNetwork(any(), any(), anyInt());
+        verify(mClientModeManager, never()).connectNetwork(any(), any(), anyInt());
         verify(mActionListener).sendFailure(WifiManager.ERROR);
         verify(mActionListener, never()).sendSuccess();
     }

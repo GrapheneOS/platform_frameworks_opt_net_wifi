@@ -78,12 +78,8 @@ public class SupplicantStateTracker extends StateMachine {
     private final State mCompletedState = new CompletedState();
     private final State mDormantState = new DormantState();
 
-    void enableVerboseLogging(int verbose) {
-        if (verbose > 0) {
-            DBG = true;
-        } else {
-            DBG = false;
-        }
+    void enableVerboseLogging(boolean verbose) {
+        DBG = verbose;
     }
 
     public String getSupplicantStateName() {

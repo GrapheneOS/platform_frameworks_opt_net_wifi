@@ -139,4 +139,9 @@ public interface ActiveModeManager {
      * Method to dump for logging state.
      */
     void dump(FileDescriptor fd, PrintWriter pw, String[] args);
+
+    /**
+     * Method to enable verbose logging.
+     */
+    void enableVerboseLogging(boolean verbose);
 }

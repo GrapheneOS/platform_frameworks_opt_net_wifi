@@ -334,7 +334,6 @@ public class WifiNetworkFactory extends NetworkFactory {
                 return;
             }
             mClientModeManager = Objects.requireNonNull(modeManager);
-            Objects.requireNonNull(modeManager.getImpl());
             handleClientModeManagerRetrieval();
         }
     }
@@ -422,8 +421,8 @@ public class WifiNetworkFactory extends NetworkFactory {
     /**
      * Enable verbose logging.
      */
-    public void enableVerboseLogging(int verbose) {
-        mVerboseLoggingEnabled = (verbose > 0);
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     /**
@@ -769,7 +768,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     private void disconnectAndRemoveNetworkFromWifiConfigManager(
             @Nullable WifiConfiguration network) {
         // Trigger a disconnect first.
-        mClientModeManager.getImpl().disconnectCommand();
+        mClientModeManager.disconnect();
 
         if (network == null) return;
         WifiConfiguration wcmNetwork =
