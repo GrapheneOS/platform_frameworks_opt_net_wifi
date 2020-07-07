@@ -329,7 +329,7 @@ public class WifiInjector {
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, this, mWifiNative, mBuildProperties,
                 new LastMileLogger(this), mClock);
-        mWifiChannelUtilizationConnected = new WifiChannelUtilization(mClock);
+        mWifiChannelUtilizationConnected = new WifiChannelUtilization(mClock, mContext);
         mWifiDataStall = new WifiDataStall(mFrameworkFacade, mWifiMetrics, mContext,
                 mDeviceConfigFacade, mWifiChannelUtilizationConnected, mClock, wifiHandler,
                 mThroughputPredictor);
@@ -617,7 +617,7 @@ public class WifiInjector {
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard);
         mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
-        mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock);
+        mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
         return new WifiConnectivityManager(mContext, getScoringParams(),
                 clientModeImpl, this,
                 mWifiConfigManager, mWifiNetworkSuggestionsManager, clientModeImpl.getWifiInfo(),
