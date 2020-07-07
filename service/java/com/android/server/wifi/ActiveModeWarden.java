@@ -511,16 +511,6 @@ public class ActiveModeWarden {
     }
 
     /**
-     * @return true if any mode manager is stopping
-     */
-    private boolean hasAnyModeManagerStopping() {
-        for (ActiveModeManager manager : mActiveModeManagers) {
-            if (manager.isStopping()) return true;
-        }
-        return false;
-    }
-
-    /**
      * @return true if all the client mode managers are in scan only role,
      * false if there are no client mode managers present or if any of them are not in scan only
      * role.

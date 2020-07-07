@@ -36,8 +36,6 @@ import static com.android.server.wifi.util.ApConfigUtil.DEFAULT_AP_CHANNEL;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
@@ -669,7 +667,6 @@ public class SoftApManagerTest extends WifiBaseTest {
         InOrder order = inOrder(mCallback, mListener, mContext);
 
         mSoftApManager.stop();
-        assertTrue(mSoftApManager.isStopping());
         mLooper.dispatchAll();
 
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
@@ -688,7 +685,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WIFI_AP_STATE_DISABLING, HOTSPOT_NO_ERROR, TEST_INTERFACE_NAME,
                 softApModeConfig.getTargetMode());
         order.verify(mListener).onStopped();
-        assertFalse(mSoftApManager.isStopping());
     }
 
     /**
@@ -724,7 +720,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WIFI_AP_STATE_DISABLING, HOTSPOT_NO_ERROR, TEST_INTERFACE_NAME,
                 softApModeConfig.getTargetMode());
         order.verify(mListener).onStopped();
-        assertFalse(mSoftApManager.isStopping());
     }
 
     /**
@@ -1867,7 +1862,6 @@ public class SoftApManagerTest extends WifiBaseTest {
 
 
         mSoftApManager.start();
-        mSoftApManager.setRole(ActiveModeManager.ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mFakeSoftApNotifier).dismissSoftApShutDownTimeoutExpiredNotification();
         order.verify(mWifiNative).setupInterfaceForSoftApMode(

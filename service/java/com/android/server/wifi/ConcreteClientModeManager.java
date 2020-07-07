@@ -138,11 +138,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mDeferStopHandler.start(getWifiOffDeferringTimeMs());
     }
 
-    @Override
-    public boolean isStopping() {
-        return mTargetRole == ROLE_UNSPECIFIED && mRole != ROLE_UNSPECIFIED;
-    }
-
     private class DeferStopHandler extends WifiHandler {
         private boolean mIsDeferring = false;
         private ImsMmTelManager mImsMmTelManager = null;

@@ -48,11 +48,6 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void stop() { }
 
     @Override
-    public boolean isStopping() {
-        return false;
-    }
-
-    @Override
     public int getRole() {
         return 0;
     }
