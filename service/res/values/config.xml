@@ -422,6 +422,15 @@
     <!-- Integer indicating the RSSI and link layer stats polling interval in milliseconds when device is connected and screen is on -->
     <integer translatable="false" name="config_wifiPollRssiIntervalMilliseconds">3000</integer>
 
+    <!-- Override channel utilization estimation with fixed value -->
+    <bool translatable="false" name="config_wifiChannelUtilizationOverrideEnabled">true</bool>
+    <!-- Integer values represent the channel utilization in different RF bands when
+          config_wifiChannelUtilizationOverridingEnabled is true.
+         They should be set to [0, 255] corresponding to utilization ratio between 0 and 1 -->
+    <integer translatable="false" name="config_wifiChannelUtilizationOverride2g">80</integer>
+    <integer translatable="false" name="config_wifiChannelUtilizationOverride5g">15</integer>
+    <integer translatable="false" name="config_wifiChannelUtilizationOverride6g">10</integer>
+
     <!-- Enable WPA2 to WPA3 auto-upgrade -->
     <bool translatable="false" name="config_wifiSaeUpgradeEnabled">true</bool>
 
