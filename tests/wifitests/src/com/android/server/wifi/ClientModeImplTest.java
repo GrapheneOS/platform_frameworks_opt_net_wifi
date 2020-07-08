@@ -2165,7 +2165,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         startSupplicantAndDispatchMessages();
         assertEquals(ClientModeImpl.CONNECT_MODE, mCmi.getOperationalModeForTest());
         assertEquals(WifiManager.WIFI_STATE_ENABLED, mCmi.syncGetWifiState());
-        inOrder.verify(mWifiNetworkFactory).setWifiState(eq(true));
         inOrderMetrics.verify(mWifiMetrics)
                 .setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
         inOrderMetrics.verify(mWifiMetrics).logStaEvent(StaEvent.TYPE_WIFI_ENABLED);
@@ -2185,7 +2184,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(ClientModeImpl.DISABLED_MODE, mCmi.getOperationalModeForTest());
         assertEquals("DefaultState", getCurrentState().getName());
         assertEquals(WifiManager.WIFI_STATE_DISABLED, mCmi.syncGetWifiState());
-        inOrder.verify(mWifiNetworkFactory).setWifiState(eq(false));
         inOrderMetrics.verify(mWifiMetrics).setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
         inOrderMetrics.verify(mWifiMetrics).logStaEvent(StaEvent.TYPE_WIFI_DISABLED);
         assertNull(wifiInfo.getBSSID());
@@ -2207,7 +2205,6 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         assertEquals(ClientModeImpl.CONNECT_MODE, mCmi.getOperationalModeForTest());
         assertEquals(WifiManager.WIFI_STATE_ENABLED, mCmi.syncGetWifiState());
-        inOrder.verify(mWifiNetworkFactory).setWifiState(eq(true));
         inOrderMetrics.verify(mWifiMetrics)
                 .setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
         inOrderMetrics.verify(mWifiMetrics).logStaEvent(StaEvent.TYPE_WIFI_ENABLED);

@@ -3641,8 +3641,6 @@ public class ClientModeImpl extends StateMachine {
             mWakeupController.reset();
             sendNetworkChangeBroadcast(DetailedState.DISCONNECTED);
 
-            // Inform WifiConnectivityManager that Wifi is enabled
-            mNetworkFactory.setWifiState(true);
             // Inform metrics that Wifi is Enabled (but not yet connected)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
             mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_ENABLED);
@@ -3655,8 +3653,6 @@ public class ClientModeImpl extends StateMachine {
         public void exit() {
             mOperationalMode = DISABLED_MODE;
 
-            // Inform WifiConnectivityManager that Wifi is disabled
-            mNetworkFactory.setWifiState(false);
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
             mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_DISABLED);

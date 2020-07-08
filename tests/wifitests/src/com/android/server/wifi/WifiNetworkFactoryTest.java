@@ -19,7 +19,6 @@ package com.android.server.wifi;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE;
-import static android.net.NetworkFactory.CMD_REQUEST_NETWORK;
 
 import static com.android.server.wifi.WifiNetworkFactory.PERIODIC_SCAN_INTERVAL_MS;
 import static com.android.server.wifi.util.NativeUtil.addEnclosingQuotes;
@@ -53,7 +52,6 @@ import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiScanner.ScanListener;
 import android.net.wifi.WifiScanner.ScanSettings;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.PatternMatcher;
 import android.os.Process;
 import android.os.RemoteException;
@@ -158,6 +156,8 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
             ArgumentCaptor.forClass(ScanListener.class);
     ArgumentCaptor<ActionListenerWrapper> mConnectListenerArgumentCaptor =
             ArgumentCaptor.forClass(ActionListenerWrapper.class);
+    ArgumentCaptor<ActiveModeWarden.ModeChangeCallback> mModeChangeCallbackCaptor =
+            ArgumentCaptor.forClass(ActiveModeWarden.ModeChangeCallback.class);
     InOrder mInOrder;
 
     private WifiNetworkFactory mWifiNetworkFactory;
@@ -216,6 +216,10 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         assertNotNull(mDataSource);
         mNetworkRequestStoreData = new NetworkRequestStoreData(mDataSource);
 
+        verify(mActiveModeWarden).registerModeChangeCallback(
+                mModeChangeCallbackCaptor.capture());
+        assertNotNull(mModeChangeCallbackCaptor.getValue());
+
         // Register factory with connectivity manager.
         mWifiNetworkFactory.register();
         ArgumentCaptor<NetworkProvider> networkProviderArgumentCaptor =
@@ -231,7 +235,6 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 .build();
 
         // Setup with wifi on.
-        mWifiNetworkFactory.setWifiState(true);
         mWifiNetworkFactory.enableVerboseLogging(true);
     }
 
@@ -2135,39 +2138,31 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
     }
 
     /**
-     * Verify we don't accept specific network request when wifi is off.
-     */
-    @Test
-    public void testHandleAcceptNetworkRequestWithSpecifierWhenWifiOff() throws Exception {
-        when(mActivityManager.getPackageImportance(TEST_PACKAGE_NAME_1))
-                .thenReturn(IMPORTANCE_FOREGROUND);
-
-        attachDefaultWifiNetworkSpecifierAndAppInfo(TEST_UID_1, false);
-
-        // set wifi off.
-        mWifiNetworkFactory.setWifiState(false);
-        assertFalse(mWifiNetworkFactory.acceptRequest(mNetworkRequest, 0));
-
-        // set wifi on.
-        mWifiNetworkFactory.setWifiState(true);
-        assertTrue(mWifiNetworkFactory.acceptRequest(mNetworkRequest, 0));
-    }
-
-    /**
      * Verify handling of new network request with network specifier when wifi is off.
+     * The request should be rejected immediately.
      */
     @Test
     public void testHandleNetworkRequestWithSpecifierWhenWifiOff() {
+        doNothing().when(mActiveModeWarden).requestLocalOnlyClientModeManager(any());
         attachDefaultWifiNetworkSpecifierAndAppInfo(TEST_UID_1, false);
 
-        // set wifi off
-        mWifiNetworkFactory.setWifiState(false);
+        // wifi off
         mWifiNetworkFactory.needNetworkFor(mNetworkRequest, 0);
+        ArgumentCaptor<ActiveModeWarden.ExternalClientModeManagerRequestListener> cmListenerCaptor =
+                ArgumentCaptor.forClass(
+                        ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
+        verify(mActiveModeWarden).requestLocalOnlyClientModeManager(cmListenerCaptor.capture());
+        assertNotNull(cmListenerCaptor.getValue());
+        cmListenerCaptor.getValue().onAnswer(null);
+
         verify(mWifiScanner, never()).startScan(any(), any(), any(), any());
 
-        // set wifi on
-        mWifiNetworkFactory.setWifiState(true);
+        // wifi on
         mWifiNetworkFactory.needNetworkFor(mNetworkRequest, 0);
+        verify(mActiveModeWarden, times(2)).requestLocalOnlyClientModeManager(
+                cmListenerCaptor.capture());
+        assertNotNull(cmListenerCaptor.getValue());
+        cmListenerCaptor.getValue().onAnswer(mClientModeManager);
         verify(mWifiScanner).startScan(any(), any(), any(), any());
     }
 
@@ -2189,7 +2184,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         verify(mWifiScanner).startScan(any(), any(), any(), any());
 
         // toggle wifi off & verify we aborted ongoing request.
-        mWifiNetworkFactory.setWifiState(false);
+        mModeChangeCallbackCaptor.getValue().onActiveModeManagerRemoved(mClientModeManager);
         verify(mNetworkRequestMatchCallback).onAbort();
         verify(mWifiConnectivityManager).setSpecificNetworkRequestInProgress(false);
         verify(mActiveModeWarden).removeLocalOnlyClientModeManager(any());
@@ -2203,7 +2198,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         sendNetworkRequestAndSetupForConnectionStatus();
 
         // toggle wifi off & verify we aborted ongoing request.
-        mWifiNetworkFactory.setWifiState(false);
+        mModeChangeCallbackCaptor.getValue().onActiveModeManagerRemoved(mClientModeManager);
         verify(mAlarmManager).cancel(mConnectionTimeoutAlarmListenerArgumentCaptor.getValue());
         verify(mNetworkRequestMatchCallback).onAbort();
         verify(mWifiConnectivityManager).setSpecificNetworkRequestInProgress(false);
@@ -2211,30 +2206,26 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
     }
 
     /**
-     * Verify handling of new network request with network specifier when wifi is off & then on.
-     * Note: Unlike the other unit tests, this test invokes the top level
-     * {@link NetworkFactory#CMD_REQUEST_NETWORK} to simulate the full flow.
+     * Verify handling of new network request with network specifier when wifi is off.
+     * The request should be rejected immediately.
      */
     @Test
     public void testFullHandleNetworkRequestWithSpecifierWhenWifiOff() {
+        doNothing().when(mActiveModeWarden).requestLocalOnlyClientModeManager(any());
         attachDefaultWifiNetworkSpecifierAndAppInfo(TEST_UID_1, false);
 
-        // set wifi off
-        mWifiNetworkFactory.setWifiState(false);
+        // wifi off
         // Add the request, should do nothing.
-        Message message = Message.obtain();
-        message.what = CMD_REQUEST_NETWORK;
-        message.obj = mNetworkRequest;
-        mWifiNetworkFactory.sendMessage(message);
+        mWifiNetworkFactory.needNetworkFor(mNetworkRequest, 0);
+        ArgumentCaptor<ActiveModeWarden.ExternalClientModeManagerRequestListener> cmListenerCaptor =
+                ArgumentCaptor.forClass(
+                        ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
+        verify(mActiveModeWarden).requestLocalOnlyClientModeManager(cmListenerCaptor.capture());
+        assertNotNull(cmListenerCaptor.getValue());
+        cmListenerCaptor.getValue().onAnswer(null);
         mLooper.dispatchAll();
         verify(mWifiScanner, never()).startScan(any(), any(), any(), any());
-
-        // set wifi on
-        mWifiNetworkFactory.setWifiState(true);
-        mLooper.dispatchAll();
-        // Should trigger a re-evaluation of existing requests and the pending request will be
-        // processed now.
-        verify(mWifiScanner).startScan(any(), any(), any(), any());
+        verify(mConnectivityManager).declareNetworkRequestUnfulfillable(eq(mNetworkRequest));
     }
 
     /**
