@@ -2392,7 +2392,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         // APM toggle off before the stop is complete.
         assertInEnabledState();
-        when(mClientModeManager.isStopping()).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         mActiveModeWarden.airplaneModeToggled();
         mLooper.dispatchAll();
@@ -2426,7 +2425,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         // APM toggle off before the stop is complete.
         assertInEnabledState();
-        when(mClientModeManager.isStopping()).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         mActiveModeWarden.airplaneModeToggled();
         // This test is identical to
@@ -2464,8 +2462,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         // APM toggle off before the stop is complete.
         assertInEnabledState();
-        when(mClientModeManager.isStopping()).thenReturn(true);
-        when(mSoftApManager.isStopping()).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         mActiveModeWarden.airplaneModeToggled();
         mLooper.dispatchAll();
