@@ -48,10 +48,6 @@ public class WifiMonitor {
     /* Supplicant events reported to a state machine */
     private static final int BASE = Protocol.BASE_WIFI_MONITOR;
 
-    /* Connection to supplicant established */
-    public static final int SUP_CONNECTION_EVENT                 = BASE + 1;
-    /* Connection to supplicant lost */
-    public static final int SUP_DISCONNECTION_EVENT              = BASE + 2;
    /* Network connection completed */
     public static final int NETWORK_CONNECTION_EVENT             = BASE + 3;
     /* Network disconnection completed */
@@ -175,7 +171,6 @@ public class WifiMonitor {
     public synchronized void startMonitoring(String iface) {
         if (mVerboseLoggingEnabled) Log.d(TAG, "startMonitoring(" + iface + ")");
         setMonitoring(iface, true);
-        broadcastSupplicantConnectionEvent(iface);
     }
 
     /**
@@ -186,7 +181,6 @@ public class WifiMonitor {
     public synchronized void stopMonitoring(String iface) {
         if (mVerboseLoggingEnabled) Log.d(TAG, "stopMonitoring(" + iface + ")");
         setMonitoring(iface, true);
-        broadcastSupplicantDisconnectionEvent(iface);
         setMonitoring(iface, false);
     }
 
@@ -240,6 +234,7 @@ public class WifiMonitor {
             for (Map.Entry<String, SparseArray<Set<Handler>>> entry : mHandlerMap.entrySet()) {
                 if (isMonitoring(entry.getKey())) {
                     Set<Handler> ifaceWhatHandlers = entry.getValue().get(message.what);
+                    if (ifaceWhatHandlers == null) continue;
                     for (Handler handler : ifaceWhatHandlers) {
                         if (handler != null) {
                             sendMessage(handler, Message.obtain(message));
@@ -508,26 +503,6 @@ public class WifiMonitor {
                                                     SupplicantState newSupplicantState) {
         sendMessage(iface, SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(networkId, wifiSsid, bssid, newSupplicantState));
-    }
-
-    /**
-     * Broadcast the connection to wpa_supplicant event to all the handlers registered for
-     * this event.
-     *
-     * @param iface Name of iface on which this occurred.
-     */
-    public void broadcastSupplicantConnectionEvent(String iface) {
-        sendMessage(iface, SUP_CONNECTION_EVENT);
-    }
-
-    /**
-     * Broadcast the loss of connection to wpa_supplicant event to all the handlers registered for
-     * this event.
-     *
-     * @param iface Name of iface on which this occurred.
-     */
-    public void broadcastSupplicantDisconnectionEvent(String iface) {
-        sendMessage(iface, SUP_DISCONNECTION_EVENT);
     }
 
     /**
