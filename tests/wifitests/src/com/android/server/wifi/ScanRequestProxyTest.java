@@ -22,6 +22,8 @@ import static com.android.server.wifi.ScanRequestProxy.SCAN_REQUEST_THROTTLE_MAX
 import static com.android.server.wifi.ScanRequestProxy.SCAN_REQUEST_THROTTLE_TIME_WINDOW_FG_APPS_MS;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_SCAN_THROTTLE_ENABLED;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -1009,6 +1011,19 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         mLooper.dispatchAll();
         validateScanResultsAvailableBroadcastSent(true);
         verify(mScanResultsCallback, never()).onScanResultsAvailable();
+    }
 
+    /** Test that modifying the returned scan results list does not change the original. */
+    @Test
+    public void testGetScanResults_modifyReturnedList_doesNotChangeOriginal() {
+        // initialize scan results
+        testStartScanSuccess();
+
+        List<ScanResult> scanResults = mScanRequestProxy.getScanResults();
+        int scanResultsOriginalSize = scanResults.size();
+
+        scanResults.add(new ScanResult());
+
+        assertThat(mScanRequestProxy.getScanResults()).hasSize(scanResultsOriginalSize);
     }
 }
