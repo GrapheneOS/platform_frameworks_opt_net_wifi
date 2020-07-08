@@ -778,11 +778,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void initialize() {
-        mClientModeImpl.initialize();
-    }
-
-    @Override
     public int syncGetWifiState() {
         return mClientModeImpl.syncGetWifiState();
     }
@@ -927,5 +922,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
         mClientModeImpl.probeLink(callback, mcs);
+    }
+
+    @Override
+    public void sendMessageToClientModeImpl(Message msg) {
+        mClientModeImpl.sendMessage(msg);
     }
 }

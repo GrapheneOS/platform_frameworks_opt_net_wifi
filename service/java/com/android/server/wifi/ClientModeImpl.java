@@ -37,7 +37,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.ReasonCode;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.StatusCode;
 import android.net.ConnectivityManager;
@@ -80,7 +79,6 @@ import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.net.wifi.nl80211.WifiNl80211Manager;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.os.BatteryStatsManager;
 import android.os.ConditionVariable;
 import android.os.Looper;
@@ -100,7 +98,6 @@ import android.util.Pair;
 import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.MessageUtils;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
@@ -202,7 +199,6 @@ public class ClientModeImpl extends StateMachine {
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private ConnectivityManager mCm;
     private final BaseWifiDiagnostics mWifiDiagnostics;
-    private final boolean mP2pSupported;
     private final AtomicBoolean mP2pConnected = new AtomicBoolean(false);
     private boolean mTemporarilyDisconnectWifi = false;
     private final Clock mClock;
@@ -236,6 +232,7 @@ public class ClientModeImpl extends StateMachine {
     private final WakeupController mWakeupController;
     private final WifiLockManager mWifiLockManager;
     private final SelfRecovery mSelfRecovery;
+    private final WifiP2pConnection mWifiP2pConnection;
 
     private boolean mScreenOn = false;
 
@@ -430,12 +427,6 @@ public class ClientModeImpl extends StateMachine {
     private volatile IpClientManager mIpClient;
     private IpClientCallbacksImpl mIpClientCallbacks;
 
-    // Channel for sending replies.
-    private AsyncChannel mReplyChannel = new AsyncChannel();
-
-    // Used to initiate a connection with WifiP2pService
-    private AsyncChannel mWifiP2pChannel;
-
     private WifiNetworkFactory mNetworkFactory;
     private UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
     private WifiNetworkAgent mNetworkAgent;
@@ -522,12 +513,6 @@ public class ClientModeImpl extends StateMachine {
     /** Connecting watchdog timeout counter */
     private int mConnectingWatchdogCount = 0;
 
-    /**
-     * Indicates the end of boot process, should be used to register network factory, initiate
-     * connection attempt, etc.
-     */
-    static final int CMD_INITIALIZE                                 = BASE + 134;
-
     /* We now have a valid IP configuration. */
     static final int CMD_IP_CONFIGURATION_SUCCESSFUL                    = BASE + 138;
     /* We no longer have a valid IP configuration. */
@@ -606,11 +591,8 @@ public class ClientModeImpl extends StateMachine {
     static final int CMD_START_FILS_CONNECTION                          = BASE + 262;
 
     // For message logging.
-    private static final Class[] sMessageClasses = {
-            AsyncChannel.class, ClientModeImpl.class };
     private static final SparseArray<String> sGetWhatToString =
-            MessageUtils.findMessageNames(sMessageClasses);
-
+            MessageUtils.findMessageNames(new Class[] {ClientModeImpl.class});
 
     /* Wifi state machine modes of operation */
     /* CONNECT_MODE - connect to any 'known' AP when it becomes available */
@@ -754,7 +736,8 @@ public class ClientModeImpl extends StateMachine {
             WifiCarrierInfoManager wifiCarrierInfoManager,
             EapFailureNotifier eapFailureNotifier,
             SimRequiredNotifier simRequiredNotifier,
-            WifiScoreReport wifiScoreReport) {
+            WifiScoreReport wifiScoreReport,
+            WifiP2pConnection wifiP2pConnection) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
         mClock = clock;
@@ -773,9 +756,6 @@ public class ClientModeImpl extends StateMachine {
 
         mBatteryStatsManager = batteryStatsManager;
         mWifiStateTracker = wifiStateTracker;
-
-        mP2pSupported = mContext.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_WIFI_DIRECT);
 
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mWifiConfigManager = wifiConfigManager;
@@ -826,6 +806,7 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiHealthMonitor = wifiHealthMonitor;
+        mWifiP2pConnection = wifiP2pConnection;
 
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
@@ -1782,13 +1763,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Trigger message to initialize connect operations (post boot completed).
-     */
-    public void initialize() {
-        sendMessage(CMD_INITIALIZE);
-    }
-
-    /**
      * ******************************************************
      * Internal private functions
      * ******************************************************
@@ -2111,12 +2085,6 @@ public class ClientModeImpl extends StateMachine {
             return s;
         }
         switch (what) {
-            case AsyncChannel.CMD_CHANNEL_HALF_CONNECTED:
-                s = "CMD_CHANNEL_HALF_CONNECTED";
-                break;
-            case AsyncChannel.CMD_CHANNEL_DISCONNECTED:
-                s = "CMD_CHANNEL_DISCONNECTED";
-                break;
             case CMD_CONNECT_NETWORK:
                 s = "CMD_CONNECT_NETWORK";
                 break;
@@ -2675,13 +2643,18 @@ public class ClientModeImpl extends StateMachine {
         // Update link layer stats
         getWifiLinkLayerStats();
 
-        if (mWifiP2pChannel != null) {
-            /* P2p discovery breaks dhcp, shut it down in order to get through this */
-            Message msg = new Message();
-            msg.what = WifiP2pServiceImpl.BLOCK_DISCOVERY;
-            msg.arg1 = WifiP2pServiceImpl.ENABLED;
-            msg.arg2 = CMD_PRE_DHCP_ACTION_COMPLETE;
-            mWifiP2pChannel.sendMessage(msg);
+        if (mWifiP2pConnection.isConnected()) {
+            // P2P discovery breaks DHCP, so shut it down in order to get through this.
+            // Once P2P service receives this message and processes it accordingly, it is supposed
+            // to send arg2 (i.e. CMD_PRE_DHCP_ACTION_COMPLETE) in a new Message.what back to
+            // ClientModeImpl so that we can continue.
+            // TODO(b/159060934): Need to ensure that CMD_PRE_DHCP_ACTION_COMPLETE is sent back to
+            //  the ClientModeImpl instance that originally sent it. Right now it is sent back to
+            //  all ClientModeImpl instances by WifiP2pConnection.
+            mWifiP2pConnection.sendMessage(
+                    WifiP2pServiceImpl.BLOCK_DISCOVERY,
+                    WifiP2pServiceImpl.ENABLED,
+                    CMD_PRE_DHCP_ACTION_COMPLETE);
         } else {
             // If the p2p service is not running, we can proceed directly.
             sendMessage(CMD_PRE_DHCP_ACTION_COMPLETE);
@@ -2708,7 +2681,8 @@ public class ClientModeImpl extends StateMachine {
         setSuspendOptimizationsNative(SUSPEND_DUE_TO_DHCP, true);
         setPowerSave(true);
 
-        p2pSendMessage(WifiP2pServiceImpl.BLOCK_DISCOVERY, WifiP2pServiceImpl.DISABLED);
+        mWifiP2pConnection.sendMessage(
+                WifiP2pServiceImpl.BLOCK_DISCOVERY, WifiP2pServiceImpl.DISABLED);
 
         // Set the coexistence mode back to its default value
         mWifiNative.setBluetoothCoexistenceMode(
@@ -3105,25 +3079,6 @@ public class ClientModeImpl extends StateMachine {
         return true;
     }
 
-    /**
-     * ClientModeImpl needs to enable/disable other services when wifi is in client mode.  This
-     * method allows ClientModeImpl to get these additional system services.
-     *
-     * At this time, this method is used to setup variables for P2P service and Wifi Aware.
-     */
-    private void getAdditionalWifiServiceInterfaces() {
-        // First set up Wifi Direct
-        if (mP2pSupported) {
-            WifiP2pManager wifiP2pService = mContext.getSystemService(WifiP2pManager.class);
-
-            if (wifiP2pService != null) {
-                mWifiP2pChannel = new AsyncChannel();
-                mWifiP2pChannel.connect(mContext, getHandler(),
-                        wifiP2pService.getP2pStateMachineMessenger());
-            }
-        }
-    }
-
      /**
      * Dynamically change the MAC address to use the locally randomized
      * MAC address generated for each network.
@@ -3228,31 +3183,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case AsyncChannel.CMD_CHANNEL_HALF_CONNECTED: {
-                    AsyncChannel ac = (AsyncChannel) message.obj;
-                    if (ac == mWifiP2pChannel) {
-                        if (message.arg1 == AsyncChannel.STATUS_SUCCESSFUL) {
-                            p2pSendMessage(AsyncChannel.CMD_CHANNEL_FULL_CONNECTION);
-                        } else {
-                            // TODO: We should probably do some cleanup or attempt a retry
-                            // b/34283611
-                            loge("WifiP2pService connection failure, error=" + message.arg1);
-                        }
-                    } else {
-                        loge("got HALF_CONNECTED for unknown channel");
-                    }
-                    break;
-                }
-                case AsyncChannel.CMD_CHANNEL_DISCONNECTED: {
-                    AsyncChannel ac = (AsyncChannel) message.obj;
-                    if (ac == mWifiP2pChannel) {
-                        loge("WifiP2pService channel lost, message.arg1 =" + message.arg1);
-                        //TODO: Re-establish connection to state machine after a delay (b/34283611)
-                        // mWifiP2pChannel.connect(mContext, getHandler(),
-                        // mWifiP2pManager.getMessenger());
-                    }
-                    break;
-                }
                 case CMD_BLUETOOTH_ADAPTER_STATE_CHANGE: {
                     // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE
                     // message. So we need to rely on STATE_CHANGE message to detect on->off
@@ -3280,11 +3210,6 @@ public class ClientModeImpl extends StateMachine {
                     } else {
                         setSuspendOptimizations(SUSPEND_DUE_TO_HIGH_PERF, true);
                     }
-                    break;
-                }
-                case CMD_INITIALIZE: {
-                    // get other services that we need to manage
-                    getAdditionalWifiServiceInterfaces();
                     break;
                 }
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
@@ -3327,7 +3252,8 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
                     mTemporarilyDisconnectWifi = (message.arg1 == 1);
-                    replyToMessage(message, WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
+                    mWifiP2pConnection.replyToMessage(
+                            message, WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
                     break;
                 }
                 /* Link configuration (IP address, DNS, ...) changes notified via netlink */
@@ -5563,7 +5489,7 @@ public class ClientModeImpl extends StateMachine {
             // We don't scan frequently if this is a temporary disconnect
             // due to p2p
             if (mTemporarilyDisconnectWifi) {
-                p2pSendMessage(WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
+                mWifiP2pConnection.sendMessage(WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
                 return;
             }
 
@@ -5620,42 +5546,6 @@ public class ClientModeImpl extends StateMachine {
                      mActiveModeManager,
                      WifiConnectivityManager.WIFI_STATE_TRANSITIONING);
         }
-    }
-
-    /**
-     * State machine initiated requests can have replyTo set to null, indicating
-     * there are no recipients, we ignore those reply actions.
-     */
-    private void replyToMessage(Message msg, int what) {
-        if (msg.replyTo == null) return;
-        Message dstMsg = obtainMessageWithWhatAndArg2(msg, what);
-        mReplyChannel.replyToMessage(msg, dstMsg);
-    }
-
-    private void replyToMessage(Message msg, int what, int arg1) {
-        if (msg.replyTo == null) return;
-        Message dstMsg = obtainMessageWithWhatAndArg2(msg, what);
-        dstMsg.arg1 = arg1;
-        mReplyChannel.replyToMessage(msg, dstMsg);
-    }
-
-    private void replyToMessage(Message msg, int what, Object obj) {
-        if (msg.replyTo == null) return;
-        Message dstMsg = obtainMessageWithWhatAndArg2(msg, what);
-        dstMsg.obj = obj;
-        mReplyChannel.replyToMessage(msg, dstMsg);
-    }
-
-    /**
-     * arg2 on the source message has a unique id that needs to be retained in replies
-     * to match the request
-     * <p>see WifiManager for details
-     */
-    private Message obtainMessageWithWhatAndArg2(Message srcMsg, int what) {
-        Message msg = Message.obtain();
-        msg.what = what;
-        msg.arg2 = srcMsg.arg2;
-        return msg;
     }
 
     void handleGsmAuthRequest(SimAuthRequestData requestData) {
@@ -5798,41 +5688,6 @@ public class ClientModeImpl extends StateMachine {
     private String getTargetSsid() {
         WifiConfiguration config = getTargetWifiConfiguration();
         return config != null ? config.SSID : null;
-    }
-
-    /**
-     * Gets the SSID from the WifiConfiguration pointed at by 'mLastNetworkId'
-     * This should match the network config framework is connected to.
-     */
-    private String getCurrentSsid() {
-        WifiConfiguration config = getCurrentWifiConfiguration();
-        return config != null ? config.SSID : null;
-    }
-
-    /**
-     * Send message to WifiP2pServiceImpl.
-     * @return true if message is sent.
-     *         false if there is no channel configured for WifiP2pServiceImpl.
-     */
-    private boolean p2pSendMessage(int what) {
-        if (mWifiP2pChannel != null) {
-            mWifiP2pChannel.sendMessage(what);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Send message to WifiP2pServiceImpl with an additional param |arg1|.
-     * @return true if message is sent.
-     *         false if there is no channel configured for WifiP2pServiceImpl.
-     */
-    private boolean p2pSendMessage(int what, int arg1) {
-        if (mWifiP2pChannel != null) {
-            mWifiP2pChannel.sendMessage(what, arg1);
-            return true;
-        }
-        return false;
     }
 
     /**
