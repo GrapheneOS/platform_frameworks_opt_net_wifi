@@ -26,6 +26,7 @@ import android.net.NetworkUtils;
 import android.net.ProxyInfo;
 import android.net.RouteInfo;
 import android.net.StaticIpConfiguration;
+import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -945,7 +946,8 @@ public class XmlUtil {
                 case PAC:
                     String proxyPacFile =
                             (String) XmlUtil.readNextValueWithName(in, XML_TAG_PROXY_PAC_FILE);
-                    ipConfiguration.setHttpProxy(new ProxyInfo(proxyPacFile));
+                    ipConfiguration.setHttpProxy(
+                            ProxyInfo.buildPacProxy(Uri.parse(proxyPacFile)));
                     break;
                 case NONE:
                 case UNASSIGNED:
