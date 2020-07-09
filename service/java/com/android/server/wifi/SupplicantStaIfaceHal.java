@@ -627,9 +627,6 @@ public class SupplicantStaIfaceHal {
                 Log.i(TAG, "Ignoring stale death recipient notification");
                 return;
             }
-            for (String ifaceName : mISupplicantStaIfaces.keySet()) {
-                mWifiMonitor.broadcastSupplicantDisconnectionEvent(ifaceName);
-            }
             clearState();
             if (mDeathEventHandler != null) {
                 mDeathEventHandler.onDeath();
