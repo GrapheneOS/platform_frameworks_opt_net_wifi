@@ -336,15 +336,20 @@ public class SoftApManager implements ActiveModeManager {
             if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
                 Log.w(TAG, "failed to reset to factory MAC address; continuing with current MAC");
             }
-        } else if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
-            // We're configuring a random/custom MAC address. In this case,
-            // driver support is mandatory.
-            Log.e(TAG, "failed to set explicitly requested MAC address");
-            return ERROR_GENERIC;
+        } else {
+            if (mWifiNative.isSetMacAddressSupported(mApInterfaceName)) {
+                if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+                    Log.e(TAG, "failed to set explicitly requested MAC address");
+                    return ERROR_GENERIC;
+                }
+            } else if (!mIsUnsetBssid) {
+                // If hardware does not support MAC address setter,
+                // only report the error for non randomization.
+                return ERROR_UNSUPPORTED_CONFIGURATION;
+            }
         }
 
         mCurrentSoftApInfo.setBssid(mac);
-
         return SUCCESS;
     }
 
