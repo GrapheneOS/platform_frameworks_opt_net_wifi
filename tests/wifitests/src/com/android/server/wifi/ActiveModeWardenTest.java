@@ -2277,7 +2277,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
         assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers());
 
-        ClientModeManager localOnlyClientModeManager = mock(ClientModeManager.class);
+        ConcreteClientModeManager localOnlyClientModeManager =
+                mock(ConcreteClientModeManager.class);
         GeneralUtil.Mutable<ActiveModeManager.Listener> localOnlyClientListener =
                 new GeneralUtil.Mutable<>();
         doAnswer((invocation) -> {

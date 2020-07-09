@@ -597,7 +597,7 @@ public class WifiInjector {
      * @param listener listener for ClientModeManager state changes
      * @return a new instance of ClientModeManager
      */
-    public ClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
+    public ConcreteClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
         ClientModeImpl clientModeImpl = new ClientModeImpl(mContext, mWifiMetrics, mClock,
                 mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
                 mPasspointManager, mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper,
