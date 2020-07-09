@@ -839,6 +839,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         // TODO(b/117601161): Refactor this.
         ConnectActionListener listener = new ConnectActionListener();
         mConnectHelper.connectToNetwork(
+                mClientModeManager,
                 new NetworkUpdateResult(networkId),
                 new ActionListenerWrapper(listener),
                 mActiveSpecificNetworkRequest.getRequestorUid());
