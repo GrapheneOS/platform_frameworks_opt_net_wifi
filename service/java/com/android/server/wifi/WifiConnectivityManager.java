@@ -772,7 +772,9 @@ public class WifiConnectivityManager {
         @Override
         public void onActiveModeManagerAdded(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) Log.v(TAG, "ModeManager added " + activeModeManager);
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "ModeManager added " + activeModeManager.getInterfaceName());
+            }
             if (ActiveModeManager.CLIENT_INTERNET_CONNECTIVITY_ROLES.contains(
                     activeModeManager.getRole())) {
                 mClientModeManagers.add((ClientModeManager) activeModeManager);
@@ -783,7 +785,9 @@ public class WifiConnectivityManager {
         @Override
         public void onActiveModeManagerRemoved(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) Log.v(TAG, "ModeManager removed " + activeModeManager);
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "ModeManager removed " + activeModeManager.getInterfaceName());
+            }
             // No need to check for role when mode manager is removed.
             mClientModeManagers.remove(activeModeManager);
             setWifiEnabled(!mClientModeManagers.isEmpty());
@@ -792,7 +796,9 @@ public class WifiConnectivityManager {
         @Override
         public void onActiveModeManagerRoleChanged(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) Log.v(TAG, "ModeManager role changed " + activeModeManager);
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "ModeManager role changed " + activeModeManager.getInterfaceName());
+            }
             if (ActiveModeManager.CLIENT_INTERNET_CONNECTIVITY_ROLES.contains(
                     activeModeManager.getRole())) {
                 mClientModeManagers.add((ClientModeManager) activeModeManager);

@@ -353,7 +353,9 @@ public class WifiNetworkFactory extends NetworkFactory {
         @Override
         public void onActiveModeManagerRemoved(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) Log.v(TAG, "ModeManager removed " + activeModeManager);
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "ModeManager removed " + activeModeManager.getInterfaceName());
+            }
             // Mode manager removed. Cleanup any ongoing requests.
             if (activeModeManager == mClientModeManager) {
                 handleClientModeManagerRemovalOrFailure();
@@ -363,7 +365,9 @@ public class WifiNetworkFactory extends NetworkFactory {
         @Override
         public void onActiveModeManagerRoleChanged(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) Log.v(TAG, "ModeManager role changed " + activeModeManager);
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "ModeManager role changed " + activeModeManager.getInterfaceName());
+            }
             // Mode manager role changed. Cleanup any ongoing requests.
             if (activeModeManager == mClientModeManager) {
                 // If the role changes to scan mode, tear down stuff. In case of primary client mode
@@ -1120,7 +1124,9 @@ public class WifiNetworkFactory extends NetworkFactory {
     }
 
     private void handleClientModeManagerRetrieval() {
-        if (mVerboseLoggingEnabled) Log.v(TAG, "ClientModeManager retrieved");
+        if (mVerboseLoggingEnabled) {
+            Log.v(TAG, "ClientModeManager retrieved: " + mClientModeManager.getInterfaceName());
+        }
         if (!triggerConnectIfUserApprovedMatchFound()) {
             // Start UI to let the user grant/disallow this request from the app.
             startUi();
