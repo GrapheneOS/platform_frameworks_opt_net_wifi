@@ -494,64 +494,38 @@ public class WifiMonitorTest extends WifiBaseTest {
     }
 
     /**
-     * Broadcast supplicant connection test.
-     */
-    @Test
-    public void testBroadcastSupplicantConnectionEvent() {
-        mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.SUP_CONNECTION_EVENT, mHandlerSpy);
-        mWifiMonitor.broadcastSupplicantConnectionEvent(WLAN_IFACE_NAME);
-        mLooper.dispatchAll();
-
-        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-        verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.SUP_CONNECTION_EVENT, messageCaptor.getValue().what);
-    }
-    /**
-     * Broadcast supplicant disconnection test.
-     */
-    @Test
-    public void testBroadcastSupplicantDisconnectionEvent() {
-        mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.SUP_DISCONNECTION_EVENT, mHandlerSpy);
-        mWifiMonitor.broadcastSupplicantDisconnectionEvent(WLAN_IFACE_NAME);
-        mLooper.dispatchAll();
-
-        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-        verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.SUP_DISCONNECTION_EVENT, messageCaptor.getValue().what);
-    }
-    /**
      * Broadcast message to two handlers test.
      */
     @Test
     public void testBroadcastEventToTwoHandlers() {
         mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.SUP_CONNECTION_EVENT, mHandlerSpy);
+                WLAN_IFACE_NAME, WifiMonitor.SUP_REQUEST_SIM_AUTH, mHandlerSpy);
         mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.SUP_CONNECTION_EVENT, mSecondHandlerSpy);
-        mWifiMonitor.broadcastSupplicantConnectionEvent(WLAN_IFACE_NAME);
+                WLAN_IFACE_NAME, WifiMonitor.SUP_REQUEST_SIM_AUTH, mSecondHandlerSpy);
+        mWifiMonitor.broadcastNetworkGsmAuthRequestEvent(
+                WLAN_IFACE_NAME, NETWORK_ID, SSID, GSM_AUTH_DATA);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.SUP_CONNECTION_EVENT, messageCaptor.getValue().what);
+        assertEquals(WifiMonitor.SUP_REQUEST_SIM_AUTH, messageCaptor.getValue().what);
         verify(mSecondHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.SUP_CONNECTION_EVENT, messageCaptor.getValue().what);
+        assertEquals(WifiMonitor.SUP_REQUEST_SIM_AUTH, messageCaptor.getValue().what);
     }
+
     /**
      * Broadcast message when iface is null.
      */
     @Test
     public void testBroadcastEventWhenIfaceIsNull() {
         mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.SUP_DISCONNECTION_EVENT, mHandlerSpy);
-        mWifiMonitor.broadcastSupplicantDisconnectionEvent(null);
+                WLAN_IFACE_NAME, WifiMonitor.SUP_REQUEST_SIM_AUTH, mHandlerSpy);
+        mWifiMonitor.broadcastNetworkGsmAuthRequestEvent(null, NETWORK_ID, SSID, GSM_AUTH_DATA);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.SUP_DISCONNECTION_EVENT, messageCaptor.getValue().what);
+        assertEquals(WifiMonitor.SUP_REQUEST_SIM_AUTH, messageCaptor.getValue().what);
     }
     /**
      * Broadcast message when iface handler is null.
@@ -559,13 +533,14 @@ public class WifiMonitorTest extends WifiBaseTest {
     @Test
     public void testBroadcastEventWhenIfaceHandlerIsNull() {
         mWifiMonitor.registerHandler(
-                WLAN_IFACE_NAME, WifiMonitor.SUP_DISCONNECTION_EVENT, mHandlerSpy);
-        mWifiMonitor.broadcastSupplicantDisconnectionEvent(SECOND_WLAN_IFACE_NAME);
+                WLAN_IFACE_NAME, WifiMonitor.SUP_REQUEST_SIM_AUTH, mHandlerSpy);
+        mWifiMonitor.broadcastNetworkGsmAuthRequestEvent(
+                WLAN_IFACE_NAME, NETWORK_ID, SSID, GSM_AUTH_DATA);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.SUP_DISCONNECTION_EVENT, messageCaptor.getValue().what);
+        assertEquals(WifiMonitor.SUP_REQUEST_SIM_AUTH, messageCaptor.getValue().what);
     }
 
     @Test
