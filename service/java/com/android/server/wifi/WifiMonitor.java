@@ -109,8 +109,8 @@ public class WifiMonitor {
 
     private boolean mVerboseLoggingEnabled = false;
 
-    void enableVerboseLogging(int verbose) {
-        mVerboseLoggingEnabled = verbose > 0;
+    void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     private final Map<String, SparseArray<Set<Handler>>> mHandlerMap = new HashMap<>();

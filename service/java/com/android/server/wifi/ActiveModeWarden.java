@@ -26,16 +26,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.BatteryStatsManager;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.telephony.TelephonyManager;
 import android.util.ArraySet;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.IState;
@@ -52,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 
 /**
  * This class provides the implementation for different WiFi operating modes.
@@ -63,9 +67,8 @@ public class ActiveModeWarden {
     // Holder for active mode managers
     private final ArraySet<ActiveModeManager> mActiveModeManagers;
     private final ArraySet<ModeChangeCallback> mCallbacks;
-    // DefaultModeManager used to service API calls when there are not active mode managers.
-    private final DefaultModeManager mDefaultModeManager;
-
+    // DefaultModeManager used to service API calls when there are no active client mode managers.
+    private final DefaultClientModeManager mDefaultClientModeManager;
     private final WifiInjector mWifiInjector;
     private final Looper mLooper;
     private final Handler mHandler;
@@ -85,6 +88,10 @@ public class ActiveModeWarden {
     private boolean mCanRequestMoreClientModeManagers = false;
     private boolean mCanRequestMoreSoftApManagers = false;
     private boolean mIsShuttingdown = false;
+    private boolean mVerboseLoggingEnabled = false;
+    private boolean mBootCompleted = false;
+    /** Cache to store the external scorer for primary client mode manager. */
+    @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mPrimaryClientModeManagerScorer;
 
     /**
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
@@ -130,7 +137,7 @@ public class ActiveModeWarden {
     ActiveModeWarden(WifiInjector wifiInjector,
                      Looper looper,
                      WifiNative wifiNative,
-                     DefaultModeManager defaultModeManager,
+                     DefaultClientModeManager defaultClientModeManager,
                      BatteryStatsManager batteryStatsManager,
                      BaseWifiDiagnostics wifiDiagnostics,
                      Context context,
@@ -147,7 +154,7 @@ public class ActiveModeWarden {
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mActiveModeManagers = new ArraySet<>();
         mCallbacks = new ArraySet<>();
-        mDefaultModeManager = defaultModeManager;
+        mDefaultClientModeManager = defaultClientModeManager;
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
         mWifiNative = wifiNative;
@@ -195,6 +202,47 @@ public class ActiveModeWarden {
     private void invokeOnRoleChangedCallbacks(@NonNull ActiveModeManager activeModeManager) {
         for (ModeChangeCallback callback : mCallbacks) {
             callback.onActiveModeManagerRoleChanged(activeModeManager);
+        }
+    }
+
+    /**
+     * Enable verbose logging.
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
+        for (ActiveModeManager modeManager : mActiveModeManagers) {
+            modeManager.enableVerboseLogging(verbose);
+        }
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#setWifiConnectedNetworkScorer(Executor,
+     * WifiManager.WifiConnectedNetworkScorer)}
+     */
+    public boolean setWifiConnectedNetworkScorer(IBinder binder,
+            IWifiConnectedNetworkScorer scorer) {
+        mPrimaryClientModeManagerScorer = Pair.create(binder, scorer);
+        return getPrimaryClientModeManager().setWifiConnectedNetworkScorer(binder, scorer);
+    }
+
+    /**
+     * See {@link WifiManager#clearWifiConnectedNetworkScorer()}
+     */
+    public void clearWifiConnectedNetworkScorer() {
+        mPrimaryClientModeManagerScorer = null;
+        getPrimaryClientModeManager().clearWifiConnectedNetworkScorer();
+    }
+
+    /**
+     * Handle boot completed event and store this state.
+     * Will be propagated to the primary client mode manager instance wheneve they're created.
+     */
+    public void handleBootCompleted() {
+        mBootCompleted = true;
+        for (ActiveModeManager modeManager : mActiveModeManagers) {
+            if (modeManager instanceof ClientModeManager) {
+                ((ClientModeManager) modeManager).initialize();
+            }
         }
     }
 
@@ -374,14 +422,18 @@ public class ActiveModeWarden {
     }
 
     /**
-     * Returns primary client mode manager, if any.
+     * Returns primary client mode manager if any, else returns an instance of
+     * {@link ClientModeManager}.
      * This mode manager can be the default route on the device & will handle all external API
      * calls.
-     * @return Instance of {@link ClientModeManager} or null if none present.
+     * @return Instance of {@link ClientModeManager}.
      */
-    @Nullable
+    @NonNull
     public ClientModeManager getPrimaryClientModeManager() {
-        return getClientModeManagerInRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        ClientModeManager cm = getClientModeManagerInRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        if (cm != null) return cm;
+        // If there is no primary client manager, return the default one.
+        return mDefaultClientModeManager;
     }
 
     /**
@@ -456,16 +508,6 @@ public class ActiveModeWarden {
 
     private boolean hasAnySoftApManager() {
         return hasAnyModeManagerInOneOfRoles(ActiveModeManager.SOFTAP_ROLES);
-    }
-
-    /**
-     * @return true if any mode manager is stopping
-     */
-    private boolean hasAnyModeManagerStopping() {
-        for (ActiveModeManager manager : mActiveModeManagers) {
-            if (manager.isStopping()) return true;
-        }
-        return false;
     }
 
     /**
@@ -544,6 +586,7 @@ public class ActiveModeWarden {
         listener.setActiveModeManager(manager);
         manager.start();
         manager.setRole(getRoleForSoftApIpMode(softApConfig.getTargetMode()));
+        manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mActiveModeManagers.add(manager);
     }
 
@@ -597,6 +640,15 @@ public class ActiveModeWarden {
         manager.start();
         if (!switchPrimaryOrScanOnlyClientModeManagerRole(manager)) {
             return false;
+        }
+        manager.enableVerboseLogging(mVerboseLoggingEnabled);
+        if (mBootCompleted) manager.initialize();
+        if (mPrimaryClientModeManagerScorer != null) {
+            // TODO (b/160346062): Clear the connected scorer from this mode manager when
+            // we switch it out of primary role for the MBB use-case.
+            // Also vice versa, we need to set the scorer on the new primary mode manager.
+            manager.setWifiConnectedNetworkScorer(
+                    mPrimaryClientModeManagerScorer.first, mPrimaryClientModeManagerScorer.second);
         }
         mActiveModeManagers.add(manager);
         return true;
@@ -663,6 +715,7 @@ public class ActiveModeWarden {
         listener.setActiveModeManager(manager);
         manager.start();
         manager.setRole(ActiveModeManager.ROLE_CLIENT_LOCAL_ONLY);
+        manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mActiveModeManagers.add(manager);
         return true;
     }

@@ -147,7 +147,9 @@ import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -207,7 +209,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     private void enableDebugLogs() {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
     }
 
     private FrameworkFacade getFrameworkFacade() throws Exception {
@@ -353,7 +355,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     HandlerThread mWifiCoreThread;
     HandlerThread mP2pThread;
     HandlerThread mSyncThread;
-    AsyncChannel  mCmiAsyncChannel;
     AsyncChannel  mNetworkAgentAsyncChannel;
     TestAlarmManager mAlarmManager;
     MockWifiMonitor mWifiMonitor;
@@ -414,6 +415,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Mock Network mNetwork;
     @Mock ClientModeManager mClientModeManager;
+    @Mock WifiScoreReport mWifiScoreReport;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -566,27 +568,22 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
-                mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier);
+                mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
+                mWifiScoreReport);
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
-
-        registerAsyncChannel((x) -> {
-            mCmiAsyncChannel = x;
-        }, mCmi.getMessenger());
 
         mBinderToken = Binder.clearCallingIdentity();
 
         /* Send the BOOT_COMPLETED message to setup some CMI state. */
-        mCmi.handleBootCompleted();
+        mCmi.initialize();
         mLooper.dispatchAll();
 
-        verify(mWifiNetworkFactory, atLeastOnce()).register();
-        verify(mUntrustedWifiNetworkFactory, atLeastOnce()).register();
         verify(mWifiConfigManager, atLeastOnce()).addOnNetworkUpdateListener(
                 mConfigUpdateListenerCaptor.capture());
         assertNotNull(mConfigUpdateListenerCaptor.getValue());
 
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         mLooper.dispatchAll();
     }
 
@@ -601,7 +598,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mWifiCoreThread = null;
         mP2pThread = null;
         mSyncThread = null;
-        mCmiAsyncChannel = null;
         mNetworkAgentAsyncChannel = null;
         mNetworkAgentHandler = null;
         mCmi = null;
@@ -612,7 +608,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void createNew() throws Exception {
         assertEquals("DefaultState", getCurrentState().getName());
 
-        mCmi.handleBootCompleted();
+        mCmi.initialize();
         mLooper.dispatchAll();
         assertEquals("DefaultState", getCurrentState().getName());
     }
@@ -699,14 +695,6 @@ public class ClientModeImplTest extends WifiBaseTest {
                 Binder.getCallingUid());
         mLooper.dispatchAll();
         verify(connectActionListener).onSuccess();
-    }
-
-    /**
-     * Verifies that configs can be saved when not in client mode.
-     */
-    @Test
-    public void canSaveNetworkConfigWhenWifiDisabled() throws Exception {
-        canSaveNetworkConfig();
     }
 
     /**
@@ -1921,7 +1909,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void normalLogRecSizeIsUsedByDefault() {
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(false);
         assertEquals(ClientModeImpl.NUM_LOG_RECS_NORMAL, mCmi.getLogRecMaxSize());
     }
 
@@ -1930,7 +1918,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void enablingVerboseLoggingUpdatesLogRecSize() {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         assertEquals(LOG_REC_LIMIT_IN_VERBOSE_MODE, mCmi.getLogRecMaxSize());
     }
 
@@ -1940,14 +1928,14 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         assertTrue(mCmi.getLogRecSize() >= 1);
 
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(false);
         assertEquals(0, mCmi.getLogRecSize());
     }
 
     @Test
     public void disablingVerboseLoggingUpdatesLogRecSize() {
-        mCmi.enableVerboseLogging(1);
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(true);
+        mCmi.enableVerboseLogging(false);
         assertEquals(ClientModeImpl.NUM_LOG_RECS_NORMAL, mCmi.getLogRecMaxSize());
     }
 
@@ -1965,7 +1953,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void logRecsExcludeRssiPollCommandByDefault() {
-        mCmi.enableVerboseLogging(0);
+        mCmi.enableVerboseLogging(false);
         mCmi.sendMessage(ClientModeImpl.CMD_RSSI_POLL);
         mLooper.dispatchAll();
         assertEquals(0, mCmi.copyLogRecs()
@@ -1976,7 +1964,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void logRecsIncludeRssiPollCommandWhenVerboseLoggingIsEnabled() {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         mCmi.sendMessage(ClientModeImpl.CMD_RSSI_POLL);
         mLooper.dispatchAll();
         assertEquals(1, mCmi.copyLogRecs()
@@ -1996,52 +1984,25 @@ public class ClientModeImplTest extends WifiBaseTest {
                 any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         mLooper.startAutoDispatch();
         assertTrue(mCmi.syncStartSubscriptionProvisioning(
-                OTHER_USER_UID, mOsuProvider, mProvisioningCallback, mCmiAsyncChannel));
+                OTHER_USER_UID, mOsuProvider, mProvisioningCallback));
         verify(mPasspointManager).startSubscriptionProvisioning(OTHER_USER_UID, mOsuProvider,
                 mProvisioningCallback);
         mLooper.stopAutoDispatch();
     }
 
-    /**
-     * Verify that syncStartSubscriptionProvisioning will be a no-op and return false before
-     * SUPPLICANT_START command is received by the CMI.
-     */
-    @Test
-    public void syncStartSubscriptionProvisioningBeforeSupplicantOrAPStart() throws Exception {
-        mLooper.startAutoDispatch();
-        assertFalse(mCmi.syncStartSubscriptionProvisioning(
-                OTHER_USER_UID, mOsuProvider, mProvisioningCallback, mCmiAsyncChannel));
-        mLooper.stopAutoDispatch();
-        verify(mPasspointManager, never()).startSubscriptionProvisioning(
-                anyInt(), any(OsuProvider.class), any(IProvisioningCallback.class));
-    }
-
-    /**
-     * Verify that syncStartSubscriptionProvisioning will be a no-op and return false when not in
-     * client mode.
-     */
-    @Test
-    public void syncStartSubscriptionProvisioningNoOpWifiDisabled() throws Exception {
-        mLooper.startAutoDispatch();
-        assertFalse(mCmi.syncStartSubscriptionProvisioning(
-                OTHER_USER_UID, mOsuProvider, mProvisioningCallback, mCmiAsyncChannel));
-        mLooper.stopAutoDispatch();
-        verify(mPasspointManager, never()).startSubscriptionProvisioning(
-                anyInt(), any(OsuProvider.class), any(IProvisioningCallback.class));
-    }
-
     @Test
     public void testSyncGetCurrentNetwork() throws Exception {
+        loadComponentsInStaMode();
         // syncGetCurrentNetwork() returns null when disconnected
         mLooper.startAutoDispatch();
-        assertNull(mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
+        assertNull(mCmi.syncGetCurrentNetwork());
         mLooper.stopAutoDispatch();
 
         connect();
 
         // syncGetCurrentNetwork() returns non-null Network when connected
         mLooper.startAutoDispatch();
-        assertEquals(mNetwork, mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
+        assertEquals(mNetwork, mCmi.syncGetCurrentNetwork());
         mLooper.stopAutoDispatch();
     }
 
@@ -2522,17 +2483,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that CMI dump includes WakeupController.
-     */
-    @Test
-    public void testDumpShouldDumpWakeupController() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        PrintWriter writer = new PrintWriter(stream);
-        mCmi.dump(null, writer, null);
-        verify(mWakeupController).dump(null, writer, null);
-    }
-
-    /**
      * Verify that Rssi Monitoring is started and the callback registered after connecting.
      */
     @Test
@@ -2609,7 +2559,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void verifyConnectedModeRssiPollingWithVerboseLogging() throws Exception {
-        mCmi.enableVerboseLogging(1);
+        mCmi.enableVerboseLogging(true);
         verifyConnectedModeRssiPolling();
     }
 
@@ -4212,8 +4162,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiMetrics, times(1)).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
-        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(sBSSID, sSSID,
-                btmFrmData.mBlackListDurationMs);
+        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
+                eq(btmFrmData.mBlackListDurationMs), anyInt());
     }
 
     /**
@@ -4236,8 +4186,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
         mLooper.dispatchAll();
 
-        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(sBSSID, sSSID,
-                btmFrmData.mBlackListDurationMs);
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
+                eq(btmFrmData.mBlackListDurationMs), anyInt());
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
         verify(mWifiMetrics, times(1)).incrementMboCellularSwitchRequestCount();
         verify(mWifiMetrics, times(1))
@@ -5206,5 +5156,28 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mContext, never()).sendStickyBroadcastAsUser(any(), any());
+    }
+
+
+    /**
+     * Ensure that {@link ClientModeImpl#dump(FileDescriptor, PrintWriter, String[])}
+     * {@link ClientModeImpl#updateLinkLayerStatsRssiAndScoreReport()}, at least once before calling
+     * {@link WifiScoreReport#dump(FileDescriptor, PrintWriter, String[])}.
+     *
+     * This ensures that WifiScoreReport will always get updated RSSI and link layer stats before
+     * dumping during a bug report, no matter if the screen is on or not.
+     */
+    @Test
+    public void testWifiScoreReportDump() throws Exception {
+        connect();
+
+        mLooper.startAutoDispatch();
+        mCmi.dump(new FileDescriptor(), new PrintWriter(new StringWriter()), null);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+
+        InOrder inOrder = inOrder(mWifiNative, mWifiScoreReport);
+
+        inOrder.verify(mWifiNative).getWifiLinkLayerStats(any());
+        inOrder.verify(mWifiScoreReport).dump(any(), any(), any());
     }
 }

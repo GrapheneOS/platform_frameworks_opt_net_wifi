@@ -578,7 +578,7 @@ public class WifiLockManager {
         // Otherwise, we need to change current mode, first reset it to normal
         switch (mCurrentOpMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(true)) {
+                if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(true)) {
                     Log.e(TAG, "Failed to reset the OpMode from hi-perf to Normal");
                     return false;
                 }
@@ -607,7 +607,7 @@ public class WifiLockManager {
         // Now switch to the new opMode
         switch (newLockMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(
+                if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(
                         false)) {
                     Log.e(TAG, "Failed to set the OpMode to hi-perf");
                     return false;
@@ -667,22 +667,21 @@ public class WifiLockManager {
         }
 
         if (lowLatencySupport == LOW_LATENCY_SUPPORTED) {
-            if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setLowLatencyMode(
+            if (!mActiveModeWarden.getPrimaryClientModeManager().setLowLatencyMode(
                     enabled)) {
                 Log.e(TAG, "Failed to set low latency mode");
                 return false;
             }
 
-            if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(!enabled)) {
+            if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(!enabled)) {
                 Log.e(TAG, "Failed to set power save mode");
                 // Revert the low latency mode
-                mActiveModeWarden.getPrimaryClientModeManager().getImpl().setLowLatencyMode(
-                        !enabled);
+                mActiveModeWarden.getPrimaryClientModeManager().setLowLatencyMode(!enabled);
                 return false;
             }
         } else if (lowLatencySupport == LOW_LATENCY_NOT_SUPPORTED) {
             // Only set power save mode
-            if (!mActiveModeWarden.getPrimaryClientModeManager().getImpl().setPowerSave(!enabled)) {
+            if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(!enabled)) {
                 Log.e(TAG, "Failed to set power save mode");
                 return false;
             }

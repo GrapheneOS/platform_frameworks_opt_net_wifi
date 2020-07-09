@@ -28,7 +28,6 @@ import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -57,7 +56,6 @@ import android.telephony.ims.RegistrationManager;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
-import com.android.server.wifi.WifiInjector.PrimaryClientModeImplHolder;
 import com.android.wifi.resources.R;
 
 import org.junit.After;
@@ -74,10 +72,10 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
- * Unit tests for {@link ClientModeManager}.
+ * Unit tests for {@link ConcreteClientModeManager}.
  */
 @SmallTest
-public class ClientModeManagerTest extends WifiBaseTest {
+public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private static final String TAG = "ClientModeManagerTest";
     private static final String TEST_INTERFACE_NAME = "testif0";
     private static final String OTHER_INTERFACE_NAME = "notTestIf";
@@ -229,10 +227,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
     }
 
     private ClientModeManager createClientModeManager() {
-        PrimaryClientModeImplHolder holder = new PrimaryClientModeImplHolder();
-        holder.set(mClientModeImpl);
-        return new ClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative, mListener,
-                mWifiMetrics, mWakeupController, holder);
+        return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
+                mListener, mWifiMetrics, mWakeupController, mClientModeImpl);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {
@@ -462,10 +458,8 @@ public class ClientModeManagerTest extends WifiBaseTest {
         reset(mContext, mListener);
         setUpSystemServiceForContext();
         mClientModeManager.stop();
-        assertTrue(mClientModeManager.isStopping());
         mLooper.dispatchAll();
         verify(mListener).onStopped();
-        assertFalse(mClientModeManager.isStopping());
 
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());

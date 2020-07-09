@@ -120,7 +120,7 @@ public class WifiConnectivityManager {
     // Maximum age of frequencies last seen to be included in pno scans. (30 days)
     private static final long MAX_PNO_SCAN_FREQUENCY_AGE_MS = (long) 1000 * 3600 * 24 * 30;
     private static final int POWER_SAVE_SCAN_INTERVAL_MULTIPLIER = 2;
-    // ClientModeImpl has a bunch of states. From the
+    // ClientModeManager has a bunch of states. From the
     // WifiConnectivityManager's perspective it only cares
     // if it is in Connected state, Disconnected state or in
     // transition between these two states.
@@ -311,9 +311,9 @@ public class WifiConnectivityManager {
      */
     private boolean handleScanResults(List<ScanDetail> scanDetails, String listenerName,
             boolean isFullScan) {
-        ClientModeImpl clientModeImpl = getClientModeImpl();
+        ClientModeManager clientModeManager = getClientModeManager();
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
-                clientModeImpl.getWifiLinkLayerStats(),
+                clientModeManager.getWifiLinkLayerStats(),
                 WifiChannelUtilization.UNKNOWN_FREQ);
 
         updateUserDisabledList(scanDetails);
@@ -321,18 +321,18 @@ public class WifiConnectivityManager {
         // Check if any blocklisted BSSIDs can be freed.
         Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
 
-        if (clientModeImpl.isSupplicantTransientState()) {
+        if (clientModeManager.isSupplicantTransientState()) {
             localLog(listenerName
                     + " onResults: No network selection because supplicantTransientState is "
-                    + clientModeImpl.isSupplicantTransientState());
+                    + clientModeManager.isSupplicantTransientState());
             return false;
         }
 
         localLog(listenerName + " onResults: start network selection");
 
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
-                scanDetails, bssidBlocklist, mWifiInfo, clientModeImpl.isConnected(),
-                clientModeImpl.isDisconnected(), mUntrustedConnectionAllowed);
+                scanDetails, bssidBlocklist, mWifiInfo, clientModeManager.isConnected(),
+                clientModeManager.isDisconnected(), mUntrustedConnectionAllowed);
         mLatestCandidates = candidates;
         mLatestCandidatesTimestampMs = mClock.getElapsedSinceBootMillis();
 
@@ -878,10 +878,10 @@ public class WifiConnectivityManager {
         mActiveModeWarden.registerModeChangeCallback(new ModeChangeCallback());
     }
 
-    private ClientModeImpl getClientModeImpl() {
+    private ClientModeManager getClientModeManager() {
         // TODO(b/159052883): Handle multiple primary client mode impl instances.
         // Needs a better handle on these multiple primary end to end use cases.
-        return mClientModeManagers.valueAt(0).getImpl();
+        return mClientModeManagers.valueAt(0);
     }
 
     /** Initialize single scanning schedules, and validate them */
@@ -1008,7 +1008,7 @@ public class WifiConnectivityManager {
         String currentAssociationId = (currentConnectedNetwork == null) ? "Disconnected" :
                 (mWifiInfo.getSSID() + " : " + mWifiInfo.getBSSID());
 
-        ClientModeImpl clientModeImpl = getClientModeImpl();
+        ClientModeManager clientModeManager = getClientModeManager();
         if (currentConnectedNetwork != null
                 && (currentConnectedNetwork.networkId == candidate.networkId
                 //TODO(b/36788683): re-enable linked configuration check
@@ -1022,7 +1022,7 @@ public class WifiConnectivityManager {
             } else {
                 localLog("connectToNetwork: Roaming to " + targetAssociationId + " from "
                         + currentAssociationId);
-                clientModeImpl.startRoamToNetwork(candidate.networkId, scanResultCandidate);
+                clientModeManager.startRoamToNetwork(candidate.networkId, scanResultCandidate);
             }
         } else {
             // Framework specifies the connection target BSSID if firmware doesn't support
@@ -1037,7 +1037,7 @@ public class WifiConnectivityManager {
                 localLog("connectToNetwork: Connect to " + targetAssociationId + " from "
                         + currentAssociationId);
             }
-            clientModeImpl.startConnectToNetwork(
+            clientModeManager.startConnectToNetwork(
                     candidate.networkId, Process.WIFI_UID, targetBssid);
         }
     }
@@ -1063,7 +1063,7 @@ public class WifiConnectivityManager {
     private boolean setScanChannels(ScanSettings settings) {
         Set<Integer> freqs;
 
-        WifiConfiguration config = getClientModeImpl().getCurrentWifiConfiguration();
+        WifiConfiguration config = getClientModeManager().getCurrentWifiConfiguration();
         if (config == null) {
             long ageInMillis = 1000 * 60 * mContext.getResources().getInteger(
                     R.integer.config_wifiInitialPartialScanChannelCacheAgeMins);
@@ -1710,7 +1710,7 @@ public class WifiConnectivityManager {
      * 2. The device is connected to that network.
      */
     private boolean useSingleSavedNetworkSchedule() {
-        WifiConfiguration currentNetwork = getClientModeImpl().getCurrentWifiConfiguration();
+        WifiConfiguration currentNetwork = getClientModeManager().getCurrentWifiConfiguration();
         if (currentNetwork == null) {
             localLog("Current network is missing, may caused by remove network and disconnecting ");
             return false;
@@ -1872,7 +1872,8 @@ public class WifiConnectivityManager {
                 // Make sure that the failed BSSID is blocked for at least TEMP_BSSID_BLOCK_DURATION
                 // to prevent the supplicant from trying it again.
                 mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
-                        TEMP_BSSID_BLOCK_DURATION);
+                        TEMP_BSSID_BLOCK_DURATION,
+                        BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT);
                 connectToNetwork(candidate);
             }
         } catch (IllegalArgumentException e) {
@@ -1977,7 +1978,7 @@ public class WifiConnectivityManager {
         retrieveWifiScanner();
         mConnectivityHelper.getFirmwareRoamingInfo();
         mBssidBlocklistMonitor.clearBssidBlocklist();
-        mWifiChannelUtilization.init(getClientModeImpl().getWifiLinkLayerStats());
+        mWifiChannelUtilization.init(getClientModeManager().getWifiLinkLayerStats());
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiEnablePartialInitialScan)) {
             setInitialScanState(INITIAL_SCAN_STATE_START);

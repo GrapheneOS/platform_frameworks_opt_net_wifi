@@ -106,7 +106,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mAlarmManager = new TestAlarmManager();
         mContext = mockContext();
         mLocalLog = new LocalLog(512);
-        mClientModeImpl = mockClientModeImpl();
+        mPrimaryClientModeManager = mockClientModeManager();
         mWifiConfigManager = mockWifiConfigManager();
         mWifiInfo = getWifiInfo();
         mScanData = mockScanData();
@@ -126,7 +126,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                         new Handler());
         when(mContext.getSystemService(PowerManager.class)).thenReturn(powerManager);
         when(powerManager.isInteractive()).thenReturn(false);
-        when(mPrimaryClientModeManager.getImpl()).thenReturn(mClientModeImpl);
         when(mPrimaryClientModeManager.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
 
         mWifiConnectivityManager = createConnectivityManager();
@@ -185,7 +184,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private TestLooper mLooper = new TestLooper();
     private WifiConnectivityManager mWifiConnectivityManager;
     private WifiNetworkSelector mWifiNS;
-    private ClientModeImpl mClientModeImpl;
     private WifiScanner mWifiScanner;
     private WifiConnectivityHelper mWifiConnectivityHelper;
     private ScanData mScanData;
@@ -339,8 +337,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         return connectivityHelper;
     }
 
-    ClientModeImpl mockClientModeImpl() {
-        ClientModeImpl stateMachine = mock(ClientModeImpl.class);
+    ClientModeManager mockClientModeManager() {
+        ClientModeManager stateMachine = mock(ClientModeManager.class);
 
         when(stateMachine.isConnected()).thenReturn(false);
         when(stateMachine.isDisconnected()).thenReturn(true);
@@ -429,7 +427,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Prep for setting WiFi to connected state
         WifiConfiguration connectedWifiConfiguration = new WifiConfiguration();
         connectedWifiConfiguration.networkId = TEST_CONNECTED_NETWORK_ID;
-        when(mClientModeImpl.getCurrentWifiConfiguration()).thenReturn(connectedWifiConfiguration);
+        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
+                .thenReturn(connectedWifiConfiguration);
 
         mWifiConnectivityManager.handleConnectionStateChanged(
                 mPrimaryClientModeManager,
@@ -440,7 +439,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *  Wifi enters disconnected state while screen is on.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID and BSSID.
      */
     @Test
@@ -453,7 +452,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -461,7 +460,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *  Wifi enters connected state while screen is on.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID and BSSID.
      */
     @Test
@@ -475,7 +474,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_CONNECTED);
 
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -483,7 +482,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *  Screen turned on while WiFi in disconnected state.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID and BSSID.
      */
     @Test
@@ -496,7 +495,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to on
         setScreenState(true);
 
-        verify(mClientModeImpl, atLeastOnce()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, atLeastOnce()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -504,7 +503,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *  Screen turned on while WiFi in connected state.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID and BSSID.
      */
     @Test
@@ -515,7 +514,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to on
         setScreenState(true);
 
-        verify(mClientModeImpl, atLeastOnce()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, atLeastOnce()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -524,7 +523,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *  auto roaming is disabled.
      *
      * Expected behavior: WifiConnectivityManager doesn't invoke
-     * ClientModeImpl.startConnectToNetwork() because roaming
+     * ClientModeManager.startConnectToNetwork() because roaming
      * is turned off.
      */
     @Test
@@ -541,14 +540,14 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to on
         setScreenState(true);
 
-        verify(mClientModeImpl, times(0)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(0)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
     /**
      * Multiple back to back connection attempts within the rate interval should be rate limited.
      *
-     * Expected behavior: WifiConnectivityManager calls ClientModeImpl.startConnectToNetwork()
+     * Expected behavior: WifiConnectivityManager calls ClientModeManager.startConnectToNetwork()
      * with the expected candidate network ID and BSSID for only the expected number of times within
      * the given interval.
      */
@@ -581,7 +580,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
         // Verify that we attempt to connect upto the rate.
-        verify(mClientModeImpl, times(numAttempts)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(numAttempts)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -589,7 +588,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Multiple back to back connection attempts outside the rate interval should not be rate
      * limited.
      *
-     * Expected behavior: WifiConnectivityManager calls ClientModeImpl.startConnectToNetwork()
+     * Expected behavior: WifiConnectivityManager calls ClientModeManager.startConnectToNetwork()
      * with the expected candidate network ID and BSSID for only the expected number of times within
      * the given interval.
      */
@@ -624,7 +623,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         numAttempts++;
 
         // Verify that all the connection attempts went through
-        verify(mClientModeImpl, times(numAttempts)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(numAttempts)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -632,7 +631,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Multiple back to back connection attempts after a force connectivity scan should not be rate
      * limited.
      *
-     * Expected behavior: WifiConnectivityManager calls ClientModeImpl.startConnectToNetwork()
+     * Expected behavior: WifiConnectivityManager calls ClientModeManager.startConnectToNetwork()
      * with the expected candidate network ID and BSSID for only the expected number of times within
      * the given interval.
      */
@@ -670,14 +669,14 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         }
 
         // Verify that all the connection attempts went through
-        verify(mClientModeImpl, times(numAttempts)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(numAttempts)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
     /**
      * Multiple back to back connection attempts after a user selection should not be rate limited.
      *
-     * Expected behavior: WifiConnectivityManager calls ClientModeImpl.startConnectToNetwork()
+     * Expected behavior: WifiConnectivityManager calls ClientModeManager.startConnectToNetwork()
      * with the expected candidate network ID and BSSID for only the expected number of times within
      * the given interval.
      */
@@ -715,7 +714,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         }
 
         // Verify that all the connection attempts went through
-        verify(mClientModeImpl, times(numAttempts)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(numAttempts)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -822,7 +821,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // Verify there is no connection due to currently having no cached candidates.
-        verify(mClientModeImpl, never()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
 
         // Move time forward but do not cross HIGH_MVMT_SCAN_DELAY_MS yet.
@@ -835,7 +834,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
 
         // Verify we still don't connect because not enough time have passed since the candidates
         // were cached.
-        verify(mClientModeImpl, never()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
 
         // Move time past HIGH_MVMT_SCAN_DELAY_MS.
@@ -847,7 +846,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // Verify a candidate if found this time.
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
         verify(mWifiMetrics, times(2)).incrementNumHighMovementConnectionSkipped();
         verify(mWifiMetrics).incrementNumHighMovementConnectionStarted();
@@ -872,7 +871,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
         mLooper.dispatchAll();
         // Verify there is no connection due to currently having no cached candidates.
-        verify(mClientModeImpl, never()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
 
         // Move time forward and verify that a delayed partial scan is scheduled.
@@ -918,7 +917,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Verify a connection starting
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
                 argThat(new WifiCandidatesListSizeMatcher(2)));
-        verify(mClientModeImpl).startConnectToNetwork(anyInt(), anyInt(), any());
+        verify(mPrimaryClientModeManager).startConnectToNetwork(anyInt(), anyInt(), any());
 
         // Simulate the connection failing
         mWifiConnectivityManager.handleConnectionAttemptEnded(
@@ -927,11 +926,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 CANDIDATE_SSID);
         // Verify the failed BSSID is added to blocklist
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(CANDIDATE_BSSID),
-                eq(CANDIDATE_SSID), anyLong());
+                eq(CANDIDATE_SSID), anyLong(), anyInt());
         // Verify another connection starting
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
                 argThat(new WifiCandidatesListSizeMatcher(1)));
-        verify(mClientModeImpl, times(2)).startConnectToNetwork(anyInt(), anyInt(), any());
+        verify(mPrimaryClientModeManager, times(2)).startConnectToNetwork(
+                anyInt(), anyInt(), any());
 
         // Simulate the second connection also failing
         mWifiConnectivityManager.handleConnectionAttemptEnded(
@@ -941,7 +941,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Verify there are no more connections
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
                 argThat(new WifiCandidatesListSizeMatcher(0)));
-        verify(mClientModeImpl, times(2)).startConnectToNetwork(anyInt(), anyInt(), any());
+        verify(mPrimaryClientModeManager, times(2)).startConnectToNetwork(
+                anyInt(), anyInt(), any());
     }
 
     private class WifiCandidatesListSizeMatcher implements
@@ -982,7 +983,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Verify a connection starting
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
                 argThat(new WifiCandidatesListSizeMatcher(2)));
-        verify(mClientModeImpl).startConnectToNetwork(anyInt(), anyInt(), any());
+        verify(mPrimaryClientModeManager).startConnectToNetwork(anyInt(), anyInt(), any());
 
         // Simulate the connection failing after the cache timeout period.
         when(mClock.getElapsedSinceBootMillis()).thenReturn(TEMP_BSSID_BLOCK_DURATION_MS + 1L);
@@ -991,7 +992,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION, CANDIDATE_BSSID,
                 CANDIDATE_SSID);
         // verify there are no additional connections.
-        verify(mClientModeImpl).startConnectToNetwork(anyInt(), anyInt(), any());
+        verify(mPrimaryClientModeManager).startConnectToNetwork(anyInt(), anyInt(), any());
     }
 
     /**
@@ -1015,7 +1016,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // Verify there is no connection due to currently having no cached candidates.
-        verify(mClientModeImpl, never()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
 
         // Move time past HIGH_MVMT_SCAN_DELAY_MS.
@@ -1032,7 +1033,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // Verify connect is not started.
-        verify(mClientModeImpl, never()).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
         verify(mWifiMetrics, times(2)).incrementNumHighMovementConnectionSkipped();
     }
@@ -1728,7 +1729,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set WiFi to connected state.
         setWifiStateConnected();
         // Simulate remove network, disconnect not finished.
-        when(mClientModeImpl.getCurrentWifiConfiguration()).thenReturn(null);
+        when(mPrimaryClientModeManager.getCurrentWifiConfiguration()).thenReturn(null);
         mNetworkUpdateListenerCaptor.getValue().onNetworkRemoved(null);
 
         // Get the first periodic scan interval
@@ -1905,7 +1906,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         configuration.networkId = TEST_CONNECTED_NETWORK_ID;
         when(mWifiConfigManager.getConfiguredNetwork(TEST_CONNECTED_NETWORK_ID))
                 .thenReturn(configuration);
-        when(mClientModeImpl.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
                 .thenReturn(configuration);
         when(mWifiScoreCard.lookupNetwork(configuration.SSID)).thenReturn(mPerNetwork);
         when(mPerNetwork.getFrequencies(anyLong())).thenReturn(new ArrayList<>());
@@ -1981,7 +1982,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiConfigManager.getConfiguredNetwork(TEST_CONNECTED_NETWORK_ID))
                 .thenReturn(configuration);
         List<Integer> channelList = linkScoreCardFreqsToNetwork(configuration).get(0);
-        when(mClientModeImpl.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
                 .thenReturn(configuration);
 
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
@@ -2032,7 +2033,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 .thenReturn(configuration);
         List<Integer> channelList = linkScoreCardFreqsToNetwork(configuration).get(0);
 
-        when(mClientModeImpl.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
                 .thenReturn(configuration);
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
 
@@ -2079,7 +2080,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 .thenReturn(configuration);
         List<Integer> channelList = linkScoreCardFreqsToNetwork(configuration).get(0);
 
-        when(mClientModeImpl.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
                 .thenReturn(new WifiConfiguration());
 
         doAnswer(new AnswerWithArguments() {
@@ -2197,7 +2198,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * act on them.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID and BSSID.
      */
     @Test
@@ -2210,7 +2211,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
 
         // Verify that WCM receives the scan results and initiates a connection
         // to the network.
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -2219,7 +2220,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *  results.
      *
      * Expected behavior: WifiConnectivityManager doesn't invoke
-     * ClientModeImpl.startConnectToNetwork() when full band scan
+     * ClientModeManager.startConnectToNetwork() when full band scan
      * results are not available.
      */
     @Test
@@ -2235,7 +2236,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
 
         // No roaming because no full band scan results.
-        verify(mClientModeImpl, times(0)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(0)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
 
         // Set up as full band scan results.
@@ -2246,7 +2247,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
 
         // Roaming attempt because full band scan results are available.
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -2364,7 +2365,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Connect to a network which doesn't have a config specified BSSID.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID, and the BSSID value should be
      * 'any' since firmware controls the roaming.
      */
@@ -2381,7 +2382,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, ClientModeImpl.SUPPLICANT_BSSID_ANY);
     }
 
@@ -2390,7 +2391,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Connect to a network which has a config specified BSSID.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the
+     * ClientModeManager.startConnectToNetwork() with the
      * expected candidate network ID, and the BSSID value should be
      * the config specified one.
      */
@@ -2417,7 +2418,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -2426,7 +2427,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Connect to a network which doesn't have a config specified BSSID.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the expected candidate network ID,
+     * ClientModeManager.startConnectToNetwork() with the expected candidate network ID,
      * and the BSSID value should be the candidate scan result specified.
      */
     @Test
@@ -2439,7 +2440,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -2448,7 +2449,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Connect to a network which has a config specified BSSID.
      *
      * Expected behavior: WifiConnectivityManager calls
-     * ClientModeImpl.startConnectToNetwork() with the expected candidate network ID,
+     * ClientModeManager.startConnectToNetwork() with the expected candidate network ID,
      * and the BSSID value should be the config specified one.
      */
     @Test
@@ -2471,7 +2472,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
-        verify(mClientModeImpl).startConnectToNetwork(
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -2480,7 +2481,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * WiFi in connected state, framework triggers roaming.
      *
      * Expected behavior: WifiConnectivityManager invokes
-     * ClientModeImpl.startRoamToNetwork().
+     * ClientModeManager.startRoamToNetwork().
      */
     @Test
     public void frameworkInitiatedRoaming() {
@@ -2496,7 +2497,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to on
         setScreenState(true);
 
-        verify(mClientModeImpl).startRoamToNetwork(eq(CANDIDATE_NETWORK_ID),
+        verify(mPrimaryClientModeManager).startRoamToNetwork(eq(CANDIDATE_NETWORK_ID),
                 mCandidateScanResultCaptor.capture());
         assertEquals(mCandidateScanResultCaptor.getValue().BSSID, CANDIDATE_BSSID);
     }
@@ -2507,7 +2508,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * as it's handed off to the firmware.
      *
      * Expected behavior: WifiConnectivityManager doesn't invoke
-     * ClientModeImpl.startRoamToNetwork().
+     * ClientModeManager.startRoamToNetwork().
      */
     @Test
     public void noFrameworkRoamingIfConnectedAndFirmwareRoamingSupported() {
@@ -2526,7 +2527,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to on
         setScreenState(true);
 
-        verify(mClientModeImpl, times(0)).startRoamToNetwork(anyInt(), anyObject());
+        verify(mPrimaryClientModeManager, times(0)).startRoamToNetwork(anyInt(), anyObject());
     }
 
     /*
@@ -2535,7 +2536,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * match it.
      *
      * Expected behavior: WifiConnectivityManager doesn't invoke
-     * ClientModeImpl.startConnectToNetwork().
+     * ClientModeManager.startConnectToNetwork().
      */
     @Test
     public void dropConnectAttemptIfConfigSpecifiedBssidDifferentFromScanResultBssid() {
@@ -2558,7 +2559,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
-        verify(mClientModeImpl, times(0)).startConnectToNetwork(
+        verify(mPrimaryClientModeManager, times(0)).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
     }
 
@@ -2568,7 +2569,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * match it.
      *
      * Expected behavior: WifiConnectivityManager doesn't invoke
-     * ClientModeImpl.startRoamToNetwork().
+     * ClientModeManager.startRoamToNetwork().
      */
     @Test
     public void dropRoamingAttemptIfConfigSpecifiedBssidDifferentFromScanResultBssid() {
@@ -2595,7 +2596,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to on
         setScreenState(true);
 
-        verify(mClientModeImpl, times(0)).startRoamToNetwork(anyInt(), anyObject());
+        verify(mPrimaryClientModeManager, times(0)).startRoamToNetwork(anyInt(), anyObject());
     }
 
     /**
@@ -3057,7 +3058,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Test
     public void verifyWifiChannelUtilizationRefreshedAfterScanResults() {
         WifiLinkLayerStats llstats = new WifiLinkLayerStats();
-        when(mClientModeImpl.getWifiLinkLayerStats()).thenReturn(llstats);
+        when(mPrimaryClientModeManager.getWifiLinkLayerStats()).thenReturn(llstats);
 
         // Force a connectivity scan
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
@@ -3073,7 +3074,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void verifyWifiChannelUtilizationInitAfterWifiToggle() {
         verify(mWifiChannelUtilization, times(1)).init(null);
         WifiLinkLayerStats llstats = new WifiLinkLayerStats();
-        when(mClientModeImpl.getWifiLinkLayerStats()).thenReturn(llstats);
+        when(mPrimaryClientModeManager.getWifiLinkLayerStats()).thenReturn(llstats);
 
         setWifiEnabled(false);
         setWifiEnabled(true);
@@ -3086,7 +3087,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Test
     public void verifyWifiChannelUtilizationSetMobilityState() {
         WifiLinkLayerStats llstats = new WifiLinkLayerStats();
-        when(mClientModeImpl.getWifiLinkLayerStats()).thenReturn(llstats);
+        when(mPrimaryClientModeManager.getWifiLinkLayerStats()).thenReturn(llstats);
 
         mWifiConnectivityManager.setDeviceMobilityState(
                 WifiManager.DEVICE_MOBILITY_STATE_HIGH_MVMT);

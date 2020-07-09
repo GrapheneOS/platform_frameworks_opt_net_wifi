@@ -118,8 +118,9 @@ public class WifiSettingsStore {
     }
 
     void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        pw.println("mPersistWifiState " + mPersistWifiState);
-        pw.println("mAirplaneModeOn " + mAirplaneModeOn);
+        pw.println("WifiState " + getPersistedWifiState());
+        pw.println("AirplaneModeOn " + getPersistedAirplaneModeOn());
+        pw.println("ScanAlwaysAvailable " + getPersistedScanAlwaysAvailable());
     }
 
     private void persistWifiState(int state) {
