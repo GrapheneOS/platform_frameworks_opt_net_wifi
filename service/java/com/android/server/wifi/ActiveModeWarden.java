@@ -46,6 +46,10 @@ import com.android.internal.util.Preconditions;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.android.server.wifi.ActiveModeManager.ClientConnectivityRole;
+import com.android.server.wifi.ActiveModeManager.ClientInternetConnectivityRole;
+import com.android.server.wifi.ActiveModeManager.ClientRole;
+import com.android.server.wifi.ActiveModeManager.SoftApRole;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -430,7 +434,13 @@ public class ActiveModeWarden {
      */
     @NonNull
     public List<ClientModeManager> getInternetConnectivityClientModeManagers() {
-        return getClientModeManagersInRoles(ActiveModeManager.CLIENT_INTERNET_CONNECTIVITY_ROLES);
+        List<ClientModeManager> modeManagers = new ArrayList<>();
+        for (ConcreteClientModeManager manager : mClientModeManagers) {
+            if (manager.getRole() instanceof ClientInternetConnectivityRole) {
+                modeManagers.add(manager);
+            }
+        }
+        return modeManagers;
     }
 
     @NonNull
@@ -470,22 +480,15 @@ public class ActiveModeWarden {
         return !mClientModeManagers.isEmpty() || !mSoftApManagers.isEmpty();
     }
 
-    /**
-     * @return true if any mode managers in one of the specified roles.
-     */
-    private boolean hasAnyClientModeManagerInOneOfRoles(Collection<Integer> rolesList) {
-        for (ConcreteClientModeManager manager : mClientModeManagers) {
-            if (rolesList.contains(manager.getRole())) return true;
-        }
-        return false;
-    }
-
     private boolean hasAnyClientModeManager() {
         return !mClientModeManagers.isEmpty();
     }
 
     private boolean hasAnyClientModeManagerInConnectivityRole() {
-        return hasAnyClientModeManagerInOneOfRoles(ActiveModeManager.CLIENT_CONNECTIVITY_ROLES);
+        for (ConcreteClientModeManager manager : mClientModeManagers) {
+            if (manager.getRole() instanceof ClientConnectivityRole) return true;
+        }
+        return false;
     }
 
     private boolean hasAnySoftApManager() {
@@ -506,39 +509,25 @@ public class ActiveModeWarden {
     }
 
     @Nullable
-    private ClientModeManager getClientModeManagerInRole(@ActiveModeManager.Role int role) {
-        Preconditions.checkArgument(ActiveModeManager.CLIENT_ROLES.contains(role));
-
+    private ClientModeManager getClientModeManagerInRole(ClientRole role) {
         for (ConcreteClientModeManager manager : mClientModeManagers) {
             if (manager.getRole() == role) return manager;
         }
         return null;
     }
 
-    @NonNull
-    private List<ClientModeManager> getClientModeManagersInRoles(Collection<Integer> rolesList) {
-        List<ClientModeManager> modeManagers = new ArrayList<>();
-        for (ConcreteClientModeManager manager : mClientModeManagers) {
-            if (rolesList.contains(manager.getRole())) {
-                modeManagers.add(manager);
-            }
-        }
-        return modeManagers;
-    }
-
     @Nullable
-    private SoftApManager getSoftApManagerInRole(@ActiveModeManager.Role int role) {
-        Preconditions.checkArgument(ActiveModeManager.SOFTAP_ROLES.contains(role));
-
+    private SoftApManager getSoftApManagerInRole(SoftApRole role) {
         for (SoftApManager manager : mSoftApManagers) {
             if (manager.getRole() == role) return manager;
         }
         return null;
     }
 
-    private @ActiveModeManager.Role int getRoleForSoftApIpMode(int ipMode) {
+    private SoftApRole getRoleForSoftApIpMode(int ipMode) {
         return ipMode == IFACE_IP_MODE_TETHERED
-                ? ActiveModeManager.ROLE_SOFTAP_TETHERED : ActiveModeManager.ROLE_SOFTAP_LOCAL_ONLY;
+                ? ActiveModeManager.ROLE_SOFTAP_TETHERED
+                : ActiveModeManager.ROLE_SOFTAP_LOCAL_ONLY;
     }
 
     /**
@@ -658,7 +647,7 @@ public class ActiveModeWarden {
      * vice-versa) based on the toggle state.
      */
     private boolean switchPrimaryOrScanOnlyClientModeManagerRole(
-            @NonNull ClientModeManager modeManager) {
+            @NonNull ConcreteClientModeManager modeManager) {
         if (mSettingsStore.isWifiToggleEnabled()) {
             modeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
         } else if (checkScanOnlyModeAvailable()) {

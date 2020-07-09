@@ -49,12 +49,9 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void stop() { }
 
     @Override
-    public int getRole() {
-        return 0;
+    public Role getRole() {
+        return null;
     }
-
-    @Override
-    public void setRole(int role) { }
 
     @Override
     public String getInterfaceName() {

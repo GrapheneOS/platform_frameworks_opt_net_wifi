@@ -66,6 +66,7 @@ import android.util.Log;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.ActiveModeManager.SoftApRole;
 import com.android.server.wifi.WifiNative.InterfaceAvailableForRequestListener;
 import com.android.server.wifi.util.GeneralUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -349,7 +350,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
      */
     private void enterSoftApActiveMode(SoftApModeConfiguration softApConfig) throws Exception {
         String fromState = mActiveModeWarden.getCurrentMode();
-        int softApRole = softApConfig.getTargetMode() == WifiManager.IFACE_IP_MODE_TETHERED
+        SoftApRole softApRole = softApConfig.getTargetMode() == WifiManager.IFACE_IP_MODE_TETHERED
                 ? ROLE_SOFTAP_TETHERED : ROLE_SOFTAP_LOCAL_ONLY;
         when(mSoftApManager.getRole()).thenReturn(softApRole);
         mActiveModeWarden.startSoftAp(softApConfig);

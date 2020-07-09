@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.ActiveModeManager.ClientInternetConnectivityRole;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
 
 import android.annotation.NonNull;
@@ -776,8 +777,7 @@ public class WifiConnectivityManager {
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "ModeManager added " + activeModeManager.getInterfaceName());
             }
-            if (ActiveModeManager.CLIENT_INTERNET_CONNECTIVITY_ROLES.contains(
-                    activeModeManager.getRole())) {
+            if (activeModeManager.getRole() instanceof ClientInternetConnectivityRole) {
                 mClientModeManagers.add((ClientModeManager) activeModeManager);
             }
             setWifiEnabled(!mClientModeManagers.isEmpty());
@@ -800,8 +800,7 @@ public class WifiConnectivityManager {
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "ModeManager role changed " + activeModeManager.getInterfaceName());
             }
-            if (ActiveModeManager.CLIENT_INTERNET_CONNECTIVITY_ROLES.contains(
-                    activeModeManager.getRole())) {
+            if (activeModeManager.getRole() instanceof ClientInternetConnectivityRole) {
                 mClientModeManagers.add((ClientModeManager) activeModeManager);
             } else {
                 mClientModeManagers.remove(activeModeManager);
