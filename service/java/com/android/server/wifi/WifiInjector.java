@@ -211,6 +211,7 @@ public class WifiInjector {
         Handler wifiHandler = new Handler(wifiLooper);
 
         mContext = context;
+        mScoringParams = new ScoringParams(mContext);
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
         mWifiInfo = new ExtendedWifiInfo(context);
         mSettingsMigrationDataHolder = new SettingsMigrationDataHolder(mContext);
@@ -297,7 +298,8 @@ public class WifiInjector {
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
                 mDeviceConfigFacade, mWifiThreadRunner, mWifiInfo);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
-                mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard);
+                mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard,
+                mScoringParams);
         mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
         // Config Manager
         mWifiConfigManager = new WifiConfigManager(mContext, mClock,
@@ -313,7 +315,6 @@ public class WifiInjector {
         mSettingsStore = new WifiSettingsStore(mContext, mSettingsConfigStore);
         mWifiMetrics.setWifiConfigManager(mWifiConfigManager);
 
-        mScoringParams = new ScoringParams(mContext);
         mWifiMetrics.setScoringParams(mScoringParams);
         mThroughputPredictor = new ThroughputPredictor(mContext);
         mWifiNetworkSelector = new WifiNetworkSelector(mContext, mWifiScoreCard, mScoringParams,

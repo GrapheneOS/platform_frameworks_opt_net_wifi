@@ -1615,10 +1615,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         // by DHCP failure
         verify(mWifiLastResortWatchdog, times(2)).noteConnectionFailureAndTriggerIfNeeded(
                 sSSID, sBSSID, WifiLastResortWatchdog.FAILURE_CODE_DHCP);
-        verify(mBssidBlocklistMonitor, times(2)).handleBssidConnectionFailure(sBSSID,
-                sSSID, BssidBlocklistMonitor.REASON_DHCP_FAILURE, false);
-        verify(mBssidBlocklistMonitor, times(2)).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_DHCP_FAILURE, false);
+        verify(mBssidBlocklistMonitor, times(2)).handleBssidConnectionFailure(eq(sBSSID),
+                eq(sSSID), eq(BssidBlocklistMonitor.REASON_DHCP_FAILURE), anyInt());
+        verify(mBssidBlocklistMonitor, times(2)).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_DHCP_FAILURE), anyInt());
         verify(mBssidBlocklistMonitor, never()).handleDhcpProvisioningSuccess(sBSSID, sSSID);
         verify(mBssidBlocklistMonitor, never()).handleNetworkValidationSuccess(sBSSID, sSSID);
     }
@@ -2955,8 +2955,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
         mLooper.dispatchAll();
 
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, false);
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT), anyInt());
     }
 
     /**
@@ -2965,22 +2965,24 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testNotifiesBssidBlocklistMonitorLowRssi() throws Exception {
+        int testLowRssi = -80;
         initializeAndAddNetworkAndVerifySuccess();
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, FRAMEWORK_NETWORK_ID, 0,
                 ClientModeImpl.SUPPLICANT_BSSID_ANY);
         mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT,
                 new AssocRejectEventInfo(sSSID, sBSSID, 0, true));
-        when(mWifiConfigManager.findScanRssi(eq(FRAMEWORK_NETWORK_ID), anyInt())).thenReturn(-80);
+        when(mWifiConfigManager.findScanRssi(eq(FRAMEWORK_NETWORK_ID), anyInt()))
+                .thenReturn(testLowRssi);
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
                 .thenReturn(mScanDetailCache);
         when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
-                getGoogleGuestScanDetail(-80, sBSSID, sFreq));
+                getGoogleGuestScanDetail(testLowRssi, sBSSID, sFreq));
         when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
-                getGoogleGuestScanDetail(-80, sBSSID, sFreq).getScanResult());
+                getGoogleGuestScanDetail(testLowRssi, sBSSID, sFreq).getScanResult());
         mLooper.dispatchAll();
 
         verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT, true);
+                BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT, testLowRssi);
     }
 
     /**
@@ -2999,8 +3001,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiLastResortWatchdog, never()).noteConnectionFailureAndTriggerIfNeeded(
                 anyString(), anyString(), anyInt());
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, false);
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA), anyInt());
     }
 
     /**
@@ -3019,8 +3021,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiLastResortWatchdog).noteConnectionFailureAndTriggerIfNeeded(
                 anyString(), anyString(), anyInt());
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION, false);
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION), anyInt());
         verify(mWifiMetrics).incrementNumOfCarrierWifiConnectionNonAuthFailure();
     }
 
@@ -3041,8 +3043,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiLastResortWatchdog, never()).noteConnectionFailureAndTriggerIfNeeded(
                 anyString(), anyString(), anyInt());
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_WRONG_PASSWORD, false);
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_WRONG_PASSWORD), anyInt());
     }
 
     /**
@@ -3062,8 +3064,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiLastResortWatchdog, never()).noteConnectionFailureAndTriggerIfNeeded(
                 anyString(), anyString(), anyInt());
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_EAP_FAILURE, false);
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_EAP_FAILURE), anyInt());
     }
 
     /**
@@ -3082,8 +3084,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiLastResortWatchdog).noteConnectionFailureAndTriggerIfNeeded(
                 anyString(), anyString(), anyInt());
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE, false);
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(eq(sBSSID), eq(sSSID),
+                eq(BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE), anyInt());
     }
 
     /**
@@ -3403,7 +3405,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).updateNetworkSelectionStatus(
                 FRAMEWORK_NETWORK_ID, DISABLED_NO_INTERNET_TEMPORARY);
         verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(sBSSID, sSSID,
-                BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE, true);
+                BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE, RSSI_THRESHOLD_BREACH_MIN);
         verify(mWifiScoreCard).noteValidationFailure(any());
     }
 
@@ -4163,7 +4165,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiMetrics, times(1)).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
-                eq(btmFrmData.mBlackListDurationMs), anyInt());
+                eq(btmFrmData.mBlackListDurationMs), anyInt(), anyInt());
     }
 
     /**
@@ -4187,7 +4189,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
-                eq(btmFrmData.mBlackListDurationMs), anyInt());
+                eq(btmFrmData.mBlackListDurationMs), anyInt(), anyInt());
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
         verify(mWifiMetrics, times(1)).incrementMboCellularSwitchRequestCount();
         verify(mWifiMetrics, times(1))
