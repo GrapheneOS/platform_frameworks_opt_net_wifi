@@ -1349,7 +1349,6 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertFalse(mDut.isInitializationComplete());
-        verify(mWifiMonitor).broadcastSupplicantDisconnectionEvent(eq(WLAN0_IFACE_NAME));
         verify(mSupplicantHalDeathHandler).onDeath();
     }
 
@@ -1367,7 +1366,6 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertFalse(mDut.isInitializationComplete());
-        verify(mWifiMonitor).broadcastSupplicantDisconnectionEvent(eq(WLAN0_IFACE_NAME));
         verify(mSupplicantHalDeathHandler).onDeath();
     }
 
@@ -1385,7 +1383,6 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertTrue(mDut.isInitializationComplete());
-        verify(mWifiMonitor, never()).broadcastSupplicantDisconnectionEvent(eq(WLAN0_IFACE_NAME));
         verify(mSupplicantHalDeathHandler, never()).onDeath();
     }
 

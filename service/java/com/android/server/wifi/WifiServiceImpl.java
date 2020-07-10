@@ -367,7 +367,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                 TelephonyManager.EXTRA_NETWORK_COUNTRY);
                         Log.d(TAG, "Country code changed to :" + countryCode);
                         mCountryCode.setCountryCodeAndUpdate(countryCode);
-                        mTetheredSoftApTracker.updateSoftApCapabilityWhenCountryCodeChanged();
+                        mTetheredSoftApTracker.updateAvailChannelListInSoftApCapability();
                         mActiveModeWarden.updateSoftApCapability(
                                 mTetheredSoftApTracker.getSoftApCapability());
                     }}, new IntentFilter(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED));
@@ -429,6 +429,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiInjector.getWifiNetworkFactory().register();
             mWifiInjector.getUntrustedWifiNetworkFactory().register();
             mActiveModeWarden.handleBootCompleted();
+            mTetheredSoftApTracker.handleBootCompleted();
         });
     }
 
@@ -1029,6 +1030,12 @@ public class WifiServiceImpl extends BaseWifiService {
         private SoftApInfo mTetheredSoftApInfo = new SoftApInfo();
         // TODO: We need to maintain two capability. One for LTE + SAP and one for WIFI + SAP
         private SoftApCapability mTetheredSoftApCapability = null;
+        private boolean mIsBootComplete = false;
+
+        public void handleBootCompleted() {
+            mIsBootComplete = true;
+            updateAvailChannelListInSoftApCapability();
+        }
 
         public int getState() {
             synchronized (mLock) {
@@ -1082,6 +1089,11 @@ public class WifiServiceImpl extends BaseWifiService {
         private SoftApCapability updateSoftApCapabilityWithAvailableChannelList(
                 @NonNull SoftApCapability softApCapability) {
             SoftApCapability newSoftApCapability = new SoftApCapability(softApCapability);
+            if (!mIsBootComplete) {
+                // The available channel list is from wificond.
+                // It might be a failure or stuck during wificond init.
+                return newSoftApCapability;
+            }
             List<Integer> supportedChannelList = ApConfigUtil.getAvailableChannelFreqsForBand(
                     SoftApConfiguration.BAND_2GHZ, mWifiNative, mContext.getResources(), false);
             if (supportedChannelList != null) {
@@ -1110,37 +1122,32 @@ public class WifiServiceImpl extends BaseWifiService {
             return newSoftApCapability;
         }
 
-        public void updateSoftApCapabilityWhenCountryCodeChanged() {
-            synchronized (mLock) {
-                mTetheredSoftApCapability = updateSoftApCapabilityWithAvailableChannelList(
-                        getSoftApCapability());
-            }
-            onCapabilityChanged(mTetheredSoftApCapability);
+        public void updateAvailChannelListInSoftApCapability() {
+            onCapabilityChanged(updateSoftApCapabilityWithAvailableChannelList(
+                    getSoftApCapability()));
         }
 
         public void updateSoftApCapabilityWhenCarrierConfigChanged(int subId) {
-            synchronized (mLock) {
-                CarrierConfigManager carrierConfigManager =
-                        (CarrierConfigManager) mContext.getSystemService(
-                        Context.CARRIER_CONFIG_SERVICE);
-                if (carrierConfigManager == null) return;
-                PersistableBundle carrierConfig = carrierConfigManager.getConfigForSubId(subId);
-                if (carrierConfig == null) return;
-                int carrierMaxClient = carrierConfig.getInt(
-                        CarrierConfigManager.Wifi.KEY_HOTSPOT_MAX_CLIENT_COUNT);
-                int finalSupportedClientNumber = mContext.getResources().getInteger(
-                        R.integer.config_wifiHardwareSoftapMaxClientCount);
-                if (carrierMaxClient > 0) {
-                    finalSupportedClientNumber = Math.min(finalSupportedClientNumber,
-                            carrierMaxClient);
-                }
-                if (finalSupportedClientNumber == getSoftApCapability().getMaxSupportedClients()) {
-                    return;
-                }
-                mTetheredSoftApCapability.setMaxSupportedClients(
-                        finalSupportedClientNumber);
+            CarrierConfigManager carrierConfigManager =
+                    mContext.getSystemService(CarrierConfigManager.class);
+            if (carrierConfigManager == null) return;
+            PersistableBundle carrierConfig = carrierConfigManager.getConfigForSubId(subId);
+            if (carrierConfig == null) return;
+            int carrierMaxClient = carrierConfig.getInt(
+                    CarrierConfigManager.Wifi.KEY_HOTSPOT_MAX_CLIENT_COUNT);
+            int finalSupportedClientNumber = mContext.getResources().getInteger(
+                    R.integer.config_wifiHardwareSoftapMaxClientCount);
+            if (carrierMaxClient > 0) {
+                finalSupportedClientNumber = Math.min(finalSupportedClientNumber,
+                        carrierMaxClient);
             }
-            onCapabilityChanged(mTetheredSoftApCapability);
+            if (finalSupportedClientNumber == getSoftApCapability().getMaxSupportedClients()) {
+                return;
+            }
+            SoftApCapability newSoftApCapability = new SoftApCapability(mTetheredSoftApCapability);
+            newSoftApCapability.setMaxSupportedClients(
+                    finalSupportedClientNumber);
+            onCapabilityChanged(newSoftApCapability);
         }
 
         private final ExternalCallbackTracker<ISoftApCallback> mRegisteredSoftApCallbacks =
@@ -1246,7 +1253,6 @@ public class WifiServiceImpl extends BaseWifiService {
                 }
                 mTetheredSoftApCapability = new SoftApCapability(capability);
             }
-
             Iterator<ISoftApCallback> iterator =
                     mRegisteredSoftApCallbacks.getCallbacks().iterator();
             while (iterator.hasNext()) {
