@@ -5295,4 +5295,28 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(mNetwork, mCmi.syncGetCurrentNetwork(mCmiAsyncChannel));
         mLooper.stopAutoDispatch();
     }
+
+    @Test
+    public void clearRequestingPackageNameInWifiInfoOnConnectionFailure() throws Exception {
+        mConnectedNetwork.fromWifiNetworkSpecifier = true;
+        mConnectedNetwork.ephemeral = true;
+        mConnectedNetwork.creatorName = OP_PACKAGE_NAME;
+
+        triggerConnect();
+
+        // association completed
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.ASSOCIATED));
+        mLooper.dispatchAll();
+
+        assertTrue(mCmi.getWifiInfo().isEphemeral());
+        assertEquals(OP_PACKAGE_NAME, mCmi.getWifiInfo().getRequestingPackageName());
+
+        // fail the connection.
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, FRAMEWORK_NETWORK_ID, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        assertFalse(mCmi.getWifiInfo().isEphemeral());
+        assertNull(mCmi.getWifiInfo().getRequestingPackageName());
+    }
 }

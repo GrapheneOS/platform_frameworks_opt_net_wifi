@@ -5695,6 +5695,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     clearNetworkCachedDataIfNeeded(getTargetWifiConfiguration(), message.arg2);
                     mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
+                    mWifiInfo.reset();
                     break;
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                     StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
