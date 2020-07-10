@@ -5237,6 +5237,20 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative, never()).removeNetworkCachedData(anyInt());
     }
 
+    /**
+     * Verify that network cached data is cleared on updating a network.
+     */
+    @Test
+    public void testNetworkCachedDataIsClearedOnUpdatingNetwork() throws Exception {
+        WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
+        mConnectedNetwork.meteredOverride = METERED_OVERRIDE_METERED;
+
+        mConfigUpdateListenerCaptor.getValue().onNetworkUpdated(mConnectedNetwork, oldConfig);
+        mLooper.dispatchAll();
+        verify(mWifiNative).removeNetworkCachedData(eq(oldConfig.networkId));
+    }
+
+
     @Test
     public void testIpReachabilityLostAndRoamEventsRace() throws Exception {
         connect();
