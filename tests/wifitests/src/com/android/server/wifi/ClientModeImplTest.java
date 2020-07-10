@@ -5196,4 +5196,30 @@ public class ClientModeImplTest extends WifiBaseTest {
         inOrder.verify(mWifiNative).getWifiLinkLayerStats(any());
         inOrder.verify(mWifiScoreReport).dump(any(), any(), any());
     }
+
+    @Test
+    public void clearRequestingPackageNameInWifiInfoOnConnectionFailure() throws Exception {
+        mConnectedNetwork.fromWifiNetworkSpecifier = true;
+        mConnectedNetwork.ephemeral = true;
+        mConnectedNetwork.creatorName = OP_PACKAGE_NAME;
+
+        triggerConnect();
+
+        // association completed
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.ASSOCIATED));
+        mLooper.dispatchAll();
+
+        assertTrue(mWifiInfo.isEphemeral());
+        assertEquals(OP_PACKAGE_NAME, mWifiInfo.getRequestingPackageName());
+
+        // fail the connection.
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(mConnectedNetwork.SSID, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+
+        assertFalse(mWifiInfo.isEphemeral());
+        assertNull(mWifiInfo.getRequestingPackageName());
+    }
 }
