@@ -40,6 +40,7 @@ public class WifiContext extends ContextWrapper {
     /** Intent action that is used to identify ServiceWifiResources.apk */
     private static final String ACTION_RESOURCES_APK =
             "com.android.server.wifi.intent.action.SERVICE_WIFI_RESOURCES_APK";
+    private static final String WIFI_OVERLAY_JAVA_PKG_NAME = "com.android.wifi.resources";
 
     private String mWifiOverlayApkPkgName;
 
@@ -52,7 +53,17 @@ public class WifiContext extends ContextWrapper {
         super(contextBase);
     }
 
-    /** Get the package name of ServiceWifiResources.apk */
+    /**
+     * Get the Java package name of the resources in ServiceWifiResources.apk
+     *
+     * i.e. the package name of the Wifi Resources R class:
+     * {@code import com.android.wifi.resources.R;}, which is "com.android.wifi.resources"
+     */
+    public String getWifiOverlayJavaPkgName() {
+        return WIFI_OVERLAY_JAVA_PKG_NAME;
+    }
+
+    /** Get the Android application package name of ServiceWifiResources.apk */
     public String getWifiOverlayApkPkgName() {
         if (mWifiOverlayApkPkgName != null) {
             return mWifiOverlayApkPkgName;
