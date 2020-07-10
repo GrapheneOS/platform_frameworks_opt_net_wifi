@@ -1109,6 +1109,9 @@ public class ClientModeImpl extends StateMachine {
 
         @Override
         public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
+            // Clear invalid cached data.
+            mWifiNative.removeNetworkCachedData(oldConfig.networkId);
+
             // Check if user/app change meteredOverride for connected network.
             if (newConfig.networkId != mLastNetworkId
                     || newConfig.meteredOverride == oldConfig.meteredOverride) {
