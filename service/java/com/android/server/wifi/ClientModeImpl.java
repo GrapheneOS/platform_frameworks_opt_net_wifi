@@ -1099,6 +1099,9 @@ public class ClientModeImpl extends StateMachine {
 
         @Override
         public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
+            // Clear invalid cached data.
+            mWifiNative.removeNetworkCachedData(oldConfig.networkId);
+
             // Check if user/app change meteredOverride for connected network.
             if (newConfig.networkId != mLastNetworkId
                     || newConfig.meteredOverride == oldConfig.meteredOverride) {
@@ -2835,13 +2838,8 @@ public class ClientModeImpl extends StateMachine {
                         mWifiHealthMonitor.getScanRssiValidTimeMs());
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, scanRssi, ssid, blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
-                boolean isLowRssi = false;
-                int sufficientRssi = getSufficientRssi(networkId, bssid);
-                if (scanRssi != WifiInfo.INVALID_RSSI && sufficientRssi != WifiInfo.INVALID_RSSI) {
-                    isLowRssi = scanRssi < sufficientRssi;
-                }
                 mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, blocklistReason,
-                        isLowRssi);
+                        scanRssi);
             }
         }
 
@@ -5412,13 +5410,10 @@ public class ClientModeImpl extends StateMachine {
                                             DISABLED_NO_INTERNET_TEMPORARY);
                                 }
                                 int rssi = mWifiInfo.getRssi();
-                                int sufficientRssi = mScoringParams
-                                        .getSufficientRssi(mWifiInfo.getFrequency());
-                                boolean isLowRssi = rssi < sufficientRssi;
                                 mBssidBlocklistMonitor.handleBssidConnectionFailure(
                                         mLastBssid, config.SSID,
                                         BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
-                                        isLowRssi);
+                                        rssi);
                                 mWifiScoreCard.noteValidationFailure(mWifiInfo);
                             }
                         }
@@ -5467,12 +5462,9 @@ public class ClientModeImpl extends StateMachine {
                         // ignore disconnects initiated by wpa_supplicant.
                         mWifiScoreCard.noteNonlocalDisconnect(eventInfo.reasonCode);
                         int rssi = mWifiInfo.getRssi();
-                        int sufficientRssi = mScoringParams
-                                .getSufficientRssi(mWifiInfo.getFrequency());
-                        boolean isLowRssi = rssi < sufficientRssi;
                         mBssidBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
                                 mWifiInfo.getSSID(),
-                                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, isLowRssi);
+                                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, rssi);
                     }
                     WifiConfiguration config = getCurrentWifiConfiguration();
 
@@ -5954,7 +5946,7 @@ public class ClientModeImpl extends StateMachine {
             }
             // Blacklist the current BSS
             mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration,
-                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE);
+                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 0);
         }
 
         if (frameData.mStatus != MboOceConstants.BTM_RESPONSE_STATUS_ACCEPT) {
