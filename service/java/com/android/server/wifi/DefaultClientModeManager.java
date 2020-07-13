@@ -56,6 +56,11 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void setRole(int role) { }
 
     @Override
+    public String getInterfaceName() {
+        return null;
+    }
+
+    @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) { }
 
     @Override

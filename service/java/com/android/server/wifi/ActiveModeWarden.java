@@ -398,9 +398,10 @@ public class ActiveModeWarden {
      */
     public interface ExternalClientModeManagerRequestListener {
         /**
-         * Returns an instance of ClientModeManager for the client for use.
+         * Returns an instance of ClientModeManager or null if the request failed (when wifi is
+         * off).
          */
-        void onAnswer(ClientModeManager modeManager);
+        void onAnswer(@Nullable ClientModeManager modeManager);
     }
 
     /**
@@ -409,7 +410,7 @@ public class ActiveModeWarden {
     public void requestLocalOnlyClientModeManager(
             @NonNull ExternalClientModeManagerRequestListener listener) {
         mWifiController.sendMessage(
-                WifiController.CMD_ADD_LOCAL_ONLY_CLIENT_MODE_MANAGER,
+                WifiController.CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER,
                 Objects.requireNonNull(listener));
     }
 
@@ -943,7 +944,7 @@ public class ActiveModeWarden {
         static final int CMD_AP_START_FAILURE                       = BASE + 23;
         static final int CMD_UPDATE_AP_CAPABILITY                   = BASE + 24;
         static final int CMD_UPDATE_AP_CONFIG                       = BASE + 25;
-        static final int CMD_ADD_LOCAL_ONLY_CLIENT_MODE_MANAGER     = BASE + 26;
+        static final int CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER = BASE + 26;
         static final int CMD_REMOVE_LOCAL_ONLY_CLIENT_MODE_MANAGER  = BASE + 27;
 
         private final EnabledState mEnabledState = new EnabledState();
@@ -1077,8 +1078,12 @@ public class ActiveModeWarden {
                     case CMD_RECOVERY_RESTART_WIFI:
                     case CMD_RECOVERY_RESTART_WIFI_CONTINUE:
                     case CMD_DEFERRED_RECOVERY_RESTART_WIFI:
-                    case CMD_ADD_LOCAL_ONLY_CLIENT_MODE_MANAGER:
                     case CMD_REMOVE_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                        break;
+                    case CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                        ExternalClientModeManagerRequestListener externalRequestListener =
+                                (ExternalClientModeManagerRequestListener) msg.obj;
+                        externalRequestListener.onAnswer(null);
                         break;
                     case CMD_RECOVERY_DISABLE_WIFI:
                         log("Recovery has been throttled, disable wifi");
@@ -1208,11 +1213,11 @@ public class ActiveModeWarden {
                             stopAllClientModeManagers();
                         }
                         break;
-                    case CMD_ADD_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                    case CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER:
                         ExternalClientModeManagerRequestListener externalRequestListener =
                                 (ExternalClientModeManagerRequestListener) msg.obj;
                         if (mCanRequestMoreClientModeManagers) {
-                            // Can create a concurrent client mode manager.
+                            // Can create a concurrent local only client mode manager.
                             startLocalOnlyClientModeManager(externalRequestListener);
                         } else {
                             // Can't create a concurrent client mode manager, use the primary one

@@ -130,6 +130,12 @@ public interface ActiveModeManager {
      */
     void setRole(@Role int role);
 
+
+    /**
+     * Method to get the iface name for the mode manager.
+     */
+    String getInterfaceName();
+
     /**
      * Method to dump for logging state.
      */
