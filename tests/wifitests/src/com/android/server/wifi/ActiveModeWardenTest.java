@@ -2344,6 +2344,17 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verifyNoMoreInteractions(localOnlyClientModeManager);
     }
 
+
+    @Test
+    public void requestLocalOnlyClientModeManagerWhenWifiIsOff() throws Exception {
+        ActiveModeWarden.ExternalClientModeManagerRequestListener externalRequestListener = mock(
+                ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
+        mActiveModeWarden.requestLocalOnlyClientModeManager(externalRequestListener);
+        mLooper.dispatchAll();
+
+        verify(externalRequestListener).onAnswer(null);
+    }
+
     @Test
     public void airplaneModeToggleOnDisablesWifi() throws Exception {
         enterClientModeActiveState();
