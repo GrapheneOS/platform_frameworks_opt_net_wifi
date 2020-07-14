@@ -1118,13 +1118,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Set wpa_supplicant log level using |mVerboseLoggingLevel| flag.
-     */
-    void setSupplicantLogLevel() {
-        mWifiNative.setSupplicantLogLevel(mVerboseLoggingEnabled);
-    }
-
-    /**
      * Method to update logging level in wifi service related classes.
      *
      * @param verbose int logging level to use
@@ -1138,23 +1131,8 @@ public class ClientModeImpl extends StateMachine {
             mVerboseLoggingEnabled = false;
             setLogRecSize(NUM_LOG_RECS_NORMAL);
         }
-        setSupplicantLogLevel();
-        mCountryCode.enableVerboseLogging(verbose);
+
         mWifiScoreReport.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiDiagnostics.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiMonitor.enableVerboseLogging(verbose);
-        mWifiNative.enableVerboseLogging(verbose);
-        mWifiConfigManager.enableVerboseLogging(verbose);
-        mSupplicantStateTracker.enableVerboseLogging(verbose);
-        mPasspointManager.enableVerboseLogging(verbose);
-        mNetworkFactory.enableVerboseLogging(verbose);
-        mLinkProbeManager.enableVerboseLogging(mVerboseLoggingEnabled);
-        mMboOceController.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiScoreCard.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiHealthMonitor.enableVerboseLogging(mVerboseLoggingEnabled);
-        mThroughputPredictor.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiDataStall.enableVerboseLogging(mVerboseLoggingEnabled);
-        mWifiConnectivityManager.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
     /**
@@ -3354,7 +3332,7 @@ public class ClientModeImpl extends StateMachine {
         setMulticastFilter(true);
         registerForWifiMonitorEvents();
         mWifiLastResortWatchdog.clearAllFailureCounts();
-        setSupplicantLogLevel();
+        mWifiNative.setSupplicantLogLevel(mVerboseLoggingEnabled);
 
         // reset state related to supplicant starting
         mSupplicantStateTracker.sendMessage(CMD_RESET_SUPPLICANT_STATE);
