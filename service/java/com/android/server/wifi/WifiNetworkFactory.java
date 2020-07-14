@@ -25,8 +25,10 @@ import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AppOpsManager;
 import android.companion.CompanionDeviceManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
@@ -47,6 +49,7 @@ import android.os.HandlerExecutor;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PatternMatcher;
+import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -444,6 +447,23 @@ public class WifiNetworkFactory extends NetworkFactory {
         mConnectionTimeoutAlarmListener = new ConnectionTimeoutAlarmListener();
         mRegisteredCallbacks = new ExternalCallbackTracker<INetworkRequestMatchCallback>(mHandler);
         mUserApprovedAccessPointMap = new HashMap<>();
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        context.registerReceiver(
+                new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String action = intent.getAction();
+                        if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                            handleScreenStateChanged(true);
+                        } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                            handleScreenStateChanged(false);
+                        }
+                    }
+                }, filter, null, mHandler);
+        handleScreenStateChanged(context.getSystemService(PowerManager.class).isInteractive());
 
         // register the data store for serializing/deserializing data.
         configStore.registerStoreData(
@@ -987,7 +1007,7 @@ public class WifiNetworkFactory extends NetworkFactory {
     /**
      * Invoked by {@link ClientModeImpl} to indicate screen state changes.
      */
-    public void handleScreenStateChanged(boolean screenOn) {
+    private void handleScreenStateChanged(boolean screenOn) {
         // If there is no active request or if the user has already selected a network,
         // ignore screen state changes.
         if (mActiveSpecificNetworkRequest == null || !mIsPeriodicScanEnabled) return;
