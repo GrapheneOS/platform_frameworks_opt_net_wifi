@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.net.wifi.WifiManager;
 import android.util.Log;
@@ -39,16 +40,31 @@ public class ConnectHelper {
         mWifiConfigManager = wifiConfigManager;
     }
 
-    /** Trigger connection to an existing network and provide status via the provided callback. */
+    /**
+     * Trigger connection to an existing network and provide status via the provided callback.
+     * This uses the primary client mode manager for making the connection.
+     */
     public void connectToNetwork(
+            NetworkUpdateResult result,
+            @Nullable ActionListenerWrapper wrapper,
+            int callingUid) {
+        connectToNetwork(
+                mActiveModeWarden.getPrimaryClientModeManager(), result, wrapper, callingUid);
+    }
+
+    /**
+     * Trigger connection to an existing network and provide status via the provided callback.
+     * This uses the provided client mode manager for making the connection.
+     */
+    public void connectToNetwork(
+            @NonNull ClientModeManager clientModeManager,
             NetworkUpdateResult result,
             @Nullable ActionListenerWrapper wrapper,
             int callingUid) {
         int netId = result.getNetworkId();
         boolean success = mWifiConfigManager.updateBeforeConnect(netId, callingUid);
         if (success) {
-            mActiveModeWarden.getPrimaryClientModeManager().connectNetwork(
-                    result, wrapper, callingUid);
+            clientModeManager.connectNetwork(result, wrapper, callingUid);
         } else {
             Log.e(TAG, "connectToNetwork Invalid network Id=" + netId);
             wrapper.sendFailure(WifiManager.ERROR);

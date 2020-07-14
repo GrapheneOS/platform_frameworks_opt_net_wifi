@@ -182,15 +182,15 @@ public class ClientModeImpl extends StateMachine {
      */
     @Override
     protected void loge(String s) {
-        Log.e(getName(), s);
+        Log.e(getTag(), s);
     }
     @Override
     protected void logd(String s) {
-        Log.d(getName(), s);
+        Log.d(getTag(), s);
     }
     @Override
     protected void log(String s) {
-        Log.d(getName(), s);
+        Log.d(getTag(), s);
     }
     private final Context mContext;
     private final WifiMetrics mWifiMetrics;
@@ -253,10 +253,14 @@ public class ClientModeImpl extends StateMachine {
 
     private boolean mIpReachabilityDisconnectEnabled = true;
 
+    private String getTag() {
+        return TAG + "[" + (mInterfaceName == null ? "unknown" : mInterfaceName) + "]";
+    }
+
     private void processRssiThreshold(byte curRssi, int reason,
             WifiNative.WifiRssiEventHandler rssiHandler) {
         if (curRssi == Byte.MAX_VALUE || curRssi == Byte.MIN_VALUE) {
-            Log.wtf(TAG, "processRssiThreshold: Invalid rssi " + curRssi);
+            Log.wtf(getTag(), "processRssiThreshold: Invalid rssi " + curRssi);
             return;
         }
         for (int i = 0; i < mRssiRanges.length; i++) {
@@ -271,7 +275,7 @@ public class ClientModeImpl extends StateMachine {
                 mWifiInfo.setRssi(curRssi);
                 updateCapabilities();
                 int ret = startRssiMonitoringOffload(maxRssi, minRssi, rssiHandler);
-                Log.d(TAG, "Re-program RSSI thresholds for " + getWhatToString(reason)
+                Log.d(getTag(), "Re-program RSSI thresholds for " + getWhatToString(reason)
                         + ": [" + minRssi + ", " + maxRssi + "], curRssi=" + curRssi
                         + " ret=" + ret);
                 break;
@@ -388,7 +392,7 @@ public class ClientModeImpl extends StateMachine {
         if (config.BSSID != null) {
             bssid = config.BSSID;
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "force BSSID to " + bssid + "due to config");
+                Log.d(getTag(), "force BSSID to " + bssid + "due to config");
             }
         }
         if (mVerboseLoggingEnabled) {
@@ -412,11 +416,11 @@ public class ClientModeImpl extends StateMachine {
         if (config.BSSID != null) {
             bssid = config.BSSID;
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "force BSSID to " + bssid + "due to config");
+                Log.d(getTag(), "force BSSID to " + bssid + "due to config");
             }
         }
         if (mVerboseLoggingEnabled) {
-            Log.d(TAG, "setTargetBssid set to " + bssid + " key=" + config.getKey());
+            Log.d(getTag(), "setTargetBssid set to " + bssid + " key=" + config.getKey());
         }
         mTargetBssid = bssid;
         config.getNetworkSelectionStatus().setNetworkSelectionBSSID(bssid);
@@ -1056,7 +1060,7 @@ public class ClientModeImpl extends StateMachine {
 
     private void stopIpClient() {
         // TODO(b/157943924): Adding more log to debug the issue.
-        Log.v(TAG, "stopIpClient IpClientWithPreConnection: " + mIpClientWithPreConnection,
+        Log.v(getTag(), "stopIpClient IpClientWithPreConnection: " + mIpClientWithPreConnection,
                 new Throwable());
         if (mIpClient != null) {
             if (mIpClientWithPreConnection) {
@@ -1113,17 +1117,18 @@ public class ClientModeImpl extends StateMachine {
             if (isMetered == wasMetered) {
                 // no meteredness change, nothing to do.
                 if (mVerboseLoggingEnabled) {
-                    Log.v(TAG, "User/app changed meteredOverride, but no change in meteredness");
+                    Log.v(getTag(), "User/app changed meteredOverride, "
+                            + "but no change in meteredness");
                 }
                 return;
             }
             // If unmetered->metered trigger a disconnect.
             // If metered->unmetered update capabilities.
             if (isMetered) {
-                Log.w(TAG, "Network marked metered, triggering disconnect");
+                Log.w(getTag(), "Network marked metered, triggering disconnect");
                 sendMessage(CMD_DISCONNECT);
             } else {
-                Log.i(TAG, "Network marked unmetered, triggering capabilities update");
+                Log.i(getTag(), "Network marked unmetered, triggering capabilities update");
                 updateCapabilities(newConfig);
             }
         }
@@ -1418,12 +1423,12 @@ public class ClientModeImpl extends StateMachine {
             case WIFI_STATE_ENABLED:
             case WIFI_STATE_UNKNOWN:
                 if (mVerboseLoggingEnabled) {
-                    Log.d(TAG, "setting wifi state to: " + newState);
+                    Log.d(getTag(), "setting wifi state to: " + newState);
                 }
                 mWifiState.set(newState);
                 return;
             default:
-                Log.d(TAG, "attempted to set an invalid state: " + newState);
+                Log.d(getTag(), "attempted to set an invalid state: " + newState);
                 return;
         }
     }
@@ -1478,12 +1483,12 @@ public class ClientModeImpl extends StateMachine {
                 || supplicantState == SupplicantState.GROUP_HANDSHAKE) {
 
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Supplicant is under transient state: " + supplicantState);
+                Log.d(getTag(), "Supplicant is under transient state: " + supplicantState);
             }
             return true;
         } else {
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Supplicant is under steady state: " + supplicantState);
+                Log.d(getTag(), "Supplicant is under steady state: " + supplicantState);
             }
         }
 
@@ -1539,7 +1544,8 @@ public class ClientModeImpl extends StateMachine {
                 transitionTo(mDisconnectedState);
                 mWifiScoreReport.setInterfaceName(ifaceName);
             } else {
-                Log.e(TAG, "supposed to enter connect mode, but iface is null -> DefaultState");
+                Log.e(getTag(), "supposed to enter connect mode, "
+                        + "but iface is null -> DefaultState");
                 transitionTo(mDefaultState);
             }
         }
@@ -1632,7 +1638,7 @@ public class ClientModeImpl extends StateMachine {
     private boolean messageIsNull(Message resultMsg) {
         if (resultMsg != null) return false;
         if (mNullMessageCounter.getAndIncrement() > 0) {
-            Log.wtf(TAG, "Persistent null Message", new RuntimeException());
+            Log.wtf(getTag(), "Persistent null Message", new RuntimeException());
         }
         return true;
     }
@@ -2241,7 +2247,7 @@ public class ClientModeImpl extends StateMachine {
             mCm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         }
         if (mCm == null) {
-            Log.e(TAG, "Cannot retrieve connectivity service");
+            Log.e(getTag(), "Cannot retrieve connectivity service");
             return false;
         }
         return true;
@@ -2321,7 +2327,7 @@ public class ClientModeImpl extends StateMachine {
              * so adjust the valid rssi reports for such implementations.
              */
             if (newRssi > (WifiInfo.INVALID_RSSI + 256)) {
-                Log.wtf(TAG, "Error! +ve value RSSI: " + newRssi);
+                Log.wtf(getTag(), "Error! +ve value RSSI: " + newRssi);
                 newRssi -= 256;
             }
             mWifiInfo.setRssi(newRssi);
@@ -2610,7 +2616,7 @@ public class ClientModeImpl extends StateMachine {
      */
     private void handleNetworkDisconnect(boolean newConnectionInProgress) {
         if (mVerboseLoggingEnabled) {
-            Log.v(TAG, "handleNetworkDisconnect: newConnectionInProgress: "
+            Log.v(getTag(), "handleNetworkDisconnect: newConnectionInProgress: "
                     + newConnectionInProgress, new Throwable());
         }
 
@@ -2746,11 +2752,11 @@ public class ClientModeImpl extends StateMachine {
     public boolean setPowerSave(boolean ps) {
         if (mInterfaceName != null) {
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Setting power save for: " + mInterfaceName + " to: " + ps);
+                Log.d(getTag(), "Setting power save for: " + mInterfaceName + " to: " + ps);
             }
             mWifiNative.setPowerSave(mInterfaceName, ps);
         } else {
-            Log.e(TAG, "Failed to setPowerSave, interfaceName is null");
+            Log.e(getTag(), "Failed to setPowerSave, interfaceName is null");
             return false;
         }
         return true;
@@ -2765,10 +2771,10 @@ public class ClientModeImpl extends StateMachine {
      */
     public boolean setLowLatencyMode(boolean enabled) {
         if (mVerboseLoggingEnabled) {
-            Log.d(TAG, "Setting low latency mode to " + enabled);
+            Log.d(getTag(), "Setting low latency mode to " + enabled);
         }
         if (!mWifiNative.setLowLatencyMode(enabled)) {
-            Log.e(TAG, "Failed to setLowLatencyMode");
+            Log.e(getTag(), "Failed to setLowLatencyMode");
             return false;
         }
         return true;
@@ -3153,7 +3159,7 @@ public class ClientModeImpl extends StateMachine {
      */
     private void configureRandomizedMacAddress(WifiConfiguration config) {
         if (config == null) {
-            Log.e(TAG, "No config to change MAC address to");
+            Log.e(getTag(), "No config to change MAC address to");
             return;
         }
         String currentMacString = mWifiNative.getMacAddress(mInterfaceName);
@@ -3161,9 +3167,9 @@ public class ClientModeImpl extends StateMachine {
                 MacAddress.fromString(currentMacString);
         MacAddress newMac = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
         if (!WifiConfiguration.isValidMacAddressForRandomization(newMac)) {
-            Log.wtf(TAG, "Config generated an invalid MAC address");
+            Log.wtf(getTag(), "Config generated an invalid MAC address");
         } else if (newMac.equals(currentMac)) {
-            Log.d(TAG, "No changes in MAC address");
+            Log.d(getTag(), "No changes in MAC address");
         } else {
             mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
             boolean setMacSuccess =
@@ -3171,7 +3177,7 @@ public class ClientModeImpl extends StateMachine {
             if (setMacSuccess) {
                 mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, newMac);
             }
-            Log.d(TAG, "ConnectedMacRandomization SSID(" + config.getPrintableSsid()
+            Log.d(getTag(), "ConnectedMacRandomization SSID(" + config.getPrintableSsid()
                     + "). setMacAddress(" + newMac.toString() + ") from "
                     + currentMacString + " = " + setMacSuccess);
         }
@@ -3183,7 +3189,7 @@ public class ClientModeImpl extends StateMachine {
     private void setCurrentMacToFactoryMac(WifiConfiguration config) {
         MacAddress factoryMac = mWifiNative.getFactoryMacAddress(mInterfaceName);
         if (factoryMac == null) {
-            Log.e(TAG, "Fail to set factory MAC address. Factory MAC is null.");
+            Log.e(getTag(), "Fail to set factory MAC address. Factory MAC is null.");
             return;
         }
         String currentMacStr = mWifiNative.getMacAddress(mInterfaceName);
@@ -3192,7 +3198,8 @@ public class ClientModeImpl extends StateMachine {
                 mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, factoryMac);
                 mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
             } else {
-                Log.e(TAG, "Failed to set MAC address to " + "'" + factoryMac.toString() + "'");
+                Log.e(getTag(), "Failed to set MAC address to " + "'"
+                        + factoryMac.toString() + "'");
             }
         }
     }
@@ -3417,7 +3424,7 @@ public class ClientModeImpl extends StateMachine {
                 case 0: {
                     // We want to notice any empty messages (with what == 0) that might crop up.
                     // For example, we may have recycled a message sent to multiple handlers.
-                    Log.wtf(TAG, "Error! empty message encountered");
+                    Log.wtf(getTag(), "Error! empty message encountered");
                     break;
                 }
                 default: {
@@ -3438,7 +3445,7 @@ public class ClientModeImpl extends StateMachine {
      * Helper method to start other services and get state ready for client mode
      */
     private void setupClientMode() {
-        Log.d(TAG, "setupClientMode() ifacename = " + mInterfaceName);
+        Log.d(getTag(), "setupClientMode() ifacename = " + mInterfaceName);
 
         setHighPerfModeEnabled(false);
 
@@ -3465,7 +3472,7 @@ public class ClientModeImpl extends StateMachine {
         if (isConnectedMacRandomizationEnabled()) {
             if (!mWifiNative.setMacAddress(
                     mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
-                Log.e(TAG, "Failed to set random MAC address on bootup");
+                Log.e(getTag(), "Failed to set random MAC address on bootup");
             }
         }
         mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
@@ -3600,7 +3607,7 @@ public class ClientModeImpl extends StateMachine {
         try {
             bssid = (mLastBssid != null) ? MacAddress.fromString(mLastBssid) : null;
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Invalid BSSID format: " + mLastBssid);
+            Log.e(getTag(), "Invalid BSSID format: " + mLastBssid);
         }
         return bssid;
     }
@@ -3627,7 +3634,7 @@ public class ClientModeImpl extends StateMachine {
 
         @Override
         public void enter() {
-            Log.d(TAG, "entering ConnectableState: ifaceName = " + mInterfaceName);
+            Log.d(getTag(), "entering ConnectableState: ifaceName = " + mInterfaceName);
             mOperationalMode = CONNECT_MODE;
             setupClientMode();
             if (!mWifiNative.removeAllNetworks(mInterfaceName)) {
@@ -3639,8 +3646,6 @@ public class ClientModeImpl extends StateMachine {
             mWakeupController.reset();
             sendNetworkChangeBroadcast(DetailedState.DISCONNECTED);
 
-            // Inform WifiConnectivityManager that Wifi is enabled
-            mNetworkFactory.setWifiState(true);
             // Inform metrics that Wifi is Enabled (but not yet connected)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
             mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_ENABLED);
@@ -3653,8 +3658,6 @@ public class ClientModeImpl extends StateMachine {
         public void exit() {
             mOperationalMode = DISABLED_MODE;
 
-            // Inform WifiConnectivityManager that Wifi is disabled
-            mNetworkFactory.setWifiState(false);
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
             mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_DISABLED);
@@ -3741,7 +3744,7 @@ public class ClientModeImpl extends StateMachine {
 
                     String currentMacAddress = mWifiNative.getMacAddress(mInterfaceName);
                     mWifiInfo.setMacAddress(currentMacAddress);
-                    Log.i(TAG, "Connecting with " + currentMacAddress + " as the mac address");
+                    Log.i(getTag(), "Connecting with " + currentMacAddress + " as the mac address");
 
                     mTargetWifiConfiguration = config;
                     /* Check for FILS configuration again after updating the config */
@@ -3763,7 +3766,7 @@ public class ClientModeImpl extends StateMachine {
                     List<Layer2PacketParcelable> packets;
                     packets = (List<Layer2PacketParcelable>) message.obj;
                     if (mVerboseLoggingEnabled) {
-                        Log.d(TAG, "Send HLP IEs to supplicant");
+                        Log.d(getTag(), "Send HLP IEs to supplicant");
                     }
                     addLayer2PacketsToHlpReq(packets);
                     WifiConfiguration config = mTargetWifiConfiguration;
@@ -3801,7 +3804,7 @@ public class ClientModeImpl extends StateMachine {
                                     if (currentConfig != null) {
                                         mIpClient.setHttpProxy(currentConfig.getHttpProxy());
                                     } else {
-                                        Log.w(TAG,
+                                        Log.w(getTag(),
                                                 "CMD_SAVE_NETWORK proxy change - but no current "
                                                         + "Wi-Fi config");
                                     }
@@ -3816,7 +3819,7 @@ public class ClientModeImpl extends StateMachine {
                                 if (currentConfig != null) {
                                     transitionTo(mL3ProvisioningState);
                                 } else {
-                                    Log.w(TAG, "CMD_SAVE_NETWORK Ip change - but no current "
+                                    Log.w(getTag(), "CMD_SAVE_NETWORK Ip change - but no current "
                                             + "Wi-Fi config");
                                 }
                             }
@@ -4210,7 +4213,7 @@ public class ClientModeImpl extends StateMachine {
                 if (val <= Byte.MAX_VALUE && val >= Byte.MIN_VALUE) {
                     rssiRange[i] = (byte) val;
                 } else {
-                    Log.e(TAG, "Illegal value " + val + " for RSSI thresholds: "
+                    Log.e(getTag(), "Illegal value " + val + " for RSSI thresholds: "
                             + Arrays.toString(rssiVals));
                     ClientModeImpl.this.sendMessage(CMD_STOP_RSSI_MONITORING_OFFLOAD,
                             mWifiInfo.getRssi());
@@ -4241,12 +4244,12 @@ public class ClientModeImpl extends StateMachine {
     class ConnectingOrConnectedState extends State {
         @Override
         public void enter() {
-            if (mVerboseLoggingEnabled) Log.v(TAG, "Entering ConnectingOrConnectedState");
+            if (mVerboseLoggingEnabled) Log.v(getTag(), "Entering ConnectingOrConnectedState");
         }
 
         @Override
         public void exit() {
-            if (mVerboseLoggingEnabled) Log.v(TAG, "Exiting ConnectingOrConnectedState");
+            if (mVerboseLoggingEnabled) Log.v(getTag(), "Exiting ConnectingOrConnectedState");
             // Not connected/connecting to any network:
             // 1. Disable the network in supplicant to prevent it from auto-connecting. We don't
             // remove the network to avoid losing any cached info in supplicant (reauth, etc) in
@@ -4256,7 +4259,7 @@ public class ClientModeImpl extends StateMachine {
             if (isConnectedMacRandomizationEnabled()) {
                 if (!mWifiNative.setMacAddress(
                         mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
-                    Log.e(TAG, "Failed to set random MAC address on disconnect");
+                    Log.e(getTag(), "Failed to set random MAC address on disconnect");
                 }
             }
             mWifiInfo.reset();
@@ -4443,7 +4446,7 @@ public class ClientModeImpl extends StateMachine {
     class L2ConnectingState extends State {
         @Override
         public void enter() {
-            if (mVerboseLoggingEnabled) Log.v(TAG, "Entering L2ConnectingState");
+            if (mVerboseLoggingEnabled) Log.v(getTag(), "Entering L2ConnectingState");
             // Make sure we connect: we enter this state prior to connecting to a new
             // network. In some cases supplicant ignores the connect requests (it might not
             // find the target SSID in its cache), Therefore we end up stuck that state, hence the
@@ -4456,7 +4459,7 @@ public class ClientModeImpl extends StateMachine {
 
         @Override
         public void exit() {
-            if (mVerboseLoggingEnabled) Log.v(TAG, "Exiting L2ConnectingState");
+            if (mVerboseLoggingEnabled) Log.v(getTag(), "Exiting L2ConnectingState");
         }
 
         @Override
@@ -4479,7 +4482,7 @@ public class ClientModeImpl extends StateMachine {
                     String bssid = assocRejectEventInfo.bssid;
                     boolean timedOut = assocRejectEventInfo.timedOut;
                     int statusCode = assocRejectEventInfo.statusCode;
-                    Log.d(TAG, "Association Rejection event: bssid=" + bssid + " statusCode="
+                    Log.d(getTag(), "Association Rejection event: bssid=" + bssid + " statusCode="
                             + statusCode + " timedOut=" + timedOut);
                     if (!isValidBssid(bssid)) {
                         // If BSSID is null, use the target roam BSSID
@@ -4627,7 +4630,7 @@ public class ClientModeImpl extends StateMachine {
                         Pair<String, String> identityPair = mWifiCarrierInfoManager
                                 .getSimIdentity(mTargetWifiConfiguration);
                         if (identityPair != null && identityPair.first != null) {
-                            Log.i(TAG, "SUP_REQUEST_IDENTITY: identityPair=["
+                            Log.i(getTag(), "SUP_REQUEST_IDENTITY: identityPair=["
                                     + ((identityPair.first.length() >= 7)
                                     ? identityPair.first.substring(0, 7 /* Prefix+PLMN ID */)
                                     + "****"
@@ -4638,7 +4641,7 @@ public class ClientModeImpl extends StateMachine {
                                     identityPair.second);
                             identitySent = true;
                         } else {
-                            Log.e(TAG, "Unable to retrieve identity from Telephony");
+                            Log.e(getTag(), "Unable to retrieve identity from Telephony");
                         }
                     }
 
@@ -4699,7 +4702,7 @@ public class ClientModeImpl extends StateMachine {
             @Override
             public void onRssiThresholdBreached(byte curRssi) {
                 if (mVerboseLoggingEnabled) {
-                    Log.e(TAG, "onRssiThresholdBreach event. Cur Rssi = " + curRssi);
+                    Log.e(getTag(), "onRssiThresholdBreach event. Cur Rssi = " + curRssi);
                 }
                 sendMessage(CMD_RSSI_THRESHOLD_BREACHED, curRssi);
             }
@@ -4750,7 +4753,7 @@ public class ClientModeImpl extends StateMachine {
             final NetworkCapabilities nc = getCapabilities(getCurrentWifiConfiguration());
             // This should never happen.
             if (mNetworkAgent != null) {
-                Log.wtf(TAG, "mNetworkAgent is not null: " + mNetworkAgent);
+                Log.wtf(getTag(), "mNetworkAgent is not null: " + mNetworkAgent);
                 mNetworkAgent.unregister();
             }
             mNetworkAgent = new WifiNetworkAgent(mContext, getHandler().getLooper(),
@@ -5083,7 +5086,7 @@ public class ClientModeImpl extends StateMachine {
         sendMessage(CMD_ONESHOT_RSSI_POLL);
     }
 
-    private static int convertToUsabilityStatsTriggerType(int unusableEventTriggerType) {
+    private int convertToUsabilityStatsTriggerType(int unusableEventTriggerType) {
         int triggerType;
         switch (unusableEventTriggerType) {
             case WifiIsUnusableEvent.TYPE_DATA_STALL_BAD_TX:
@@ -5103,7 +5106,7 @@ public class ClientModeImpl extends StateMachine {
                 break;
             default:
                 triggerType = WifiUsabilityStats.TYPE_UNKNOWN;
-                Log.e(TAG, "Unknown WifiIsUnusableEvent: " + unusableEventTriggerType);
+                Log.e(getTag(), "Unknown WifiIsUnusableEvent: " + unusableEventTriggerType);
         }
         return triggerType;
     }
@@ -5169,7 +5172,8 @@ public class ClientModeImpl extends StateMachine {
     @VisibleForTesting
     public boolean shouldEvaluateWhetherToSendExplicitlySelected(WifiConfiguration currentConfig) {
         if (currentConfig == null) {
-            Log.wtf(TAG, "Current WifiConfiguration is null, but IP provisioning just succeeded");
+            Log.wtf(getTag(), "Current WifiConfiguration is null, "
+                    + "but IP provisioning just succeeded");
             return false;
         }
         long currentTimeMillis = mClock.getElapsedSinceBootMillis();
@@ -5381,7 +5385,7 @@ public class ClientModeImpl extends StateMachine {
                         mWifiNative.disconnect(mInterfaceName);
                     } else if (message.arg1 == NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN
                             || message.arg1 == NETWORK_STATUS_UNWANTED_VALIDATION_FAILED) {
-                        Log.d(TAG, (message.arg1 == NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN
+                        Log.d(getTag(), (message.arg1 == NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN
                                 ? "NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN"
                                 : "NETWORK_STATUS_UNWANTED_VALIDATION_FAILED"));
                         WifiConfiguration config = getCurrentWifiConfiguration();
@@ -5403,7 +5407,7 @@ public class ClientModeImpl extends StateMachine {
                                 // selection status to temporarily disable the network.
                                 if (mWifiConfigManager.getLastSelectedNetwork() != config.networkId
                                         && !config.noInternetAccessExpected) {
-                                    Log.i(TAG, "Temporarily disabling network because of"
+                                    Log.i(getTag(), "Temporarily disabling network because of"
                                             + "no-internet access");
                                     mWifiConfigManager.updateNetworkSelectionStatus(
                                             config.networkId,
@@ -5558,7 +5562,7 @@ public class ClientModeImpl extends StateMachine {
     class DisconnectedState extends State {
         @Override
         public void enter() {
-            Log.i(TAG, "disconnectedstate enter");
+            Log.i(getTag(), "disconnectedstate enter");
             // We don't scan frequently if this is a temporary disconnect
             // due to p2p
             if (mTemporarilyDisconnectWifi) {
@@ -5921,7 +5925,7 @@ public class ClientModeImpl extends StateMachine {
         String bssid = mWifiInfo.getBSSID();
         String ssid = mWifiInfo.getSSID();
         if ((bssid == null) || (ssid == null) || WifiManager.UNKNOWN_SSID.equals(ssid)) {
-            Log.e(TAG, "Failed to handle BSS transition: bssid: " + bssid + " ssid: " + ssid);
+            Log.e(getTag(), "Failed to handle BSS transition: bssid: " + bssid + " ssid: " + ssid);
             return;
         }
 
@@ -6022,7 +6026,7 @@ public class ClientModeImpl extends StateMachine {
         if (isFrameworkWpa3SaeUpgradePossible && isWpa3SaeUpgradeOffloadEnabled()) {
             // Driver offload of upgrading legacy WPA/WPA2 connection to WPA3
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Driver upgrade legacy WPA/WPA2 connection to WPA3");
+                Log.d(getTag(), "Driver upgrade legacy WPA/WPA2 connection to WPA3");
             }
             config.allowedAuthAlgorithms.clear();
             // Note: KeyMgmt.WPA2_PSK is already enabled, enable SAE as well
@@ -6056,7 +6060,7 @@ public class ClientModeImpl extends StateMachine {
                     // Found a legacy WPA2 AP in range. Do not upgrade the connection to WPA3 to
                     // allow seamless roaming within the ESS.
                     if (mVerboseLoggingEnabled) {
-                        Log.d(TAG, "Found legacy WPA2 AP, do not upgrade to WPA3");
+                        Log.d(getTag(), "Found legacy WPA2 AP, do not upgrade to WPA3");
                     }
                     isLegacyWpa2ApInScanResult = true;
                     canUpgradePskToSae = false;
@@ -6084,7 +6088,7 @@ public class ClientModeImpl extends StateMachine {
                             WifiConfiguration.KeyMgmt.FILS_SHA384))) {
             // Upgrade legacy WPA/WPA2 connection to WPA3
             if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Upgrade legacy WPA/WPA2 connection to WPA3");
+                Log.d(getTag(), "Upgrade legacy WPA/WPA2 connection to WPA3");
             }
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         }
