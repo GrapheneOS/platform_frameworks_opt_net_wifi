@@ -348,10 +348,16 @@ public class SoftApManager implements ActiveModeManager {
             return SUCCESS;
         }
 
-        // We're configuring a random/custom MAC address. In this case, driver support is mandatory.
-        if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
-            Log.e(TAG, "failed to set explicitly requested MAC address");
-            return ERROR_GENERIC;
+
+        if (mWifiNative.isSetMacAddressSupported(mApInterfaceName)) {
+            if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+                Log.e(TAG, "failed to set explicitly requested MAC address");
+                return ERROR_GENERIC;
+            }
+        } else if (!mIsRandomizeBssid) {
+            // If hardware does not support MAC address setter,
+            // only report the error for non randomization.
+            return ERROR_UNSUPPORTED_CONFIGURATION;
         }
         return SUCCESS;
     }

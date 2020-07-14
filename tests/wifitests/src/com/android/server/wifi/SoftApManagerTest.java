@@ -146,6 +146,8 @@ public class SoftApManagerTest extends WifiBaseTest {
         MockitoAnnotations.initMocks(this);
         mLooper = new TestLooper();
 
+        when(mWifiNative.isSetMacAddressSupported(any())).thenReturn(true);
+        when(mWifiNative.setMacAddress(any(), any())).thenReturn(true);
         when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(), any())).thenReturn(true);
 
         when(mFrameworkFacade.getIntegerSetting(
@@ -1699,17 +1701,75 @@ public class SoftApManagerTest extends WifiBaseTest {
     }
 
     @Test
-    public void setMacFailureAllowedWhenRandomizationOff() throws Exception {
-        when(mResources.getBoolean(R.bool.config_wifi_ap_mac_randomization_supported))
-                .thenReturn(false);
-        SoftApModeConfiguration apConfig =
-                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
-                mTestSoftApCapability);
+    public void setsCustomMacWhenSetMacNotSupport() throws Exception {
+        when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
+        when(mWifiNative.isSetMacAddressSupported(any())).thenReturn(false);
+        Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+        configBuilder.setSsid(TEST_SSID);
+        configBuilder.setBssid(MacAddress.fromString("23:34:45:56:67:78"));
+        SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
+                IFACE_IP_MODE_LOCAL_ONLY, configBuilder.build(), mTestSoftApCapability);
         ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
 
-        when(mWifiNative.setMacAddress(any(), any())).thenReturn(false);
+        mSoftApManager = createSoftApManager(apConfig, TEST_COUNTRY_CODE);
+        mSoftApManager.start();
+        mLooper.dispatchAll();
+        verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
+        verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_UNSUPPORTED_CONFIGURATION);
+        verify(mWifiNative, never()).setMacAddress(any(), any());
+    }
 
+    @Test
+    public void setMacFailureWhenCustomMac() throws Exception {
+        when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
+        Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+        configBuilder.setSsid(TEST_SSID);
+        configBuilder.setBssid(MacAddress.fromString("23:34:45:56:67:78"));
+        SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
+                IFACE_IP_MODE_LOCAL_ONLY, configBuilder.build(), mTestSoftApCapability);
+        ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
+        when(mWifiNative.setMacAddress(eq(TEST_INTERFACE_NAME), mac.capture())).thenReturn(false);
+
+        mSoftApManager = createSoftApManager(apConfig, TEST_COUNTRY_CODE);
+        mSoftApManager.start();
+        mLooper.dispatchAll();
+        verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
+        verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_GENERAL);
+        assertThat(mac.getValue()).isEqualTo(MacAddress.fromString("23:34:45:56:67:78"));
+    }
+
+    @Test
+    public void setMacFailureWhenRandomMac() throws Exception {
+        when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
+        when(mWifiApConfigStore.getApConfiguration()).thenReturn(mDefaultApConfig);
+        SoftApConfiguration randomizedBssidConfig =
+                new SoftApConfiguration.Builder(mDefaultApConfig)
+                .setBssid(TEST_MAC_ADDRESS).build();
+        when(mWifiApConfigStore.randomizeBssidIfUnset(any(), any())).thenReturn(
+                randomizedBssidConfig);
+        SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
+                IFACE_IP_MODE_LOCAL_ONLY, null, mTestSoftApCapability);
+        ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
+        when(mWifiNative.setMacAddress(eq(TEST_INTERFACE_NAME), mac.capture())).thenReturn(false);
+        mSoftApManager = createSoftApManager(apConfig, TEST_COUNTRY_CODE);
+        mSoftApManager.start();
+        mLooper.dispatchAll();
+        verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
+        verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_GENERAL);
+    }
+
+    @Test
+    public void setRandomMacWhenSetMacNotsupport() throws Exception {
+        when(mWifiNative.isSetMacAddressSupported(any())).thenReturn(false);
+        SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
+                IFACE_IP_MODE_LOCAL_ONLY, null, mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
+        verify(mWifiNative, never()).setMacAddress(any(), any());
     }
 
     @Test
@@ -1852,15 +1912,22 @@ public class SoftApManagerTest extends WifiBaseTest {
     /** Starts soft AP and verifies that it is enabled successfully. */
     protected void startSoftApAndVerifyEnabled(
             SoftApModeConfiguration softApConfig, String countryCode) throws Exception {
-        SoftApConfiguration expectedConfig;
+        // The expected config to pass to Native
+        SoftApConfiguration expectedConfig = null;
+        // The config which base on mDefaultApConfig and generate ramdonized mac address
+        SoftApConfiguration randomizedBssidConfig = null;
         InOrder order = inOrder(mCallback, mWifiNative);
 
-        mSoftApManager = createSoftApManager(softApConfig, countryCode);
-        mSoftApManager.mSoftApNotifier = mFakeSoftApNotifier;
         SoftApConfiguration config = softApConfig.getSoftApConfiguration();
         if (config == null) {
+            // Only generate randomized mac for default config since test case doesn't care it.
             when(mWifiApConfigStore.getApConfiguration()).thenReturn(mDefaultApConfig);
-            expectedConfig = new SoftApConfiguration.Builder(mDefaultApConfig)
+            randomizedBssidConfig =
+                    new SoftApConfiguration.Builder(mDefaultApConfig)
+                    .setBssid(TEST_MAC_ADDRESS).build();
+            when(mWifiApConfigStore.randomizeBssidIfUnset(any(), any())).thenReturn(
+                    randomizedBssidConfig);
+            expectedConfig = new SoftApConfiguration.Builder(randomizedBssidConfig)
                 .setChannel(DEFAULT_AP_CHANNEL, SoftApConfiguration.BAND_2GHZ)
                 .build();
         } else {
@@ -1868,7 +1935,8 @@ public class SoftApManagerTest extends WifiBaseTest {
                 .setChannel(DEFAULT_AP_CHANNEL, SoftApConfiguration.BAND_2GHZ)
                 .build();
         }
-
+        mSoftApManager = createSoftApManager(softApConfig, countryCode);
+        mSoftApManager.mSoftApNotifier = mFakeSoftApNotifier;
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
 
         when(mWifiNative.setupInterfaceForSoftApMode(any()))
@@ -1905,8 +1973,8 @@ public class SoftApManagerTest extends WifiBaseTest {
         verify(mListener).onStarted();
         verify(mWifiMetrics).addSoftApUpChangedEvent(true, softApConfig.getTargetMode(),
                 TEST_DEFAULT_SHUTDOWN_TIMEOUT_MILLS);
-        verify(mWifiMetrics).updateSoftApConfiguration(config == null ? mDefaultApConfig : config,
-                softApConfig.getTargetMode());
+        verify(mWifiMetrics).updateSoftApConfiguration(config == null
+                ? randomizedBssidConfig : config, softApConfig.getTargetMode());
         verify(mWifiMetrics).updateSoftApCapability(softApConfig.getCapability(),
                 softApConfig.getTargetMode());
     }
