@@ -2965,6 +2965,36 @@ public class WifiVendorHalTest extends WifiBaseTest {
     }
 
     /**
+     * Verifies isSetMacAddressSupported().
+     */
+    @Test
+    public void testIsSetMacAddressSupportedWhenV1_4Support() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_4Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV14);
+
+        assertTrue(mWifiVendorHal.isSetMacAddressSupported(TEST_IFACE_NAME_1));
+    }
+
+    /**
+     * Verifies isSetMacAddressSupported().
+     */
+    @Test
+    public void testIsSetMacAddressSupportedWhenV1_2Support() throws Exception {
+        // Expose the 1.2 IWifiStaIface.
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        assertTrue(mWifiVendorHal.isSetMacAddressSupported(TEST_IFACE_NAME));
+    }
+
+    /**
+     * Verifies isSetMacAddressSupported() does not crash with older HALs.
+     */
+    @Test
+    public void testIsSetMacAddressSupportedOnOlderHal() throws Exception {
+        assertFalse(mWifiVendorHal.isSetMacAddressSupported(TEST_IFACE_NAME));
+    }
+
+    /**
      * Verifies radio mode change callback to indicate DBS mode.
      */
     @Test

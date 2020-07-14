@@ -1788,6 +1788,15 @@ public class WifiNative {
     }
 
     /**
+     * Returns true if Hal version supports setMacAddress, otherwise false.
+     *
+     * @param interfaceName Name of the interface
+     */
+    public boolean isSetMacAddressSupported(@NonNull String interfaceName) {
+        return mWifiVendorHal.isSetMacAddressSupported(interfaceName);
+    }
+
+    /**
      * Get the factory MAC address of the given interface
      * @param interfaceName Name of the interface.
      * @return factory MAC address, or null on a failed call or if feature is unavailable.
