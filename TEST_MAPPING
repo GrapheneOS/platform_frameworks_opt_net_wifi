@@ -10,6 +10,14 @@
           "include-filter": "android.cts.backup.OtherSoundsSettingsHostSideTest"
         }
       ]
+    },
+    {
+      "name": "CtsWifiTestCases",
+      "options": [
+        {
+          "exclude-annotation": "android.net.wifi.cts.VirtualDeviceNotSupported"
+        }
+      ]
     }
   ]
 }
