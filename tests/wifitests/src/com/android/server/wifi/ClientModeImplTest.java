@@ -98,8 +98,6 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.IPowerManager;
-import android.os.IThermalService;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
@@ -242,9 +240,11 @@ public class ClientModeImplTest extends WifiBaseTest {
                 });
         when(context.getContentResolver()).thenReturn(mockContentResolver);
 
-        when(context.getSystemService(Context.POWER_SERVICE)).thenReturn(
-                new PowerManager(context, mock(IPowerManager.class), mock(IThermalService.class),
-                    new Handler()));
+        when(context.getSystemService(Context.POWER_SERVICE)).thenReturn(mPowerManager);
+        when(context.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
+        when(mPowerManager.isInteractive()).thenReturn(true);
+        when(mPowerManager.newWakeLock(anyInt(), anyString())).thenReturn(
+                mock(PowerManager.WakeLock.class));
 
         mAlarmManager = new TestAlarmManager();
         when(context.getSystemService(Context.ALARM_SERVICE)).thenReturn(
@@ -416,6 +416,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock Network mNetwork;
     @Mock ClientModeManager mClientModeManager;
     @Mock WifiScoreReport mWifiScoreReport;
+    @Mock PowerManager mPowerManager;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);

@@ -827,21 +827,6 @@ public class ClientModeImpl extends StateMachine {
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiHealthMonitor = wifiHealthMonitor;
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        mContext.registerReceiver(
-                new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        String action = intent.getAction();
-                        if (action.equals(Intent.ACTION_SCREEN_ON)) {
-                            sendMessage(CMD_SCREEN_STATE_CHANGED, 1);
-                        } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
-                            sendMessage(CMD_SCREEN_STATE_CHANGED, 0);
-                        }
-                    }
-                }, filter);
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -871,12 +856,6 @@ public class ClientModeImpl extends StateMachine {
     @Override
     public void start() {
         super.start();
-
-        PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-
-        // Learn the initial state of whether the screen is on.
-        // We update this field when we receive broadcasts from the system.
-        handleScreenStateChanged(powerManager.isInteractive());
     }
 
     private void registerForWifiMonitorEvents()  {
@@ -2233,12 +2212,6 @@ public class ClientModeImpl extends StateMachine {
         mOnTimeScreenStateChange = mOnTime;
         mLastScreenStateChangeTimeStamp = mLastLinkLayerStatsUpdate;
 
-        mWifiMetrics.setScreenState(screenOn);
-
-        mNetworkFactory.handleScreenStateChanged(screenOn);
-
-        mWifiLockManager.handleScreenStateChanged(screenOn);
-
         if (mVerboseLoggingEnabled) log("handleScreenStateChanged Exit: " + screenOn);
     }
 
@@ -3314,10 +3287,6 @@ public class ClientModeImpl extends StateMachine {
                     getAdditionalWifiServiceInterfaces();
                     break;
                 }
-                case CMD_SCREEN_STATE_CHANGED: {
-                    handleScreenStateChanged(message.arg1 != 0);
-                    break;
-                }
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
@@ -3631,12 +3600,33 @@ public class ClientModeImpl extends StateMachine {
     }
 
     class ConnectableState extends State {
+        BroadcastReceiver mScreenStateChangeReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                    sendMessage(CMD_SCREEN_STATE_CHANGED, 1);
+                } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                    sendMessage(CMD_SCREEN_STATE_CHANGED, 0);
+                }
+            }
+        };
 
         @Override
         public void enter() {
             Log.d(getTag(), "entering ConnectableState: ifaceName = " + mInterfaceName);
             mOperationalMode = CONNECT_MODE;
+
             setupClientMode();
+
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_SCREEN_ON);
+            filter.addAction(Intent.ACTION_SCREEN_OFF);
+            mContext.registerReceiver(mScreenStateChangeReceiver, filter);
+            // Learn the initial state of whether the screen is on.
+            // We update this field when we receive broadcasts from the system.
+            handleScreenStateChanged(mContext.getSystemService(PowerManager.class).isInteractive());
+
             if (!mWifiNative.removeAllNetworks(mInterfaceName)) {
                 loge("Failed to remove networks on entering connect mode");
             }
@@ -3669,6 +3659,9 @@ public class ClientModeImpl extends StateMachine {
             }
             mWifiHealthMonitor.setWifiEnabled(false);
             mWifiDataStall.reset();
+
+            mContext.unregisterReceiver(mScreenStateChangeReceiver);
+
             stopClientMode();
         }
 
@@ -3677,6 +3670,10 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case CMD_SCREEN_STATE_CHANGED: {
+                    handleScreenStateChanged(message.arg1 != 0);
+                    break;
+                }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
                     if (message.arg1 == 1) {
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,

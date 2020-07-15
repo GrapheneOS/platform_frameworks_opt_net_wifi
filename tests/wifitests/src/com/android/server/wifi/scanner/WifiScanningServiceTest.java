@@ -78,7 +78,6 @@ import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.test.BidirectionalAsyncChannel;
 import com.android.server.wifi.Clock;
-import com.android.server.wifi.DppMetrics;
 import com.android.server.wifi.FakeWifiLog;
 import com.android.server.wifi.FrameworkFacade;
 import com.android.server.wifi.MockResources;
@@ -87,11 +86,7 @@ import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
-import com.android.server.wifi.WifiPowerMetrics;
-import com.android.server.wifi.aware.WifiAwareMetrics;
-import com.android.server.wifi.p2p.WifiP2pMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
-import com.android.server.wifi.rtt.RttMetrics;
 import com.android.server.wifi.util.WifiAsyncChannel;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 
@@ -139,14 +134,12 @@ public class WifiScanningServiceTest extends WifiBaseTest {
     @Mock Clock mClock;
     @Spy FakeWifiLog mLog;
     @Mock WifiPermissionsUtil mWifiPermissionsUtil;
-    @Mock DppMetrics mDppMetrics;
     @Mock WifiNative mWifiNative;
+    @Mock WifiMetrics mWifiMetrics;
     ChannelHelper mChannelHelper0;
     ChannelHelper mChannelHelper1;
-    WifiMetrics mWifiMetrics;
     TestLooper mLooper;
     WifiScanningServiceImpl mWifiScanningServiceImpl;
-    @Mock WifiP2pMetrics mWifiP2pMetrics;
 
     @Before
     public void setUp() throws Exception {
@@ -170,10 +163,6 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                 new int[]{5600, 5660, 5680}, // 5650 is missing from channelHelper0
                 new int[]{5945, 5985});
         mLooper = new TestLooper();
-        mWifiMetrics = new WifiMetrics(mContext, mFrameworkFacade, mClock, mLooper.getLooper(),
-                new WifiAwareMetrics(mClock), new RttMetrics(mClock),
-                new WifiPowerMetrics(mBatteryStats),
-                mWifiP2pMetrics, mDppMetrics);
         when(mWifiScannerImplFactory
                 .create(any(), any(), any(), eq(TEST_IFACE_NAME_0)))
                 .thenReturn(mWifiScannerImpl0);
@@ -793,9 +782,9 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         assertDumpContainsCallbackLog("singleScanInvalidRequest", requestId,
                 "bad request");
 
-        assertEquals(0, mWifiMetrics.getOneshotScanCount());
-        assertEquals(mWifiMetrics.getScanReturnEntry(
-                WifiMetricsProto.WifiLog.SCAN_FAILURE_INVALID_CONFIGURATION), 1);
+        verify(mWifiMetrics, never()).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_FAILURE_INVALID_CONFIGURATION, 1);
 
         // Ensure that no scan was triggered to the lower layers.
         verify(mBatteryStats, never()).reportWifiScanStoppedFromSource(eq(workSource));
@@ -846,9 +835,9 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         assertDumpContainsCallbackLog("singleScanInvalidRequest", requestId,
                 "bad request");
 
-        assertEquals(0, mWifiMetrics.getOneshotScanCount());
-        assertEquals(mWifiMetrics.getScanReturnEntry(
-                WifiMetricsProto.WifiLog.SCAN_FAILURE_INVALID_CONFIGURATION), 1);
+        verify(mWifiMetrics, never()).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_FAILURE_INVALID_CONFIGURATION, 1);
 
         // Ensure that no scan was triggered to the lower layers.
         verify(mBatteryStats, never()).reportWifiScanStoppedFromSource(eq(workSource));
@@ -891,9 +880,9 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         assertDumpContainsCallbackLog("singleScanInvalidRequest", requestId,
                 "bad request");
 
-        assertEquals(0, mWifiMetrics.getOneshotScanCount());
-        assertEquals(mWifiMetrics.getScanReturnEntry(
-                WifiMetricsProto.WifiLog.SCAN_FAILURE_INVALID_CONFIGURATION), 1);
+        verify(mWifiMetrics, never()).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_FAILURE_INVALID_CONFIGURATION, 1);
 
         // Ensure that no scan was triggered to the lower layers.
         verify(mBatteryStats, never()).reportWifiScanStoppedFromSource(eq(workSource));
@@ -948,8 +937,8 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                 "Failed to start single scan", messageCaptor.getAllValues().get(1));
         verifyNoMoreInteractions(mBatteryStats);
 
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 1);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN), 1);
+        verify(mWifiMetrics).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN, 1);
         assertDumpContainsRequestLog("addSingleScanRequest", requestId);
     }
 
@@ -991,8 +980,8 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                 WifiScanner.REASON_UNSPECIFIED, "Scan failed");
         assertDumpContainsCallbackLog("singleScanFailed", requestId,
                 "reason=" + WifiScanner.REASON_UNSPECIFIED + ", Scan failed");
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 1);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN), 1);
+        verify(mWifiMetrics).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN, 1);
         verify(mBatteryStats).reportWifiScanStoppedFromSource(eq(workSource));
     }
 
@@ -1021,12 +1010,12 @@ public class WifiScanningServiceTest extends WifiBaseTest {
 
         sendSingleScanRequest(controlChannel, requestId, requestSettings, null);
 
-        assertEquals(0, mWifiMetrics.getOneshotScanCount());
-        assertEquals(0, mWifiMetrics.getOneshotScanWithDfsCount());
+        verify(mWifiMetrics, never()).incrementOneshotScanCount();
+        verify(mWifiMetrics, never()).incrementOneshotScanWithDfsCount();
         // Scan is successfully queue
         mLooper.dispatchAll();
-        assertEquals(1, mWifiMetrics.getOneshotScanCount());
-        assertEquals(1, mWifiMetrics.getOneshotScanWithDfsCount());
+        verify(mWifiMetrics).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementOneshotScanWithDfsCount();
     }
 
     /**
@@ -1054,11 +1043,12 @@ public class WifiScanningServiceTest extends WifiBaseTest {
 
         sendSingleScanRequest(controlChannel, requestId, requestSettings, null);
 
-        assertEquals(0, mWifiMetrics.getOneshotScanCount());
+        verify(mWifiMetrics, never()).incrementOneshotScanCount();
+        verify(mWifiMetrics, never()).incrementOneshotScanWithDfsCount();
         // Scan is successfully queue
         mLooper.dispatchAll();
-        assertEquals(1, mWifiMetrics.getOneshotScanCount());
-        assertEquals(0, mWifiMetrics.getOneshotScanWithDfsCount());
+        verify(mWifiMetrics).incrementOneshotScanCount();
+        verify(mWifiMetrics, never()).incrementOneshotScanWithDfsCount();
     }
 
     /**
@@ -1321,8 +1311,9 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verifyScanResultsReceived(handlerOrder, handler, requestId2, results2.getScanData());
         verifySingleScanCompletedReceived(handlerOrder, handler, requestId2);
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 2);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_SUCCESS), 2);
+        verify(mWifiMetrics, times(2)).incrementOneshotScanCount();
+        verify(mWifiMetrics, times(2)).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 1);
     }
 
     /**
@@ -1391,8 +1382,9 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verifyScanResultsReceived(handlerOrder, handler, requestId2, results2.getScanData());
         verifySingleScanCompletedReceived(handlerOrder, handler, requestId2);
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 2);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_SUCCESS), 2);
+        verify(mWifiMetrics, times(2)).incrementOneshotScanCount();
+        verify(mWifiMetrics, times(2)).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 1);
     }
 
 
@@ -1495,8 +1487,11 @@ public class WifiScanningServiceTest extends WifiBaseTest {
 
         verifyMultipleSingleScanResults(handlerOrder, handler, requestId2, results2, requestId3,
                 results3);
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 3);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_SUCCESS), 3);
+        verify(mWifiMetrics, times(3)).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 1);
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 2);
 
         verify(mBatteryStats).reportWifiScanStoppedFromSource(eq(workSource2and3));
 
@@ -1573,8 +1568,9 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         verifyMultipleSingleScanResults(handlerOrder, handler, requestId1, results1, requestId2,
                 results2);
 
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 2);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_SUCCESS), 2);
+        verify(mWifiMetrics, times(2)).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 2);
     }
 
     /**
@@ -1672,8 +1668,11 @@ public class WifiScanningServiceTest extends WifiBaseTest {
 
         verifyScanResultsReceived(handlerOrder, handler, requestId2, results2.getScanData());
         verifySingleScanCompletedReceived(handlerOrder, handler, requestId2);
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 3);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_SUCCESS), 3);
+        verify(mWifiMetrics, times(3)).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 2);
+        verify(mWifiMetrics).incrementScanReturnEntry(
+                WifiMetricsProto.WifiLog.SCAN_SUCCESS, 1);
 
         verify(mBatteryStats).reportWifiScanStoppedFromSource(eq(workSource2));
 
@@ -2226,7 +2225,7 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                         WifiScanner.WIFI_BAND_BOTH)
                 .build();
         doSuccessfulBackgroundScan(requestSettings, nativeSettings);
-        assertEquals(mWifiMetrics.getBackgroundScanCount(), 1);
+        verify(mWifiMetrics).incrementBackgroundScanCount();
     }
 
     /**
@@ -3106,8 +3105,8 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                 "Failed to start single scan", messageCaptor.getAllValues().get(1));
         verifyNoMoreInteractions(mBatteryStats);
 
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 1);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN), 1);
+        verify(mWifiMetrics).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN, 1);
         assertDumpContainsRequestLog("addSingleScanRequest", requestId);
     }
 
@@ -3218,8 +3217,8 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                 WifiScanner.REASON_UNSPECIFIED, "Scan failed");
         assertDumpContainsCallbackLog("singleScanFailed", requestId,
                 "reason=" + WifiScanner.REASON_UNSPECIFIED + ", Scan failed");
-        assertEquals(mWifiMetrics.getOneshotScanCount(), 1);
-        assertEquals(mWifiMetrics.getScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN), 1);
+        verify(mWifiMetrics).incrementOneshotScanCount();
+        verify(mWifiMetrics).incrementScanReturnEntry(WifiMetricsProto.WifiLog.SCAN_UNKNOWN, 1);
         verify(mBatteryStats).reportWifiScanStoppedFromSource(eq(workSource));
     }
 

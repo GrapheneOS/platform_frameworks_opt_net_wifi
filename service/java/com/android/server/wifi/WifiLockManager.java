@@ -17,12 +17,16 @@
 package com.android.server.wifi;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.WorkSource;
 import android.os.WorkSource.WorkChain;
@@ -96,6 +100,23 @@ public class WifiLockManager {
         mHandler = handler;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        context.registerReceiver(
+                new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String action = intent.getAction();
+                        if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                            handleScreenStateChanged(true);
+                        } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                            handleScreenStateChanged(false);
+                        }
+                    }
+                }, filter, null, mHandler);
+        handleScreenStateChanged(context.getSystemService(PowerManager.class).isInteractive());
 
         // Register for UID fg/bg transitions
         registerUidImportanceTransitions();
@@ -334,7 +355,7 @@ public class WifiLockManager {
     /**
      * Handler for screen state (on/off) changes
      */
-    public void handleScreenStateChanged(boolean screenOn) {
+    private void handleScreenStateChanged(boolean screenOn) {
         if (mVerboseLoggingEnabled) {
             Log.d(TAG, "handleScreenStateChanged: screenOn = " + screenOn);
         }
