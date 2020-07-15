@@ -55,6 +55,7 @@ import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -87,6 +88,7 @@ public class ActiveModeWarden {
     private final ScanRequestProxy mScanRequestProxy;
     private final WifiNative mWifiNative;
     private final WifiController mWifiController;
+    private final Graveyard mGraveyard;
 
     private WifiManager.SoftApCallback mSoftApCallback;
     private WifiManager.SoftApCallback mLohsCallback;
@@ -139,6 +141,61 @@ public class ActiveModeWarden {
         void onActiveModeManagerRoleChanged(@NonNull ActiveModeManager activeModeManager);
     }
 
+    /**
+     * Keep stopped {@link ActiveModeManager} instances so that they can be dumped to aid debugging.
+     *
+     * TODO(b/160283853): Find a smarter way to evict old ActiveModeManagers
+     */
+    private static class Graveyard {
+        private static final int INSTANCES_TO_KEEP = 3;
+
+        private final ArrayDeque<ConcreteClientModeManager> mClientModeManagers =
+                new ArrayDeque<>();
+        private final ArrayDeque<SoftApManager> mSoftApManagers = new ArrayDeque<>();
+
+        /**
+         * Add this stopped {@link ConcreteClientModeManager} to the graveyard, and evict the oldest
+         * ClientModeManager if the graveyard is full.
+         */
+        void inter(ConcreteClientModeManager clientModeManager) {
+            if (mClientModeManagers.size() == INSTANCES_TO_KEEP) {
+                mClientModeManagers.removeFirst();
+            }
+            mClientModeManagers.addLast(clientModeManager);
+        }
+
+        /**
+         * Add this stopped {@link SoftApManager} to the graveyard, and evict the oldest
+         * SoftApManager if the graveyard is full.
+         */
+        void inter(SoftApManager softApManager) {
+            if (mSoftApManagers.size() == INSTANCES_TO_KEEP) {
+                mSoftApManagers.removeFirst();
+            }
+            mSoftApManagers.addLast(softApManager);
+        }
+
+        /** Dump the contents of the graveyard. */
+        void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+            pw.println("Dump of ActiveModeWarden.Graveyard");
+            pw.println("Stopped ClientModeManagers: " + mClientModeManagers.size() + " total");
+            int i = 0;
+            for (ConcreteClientModeManager clientModeManager : mClientModeManagers) {
+                pw.println("Dump of stopped ClientModeManager " + i);
+                clientModeManager.dump(fd, pw, args);
+                i++;
+            }
+            pw.println("Stopped SoftApManagers: " + mSoftApManagers.size() + " total");
+            i = 0;
+            for (SoftApManager softApManager : mSoftApManagers) {
+                pw.println("Dump of stopped SoftApManager " + i);
+                softApManager.dump(fd, pw, args);
+                i++;
+            }
+            pw.println();
+        }
+    }
+
     ActiveModeWarden(WifiInjector wifiInjector,
                      Looper looper,
                      WifiNative wifiNative,
@@ -162,6 +219,7 @@ public class ActiveModeWarden {
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
         mWifiNative = wifiNative;
         mWifiController = new WifiController();
+        mGraveyard = new Graveyard();
 
         wifiNative.registerStatusListener(isReady -> {
             if (!isReady && !mIsShuttingdown) {
@@ -708,6 +766,7 @@ public class ActiveModeWarden {
         for (ActiveModeManager manager : getActiveModeManagers()) {
             manager.dump(fd, pw, args);
         }
+        mGraveyard.dump(fd, pw, args);
     }
 
     @VisibleForTesting
@@ -758,6 +817,7 @@ public class ActiveModeWarden {
         @Override
         public void onStopped() {
             mSoftApManagers.remove(softApManager);
+            mGraveyard.inter(softApManager);
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_AP_STOPPED);
             invokeOnRemovedCallbacks(softApManager);
@@ -766,6 +826,7 @@ public class ActiveModeWarden {
         @Override
         public void onStartFailure() {
             mSoftApManagers.remove(softApManager);
+            mGraveyard.inter(softApManager);
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_AP_START_FAILURE);
         }
@@ -804,6 +865,7 @@ public class ActiveModeWarden {
         @Override
         public void onStopped() {
             mClientModeManagers.remove(clientModeManager);
+            mGraveyard.inter(clientModeManager);
             updateClientScanMode();
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_STA_STOPPED);
@@ -813,6 +875,7 @@ public class ActiveModeWarden {
         @Override
         public void onStartFailure() {
             mClientModeManagers.remove(clientModeManager);
+            mGraveyard.inter(clientModeManager);
             updateClientScanMode();
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_STA_START_FAILURE);
