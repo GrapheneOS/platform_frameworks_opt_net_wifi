@@ -24,6 +24,7 @@ import static com.android.server.wifi.util.ApConfigUtil.ERROR_UNSUPPORTED_CONFIG
 import static com.android.server.wifi.util.ApConfigUtil.SUCCESS;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.content.Intent;
 import android.net.MacAddress;
 import android.net.wifi.ScanResult;
@@ -119,7 +120,8 @@ public class SoftApManager implements ActiveModeManager {
 
     private BaseWifiDiagnostics mWifiDiagnostics;
 
-    private @Role int mRole = ROLE_UNSPECIFIED;
+    @Nullable
+    private SoftApRole mRole = null;
 
     private boolean mEverReportMetricsForMaxClient = false;
 
@@ -232,15 +234,14 @@ public class SoftApManager implements ActiveModeManager {
     }
 
     @Override
-    public @Role int getRole() {
+    public SoftApRole getRole() {
         return mRole;
     }
 
-    @Override
-    public void setRole(@Role int role) {
+    /** Set the role of this SoftApManager */
+    public void setRole(SoftApRole role) {
         // softap does not allow in-place switching of roles.
-        Preconditions.checkState(mRole == ROLE_UNSPECIFIED);
-        Preconditions.checkState(SOFTAP_ROLES.contains(role));
+        Preconditions.checkState(mRole == null);
         mRole = role;
     }
 
@@ -854,7 +855,7 @@ public class SoftApManager implements ActiveModeManager {
                 mApInterfaceName = null;
                 mIfaceIsUp = false;
                 mIfaceIsDestroyed = false;
-                mRole = ROLE_UNSPECIFIED;
+                mRole = null;
                 mStateMachine.quitNow();
                 mModeListener.onStopped();
                 setSoftApChannel(0, SoftApInfo.CHANNEL_WIDTH_INVALID);

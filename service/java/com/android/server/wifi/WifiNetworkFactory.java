@@ -59,6 +59,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.ActiveModeManager.ClientConnectivityRole;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.ExternalCallbackTracker;
@@ -375,8 +376,7 @@ public class WifiNetworkFactory extends NetworkFactory {
             if (activeModeManager == mClientModeManager) {
                 // If the role changes to scan mode, tear down stuff. In case of primary client mode
                 // manager, wifi off may mean a role change to SCAN_ONLY role, not a removal.
-                if (!ActiveModeManager.CLIENT_CONNECTIVITY_ROLES.contains(
-                        activeModeManager.getRole())) {
+                if (!(activeModeManager.getRole() instanceof ClientConnectivityRole)) {
                     handleClientModeManagerRemovalOrFailure();
                 }
             }
