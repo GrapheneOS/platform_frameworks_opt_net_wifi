@@ -219,7 +219,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Captor ArgumentCaptor<WifiNetworkSuggestionsManager.OnSuggestionUpdateListener>
             mSuggestionUpdateListenerCaptor;
     @Captor ArgumentCaptor<ActiveModeWarden.ModeChangeCallback> mModeChangeCallbackCaptor;
-    @Captor ArgumentCaptor<BroadcastReceiver> mBroacastReceiverCaptor;
+    @Captor ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor;
     private MockResources mResources;
 
     private static final int CANDIDATE_NETWORK_ID = 0;
@@ -415,7 +415,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         verify(mActiveModeWarden, atLeastOnce()).registerModeChangeCallback(
                 mModeChangeCallbackCaptor.capture());
         verify(mContext, atLeastOnce()).registerReceiver(
-                mBroacastReceiverCaptor.capture(), any(), any(), any());
+                mBroadcastReceiverCaptor.capture(), any(), any(), any());
         verify(mWifiConfigManager, atLeastOnce()).addOnNetworkUpdateListener(
                 mNetworkUpdateListenerCaptor.capture());
         verify(mWifiNetworkSuggestionsManager, atLeastOnce()).addOnSuggestionUpdateListener(
@@ -3401,9 +3401,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     private void setScreenState(boolean screenOn) {
-        BroadcastReceiver broadcastReceiver = mBroacastReceiverCaptor.getValue();
+        BroadcastReceiver broadcastReceiver = mBroadcastReceiverCaptor.getValue();
         assertNotNull(broadcastReceiver);
-        Intent intent = screenOn ? new Intent(ACTION_SCREEN_ON) : new Intent(ACTION_SCREEN_OFF);
+        Intent intent = new Intent(screenOn  ? ACTION_SCREEN_ON : ACTION_SCREEN_OFF);
         broadcastReceiver.onReceive(mContext, intent);
     }
 }

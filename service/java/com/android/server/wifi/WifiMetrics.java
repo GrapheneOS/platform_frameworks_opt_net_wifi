@@ -20,7 +20,10 @@ import static android.net.wifi.WifiConfiguration.MeteredOverride;
 
 import static java.lang.StrictMath.toIntExact;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.net.wifi.EAPConstants;
 import android.net.wifi.IOnWifiUsabilityStatsListener;
@@ -41,6 +44,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.telephony.TelephonyManager;
@@ -1239,7 +1243,6 @@ public class WifiMetrics {
         mFacade = facade;
         mClock = clock;
         mCurrentConnectionEvent = null;
-        mScreenOn = true;
         mWifiState = WifiMetricsProto.WifiLog.WIFI_DISABLED;
         mRecordStartTimeSec = mClock.getElapsedSinceBootMillis() / 1000;
         mWifiAwareMetrics = awareMetrics;
@@ -1263,6 +1266,23 @@ public class WifiMetrics {
         mCurrentDeviceMobilityStatePnoScanStartMs = -1;
         mOnWifiUsabilityListeners =
                 new ExternalCallbackTracker<IOnWifiUsabilityStatsListener>(mHandler);
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        context.registerReceiver(
+                new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String action = intent.getAction();
+                        if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                            setScreenState(true);
+                        } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                            setScreenState(false);
+                        }
+                    }
+                }, filter, null, mHandler);
+        setScreenState(context.getSystemService(PowerManager.class).isInteractive());
     }
 
     /** Sets internal ScoringParams member */
@@ -4632,7 +4652,7 @@ public class WifiMetrics {
     /**
      *  Set screen state (On/Off)
      */
-    public void setScreenState(boolean screenOn) {
+    private void setScreenState(boolean screenOn) {
         synchronized (mLock) {
             mScreenOn = screenOn;
         }
