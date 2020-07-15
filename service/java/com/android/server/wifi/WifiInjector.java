@@ -189,6 +189,8 @@ public class WifiInjector {
     private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     private final SupplicantStateTracker mSupplicantStateTracker;
 
+    private final WifiP2pConnection mWifiP2pConnection;
+
     public WifiInjector(WifiContext context) {
         if (context == null) {
             throw new IllegalStateException(
@@ -371,6 +373,7 @@ public class WifiInjector {
         mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
                 mWifiNative, new DefaultClientModeManager(), mBatteryStats, mWifiDiagnostics,
                 mContext, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil);
+        mWifiP2pConnection = new WifiP2pConnection(mContext, wifiLooper, mActiveModeWarden);
         mConnectHelper = new ConnectHelper(mActiveModeWarden, mWifiConfigManager);
         mOpenNetworkNotifier = new OpenNetworkNotifier(mContext,
                 wifiLooper, mFrameworkFacade, mClock, mWifiMetrics,
@@ -611,7 +614,8 @@ public class WifiInjector {
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 new SimRequiredNotifier(mContext, mFrameworkFacade),
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo, mWifiNative,
-                        mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall));
+                        mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall),
+                mWifiP2pConnection);
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
                 clientModeImpl);
@@ -824,5 +828,9 @@ public class WifiInjector {
 
     public BaseWifiDiagnostics getWifiDiagnostics() {
         return mWifiDiagnostics;
+    }
+
+    public WifiP2pConnection getWifiP2pConnection() {
+        return mWifiP2pConnection;
     }
 }

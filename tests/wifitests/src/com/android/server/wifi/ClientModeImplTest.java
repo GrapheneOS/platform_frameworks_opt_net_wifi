@@ -417,6 +417,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock ClientModeManager mClientModeManager;
     @Mock WifiScoreReport mWifiScoreReport;
     @Mock PowerManager mPowerManager;
+    @Mock WifiP2pConnection mWifiP2pConnection;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -570,15 +571,11 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
-                mWifiScoreReport);
+                mWifiScoreReport, mWifiP2pConnection);
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
         mBinderToken = Binder.clearCallingIdentity();
-
-        /* Send the BOOT_COMPLETED message to setup some CMI state. */
-        mCmi.initialize();
-        mLooper.dispatchAll();
 
         verify(mWifiConfigManager, atLeastOnce()).addOnNetworkUpdateListener(
                 mConfigUpdateListenerCaptor.capture());
@@ -603,15 +600,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mNetworkAgentHandler = null;
         mCmi = null;
         mSession.finishMocking();
-    }
-
-    @Test
-    public void createNew() throws Exception {
-        assertEquals("DefaultState", getCurrentState().getName());
-
-        mCmi.initialize();
-        mLooper.dispatchAll();
-        assertEquals("DefaultState", getCurrentState().getName());
     }
 
     @Test
@@ -1835,8 +1823,6 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void getWhatToString() throws Exception {
-        assertEquals("CMD_CHANNEL_HALF_CONNECTED", mCmi.getWhatToString(
-                AsyncChannel.CMD_CHANNEL_HALF_CONNECTED));
         assertEquals("CMD_PRE_DHCP_ACTION", mCmi.getWhatToString(CMD_PRE_DHCP_ACTION));
         assertEquals("CMD_IP_REACHABILITY_LOST", mCmi.getWhatToString(
                 ClientModeImpl.CMD_IP_REACHABILITY_LOST));
