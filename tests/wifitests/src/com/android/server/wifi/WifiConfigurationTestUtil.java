@@ -23,6 +23,7 @@ import android.net.IpConfiguration;
 import android.net.LinkAddress;
 import android.net.ProxyInfo;
 import android.net.StaticIpConfiguration;
+import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -241,7 +242,7 @@ public class WifiConfigurationTestUtil {
             proxyInfo = new ProxyInfo(proxyHost, proxyPort, proxyExclusionList);
             proxySettings = IpConfiguration.ProxySettings.STATIC;
         } else if (proxySettingType == PAC_PROXY_SETTING) {
-            proxyInfo = new ProxyInfo(pacProxyPath);
+            proxyInfo = ProxyInfo.buildPacProxy(Uri.parse(pacProxyPath));
             proxySettings = IpConfiguration.ProxySettings.PAC;
         } else if (proxySettingType == NONE_PROXY_SETTING) {
             proxySettings = IpConfiguration.ProxySettings.NONE;
