@@ -20,6 +20,8 @@ import android.annotation.NonNull;
 import android.content.Context;
 import android.os.BugreportManager;
 import android.os.BugreportParams;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.ArraySet;
 import android.util.Base64;
 import android.util.Log;
@@ -132,16 +134,17 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     private final LastMileLogger mLastMileLogger;
     private final Runtime mJavaRuntime;
     private final WifiMetrics mWifiMetrics;
+    private final WifiInjector mWifiInjector;
+    private final Clock mClock;
+    private final Handler mWorkerThreadHandler;
     private int mMaxRingBufferSizeBytes;
-    private WifiInjector mWifiInjector;
-    private Clock mClock;
 
     /** Interfaces started logging */
     private final Set<String> mActiveInterfaces = new ArraySet<>();
 
     public WifiDiagnostics(Context context, WifiInjector wifiInjector,
                            WifiNative wifiNative, BuildProperties buildProperties,
-                           LastMileLogger lastMileLogger, Clock clock) {
+                           LastMileLogger lastMileLogger, Clock clock, Looper workerLooper) {
         super(wifiNative);
 
         mContext = context;
@@ -153,6 +156,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         mWifiMetrics = wifiInjector.getWifiMetrics();
         mWifiInjector = wifiInjector;
         mClock = clock;
+        mWorkerThreadHandler = new Handler(workerLooper);
     }
 
     /**
@@ -250,6 +254,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         }
     }
 
+
     @Override
     public synchronized void captureBugReportData(int reason) {
         BugReport report = captureBugreport(reason, isVerboseLoggingEnabled());
@@ -258,16 +263,27 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     }
 
     @Override
-    public synchronized void captureAlertData(int errorCode, byte[] alertData) {
-        BugReport report = captureBugreport(errorCode, isVerboseLoggingEnabled());
-        report.alertData = alertData;
-        mLastAlerts.addLast(report);
-        /* Flush HAL ring buffer when detecting data stall */
-        if (Arrays.stream(mContext.getResources().getIntArray(
-                R.array.config_wifi_fatal_firmware_alert_error_code_list))
-                .boxed().collect(Collectors.toList()).contains(errorCode)) {
-            flushDump(REPORT_REASON_FATAL_FW_ALERT);
-        }
+    public void triggerBugReportDataCapture(int reason) {
+        mWorkerThreadHandler.post(() -> {
+            captureBugReportData(reason);
+        });
+    }
+
+    private void triggerAlertDataCapture(int errorCode, byte[] alertData) {
+        mWorkerThreadHandler.post(() -> {
+            synchronized (this) {
+                BugReport report = captureBugreport(errorCode, isVerboseLoggingEnabled());
+                report.alertData = alertData;
+                mLastAlerts.addLast(report);
+
+                /* Flush HAL ring buffer when detecting data stall */
+                if (Arrays.stream(mContext.getResources().getIntArray(
+                        R.array.config_wifi_fatal_firmware_alert_error_code_list))
+                        .boxed().collect(Collectors.toList()).contains(errorCode)) {
+                    flushDump(REPORT_REASON_FATAL_FW_ALERT);
+                }
+            }
+        });
     }
 
     @Override
@@ -471,7 +487,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     }
 
     synchronized void onWifiAlert(int errorCode, @NonNull byte[] buffer) {
-        captureAlertData(errorCode, buffer);
+        triggerAlertDataCapture(errorCode, buffer);
         mWifiMetrics.logFirmwareAlert(errorCode);
         mWifiInjector.getWifiScoreCard().noteFirmwareAlert(errorCode);
     }
@@ -507,7 +523,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     }
 
     private void clearVerboseLogs() {
-
         for (int i = 0; i < mLastAlerts.size(); i++) {
             mLastAlerts.get(i).clearVerboseLogs();
         }
@@ -664,12 +679,12 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     }
 
     @VisibleForTesting
-    LimitedCircularArray<BugReport> getBugReports() {
+    synchronized LimitedCircularArray<BugReport> getBugReports() {
         return mLastBugReports;
     }
 
     @VisibleForTesting
-    LimitedCircularArray<BugReport> getAlertReports() {
+    synchronized LimitedCircularArray<BugReport> getAlertReports() {
         return mLastAlerts;
     }
 
