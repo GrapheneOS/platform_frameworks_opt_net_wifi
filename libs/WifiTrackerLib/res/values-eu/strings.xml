@@ -33,7 +33,7 @@
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> bidez konektatuta"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> bidez erabilgarri"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automatikoki konektatu da <xliff:g id="NAME">%1$s</xliff:g> bidez"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Sareen balorazioen hornitzaile baten bidez automatikoki konektatuta"</string>
+    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Sare-balorazioen hornitzaile baten bidez automatikoki konektatuta"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Konexio mugatua"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Ezin da atzitu DNS zerbitzari pribatua"</string>
     <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"Ez dago Interneteko konexiorik"</string>
