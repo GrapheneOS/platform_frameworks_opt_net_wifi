@@ -19,6 +19,8 @@ package com.android.server.wifi;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE;
+import static android.content.Intent.ACTION_SCREEN_OFF;
+import static android.content.Intent.ACTION_SCREEN_ON;
 
 import static com.android.server.wifi.WifiNetworkFactory.PERIODIC_SCAN_INTERVAL_MS;
 import static com.android.server.wifi.util.NativeUtil.addEnclosingQuotes;
@@ -33,6 +35,7 @@ import android.app.AlarmManager.OnAlarmListener;
 import android.app.AppOpsManager;
 import android.app.test.MockAnswerUtil;
 import android.companion.CompanionDeviceManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -53,6 +56,7 @@ import android.net.wifi.WifiScanner.ScanListener;
 import android.net.wifi.WifiScanner.ScanSettings;
 import android.os.IBinder;
 import android.os.PatternMatcher;
+import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -75,6 +79,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -137,6 +142,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
     @Mock NetworkProvider mNetworkProvider;
     @Mock ActiveModeWarden mActiveModeWarden;
     @Mock ConnectHelper mConnectHelper;
+    @Mock PowerManager mPowerManager;
     NetworkCapabilities mNetworkCapabilities;
     TestLooper mLooper;
     NetworkRequest mNetworkRequest;
@@ -158,6 +164,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
             ArgumentCaptor.forClass(ActionListenerWrapper.class);
     ArgumentCaptor<ActiveModeWarden.ModeChangeCallback> mModeChangeCallbackCaptor =
             ArgumentCaptor.forClass(ActiveModeWarden.ModeChangeCallback.class);
+    @Captor ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor;
     InOrder mInOrder;
 
     private WifiNetworkFactory mWifiNetworkFactory;
@@ -182,6 +189,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 .thenReturn(mConnectivityManager);
         when(mContext.getSystemService(CompanionDeviceManager.class))
                 .thenReturn(mCompanionDeviceManager);
+        when(mContext.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
         when(mPackageManager.getNameForUid(TEST_UID_1)).thenReturn(TEST_PACKAGE_NAME_1);
         when(mPackageManager.getNameForUid(TEST_UID_2)).thenReturn(TEST_PACKAGE_NAME_2);
         when(mPackageManager.getApplicationInfoAsUser(any(), anyInt(), any()))
@@ -208,6 +216,9 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 mClock, mWifiInjector, mWifiConnectivityManager,
                 mWifiConfigManager, mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics,
                 mActiveModeWarden, mConnectHelper);
+
+        verify(mContext, atLeastOnce()).registerReceiver(
+                mBroadcastReceiverCaptor.capture(), any(), any(), any());
 
         ArgumentCaptor<NetworkRequestStoreData.DataSource> dataSourceArgumentCaptor =
                 ArgumentCaptor.forClass(NetworkRequestStoreData.DataSource.class);
@@ -2088,7 +2099,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         sendNetworkRequestAndSetupForUserSelection();
 
         // Turn off screen.
-        mWifiNetworkFactory.handleScreenStateChanged(false);
+        setScreenState(false);
 
         // 1. Cancel the scan timer.
         mInOrder.verify(mAlarmManager).cancel(
@@ -2100,7 +2111,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         mInOrder.verifyNoMoreInteractions();
 
         // Now, turn the screen on.
-        mWifiNetworkFactory.handleScreenStateChanged(true);
+        setScreenState(true);
 
         // Verify that we resumed periodic scanning.
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
@@ -2120,10 +2131,10 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 mPeriodicScanListenerArgumentCaptor.getValue());
 
         // Turn off screen.
-        mWifiNetworkFactory.handleScreenStateChanged(false);
+        setScreenState(false);
 
         // Now, turn the screen on.
-        mWifiNetworkFactory.handleScreenStateChanged(true);
+        setScreenState(true);
 
         // Ensure that we did not pause or resume scanning.
         mInOrder.verifyNoMoreInteractions();
@@ -2137,10 +2148,10 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         sendNetworkRequestAndSetupForConnectionStatus();
 
         // Turn off screen.
-        mWifiNetworkFactory.handleScreenStateChanged(false);
+        setScreenState(false);
 
         // Now, turn the screen on.
-        mWifiNetworkFactory.handleScreenStateChanged(true);
+        setScreenState(true);
 
         // Ensure that we did not pause or resume scanning.
         mInOrder.verifyNoMoreInteractions();
@@ -3090,5 +3101,12 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         // only copy over the ssid
         selectedNetworkinCb.SSID = selectedNetwork.SSID;
         callback.select(selectedNetworkinCb);
+    }
+
+    private void setScreenState(boolean screenOn) {
+        BroadcastReceiver broadcastReceiver = mBroadcastReceiverCaptor.getValue();
+        assertNotNull(broadcastReceiver);
+        Intent intent = new Intent(screenOn  ? ACTION_SCREEN_ON : ACTION_SCREEN_OFF);
+        broadcastReceiver.onReceive(mContext, intent);
     }
 }

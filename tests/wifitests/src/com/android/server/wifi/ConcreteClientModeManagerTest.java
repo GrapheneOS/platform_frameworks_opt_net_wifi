@@ -84,7 +84,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
 
     TestLooper mLooper;
 
-    ClientModeManager mClientModeManager;
+    ConcreteClientModeManager mClientModeManager;
 
     @Mock Context mContext;
     @Mock WifiMetrics mWifiMetrics;
@@ -226,7 +226,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         mStaticMockSession.finishMocking();
     }
 
-    private ClientModeManager createClientModeManager() {
+    private ConcreteClientModeManager createClientModeManager() {
         return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
                 mListener, mWifiMetrics, mWakeupController, mClientModeImpl);
     }

@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -56,7 +57,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.internal.util.IState;
-import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
@@ -88,8 +88,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
     private DeferStopHandler mDeferStopHandler;
-    private @Role int mRole = ROLE_UNSPECIFIED;
-    private @Role int mTargetRole = ROLE_UNSPECIFIED;
+    @Nullable
+    private ClientRole mRole = null;
+    @Nullable
+    private ClientRole mTargetRole = null;
     private int mActiveSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
 
     ConcreteClientModeManager(Context context, @NonNull Looper looper, Clock clock,
@@ -131,7 +133,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void stop() {
         Log.d(getTag(), " currentstate: " + getCurrentStateName());
-        mTargetRole = ROLE_UNSPECIFIED;
+        mTargetRole = null;
         if (mIfaceIsUp) {
             updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
                     WifiManager.WIFI_STATE_ENABLED);
@@ -257,7 +259,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     (int) (mClock.getElapsedSinceBootMillis() - mDeferringStartTimeMillis);
             boolean isTimedOut = mMaximumDeferringTimeMillis > 0
                     && deferringDurationMillis >= mMaximumDeferringTimeMillis;
-            if (mTargetRole == ROLE_UNSPECIFIED) {
+            if (mTargetRole == null) {
                 Log.d(getTag(), "Continue to stop wifi");
                 mStateMachine.quitNow();
                 mWifiMetrics.noteWifiOff(mIsDeferring, isTimedOut, deferringDurationMillis);
@@ -347,18 +349,17 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public @Role int getRole() {
+    public ClientRole getRole() {
         return mRole;
     }
 
-    @Override
-    public void setRole(@Role int role) {
-        Preconditions.checkState(CLIENT_ROLES.contains(role));
+    /** Set the role of this ClientModeManager */
+    public void setRole(ClientRole role) {
         if (role == ROLE_CLIENT_SCAN_ONLY) {
             mTargetRole = role;
             // Switch client mode manager to scan only mode.
             mStateMachine.sendMessage(ClientModeStateMachine.CMD_SWITCH_TO_SCAN_ONLY_MODE);
-        } else if (CLIENT_CONNECTIVITY_ROLES.contains(role)) {
+        } else if (role instanceof ClientConnectivityRole) {
             mTargetRole = role;
             // Switch client mode manager to connect mode.
             mStateMachine.sendMessage(ClientModeStateMachine.CMD_SWITCH_TO_CONNECT_MODE, role);
@@ -482,9 +483,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
             start();
         }
 
-        private void setRoleInternalAndInvokeCallback(int newRole) {
+        private void setRoleInternalAndInvokeCallback(ClientRole newRole) {
             if (newRole == mRole) return;
-            if (mRole == ROLE_UNSPECIFIED) {
+            if (mRole == null) {
                 Log.v(getTag(), "ClientModeManager started in role: " + newRole);
                 mRole = newRole;
                 mModeListener.onStarted();
@@ -555,7 +556,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                         break;
                     case CMD_SWITCH_TO_CONNECT_MODE:
                         // could be any one of possible connect mode roles.
-                        setRoleInternalAndInvokeCallback(message.arg1);
+                        setRoleInternalAndInvokeCallback((ClientRole) message.obj);
                         updateConnectModeState(WifiManager.WIFI_STATE_ENABLING,
                                 WifiManager.WIFI_STATE_DISABLED);
                         if (!mWifiNative.switchClientInterfaceToConnectivityMode(
@@ -614,7 +615,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 }
 
                 // once we leave started, nothing else to do...  stop the state machine
-                mRole = ROLE_UNSPECIFIED;
+                mRole = null;
                 mStateMachine.quitNow();
                 mModeListener.onStopped();
             }
@@ -664,7 +665,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 switch (message.what) {
                     case CMD_SWITCH_TO_CONNECT_MODE:
                         // Already in connect mode, only switching the connectivity roles.
-                        setRoleInternalAndInvokeCallback(message.arg1);
+                        setRoleInternalAndInvokeCallback((ClientRole) message.obj);
                         break;
                     case CMD_SWITCH_TO_SCAN_ONLY_MODE:
                         updateConnectModeState(WifiManager.WIFI_STATE_DISABLING,
@@ -775,11 +776,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void sendBluetoothAdapterStateChange(int state) {
         mClientModeImpl.sendBluetoothAdapterStateChange(state);
-    }
-
-    @Override
-    public void initialize() {
-        mClientModeImpl.initialize();
     }
 
     @Override
@@ -927,5 +923,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
         mClientModeImpl.probeLink(callback, mcs);
+    }
+
+    @Override
+    public void sendMessageToClientModeImpl(Message msg) {
+        mClientModeImpl.sendMessage(msg);
     }
 }

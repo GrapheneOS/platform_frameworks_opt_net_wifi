@@ -27,6 +27,7 @@ import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.WorkSource;
 
 import com.android.server.wifi.util.ActionListenerWrapper;
@@ -61,8 +62,6 @@ public interface ClientModeManager extends ActiveModeManager {
     void sendBluetoothAdapterConnectionStateChange(int state);
 
     void sendBluetoothAdapterStateChange(int state);
-
-    void initialize();
 
     int syncGetWifiState();
 
@@ -120,4 +119,7 @@ public interface ClientModeManager extends ActiveModeManager {
     void setPollRssiIntervalMsecs(int newPollIntervalMsecs);
 
     void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs);
+
+    /** Send a {@link Message} to ClientModeImpl's StateMachine. */
+    void sendMessageToClientModeImpl(Message msg);
 }

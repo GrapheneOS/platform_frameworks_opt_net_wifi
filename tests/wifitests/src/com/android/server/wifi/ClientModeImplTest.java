@@ -98,8 +98,6 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.IPowerManager;
-import android.os.IThermalService;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
@@ -242,9 +240,11 @@ public class ClientModeImplTest extends WifiBaseTest {
                 });
         when(context.getContentResolver()).thenReturn(mockContentResolver);
 
-        when(context.getSystemService(Context.POWER_SERVICE)).thenReturn(
-                new PowerManager(context, mock(IPowerManager.class), mock(IThermalService.class),
-                    new Handler()));
+        when(context.getSystemService(Context.POWER_SERVICE)).thenReturn(mPowerManager);
+        when(context.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
+        when(mPowerManager.isInteractive()).thenReturn(true);
+        when(mPowerManager.newWakeLock(anyInt(), anyString())).thenReturn(
+                mock(PowerManager.WakeLock.class));
 
         mAlarmManager = new TestAlarmManager();
         when(context.getSystemService(Context.ALARM_SERVICE)).thenReturn(
@@ -416,6 +416,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock Network mNetwork;
     @Mock ClientModeManager mClientModeManager;
     @Mock WifiScoreReport mWifiScoreReport;
+    @Mock PowerManager mPowerManager;
+    @Mock WifiP2pConnection mWifiP2pConnection;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -569,15 +571,11 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
-                mWifiScoreReport);
+                mWifiScoreReport, mWifiP2pConnection);
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
         mBinderToken = Binder.clearCallingIdentity();
-
-        /* Send the BOOT_COMPLETED message to setup some CMI state. */
-        mCmi.initialize();
-        mLooper.dispatchAll();
 
         verify(mWifiConfigManager, atLeastOnce()).addOnNetworkUpdateListener(
                 mConfigUpdateListenerCaptor.capture());
@@ -602,15 +600,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mNetworkAgentHandler = null;
         mCmi = null;
         mSession.finishMocking();
-    }
-
-    @Test
-    public void createNew() throws Exception {
-        assertEquals("DefaultState", getCurrentState().getName());
-
-        mCmi.initialize();
-        mLooper.dispatchAll();
-        assertEquals("DefaultState", getCurrentState().getName());
     }
 
     @Test
@@ -1834,8 +1823,6 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     @Test
     public void getWhatToString() throws Exception {
-        assertEquals("CMD_CHANNEL_HALF_CONNECTED", mCmi.getWhatToString(
-                AsyncChannel.CMD_CHANNEL_HALF_CONNECTED));
         assertEquals("CMD_PRE_DHCP_ACTION", mCmi.getWhatToString(CMD_PRE_DHCP_ACTION));
         assertEquals("CMD_IP_REACHABILITY_LOST", mCmi.getWhatToString(
                 ClientModeImpl.CMD_IP_REACHABILITY_LOST));

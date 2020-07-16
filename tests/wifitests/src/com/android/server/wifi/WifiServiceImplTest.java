@@ -317,6 +317,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiNetworkFactory mWifiNetworkFactory;
     @Mock UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
+    @Mock WifiP2pConnection mWifiP2pConnection;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -399,6 +400,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiDataStall()).thenReturn(mWifiDataStall);
         when(mWifiInjector.getWifiNative()).thenReturn(mWifiNative);
         when(mWifiInjector.getConnectHelper()).thenReturn(mConnectHelper);
+        when(mWifiInjector.getWifiP2pConnection()).thenReturn(mWifiP2pConnection);
         when(mClientModeManager.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
@@ -5530,7 +5532,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiNetworkFactory).register();
         verify(mUntrustedWifiNetworkFactory).register();
         verify(mPasspointManager).initializeProvisioner(any());
-        verify(mActiveModeWarden).handleBootCompleted();
+        verify(mWifiP2pConnection).handleBootCompleted();
     }
 
     /**

@@ -30,6 +30,7 @@ import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.WorkSource;
 
 import com.android.server.wifi.util.ActionListenerWrapper;
@@ -48,12 +49,9 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void stop() { }
 
     @Override
-    public int getRole() {
-        return 0;
+    public Role getRole() {
+        return null;
     }
-
-    @Override
-    public void setRole(int role) { }
 
     @Override
     public String getInterfaceName() {
@@ -110,9 +108,6 @@ public class DefaultClientModeManager implements ClientModeManager {
 
     @Override
     public void sendBluetoothAdapterStateChange(int state) { }
-
-    @Override
-    public void initialize() { }
 
     @Override
     public int syncGetWifiState() {
@@ -249,4 +244,7 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
         callback.onFailure(SEND_MGMT_FRAME_ERROR_UNKNOWN);
     }
+
+    @Override
+    public void sendMessageToClientModeImpl(Message msg) { }
 }

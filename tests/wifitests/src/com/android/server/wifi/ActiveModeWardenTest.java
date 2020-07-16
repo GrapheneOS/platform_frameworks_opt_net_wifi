@@ -66,6 +66,7 @@ import android.util.Log;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.ActiveModeManager.SoftApRole;
 import com.android.server.wifi.WifiNative.InterfaceAvailableForRequestListener;
 import com.android.server.wifi.util.GeneralUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -349,7 +350,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
      */
     private void enterSoftApActiveMode(SoftApModeConfiguration softApConfig) throws Exception {
         String fromState = mActiveModeWarden.getCurrentMode();
-        int softApRole = softApConfig.getTargetMode() == WifiManager.IFACE_IP_MODE_TETHERED
+        SoftApRole softApRole = softApConfig.getTargetMode() == WifiManager.IFACE_IP_MODE_TETHERED
                 ? ROLE_SOFTAP_TETHERED : ROLE_SOFTAP_LOCAL_ONLY;
         when(mSoftApManager.getRole()).thenReturn(softApRole);
         mActiveModeWarden.startSoftAp(softApConfig);
@@ -2277,7 +2278,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
         assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers());
 
-        ClientModeManager localOnlyClientModeManager = mock(ClientModeManager.class);
+        ConcreteClientModeManager localOnlyClientModeManager =
+                mock(ConcreteClientModeManager.class);
         GeneralUtil.Mutable<ActiveModeManager.Listener> localOnlyClientListener =
                 new GeneralUtil.Mutable<>();
         doAnswer((invocation) -> {
@@ -2521,25 +2523,5 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         mActiveModeWarden.setWifiConnectedNetworkScorer(iBinder, iScorer);
         verify(mClientModeManager, times(2)).setWifiConnectedNetworkScorer(iBinder, iScorer);
-    }
-
-    @Test
-    public void propagateBootCompletedToExistingPrimaryClientModeManager() throws Exception {
-        enterClientModeActiveState();
-        assertInEnabledState();
-        verify(mClientModeManager, never()).initialize();
-
-        mActiveModeWarden.handleBootCompleted();
-        verify(mClientModeManager).initialize();
-    }
-
-    @Test
-    public void propagateBootCompletedToNewPrimaryClientModeManager() throws Exception {
-        mActiveModeWarden.handleBootCompleted();
-
-        enterClientModeActiveState();
-        assertInEnabledState();
-
-        verify(mClientModeManager).initialize();
     }
 }
