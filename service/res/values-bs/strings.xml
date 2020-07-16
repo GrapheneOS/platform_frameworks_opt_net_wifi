@@ -19,8 +19,8 @@
     <string name="wifiResourcesAppLabel" product="default" msgid="4965162975090543792">"Sistemski Wi-Fi resursi"</string>
     <string name="wifi_available_title" msgid="2844963247498642107">"Povežite se na otvorenu Wi‑Fi mrežu"</string>
     <string name="wifi_available_title_connecting" msgid="4308431577637294026">"Povezivanje na WiFi mrežu"</string>
-    <string name="wifi_available_title_connected" msgid="922603556292157664">"Povezani ste na Wi‑Fi mrežu"</string>
-    <string name="wifi_available_title_failed_to_connect" msgid="2304443371893419545">"Nije se moguće povezati na Wi‑Fi mrežu"</string>
+    <string name="wifi_available_title_connected" msgid="922603556292157664">"Povezani ste s WiFi mrežom"</string>
+    <string name="wifi_available_title_failed_to_connect" msgid="2304443371893419545">"Nije se moguće povezati s WiFi mrežom"</string>
     <string name="wifi_available_content_failed_to_connect" msgid="3171283790496729136">"Dodirnite da vidite sve mreže"</string>
     <string name="wifi_available_action_connect" msgid="7989951293406720158">"Povežite se"</string>
     <string name="wifi_available_action_all_networks" msgid="2616926772813472478">"Sve mreže"</string>
