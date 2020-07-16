@@ -73,8 +73,6 @@ public interface ClientModeManager extends ActiveModeManager {
 
     DhcpResultsParcelable syncGetDhcpResultsParcelable();
 
-    String syncGetWifiStateByName();
-
     long syncGetSupportedFeatures();
 
     boolean syncStartSubscriptionProvisioning(int callingUid, OsuProvider provider,

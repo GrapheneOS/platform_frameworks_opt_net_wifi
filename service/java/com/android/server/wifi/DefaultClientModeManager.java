@@ -134,11 +134,6 @@ public class DefaultClientModeManager implements ClientModeManager {
         return new DhcpResultsParcelable();
     }
 
-    @Override
-    public String syncGetWifiStateByName() {
-        return null;
-    }
-
     public long syncGetSupportedFeatures() {
         return 0L;
     }

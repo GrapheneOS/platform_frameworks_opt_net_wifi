@@ -1361,7 +1361,8 @@ public class ClientModeImpl extends StateMachine {
     /**
      * Converts the current wifi state to a printable form.
      */
-    public String syncGetWifiStateByName() {
+    @VisibleForTesting
+    String syncGetWifiStateByName() {
         switch (mWifiState.get()) {
             case WIFI_STATE_DISABLING:
                 return "disabling";

@@ -804,11 +804,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public String syncGetWifiStateByName() {
-        return mClientModeImpl.syncGetWifiStateByName();
-    }
-
-    @Override
     public long syncGetSupportedFeatures() {
         return mClientModeImpl.syncGetSupportedFeatures();
     }
