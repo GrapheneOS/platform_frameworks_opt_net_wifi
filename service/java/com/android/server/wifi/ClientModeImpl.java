@@ -5132,6 +5132,7 @@ public class ClientModeImpl extends StateMachine {
                      * and handle the rest of the events there.
                      */
                     StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
+                    handleSupplicantStateChange(stateChangeResult);
                     if (stateChangeResult.state == SupplicantState.DISCONNECTED
                             || stateChangeResult.state == SupplicantState.INACTIVE
                             || stateChangeResult.state == SupplicantState.INTERFACE_DISABLED) {
