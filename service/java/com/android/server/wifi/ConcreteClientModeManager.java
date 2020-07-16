@@ -769,13 +769,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void sendBluetoothAdapterConnectionStateChange(int state) {
-        mClientModeImpl.sendBluetoothAdapterConnectionStateChange(state);
-    }
-
-    @Override
-    public void sendBluetoothAdapterStateChange(int state) {
-        mClientModeImpl.sendBluetoothAdapterStateChange(state);
+    public void onBluetoothConnectionStateChanged() {
+        mClientModeImpl.onBluetoothConnectionStateChanged();
     }
 
     @Override

@@ -433,13 +433,6 @@ public class WifiConnectivityManager {
         mConfigManager.updateUserDisabledList(results);
     }
 
-    /**
-     * Set whether bluetooth is in the connected state
-     */
-    public void setBluetoothConnected(boolean isBluetoothConnected) {
-        mNetworkSelector.setBluetoothConnected(isBluetoothConnected);
-    }
-
     private class CachedWifiCandidates {
         public final long timeSinceBootMs;
         public final Map<WifiCandidates.Key, Integer> candidateRssiMap;

@@ -104,10 +104,7 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) { }
 
     @Override
-    public void sendBluetoothAdapterConnectionStateChange(int state) { }
-
-    @Override
-    public void sendBluetoothAdapterStateChange(int state) { }
+    public void onBluetoothConnectionStateChanged() { }
 
     @Override
     public int syncGetWifiState() {

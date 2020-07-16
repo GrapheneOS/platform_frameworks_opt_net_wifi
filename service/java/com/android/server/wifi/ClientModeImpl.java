@@ -32,7 +32,6 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -288,27 +287,7 @@ public class ClientModeImpl extends StateMachine {
     */
     private int mOperationalMode = DISABLED_MODE;
 
-    private ClientModeManager.Listener mClientModeCallback = null;
-
-    private boolean mBluetoothConnectionActive = false;
-
     private PowerManager.WakeLock mSuspendWakeLock;
-
-    /**
-     * Interval in milliseconds between receiving a disconnect event
-     * while connected to a good AP, and handling the disconnect proper
-     */
-    private static final int LINK_FLAPPING_DEBOUNCE_MSEC = 4000;
-
-    /**
-     * Delay between supplicant restarts upon failure to establish connection
-     */
-    private static final int SUPPLICANT_RESTART_INTERVAL_MSECS = 5000;
-
-    /**
-     * Number of times we attempt to restart supplicant
-     */
-    private static final int SUPPLICANT_RESTART_TRIES = 5;
 
     /**
      * Value to set in wpa_supplicant "bssid" field when we don't want to restrict connection to
@@ -321,9 +300,6 @@ public class ClientModeImpl extends StateMachine {
      * Do not modify this directly; use updateLinkProperties instead.
      */
     private LinkProperties mLinkProperties;
-
-    /* Tracks sequence number on a periodic scan message */
-    private int mPeriodicScanToken = 0;
 
     private final Object mDhcpResultsParcelableLock = new Object();
     @NonNull
@@ -415,10 +391,9 @@ public class ClientModeImpl extends StateMachine {
 
     /* The base for wifi message types */
     static final int BASE = Protocol.BASE_WIFI;
-    /* BT state change, e.g., on or off */
-    static final int CMD_BLUETOOTH_ADAPTER_STATE_CHANGE                 = BASE + 31;
-    /* BT connection state change, e.g., connected or disconnected */
-    static final int CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE      = BASE + 32;
+
+    /* BT connection state changed, e.g., connected/disconnected */
+    static final int CMD_BLUETOOTH_CONNECTION_STATE_CHANGE              = BASE + 31;
 
     /* Supplicant commands after driver start*/
     /* Set operational mode. CONNECT, SCAN ONLY, SCAN_ONLY with Wi-Fi off mode */
@@ -1645,20 +1620,9 @@ public class ClientModeImpl extends StateMachine {
         sendMessage(CMD_ENABLE_TDLS, enabler, 0, remoteMacAddress);
     }
 
-    /**
-     * Send a message indicating bluetooth adapter state changed, e.g., turn on or ff
-     */
-    public void sendBluetoothAdapterStateChange(int state) {
-        sendMessage(CMD_BLUETOOTH_ADAPTER_STATE_CHANGE, state, 0);
-    }
-
-    /**
-     * Send a message indicating bluetooth adapter connection state changed, e.g., connected
-     * or disconnected. Note that turning off BT after pairing success keeps connection state in
-     * connected state.
-     */
-    public void sendBluetoothAdapterConnectionStateChange(int state) {
-        sendMessage(CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE, state, 0);
+    /** Send a message indicating bluetooth connection state changed, e.g. connected/disconnected */
+    public void onBluetoothConnectionStateChanged() {
+        sendMessage(CMD_BLUETOOTH_CONNECTION_STATE_CHANGE);
     }
 
     /**
@@ -2560,7 +2524,7 @@ public class ClientModeImpl extends StateMachine {
     }
 
     void handlePreDhcpSetup() {
-        if (!mBluetoothConnectionActive) {
+        if (!mWifiGlobals.isBluetoothConnected()) {
             /*
              * There are problems setting the Wi-Fi driver's power
              * mode to active when bluetooth coexistence mode is
@@ -3132,23 +3096,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case CMD_BLUETOOTH_ADAPTER_STATE_CHANGE: {
-                    // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE
-                    // message. So we need to rely on STATE_CHANGE message to detect on->off
-                    // transition and update mBluetoothConnectionActive status correctly.
-                    mBluetoothConnectionActive = mBluetoothConnectionActive
-                            && message.arg1 != BluetoothAdapter.STATE_OFF;
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
-                    break;
-                }
-                case CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE: {
-                    // Transition to a non-disconnected state does correctly
-                    // indicate BT is connected or being connected.
-                    mBluetoothConnectionActive =
-                            message.arg1 != BluetoothAdapter.STATE_DISCONNECTED;
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
-                    break;
-                }
                 case CMD_ENABLE_RSSI_POLL: {
                     mEnableRssiPolling = (message.arg1 == 1);
                     break;
@@ -3161,6 +3108,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
+                case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
@@ -3333,12 +3281,11 @@ public class ClientModeImpl extends StateMachine {
         mMboOceController.enable();
         mWifiDataStall.enablePhoneStateListener();
 
-        /**
-         * Enable bluetooth coexistence scan mode when bluetooth connection is active.
-         * When this mode is on, some of the low-level scan parameters used by the
-         * driver are changed to reduce interference with bluetooth
-         */
-        mWifiNative.setBluetoothCoexistenceScanMode(mInterfaceName, mBluetoothConnectionActive);
+        // Enable bluetooth coexistence scan mode when bluetooth connection is active.
+        // When this mode is on, some of the low-level scan parameters used by the
+        // driver are changed to reduce interference with bluetooth
+        mWifiNative.setBluetoothCoexistenceScanMode(
+                mInterfaceName, mWifiGlobals.isBluetoothConnected());
         sendNetworkChangeBroadcast(DetailedState.DISCONNECTED);
 
         // Disable legacy multicast filtering, which on some chipsets defaults to enabled.
@@ -3719,25 +3666,9 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case CMD_BLUETOOTH_ADAPTER_STATE_CHANGE: {
-                    // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE
-                    // message. So we need to rely on STATE_CHANGE message to detect on->off
-                    // transition and update mBluetoothConnectionActive status correctly.
-                    mBluetoothConnectionActive = mBluetoothConnectionActive
-                            && message.arg1 != BluetoothAdapter.STATE_OFF;
+                case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE: {
                     mWifiNative.setBluetoothCoexistenceScanMode(
-                            mInterfaceName, mBluetoothConnectionActive);
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
-                    break;
-                }
-                case CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE: {
-                    // Transition to a non-disconnected state does correctly
-                    // indicate BT is connected or being connected.
-                    mBluetoothConnectionActive =
-                            message.arg1 != BluetoothAdapter.STATE_DISCONNECTED;
-                    mWifiNative.setBluetoothCoexistenceScanMode(
-                            mInterfaceName, mBluetoothConnectionActive);
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
+                            mInterfaceName, mWifiGlobals.isBluetoothConnected());
                     break;
                 }
                 case CMD_SET_SUSPEND_OPT_ENABLED: {

@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static junit.framework.Assert.assertEquals;
 
 import static org.mockito.Mockito.when;
@@ -60,5 +62,30 @@ public class WifiGlobalsTest extends WifiBaseTest {
         assertEquals(6000, mWifiGlobals.getPollRssiIntervalMillis());
         mResources.setInteger(R.integer.config_wifiPollRssiIntervalMilliseconds, 7000);
         assertEquals(6000, mWifiGlobals.getPollRssiIntervalMillis());
+    }
+
+    /** Verify that Bluetooth active is set correctly with BT state/connection state changes */
+    @Test
+    public void verifyBluetoothStateAndConnectionStateChanges() {
+        mWifiGlobals.setBluetoothEnabled(true);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isFalse();
+
+        mWifiGlobals.setBluetoothConnected(true);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isTrue();
+
+        mWifiGlobals.setBluetoothEnabled(false);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isFalse();
+
+        mWifiGlobals.setBluetoothEnabled(true);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isFalse();
+
+        mWifiGlobals.setBluetoothConnected(true);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isTrue();
+
+        mWifiGlobals.setBluetoothConnected(false);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isFalse();
+
+        mWifiGlobals.setBluetoothConnected(true);
+        assertThat(mWifiGlobals.isBluetoothConnected()).isTrue();
     }
 }

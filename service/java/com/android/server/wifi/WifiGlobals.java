@@ -41,6 +41,7 @@ public class WifiGlobals {
 
     private final AtomicInteger mPollRssiIntervalMillis = new AtomicInteger(-1);
     private final AtomicBoolean mIpReachabilityDisconnectEnabled = new AtomicBoolean(true);
+    private final AtomicBoolean mIsBluetoothConnected = new AtomicBoolean(false);
 
     public WifiGlobals(Context context) {
         mContext = context;
@@ -72,5 +73,25 @@ public class WifiGlobals {
     /** Sets whether CMD_IP_REACHABILITY_LOST events should trigger disconnects. */
     public void setIpReachabilityDisconnectEnabled(boolean enabled) {
         mIpReachabilityDisconnectEnabled.set(enabled);
+    }
+
+    /** Set whether bluetooth is enabled. */
+    public void setBluetoothEnabled(boolean isEnabled) {
+        // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE message.
+        // So set mIsBluetoothConnected to false if we get a bluetooth disable while connected.
+        // But otherwise, Bluetooth being turned on doesn't mean that we're connected.
+        if (!isEnabled) {
+            mIsBluetoothConnected.set(false);
+        }
+    }
+
+    /** Set whether bluetooth is connected. */
+    public void setBluetoothConnected(boolean isConnected) {
+        mIsBluetoothConnected.set(isConnected);
+    }
+
+    /** Get whether bluetooth is connected */
+    public boolean isBluetoothConnected() {
+        return mIsBluetoothConnected.get();
     }
 }

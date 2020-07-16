@@ -191,6 +191,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiLog mLog;
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final ConnectHelper mConnectHelper;
+    private final WifiGlobals mWifiGlobals;
     /**
      * Verbose logging flag. Toggled by developer options.
      */
@@ -288,6 +289,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiDataStall = wifiInjector.getWifiDataStall();
         mWifiNative = wifiInjector.getWifiNative();
         mConnectHelper = wifiInjector.getConnectHelper();
+        mWifiGlobals = wifiInjector.getWifiGlobals();
     }
 
     /**
@@ -409,13 +411,19 @@ public class WifiServiceImpl extends BaseWifiService {
                     } else if (action.equals(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)) {
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
                                 BluetoothAdapter.STATE_DISCONNECTED);
+                        boolean isConnected = state != BluetoothAdapter.STATE_DISCONNECTED;
+                        mWifiGlobals.setBluetoothConnected(isConnected);
+                        // TODO(b/159060934): should this notification be sent to all CMMs?
                         mActiveModeWarden.getPrimaryClientModeManager()
-                                .sendBluetoothAdapterConnectionStateChange(state);
+                                .onBluetoothConnectionStateChanged();
                     } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                                 BluetoothAdapter.STATE_OFF);
+                        boolean isEnabled = state != BluetoothAdapter.STATE_OFF;
+                        mWifiGlobals.setBluetoothEnabled(isEnabled);
+                        // TODO(b/159060934): should this notification be sent to all CMMs?
                         mActiveModeWarden.getPrimaryClientModeManager()
-                                .sendBluetoothAdapterStateChange(state);
+                                .onBluetoothConnectionStateChanged();
                     } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
                         handleIdleModeChanged();
                     } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
@@ -3225,7 +3233,7 @@ public class WifiServiceImpl extends BaseWifiService {
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
         WifiShellCommand shellCommand =  new WifiShellCommand(mWifiInjector, this, mContext,
-                mActiveModeWarden.getPrimaryClientModeManager(), mWifiInjector.getWifiGlobals());
+                mActiveModeWarden.getPrimaryClientModeManager(), mWifiGlobals);
         return shellCommand.exec(this, in.getFileDescriptor(), out.getFileDescriptor(),
                 err.getFileDescriptor(), args);
     }

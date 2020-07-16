@@ -59,9 +59,11 @@ public interface ClientModeManager extends ActiveModeManager {
 
     void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason);
 
-    void sendBluetoothAdapterConnectionStateChange(int state);
-
-    void sendBluetoothAdapterStateChange(int state);
+    /**
+     * Notification that the Bluetooth connection state changed. The latest connection state can be
+     * fetched from {@link WifiGlobals#isBluetoothConnected()}.
+     */
+    void onBluetoothConnectionStateChanged();
 
     int syncGetWifiState();
 
