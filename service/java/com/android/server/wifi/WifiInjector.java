@@ -188,8 +188,8 @@ public class WifiInjector {
     private final WifiNetworkFactory mWifiNetworkFactory;
     private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     private final SupplicantStateTracker mSupplicantStateTracker;
-
     private final WifiP2pConnection mWifiP2pConnection;
+    private final WifiGlobals mWifiGlobals;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -213,6 +213,7 @@ public class WifiInjector {
         Handler wifiHandler = new Handler(wifiLooper);
 
         mContext = context;
+        mWifiGlobals = new WifiGlobals(mContext);
         mScoringParams = new ScoringParams(mContext);
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
         mWifiInfo = new ExtendedWifiInfo(context);
@@ -632,7 +633,7 @@ public class WifiInjector {
                 new SimRequiredNotifier(mContext, mFrameworkFacade),
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo, mWifiNative,
                         mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall),
-                mWifiP2pConnection);
+                mWifiP2pConnection, mWifiGlobals);
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
                 clientModeImpl);
@@ -849,5 +850,9 @@ public class WifiInjector {
 
     public WifiP2pConnection getWifiP2pConnection() {
         return mWifiP2pConnection;
+    }
+
+    public WifiGlobals getWifiGlobals() {
+        return mWifiGlobals;
     }
 }

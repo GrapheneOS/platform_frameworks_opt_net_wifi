@@ -233,6 +233,7 @@ public class ClientModeImpl extends StateMachine {
     private final WifiLockManager mWifiLockManager;
     private final SelfRecovery mSelfRecovery;
     private final WifiP2pConnection mWifiP2pConnection;
+    private final WifiGlobals mWifiGlobals;
 
     private boolean mScreenOn = false;
 
@@ -247,8 +248,6 @@ public class ClientModeImpl extends StateMachine {
     // The subId used by WifiConfiguration with SIM credential which was connected successfully
     private int mLastSubId;
     private String mLastSimBasedConnectionCarrierName;
-
-    private boolean mIpReachabilityDisconnectEnabled = true;
 
     private String getTag() {
         return TAG + "[" + (mInterfaceName == null ? "unknown" : mInterfaceName) + "]";
@@ -281,8 +280,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private boolean mEnableRssiPolling = false;
-    // Accessed via Binder thread ({get,set}PollRssiIntervalMsecs), and the main Wifi thread.
-    private volatile int mPollRssiIntervalMsecs = -1;
     private int mRssiPollToken = 0;
     /* 3 operational states for STA operation: CONNECT_MODE, SCAN_ONLY_MODE, SCAN_ONLY_WIFI_OFF_MODE
     * In CONNECT_MODE, the STA can scan and connect to an access point
@@ -296,13 +293,6 @@ public class ClientModeImpl extends StateMachine {
     private boolean mBluetoothConnectionActive = false;
 
     private PowerManager.WakeLock mSuspendWakeLock;
-
-    /**
-     * Maximum allowable interval in milliseconds between polling for RSSI and linkspeed
-     * information. This is also used as the polling interval for WifiTrafficPoller, which updates
-     * its data activity on every CMD_RSSI_POLL.
-     */
-    private static final int MAXIMUM_POLL_RSSI_INTERVAL_MSECS = 6000;
 
     /**
      * Interval in milliseconds between receiving a disconnect event
@@ -362,19 +352,6 @@ public class ClientModeImpl extends StateMachine {
     // SSID. Once connected, it will be set to invalid
     private int mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
     private WifiConfiguration mTargetWifiConfiguration = null;
-
-    int getPollRssiIntervalMsecs() {
-        if (mPollRssiIntervalMsecs > 0) {
-            return mPollRssiIntervalMsecs;
-        }
-        return Math.min(mContext.getResources().getInteger(
-                R.integer.config_wifiPollRssiIntervalMilliseconds),
-                        MAXIMUM_POLL_RSSI_INTERVAL_MSECS);
-    }
-
-    void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
-        mPollRssiIntervalMsecs = newPollIntervalMsecs;
-    }
 
     /**
      * Method to clear {@link #mTargetBssid} and reset the current connected network's
@@ -737,7 +714,8 @@ public class ClientModeImpl extends StateMachine {
             EapFailureNotifier eapFailureNotifier,
             SimRequiredNotifier simRequiredNotifier,
             WifiScoreReport wifiScoreReport,
-            WifiP2pConnection wifiP2pConnection) {
+            WifiP2pConnection wifiP2pConnection,
+            WifiGlobals wifiGlobals) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
         mClock = clock;
@@ -807,7 +785,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiHealthMonitor = wifiHealthMonitor;
         mWifiP2pConnection = wifiP2pConnection;
-
+        mWifiGlobals = wifiGlobals;
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -4767,7 +4745,7 @@ public class ClientModeImpl extends StateMachine {
                             WifiIsUnusableEvent.TYPE_IP_REACHABILITY_LOST);
                     mWifiMetrics.addToWifiUsabilityStatsList(WifiUsabilityStats.LABEL_BAD,
                             WifiUsabilityStats.TYPE_IP_REACHABILITY_LOST, -1);
-                    if (mIpReachabilityDisconnectEnabled) {
+                    if (mWifiGlobals.getIpReachabilityDisconnectEnabled()) {
                         handleIpReachabilityLost();
                     } else {
                         logd("CMD_IP_REACHABILITY_LOST but disconnect disabled -- ignore");
@@ -4807,7 +4785,7 @@ public class ClientModeImpl extends StateMachine {
                         mLinkProbeManager.updateConnectionStats(
                                 mWifiInfo, mInterfaceName);
                         sendMessageDelayed(obtainMessage(CMD_RSSI_POLL, mRssiPollToken, 0),
-                                getPollRssiIntervalMsecs());
+                                mWifiGlobals.getPollRssiIntervalMillis());
                         if (mVerboseLoggingEnabled) sendRssiChangeBroadcast(mWifiInfo.getRssi());
                         mWifiTrafficPoller.notifyOnDataActivity(mWifiInfo.txSuccess,
                                 mWifiInfo.rxSuccess);
@@ -4826,7 +4804,7 @@ public class ClientModeImpl extends StateMachine {
                         mLinkProbeManager.resetOnScreenTurnedOn();
                         fetchRssiLinkSpeedAndFrequencyNative();
                         sendMessageDelayed(obtainMessage(CMD_RSSI_POLL, mRssiPollToken, 0),
-                                getPollRssiIntervalMsecs());
+                                mWifiGlobals.getPollRssiIntervalMillis());
                     }
                     break;
                 }
@@ -5674,20 +5652,6 @@ public class ClientModeImpl extends StateMachine {
     private boolean hasConnectionRequests() {
         return mNetworkFactory.hasConnectionRequests()
                 || mUntrustedNetworkFactory.hasConnectionRequests();
-    }
-
-    /**
-     * Returns whether CMD_IP_REACHABILITY_LOST events should trigger disconnects.
-     */
-    public boolean getIpReachabilityDisconnectEnabled() {
-        return mIpReachabilityDisconnectEnabled;
-    }
-
-    /**
-     * Sets whether CMD_IP_REACHABILITY_LOST events should trigger disconnects.
-     */
-    public void setIpReachabilityDisconnectEnabled(boolean enabled) {
-        mIpReachabilityDisconnectEnabled = enabled;
     }
 
     /**

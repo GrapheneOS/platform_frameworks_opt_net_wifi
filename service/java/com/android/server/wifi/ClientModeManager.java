@@ -110,14 +110,6 @@ public interface ClientModeManager extends ActiveModeManager {
 
     boolean isSupplicantTransientState();
 
-    boolean getIpReachabilityDisconnectEnabled();
-
-    void setIpReachabilityDisconnectEnabled(boolean enabled);
-
-    int getPollRssiIntervalMsecs();
-
-    void setPollRssiIntervalMsecs(int newPollIntervalMsecs);
-
     void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs);
 
     /** Send a {@link Message} to ClientModeImpl's StateMachine. */

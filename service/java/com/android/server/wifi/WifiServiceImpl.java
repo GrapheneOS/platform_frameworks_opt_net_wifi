@@ -3223,10 +3223,10 @@ public class WifiServiceImpl extends BaseWifiService {
     public int handleShellCommand(@NonNull ParcelFileDescriptor in,
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new WifiShellCommand(mWifiInjector, this, mContext,
-                mActiveModeWarden.getPrimaryClientModeManager()).exec(
-                this, in.getFileDescriptor(), out.getFileDescriptor(), err.getFileDescriptor(),
-                args);
+        WifiShellCommand shellCommand =  new WifiShellCommand(mWifiInjector, this, mContext,
+                mActiveModeWarden.getPrimaryClientModeManager(), mWifiInjector.getWifiGlobals());
+        return shellCommand.exec(this, in.getFileDescriptor(), out.getFileDescriptor(),
+                err.getFileDescriptor(), args);
     }
 
     private void updateWifiMetrics() {

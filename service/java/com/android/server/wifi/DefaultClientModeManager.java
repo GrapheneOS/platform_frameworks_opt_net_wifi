@@ -225,22 +225,6 @@ public class DefaultClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public boolean getIpReachabilityDisconnectEnabled() {
-        return false;
-    }
-
-    @Override
-    public void setIpReachabilityDisconnectEnabled(boolean enabled) { }
-
-    @Override
-    public int getPollRssiIntervalMsecs() {
-        return -1;
-    }
-
-    @Override
-    public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) { }
-
-    @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
         callback.onFailure(SEND_MGMT_FRAME_ERROR_UNKNOWN);
     }

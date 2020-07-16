@@ -901,26 +901,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public boolean getIpReachabilityDisconnectEnabled() {
-        return mClientModeImpl.getIpReachabilityDisconnectEnabled();
-    }
-
-    @Override
-    public void setIpReachabilityDisconnectEnabled(boolean enabled) {
-        mClientModeImpl.setIpReachabilityDisconnectEnabled(enabled);
-    }
-
-    @Override
-    public int getPollRssiIntervalMsecs() {
-        return mClientModeImpl.getPollRssiIntervalMsecs();
-    }
-
-    @Override
-    public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
-        mClientModeImpl.setPollRssiIntervalMsecs(newPollIntervalMsecs);
-    }
-
-    @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
         mClientModeImpl.probeLink(callback, mcs);
     }
