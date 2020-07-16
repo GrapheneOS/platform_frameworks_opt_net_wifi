@@ -1750,6 +1750,15 @@ public class SoftApManagerTest extends WifiBaseTest {
     }
 
     @Test
+    public void setRandomMacWhenSetMacNotsupport() throws Exception {
+        when(mWifiNative.isSetMacAddressSupported(any())).thenReturn(false);
+        SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
+                IFACE_IP_MODE_LOCAL_ONLY, null, mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+        verify(mWifiNative, never()).setMacAddress(any(), any());
+    }
+
+    @Test
     public void testForceClientDisconnectInvokeBecauseReachMaxClient() throws Exception {
         mTestSoftApCapability.setMaxSupportedClients(1);
         SoftApModeConfiguration apConfig =
