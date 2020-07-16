@@ -65,8 +65,6 @@ public interface ClientModeManager extends ActiveModeManager {
 
     int syncGetWifiState();
 
-    WifiLinkLayerStats syncGetLinkLayerStats();
-
     WifiInfo syncRequestConnectionInfo();
 
     boolean syncQueryPasspointIcon(long bssid, String fileName);

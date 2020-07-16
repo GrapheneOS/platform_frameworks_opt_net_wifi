@@ -1583,14 +1583,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Get link layers stats for adapter synchronously
-     */
-    public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return mWifiThreadRunner.call(
-                () -> getWifiLinkLayerStats(), null);
-    }
-
-    /**
      * Method to enable/disable RSSI polling
      * @param enabled boolean idicating if polling should start
      */

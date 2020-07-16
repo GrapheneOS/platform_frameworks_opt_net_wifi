@@ -115,11 +115,6 @@ public class DefaultClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return null;
-    }
-
-    @Override
     public WifiInfo syncRequestConnectionInfo() {
         return new WifiInfo();
     }

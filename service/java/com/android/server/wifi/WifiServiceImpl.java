@@ -2118,8 +2118,9 @@ public class WifiServiceImpl extends BaseWifiService {
         if ((getSupportedFeatures() & WifiManager.WIFI_FEATURE_LINK_LAYER_STATS) == 0) {
             return null;
         }
-        WifiLinkLayerStats stats =
-                mActiveModeWarden.getPrimaryClientModeManager().syncGetLinkLayerStats();
+        WifiLinkLayerStats stats = mWifiThreadRunner.call(
+                () -> mActiveModeWarden.getPrimaryClientModeManager().getWifiLinkLayerStats(),
+                null);
         if (stats == null) {
             return null;
         }

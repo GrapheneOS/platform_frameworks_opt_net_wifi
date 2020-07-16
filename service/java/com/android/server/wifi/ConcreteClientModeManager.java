@@ -784,11 +784,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return mClientModeImpl.syncGetLinkLayerStats();
-    }
-
-    @Override
     public WifiInfo syncRequestConnectionInfo() {
         return mClientModeImpl.syncRequestConnectionInfo();
     }
