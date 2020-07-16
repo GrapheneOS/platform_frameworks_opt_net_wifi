@@ -113,6 +113,7 @@ public class WifiNative {
      */
     public void enableVerboseLogging(boolean verbose) {
         mVerboseLoggingEnabled = verbose;
+        setSupplicantLogLevel(mVerboseLoggingEnabled);
         mWifiCondManager.enableVerboseLogging(mVerboseLoggingEnabled);
         mSupplicantStaIfaceHal.enableVerboseLogging(mVerboseLoggingEnabled);
         mHostapdHal.enableVerboseLogging(mVerboseLoggingEnabled);

@@ -459,6 +459,23 @@ public class WifiInjector {
         LogcatLog.enableVerboseLogging(verbose);
         mDppManager.enableVerboseLogging(verbose);
         mWifiCarrierInfoManager.enableVerboseLogging(verbose);
+
+        boolean verboseBool = verbose > 0;
+        mCountryCode.enableVerboseLogging(verboseBool);
+        mWifiDiagnostics.enableVerboseLogging(verboseBool);
+        mWifiMonitor.enableVerboseLogging(verboseBool);
+        mWifiNative.enableVerboseLogging(verboseBool);
+        mWifiConfigManager.enableVerboseLogging(verboseBool);
+        mSupplicantStateTracker.enableVerboseLogging(verboseBool);
+        mPasspointManager.enableVerboseLogging(verboseBool);
+        mWifiNetworkFactory.enableVerboseLogging(verboseBool);
+        mLinkProbeManager.enableVerboseLogging(verboseBool);
+        mMboOceController.enableVerboseLogging(verboseBool);
+        mWifiScoreCard.enableVerboseLogging(verboseBool);
+        mWifiHealthMonitor.enableVerboseLogging(verboseBool);
+        mThroughputPredictor.enableVerboseLogging(verboseBool);
+        mWifiDataStall.enableVerboseLogging(verboseBool);
+        mWifiConnectivityManager.enableVerboseLogging(verboseBool);
     }
 
     public UserManager getUserManager() {
