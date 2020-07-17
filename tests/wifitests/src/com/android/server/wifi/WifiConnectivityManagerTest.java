@@ -3103,17 +3103,6 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
-     *  Verify that WifiNetworkSelector sets bluetoothConnected correctly
-     */
-    @Test
-    public void verifyWifiNetworkSelectorSetBluetoothConnected() {
-        mWifiConnectivityManager.setBluetoothConnected(true);
-        verify(mWifiNS).setBluetoothConnected(true);
-        mWifiConnectivityManager.setBluetoothConnected(false);
-        verify(mWifiNS).setBluetoothConnected(false);
-    }
-
-    /**
      *  Verify that WifiChannelUtilization is updated
      */
     @Test

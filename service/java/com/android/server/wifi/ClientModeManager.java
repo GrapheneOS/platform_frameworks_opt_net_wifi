@@ -59,13 +59,13 @@ public interface ClientModeManager extends ActiveModeManager {
 
     void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason);
 
-    void sendBluetoothAdapterConnectionStateChange(int state);
-
-    void sendBluetoothAdapterStateChange(int state);
+    /**
+     * Notification that the Bluetooth connection state changed. The latest connection state can be
+     * fetched from {@link WifiGlobals#isBluetoothConnected()}.
+     */
+    void onBluetoothConnectionStateChanged();
 
     int syncGetWifiState();
-
-    WifiLinkLayerStats syncGetLinkLayerStats();
 
     WifiInfo syncRequestConnectionInfo();
 
@@ -74,8 +74,6 @@ public interface ClientModeManager extends ActiveModeManager {
     Network syncGetCurrentNetwork();
 
     DhcpResultsParcelable syncGetDhcpResultsParcelable();
-
-    String syncGetWifiStateByName();
 
     long syncGetSupportedFeatures();
 
@@ -109,14 +107,6 @@ public interface ClientModeManager extends ActiveModeManager {
     boolean isDisconnected();
 
     boolean isSupplicantTransientState();
-
-    boolean getIpReachabilityDisconnectEnabled();
-
-    void setIpReachabilityDisconnectEnabled(boolean enabled);
-
-    int getPollRssiIntervalMsecs();
-
-    void setPollRssiIntervalMsecs(int newPollIntervalMsecs);
 
     void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs);
 
