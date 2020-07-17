@@ -5206,4 +5206,31 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertFalse(mWifiInfo.isEphemeral());
         assertNull(mWifiInfo.getRequestingPackageName());
     }
+
+    @Test
+    public void handleAssociationRejectionWhenRoaming() throws Exception {
+        connect();
+
+        assertTrue(SupplicantState.isConnecting(mWifiInfo.getSupplicantState()));
+
+        when(mWifiNative.roamToNetwork(any(), any())).thenReturn(true);
+
+        // Trigger roam to a BSSID.
+        ScanResult scanResult = new ScanResult();
+        scanResult.SSID = WifiInfo.sanitizeSsid(mConnectedNetwork.SSID);
+        scanResult.BSSID = sBSSID1;
+        mCmi.startRoamToNetwork(FRAMEWORK_NETWORK_ID, scanResult);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).roamToNetwork(any(), any());
+        assertEquals("RoamingState", getCurrentState().getName());
+
+        // fail the connection.
+        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
+                new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.DISCONNECTED));
+        mLooper.dispatchAll();
+
+        // Ensure we reset WifiInfo fields.
+        assertFalse(SupplicantState.isConnecting(mWifiInfo.getSupplicantState()));
+    }
 }
