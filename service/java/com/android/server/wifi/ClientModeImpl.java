@@ -1422,7 +1422,7 @@ public class ClientModeImpl extends StateMachine {
     public void setOperationalMode(int mode, @Nullable String ifaceName,
                 @Nullable ActiveModeManager activeModeManager) {
         if (mVerboseLoggingEnabled) {
-            log("setting operational mode to " + String.valueOf(mode) + " for iface: " + ifaceName);
+            log("setting operational mode to " + mode + " for iface: " + ifaceName);
         }
         if (mode != CONNECT_MODE) {
             // we are disabling client mode...   need to exit connect mode now
@@ -1581,7 +1581,7 @@ public class ClientModeImpl extends StateMachine {
     /**
      * reset cached SIM credential data
      */
-    public synchronized void resetSimAuthNetworks(@ResetSimReason int resetReason) {
+    public void resetSimAuthNetworks(@ResetSimReason int resetReason) {
         sendMessage(CMD_RESET_SIM_NETWORKS, resetReason);
     }
 
@@ -3108,6 +3108,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
+                case CMD_RESET_SIM_NETWORKS:
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
@@ -3158,6 +3159,8 @@ public class ClientModeImpl extends StateMachine {
                     updateLinkProperties((LinkProperties) message.obj);
                     break;
                 }
+                case CMD_START_RSSI_MONITORING_OFFLOAD:
+                case CMD_STOP_RSSI_MONITORING_OFFLOAD:
                 case CMD_IP_CONFIGURATION_SUCCESSFUL:
                 case CMD_IP_CONFIGURATION_LOST:
                 case CMD_IP_REACHABILITY_LOST: {
@@ -3165,7 +3168,6 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case CMD_START_IP_PACKET_OFFLOAD:
-                    /* fall-through */
                 case CMD_STOP_IP_PACKET_OFFLOAD:
                 case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
                 case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF: {
@@ -3173,20 +3175,6 @@ public class ClientModeImpl extends StateMachine {
                         mNetworkAgent.sendSocketKeepaliveEvent(message.arg1,
                                 SocketKeepalive.ERROR_INVALID_NETWORK);
                     }
-                    break;
-                }
-                case CMD_START_RSSI_MONITORING_OFFLOAD: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case CMD_STOP_RSSI_MONITORING_OFFLOAD: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case CMD_RESET_SIM_NETWORKS: {
-                    /* Defer this message until supplicant is started. */
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DEFERRED;
-                    deferMessage(message);
                     break;
                 }
                 case CMD_INSTALL_PACKET_FILTER: {
@@ -3650,20 +3638,6 @@ public class ClientModeImpl extends StateMachine {
                         startConnectToNetwork(netId, message.sendingUid, SUPPLICANT_BSSID_ANY);
                     }
                     cnm.listener.sendSuccess();
-                    break;
-                }
-                case CMD_RESET_SIM_NETWORKS: {
-                    log("resetting EAP-SIM/AKA/AKA' networks since SIM was changed");
-                    int resetReason = message.arg1;
-                    if (resetReason == RESET_SIM_REASON_SIM_INSERTED) {
-                        // whenever a SIM is inserted clear all SIM related notifications
-                        mSimRequiredNotifier.dismissSimRequiredNotification();
-                    } else {
-                        mWifiConfigManager.resetSimNetworks();
-                    }
-                    if (resetReason != RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED) {
-                        mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
-                    }
                     break;
                 }
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE: {
@@ -4789,8 +4763,6 @@ public class ClientModeImpl extends StateMachine {
                                     config, mLastSimBasedConnectionCarrierName);
                         }
                     }
-                    /* allow parent state to reset data for other networks */
-                    handleStatus = NOT_HANDLED;
                     break;
                 }
                 case CMD_START_IP_PACKET_OFFLOAD: {

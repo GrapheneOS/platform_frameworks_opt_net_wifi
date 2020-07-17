@@ -3827,43 +3827,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * Verify removing sim will also remove an ephemeral Passpoint Provider. And reset carrier
-     * privileged suggestor apps.
-     */
-    @Test
-    public void testResetSimNetworkWhenRemovingSim() throws Exception {
-        // Switch to connect mode and verify wifi is reported as enabled
-        startSupplicantAndDispatchMessages();
-
-        // Indicate that sim is removed.
-        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
-                ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
-        mLooper.dispatchAll();
-
-        verify(mWifiConfigManager).resetSimNetworks();
-        verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
-    }
-
-    /**
-     * Verify inserting sim will reset carrier privileged suggestor apps.
-     * and remove any previous notifications due to sim removal
-     */
-    @Test
-    public void testResetCarrierPrivilegedAppsWhenInsertingSim() throws Exception {
-        // Switch to connect mode and verify wifi is reported as enabled
-        startSupplicantAndDispatchMessages();
-
-        // Indicate that sim is inserted.
-        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
-                ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED);
-        mLooper.dispatchAll();
-
-        verify(mWifiConfigManager, never()).resetSimNetworks();
-        verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
-        verify(mSimRequiredNotifier).dismissSimRequiredNotification();
-    }
-
-    /**
      * Verifies that WifiLastResortWatchdog is notified of FOURWAY_HANDSHAKE_TIMEOUT.
      */
     @Test
