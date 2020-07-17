@@ -428,17 +428,17 @@ public class WifiServiceImpl extends BaseWifiService {
                                 BluetoothAdapter.STATE_DISCONNECTED);
                         boolean isConnected = state != BluetoothAdapter.STATE_DISCONNECTED;
                         mWifiGlobals.setBluetoothConnected(isConnected);
-                        // TODO(b/159060934): should this notification be sent to all CMMs?
-                        mActiveModeWarden.getPrimaryClientModeManager()
-                                .onBluetoothConnectionStateChanged();
+                        for (ClientModeManager cmm : mActiveModeWarden.getClientModeManagers()) {
+                            cmm.onBluetoothConnectionStateChanged();
+                        }
                     } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                                 BluetoothAdapter.STATE_OFF);
                         boolean isEnabled = state != BluetoothAdapter.STATE_OFF;
                         mWifiGlobals.setBluetoothEnabled(isEnabled);
-                        // TODO(b/159060934): should this notification be sent to all CMMs?
-                        mActiveModeWarden.getPrimaryClientModeManager()
-                                .onBluetoothConnectionStateChanged();
+                        for (ClientModeManager cmm : mActiveModeWarden.getClientModeManagers()) {
+                            cmm.onBluetoothConnectionStateChanged();
+                        }
                     } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
                         handleIdleModeChanged();
                     } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
