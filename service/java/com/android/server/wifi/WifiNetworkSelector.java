@@ -103,11 +103,11 @@ public class WifiNetworkSelector {
     private final WifiNative mWifiNative;
     private final ThroughputPredictor mThroughputPredictor;
     private final WifiChannelUtilization mWifiChannelUtilization;
+    private final WifiGlobals mWifiGlobals;
 
     private final Map<String, WifiCandidates.CandidateScorer> mCandidateScorers = new ArrayMap<>();
     private boolean mIsEnhancedOpenSupportedInitialized = false;
     private boolean mIsEnhancedOpenSupported;
-    private boolean mIsBluetoothConnected = false;
 
     /**
      * Interface for WiFi Network Nominator
@@ -963,7 +963,7 @@ public class WifiNetworkSelector {
                 scanDetail.getNetworkDetail().getMaxNumberSpatialStreams(),
                 scanDetail.getNetworkDetail().getChannelUtilization(),
                 channelUtilizationLinkLayerStats,
-                mIsBluetoothConnected);
+                mWifiGlobals.isBluetoothConnected());
     }
 
     /**
@@ -1026,13 +1026,6 @@ public class WifiNetworkSelector {
     private static final int ID_PREFIX = 42;
     private static final int MIN_SCORER_EXP_ID = ID_PREFIX * ID_SUFFIX_MOD;
 
-    /**
-     * Set whether bluetooth is in the connected state
-     */
-    public void setBluetoothConnected(boolean isBlueToothConnected) {
-        mIsBluetoothConnected = isBlueToothConnected;
-    }
-
     WifiNetworkSelector(
             Context context,
             WifiScoreCard wifiScoreCard,
@@ -1043,7 +1036,8 @@ public class WifiNetworkSelector {
             WifiMetrics wifiMetrics,
             WifiNative wifiNative,
             ThroughputPredictor throughputPredictor,
-            WifiChannelUtilization wifiChannelUtilization) {
+            WifiChannelUtilization wifiChannelUtilization,
+            WifiGlobals wifiGlobals) {
         mContext = context;
         mWifiScoreCard = wifiScoreCard;
         mScoringParams = scoringParams;
@@ -1054,5 +1048,6 @@ public class WifiNetworkSelector {
         mWifiNative = wifiNative;
         mThroughputPredictor = throughputPredictor;
         mWifiChannelUtilization = wifiChannelUtilization;
+        mWifiGlobals = wifiGlobals;
     }
 }

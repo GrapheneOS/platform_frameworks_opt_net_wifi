@@ -104,19 +104,11 @@ public class DefaultClientModeManager implements ClientModeManager {
     public void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) { }
 
     @Override
-    public void sendBluetoothAdapterConnectionStateChange(int state) { }
-
-    @Override
-    public void sendBluetoothAdapterStateChange(int state) { }
+    public void onBluetoothConnectionStateChanged() { }
 
     @Override
     public int syncGetWifiState() {
         return WifiManager.WIFI_STATE_DISABLED;
-    }
-
-    @Override
-    public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return null;
     }
 
     @Override
@@ -137,11 +129,6 @@ public class DefaultClientModeManager implements ClientModeManager {
     @Override
     public DhcpResultsParcelable syncGetDhcpResultsParcelable() {
         return new DhcpResultsParcelable();
-    }
-
-    @Override
-    public String syncGetWifiStateByName() {
-        return null;
     }
 
     public long syncGetSupportedFeatures() {
@@ -223,22 +210,6 @@ public class DefaultClientModeManager implements ClientModeManager {
     public boolean isSupplicantTransientState() {
         return false;
     }
-
-    @Override
-    public boolean getIpReachabilityDisconnectEnabled() {
-        return false;
-    }
-
-    @Override
-    public void setIpReachabilityDisconnectEnabled(boolean enabled) { }
-
-    @Override
-    public int getPollRssiIntervalMsecs() {
-        return -1;
-    }
-
-    @Override
-    public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) { }
 
     @Override
     public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
