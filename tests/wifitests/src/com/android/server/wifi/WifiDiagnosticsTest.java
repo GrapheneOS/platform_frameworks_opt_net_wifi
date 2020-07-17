@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.content.Context;
 import android.os.BugreportManager;
+import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
@@ -77,6 +78,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     private long mBootTimeMs = 0L;
     MockResources mResources;
     WifiDiagnostics mWifiDiagnostics;
+    TestLooper mTestLooper;
 
     private static final String FAKE_RING_BUFFER_NAME = "fake-ring-buffer";
     private static final String STA_IF_NAME = "wlan0";
@@ -108,6 +110,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        mTestLooper = new TestLooper();
 
         mFakeRbs = new WifiNative.RingBufferStatus();
         mFakeRbs.name = FAKE_RING_BUFFER_NAME;
@@ -147,7 +150,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
             }
         }).when(mClock).getElapsedSinceBootMillis();
         mWifiDiagnostics = new WifiDiagnostics(
-                mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
+                mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock,
+                mTestLooper.getLooper());
         mWifiNative.enableVerboseLogging(false);
     }
 
@@ -280,7 +284,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         final byte[] data = new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE];
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData = getLoggerRingBufferData();
         assertEquals(1, ringBufferData.length);
@@ -301,7 +306,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         final byte[] data2 = {1, 2, 3};
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data1);
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data2);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData = getLoggerRingBufferData();
         assertEquals(1, ringBufferData.length);
@@ -647,7 +653,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(STA_IF_NAME);
         mWifiDiagnostics.onRingBufferData(
                 mFakeRbs, new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE + 1]);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(0, getLoggerRingBufferData().length);
     }
 
@@ -663,7 +670,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(STA_IF_NAME);
         mWifiDiagnostics.onRingBufferData(
                 mFakeRbs, new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE + 1]);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(0, getLoggerRingBufferData().length);
     }
 
@@ -679,7 +687,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(STA_IF_NAME);
         mWifiDiagnostics.onRingBufferData(
                 mFakeRbs, new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE + 1]);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(0, getLoggerRingBufferData().length);
     }
 
@@ -692,7 +701,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(STA_IF_NAME);
         mWifiDiagnostics.onRingBufferData(
                 mFakeRbs, new byte[LARGE_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE]);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(1, getLoggerRingBufferData().length);
     }
 
@@ -705,7 +715,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(STA_IF_NAME);
         mWifiDiagnostics.onRingBufferData(
                 mFakeRbs, new byte[LARGE_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE]);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(1, getLoggerRingBufferData().length);
     }
 
@@ -722,13 +733,15 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         // Existing data is nuked (too large).
         mWifiDiagnostics.enableVerboseLogging(false /* verbose disabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(0, getLoggerRingBufferData().length);
 
         // New data must obey limit as well.
         mWifiDiagnostics.onRingBufferData(
                 mFakeRbs, new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE + 1]);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         assertEquals(0, getLoggerRingBufferData().length);
     }
 
@@ -739,6 +752,7 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Test
     public void onWifiAlertCapturesBugreportAndLogsMetrics() throws Exception {
         mWifiDiagnostics.onWifiAlert(ALERT_REASON_CODE, ALERT_DATA);
+        mTestLooper.dispatchAll();
 
         assertEquals(1, mWifiDiagnostics.getAlertReports().size());
         WifiDiagnostics.BugReport alertReport = mWifiDiagnostics.getAlertReports().get(0);
@@ -752,7 +766,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     /** Verifies that we skip the firmware and driver dumps if verbose is not enabled. */
     @Test
     public void captureBugReportSkipsFirmwareAndDriverDumpsByDefault() {
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative, never()).getFwMemoryDump();
         verify(mWifiNative, never()).getDriverStateDump();
     }
@@ -762,7 +777,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     public void captureBugReportTakesFirmwareAndDriverDumpsInVerboseMode() {
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getFwMemoryDump();
         verify(mWifiNative).getDriverStateDump();
     }
@@ -774,7 +790,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getDriverStateDump();
 
         StringWriter sw = new StringWriter();
@@ -788,7 +805,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     public void dumpOmitsDriverStateDumpIfUnavailable() {
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getDriverStateDump();
 
         StringWriter sw = new StringWriter();
@@ -804,7 +822,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getDriverStateDump();
 
         mWifiDiagnostics.enableVerboseLogging(false /* verbose disabled */);
@@ -823,7 +842,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getFwMemoryDump();
 
         StringWriter sw = new StringWriter();
@@ -837,7 +857,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     public void dumpOmitsFirmwareMemoryDumpIfUnavailable() {
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getFwMemoryDump();
 
         StringWriter sw = new StringWriter();
@@ -853,7 +874,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         mWifiDiagnostics.enableVerboseLogging(true /* verbose enabled */);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).getFwMemoryDump();
 
         mWifiDiagnostics.enableVerboseLogging(false /* verbose disabled */);
@@ -913,7 +935,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         mResources.setBoolean(R.bool.config_wifi_diagnostics_bugreport_enabled, false);
         mWifiDiagnostics = new WifiDiagnostics(
-                mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
+                mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock,
+                mTestLooper.getLooper());
 
         mWifiDiagnostics.takeBugReport("", "");
         verify(mBugreportManager, never()).requestBugreport(any(), any(), any());
@@ -921,30 +944,33 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
     /** Verifies that we flush HAL ringbuffer when capture bugreport. */
     @Test
-    public void captureBugReportFlushRingBufferData() {
+    public void triggerBugReportFlushRingBufferDataCapture() {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         when(mWifiNative.flushRingBufferData()).thenReturn(true);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).flushRingBufferData();
     }
 
     /** Verifies that we flush HAL ringbuffer when detecting fatal firmware alert. */
     @Test
-    public void captureAlertFlushRingBufferData() {
+    public void triggerAlertFlushRingBufferDataCapture() {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         when(mWifiNative.flushRingBufferData()).thenReturn(true);
         /** captureAlertData with mock fatal firmware alert*/
-        mWifiDiagnostics.captureAlertData(FATAL_FW_ALERT_LIST[0], ALERT_DATA);
+        mWifiDiagnostics.onWifiAlert(FATAL_FW_ALERT_LIST[0], ALERT_DATA);
+        mTestLooper.dispatchAll();
         verify(mWifiNative).flushRingBufferData();
     }
 
     /** Verifies that we don't flush HAL ringbuffer when detecting non fatal firmware alert. */
     @Test
-    public void captureNonAlertFlushRingBufferData() {
+    public void triggerNonAlertFlushRingBufferDataCapture() {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         when(mWifiNative.flushRingBufferData()).thenReturn(true);
         /** captureAlertData with mock non fatal firmware alert*/
-        mWifiDiagnostics.captureAlertData(NON_FATAL_FW_ALERT, ALERT_DATA);
+        mWifiDiagnostics.onWifiAlert(NON_FATAL_FW_ALERT, ALERT_DATA);
+        mTestLooper.dispatchAll();
         verify(mWifiNative, never()).flushRingBufferData();
     }
 
@@ -960,7 +986,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         final byte[] data = new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE];
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData = getLoggerRingBufferData();
         assertEquals(1, ringBufferData.length);
@@ -981,7 +1008,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
 
         final byte[] data = new byte[SMALL_RING_BUFFER_SIZE_KB * BYTES_PER_KBYTE];
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData = getLoggerRingBufferData();
         assertEquals(1, ringBufferData.length);
@@ -1003,7 +1031,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(AP_IF_NAME);
 
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData0 = getLoggerRingBufferData();
         assertEquals(1, ringBufferData0.length);
@@ -1012,7 +1041,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.stopLogging(STA_IF_NAME);
 
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData1 = getLoggerRingBufferData();
         assertEquals(1, ringBufferData1.length);
@@ -1034,7 +1064,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startLogging(AP_IF_NAME);
 
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData0 = getLoggerRingBufferData();
         assertEquals(1, ringBufferData0.length);
@@ -1043,7 +1074,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.stopLogging(AP_IF_NAME);
 
         mWifiDiagnostics.onRingBufferData(mFakeRbs, data);
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_NONE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_NONE);
+        mTestLooper.dispatchAll();
 
         byte[][] ringBufferData1 = getLoggerRingBufferData();
         assertEquals(1, ringBufferData1.length);

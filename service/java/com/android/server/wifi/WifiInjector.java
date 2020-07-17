@@ -105,10 +105,10 @@ public class WifiInjector {
     private final FrameworkFacade mFrameworkFacade = new FrameworkFacade();
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final UserManager mUserManager;
-    private final HandlerThread mAsyncChannelHandlerThread;
     private final HandlerThread mWifiHandlerThread;
     private final HandlerThread mWifiP2pServiceHandlerThread;
     private final HandlerThread mPasspointProvisionerHandlerThread;
+    private final HandlerThread mWifiDiagnosticsHandlerThread;
     private final WifiTrafficPoller mWifiTrafficPoller;
     private final WifiCountryCode mCountryCode;
     private final BackupManagerProxy mBackupManagerProxy = new BackupManagerProxy();
@@ -205,12 +205,12 @@ public class WifiInjector {
         sWifiInjector = this;
 
         // Now create and start handler threads
-        mAsyncChannelHandlerThread = new HandlerThread("AsyncChannelHandlerThread");
-        mAsyncChannelHandlerThread.start();
         mWifiHandlerThread = new HandlerThread("WifiHandlerThread");
         mWifiHandlerThread.start();
         Looper wifiLooper = mWifiHandlerThread.getLooper();
         Handler wifiHandler = new Handler(wifiLooper);
+        mWifiDiagnosticsHandlerThread = new HandlerThread("WifiDiagnostics");
+        mWifiDiagnosticsHandlerThread.start();
 
         mContext = context;
         mScoringParams = new ScoringParams(mContext);
@@ -295,7 +295,7 @@ public class WifiInjector {
                 mContext.getSystemService(ActivityManager.class).isLowRamDevice() ? 256 : 512);
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, this, mWifiNative, mBuildProperties,
-                new LastMileLogger(this), mClock);
+                new LastMileLogger(this), mClock, mWifiDiagnosticsHandlerThread.getLooper());
         mWifiLastResortWatchdog = new WifiLastResortWatchdog(this, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
                 mDeviceConfigFacade, mWifiThreadRunner, mWifiInfo);
@@ -500,10 +500,6 @@ public class WifiInjector {
 
     public FrameworkFacade getFrameworkFacade() {
         return mFrameworkFacade;
-    }
-
-    public HandlerThread getAsyncChannelHandlerThread() {
-        return mAsyncChannelHandlerThread;
     }
 
     public HandlerThread getWifiP2pServiceHandlerThread() {

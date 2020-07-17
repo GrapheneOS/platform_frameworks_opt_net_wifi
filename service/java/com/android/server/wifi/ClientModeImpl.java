@@ -2941,7 +2941,7 @@ public class ClientModeImpl extends StateMachine {
     private void handleIPv4Failure() {
         // TODO: Move this to provisioning failure, not DHCP failure.
         // DHCPv4 failure is expected on an IPv6-only network.
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_DHCP_FAILURE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_DHCP_FAILURE);
         if (mVerboseLoggingEnabled) {
             int count = -1;
             WifiConfiguration config = getCurrentWifiConfiguration();
@@ -4377,7 +4377,7 @@ public class ClientModeImpl extends StateMachine {
                         break;
                     }
                     stopIpClient();
-                    mWifiDiagnostics.captureBugReportData(
+                    mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_ASSOC_FAILURE);
                     mDidBlackListBSSID = false;
                     String bssid = assocRejectEventInfo.bssid;
@@ -4423,7 +4423,7 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT: {
                     stopIpClient();
-                    mWifiDiagnostics.captureBugReportData(
+                    mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_AUTH_FAILURE);
                     int disableReason = WifiConfiguration.NetworkSelectionStatus
                             .DISABLED_AUTHENTICATION_FAILURE;
@@ -4761,7 +4761,7 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case CMD_IP_REACHABILITY_LOST: {
                     if (mVerboseLoggingEnabled && message.obj != null) log((String) message.obj);
-                    mWifiDiagnostics.captureBugReportData(
+                    mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_REACHABILITY_LOST);
                     mWifiMetrics.logWifiIsUnusableEvent(
                             WifiIsUnusableEvent.TYPE_IP_REACHABILITY_LOST);
@@ -5111,7 +5111,7 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_IP_CONFIGURATION_LOST: {
                     WifiConfiguration config = getCurrentWifiConfiguration();
                     if (config != null) {
-                        mWifiDiagnostics.captureBugReportData(
+                        mWifiDiagnostics.triggerBugReportDataCapture(
                                 WifiDiagnostics.REPORT_REASON_AUTOROAM_FAILURE);
                     }
                     handleStatus = NOT_HANDLED;
@@ -5360,7 +5360,7 @@ public class ClientModeImpl extends StateMachine {
                             WifiMetricsProto.ConnectionEvent.HLF_NONE,
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
                     if (unexpectedDisconnectedReason(eventInfo.reasonCode)) {
-                        mWifiDiagnostics.captureBugReportData(
+                        mWifiDiagnostics.triggerBugReportDataCapture(
                                 WifiDiagnostics.REPORT_REASON_UNEXPECTED_DISCONNECT);
                     }
 
