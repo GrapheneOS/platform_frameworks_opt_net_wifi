@@ -53,7 +53,7 @@ public class BaseWifiDiagnostics {
 
     public synchronized void captureBugReportData(int reason) { }
 
-    public synchronized void captureAlertData(int errorCode, byte[] alertData) { }
+    public void triggerBugReportDataCapture(int reason) { }
 
     public synchronized void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         dump(pw);

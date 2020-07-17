@@ -225,7 +225,7 @@ public class ActiveModeWarden {
             if (!isReady && !mIsShuttingdown) {
                 mHandler.post(() -> {
                     Log.e(TAG, "One of the native daemons died. Triggering recovery");
-                    wifiDiagnostics.captureBugReportData(
+                    wifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_WIFINATIVE_FAILURE);
 
                     // immediately trigger SelfRecovery if we receive a notice about an
