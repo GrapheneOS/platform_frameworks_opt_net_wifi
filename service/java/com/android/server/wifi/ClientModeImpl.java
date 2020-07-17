@@ -5314,12 +5314,11 @@ public class ClientModeImpl extends StateMachine {
                                     mWifiConfigManager.updateNetworkSelectionStatus(
                                             config.networkId,
                                             DISABLED_NO_INTERNET_TEMPORARY);
+                                    mBssidBlocklistMonitor.handleBssidConnectionFailure(
+                                            mLastBssid, config.SSID,
+                                            BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+                                            mWifiInfo.getRssi());
                                 }
-                                int rssi = mWifiInfo.getRssi();
-                                mBssidBlocklistMonitor.handleBssidConnectionFailure(
-                                        mLastBssid, config.SSID,
-                                        BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
-                                        rssi);
                                 mWifiScoreCard.noteValidationFailure(mWifiInfo);
                             }
                         }
