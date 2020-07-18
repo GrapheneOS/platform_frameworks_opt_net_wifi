@@ -25,6 +25,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.internal.util.AsyncChannel;
+import com.android.server.wifi.p2p.WifiP2pServiceImpl;
 
 /**
  * Used by {@link ClientModeImpl} to communicate with
@@ -42,6 +43,7 @@ public class WifiP2pConnection {
     private final AsyncChannel mReplyChannel = new AsyncChannel();
     /** Used to initiate a connection with WifiP2pService */
     private AsyncChannel mWifiP2pChannel;
+    private boolean mTemporarilyDisconnectWifi = false;
 
     public WifiP2pConnection(Context context, Looper looper, ActiveModeWarden activeModeWarden) {
         mContext = context;
@@ -89,6 +91,16 @@ public class WifiP2pConnection {
                         // TODO(b/34283611): Re-establish connection to state machine after a delay
                         // mWifiP2pChannel.connect(mContext, getHandler(),
                         // mWifiP2pManager.getMessenger());
+                    }
+                } break;
+                case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
+                    mTemporarilyDisconnectWifi = (msg.arg1 == 1);
+                    if (mActiveModeWarden.getClientModeManagers().isEmpty()) {
+                        // no active client mode managers, so request is trivially satisfied
+                        replyToMessage(msg, WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
+                    } else {
+                        // need to tell all client mode managers to disconnect
+                        sendMessageToAllClientModeImpls(msg);
                     }
                 } break;
                 default: {
@@ -169,5 +181,10 @@ public class WifiP2pConnection {
         msg.what = what;
         msg.arg2 = srcMsg.arg2;
         return msg;
+    }
+
+    /** Whether P2P service requested that we temporarily disconnect from Wifi */
+    public boolean shouldTemporarilyDisconnectWifi() {
+        return mTemporarilyDisconnectWifi;
     }
 }

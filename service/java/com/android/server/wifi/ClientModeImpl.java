@@ -196,7 +196,6 @@ public class ClientModeImpl extends StateMachine {
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private final BaseWifiDiagnostics mWifiDiagnostics;
-    private boolean mTemporarilyDisconnectWifi = false;
     private final Clock mClock;
     private final WifiCountryCode mCountryCode;
     private final WifiScoreCard mWifiScoreCard;
@@ -3059,6 +3058,7 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST:
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
                 case CMD_ENABLE_RSSI_POLL:
                 case CMD_RESET_SIM_NETWORKS:
@@ -3094,12 +3094,6 @@ public class ClientModeImpl extends StateMachine {
                     } else {
                         setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, false);
                     }
-                    break;
-                }
-                case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
-                    mTemporarilyDisconnectWifi = (message.arg1 == 1);
-                    mWifiP2pConnection.replyToMessage(
-                            message, WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
                     break;
                 }
                 /* Link configuration (IP address, DNS, ...) changes notified via netlink */
@@ -3437,14 +3431,12 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
-                    if (message.arg1 == 1) {
+                    if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_P2P_DISCONNECT_WIFI_REQUEST);
                         mWifiNative.disconnect(mInterfaceName);
-                        mTemporarilyDisconnectWifi = true;
                     } else {
                         mWifiNative.reconnect(mInterfaceName);
-                        mTemporarilyDisconnectWifi = false;
                     }
                     break;
                 }
@@ -4595,11 +4587,10 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
-                    if (message.arg1 == 1) {
+                    if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_P2P_DISCONNECT_WIFI_REQUEST);
                         mWifiNative.disconnect(mInterfaceName);
-                        mTemporarilyDisconnectWifi = true;
                     }
                     break;
                 }
@@ -5279,7 +5270,10 @@ public class ClientModeImpl extends StateMachine {
             Log.i(getTag(), "disconnectedstate enter");
             // We don't scan frequently if this is a temporary disconnect
             // due to p2p
-            if (mTemporarilyDisconnectWifi) {
+            if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
+                // TODO(b/161569371): P2P should wait for all ClientModeImpls to enter
+                //  DisconnectedState, not just one instance.
+                // (Does P2P Service support STA+P2P concurrency?)
                 mWifiP2pConnection.sendMessage(WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
                 return;
             }
@@ -5304,7 +5298,7 @@ public class ClientModeImpl extends StateMachine {
             switch (message.what) {
                 case CMD_RECONNECT:
                 case CMD_REASSOCIATE: {
-                    if (mTemporarilyDisconnectWifi) {
+                    if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
                         // Drop a third party reconnect/reassociate if STA is
                         // temporarily disconnected for p2p
                         break;
