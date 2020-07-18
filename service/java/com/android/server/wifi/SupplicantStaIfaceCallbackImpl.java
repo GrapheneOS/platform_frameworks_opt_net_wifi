@@ -55,7 +55,8 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
     private final String mIfaceName;
     private final Object mLock;
     private final WifiMonitor mWifiMonitor;
-    private boolean mStateIsFourway = false; // Used to help check for PSK password mismatch
+    // Used to help check for PSK password mismatch & EAP connection failure.
+    private int mStateBeforeDisconnect = State.INACTIVE;
     private String mCurrentSsid = null;
 
     SupplicantStaIfaceCallbackImpl(@NonNull SupplicantStaIfaceHal staIfaceHal,
@@ -152,8 +153,8 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
     public void onNetworkRemoved(int id) {
         synchronized (mLock) {
             mStaIfaceHal.logCallback("onNetworkRemoved");
-            // Reset 4way handshake state since network has been removed.
-            mStateIsFourway = false;
+            // Reset state since network has been removed.
+            mStateBeforeDisconnect = State.INACTIVE;
         }
     }
 
@@ -169,12 +170,16 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             WifiSsid wifiSsid =
                     WifiSsid.createFromByteArray(NativeUtil.byteArrayFromArrayList(ssid));
             String bssidStr = NativeUtil.macAddressFromByteArray(bssid);
-            mStateIsFourway = (newState == ISupplicantStaIfaceCallback.State.FOURWAY_HANDSHAKE);
-            if (newSupplicantState == SupplicantState.COMPLETED) {
+            if (newState != State.DISCONNECTED) {
+                // onStateChanged(DISCONNECTED) may come before onDisconnected(), so add this
+                // cache to track the state before the disconnect.
+                mStateBeforeDisconnect = newState;
+            }
+            if (newState == State.COMPLETED) {
                 mWifiMonitor.broadcastNetworkConnectionEvent(
                         mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), filsHlpSent,
                         bssidStr);
-            } else if (newSupplicantState == SupplicantState.ASSOCIATING) {
+            } else if (newState == State.ASSOCIATING) {
                 mCurrentSsid = NativeUtil.encodeSsid(ssid);
             }
             mWifiMonitor.broadcastSupplicantStateChangeEvent(
@@ -250,14 +255,23 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
         synchronized (mLock) {
             mStaIfaceHal.logCallback("onDisconnected");
             if (mStaIfaceHal.isVerboseLoggingEnabled()) {
-                Log.e(TAG, "onDisconnected 4way=" + mStateIsFourway
+                Log.e(TAG, "onDisconnected state=" + mStateBeforeDisconnect
                         + " locallyGenerated=" + locallyGenerated
                         + " reasonCode=" + reasonCode);
             }
-            if (mStateIsFourway
-                    && (!locallyGenerated || reasonCode != ReasonCode.IE_IN_4WAY_DIFFERS)) {
-                mWifiMonitor.broadcastAuthenticationFailureEvent(
-                        mIfaceName, WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD, -1);
+            WifiConfiguration curConfiguration =
+                    mStaIfaceHal.getCurrentNetworkLocalConfig(mIfaceName);
+            if (curConfiguration != null) {
+                if (mStateBeforeDisconnect == State.FOURWAY_HANDSHAKE
+                        && WifiConfigurationUtil.isConfigForPskNetwork(curConfiguration)
+                        && (!locallyGenerated || reasonCode != ReasonCode.IE_IN_4WAY_DIFFERS)) {
+                    mWifiMonitor.broadcastAuthenticationFailureEvent(
+                            mIfaceName, WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD, -1);
+                } else if (mStateBeforeDisconnect == State.ASSOCIATED
+                        && WifiConfigurationUtil.isConfigForEapNetwork(curConfiguration)) {
+                    mWifiMonitor.broadcastAuthenticationFailureEvent(
+                            mIfaceName, WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE, -1);
+                }
             }
             mWifiMonitor.broadcastNetworkDisconnectionEvent(
                     mIfaceName, locallyGenerated, reasonCode, mCurrentSsid,
@@ -272,7 +286,6 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             boolean isWrongPwd = false;
             WifiConfiguration curConfiguration =
                     mStaIfaceHal.getCurrentNetworkLocalConfig(mIfaceName);
-
             if (curConfiguration != null) {
                 if (!timedOut) {
                     Log.d(TAG, "flush PMK cache due to association rejection for config id "
