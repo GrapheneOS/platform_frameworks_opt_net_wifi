@@ -1562,7 +1562,8 @@ public class ClientModeImpl extends StateMachine {
      * Method to enable/disable RSSI polling
      * @param enabled boolean idicating if polling should start
      */
-    public void enableRssiPolling(boolean enabled) {
+    @VisibleForTesting
+    void enableRssiPolling(boolean enabled) {
         sendMessage(CMD_ENABLE_RSSI_POLL, enabled ? 1 : 0, 0);
     }
 
@@ -3096,10 +3097,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case CMD_ENABLE_RSSI_POLL: {
-                    mEnableRssiPolling = (message.arg1 == 1);
-                    break;
-                }
                 case CMD_SET_HIGH_PERF_MODE: {
                     if (message.arg1 == 1) {
                         setSuspendOptimizations(SUSPEND_DUE_TO_HIGH_PERF, false);
@@ -3108,6 +3105,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
+                case CMD_ENABLE_RSSI_POLL:
                 case CMD_RESET_SIM_NETWORKS:
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
@@ -3480,6 +3478,10 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case CMD_ENABLE_RSSI_POLL: {
+                    mEnableRssiPolling = (message.arg1 == 1);
+                    break;
+                }
                 case CMD_SCREEN_STATE_CHANGED: {
                     handleScreenStateChanged(message.arg1 != 0);
                     break;
