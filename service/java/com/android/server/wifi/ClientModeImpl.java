@@ -405,18 +405,6 @@ public class ClientModeImpl extends StateMachine {
     /* Reassociate to a network */
     static final int CMD_REASSOCIATE                                    = BASE + 75;
 
-    /* Controls suspend mode optimizations
-     *
-     * When high perf mode is enabled, suspend mode optimizations are disabled
-     *
-     * When high perf mode is disabled, suspend mode optimizations are enabled
-     *
-     * Suspend mode optimizations include:
-     * - packet filtering
-     * - turn off roaming
-     * - DTIM wake up settings
-     */
-    static final int CMD_SET_HIGH_PERF_MODE                             = BASE + 77;
     /* Enables RSSI poll */
     static final int CMD_ENABLE_RSSI_POLL                               = BASE + 82;
     /* RSSI poll */
@@ -1566,18 +1554,6 @@ public class ClientModeImpl extends StateMachine {
     void enableRssiPolling(boolean enabled) {
         sendMessage(CMD_ENABLE_RSSI_POLL, enabled ? 1 : 0, 0);
     }
-
-    /**
-     * Set high performance mode of operation.
-     * Enabling would set active power mode and disable suspend optimizations;
-     * disabling would set auto power mode and enable suspend optimizations
-     *
-     * @param enable true if enable, false otherwise
-     */
-    public void setHighPerfModeEnabled(boolean enable) {
-        sendMessage(CMD_SET_HIGH_PERF_MODE, enable ? 1 : 0, 0);
-    }
-
 
     /**
      * reset cached SIM credential data
@@ -3097,14 +3073,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case CMD_SET_HIGH_PERF_MODE: {
-                    if (message.arg1 == 1) {
-                        setSuspendOptimizations(SUSPEND_DUE_TO_HIGH_PERF, false);
-                    } else {
-                        setSuspendOptimizations(SUSPEND_DUE_TO_HIGH_PERF, true);
-                    }
-                    break;
-                }
                 case CMD_ENABLE_RSSI_POLL:
                 case CMD_RESET_SIM_NETWORKS:
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
@@ -3225,7 +3193,7 @@ public class ClientModeImpl extends StateMachine {
     private void setupClientMode() {
         Log.d(getTag(), "setupClientMode() ifacename = " + mInterfaceName);
 
-        setHighPerfModeEnabled(false);
+        setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, true);
 
         mWifiStateTracker.updateState(WifiStateTracker.INVALID);
         mIpClientCallbacks = new IpClientCallbacksImpl();
@@ -3655,14 +3623,6 @@ public class ClientModeImpl extends StateMachine {
                         }
                     } else {
                         setSuspendOptimizationsNative(SUSPEND_DUE_TO_SCREEN, false);
-                    }
-                    break;
-                }
-                case CMD_SET_HIGH_PERF_MODE: {
-                    if (message.arg1 == 1) {
-                        setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, false);
-                    } else {
-                        setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, true);
                     }
                     break;
                 }
@@ -4920,11 +4880,6 @@ public class ClientModeImpl extends StateMachine {
                             ? mTargetBssid : eventInfo.bssid,
                             WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     handleStatus = NOT_HANDLED;
-                    break;
-                }
-                case CMD_SET_HIGH_PERF_MODE: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DEFERRED;
-                    deferMessage(message);
                     break;
                 }
                 default: {
