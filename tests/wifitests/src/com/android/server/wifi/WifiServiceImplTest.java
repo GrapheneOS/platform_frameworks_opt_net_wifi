@@ -542,6 +542,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.startAutoDispatch();
         mWifiServiceImpl.dump(new FileDescriptor(), new PrintWriter(new StringWriter()), null);
         mLooper.stopAutoDispatchAndIgnoreExceptions();
+
+        verify(mWifiDiagnostics).captureBugReportData(
+                WifiDiagnostics.REPORT_REASON_USER_ACTION);
+        verify(mWifiDiagnostics).dump(any(), any(), any());
     }
 
     /**
@@ -5678,7 +5682,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         stats.rx_time = 2;
         stats.tx_time_per_level = new int[] {3, 4, 5};
         stats.on_time_scan = 6;
-        when(mClientModeManager.syncGetLinkLayerStats()).thenReturn(stats);
+        when(mClientModeManager.getWifiLinkLayerStats()).thenReturn(stats);
         when(mPowerProfile.getAveragePower(PowerProfile.POWER_WIFI_CONTROLLER_IDLE))
                 .thenReturn(7.0);
         when(mPowerProfile.getAveragePower(PowerProfile.POWER_WIFI_CONTROLLER_RX))
@@ -5730,7 +5734,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void getWifiActivityEnergyInfoAsyncSuccess() throws Exception {
         when(mClientModeManager.syncGetSupportedFeatures()).thenReturn(Long.MAX_VALUE);
         setupReportActivityInfo();
+        mLooper.startAutoDispatch();
         mWifiServiceImpl.getWifiActivityEnergyInfoAsync(mOnWifiActivityEnergyInfoListener);
+        mLooper.stopAutoDispatch();
         ArgumentCaptor<WifiActivityEnergyInfo> infoCaptor =
                 ArgumentCaptor.forClass(WifiActivityEnergyInfo.class);
         verify(mOnWifiActivityEnergyInfoListener).onWifiActivityEnergyInfo(infoCaptor.capture());

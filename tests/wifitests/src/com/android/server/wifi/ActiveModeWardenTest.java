@@ -906,7 +906,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void handleWifiNativeFailureDeviceNotShuttingDown() throws Exception {
         mWifiNativeStatusListener.onStatusChanged(false);
         mLooper.dispatchAll();
-        verify(mWifiDiagnostics).captureBugReportData(
+        verify(mWifiDiagnostics).triggerBugReportDataCapture(
                 WifiDiagnostics.REPORT_REASON_WIFINATIVE_FAILURE);
         verify(mSelfRecovery).trigger(eq(SelfRecovery.REASON_WIFINATIVE_FAILURE));
     }
@@ -919,7 +919,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.notifyShuttingDown();
         mWifiNativeStatusListener.onStatusChanged(false);
         mLooper.dispatchAll();
-        verify(mWifiDiagnostics, never()).captureBugReportData(
+        verify(mWifiDiagnostics, never()).triggerBugReportDataCapture(
                 WifiDiagnostics.REPORT_REASON_WIFINATIVE_FAILURE);
         verify(mSelfRecovery, never()).trigger(eq(SelfRecovery.REASON_WIFINATIVE_FAILURE));
     }
@@ -931,7 +931,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void handleWifiNativeStatusReady() throws Exception {
         mWifiNativeStatusListener.onStatusChanged(true);
         mLooper.dispatchAll();
-        verify(mWifiDiagnostics, never()).captureBugReportData(
+        verify(mWifiDiagnostics, never()).triggerBugReportDataCapture(
                 WifiDiagnostics.REPORT_REASON_WIFINATIVE_FAILURE);
         verify(mSelfRecovery, never()).trigger(eq(SelfRecovery.REASON_WIFINATIVE_FAILURE));
     }

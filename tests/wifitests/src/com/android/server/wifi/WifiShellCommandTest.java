@@ -66,6 +66,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
     @Mock ConnectivityManager mConnectivityManager;
     @Mock WifiCarrierInfoManager mWifiCarrierInfoManager;
     @Mock WifiNetworkFactory mWifiNetworkFactory;
+    @Mock WifiGlobals mWifiGlobals;
 
     WifiShellCommand mWifiShellCommand;
 
@@ -85,7 +86,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
         when(mWifiInjector.getWifiNetworkFactory()).thenReturn(mWifiNetworkFactory);
 
         mWifiShellCommand = new WifiShellCommand(mWifiInjector, mWifiService, mContext,
-                mClientModeManager);
+                mClientModeManager, mWifiGlobals);
 
         // by default emulate shell uid.
         BinderUtil.setUid(Process.SHELL_UID);
@@ -102,7 +103,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-ipreach-disconnect", "enabled"});
-        verify(mClientModeManager, never()).setIpReachabilityDisconnectEnabled(anyBoolean());
+        verify(mWifiGlobals, never()).setIpReachabilityDisconnectEnabled(anyBoolean());
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
 
         BinderUtil.setUid(Process.ROOT_UID);
@@ -110,18 +111,18 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-ipreach-disconnect", "enabled"});
-        verify(mClientModeManager).setIpReachabilityDisconnectEnabled(true);
+        verify(mWifiGlobals).setIpReachabilityDisconnectEnabled(true);
 
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-ipreach-disconnect", "disabled"});
-        verify(mClientModeManager).setIpReachabilityDisconnectEnabled(false);
+        verify(mWifiGlobals).setIpReachabilityDisconnectEnabled(false);
 
         // invalid arg
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-ipreach-disconnect", "yes"});
-        verifyNoMoreInteractions(mClientModeManager);
+        verifyNoMoreInteractions(mWifiGlobals);
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
     }
 
@@ -131,24 +132,24 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"get-ipreach-disconnect"});
-        verify(mClientModeManager, never()).getIpReachabilityDisconnectEnabled();
+        verify(mWifiGlobals, never()).getIpReachabilityDisconnectEnabled();
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
 
         BinderUtil.setUid(Process.ROOT_UID);
 
-        when(mClientModeManager.getIpReachabilityDisconnectEnabled()).thenReturn(true);
+        when(mWifiGlobals.getIpReachabilityDisconnectEnabled()).thenReturn(true);
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"get-ipreach-disconnect"});
-        verify(mClientModeManager).getIpReachabilityDisconnectEnabled();
+        verify(mWifiGlobals).getIpReachabilityDisconnectEnabled();
         mWifiShellCommand.getOutPrintWriter().toString().contains(
                 "IPREACH_DISCONNECT state is true");
 
-        when(mClientModeManager.getIpReachabilityDisconnectEnabled()).thenReturn(false);
+        when(mWifiGlobals.getIpReachabilityDisconnectEnabled()).thenReturn(false);
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"get-ipreach-disconnect"});
-        verify(mClientModeManager, times(2)).getIpReachabilityDisconnectEnabled();
+        verify(mWifiGlobals, times(2)).getIpReachabilityDisconnectEnabled();
         mWifiShellCommand.getOutPrintWriter().toString().contains(
                 "IPREACH_DISCONNECT state is false");
     }
@@ -159,7 +160,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-poll-rssi-interval-msecs", "5"});
-        verify(mClientModeManager, never()).setPollRssiIntervalMsecs(anyInt());
+        verify(mWifiGlobals, never()).setPollRssiIntervalMillis(anyInt());
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
 
         BinderUtil.setUid(Process.ROOT_UID);
@@ -167,13 +168,13 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-poll-rssi-interval-msecs", "5"});
-        verify(mClientModeManager).setPollRssiIntervalMsecs(5);
+        verify(mWifiGlobals).setPollRssiIntervalMillis(5);
 
         // invalid arg
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"set-poll-rssi-interval-msecs", "0"});
-        verifyNoMoreInteractions(mClientModeManager);
+        verifyNoMoreInteractions(mWifiGlobals);
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
     }
 
@@ -183,18 +184,18 @@ public class WifiShellCommandTest extends WifiBaseTest {
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"get-poll-rssi-interval-msecs"});
-        verify(mClientModeManager, never()).getPollRssiIntervalMsecs();
+        verify(mWifiGlobals, never()).getPollRssiIntervalMillis();
         assertFalse(mWifiShellCommand.getErrPrintWriter().toString().isEmpty());
 
         BinderUtil.setUid(Process.ROOT_UID);
 
-        when(mClientModeManager.getPollRssiIntervalMsecs()).thenReturn(5);
+        when(mWifiGlobals.getPollRssiIntervalMillis()).thenReturn(5);
         mWifiShellCommand.exec(
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"get-poll-rssi-interval-msecs"});
-        verify(mClientModeManager).getPollRssiIntervalMsecs();
+        verify(mWifiGlobals).getPollRssiIntervalMillis();
         mWifiShellCommand.getOutPrintWriter().toString().contains(
-                "ClientModeManager.mPollRssiIntervalMsecs = 5");
+                "WifiGlobals.getPollRssiIntervalMillis() = 5");
     }
 
     @Test

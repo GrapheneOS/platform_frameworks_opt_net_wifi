@@ -57,7 +57,6 @@ import static org.mockito.Mockito.withSettings;
 import android.app.ActivityManager;
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.app.test.TestAlarmManager;
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -418,6 +417,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiScoreReport mWifiScoreReport;
     @Mock PowerManager mPowerManager;
     @Mock WifiP2pConnection mWifiP2pConnection;
+    @Mock WifiGlobals mWifiGlobals;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -470,8 +470,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, true);
         mResources.setIntArray(R.array.config_wifiRssiLevelThresholds,
                 RssiUtilTest.RSSI_THRESHOLDS);
-        mResources.setInteger(R.integer.config_wifiPollRssiIntervalMilliseconds, 3000);
         when(mContext.getResources()).thenReturn(mResources);
+
+        when(mWifiGlobals.getPollRssiIntervalMillis()).thenReturn(3000);
+        when(mWifiGlobals.getIpReachabilityDisconnectEnabled()).thenReturn(true);
 
         when(mFrameworkFacade.getIntegerSetting(mContext,
                 Settings.Global.WIFI_FREQUENCY_BAND,
@@ -571,7 +573,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
-                mWifiScoreReport, mWifiP2pConnection);
+                mWifiScoreReport, mWifiP2pConnection, mWifiGlobals);
         mCmi.start();
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
@@ -3820,7 +3822,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         mCmi.sendMessage(ClientModeImpl.CMD_IP_REACHABILITY_LOST);
         mLooper.dispatchAll();
-        verify(mWifiDiagnostics).captureBugReportData(
+        verify(mWifiDiagnostics).triggerBugReportDataCapture(
                 eq(WifiDiagnostics.REPORT_REASON_REACHABILITY_LOST));
     }
 
@@ -4092,39 +4094,28 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiDataStall).disablePhoneStateListener();
     }
 
-    /**
-     * Verify that Bluetooth active is set correctly with BT state/connection state changes
-     */
     @Test
-    public void verifyBluetoothStateAndConnectionStateChanges() throws Exception {
+    public void onBluetoothConnectionStateChanged() throws Exception {
+        assertEquals("DefaultState", getCurrentState().getName());
+        mCmi.onBluetoothConnectionStateChanged();
+        mLooper.dispatchAll();
+        verify(mWifiNative, never()).setBluetoothCoexistenceScanMode(any(), anyBoolean());
+
+        // Enter Connect Mode
+        when(mWifiGlobals.isBluetoothConnected()).thenReturn(false);
         startSupplicantAndDispatchMessages();
-        mCmi.sendBluetoothAdapterStateChange(BluetoothAdapter.STATE_ON);
-        mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(1)).setBluetoothConnected(false);
+        assertEquals("DisconnectedState", getCurrentState().getName());
+        verify(mWifiNative).setBluetoothCoexistenceScanMode(any(), eq(false));
 
-        mCmi.sendBluetoothAdapterConnectionStateChange(BluetoothAdapter.STATE_CONNECTED);
+        when(mWifiGlobals.isBluetoothConnected()).thenReturn(true);
+        mCmi.onBluetoothConnectionStateChanged();
         mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(1)).setBluetoothConnected(true);
+        verify(mWifiNative).setBluetoothCoexistenceScanMode(any(), eq(true));
 
-        mCmi.sendBluetoothAdapterStateChange(BluetoothAdapter.STATE_OFF);
+        when(mWifiGlobals.isBluetoothConnected()).thenReturn(false);
+        mCmi.onBluetoothConnectionStateChanged();
         mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(2)).setBluetoothConnected(false);
-
-        mCmi.sendBluetoothAdapterStateChange(BluetoothAdapter.STATE_ON);
-        mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(3)).setBluetoothConnected(false);
-
-        mCmi.sendBluetoothAdapterConnectionStateChange(BluetoothAdapter.STATE_CONNECTING);
-        mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(2)).setBluetoothConnected(true);
-
-        mCmi.sendBluetoothAdapterConnectionStateChange(BluetoothAdapter.STATE_DISCONNECTED);
-        mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(4)).setBluetoothConnected(false);
-
-        mCmi.sendBluetoothAdapterConnectionStateChange(BluetoothAdapter.STATE_CONNECTED);
-        mLooper.dispatchAll();
-        verify(mWifiConnectivityManager, times(3)).setBluetoothConnected(true);
+        verify(mWifiNative, times(2)).setBluetoothCoexistenceScanMode(any(), eq(false));
     }
 
     /**
@@ -4200,18 +4191,6 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mWifiConnectivityManager, never())
                 .forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
-    }
-
-    /**
-     * Test that the interval for poll RSSI is read from config overlay correctly.
-     */
-    @Test
-    public void testPollRssiIntervalIsSetCorrectly() throws Exception {
-        assertEquals(3000, mCmi.getPollRssiIntervalMsecs());
-        mResources.setInteger(R.integer.config_wifiPollRssiIntervalMilliseconds, 6000);
-        assertEquals(6000, mCmi.getPollRssiIntervalMsecs());
-        mResources.setInteger(R.integer.config_wifiPollRssiIntervalMilliseconds, 7000);
-        assertEquals(6000, mCmi.getPollRssiIntervalMsecs());
     }
 
     /**

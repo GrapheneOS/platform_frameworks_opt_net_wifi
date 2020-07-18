@@ -769,23 +769,13 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void sendBluetoothAdapterConnectionStateChange(int state) {
-        mClientModeImpl.sendBluetoothAdapterConnectionStateChange(state);
-    }
-
-    @Override
-    public void sendBluetoothAdapterStateChange(int state) {
-        mClientModeImpl.sendBluetoothAdapterStateChange(state);
+    public void onBluetoothConnectionStateChanged() {
+        mClientModeImpl.onBluetoothConnectionStateChanged();
     }
 
     @Override
     public int syncGetWifiState() {
         return mClientModeImpl.syncGetWifiState();
-    }
-
-    @Override
-    public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return mClientModeImpl.syncGetLinkLayerStats();
     }
 
     @Override
@@ -806,11 +796,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public DhcpResultsParcelable syncGetDhcpResultsParcelable() {
         return mClientModeImpl.syncGetDhcpResultsParcelable();
-    }
-
-    @Override
-    public String syncGetWifiStateByName() {
-        return mClientModeImpl.syncGetWifiStateByName();
     }
 
     @Override
@@ -898,26 +883,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public boolean isSupplicantTransientState() {
         return mClientModeImpl.isSupplicantTransientState();
-    }
-
-    @Override
-    public boolean getIpReachabilityDisconnectEnabled() {
-        return mClientModeImpl.getIpReachabilityDisconnectEnabled();
-    }
-
-    @Override
-    public void setIpReachabilityDisconnectEnabled(boolean enabled) {
-        mClientModeImpl.setIpReachabilityDisconnectEnabled(enabled);
-    }
-
-    @Override
-    public int getPollRssiIntervalMsecs() {
-        return mClientModeImpl.getPollRssiIntervalMsecs();
-    }
-
-    @Override
-    public void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
-        mClientModeImpl.setPollRssiIntervalMsecs(newPollIntervalMsecs);
     }
 
     @Override

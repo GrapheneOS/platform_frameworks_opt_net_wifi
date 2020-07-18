@@ -39,7 +39,6 @@ import android.util.LocalLog;
 import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.WifiNetworkSelectorTestUtil.ScanDetailsAndWifiConfigs;
-import com.android.server.wifi.hotspot2.NetworkDetail;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.wifi.resources.R;
 
@@ -81,7 +80,8 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         mLocalLog = new LocalLog(512);
 
-        mWifiNetworkSelector = new WifiNetworkSelector(mContext,
+        mWifiNetworkSelector = new WifiNetworkSelector(
+                mContext,
                 mWifiScoreCard,
                 mScoringParams,
                 mWifiConfigManager, mClock,
@@ -89,7 +89,8 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 mWifiMetrics,
                 mWifiNative,
                 mThroughputPredictor,
-                mWifiChannelUtilization);
+                mWifiChannelUtilization,
+                mWifiGlobals);
 
         mWifiNetworkSelector.registerNetworkNominator(mDummyNominator);
         mDummyNominator.setNominatorToSelectCandidate(true);
@@ -246,9 +247,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     @Spy private MockResources mResource = new MockResources();
     @Mock private WifiInfo mWifiInfo;
     @Mock private Clock mClock;
-    @Mock private NetworkDetail mNetworkDetail;
     @Mock private ThroughputPredictor mThroughputPredictor;
     @Mock private WifiChannelUtilization mWifiChannelUtilization;
+    @Mock private WifiGlobals mWifiGlobals;
     private ScoringParams mScoringParams;
     private LocalLog mLocalLog;
     private int mThresholdMinimumRssi2G;

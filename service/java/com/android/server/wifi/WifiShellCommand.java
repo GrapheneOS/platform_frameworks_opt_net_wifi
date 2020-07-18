@@ -107,6 +107,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             sActiveRequests = new ConcurrentHashMap<>();
 
     private final ClientModeManager mClientModeManager;
+    private final WifiGlobals mWifiGlobals;
     private final WifiLockManager mWifiLockManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private final WifiConfigManager mWifiConfigManager;
@@ -121,8 +122,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final WifiNetworkFactory mWifiNetworkFactory;
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context,
-            ClientModeManager clientModeManager) {
+            ClientModeManager clientModeManager, WifiGlobals wifiGlobals) {
         mClientModeManager = clientModeManager;
+        mWifiGlobals = wifiGlobals;
         mWifiLockManager = wifiInjector.getWifiLockManager();
         mWifiNetworkSuggestionsManager = wifiInjector.getWifiNetworkSuggestionsManager();
         mWifiConfigManager = wifiInjector.getWifiConfigManager();
@@ -157,12 +159,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             switch (cmd) {
                 case "set-ipreach-disconnect": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
-                    mClientModeManager.setIpReachabilityDisconnectEnabled(enabled);
+                    mWifiGlobals.setIpReachabilityDisconnectEnabled(enabled);
                     return 0;
                 }
                 case "get-ipreach-disconnect":
                     pw.println("IPREACH_DISCONNECT state is "
-                            + mClientModeManager.getIpReachabilityDisconnectEnabled());
+                            + mWifiGlobals.getIpReachabilityDisconnectEnabled());
                     return 0;
                 case "set-poll-rssi-interval-msecs":
                     int newPollIntervalMsecs;
@@ -182,11 +184,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         return -1;
                     }
 
-                    mClientModeManager.setPollRssiIntervalMsecs(newPollIntervalMsecs);
+                    mWifiGlobals.setPollRssiIntervalMillis(newPollIntervalMsecs);
                     return 0;
                 case "get-poll-rssi-interval-msecs":
-                    pw.println("ClientModeManager.mPollRssiIntervalMsecs = "
-                            + mClientModeManager.getPollRssiIntervalMsecs());
+                    pw.println("WifiGlobals.getPollRssiIntervalMillis() = "
+                            + mWifiGlobals.getPollRssiIntervalMillis());
                     return 0;
                 case "force-hi-perf-mode": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");

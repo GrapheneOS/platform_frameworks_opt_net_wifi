@@ -32,7 +32,6 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -233,6 +232,7 @@ public class ClientModeImpl extends StateMachine {
     private final WifiLockManager mWifiLockManager;
     private final SelfRecovery mSelfRecovery;
     private final WifiP2pConnection mWifiP2pConnection;
+    private final WifiGlobals mWifiGlobals;
 
     private boolean mScreenOn = false;
 
@@ -247,8 +247,6 @@ public class ClientModeImpl extends StateMachine {
     // The subId used by WifiConfiguration with SIM credential which was connected successfully
     private int mLastSubId;
     private String mLastSimBasedConnectionCarrierName;
-
-    private boolean mIpReachabilityDisconnectEnabled = true;
 
     private String getTag() {
         return TAG + "[" + (mInterfaceName == null ? "unknown" : mInterfaceName) + "]";
@@ -281,8 +279,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     private boolean mEnableRssiPolling = false;
-    // Accessed via Binder thread ({get,set}PollRssiIntervalMsecs), and the main Wifi thread.
-    private volatile int mPollRssiIntervalMsecs = -1;
     private int mRssiPollToken = 0;
     /* 3 operational states for STA operation: CONNECT_MODE, SCAN_ONLY_MODE, SCAN_ONLY_WIFI_OFF_MODE
     * In CONNECT_MODE, the STA can scan and connect to an access point
@@ -291,34 +287,7 @@ public class ClientModeImpl extends StateMachine {
     */
     private int mOperationalMode = DISABLED_MODE;
 
-    private ClientModeManager.Listener mClientModeCallback = null;
-
-    private boolean mBluetoothConnectionActive = false;
-
     private PowerManager.WakeLock mSuspendWakeLock;
-
-    /**
-     * Maximum allowable interval in milliseconds between polling for RSSI and linkspeed
-     * information. This is also used as the polling interval for WifiTrafficPoller, which updates
-     * its data activity on every CMD_RSSI_POLL.
-     */
-    private static final int MAXIMUM_POLL_RSSI_INTERVAL_MSECS = 6000;
-
-    /**
-     * Interval in milliseconds between receiving a disconnect event
-     * while connected to a good AP, and handling the disconnect proper
-     */
-    private static final int LINK_FLAPPING_DEBOUNCE_MSEC = 4000;
-
-    /**
-     * Delay between supplicant restarts upon failure to establish connection
-     */
-    private static final int SUPPLICANT_RESTART_INTERVAL_MSECS = 5000;
-
-    /**
-     * Number of times we attempt to restart supplicant
-     */
-    private static final int SUPPLICANT_RESTART_TRIES = 5;
 
     /**
      * Value to set in wpa_supplicant "bssid" field when we don't want to restrict connection to
@@ -331,9 +300,6 @@ public class ClientModeImpl extends StateMachine {
      * Do not modify this directly; use updateLinkProperties instead.
      */
     private LinkProperties mLinkProperties;
-
-    /* Tracks sequence number on a periodic scan message */
-    private int mPeriodicScanToken = 0;
 
     private final Object mDhcpResultsParcelableLock = new Object();
     @NonNull
@@ -362,19 +328,6 @@ public class ClientModeImpl extends StateMachine {
     // SSID. Once connected, it will be set to invalid
     private int mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
     private WifiConfiguration mTargetWifiConfiguration = null;
-
-    int getPollRssiIntervalMsecs() {
-        if (mPollRssiIntervalMsecs > 0) {
-            return mPollRssiIntervalMsecs;
-        }
-        return Math.min(mContext.getResources().getInteger(
-                R.integer.config_wifiPollRssiIntervalMilliseconds),
-                        MAXIMUM_POLL_RSSI_INTERVAL_MSECS);
-    }
-
-    void setPollRssiIntervalMsecs(int newPollIntervalMsecs) {
-        mPollRssiIntervalMsecs = newPollIntervalMsecs;
-    }
 
     /**
      * Method to clear {@link #mTargetBssid} and reset the current connected network's
@@ -438,10 +391,9 @@ public class ClientModeImpl extends StateMachine {
 
     /* The base for wifi message types */
     static final int BASE = Protocol.BASE_WIFI;
-    /* BT state change, e.g., on or off */
-    static final int CMD_BLUETOOTH_ADAPTER_STATE_CHANGE                 = BASE + 31;
-    /* BT connection state change, e.g., connected or disconnected */
-    static final int CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE      = BASE + 32;
+
+    /* BT connection state changed, e.g., connected/disconnected */
+    static final int CMD_BLUETOOTH_CONNECTION_STATE_CHANGE              = BASE + 31;
 
     /* Supplicant commands after driver start*/
     /* Set operational mode. CONNECT, SCAN ONLY, SCAN_ONLY with Wi-Fi off mode */
@@ -737,7 +689,8 @@ public class ClientModeImpl extends StateMachine {
             EapFailureNotifier eapFailureNotifier,
             SimRequiredNotifier simRequiredNotifier,
             WifiScoreReport wifiScoreReport,
-            WifiP2pConnection wifiP2pConnection) {
+            WifiP2pConnection wifiP2pConnection,
+            WifiGlobals wifiGlobals) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
         mClock = clock;
@@ -807,7 +760,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiHealthMonitor = wifiHealthMonitor;
         mWifiP2pConnection = wifiP2pConnection;
-
+        mWifiGlobals = wifiGlobals;
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -1383,7 +1336,8 @@ public class ClientModeImpl extends StateMachine {
     /**
      * Converts the current wifi state to a printable form.
      */
-    public String syncGetWifiStateByName() {
+    @VisibleForTesting
+    String syncGetWifiStateByName() {
         switch (mWifiState.get()) {
             case WIFI_STATE_DISABLING:
                 return "disabling";
@@ -1605,14 +1559,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Get link layers stats for adapter synchronously
-     */
-    public WifiLinkLayerStats syncGetLinkLayerStats() {
-        return mWifiThreadRunner.call(
-                () -> getWifiLinkLayerStats(), null);
-    }
-
-    /**
      * Method to enable/disable RSSI polling
      * @param enabled boolean idicating if polling should start
      */
@@ -1674,20 +1620,9 @@ public class ClientModeImpl extends StateMachine {
         sendMessage(CMD_ENABLE_TDLS, enabler, 0, remoteMacAddress);
     }
 
-    /**
-     * Send a message indicating bluetooth adapter state changed, e.g., turn on or ff
-     */
-    public void sendBluetoothAdapterStateChange(int state) {
-        sendMessage(CMD_BLUETOOTH_ADAPTER_STATE_CHANGE, state, 0);
-    }
-
-    /**
-     * Send a message indicating bluetooth adapter connection state changed, e.g., connected
-     * or disconnected. Note that turning off BT after pairing success keeps connection state in
-     * connected state.
-     */
-    public void sendBluetoothAdapterConnectionStateChange(int state) {
-        sendMessage(CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE, state, 0);
+    /** Send a message indicating bluetooth connection state changed, e.g. connected/disconnected */
+    public void onBluetoothConnectionStateChanged() {
+        sendMessage(CMD_BLUETOOTH_CONNECTION_STATE_CHANGE);
     }
 
     /**
@@ -2589,7 +2524,7 @@ public class ClientModeImpl extends StateMachine {
     }
 
     void handlePreDhcpSetup() {
-        if (!mBluetoothConnectionActive) {
+        if (!mWifiGlobals.isBluetoothConnected()) {
             /*
              * There are problems setting the Wi-Fi driver's power
              * mode to active when bluetooth coexistence mode is
@@ -2941,7 +2876,7 @@ public class ClientModeImpl extends StateMachine {
     private void handleIPv4Failure() {
         // TODO: Move this to provisioning failure, not DHCP failure.
         // DHCPv4 failure is expected on an IPv6-only network.
-        mWifiDiagnostics.captureBugReportData(WifiDiagnostics.REPORT_REASON_DHCP_FAILURE);
+        mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_DHCP_FAILURE);
         if (mVerboseLoggingEnabled) {
             int count = -1;
             WifiConfiguration config = getCurrentWifiConfiguration();
@@ -3161,23 +3096,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case CMD_BLUETOOTH_ADAPTER_STATE_CHANGE: {
-                    // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE
-                    // message. So we need to rely on STATE_CHANGE message to detect on->off
-                    // transition and update mBluetoothConnectionActive status correctly.
-                    mBluetoothConnectionActive = mBluetoothConnectionActive
-                            && message.arg1 != BluetoothAdapter.STATE_OFF;
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
-                    break;
-                }
-                case CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE: {
-                    // Transition to a non-disconnected state does correctly
-                    // indicate BT is connected or being connected.
-                    mBluetoothConnectionActive =
-                            message.arg1 != BluetoothAdapter.STATE_DISCONNECTED;
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
-                    break;
-                }
                 case CMD_ENABLE_RSSI_POLL: {
                     mEnableRssiPolling = (message.arg1 == 1);
                     break;
@@ -3190,6 +3108,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
+                case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
@@ -3362,12 +3281,11 @@ public class ClientModeImpl extends StateMachine {
         mMboOceController.enable();
         mWifiDataStall.enablePhoneStateListener();
 
-        /**
-         * Enable bluetooth coexistence scan mode when bluetooth connection is active.
-         * When this mode is on, some of the low-level scan parameters used by the
-         * driver are changed to reduce interference with bluetooth
-         */
-        mWifiNative.setBluetoothCoexistenceScanMode(mInterfaceName, mBluetoothConnectionActive);
+        // Enable bluetooth coexistence scan mode when bluetooth connection is active.
+        // When this mode is on, some of the low-level scan parameters used by the
+        // driver are changed to reduce interference with bluetooth
+        mWifiNative.setBluetoothCoexistenceScanMode(
+                mInterfaceName, mWifiGlobals.isBluetoothConnected());
         sendNetworkChangeBroadcast(DetailedState.DISCONNECTED);
 
         // Disable legacy multicast filtering, which on some chipsets defaults to enabled.
@@ -3748,25 +3666,9 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case CMD_BLUETOOTH_ADAPTER_STATE_CHANGE: {
-                    // If BT was connected and then turned off, there is no CONNECTION_STATE_CHANGE
-                    // message. So we need to rely on STATE_CHANGE message to detect on->off
-                    // transition and update mBluetoothConnectionActive status correctly.
-                    mBluetoothConnectionActive = mBluetoothConnectionActive
-                            && message.arg1 != BluetoothAdapter.STATE_OFF;
+                case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE: {
                     mWifiNative.setBluetoothCoexistenceScanMode(
-                            mInterfaceName, mBluetoothConnectionActive);
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
-                    break;
-                }
-                case CMD_BLUETOOTH_ADAPTER_CONNECTION_STATE_CHANGE: {
-                    // Transition to a non-disconnected state does correctly
-                    // indicate BT is connected or being connected.
-                    mBluetoothConnectionActive =
-                            message.arg1 != BluetoothAdapter.STATE_DISCONNECTED;
-                    mWifiNative.setBluetoothCoexistenceScanMode(
-                            mInterfaceName, mBluetoothConnectionActive);
-                    mWifiConnectivityManager.setBluetoothConnected(mBluetoothConnectionActive);
+                            mInterfaceName, mWifiGlobals.isBluetoothConnected());
                     break;
                 }
                 case CMD_SET_SUSPEND_OPT_ENABLED: {
@@ -4377,7 +4279,7 @@ public class ClientModeImpl extends StateMachine {
                         break;
                     }
                     stopIpClient();
-                    mWifiDiagnostics.captureBugReportData(
+                    mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_ASSOC_FAILURE);
                     mDidBlackListBSSID = false;
                     String bssid = assocRejectEventInfo.bssid;
@@ -4423,7 +4325,7 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT: {
                     stopIpClient();
-                    mWifiDiagnostics.captureBugReportData(
+                    mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_AUTH_FAILURE);
                     int disableReason = WifiConfiguration.NetworkSelectionStatus
                             .DISABLED_AUTHENTICATION_FAILURE;
@@ -4761,13 +4663,13 @@ public class ClientModeImpl extends StateMachine {
                 }
                 case CMD_IP_REACHABILITY_LOST: {
                     if (mVerboseLoggingEnabled && message.obj != null) log((String) message.obj);
-                    mWifiDiagnostics.captureBugReportData(
+                    mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_REACHABILITY_LOST);
                     mWifiMetrics.logWifiIsUnusableEvent(
                             WifiIsUnusableEvent.TYPE_IP_REACHABILITY_LOST);
                     mWifiMetrics.addToWifiUsabilityStatsList(WifiUsabilityStats.LABEL_BAD,
                             WifiUsabilityStats.TYPE_IP_REACHABILITY_LOST, -1);
-                    if (mIpReachabilityDisconnectEnabled) {
+                    if (mWifiGlobals.getIpReachabilityDisconnectEnabled()) {
                         handleIpReachabilityLost();
                     } else {
                         logd("CMD_IP_REACHABILITY_LOST but disconnect disabled -- ignore");
@@ -4807,7 +4709,7 @@ public class ClientModeImpl extends StateMachine {
                         mLinkProbeManager.updateConnectionStats(
                                 mWifiInfo, mInterfaceName);
                         sendMessageDelayed(obtainMessage(CMD_RSSI_POLL, mRssiPollToken, 0),
-                                getPollRssiIntervalMsecs());
+                                mWifiGlobals.getPollRssiIntervalMillis());
                         if (mVerboseLoggingEnabled) sendRssiChangeBroadcast(mWifiInfo.getRssi());
                         mWifiTrafficPoller.notifyOnDataActivity(mWifiInfo.txSuccess,
                                 mWifiInfo.rxSuccess);
@@ -4826,7 +4728,7 @@ public class ClientModeImpl extends StateMachine {
                         mLinkProbeManager.resetOnScreenTurnedOn();
                         fetchRssiLinkSpeedAndFrequencyNative();
                         sendMessageDelayed(obtainMessage(CMD_RSSI_POLL, mRssiPollToken, 0),
-                                getPollRssiIntervalMsecs());
+                                mWifiGlobals.getPollRssiIntervalMillis());
                     }
                     break;
                 }
@@ -5111,7 +5013,7 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_IP_CONFIGURATION_LOST: {
                     WifiConfiguration config = getCurrentWifiConfiguration();
                     if (config != null) {
-                        mWifiDiagnostics.captureBugReportData(
+                        mWifiDiagnostics.triggerBugReportDataCapture(
                                 WifiDiagnostics.REPORT_REASON_AUTOROAM_FAILURE);
                     }
                     handleStatus = NOT_HANDLED;
@@ -5360,7 +5262,7 @@ public class ClientModeImpl extends StateMachine {
                             WifiMetricsProto.ConnectionEvent.HLF_NONE,
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
                     if (unexpectedDisconnectedReason(eventInfo.reasonCode)) {
-                        mWifiDiagnostics.captureBugReportData(
+                        mWifiDiagnostics.triggerBugReportDataCapture(
                                 WifiDiagnostics.REPORT_REASON_UNEXPECTED_DISCONNECT);
                     }
 
@@ -5675,20 +5577,6 @@ public class ClientModeImpl extends StateMachine {
     private boolean hasConnectionRequests() {
         return mNetworkFactory.hasConnectionRequests()
                 || mUntrustedNetworkFactory.hasConnectionRequests();
-    }
-
-    /**
-     * Returns whether CMD_IP_REACHABILITY_LOST events should trigger disconnects.
-     */
-    public boolean getIpReachabilityDisconnectEnabled() {
-        return mIpReachabilityDisconnectEnabled;
-    }
-
-    /**
-     * Sets whether CMD_IP_REACHABILITY_LOST events should trigger disconnects.
-     */
-    public void setIpReachabilityDisconnectEnabled(boolean enabled) {
-        mIpReachabilityDisconnectEnabled = enabled;
     }
 
     /**

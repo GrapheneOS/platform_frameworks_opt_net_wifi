@@ -105,10 +105,10 @@ public class WifiInjector {
     private final FrameworkFacade mFrameworkFacade = new FrameworkFacade();
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final UserManager mUserManager;
-    private final HandlerThread mAsyncChannelHandlerThread;
     private final HandlerThread mWifiHandlerThread;
     private final HandlerThread mWifiP2pServiceHandlerThread;
     private final HandlerThread mPasspointProvisionerHandlerThread;
+    private final HandlerThread mWifiDiagnosticsHandlerThread;
     private final WifiTrafficPoller mWifiTrafficPoller;
     private final WifiCountryCode mCountryCode;
     private final BackupManagerProxy mBackupManagerProxy = new BackupManagerProxy();
@@ -188,8 +188,8 @@ public class WifiInjector {
     private final WifiNetworkFactory mWifiNetworkFactory;
     private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     private final SupplicantStateTracker mSupplicantStateTracker;
-
     private final WifiP2pConnection mWifiP2pConnection;
+    private final WifiGlobals mWifiGlobals;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -205,14 +205,15 @@ public class WifiInjector {
         sWifiInjector = this;
 
         // Now create and start handler threads
-        mAsyncChannelHandlerThread = new HandlerThread("AsyncChannelHandlerThread");
-        mAsyncChannelHandlerThread.start();
         mWifiHandlerThread = new HandlerThread("WifiHandlerThread");
         mWifiHandlerThread.start();
         Looper wifiLooper = mWifiHandlerThread.getLooper();
         Handler wifiHandler = new Handler(wifiLooper);
+        mWifiDiagnosticsHandlerThread = new HandlerThread("WifiDiagnostics");
+        mWifiDiagnosticsHandlerThread.start();
 
         mContext = context;
+        mWifiGlobals = new WifiGlobals(mContext);
         mScoringParams = new ScoringParams(mContext);
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
         mWifiInfo = new ExtendedWifiInfo(context);
@@ -295,7 +296,7 @@ public class WifiInjector {
                 mContext.getSystemService(ActivityManager.class).isLowRamDevice() ? 256 : 512);
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, this, mWifiNative, mBuildProperties,
-                new LastMileLogger(this), mClock);
+                new LastMileLogger(this), mClock, mWifiDiagnosticsHandlerThread.getLooper());
         mWifiLastResortWatchdog = new WifiLastResortWatchdog(this, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
                 mDeviceConfigFacade, mWifiThreadRunner, mWifiInfo);
@@ -321,7 +322,7 @@ public class WifiInjector {
         mThroughputPredictor = new ThroughputPredictor(mContext);
         mWifiNetworkSelector = new WifiNetworkSelector(mContext, mWifiScoreCard, mScoringParams,
                 mWifiConfigManager, mClock, mConnectivityLocalLog, mWifiMetrics, mWifiNative,
-                mThroughputPredictor, mWifiChannelUtilizationScan);
+                mThroughputPredictor, mWifiChannelUtilizationScan, mWifiGlobals);
         CompatibilityScorer compatibilityScorer = new CompatibilityScorer(mScoringParams);
         mWifiNetworkSelector.registerCandidateScorer(compatibilityScorer);
         ScoreCardBasedScorer scoreCardBasedScorer = new ScoreCardBasedScorer(mScoringParams);
@@ -502,10 +503,6 @@ public class WifiInjector {
         return mFrameworkFacade;
     }
 
-    public HandlerThread getAsyncChannelHandlerThread() {
-        return mAsyncChannelHandlerThread;
-    }
-
     public HandlerThread getWifiP2pServiceHandlerThread() {
         return mWifiP2pServiceHandlerThread;
     }
@@ -632,7 +629,7 @@ public class WifiInjector {
                 new SimRequiredNotifier(mContext, mFrameworkFacade),
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo, mWifiNative,
                         mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall),
-                mWifiP2pConnection);
+                mWifiP2pConnection, mWifiGlobals);
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
                 clientModeImpl);
@@ -849,5 +846,9 @@ public class WifiInjector {
 
     public WifiP2pConnection getWifiP2pConnection() {
         return mWifiP2pConnection;
+    }
+
+    public WifiGlobals getWifiGlobals() {
+        return mWifiGlobals;
     }
 }
