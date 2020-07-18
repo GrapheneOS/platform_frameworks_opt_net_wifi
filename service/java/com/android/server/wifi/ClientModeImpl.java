@@ -139,7 +139,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -196,9 +195,7 @@ public class ClientModeImpl extends StateMachine {
     private final WifiConfigManager mWifiConfigManager;
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
-    private ConnectivityManager mCm;
     private final BaseWifiDiagnostics mWifiDiagnostics;
-    private final AtomicBoolean mP2pConnected = new AtomicBoolean(false);
     private boolean mTemporarilyDisconnectWifi = false;
     private final Clock mClock;
     private final WifiCountryCode mCountryCode;
@@ -2073,17 +2070,6 @@ public class ClientModeImpl extends StateMachine {
         if (mVerboseLoggingEnabled) log("handleScreenStateChanged Exit: " + screenOn);
     }
 
-    private boolean checkAndSetConnectivityInstance() {
-        if (mCm == null) {
-            mCm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        }
-        if (mCm == null) {
-            Log.e(getTag(), "Cannot retrieve connectivity service");
-            return false;
-        }
-        return true;
-    }
-
     private void setSuspendOptimizationsNative(int reason, boolean enabled) {
         if (mVerboseLoggingEnabled) {
             log("setSuspendOptimizationsNative: " + reason + " " + enabled
@@ -3073,6 +3059,7 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
                 case CMD_ENABLE_RSSI_POLL:
                 case CMD_RESET_SIM_NETWORKS:
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
@@ -3107,11 +3094,6 @@ public class ClientModeImpl extends StateMachine {
                     } else {
                         setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, false);
                     }
-                    break;
-                }
-                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {
-                    NetworkInfo info = (NetworkInfo) message.obj;
-                    mP2pConnected.set(info.isConnected());
                     break;
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
@@ -5320,11 +5302,6 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {
-                    NetworkInfo info = (NetworkInfo) message.obj;
-                    mP2pConnected.set(info.isConnected());
-                    break;
-                }
                 case CMD_RECONNECT:
                 case CMD_REASSOCIATE: {
                     if (mTemporarilyDisconnectWifi) {
