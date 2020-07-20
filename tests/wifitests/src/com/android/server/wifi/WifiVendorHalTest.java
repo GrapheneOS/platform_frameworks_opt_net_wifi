@@ -1394,7 +1394,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     }
 
     /**
-     * Test that RemoteException is caught and logged, and onDeath() is triggered.
+     * Test that RemoteException is caught and logged.
      */
     @Test
     public void testRemoteExceptionIsHandled() throws Exception {
@@ -1404,9 +1404,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
                 .thenThrow(new RemoteException("oops"));
         assertTrue(mWifiVendorHal.startVendorHalAp());
         assertFalse(mWifiVendorHal.setCountryCodeHal(TEST_IFACE_NAME, "CA"));
-        assertFalse(mWifiVendorHal.isHalStarted());
+        assertTrue(mWifiVendorHal.isHalStarted());
         verify(mWifiLog).err("% RemoteException in HIDL call %");
-        verify(mVendorHalDeathHandler).onDeath();
     }
 
     /**
