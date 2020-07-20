@@ -82,6 +82,7 @@ import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AppOpsManager;
 import android.app.test.MockAnswerUtil;
+import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -245,6 +246,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private SoftApCallback mLohsApCallback;
     private String mLohsInterfaceName;
     private ApplicationInfo mApplicationInfo;
+    private List<ClientModeManager> mClientModeManagers;
     private static final String DPP_URI = "DPP:some_dpp_uri";
 
     private final ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
@@ -318,6 +320,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
     @Mock WifiP2pConnection mWifiP2pConnection;
+    @Mock SimRequiredNotifier mSimRequiredNotifier;
+    @Mock WifiGlobals mWifiGlobals;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -401,6 +405,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiNative()).thenReturn(mWifiNative);
         when(mWifiInjector.getConnectHelper()).thenReturn(mConnectHelper);
         when(mWifiInjector.getWifiP2pConnection()).thenReturn(mWifiP2pConnection);
+        when(mWifiInjector.getSimRequiredNotifier()).thenReturn(mSimRequiredNotifier);
+        when(mWifiInjector.getWifiGlobals()).thenReturn(mWifiGlobals);
         when(mClientModeManager.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
@@ -418,6 +424,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mScanRequestProxy.startScan(anyInt(), anyString())).thenReturn(true);
         when(mLohsCallback.asBinder()).thenReturn(mock(IBinder.class));
         when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
+
+        mClientModeManagers = Arrays.asList(mClientModeManager, mock(ClientModeManager.class));
+        when(mActiveModeWarden.getClientModeManagers()).thenReturn(mClientModeManagers);
 
         mWifiServiceImpl = makeWifiServiceImpl();
         mDppCallback = new IDppCallback() {
@@ -4194,6 +4203,70 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     @Test
+    public void testBluetoothBroadcastHandling() {
+        when(mWifiInjector.getPasspointProvisionerHandlerThread())
+                .thenReturn(mock(HandlerThread.class));
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        mWifiServiceImpl.handleBootCompleted();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
+                                && filter.hasAction(BluetoothAdapter.ACTION_STATE_CHANGED)));
+
+        {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+            intent.putExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
+                    BluetoothAdapter.STATE_DISCONNECTED);
+            mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+            mLooper.dispatchAll();
+
+            verify(mWifiGlobals).setBluetoothConnected(false);
+            for (ClientModeManager cmm : mClientModeManagers) {
+                verify(cmm).onBluetoothConnectionStateChanged();
+            }
+        }
+
+        {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+            intent.putExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,
+                    BluetoothAdapter.STATE_CONNECTED);
+            mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+            mLooper.dispatchAll();
+
+            verify(mWifiGlobals).setBluetoothConnected(true);
+            for (ClientModeManager cmm : mClientModeManagers) {
+                verify(cmm, times(2)).onBluetoothConnectionStateChanged();
+            }
+        }
+
+        {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
+            intent.putExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF);
+            mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+            mLooper.dispatchAll();
+
+            verify(mWifiGlobals).setBluetoothEnabled(false);
+            for (ClientModeManager cmm : mClientModeManagers) {
+                verify(cmm, times(3)).onBluetoothConnectionStateChanged();
+            }
+        }
+
+        {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
+            intent.putExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON);
+            mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+            mLooper.dispatchAll();
+
+            verify(mWifiGlobals).setBluetoothEnabled(true);
+            for (ClientModeManager cmm : mClientModeManagers) {
+                verify(cmm, times(4)).onBluetoothConnectionStateChanged();
+            }
+        }
+    }
+
+    @Test
     public void testUserRemovedBroadcastHandlingWithWrongIntentAction() {
         when(mWifiInjector.getPasspointProvisionerHandlerThread())
                 .thenReturn(mock(HandlerThread.class));
@@ -4290,6 +4363,69 @@ public class WifiServiceImplTest extends WifiBaseTest {
         intent.putExtra(TelephonyManager.EXTRA_SIM_STATE, Intent.SIM_STATE_ABSENT);
         mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
         verifyNoMoreInteractions(mWifiCountryCode);
+    }
+
+    /**
+     * Verify removing sim will also remove an ephemeral Passpoint Provider. And reset carrier
+     * privileged suggestor apps.
+     */
+    @Test
+    public void testResetSimNetworkWhenRemovingSim() throws Exception {
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(TelephonyManager.ACTION_SIM_CARD_STATE_CHANGED)));
+
+        Intent intent = new Intent(TelephonyManager.ACTION_SIM_CARD_STATE_CHANGED);
+        intent.putExtra(TelephonyManager.EXTRA_SIM_STATE, TelephonyManager.SIM_STATE_ABSENT);
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+        mLooper.dispatchAll();
+
+        verify(mWifiConfigManager).resetSimNetworks();
+        verify(mSimRequiredNotifier, never()).dismissSimRequiredNotification();
+        verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
+    }
+
+    /**
+     * Verify inserting sim will reset carrier privileged suggestor apps.
+     * and remove any previous notifications due to sim removal
+     */
+    @Test
+    public void testResetCarrierPrivilegedAppsWhenInsertingSim() throws Exception {
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(TelephonyManager.ACTION_SIM_APPLICATION_STATE_CHANGED)));
+
+        Intent intent = new Intent(TelephonyManager.ACTION_SIM_APPLICATION_STATE_CHANGED);
+        intent.putExtra(TelephonyManager.EXTRA_SIM_STATE, TelephonyManager.SIM_STATE_LOADED);
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+        mLooper.dispatchAll();
+
+        verify(mWifiConfigManager, never()).resetSimNetworks();
+        verify(mSimRequiredNotifier).dismissSimRequiredNotification();
+        verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
+    }
+
+    @Test
+    public void testResetSimNetworkWhenDefaultDataSimChanged() throws Exception {
+        mWifiServiceImpl.checkAndStartWifi();
+        mLooper.dispatchAll();
+        verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                argThat((IntentFilter filter) ->
+                        filter.hasAction(
+                                TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED)));
+
+        Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent.putExtra("subscription", 1);
+        mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
+        mLooper.dispatchAll();
+
+        verify(mWifiConfigManager).resetSimNetworks();
+        verify(mSimRequiredNotifier, never()).dismissSimRequiredNotification();
+        verify(mWifiNetworkSuggestionsManager, never()).resetCarrierPrivilegedApps();
     }
 
     /**

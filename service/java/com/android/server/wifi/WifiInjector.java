@@ -190,6 +190,7 @@ public class WifiInjector {
     private final SupplicantStateTracker mSupplicantStateTracker;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
+    private final SimRequiredNotifier mSimRequiredNotifier;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -430,6 +431,8 @@ public class WifiInjector {
         mWifiNetworkSelector.registerNetworkNominator(mSavedNetworkNominator);
         mWifiNetworkSelector.registerNetworkNominator(mNetworkSuggestionNominator);
         mWifiNetworkSelector.registerNetworkNominator(mScoredNetworkNominator);
+
+        mSimRequiredNotifier = new SimRequiredNotifier(mContext, mFrameworkFacade);
     }
 
     /**
@@ -626,7 +629,7 @@ public class WifiInjector {
                 mLinkProbeManager, mBatteryStats, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
-                new SimRequiredNotifier(mContext, mFrameworkFacade),
+                mSimRequiredNotifier,
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo, mWifiNative,
                         mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall),
                 mWifiP2pConnection, mWifiGlobals);
@@ -850,5 +853,9 @@ public class WifiInjector {
 
     public WifiGlobals getWifiGlobals() {
         return mWifiGlobals;
+    }
+
+    public SimRequiredNotifier getSimRequiredNotifier() {
+        return mSimRequiredNotifier;
     }
 }
