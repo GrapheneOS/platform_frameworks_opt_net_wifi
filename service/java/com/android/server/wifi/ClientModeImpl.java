@@ -3058,6 +3058,7 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case CMD_SET_SUSPEND_OPT_ENABLED:
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST:
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
                 case CMD_ENABLE_RSSI_POLL:
@@ -3083,17 +3084,6 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_SET_OPERATIONAL_MODE: {
                     // using the CMD_SET_OPERATIONAL_MODE (sent at front of queue) to trigger the
                     // state transitions performed in setOperationalMode.
-                    break;
-                }
-                case CMD_SET_SUSPEND_OPT_ENABLED: {
-                    if (message.arg1 == 1) {
-                        if (message.arg2 == 1) {
-                            mSuspendWakeLock.release();
-                        }
-                        setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, true);
-                    } else {
-                        setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, false);
-                    }
                     break;
                 }
                 /* Link configuration (IP address, DNS, ...) changes notified via netlink */
