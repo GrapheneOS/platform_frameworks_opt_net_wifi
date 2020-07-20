@@ -248,6 +248,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiHealthMonitor mWifiHealthMonitor;
     private final WifiDataStall mWifiDataStall;
     private final WifiNative mWifiNative;
+    private final SimRequiredNotifier mSimRequiredNotifier;
 
     public WifiServiceImpl(Context context, WifiInjector wifiInjector) {
         mContext = context;
@@ -290,6 +291,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiNative = wifiInjector.getWifiNative();
         mConnectHelper = wifiInjector.getConnectHelper();
         mWifiGlobals = wifiInjector.getWifiGlobals();
+        mSimRequiredNotifier = wifiInjector.getSimRequiredNotifier();
     }
 
     /**
@@ -321,8 +323,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_ABSENT == state) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
-                                mActiveModeWarden.getPrimaryClientModeManager()
-                                        .resetSimAuthNetworks(RESET_SIM_REASON_SIM_REMOVED);
+                                resetSimAuthNetworks(RESET_SIM_REASON_SIM_REMOVED);
                             }
                         }
                     },
@@ -336,8 +337,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_LOADED == state) {
                                 Log.d(TAG, "resetting networks because SIM was loaded");
-                                mActiveModeWarden.getPrimaryClientModeManager()
-                                        .resetSimAuthNetworks(RESET_SIM_REASON_SIM_INSERTED);
+                                resetSimAuthNetworks(RESET_SIM_REASON_SIM_INSERTED);
                             }
                         }
                     },
@@ -352,9 +352,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                     SubscriptionManager.INVALID_SUBSCRIPTION_ID);
                             if (subId != mLastSubId) {
                                 Log.d(TAG, "resetting networks as default data SIM is changed");
-                                mActiveModeWarden.getPrimaryClientModeManager()
-                                        .resetSimAuthNetworks(
-                                                RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
+                                resetSimAuthNetworks(RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
                                 mLastSubId = subId;
                             }
                         }
@@ -382,6 +380,23 @@ public class WifiServiceImpl extends BaseWifiService {
 
             mActiveModeWarden.start();
             registerForCarrierConfigChange();
+        });
+    }
+
+    private void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) {
+        mWifiThreadRunner.post(() -> {
+            Log.d(TAG, "resetting EAP-SIM/AKA/AKA' networks since SIM was changed");
+            if (resetReason == RESET_SIM_REASON_SIM_INSERTED) {
+                // whenever a SIM is inserted clear all SIM related notifications
+                mSimRequiredNotifier.dismissSimRequiredNotification();
+            } else {
+                mWifiConfigManager.resetSimNetworks();
+            }
+            if (resetReason != RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED) {
+                mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
+            }
+            // do additional handling if we are current connected to a sim auth network
+            mActiveModeWarden.getPrimaryClientModeManager().resetSimAuthNetworks(resetReason);
         });
     }
 
@@ -413,17 +428,17 @@ public class WifiServiceImpl extends BaseWifiService {
                                 BluetoothAdapter.STATE_DISCONNECTED);
                         boolean isConnected = state != BluetoothAdapter.STATE_DISCONNECTED;
                         mWifiGlobals.setBluetoothConnected(isConnected);
-                        // TODO(b/159060934): should this notification be sent to all CMMs?
-                        mActiveModeWarden.getPrimaryClientModeManager()
-                                .onBluetoothConnectionStateChanged();
+                        for (ClientModeManager cmm : mActiveModeWarden.getClientModeManagers()) {
+                            cmm.onBluetoothConnectionStateChanged();
+                        }
                     } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                                 BluetoothAdapter.STATE_OFF);
                         boolean isEnabled = state != BluetoothAdapter.STATE_OFF;
                         mWifiGlobals.setBluetoothEnabled(isEnabled);
-                        // TODO(b/159060934): should this notification be sent to all CMMs?
-                        mActiveModeWarden.getPrimaryClientModeManager()
-                                .onBluetoothConnectionStateChanged();
+                        for (ClientModeManager cmm : mActiveModeWarden.getClientModeManagers()) {
+                            cmm.onBluetoothConnectionStateChanged();
+                        }
                     } else if (action.equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)) {
                         handleIdleModeChanged();
                     } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
