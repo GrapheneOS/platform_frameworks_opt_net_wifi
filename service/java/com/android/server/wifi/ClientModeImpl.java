@@ -139,7 +139,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -196,10 +195,7 @@ public class ClientModeImpl extends StateMachine {
     private final WifiConfigManager mWifiConfigManager;
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
-    private ConnectivityManager mCm;
     private final BaseWifiDiagnostics mWifiDiagnostics;
-    private final AtomicBoolean mP2pConnected = new AtomicBoolean(false);
-    private boolean mTemporarilyDisconnectWifi = false;
     private final Clock mClock;
     private final WifiCountryCode mCountryCode;
     private final WifiScoreCard mWifiScoreCard;
@@ -405,18 +401,6 @@ public class ClientModeImpl extends StateMachine {
     /* Reassociate to a network */
     static final int CMD_REASSOCIATE                                    = BASE + 75;
 
-    /* Controls suspend mode optimizations
-     *
-     * When high perf mode is enabled, suspend mode optimizations are disabled
-     *
-     * When high perf mode is disabled, suspend mode optimizations are enabled
-     *
-     * Suspend mode optimizations include:
-     * - packet filtering
-     * - turn off roaming
-     * - DTIM wake up settings
-     */
-    static final int CMD_SET_HIGH_PERF_MODE                             = BASE + 77;
     /* Enables RSSI poll */
     static final int CMD_ENABLE_RSSI_POLL                               = BASE + 82;
     /* RSSI poll */
@@ -1422,7 +1406,7 @@ public class ClientModeImpl extends StateMachine {
     public void setOperationalMode(int mode, @Nullable String ifaceName,
                 @Nullable ActiveModeManager activeModeManager) {
         if (mVerboseLoggingEnabled) {
-            log("setting operational mode to " + String.valueOf(mode) + " for iface: " + ifaceName);
+            log("setting operational mode to " + mode + " for iface: " + ifaceName);
         }
         if (mode != CONNECT_MODE) {
             // we are disabling client mode...   need to exit connect mode now
@@ -1562,26 +1546,15 @@ public class ClientModeImpl extends StateMachine {
      * Method to enable/disable RSSI polling
      * @param enabled boolean idicating if polling should start
      */
-    public void enableRssiPolling(boolean enabled) {
+    @VisibleForTesting
+    void enableRssiPolling(boolean enabled) {
         sendMessage(CMD_ENABLE_RSSI_POLL, enabled ? 1 : 0, 0);
     }
 
     /**
-     * Set high performance mode of operation.
-     * Enabling would set active power mode and disable suspend optimizations;
-     * disabling would set auto power mode and enable suspend optimizations
-     *
-     * @param enable true if enable, false otherwise
-     */
-    public void setHighPerfModeEnabled(boolean enable) {
-        sendMessage(CMD_SET_HIGH_PERF_MODE, enable ? 1 : 0, 0);
-    }
-
-
-    /**
      * reset cached SIM credential data
      */
-    public synchronized void resetSimAuthNetworks(@ResetSimReason int resetReason) {
+    public void resetSimAuthNetworks(@ResetSimReason int resetReason) {
         sendMessage(CMD_RESET_SIM_NETWORKS, resetReason);
     }
 
@@ -2094,17 +2067,6 @@ public class ClientModeImpl extends StateMachine {
         mLastScreenStateChangeTimeStamp = mLastLinkLayerStatsUpdate;
 
         if (mVerboseLoggingEnabled) log("handleScreenStateChanged Exit: " + screenOn);
-    }
-
-    private boolean checkAndSetConnectivityInstance() {
-        if (mCm == null) {
-            mCm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        }
-        if (mCm == null) {
-            Log.e(getTag(), "Cannot retrieve connectivity service");
-            return false;
-        }
-        return true;
     }
 
     private void setSuspendOptimizationsNative(int reason, boolean enabled) {
@@ -3096,18 +3058,10 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case CMD_ENABLE_RSSI_POLL: {
-                    mEnableRssiPolling = (message.arg1 == 1);
-                    break;
-                }
-                case CMD_SET_HIGH_PERF_MODE: {
-                    if (message.arg1 == 1) {
-                        setSuspendOptimizations(SUSPEND_DUE_TO_HIGH_PERF, false);
-                    } else {
-                        setSuspendOptimizations(SUSPEND_DUE_TO_HIGH_PERF, true);
-                    }
-                    break;
-                }
+                case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST:
+                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
+                case CMD_ENABLE_RSSI_POLL:
+                case CMD_RESET_SIM_NETWORKS:
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
@@ -3142,22 +3096,13 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 }
-                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {
-                    NetworkInfo info = (NetworkInfo) message.obj;
-                    mP2pConnected.set(info.isConnected());
-                    break;
-                }
-                case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
-                    mTemporarilyDisconnectWifi = (message.arg1 == 1);
-                    mWifiP2pConnection.replyToMessage(
-                            message, WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
-                    break;
-                }
                 /* Link configuration (IP address, DNS, ...) changes notified via netlink */
                 case CMD_UPDATE_LINKPROPERTIES: {
                     updateLinkProperties((LinkProperties) message.obj);
                     break;
                 }
+                case CMD_START_RSSI_MONITORING_OFFLOAD:
+                case CMD_STOP_RSSI_MONITORING_OFFLOAD:
                 case CMD_IP_CONFIGURATION_SUCCESSFUL:
                 case CMD_IP_CONFIGURATION_LOST:
                 case CMD_IP_REACHABILITY_LOST: {
@@ -3165,7 +3110,6 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case CMD_START_IP_PACKET_OFFLOAD:
-                    /* fall-through */
                 case CMD_STOP_IP_PACKET_OFFLOAD:
                 case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
                 case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF: {
@@ -3173,20 +3117,6 @@ public class ClientModeImpl extends StateMachine {
                         mNetworkAgent.sendSocketKeepaliveEvent(message.arg1,
                                 SocketKeepalive.ERROR_INVALID_NETWORK);
                     }
-                    break;
-                }
-                case CMD_START_RSSI_MONITORING_OFFLOAD: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case CMD_STOP_RSSI_MONITORING_OFFLOAD: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case CMD_RESET_SIM_NETWORKS: {
-                    /* Defer this message until supplicant is started. */
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DEFERRED;
-                    deferMessage(message);
                     break;
                 }
                 case CMD_INSTALL_PACKET_FILTER: {
@@ -3239,7 +3169,7 @@ public class ClientModeImpl extends StateMachine {
     private void setupClientMode() {
         Log.d(getTag(), "setupClientMode() ifacename = " + mInterfaceName);
 
-        setHighPerfModeEnabled(false);
+        setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, true);
 
         mWifiStateTracker.updateState(WifiStateTracker.INVALID);
         mIpClientCallbacks = new IpClientCallbacksImpl();
@@ -3492,19 +3422,21 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case CMD_ENABLE_RSSI_POLL: {
+                    mEnableRssiPolling = (message.arg1 == 1);
+                    break;
+                }
                 case CMD_SCREEN_STATE_CHANGED: {
                     handleScreenStateChanged(message.arg1 != 0);
                     break;
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
-                    if (message.arg1 == 1) {
+                    if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_P2P_DISCONNECT_WIFI_REQUEST);
                         mWifiNative.disconnect(mInterfaceName);
-                        mTemporarilyDisconnectWifi = true;
                     } else {
                         mWifiNative.reconnect(mInterfaceName);
-                        mTemporarilyDisconnectWifi = false;
                     }
                     break;
                 }
@@ -3652,20 +3584,6 @@ public class ClientModeImpl extends StateMachine {
                     cnm.listener.sendSuccess();
                     break;
                 }
-                case CMD_RESET_SIM_NETWORKS: {
-                    log("resetting EAP-SIM/AKA/AKA' networks since SIM was changed");
-                    int resetReason = message.arg1;
-                    if (resetReason == RESET_SIM_REASON_SIM_INSERTED) {
-                        // whenever a SIM is inserted clear all SIM related notifications
-                        mSimRequiredNotifier.dismissSimRequiredNotification();
-                    } else {
-                        mWifiConfigManager.resetSimNetworks();
-                    }
-                    if (resetReason != RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED) {
-                        mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
-                    }
-                    break;
-                }
                 case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE: {
                     mWifiNative.setBluetoothCoexistenceScanMode(
                             mInterfaceName, mWifiGlobals.isBluetoothConnected());
@@ -3679,14 +3597,6 @@ public class ClientModeImpl extends StateMachine {
                         }
                     } else {
                         setSuspendOptimizationsNative(SUSPEND_DUE_TO_SCREEN, false);
-                    }
-                    break;
-                }
-                case CMD_SET_HIGH_PERF_MODE: {
-                    if (message.arg1 == 1) {
-                        setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, false);
-                    } else {
-                        setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, true);
                     }
                     break;
                 }
@@ -4677,11 +4587,10 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
-                    if (message.arg1 == 1) {
+                    if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_P2P_DISCONNECT_WIFI_REQUEST);
                         mWifiNative.disconnect(mInterfaceName);
-                        mTemporarilyDisconnectWifi = true;
                     }
                     break;
                 }
@@ -4789,8 +4698,6 @@ public class ClientModeImpl extends StateMachine {
                                     config, mLastSimBasedConnectionCarrierName);
                         }
                     }
-                    /* allow parent state to reset data for other networks */
-                    handleStatus = NOT_HANDLED;
                     break;
                 }
                 case CMD_START_IP_PACKET_OFFLOAD: {
@@ -4946,11 +4853,6 @@ public class ClientModeImpl extends StateMachine {
                             ? mTargetBssid : eventInfo.bssid,
                             WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     handleStatus = NOT_HANDLED;
-                    break;
-                }
-                case CMD_SET_HIGH_PERF_MODE: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DEFERRED;
-                    deferMessage(message);
                     break;
                 }
                 default: {
@@ -5369,7 +5271,10 @@ public class ClientModeImpl extends StateMachine {
             Log.i(getTag(), "disconnectedstate enter");
             // We don't scan frequently if this is a temporary disconnect
             // due to p2p
-            if (mTemporarilyDisconnectWifi) {
+            if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
+                // TODO(b/161569371): P2P should wait for all ClientModeImpls to enter
+                //  DisconnectedState, not just one instance.
+                // (Does P2P Service support STA+P2P concurrency?)
                 mWifiP2pConnection.sendMessage(WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE);
                 return;
             }
@@ -5392,14 +5297,9 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
-                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED: {
-                    NetworkInfo info = (NetworkInfo) message.obj;
-                    mP2pConnected.set(info.isConnected());
-                    break;
-                }
                 case CMD_RECONNECT:
                 case CMD_REASSOCIATE: {
-                    if (mTemporarilyDisconnectWifi) {
+                    if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
                         // Drop a third party reconnect/reassociate if STA is
                         // temporarily disconnected for p2p
                         break;
