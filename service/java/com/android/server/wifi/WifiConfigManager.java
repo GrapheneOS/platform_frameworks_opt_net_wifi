@@ -1801,7 +1801,7 @@ public class WifiConfigManager {
             int disableReason = networkStatus.getNetworkSelectionDisableReason();
             int blockedBssids = Math.min(MAX_BLOCKED_BSSID_PER_NETWORK,
                     mWifiInjector.getBssidBlocklistMonitor()
-                            .getNumBlockedBssidsForSsid(config.SSID));
+                            .updateAndGetNumBlockedBssidsForSsid(config.SSID));
             // if no BSSIDs are blocked then we should keep trying to connect to something
             long disableTimeoutMs = 0;
             if (blockedBssids > 0) {
