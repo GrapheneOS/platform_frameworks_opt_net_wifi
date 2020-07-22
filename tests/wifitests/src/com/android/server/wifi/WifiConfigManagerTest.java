@@ -616,7 +616,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 return (int) mBssidStatusMap.entrySet().stream()
                         .filter(e -> e.getValue().equals(ssid)).count();
             }
-        }).when(mBssidBlocklistMonitor).getNumBlockedBssidsForSsid(
+        }).when(mBssidBlocklistMonitor).updateAndGetNumBlockedBssidsForSsid(
                 anyString());
         // add bssid to the blocklist
         mBssidStatusMap.put(TEST_BSSID, openNetwork.SSID);
@@ -644,7 +644,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(oldConfig.trusted);
         assertNull(oldConfig.BSSID);
 
-        assertEquals(0, mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(openNetwork.SSID));
+        assertEquals(0, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(
+                openNetwork.SSID));
     }
 
     /**
@@ -1370,7 +1371,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         for (int i = 1; i < MAX_BLOCKED_BSSID_PER_NETWORK + 1; i++) {
             verifyDisableNetwork(result, disableReason);
             int numBssidsInBlocklist = i;
-            when(mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(anyString()))
+            when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString()))
                     .thenReturn(numBssidsInBlocklist);
             timeout = WifiConfigManager.getNetworkSelectionDisableTimeoutMillis(disableReason)
                     * multiplier;
@@ -1381,7 +1382,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Verify one last time that the disable duration is capped at some maximum.
         verifyDisableNetwork(result, disableReason);
-        when(mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(anyString()))
+        when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString()))
                 .thenReturn(MAX_BLOCKED_BSSID_PER_NETWORK + 1);
         verifyNetworkIsEnabledAfter(result.getNetworkId(),
                 TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS + timeout);
@@ -1399,7 +1400,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Verify that with 0 BSSIDs in blocklist we enable the network immediately
         verifyDisableNetwork(result, disableReason);
-        when(mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(anyString())).thenReturn(0);
+        when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString())).thenReturn(0);
         when(mClock.getElapsedSinceBootMillis())
                 .thenReturn(TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
         assertTrue(mWifiConfigManager.tryEnableNetwork(result.getNetworkId()));
