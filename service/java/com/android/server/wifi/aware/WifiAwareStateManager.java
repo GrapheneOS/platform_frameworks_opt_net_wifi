@@ -226,6 +226,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     private final SparseArray<WifiAwareClientState> mClients = new SparseArray<>();
     private ConfigRequest mCurrentAwareConfiguration = null;
     private boolean mCurrentIdentityNotification = false;
+    private boolean mCurrentRangingEnabled = false;
 
     private static final byte[] ALL_ZERO_MAC = new byte[] {0, 0, 0, 0, 0, 0};
     private byte[] mCurrentDiscoveryInterfaceMac = ALL_ZERO_MAC;
@@ -642,7 +643,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         Message msg = mSm.obtainMessage(MESSAGE_TYPE_COMMAND);
         msg.arg1 = COMMAND_TYPE_UPDATE_PUBLISH;
         msg.arg2 = clientId;
-        msg.obj = publishConfig;
+        msg.getData().putParcelable(MESSAGE_BUNDLE_KEY_CONFIG, publishConfig);
         msg.getData().putInt(MESSAGE_BUNDLE_KEY_SESSION_ID, sessionId);
         mSm.sendMessage(msg);
     }
@@ -669,7 +670,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         Message msg = mSm.obtainMessage(MESSAGE_TYPE_COMMAND);
         msg.arg1 = COMMAND_TYPE_UPDATE_SUBSCRIBE;
         msg.arg2 = clientId;
-        msg.obj = subscribeConfig;
+        msg.getData().putParcelable(MESSAGE_BUNDLE_KEY_CONFIG, subscribeConfig);
         msg.getData().putInt(MESSAGE_BUNDLE_KEY_SESSION_ID, sessionId);
         mSm.sendMessage(msg);
     }
@@ -1615,8 +1616,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                 case COMMAND_TYPE_UPDATE_PUBLISH: {
                     int clientId = msg.arg2;
                     int sessionId = msg.getData().getInt(MESSAGE_BUNDLE_KEY_SESSION_ID);
-                    PublishConfig publishConfig = (PublishConfig) msg.obj;
-
+                    PublishConfig publishConfig = (PublishConfig) msg.getData()
+                            .getParcelable(MESSAGE_BUNDLE_KEY_CONFIG);
                     waitForResponse = updatePublishLocal(mCurrentTransactionId, clientId, sessionId,
                             publishConfig);
                     break;
@@ -1635,7 +1636,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                 case COMMAND_TYPE_UPDATE_SUBSCRIBE: {
                     int clientId = msg.arg2;
                     int sessionId = msg.getData().getInt(MESSAGE_BUNDLE_KEY_SESSION_ID);
-                    SubscribeConfig subscribeConfig = (SubscribeConfig) msg.obj;
+                    SubscribeConfig subscribeConfig = (SubscribeConfig) msg.getData()
+                            .getParcelable(MESSAGE_BUNDLE_KEY_CONFIG);
 
                     waitForResponse = updateSubscribeLocal(mCurrentTransactionId, clientId,
                             sessionId, subscribeConfig);
@@ -2247,7 +2249,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
 
         boolean success = mWifiAwareNativeApi.enableAndConfigure(transactionId, merged,
                 notificationRequired, mCurrentAwareConfiguration == null,
-                mPowerManager.isInteractive(), mPowerManager.isDeviceIdleMode());
+                mPowerManager.isInteractive(), mPowerManager.isDeviceIdleMode(),
+                mCurrentRangingEnabled);
         if (!success) {
             try {
                 callback.onConnectFail(NanStatusType.INTERNAL_FAILURE);
@@ -2292,13 +2295,16 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             return false;
         }
         boolean notificationReqs = doesAnyClientNeedIdentityChangeNotifications();
+        boolean rangingEnabled = doesAnyClientNeedRanging();
         if (merged.equals(mCurrentAwareConfiguration)
-                && mCurrentIdentityNotification == notificationReqs) {
+                && mCurrentIdentityNotification == notificationReqs
+                && mCurrentRangingEnabled == rangingEnabled) {
             return false;
         }
 
         return mWifiAwareNativeApi.enableAndConfigure(transactionId, merged, notificationReqs,
-                false, mPowerManager.isInteractive(), mPowerManager.isDeviceIdleMode());
+                false, mPowerManager.isInteractive(), mPowerManager.isDeviceIdleMode(),
+                rangingEnabled);
     }
 
     private boolean reconfigureLocal(short transactionId) {
@@ -2310,10 +2316,11 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         }
 
         boolean notificationReqs = doesAnyClientNeedIdentityChangeNotifications();
+        boolean rangingEnabled = doesAnyClientNeedRanging();
 
         return mWifiAwareNativeApi.enableAndConfigure(transactionId, mCurrentAwareConfiguration,
                 notificationReqs, false, mPowerManager.isInteractive(),
-                mPowerManager.isDeviceIdleMode());
+                mPowerManager.isDeviceIdleMode(), rangingEnabled);
     }
 
     private void terminateSessionLocal(int clientId, int sessionId) {
@@ -2329,6 +2336,10 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         }
 
         WifiAwareDiscoverySessionState session = client.terminateSession(sessionId);
+        // If Ranging enabled require changes, reconfigure.
+        if (mCurrentRangingEnabled != doesAnyClientNeedRanging()) {
+            reconfigure();
+        }
         if (session != null) {
             mAwareMetrics.recordDiscoverySessionDuration(session.getCreationTime(),
                     session.isPublishSession());
@@ -2624,6 +2635,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             Log.wtf(TAG, "onConfigCompletedLocal: got a null merged configuration after config!?");
         }
         mCurrentIdentityNotification = doesAnyClientNeedIdentityChangeNotifications();
+        mCurrentRangingEnabled = doesAnyClientNeedRanging();
     }
 
     private void onConfigFailedLocal(Message failedCommand, int reason) {
@@ -2685,6 +2697,26 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                     + ", pubSubId=" + pubSubId + ", isPublish=" + isPublish);
         }
 
+        boolean isRangingEnabled = false;
+        int minRange = -1;
+        int maxRange = -1;
+        if (isPublish) {
+            PublishConfig publishConfig = completedCommand.getData().getParcelable(
+                    MESSAGE_BUNDLE_KEY_CONFIG);
+            isRangingEnabled = publishConfig.mEnableRanging;
+        } else {
+            SubscribeConfig subscribeConfig = completedCommand.getData().getParcelable(
+                    MESSAGE_BUNDLE_KEY_CONFIG);
+            isRangingEnabled =
+                    subscribeConfig.mMinDistanceMmSet || subscribeConfig.mMaxDistanceMmSet;
+            if (subscribeConfig.mMinDistanceMmSet) {
+                minRange = subscribeConfig.mMinDistanceMm;
+            }
+            if (subscribeConfig.mMaxDistanceMmSet) {
+                maxRange = subscribeConfig.mMaxDistanceMm;
+            }
+        }
+
         if (completedCommand.arg1 == COMMAND_TYPE_PUBLISH
                 || completedCommand.arg1 == COMMAND_TYPE_SUBSCRIBE) {
             int clientId = completedCommand.arg2;
@@ -2704,26 +2736,6 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             } catch (RemoteException e) {
                 Log.e(TAG, "onSessionConfigSuccessLocal: onSessionStarted() RemoteException=" + e);
                 return;
-            }
-
-            boolean isRangingEnabled = false;
-            int minRange = -1;
-            int maxRange = -1;
-            if (completedCommand.arg1 == COMMAND_TYPE_PUBLISH) {
-                PublishConfig publishConfig = completedCommand.getData().getParcelable(
-                        MESSAGE_BUNDLE_KEY_CONFIG);
-                isRangingEnabled = publishConfig.mEnableRanging;
-            } else {
-                SubscribeConfig subscribeConfig = completedCommand.getData().getParcelable(
-                        MESSAGE_BUNDLE_KEY_CONFIG);
-                isRangingEnabled =
-                        subscribeConfig.mMinDistanceMmSet || subscribeConfig.mMaxDistanceMmSet;
-                if (subscribeConfig.mMinDistanceMmSet) {
-                    minRange = subscribeConfig.mMinDistanceMm;
-                }
-                if (subscribeConfig.mMaxDistanceMmSet) {
-                    maxRange = subscribeConfig.mMaxDistanceMm;
-                }
             }
 
             WifiAwareDiscoverySessionState session = new WifiAwareDiscoverySessionState(
@@ -2767,11 +2779,17 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                 Log.e(TAG, "onSessionConfigSuccessLocal: onSessionConfigSuccess() RemoteException="
                         + e);
             }
+            session.setRangingEnabled(isRangingEnabled);
             mAwareMetrics.recordDiscoveryStatus(client.getUid(), NanStatusType.SUCCESS,
                     completedCommand.arg1 == COMMAND_TYPE_UPDATE_PUBLISH);
         } else {
             Log.wtf(TAG,
                     "onSessionConfigSuccessLocal: unexpected completedCommand=" + completedCommand);
+            return;
+        }
+        // If ranging require changes, reconfigure.
+        if (mCurrentRangingEnabled != doesAnyClientNeedRanging()) {
+            reconfigure();
         }
     }
 
@@ -2829,6 +2847,9 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
 
             if (reason == NanStatusType.INVALID_SESSION_ID) {
                 client.removeSession(sessionId);
+                if (mCurrentRangingEnabled != doesAnyClientNeedRanging()) {
+                    reconfigure();
+                }
             }
         } else {
             Log.wtf(TAG, "onSessionConfigFailLocal: unexpected failedCommand=" + failedCommand);
@@ -3059,6 +3080,9 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                     "onSessionTerminatedLocal onSessionTerminated(): RemoteException (FYI): " + e);
         }
         data.first.removeSession(data.second.getSessionId());
+        if (mCurrentRangingEnabled != doesAnyClientNeedRanging()) {
+            reconfigure();
+        }
         mAwareMetrics.recordDiscoverySessionDuration(data.second.getCreationTime(),
                 data.second.isPublishSession());
     }
@@ -3222,6 +3246,15 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     private boolean doesAnyClientNeedIdentityChangeNotifications() {
         for (int i = 0; i < mClients.size(); ++i) {
             if (mClients.valueAt(i).getNotifyIdentityChange()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean doesAnyClientNeedRanging() {
+        for (int i = 0; i < mClients.size(); ++i) {
+            if (mClients.valueAt(i).isRangingEnabled()) {
                 return true;
             }
         }

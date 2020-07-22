@@ -595,7 +595,7 @@ public class WifiAwareNativeApiTest extends WifiBaseTest {
         mIsInterface12 = isHal12;
 
         mDut.enableAndConfigure(transactionId, configRequest, notifyIdentityChange,
-                initialConfiguration, isInteractive, isIdle);
+                initialConfiguration, isInteractive, isIdle, false);
 
         ArgumentCaptor<NanEnableRequest> enableReqCaptor = ArgumentCaptor.forClass(
                 NanEnableRequest.class);
