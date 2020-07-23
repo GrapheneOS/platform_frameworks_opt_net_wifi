@@ -65,7 +65,9 @@ public class WifiKeyStore {
 
     // Certificate and private key management for EnterpriseConfig
     private static boolean needsKeyStore(WifiEnterpriseConfig config) {
-        return (config.getClientCertificate() != null || config.getCaCertificate() != null);
+        return (config.getClientCertificate() != null || config.getCaCertificate() != null
+                || config.getCaCertificateAlias() != null
+                || config.getClientCertificateAlias() != null);
     }
 
     private static boolean isHardwareBackedKey(Key key) {
