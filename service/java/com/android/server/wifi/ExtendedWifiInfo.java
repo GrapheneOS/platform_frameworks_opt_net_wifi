@@ -17,10 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
-import android.content.Context;
 import android.net.wifi.WifiInfo;
-
-import com.android.wifi.resources.R;
 
 /**
  * Extends WifiInfo with the methods for computing the averaged packet rates
@@ -32,14 +29,14 @@ public class ExtendedWifiInfo extends WifiInfo {
     private static final int SOURCE_TRAFFIC_COUNTERS = 1;
     private static final int SOURCE_LLSTATS = 2;
 
-    private final Context mContext;
+    private final WifiGlobals mWifiGlobals;
 
     private int mLastSource = SOURCE_UNKNOWN;
     private long mLastPacketCountUpdateTimeStamp = RESET_TIME_STAMP;
 
-    ExtendedWifiInfo(Context context) {
+    ExtendedWifiInfo(WifiGlobals wifiGlobals) {
         super();
-        mContext = context;
+        mWifiGlobals = wifiGlobals;
     }
 
     @Override
@@ -47,8 +44,7 @@ public class ExtendedWifiInfo extends WifiInfo {
         super.reset();
         mLastSource = SOURCE_UNKNOWN;
         mLastPacketCountUpdateTimeStamp = RESET_TIME_STAMP;
-        if (mContext.getResources().getBoolean(
-                R.bool.config_wifi_connected_mac_randomization_supported)) {
+        if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             setMacAddress(DEFAULT_MAC_ADDRESS);
         }
     }

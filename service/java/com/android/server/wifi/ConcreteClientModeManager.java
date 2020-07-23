@@ -16,6 +16,12 @@
 
 package com.android.server.wifi;
 
+import static android.net.wifi.WifiManager.WIFI_STATE_DISABLED;
+import static android.net.wifi.WifiManager.WIFI_STATE_DISABLING;
+import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
+import static android.net.wifi.WifiManager.WIFI_STATE_ENABLING;
+import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
+
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.Context;
@@ -67,11 +73,9 @@ import com.android.wifi.resources.R;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Manager WiFi in Client Mode where we connect to configured networks.
- * TODO (b/160014176): Merge {@link ClientModeManager} and {@link ClientModeImpl}
- */
+/** Manager WiFi in Client Mode where we connect to configured networks. */
 public class ConcreteClientModeManager implements ClientModeManager {
     private static final String TAG = "WifiClientModeManager";
 
@@ -84,6 +88,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WakeupController mWakeupController;
     private final Listener mModeListener;
     private final ClientModeImpl mClientModeImpl;
+    private final SelfRecovery mSelfRecovery;
+    private final WifiGlobals mWifiGlobals;
 
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
@@ -92,11 +98,22 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private ClientRole mRole = null;
     @Nullable
     private ClientRole mTargetRole = null;
+    private boolean mVerboseLoggingEnabled = false;
     private int mActiveSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+
+    /**
+     * One of  {@link WifiManager#WIFI_STATE_DISABLED},
+     * {@link WifiManager#WIFI_STATE_DISABLING},
+     * {@link WifiManager#WIFI_STATE_ENABLED},
+     * {@link WifiManager#WIFI_STATE_ENABLING},
+     * {@link WifiManager#WIFI_STATE_UNKNOWN}
+     */
+    private final AtomicInteger mWifiState = new AtomicInteger(WIFI_STATE_DISABLED);
 
     ConcreteClientModeManager(Context context, @NonNull Looper looper, Clock clock,
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
-            WakeupController wakeupController, ClientModeImpl clientModeImpl) {
+            WakeupController wakeupController, ClientModeImpl clientModeImpl,
+            SelfRecovery selfRecovery, WifiGlobals wifiGlobals) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -106,6 +123,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mClientModeImpl = clientModeImpl;
         mStateMachine = new ClientModeStateMachine(looper);
         mDeferStopHandler = new DeferStopHandler(looper);
+        mSelfRecovery = selfRecovery;
+        mWifiGlobals = wifiGlobals;
 
         /**
          * TODO(b/117601161): Start {@link ClientModeImpl} from the enter method of
@@ -385,6 +404,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         pw.println("mIfaceIsUp: " + mIfaceIsUp);
         mStateMachine.dump(fd, pw, args);
         pw.println();
+        pw.println("Wi-Fi is " + syncGetWifiStateByName());
         mClientModeImpl.dump(fd, pw, args);
         pw.println();
     }
@@ -415,13 +435,48 @@ public class ConcreteClientModeManager implements ClientModeManager {
             return;
         }
 
-        mClientModeImpl.setWifiStateForApiCalls(newState);
+        setWifiStateForApiCalls(newState);
 
         final Intent intent = new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         intent.putExtra(WifiManager.EXTRA_WIFI_STATE, newState);
         intent.putExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, currentState);
         mContext.sendStickyBroadcastAsUser(intent, UserHandle.ALL);
+    }
+
+    private void setWifiStateForApiCalls(int newState) {
+        switch (newState) {
+            case WIFI_STATE_DISABLING:
+            case WIFI_STATE_DISABLED:
+            case WIFI_STATE_ENABLING:
+            case WIFI_STATE_ENABLED:
+            case WIFI_STATE_UNKNOWN:
+                if (mVerboseLoggingEnabled) {
+                    Log.d(getTag(), "setting wifi state to: " + newState);
+                }
+                mWifiState.set(newState);
+                break;
+            default:
+                Log.d(getTag(), "attempted to set an invalid state: " + newState);
+                break;
+        }
+    }
+
+    private String syncGetWifiStateByName() {
+        switch (mWifiState.get()) {
+            case WIFI_STATE_DISABLING:
+                return "disabling";
+            case WIFI_STATE_DISABLED:
+                return "disabled";
+            case WIFI_STATE_ENABLING:
+                return "enabling";
+            case WIFI_STATE_ENABLED:
+                return "enabled";
+            case WIFI_STATE_UNKNOWN:
+                return "unknown state";
+            default:
+                return "[invalid state]";
+        }
     }
 
     private class ClientModeStateMachine extends StateMachine {
@@ -581,8 +636,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     case CMD_INTERFACE_DOWN:
                         Log.e(getTag(), "Detected an interface down, reporting failure to "
                                 + "SelfRecovery");
-                        mClientModeImpl
-                                .failureDetected(SelfRecovery.REASON_STA_IFACE_DOWN);
+                        mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
                         transitionTo(mIdleState);
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
@@ -681,7 +735,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                             break;  // no change
                         }
                         if (!isUp) {
-                            if (!mClientModeImpl.isConnectedMacRandomizationEnabled()) {
+                            if (!mWifiGlobals.isConnectedMacRandomizationEnabled()) {
                                 // Handle the error case where our underlying interface went down if
                                 // we do not have mac randomization enabled (b/72459123).
                                 // if the interface goes down we should exit and go back to idle
@@ -775,7 +829,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public int syncGetWifiState() {
-        return mClientModeImpl.syncGetWifiState();
+        return mWifiState.get();
     }
 
     @Override
@@ -837,6 +891,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
         mClientModeImpl.enableVerboseLogging(verbose);
     }
 

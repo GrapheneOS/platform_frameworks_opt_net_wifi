@@ -136,7 +136,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         mBlobs.clear();
         mConfiguredNetworks = new ArrayList<>();
         mMilliSecondsSinceBoot = 0;
-        mWifiInfo = new ExtendedWifiInfo(mock(Context.class));
+        mWifiInfo = new ExtendedWifiInfo(mock(WifiGlobals.class));
         mWifiInfo.setBSSID(TEST_BSSID_1.toString());
         mWifiInfo.setSSID(TEST_SSID_1);
         // Add 1st configuration

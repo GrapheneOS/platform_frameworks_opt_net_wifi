@@ -217,7 +217,7 @@ public class WifiInjector {
         mWifiGlobals = new WifiGlobals(mContext);
         mScoringParams = new ScoringParams(mContext);
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
-        mWifiInfo = new ExtendedWifiInfo(context);
+        mWifiInfo = new ExtendedWifiInfo(mWifiGlobals);
         mSettingsMigrationDataHolder = new SettingsMigrationDataHolder(mContext);
         mConnectionFailureNotificationBuilder = new ConnectionFailureNotificationBuilder(
                 mContext, getWifiStackPackageName(), mFrameworkFacade);
@@ -635,7 +635,7 @@ public class WifiInjector {
                 mWifiP2pConnection, mWifiGlobals);
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
-                clientModeImpl);
+                clientModeImpl, mSelfRecovery, mWifiGlobals);
     }
 
     /**
