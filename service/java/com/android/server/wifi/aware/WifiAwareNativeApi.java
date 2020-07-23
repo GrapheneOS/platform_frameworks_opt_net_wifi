@@ -355,10 +355,11 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
      *            (true) or an update (false) to the configuration.
      * @param isInteractive PowerManager.isInteractive
      * @param isIdle PowerManager.isIdle
+     * @param rangingEnabled Indicates whether or not enable ranging.
      */
     public boolean enableAndConfigure(short transactionId, ConfigRequest configRequest,
             boolean notifyIdentityChange, boolean initialConfiguration, boolean isInteractive,
-            boolean isIdle) {
+            boolean isIdle, boolean rangingEnabled) {
         if (mDbg) {
             Log.v(TAG, "enableAndConfigure: transactionId=" + transactionId + ", configRequest="
                     + configRequest + ", notifyIdentityChange=" + notifyIdentityChange
@@ -379,7 +380,7 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
             configSupplemental12.discoveryBeaconIntervalMs = 0;
             configSupplemental12.numberOfSpatialStreamsInDiscovery = 0;
             configSupplemental12.enableDiscoveryWindowEarlyTermination = false;
-            configSupplemental12.enableRanging = true;
+            configSupplemental12.enableRanging = rangingEnabled;
         }
 
         NanBandSpecificConfig config24 = new NanBandSpecificConfig();

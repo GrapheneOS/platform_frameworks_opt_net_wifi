@@ -3058,6 +3058,16 @@ public class ClientModeImpl extends StateMachine {
             boolean handleStatus = HANDLED;
 
             switch (message.what) {
+                case CMD_DIAGS_CONNECT_TIMEOUT:
+                case CMD_SET_FALLBACK_PACKET_FILTERING:
+                case CMD_READ_PACKET_FILTER:
+                case CMD_INSTALL_PACKET_FILTER:
+                case CMD_START_IP_PACKET_OFFLOAD:
+                case CMD_STOP_IP_PACKET_OFFLOAD:
+                case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
+                case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF:
+                case CMD_UPDATE_LINKPROPERTIES:
+                case CMD_SET_SUSPEND_OPT_ENABLED:
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST:
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
                 case CMD_ENABLE_RSSI_POLL:
@@ -3085,62 +3095,12 @@ public class ClientModeImpl extends StateMachine {
                     // state transitions performed in setOperationalMode.
                     break;
                 }
-                case CMD_SET_SUSPEND_OPT_ENABLED: {
-                    if (message.arg1 == 1) {
-                        if (message.arg2 == 1) {
-                            mSuspendWakeLock.release();
-                        }
-                        setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, true);
-                    } else {
-                        setSuspendOptimizations(SUSPEND_DUE_TO_SCREEN, false);
-                    }
-                    break;
-                }
-                /* Link configuration (IP address, DNS, ...) changes notified via netlink */
-                case CMD_UPDATE_LINKPROPERTIES: {
-                    updateLinkProperties((LinkProperties) message.obj);
-                    break;
-                }
                 case CMD_START_RSSI_MONITORING_OFFLOAD:
                 case CMD_STOP_RSSI_MONITORING_OFFLOAD:
                 case CMD_IP_CONFIGURATION_SUCCESSFUL:
                 case CMD_IP_CONFIGURATION_LOST:
                 case CMD_IP_REACHABILITY_LOST: {
                     mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case CMD_START_IP_PACKET_OFFLOAD:
-                case CMD_STOP_IP_PACKET_OFFLOAD:
-                case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
-                case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF: {
-                    if (mNetworkAgent != null) {
-                        mNetworkAgent.sendSocketKeepaliveEvent(message.arg1,
-                                SocketKeepalive.ERROR_INVALID_NETWORK);
-                    }
-                    break;
-                }
-                case CMD_INSTALL_PACKET_FILTER: {
-                    mWifiNative.installPacketFilter(mInterfaceName, (byte[]) message.obj);
-                    break;
-                }
-                case CMD_READ_PACKET_FILTER: {
-                    byte[] data = mWifiNative.readPacketFilter(mInterfaceName);
-                    if (mIpClient != null) {
-                        mIpClient.readPacketFilterComplete(data);
-                    }
-                    break;
-                }
-                case CMD_SET_FALLBACK_PACKET_FILTERING: {
-                    if ((boolean) message.obj) {
-                        mWifiNative.startFilteringMulticastV4Packets(mInterfaceName);
-                    } else {
-                        mWifiNative.stopFilteringMulticastV4Packets(mInterfaceName);
-                    }
-                    break;
-                }
-                case CMD_DIAGS_CONNECT_TIMEOUT: {
-                    mWifiDiagnostics.reportConnectionEvent(
-                            BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT);
                     break;
                 }
                 case 0: {
@@ -3639,6 +3599,44 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_CONFIG_ND_OFFLOAD: {
                     final boolean enabled = (message.arg1 > 0);
                     mWifiNative.configureNeighborDiscoveryOffload(mInterfaceName, enabled);
+                    break;
+                }
+                // Link configuration (IP address, DNS, ...) changes notified via netlink
+                case CMD_UPDATE_LINKPROPERTIES: {
+                    updateLinkProperties((LinkProperties) message.obj);
+                    break;
+                }
+                case CMD_START_IP_PACKET_OFFLOAD:
+                case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
+                case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF: {
+                    if (mNetworkAgent != null) {
+                        mNetworkAgent.sendSocketKeepaliveEvent(message.arg1,
+                                SocketKeepalive.ERROR_INVALID_NETWORK);
+                    }
+                    break;
+                }
+                case CMD_INSTALL_PACKET_FILTER: {
+                    mWifiNative.installPacketFilter(mInterfaceName, (byte[]) message.obj);
+                    break;
+                }
+                case CMD_READ_PACKET_FILTER: {
+                    byte[] data = mWifiNative.readPacketFilter(mInterfaceName);
+                    if (mIpClient != null) {
+                        mIpClient.readPacketFilterComplete(data);
+                    }
+                    break;
+                }
+                case CMD_SET_FALLBACK_PACKET_FILTERING: {
+                    if ((boolean) message.obj) {
+                        mWifiNative.startFilteringMulticastV4Packets(mInterfaceName);
+                    } else {
+                        mWifiNative.stopFilteringMulticastV4Packets(mInterfaceName);
+                    }
+                    break;
+                }
+                case CMD_DIAGS_CONNECT_TIMEOUT: {
+                    mWifiDiagnostics.reportConnectionEvent(
+                            BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT);
                     break;
                 }
                 default: {
@@ -5118,12 +5116,11 @@ public class ClientModeImpl extends StateMachine {
                                     mWifiConfigManager.updateNetworkSelectionStatus(
                                             config.networkId,
                                             DISABLED_NO_INTERNET_TEMPORARY);
+                                    mBssidBlocklistMonitor.handleBssidConnectionFailure(
+                                            mLastBssid, config.SSID,
+                                            BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+                                            mWifiInfo.getRssi());
                                 }
-                                int rssi = mWifiInfo.getRssi();
-                                mBssidBlocklistMonitor.handleBssidConnectionFailure(
-                                        mLastBssid, config.SSID,
-                                        BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
-                                        rssi);
                                 mWifiScoreCard.noteValidationFailure(mWifiInfo);
                             }
                         }

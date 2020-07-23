@@ -103,6 +103,10 @@ public class WifiAwareDiscoverySessionState {
         return mIsRangingEnabled;
     }
 
+    public void setRangingEnabled(boolean enabled) {
+        mIsRangingEnabled = enabled;
+    }
+
     public long getCreationTime() {
         return mCreationTime;
     }
