@@ -88,6 +88,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WakeupController mWakeupController;
     private final Listener mModeListener;
     private final ClientModeImpl mClientModeImpl;
+    private final SelfRecovery mSelfRecovery;
+    private final WifiGlobals mWifiGlobals;
 
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
@@ -110,7 +112,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     ConcreteClientModeManager(Context context, @NonNull Looper looper, Clock clock,
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
-            WakeupController wakeupController, ClientModeImpl clientModeImpl) {
+            WakeupController wakeupController, ClientModeImpl clientModeImpl,
+            SelfRecovery selfRecovery, WifiGlobals wifiGlobals) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -120,6 +123,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mClientModeImpl = clientModeImpl;
         mStateMachine = new ClientModeStateMachine(looper);
         mDeferStopHandler = new DeferStopHandler(looper);
+        mSelfRecovery = selfRecovery;
+        mWifiGlobals = wifiGlobals;
 
         /**
          * TODO(b/117601161): Start {@link ClientModeImpl} from the enter method of
@@ -631,8 +636,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     case CMD_INTERFACE_DOWN:
                         Log.e(getTag(), "Detected an interface down, reporting failure to "
                                 + "SelfRecovery");
-                        mClientModeImpl
-                                .failureDetected(SelfRecovery.REASON_STA_IFACE_DOWN);
+                        mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
                         transitionTo(mIdleState);
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
@@ -731,7 +735,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                             break;  // no change
                         }
                         if (!isUp) {
-                            if (!mClientModeImpl.isConnectedMacRandomizationEnabled()) {
+                            if (!mWifiGlobals.isConnectedMacRandomizationEnabled()) {
                                 // Handle the error case where our underlying interface went down if
                                 // we do not have mac randomization enabled (b/72459123).
                                 // if the interface goes down we should exit and go back to idle

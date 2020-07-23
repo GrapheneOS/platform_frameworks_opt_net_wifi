@@ -99,6 +99,8 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     @Mock ConnectivityManager mConnectivityManager;
     @Mock SubscriptionManager mSubscriptionManager;
     @Mock SubscriptionInfo mActiveSubscriptionInfo;
+    @Mock SelfRecovery mSelfRecovery;
+    @Mock WifiGlobals mWifiGlobals;
     private RegistrationManager.RegistrationCallback mImsMmTelManagerRegistrationCallback = null;
     private @RegistrationManager.ImsRegistrationState int mCurrentImsRegistrationState =
             RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
@@ -228,7 +230,8 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
 
     private ConcreteClientModeManager createClientModeManager() {
         return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
-                mListener, mWifiMetrics, mWakeupController, mClientModeImpl);
+                mListener, mWifiMetrics, mWakeupController, mClientModeImpl, mSelfRecovery,
+                mWifiGlobals);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {
@@ -502,10 +505,10 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext);
         setUpSystemServiceForContext();
-        when(mClientModeImpl.isConnectedMacRandomizationEnabled()).thenReturn(false);
+        when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(false);
         mInterfaceCallbackCaptor.getValue().onDown(TEST_INTERFACE_NAME);
         mLooper.dispatchAll();
-        verify(mClientModeImpl).failureDetected(eq(SelfRecovery.REASON_STA_IFACE_DOWN));
+        verify(mSelfRecovery).trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
         verifyConnectModeNotificationsForFailure();
         verify(mListener).onStopped();
     }
@@ -520,10 +523,10 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext);
         setUpSystemServiceForContext();
-        when(mClientModeImpl.isConnectedMacRandomizationEnabled()).thenReturn(true);
+        when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(true);
         mInterfaceCallbackCaptor.getValue().onDown(TEST_INTERFACE_NAME);
         mLooper.dispatchAll();
-        verify(mClientModeImpl, never()).failureDetected(eq(SelfRecovery.REASON_STA_IFACE_DOWN));
+        verify(mSelfRecovery, never()).trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
         verify(mContext, never()).sendStickyBroadcastAsUser(any(), any());
     }
 

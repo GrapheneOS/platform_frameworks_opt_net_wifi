@@ -464,10 +464,10 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         mFrameworkFacade = getFrameworkFacade();
         mContext = getContext();
-        mWifiInfo = new ExtendedWifiInfo(mContext);
+        mWifiInfo = new ExtendedWifiInfo(mWifiGlobals);
 
+        when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(true);
         mResources = getMockResources();
-        mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, true);
         mResources.setIntArray(R.array.config_wifiRssiLevelThresholds,
                 RssiUtilTest.RSSI_THRESHOLDS);
         when(mContext.getResources()).thenReturn(mResources);
@@ -2565,7 +2565,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testConnectedMacRandomizationNotSupported() throws Exception {
-        mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, false);
+        when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(false);
         initializeCmi();
         initializeAndAddNetworkAndVerifySuccess();
         assertEquals(ClientModeImpl.CONNECT_MODE, mCmi.getOperationalModeForTest());
@@ -3723,7 +3723,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testGetFactoryMacAddressFailWithNoMacRandomizationSupport() throws Exception {
-        mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, false);
+        when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(false);
         initializeCmi();
         initializeAndAddNetworkAndVerifySuccess();
         when(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(null);
@@ -3752,7 +3752,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testNoRandomizeMacAddressOnStartIfMacRandomizationNotEnabled() throws Exception {
-        mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, false);
+        when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(false);
         loadComponentsInStaMode();
         verify(mWifiNative, never()).setMacAddress(anyString(), any());
     }

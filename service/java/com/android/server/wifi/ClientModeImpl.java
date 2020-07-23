@@ -2938,28 +2938,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Helper method to check if Connected MAC Randomization is supported - onDown events are
-     * skipped if this feature is enabled (b/72459123).
-     *
-     * @return boolean true if Connected MAC randomization is supported, false otherwise
-     */
-    public boolean isConnectedMacRandomizationEnabled() {
-        return mContext.getResources().getBoolean(
-                R.bool.config_wifi_connected_mac_randomization_supported);
-    }
-
-    /**
-     * Helper method allowing ClientModeManager to report an error (interface went down) and trigger
-     * recovery.
-     *
-     * @param reason int indicating the SelfRecovery failure type.
-     */
-    public void failureDetected(int reason) {
-        // report a failure
-        mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
-    }
-
-    /**
      * Helper method to check if WPA2 network upgrade feature is enabled in the framework
      *
      * @return boolean true if feature is enabled.
@@ -3081,7 +3059,7 @@ public class ClientModeImpl extends StateMachine {
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
         mLastSignalLevel = -1;
-        if (isConnectedMacRandomizationEnabled()) {
+        if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             if (!mWifiNative.setMacAddress(
                     mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
                 Log.e(getTag(), "Failed to set random MAC address on bootup");
@@ -3897,7 +3875,7 @@ public class ClientModeImpl extends StateMachine {
             // case we reconnect back to the same network.
             // 2. Set a random MAC address to ensure that we're not leaking the MAC address.
             mWifiNative.disableNetwork(mInterfaceName);
-            if (isConnectedMacRandomizationEnabled()) {
+            if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
                 if (!mWifiNative.setMacAddress(
                         mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
                     Log.e(getTag(), "Failed to set random MAC address on disconnect");
@@ -5415,7 +5393,7 @@ public class ClientModeImpl extends StateMachine {
         if (macAddress != null) {
             return macAddress.toString();
         }
-        if (!isConnectedMacRandomizationEnabled()) {
+        if (!mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             return mWifiNative.getMacAddress(mInterfaceName);
         }
         return null;
@@ -5639,7 +5617,7 @@ public class ClientModeImpl extends StateMachine {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         }
 
-        if (isConnectedMacRandomizationEnabled()) {
+        if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
                 configureRandomizedMacAddress(config);
             } else {
@@ -5678,7 +5656,7 @@ public class ClientModeImpl extends StateMachine {
         final boolean isUsingMacRandomization =
                 config.macRandomizationSetting
                         == WifiConfiguration.RANDOMIZATION_PERSISTENT
-                        && isConnectedMacRandomizationEnabled();
+                        && mWifiGlobals.isConnectedMacRandomizationEnabled();
         if (mVerboseLoggingEnabled) {
             final String key = config.getKey();
             log("startIpClient netId=" + Integer.toString(mLastNetworkId)
