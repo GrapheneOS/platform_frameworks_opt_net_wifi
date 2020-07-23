@@ -20,8 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import android.content.Context;
-
 import androidx.test.filters.SmallTest;
 
 import org.junit.Before;
@@ -44,7 +42,7 @@ public class WifiLinkLayerStatsTest extends WifiBaseTest {
      */
     @Before
     public void setUp() throws Exception {
-        mWifiInfo = new ExtendedWifiInfo(mock(Context.class));
+        mWifiInfo = new ExtendedWifiInfo(mock(WifiGlobals.class));
         mWifiLinkLayerStats = new WifiLinkLayerStats();
     }
 

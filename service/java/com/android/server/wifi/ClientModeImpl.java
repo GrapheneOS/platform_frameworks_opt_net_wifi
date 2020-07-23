@@ -20,11 +20,6 @@ import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA256;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA384;
-import static android.net.wifi.WifiManager.WIFI_STATE_DISABLED;
-import static android.net.wifi.WifiManager.WIFI_STATE_DISABLING;
-import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
-import static android.net.wifi.WifiManager.WIFI_STATE_ENABLING;
-import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
 
 import static com.android.server.wifi.WifiDataStall.INVALID_THROUGHPUT;
 
@@ -599,15 +594,6 @@ public class ClientModeImpl extends StateMachine {
     private boolean mSentHLPs = false;
     /* Tracks IpClient start state until (FILS_)NETWORK_CONNECTION_EVENT event */
     private boolean mIpClientWithPreConnection = false;
-
-    /**
-     * One of  {@link WifiManager#WIFI_STATE_DISABLED},
-     * {@link WifiManager#WIFI_STATE_DISABLING},
-     * {@link WifiManager#WIFI_STATE_ENABLED},
-     * {@link WifiManager#WIFI_STATE_ENABLING},
-     * {@link WifiManager#WIFI_STATE_UNKNOWN}
-     */
-    private final AtomicInteger mWifiState = new AtomicInteger(WIFI_STATE_DISABLED);
 
     /**
      * Work source to use to blame usage on the WiFi service
@@ -1283,61 +1269,6 @@ public class ClientModeImpl extends StateMachine {
         return mWifiNative.stopRssiMonitoring(mInterfaceName);
     }
 
-    /**
-     * Temporary method that allows the active ClientModeManager to set the wifi state that is
-     * retrieved by API calls. This will be removed when WifiServiceImpl no longer directly calls
-     * this class (b/31479117).
-     *
-     * @param newState new state to set, invalid states are ignored.
-     */
-    public void setWifiStateForApiCalls(int newState) {
-        switch (newState) {
-            case WIFI_STATE_DISABLING:
-            case WIFI_STATE_DISABLED:
-            case WIFI_STATE_ENABLING:
-            case WIFI_STATE_ENABLED:
-            case WIFI_STATE_UNKNOWN:
-                if (mVerboseLoggingEnabled) {
-                    Log.d(getTag(), "setting wifi state to: " + newState);
-                }
-                mWifiState.set(newState);
-                return;
-            default:
-                Log.d(getTag(), "attempted to set an invalid state: " + newState);
-                return;
-        }
-    }
-
-    /**
-     * Method used by WifiServiceImpl to get the current state of Wifi (in client mode) for API
-     * calls.  This will be removed when WifiService no longer directly calls this class
-     * (b/31479117).
-     */
-    public int syncGetWifiState() {
-        return mWifiState.get();
-    }
-
-    /**
-     * Converts the current wifi state to a printable form.
-     */
-    @VisibleForTesting
-    String syncGetWifiStateByName() {
-        switch (mWifiState.get()) {
-            case WIFI_STATE_DISABLING:
-                return "disabling";
-            case WIFI_STATE_DISABLED:
-                return "disabled";
-            case WIFI_STATE_ENABLING:
-                return "enabling";
-            case WIFI_STATE_ENABLED:
-                return "enabled";
-            case WIFI_STATE_UNKNOWN:
-                return "unknown state";
-            default:
-                return "[invalid state]";
-        }
-    }
-
     public boolean isConnected() {
         return getCurrentState() == mL3ConnectedState;
     }
@@ -1627,7 +1558,6 @@ public class ClientModeImpl extends StateMachine {
         // Polls link layer stats and RSSI. This allows the stats to show up in
         // WifiScoreReport's dump() output when taking a bug report even if the screen is off.
         updateLinkLayerStatsRssiAndScoreReport();
-        pw.println("Wi-Fi is " + syncGetWifiStateByName());
         pw.println("mLinkProperties " + mLinkProperties);
         pw.println("mWifiInfo " + mWifiInfo);
         pw.println("mDhcpResultsParcelable "
@@ -3008,28 +2938,6 @@ public class ClientModeImpl extends StateMachine {
     }
 
     /**
-     * Helper method to check if Connected MAC Randomization is supported - onDown events are
-     * skipped if this feature is enabled (b/72459123).
-     *
-     * @return boolean true if Connected MAC randomization is supported, false otherwise
-     */
-    public boolean isConnectedMacRandomizationEnabled() {
-        return mContext.getResources().getBoolean(
-                R.bool.config_wifi_connected_mac_randomization_supported);
-    }
-
-    /**
-     * Helper method allowing ClientModeManager to report an error (interface went down) and trigger
-     * recovery.
-     *
-     * @param reason int indicating the SelfRecovery failure type.
-     */
-    public void failureDetected(int reason) {
-        // report a failure
-        mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
-    }
-
-    /**
      * Helper method to check if WPA2 network upgrade feature is enabled in the framework
      *
      * @return boolean true if feature is enabled.
@@ -3151,7 +3059,7 @@ public class ClientModeImpl extends StateMachine {
         mLastSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         mLastSimBasedConnectionCarrierName = null;
         mLastSignalLevel = -1;
-        if (isConnectedMacRandomizationEnabled()) {
+        if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             if (!mWifiNative.setMacAddress(
                     mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
                 Log.e(getTag(), "Failed to set random MAC address on bootup");
@@ -3967,7 +3875,7 @@ public class ClientModeImpl extends StateMachine {
             // case we reconnect back to the same network.
             // 2. Set a random MAC address to ensure that we're not leaking the MAC address.
             mWifiNative.disableNetwork(mInterfaceName);
-            if (isConnectedMacRandomizationEnabled()) {
+            if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
                 if (!mWifiNative.setMacAddress(
                         mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
                     Log.e(getTag(), "Failed to set random MAC address on disconnect");
@@ -5485,7 +5393,7 @@ public class ClientModeImpl extends StateMachine {
         if (macAddress != null) {
             return macAddress.toString();
         }
-        if (!isConnectedMacRandomizationEnabled()) {
+        if (!mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             return mWifiNative.getMacAddress(mInterfaceName);
         }
         return null;
@@ -5709,7 +5617,7 @@ public class ClientModeImpl extends StateMachine {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         }
 
-        if (isConnectedMacRandomizationEnabled()) {
+        if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
             if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
                 configureRandomizedMacAddress(config);
             } else {
@@ -5748,7 +5656,7 @@ public class ClientModeImpl extends StateMachine {
         final boolean isUsingMacRandomization =
                 config.macRandomizationSetting
                         == WifiConfiguration.RANDOMIZATION_PERSISTENT
-                        && isConnectedMacRandomizationEnabled();
+                        && mWifiGlobals.isConnectedMacRandomizationEnabled();
         if (mVerboseLoggingEnabled) {
             final String key = config.getKey();
             log("startIpClient netId=" + Integer.toString(mLastNetworkId)
