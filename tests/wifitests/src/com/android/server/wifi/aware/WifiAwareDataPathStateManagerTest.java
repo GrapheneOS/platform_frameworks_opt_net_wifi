@@ -1846,7 +1846,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
 
         if (startUpSequence) {
             inOrder.verify(mMockNative).enableAndConfigure(transactionId.capture(),
-                    eq(configRequest), eq(false), eq(true), eq(true), eq(false));
+                    eq(configRequest), eq(false), eq(true), eq(true), eq(false), eq(false));
             mDut.onConfigSuccessResponse(transactionId.getValue());
             mMockLooper.dispatchAll();
         }
