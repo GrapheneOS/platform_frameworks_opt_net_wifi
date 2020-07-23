@@ -86,6 +86,7 @@ public class WifiConfigurationTestUtil {
     public static final String TEST_STATIC_PROXY_EXCLUSION_LIST = "";
     public static final String TEST_PAC_PROXY_LOCATION = "http://";
     public static final String TEST_CA_CERT_ALIAS = "WifiConfigurationTestUtilCaCertAlias";
+    public static final String TEST_CA_CERT_SUITE_B_ALIAS = "SuiteBCaCertAlias";
     public static final String TEST_CA_CERT_PATH = "caPath";
     public static final String TEST_DOM_SUBJECT_MATCH = "domSubjectMatch";
 
@@ -169,6 +170,8 @@ public class WifiConfigurationTestUtil {
             }
 
             if ((security & SECURITY_EAP_SUITE_B) != 0) {
+                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
                 config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
                 config.requirePmf = true;
             }
@@ -375,6 +378,10 @@ public class WifiConfigurationTestUtil {
     }
 
     public static WifiConfiguration createEapSuiteBNetwork() {
+        return createEapSuiteBNetwork(WifiConfiguration.SuiteBCipher.ECDHE_RSA);
+    }
+
+    public static WifiConfiguration createEapSuiteBNetwork(int signatureType) {
         WifiConfiguration configuration =
                 generateWifiConfig(TEST_NETWORK_ID, TEST_UID, createNewSSID(), true, true,
                         null, null, SECURITY_EAP_SUITE_B);
@@ -382,6 +389,18 @@ public class WifiConfigurationTestUtil {
         configuration.requirePmf = true;
         configuration.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.TLS);
         configuration.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
+
+        if (signatureType == WifiConfiguration.SuiteBCipher.ECDHE_ECDSA) {
+            configuration.enterpriseConfig.setCaCertificate(FakeKeys.CA_SUITE_B_ECDSA_CERT);
+            configuration.enterpriseConfig.setClientKeyEntryWithCertificateChain(
+                    FakeKeys.CLIENT_SUITE_B_ECC_KEY,
+                    new X509Certificate[] {FakeKeys.CLIENT_SUITE_B_ECDSA_CERT});
+        } else {
+            configuration.enterpriseConfig.setCaCertificate(FakeKeys.CA_SUITE_B_RSA3072_CERT);
+            configuration.enterpriseConfig.setClientKeyEntryWithCertificateChain(
+                    FakeKeys.CLIENT_SUITE_B_RSA3072_KEY,
+                    new X509Certificate[] {FakeKeys.CLIENT_SUITE_B_RSA3072_CERT});
+        }
         return configuration;
     }
 
