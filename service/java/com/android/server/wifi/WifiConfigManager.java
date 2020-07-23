@@ -2927,13 +2927,21 @@ public class WifiConfigManager {
         Set<Integer> removedNetworkIds = new HashSet<>();
         // Remove any private networks of the old user before switching the userId.
         for (WifiConfiguration config : getConfiguredNetworks()) {
-            if (!config.shared && doesUidBelongToCurrentUser(config.creatorUid)) {
+            if ((!config.shared && doesUidBelongToCurrentUser(config.creatorUid))
+                    || config.ephemeral) {
                 removedNetworkIds.add(config.networkId);
                 localLog("clearInternalUserData: removed config."
                         + " netId=" + config.networkId
                         + " configKey=" + config.getKey());
                 mConfiguredNetworks.remove(config.networkId);
+                for (OnNetworkUpdateListener listener : mListeners) {
+                    listener.onNetworkRemoved(
+                            createExternalWifiConfiguration(config, true, Process.WIFI_UID));
+                }
             }
+        }
+        if (!removedNetworkIds.isEmpty()) {
+            sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_REMOVED);
         }
         mUserTemporarilyDisabledList.clear();
         mScanDetailCaches.clear();

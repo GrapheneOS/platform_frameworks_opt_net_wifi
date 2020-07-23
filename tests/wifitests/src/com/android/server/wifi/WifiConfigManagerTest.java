@@ -2915,12 +2915,73 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         Set<Integer> removedNetworks = mWifiConfigManager.handleUserSwitch(user2);
         verify(mWifiConfigStore).switchUserStoresAndRead(any(List.class));
         assertTrue((removedNetworks.size() == 1) && (removedNetworks.contains(user1NetworkId)));
+        verify(mWcmListener).onNetworkRemoved(any());
 
         // Set the expected networks to be |sharedNetwork| and |user2Network|.
         List<WifiConfiguration> expectedNetworks = new ArrayList<WifiConfiguration>() {
             {
                 add(sharedNetwork);
                 add(user2Network);
+            }
+        };
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                expectedNetworks, mWifiConfigManager.getConfiguredNetworksWithPasswords());
+
+        // Send another user switch  indication with the same user 2. This should be ignored and
+        // hence should not remove any new networks.
+        when(mUserManager.isUserUnlockingOrUnlocked(UserHandle.of(user2))).thenReturn(true);
+        removedNetworks = mWifiConfigManager.handleUserSwitch(user2);
+        assertTrue(removedNetworks.isEmpty());
+    }
+
+    @Test
+    public void testHandleUserSwitchRemovesOldUserEphemeralNetworks() throws Exception {
+        int user1 = TEST_DEFAULT_USER;
+        int user2 = TEST_DEFAULT_USER + 1;
+        setupUserProfiles(user2);
+
+        int appId = 674;
+
+        // Create 2 networks. 1 ephemeral network for user1 and 1 shared.
+        final WifiConfiguration sharedNetwork = WifiConfigurationTestUtil.createPskNetwork();
+
+        // Set up the store data that is loaded initially.
+        List<WifiConfiguration> sharedNetworks = new ArrayList<WifiConfiguration>() {
+            {
+                add(sharedNetwork);
+            }
+        };
+        setupStoreDataForRead(sharedNetworks, Collections.EMPTY_LIST);
+        assertTrue(mWifiConfigManager.loadFromStore());
+        verify(mWifiConfigStore).read();
+
+        WifiConfiguration ephemeralNetwork = WifiConfigurationTestUtil.createEphemeralNetwork();
+        verifyAddEphemeralNetworkToWifiConfigManager(ephemeralNetwork);
+
+        // Fetch the network ID assigned to the user 1 network initially.
+        int ephemeralNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        for (WifiConfiguration network : retrievedNetworks) {
+            if (network.getKey().equals(ephemeralNetwork.getKey())) {
+                ephemeralNetworkId = network.networkId;
+            }
+        }
+
+        // Now switch the user to user 2 and ensure that user 1's private network has been removed.
+        when(mUserManager.isUserUnlockingOrUnlocked(UserHandle.of(user2))).thenReturn(true);
+        Set<Integer> removedNetworks = mWifiConfigManager.handleUserSwitch(user2);
+        verify(mWifiConfigStore).switchUserStoresAndRead(any(List.class));
+        assertTrue((removedNetworks.size() == 1));
+        assertTrue(removedNetworks.contains(ephemeralNetworkId));
+        verifyNetworkRemoveBroadcast();
+        verify(mWcmListener).onNetworkRemoved(any());
+
+
+        // Set the expected networks to be |sharedNetwork|.
+        List<WifiConfiguration> expectedNetworks = new ArrayList<WifiConfiguration>() {
+            {
+                add(sharedNetwork);
             }
         };
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
