@@ -30,6 +30,7 @@ import com.android.server.wifi.util.ArrayUtils;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -276,52 +277,110 @@ public class WifiKeyStore {
         // For WPA3-Enterprise 192-bit networks, set the SuiteBCipher field based on the
         // CA certificate type. Suite-B requires SHA384, reject other certs.
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
-            // Read the first CA certificate, and initialize
-            Certificate caCert = null;
-            try {
-                caCert = mKeyStore.getCertificate(config.enterpriseConfig.getCaCertificateAlias());
-            } catch (KeyStoreException e) {
-                Log.e(TAG, "Failed to get Suite-B certificate", e);
-            }
-            if (caCert == null || !(caCert instanceof X509Certificate)) {
-                Log.e(TAG, "Failed reading CA certificate for Suite-B");
+            // Read the CA certificates, and initialize
+            String[] caAliases = config.enterpriseConfig.getCaCertificateAliases();
+
+            if (caAliases == null || caAliases.length == 0) {
+                Log.e(TAG, "No CA aliases in profile");
                 return false;
             }
-            X509Certificate x509CaCert = (X509Certificate) caCert;
-            String sigAlgOid = x509CaCert.getSigAlgOID();
-            if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Signature algorithm: " + sigAlgOid);
-            }
-            config.allowedSuiteBCiphers.clear();
 
-            // Wi-Fi alliance requires the use of both ECDSA secp384r1 and RSA 3072 certificates
-            // in WPA3-Enterprise 192-bit security networks, which are also known as Suite-B-192
-            // networks, even though NSA Suite-B-192 mandates ECDSA only. The use of the term
-            // Suite-B was already coined in the IEEE 802.11-2016 specification for
-            // AKM 00-0F-AC but the test plan for WPA3-Enterprise 192-bit for APs mandates
-            // support for both RSA and ECDSA, and for STAs it mandates ECDSA and optionally
-            // RSA. In order to be compatible with all WPA3-Enterprise 192-bit deployments,
-            // we are supporting both types here.
-            if (sigAlgOid.equals("1.2.840.113549.1.1.12")) {
-                // sha384WithRSAEncryption
-                config.allowedSuiteBCiphers.set(
-                        WifiConfiguration.SuiteBCipher.ECDHE_RSA);
-                if (mVerboseLoggingEnabled) {
-                    Log.d(TAG, "Selecting Suite-B RSA");
+            int caCertType = -1;
+            int prevCaCertType = -1;
+            for (String caAlias : caAliases) {
+                Certificate caCert = null;
+                try {
+                    caCert = mKeyStore.getCertificate(caAlias);
+                } catch (KeyStoreException e) {
+                    Log.e(TAG, "Failed to get Suite-B certificate", e);
                 }
-            } else if (sigAlgOid.equals("1.2.840.10045.4.3.3")) {
-                // ecdsa-with-SHA384
-                config.allowedSuiteBCiphers.set(
-                        WifiConfiguration.SuiteBCipher.ECDHE_ECDSA);
-                if (mVerboseLoggingEnabled) {
-                    Log.d(TAG, "Selecting Suite-B ECDSA");
+                if (caCert == null || !(caCert instanceof X509Certificate)) {
+                    Log.e(TAG, "Failed reading CA certificate for Suite-B");
+                    return false;
                 }
+
+                // Confirm that the CA certificate is compatible with Suite-B requirements
+                caCertType = getSuiteBCipherFromCert((X509Certificate) caCert);
+                if (caCertType < 0) {
+                    return false;
+                }
+                if (prevCaCertType != -1) {
+                    if (prevCaCertType != caCertType) {
+                        Log.e(TAG, "Incompatible CA certificates");
+                        return false;
+                    }
+                }
+                prevCaCertType = caCertType;
+            }
+
+            Certificate clientCert = null;
+            try {
+                clientCert = mKeyStore.getCertificate(config.enterpriseConfig
+                        .getClientCertificateAlias());
+            } catch (KeyStoreException e) {
+                Log.e(TAG, "Failed to get Suite-B client certificate", e);
+            }
+            if (clientCert == null || !(clientCert instanceof X509Certificate)) {
+                Log.e(TAG, "Failed reading client certificate for Suite-B");
+                return false;
+            }
+
+            int clientCertType = getSuiteBCipherFromCert((X509Certificate) clientCert);
+            if (clientCertType < 0) {
+                return false;
+            }
+
+            if (clientCertType == caCertType) {
+                config.allowedSuiteBCiphers.clear();
+                config.allowedSuiteBCiphers.set(clientCertType);
             } else {
-                Log.e(TAG, "Invalid CA certificate type for Suite-B: "
-                        + sigAlgOid);
+                Log.e(TAG, "Client certificate for Suite-B is incompatible with the CA "
+                        + "certificate");
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Get the Suite-B cipher from the certificate
+     *
+     * @param x509Certificate Certificate to process
+     * @return WifiConfiguration.SuiteBCipher.ECDHE_RSA if the certificate OID matches the Suite-B
+     * requirements for RSA certificates, WifiConfiguration.SuiteBCipher.ECDHE_ECDSA if the
+     * certificate OID matches the Suite-B requirements for ECDSA certificates, or -1 otherwise.
+     */
+    private int getSuiteBCipherFromCert(X509Certificate x509Certificate) {
+        String sigAlgOid = x509Certificate.getSigAlgOID();
+        if (mVerboseLoggingEnabled) {
+            Principal p = x509Certificate.getSubjectX500Principal();
+            if (p != null && !TextUtils.isEmpty(p.getName())) {
+                Log.d(TAG, "Checking cert " + p.getName());
+            }
+        }
+
+        // Wi-Fi alliance requires the use of both ECDSA secp384r1 and RSA 3072 certificates
+        // in WPA3-Enterprise 192-bit security networks, which are also known as Suite-B-192
+        // networks, even though NSA Suite-B-192 mandates ECDSA only. The use of the term
+        // Suite-B was already coined in the IEEE 802.11-2016 specification for
+        // AKM 00-0F-AC but the test plan for WPA3-Enterprise 192-bit for APs mandates
+        // support for both RSA and ECDSA, and for STAs it mandates ECDSA and optionally
+        // RSA. In order to be compatible with all WPA3-Enterprise 192-bit deployments,
+        // we are supporting both types here.
+        if (sigAlgOid.equals("1.2.840.113549.1.1.12")) {
+            // sha384WithRSAEncryption
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Found Suite-B RSA certificate");
+            }
+            return WifiConfiguration.SuiteBCipher.ECDHE_RSA;
+        } else if (sigAlgOid.equals("1.2.840.10045.4.3.3")) {
+            // ecdsa-with-SHA384
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Found Suite-B ECDSA certificate");
+            }
+            return WifiConfiguration.SuiteBCipher.ECDHE_ECDSA;
+        }
+        Log.e(TAG, "Invalid certificate type for Suite-B: " + sigAlgOid);
+        return -1;
     }
 }
