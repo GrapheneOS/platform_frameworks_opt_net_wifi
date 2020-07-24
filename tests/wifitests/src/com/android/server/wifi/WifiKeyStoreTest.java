@@ -52,7 +52,8 @@ public class WifiKeyStoreTest extends WifiBaseTest {
     private WifiKeyStore mWifiKeyStore;
     private static final String TEST_KEY_ID = "blah";
     private static final String USER_CERT_ALIAS = "aabbccddee";
-    private static final String [] USER_CA_CERT_ALIAS = {"aacccddd"};
+    private static final String USER_CA_CERT_ALIAS = "aacccddd";
+    private static final String [] USER_CA_CERT_ALIASES = {"aacccddd", "bbbccccaaa"};
     private static final String TEST_PACKAGE_NAME = "TestApp";
 
     /**
@@ -64,8 +65,9 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         mWifiKeyStore = new WifiKeyStore(mKeyStore);
 
         when(mWifiEnterpriseConfig.getClientCertificateAlias()).thenReturn(USER_CERT_ALIAS);
+        when(mWifiEnterpriseConfig.getCaCertificateAlias()).thenReturn(USER_CA_CERT_ALIAS);
         when(mWifiEnterpriseConfig.getCaCertificateAliases())
-                .thenReturn(USER_CA_CERT_ALIAS);
+                .thenReturn(USER_CA_CERT_ALIASES);
         when(mWifiEnterpriseConfig.getClientPrivateKey()).thenReturn(FakeKeys.RSA_KEY1);
         when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(FakeKeys.CLIENT_CERT);
         when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_CERT0);
@@ -95,7 +97,7 @@ public class WifiKeyStoreTest extends WifiBaseTest {
 
         // Method calls the KeyStore#delete method 4 times, user key, user cert, and 2 CA cert
         verify(mKeyStore).deleteEntry(USER_CERT_ALIAS);
-        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIAS[0]);
+        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIASES[0]);
     }
 
     /**
@@ -124,7 +126,8 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         mWifiKeyStore.removeKeys(mWifiEnterpriseConfig);
 
         // Method calls the KeyStore#delete method 2 times: 2 CA certs
-        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIAS[0]);
+        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIASES[0]);
+        verify(mKeyStore).deleteEntry(USER_CA_CERT_ALIASES[1]);
         verifyNoMoreInteractions(mKeyStore);
     }
 
@@ -212,5 +215,58 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         mWifiKeyStore.removeKeys(savedNetwork.enterpriseConfig);
         mWifiKeyStore.removeKeys(suggestionNetwork.enterpriseConfig);
         verify(mKeyStore, never()).deleteEntry(any());
+    }
+
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 correctly when CA and client
+     * certificates are of RSA 3072 type and the network is Suite-B.
+     */
+    @Test
+    public void testConfigureSuiteBRsa3072() throws Exception {
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_SUITE_B_RSA3072_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_SUITE_B_RSA3072_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[]{FakeKeys.CA_SUITE_B_RSA3072_CERT});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_RSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertTrue(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+        assertTrue(savedNetwork.allowedSuiteBCiphers.get(WifiConfiguration.SuiteBCipher.ECDHE_RSA));
+    }
+
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for ECDSA correctly when CA and client
+     * certificates are of ECDSA type and the network is Suite-B.
+     */
+    @Test
+    public void testConfigureSuiteBEcdsa() throws Exception {
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_SUITE_B_ECC_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_ECDSA_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_SUITE_B_ECDSA_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[]{FakeKeys.CA_SUITE_B_ECDSA_CERT});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_ECDSA_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_ECDSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertTrue(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+        assertTrue(
+                savedNetwork.allowedSuiteBCiphers.get(WifiConfiguration.SuiteBCipher.ECDHE_ECDSA));
     }
 }

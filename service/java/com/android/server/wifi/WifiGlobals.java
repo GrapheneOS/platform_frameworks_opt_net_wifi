@@ -94,4 +94,15 @@ public class WifiGlobals {
     public boolean isBluetoothConnected() {
         return mIsBluetoothConnected.get();
     }
+
+    /**
+     * Helper method to check if Connected MAC Randomization is supported - onDown events are
+     * skipped if this feature is enabled (b/72459123).
+     *
+     * @return boolean true if Connected MAC randomization is supported, false otherwise
+     */
+    public boolean isConnectedMacRandomizationEnabled() {
+        return mContext.getResources().getBoolean(
+                R.bool.config_wifi_connected_mac_randomization_supported);
+    }
 }
