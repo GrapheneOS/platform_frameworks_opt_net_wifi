@@ -96,6 +96,10 @@ public class WifiCarrierInfoManager {
     @VisibleForTesting
     public static final String NOTIFICATION_USER_DISMISSED_INTENT_ACTION =
             "com.android.server.wifi.action.CarrierNetwork.USER_DISMISSED";
+    /** Intent when user clicked on the notification. */
+    @VisibleForTesting
+    public static final String NOTIFICATION_USER_CLICKED_INTENT_ACTION =
+            "com.android.server.wifi.action.CarrierNetwork.USER_CLICKED";
     @VisibleForTesting
     public static final String EXTRA_CARRIER_NAME =
             "com.android.server.wifi.extra.CarrierNetwork.CARRIER_NAME";
@@ -223,13 +227,15 @@ public class WifiCarrierInfoManager {
 
                     switch (intent.getAction()) {
                         case NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION:
-                            Log.i(TAG, "User clicked to allow carrier");
-                            sendImsiPrivacyConfirmationDialog(carrierName, carrierId);
-                            // Collapse the notification bar
-                            mContext.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+                            handleUserAllowCarrierExemptionAction(carrierName, carrierId);
                             break;
                         case NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION:
                             handleUserDisallowCarrierExemptionAction(carrierName, carrierId);
+                            break;
+                        case NOTIFICATION_USER_CLICKED_INTENT_ACTION:
+                            sendImsiPrivacyConfirmationDialog(carrierName, carrierId);
+                            // Collapse the notification bar
+                            mContext.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
                             break;
                         case NOTIFICATION_USER_DISMISSED_INTENT_ACTION:
                             handleUserDismissAction();
@@ -297,6 +303,7 @@ public class WifiCarrierInfoManager {
         mIntentFilter.addAction(NOTIFICATION_USER_DISMISSED_INTENT_ACTION);
         mIntentFilter.addAction(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION);
         mIntentFilter.addAction(NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION);
+        mIntentFilter.addAction(NOTIFICATION_USER_CLICKED_INTENT_ACTION);
 
         mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, null, handler);
         configStore.registerStoreData(wifiInjector.makeImsiProtectionExemptionStoreData(
@@ -1448,6 +1455,9 @@ public class WifiCarrierInfoManager {
                 .setStyle(new Notification.BigTextStyle()
                         .bigText(mResources.getString(
                                 R.string.wifi_suggestion_imsi_privacy_content)))
+                .setContentIntent(getPrivateBroadcast(NOTIFICATION_USER_CLICKED_INTENT_ACTION,
+                        Pair.create(EXTRA_CARRIER_NAME, carrierName),
+                        Pair.create(EXTRA_CARRIER_ID, carrierId)))
                 .setDeleteIntent(getPrivateBroadcast(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
                         Pair.create(EXTRA_CARRIER_NAME, carrierName),
                         Pair.create(EXTRA_CARRIER_ID, carrierId)))
