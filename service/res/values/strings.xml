@@ -49,11 +49,11 @@
     <string name="wifi_suggestion_action_disallow_app">No thanks</string>
 
     <!-- Notification title for a connection to a SIM-based carrier network without IMSI privacy protection. -->
-    <string name="wifi_suggestion_imsi_privacy_title"><xliff:g id="carrierName" example="xxxMobile">%s</xliff:g> wants to auto\u2011connect</string>
+    <string name="wifi_suggestion_imsi_privacy_title">Connect to <xliff:g id="carrierName" example="xxxMobile">%s</xliff:g> Wi\u2011Fi?</string>
     <!-- Notification content for a connection to a SIM-based carrier network without IMSI privacy protection.-->
-    <string name="wifi_suggestion_imsi_privacy_content">These networks receive a unique ID that can be used to track device location</string>
+    <string name="wifi_suggestion_imsi_privacy_content">These networks receive a SIM ID that can be used to track device location</string>
     <!-- Notification action for allowing carrier specified in the notification body.-->
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier">Connect anyway</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier">Connect</string>
     <!-- Notification action for disallowing carrier specified in the notification body.-->
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier">Don\u0027t connect</string>
     <!-- Confirmation dialog title for a connection to a SIM-based carrier network without IMSI privacy protection. -->
