@@ -170,7 +170,7 @@
     <string name="osu_sign_up_complete">Sign-up complete. Connecting\u2026</string>
 
     <!-- IMSI protection warning for non-protection network [CHAR LIMIT=NONE] -->
-    <string name="imsi_protection_warning">This network receives a unique ID that can be used to track device location. <annotation id="url">Learn more</annotation></string>
+    <string name="imsi_protection_warning">This network receives a SIM ID that can be used to track device location. <annotation id="url">Learn more</annotation></string>
 
     <!-- Help URL, IMSI protection [DO NOT TRANSLATE] -->
     <string name="help_url_imsi_protection" translatable="false"></string>
