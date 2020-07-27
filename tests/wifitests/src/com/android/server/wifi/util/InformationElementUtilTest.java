@@ -663,8 +663,8 @@ public class InformationElementUtilTest extends WifiBaseTest {
         capabilities.from(ies, beaconCap, true);
         String result = capabilities.generateCapabilitiesString();
 
-        assertEquals("[WPA2-EAP+EAP-SHA256+FILS-SHA256-CCMP][RSN-EAP+EAP-SHA256+FILS-SHA256-CCMP]",
-                result);
+        assertEquals("[WPA2-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP]", result);
     }
 
     /**
@@ -704,8 +704,8 @@ public class InformationElementUtilTest extends WifiBaseTest {
         capabilities.from(ies, beaconCap, true);
         String result = capabilities.generateCapabilitiesString();
 
-        assertEquals("[WPA2-EAP+EAP-SHA256+FILS-SHA384-CCMP][RSN-EAP+EAP-SHA256+FILS-SHA384-CCMP]",
-                result);
+        assertEquals("[WPA2-EAP+EAP-SHA256+EAP-FILS-SHA384-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+EAP-FILS-SHA384-CCMP]", result);
     }
 
     /**
