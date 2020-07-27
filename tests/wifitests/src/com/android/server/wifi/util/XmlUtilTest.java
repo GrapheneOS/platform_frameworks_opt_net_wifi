@@ -60,7 +60,7 @@ public class XmlUtilTest extends WifiBaseTest {
 
     private static final String TEST_PACKAGE_NAME = "XmlUtilPackage";
     private static final String TEST_STATIC_IP_GATEWAY_ADDRESS = "192.168.48.1";
-    private static final String TEST_DUMMY_CONFIG_KEY = "XmlUtilDummyConfigKey";
+    private static final String TEST_PLACEHOLDER_CONFIG_KEY = "XmlUtilPlaceholderConfigKey";
     private static final String TEST_IDENTITY = "XmlUtilTestIdentity";
     private static final String TEST_ANON_IDENTITY = "XmlUtilTestAnonIdentity";
     private static final String TEST_PASSWORD = "XmlUtilTestPassword";
@@ -223,7 +223,7 @@ public class XmlUtilTest extends WifiBaseTest {
         configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
         configuration.status = WifiConfiguration.Status.DISABLED;
         configuration.linkedConfigurations = new HashMap<>();
-        configuration.linkedConfigurations.put(TEST_DUMMY_CONFIG_KEY, Integer.valueOf(1));
+        configuration.linkedConfigurations.put(TEST_PLACEHOLDER_CONFIG_KEY, Integer.valueOf(1));
         configuration.defaultGwMacAddress = TEST_STATIC_IP_GATEWAY_ADDRESS;
         configuration.requirePmf = true;
         configuration.validatedInternetAccess = true;
@@ -264,7 +264,7 @@ public class XmlUtilTest extends WifiBaseTest {
         NetworkSelectionStatus status = new NetworkSelectionStatus();
         status.setNetworkSelectionStatus(NetworkSelectionStatus.NETWORK_SELECTION_ENABLED);
         status.setNetworkSelectionDisableReason(NetworkSelectionStatus.DISABLED_NONE);
-        status.setConnectChoice(TEST_DUMMY_CONFIG_KEY);
+        status.setConnectChoice(TEST_PLACEHOLDER_CONFIG_KEY);
         status.setHasEverConnected(true);
         serializeDeserializeNetworkSelectionStatus(status);
     }
@@ -295,13 +295,13 @@ public class XmlUtilTest extends WifiBaseTest {
     @Test
     public void testDeprecatedNetworkSelectionStatusDeserialize()
             throws IOException, XmlPullParserException {
-        // Create a dummy network selection status.
+        // Create a placeholder network selection status.
         NetworkSelectionStatus status = new NetworkSelectionStatus();
         status.setNetworkSelectionStatus(
                 NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED);
         status.setNetworkSelectionDisableReason(
                 NetworkSelectionStatus.DISABLED_DHCP_FAILURE);
-        status.setConnectChoice(TEST_DUMMY_CONFIG_KEY);
+        status.setConnectChoice(TEST_PLACEHOLDER_CONFIG_KEY);
         status.setHasEverConnected(true);
 
         // Serialize this to XML string.
@@ -343,13 +343,13 @@ public class XmlUtilTest extends WifiBaseTest {
     @Test
     public void testDeprecatedNetworkSelectionDisableReasonDeserialize()
             throws IOException, XmlPullParserException {
-        // Create a dummy network selection status.
+        // Create a placeholder network selection status.
         NetworkSelectionStatus status = new NetworkSelectionStatus();
         status.setNetworkSelectionStatus(
                 NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED);
         status.setNetworkSelectionDisableReason(
                 NetworkSelectionStatus.DISABLED_DHCP_FAILURE);
-        status.setConnectChoice(TEST_DUMMY_CONFIG_KEY);
+        status.setConnectChoice(TEST_PLACEHOLDER_CONFIG_KEY);
         status.setHasEverConnected(true);
 
         // Serialize this to XML string.

@@ -440,7 +440,7 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     @Test
     public void verifyModifyOriginalConfig() throws Exception {
-        // Create a dummy PasspointConfiguration.
+        // Create a placeholder PasspointConfiguration.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
         mProvider = createProvider(config);
@@ -460,7 +460,7 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     @Test
     public void verifyModifyRetrievedConfig() throws Exception {
-        // Create a dummy PasspointConfiguration.
+        // Create a placeholder PasspointConfiguration.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
         mProvider = createProvider(config);
@@ -480,7 +480,7 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     @Test
     public void installCertsAndKeysSuccess() throws Exception {
-        // Create a dummy configuration with certificate credential.
+        // Create a placeholder configuration with certificate credential.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.CERT, false);
         Credential credential = config.getCredential();
@@ -529,7 +529,7 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     @Test
     public void installCertsAndKeysFailure() throws Exception {
-        // Create a dummy configuration with certificate credential.
+        // Create a placeholder configuration with certificate credential.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.CERT, false);
         Credential credential = config.getCredential();
@@ -574,7 +574,7 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     @Test
     public void uninstallCertsAndKeys() throws Exception {
-        // Create a dummy configuration with certificate credential.
+        // Create a placeholder configuration with certificate credential.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.CERT, false);
         Credential credential = config.getCredential();

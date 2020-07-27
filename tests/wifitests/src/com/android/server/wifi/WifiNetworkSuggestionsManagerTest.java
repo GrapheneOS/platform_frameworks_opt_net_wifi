@@ -277,12 +277,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testAddNetworkSuggestionsSuccess() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -329,12 +329,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testRemoveNetworkSuggestionsSuccess() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.setPasspointUniqueId(passpointConfiguration.getUniqueId());
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.setPasspointUniqueId(passpointConfiguration.getUniqueId());
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -455,11 +455,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testRemoveAllNetworkSuggestionsSuccess() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true);
 
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
@@ -1673,13 +1673,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testNetworkSuggestionsConfigStoreLoad() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         PerAppInfo appInfo = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
         appInfo.hasUserApproved = true;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true);
         appInfo.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
         appInfo.extNetworkSuggestions.add(
@@ -2841,9 +2841,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testOnPasspointNetworkConnectionSuccessWithOneMatch() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, true, false, true, true);
+                placeholderConfig, passpointConfiguration, true, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3011,9 +3011,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testGetPasspointSuggestionFromFqdnWithUserApproval() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(dummyConfiguration,
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, true, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
@@ -3035,13 +3035,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testGetPasspointSuggestionFromFqdnWithoutUserApproval() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(dummyConfiguration,
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, true, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
-        dummyConfiguration.creatorUid = TEST_UID_1;
+        placeholderConfig.creatorUid = TEST_UID_1;
         when(mPasspointManager.addOrUpdateProvider(any(PasspointConfiguration.class),
                 anyInt(), anyString(), eq(true), eq(true))).thenReturn(true);
         assertEquals(mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
@@ -3056,12 +3056,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mNetworkScoreManager.getActiveScorerPackage()).thenReturn(TEST_PACKAGE_1);
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(dummyConfiguration,
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, true, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
-        dummyConfiguration.creatorUid = TEST_UID_1;
+        placeholderConfig.creatorUid = TEST_UID_1;
         when(mPasspointManager.addOrUpdateProvider(any(PasspointConfiguration.class),
                 anyInt(), anyString(), eq(true), eq(true))).thenReturn(true);
         assertEquals(mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
@@ -3082,13 +3082,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testIsPasspointSuggestionSharedWithUserSetToTrue() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(dummyConfiguration,
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, true, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
-        dummyConfiguration.creatorUid = TEST_UID_1;
+        placeholderConfig.creatorUid = TEST_UID_1;
         when(mPasspointManager.addOrUpdateProvider(any(PasspointConfiguration.class),
                 anyInt(), anyString(), eq(true), eq(true))).thenReturn(true);
         assertEquals(mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
@@ -3096,16 +3096,16 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
 
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(false, TEST_PACKAGE_1);
         assertFalse(mWifiNetworkSuggestionsManager
-                .isPasspointSuggestionSharedWithUser(dummyConfiguration));
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
 
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         assertTrue(mWifiNetworkSuggestionsManager
-                .isPasspointSuggestionSharedWithUser(dummyConfiguration));
-        dummyConfiguration.meteredHint = true;
-        when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(dummyConfiguration))
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
+        placeholderConfig.meteredHint = true;
+        when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(placeholderConfig))
                 .thenReturn(true);
         assertFalse(mWifiNetworkSuggestionsManager
-                .isPasspointSuggestionSharedWithUser(dummyConfiguration));
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
     }
 
     /**
@@ -3115,9 +3115,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testIsPasspointSuggestionSharedWithUserSetToFalse() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(dummyConfiguration,
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, true, false, false, true);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
@@ -3128,11 +3128,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
 
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(false, TEST_PACKAGE_1);
         assertFalse(mWifiNetworkSuggestionsManager
-                .isPasspointSuggestionSharedWithUser(dummyConfiguration));
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
 
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         assertFalse(mWifiNetworkSuggestionsManager
-                .isPasspointSuggestionSharedWithUser(dummyConfiguration));
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
     }
 
     /**
@@ -3393,9 +3393,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testSetAllowAutoJoinOnPasspointSuggestionNetwork() {
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3443,11 +3443,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      */
     @Test
     public void getMatchingScanResultsTestWithPasspointAndNonPasspointMatch() {
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
         PasspointConfiguration mockPasspoint = mock(PasspointConfiguration.class);
         WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(
-                dummyConfiguration, mockPasspoint, false, false, true, true);
+                placeholderConfig, mockPasspoint, false, false, true, true);
         WifiNetworkSuggestion nonPasspointSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(),
                 null, false, false, true, true);
@@ -3586,12 +3586,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithSimCredential(TEST_FQDN, TEST_IMSI, TEST_REALM);
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.setPasspointUniqueId(passpointConfiguration.getUniqueId());
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.setPasspointUniqueId(passpointConfiguration.getUniqueId());
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 eapSimConfig, null, true, false, true, true);
         WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(
-                dummyConfiguration, passpointConfiguration, true, false, true, true);
+                placeholderConfig, passpointConfiguration, true, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 Arrays.asList(networkSuggestion, passpointSuggestion);
 
@@ -3648,9 +3648,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         HomeSp homeSp = new HomeSp();
         homeSp.setFqdn(TEST_FQDN);
         passpointConfiguration.setHomeSp(homeSp);
-        WifiConfiguration dummyConfig = new WifiConfiguration();
-        dummyConfig.FQDN = TEST_FQDN;
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(dummyConfig,
+        WifiConfiguration placeholderConfig = new WifiConfiguration();
+        placeholderConfig.FQDN = TEST_FQDN;
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, false, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -3671,11 +3671,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration network2 = WifiConfigurationTestUtil.createOpenNetwork();
         PasspointConfiguration passpointConfiguration =
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
-        WifiConfiguration dummyConfig = new WifiConfiguration();
-        dummyConfig.FQDN = TEST_FQDN;
+        WifiConfiguration placeholderConfig = new WifiConfiguration();
+        placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion =
                 new WifiNetworkSuggestion(network1, null, false, false, true, true);
-        WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(dummyConfig,
+        WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(placeholderConfig,
                 passpointConfiguration, false, false, true, true);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -3749,8 +3749,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 mock(WifiNetworkSuggestionsManager.OnSuggestionUpdateListener.class);
         mWifiNetworkSuggestionsManager.addOnSuggestionUpdateListener(listener);
 
-        WifiConfiguration dummyConfiguration = createDummyWifiConfigurationForPasspoint(TEST_FQDN);
-        dummyConfiguration.FQDN = TEST_FQDN;
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
 
@@ -4135,7 +4135,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         return config;
     }
 
-    private WifiConfiguration createDummyWifiConfigurationForPasspoint(String fqdn) {
+    private WifiConfiguration createPlaceholderConfigForPasspoint(String fqdn) {
         WifiConfiguration config = new WifiConfiguration();
         config.FQDN = fqdn;
         return config;
