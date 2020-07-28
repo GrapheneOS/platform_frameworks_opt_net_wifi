@@ -67,7 +67,6 @@ import com.android.server.wifi.hotspot2.Utils;
 import com.android.server.wifi.p2p.WifiP2pMetrics;
 import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
-import com.android.server.wifi.proto.nano.WifiMetricsProto.CarrierWifiMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ExperimentValues;
@@ -328,7 +327,7 @@ public class WifiMetrics {
     private final SparseIntArray mConnectToNetworkNotificationCount = new SparseIntArray();
     /** Mapping of "Connect to Network" notification user actions to counts. */
     private final SparseIntArray mConnectToNetworkNotificationActionCount = new SparseIntArray();
-    private int mOpenNetworkRecommenderBlacklistSize = 0;
+    private int mOpenNetworkRecommenderBlocklistSize = 0;
     private boolean mIsWifiNetworksAvailableNotificationOn = false;
     private int mNumOpenNetworkConnectMessageFailedToSend = 0;
     private int mNumOpenNetworkRecommendationUpdates = 0;
@@ -3048,12 +3047,12 @@ public class WifiMetrics {
     }
 
     /**
-     * Sets the number of SSIDs blacklisted from recommendation by the open network notification
+     * Sets the number of SSIDs blocklisted from recommendation by the open network notification
      * recommender.
      */
-    public void setNetworkRecommenderBlacklistSize(String notifierTag, int size) {
+    public void setNetworkRecommenderBlocklistSize(String notifierTag, int size) {
         synchronized (mLock) {
-            mOpenNetworkRecommenderBlacklistSize = size;
+            mOpenNetworkRecommenderBlocklistSize = size;
         }
     }
 
@@ -3510,8 +3509,8 @@ public class WifiMetrics {
                         + mConnectToNetworkNotificationCount.toString());
                 pw.println("mWifiLogProto.connectToNetworkNotificationActionCount="
                         + mConnectToNetworkNotificationActionCount.toString());
-                pw.println("mWifiLogProto.openNetworkRecommenderBlacklistSize="
-                        + mOpenNetworkRecommenderBlacklistSize);
+                pw.println("mWifiLogProto.openNetworkRecommenderBlocklistSize="
+                        + mOpenNetworkRecommenderBlocklistSize);
                 pw.println("mWifiLogProto.isWifiNetworksAvailableNotificationOn="
                         + mIsWifiNetworksAvailableNotificationOn);
                 pw.println("mWifiLogProto.numOpenNetworkRecommendationUpdates="
@@ -4185,7 +4184,7 @@ public class WifiMetrics {
             mWifiLogProto.connectToNetworkNotificationActionCount = notificationActionCountArray;
 
             mWifiLogProto.openNetworkRecommenderBlacklistSize =
-                    mOpenNetworkRecommenderBlacklistSize;
+                    mOpenNetworkRecommenderBlocklistSize;
             mWifiLogProto.isWifiNetworksAvailableNotificationOn =
                     mIsWifiNetworksAvailableNotificationOn;
             mWifiLogProto.numOpenNetworkRecommendationUpdates =
@@ -4510,7 +4509,7 @@ public class WifiMetrics {
 
     /**
      * Clear all WifiMetrics, except for currentConnectionEvent and Open Network Notification
-     * feature enabled state, blacklist size.
+     * feature enabled state, blocklist size.
      */
     private void clear() {
         synchronized (mLock) {

@@ -70,14 +70,14 @@ public class WifiConnectivityHelper {
 
         WifiNative.RoamingCapabilities roamingCap = new WifiNative.RoamingCapabilities();
         if (mWifiNative.getRoamingCapabilities(mWifiNative.getClientInterfaceName(), roamingCap)) {
-            if (roamingCap.maxBlacklistSize < 0 || roamingCap.maxWhitelistSize < 0) {
+            if (roamingCap.maxBlocklistSize < 0 || roamingCap.maxAllowlistSize < 0) {
                 Log.e(TAG, "Invalid firmware roaming capabilities: max num blacklist bssid="
-                        + roamingCap.maxBlacklistSize + " max num whitelist ssid="
-                        + roamingCap.maxWhitelistSize);
+                        + roamingCap.maxBlocklistSize + " max num whitelist ssid="
+                        + roamingCap.maxAllowlistSize);
             } else {
                 mFirmwareRoamingSupported = true;
-                mMaxNumBlacklistBssid = roamingCap.maxBlacklistSize;
-                mMaxNumWhitelistSsid = roamingCap.maxWhitelistSize;
+                mMaxNumBlacklistBssid = roamingCap.maxBlocklistSize;
+                mMaxNumWhitelistSsid = roamingCap.maxAllowlistSize;
                 Log.d(TAG, "Firmware roaming supported with capabilities: max num blacklist bssid="
                         + mMaxNumBlacklistBssid + " max num whitelist ssid="
                         + mMaxNumWhitelistSsid);
@@ -157,8 +157,8 @@ public class WifiConnectivityHelper {
         }
 
         WifiNative.RoamingConfig roamConfig = new WifiNative.RoamingConfig();
-        roamConfig.blacklistBssids = blacklistBssids;
-        roamConfig.whitelistSsids = whitelistSsids;
+        roamConfig.blocklistBssids = blacklistBssids;
+        roamConfig.allowlistSsids = whitelistSsids;
 
         return mWifiNative.configureRoaming(mWifiNative.getClientInterfaceName(), roamConfig);
     }
