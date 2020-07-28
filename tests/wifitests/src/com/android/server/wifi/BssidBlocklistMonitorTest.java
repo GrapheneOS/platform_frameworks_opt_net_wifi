@@ -91,7 +91,7 @@ public class BssidBlocklistMonitorTest {
         MockitoAnnotations.initMocks(this);
 
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
-        when(mWifiConnectivityHelper.getMaxNumBlacklistBssid())
+        when(mWifiConnectivityHelper.getMaxNumBlocklistBssid())
                 .thenReturn(TEST_NUM_MAX_FIRMWARE_SUPPORT_BSSIDS);
         when(mScoringParams.getSufficientRssi(anyInt())).thenReturn(TEST_SUFFICIENT_RSSI);
         mResources = new MockResources();
