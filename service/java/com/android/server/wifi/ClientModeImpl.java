@@ -1342,19 +1342,15 @@ public class ClientModeImpl extends StateMachine {
         if (mode != CONNECT_MODE) {
             // we are disabling client mode...   need to exit connect mode now
             transitionTo(mDefaultState);
+        } else if (ifaceName == null) {
+            Log.e(getTag(), "supposed to enter connect mode, but iface is null -> DefaultState");
+            transitionTo(mDefaultState);
         } else {
-            // do a quick sanity check on the iface name, make sure it isn't null
-            if (ifaceName != null) {
-                mInterfaceName = ifaceName;
-                mActiveModeManager = activeModeManager;
-                updateInterfaceCapabilities(ifaceName);
-                transitionTo(mDisconnectedState);
-                mWifiScoreReport.setInterfaceName(ifaceName);
-            } else {
-                Log.e(getTag(), "supposed to enter connect mode, "
-                        + "but iface is null -> DefaultState");
-                transitionTo(mDefaultState);
-            }
+            mInterfaceName = ifaceName;
+            mActiveModeManager = activeModeManager;
+            updateInterfaceCapabilities(ifaceName);
+            transitionTo(mDisconnectedState);
+            mWifiScoreReport.setInterfaceName(ifaceName);
         }
         // use the CMD_SET_OPERATIONAL_MODE to force the transitions before other messages are
         // handled.
