@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static android.Manifest.permission.NETWORK_SETTINGS;
+
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.app.AlertDialog;
@@ -305,7 +307,7 @@ public class WifiCarrierInfoManager {
         mIntentFilter.addAction(NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION);
         mIntentFilter.addAction(NOTIFICATION_USER_CLICKED_INTENT_ACTION);
 
-        mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, null, handler);
+        mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, NETWORK_SETTINGS, handler);
         configStore.registerStoreData(wifiInjector.makeImsiProtectionExemptionStoreData(
                 new ImsiProtectionExemptionDataSource()));
 
