@@ -1084,7 +1084,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                 case WifiScanner.SCAN_TYPE_HIGH_ACCURACY:
                     return true;
                 default:
-                    // This should never happen becuase we've validated the incoming type in
+                    // This should never happen because we've validated the incoming type in
                     // |validateScanType|.
                     throw new IllegalArgumentException("Invalid scan type "
                         + mActiveScanSettings.scanType);
@@ -1101,7 +1101,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                 case WifiScanner.SCAN_TYPE_HIGH_ACCURACY:
                     return existingScanType;
                 default:
-                    // This should never happen becuase we've validated the incoming type in
+                    // This should never happen because we've validated the incoming type in
                     // |validateScanType|.
                     throw new IllegalArgumentException("Invalid scan type " + existingScanType);
             }
@@ -1552,11 +1552,11 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
 
         private boolean addBackgroundScanRequest(ClientInfo ci, int handler,
                 ScanSettings settings, WorkSource workSource) {
-            // sanity check the input
             if (ci == null) {
                 Log.d(TAG, "Failing scan request ClientInfo not found " + handler);
                 return false;
             }
+
             if (settings.periodInMs < WifiScanner.MIN_SCAN_PERIOD_MS) {
                 loge("Failing scan request because periodInMs is " + settings.periodInMs
                         + ", min scan period is: " + WifiScanner.MIN_SCAN_PERIOD_MS);
@@ -2620,7 +2620,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
             case WifiScanner.SCAN_TYPE_HIGH_ACCURACY:
                 return "HIGH ACCURACY";
             default:
-                // This should never happen becuase we've validated the incoming type in
+                // This should never happen because we've validated the incoming type in
                 // |validateScanType|.
                 throw new IllegalArgumentException("Invalid scan type " + type);
         }
