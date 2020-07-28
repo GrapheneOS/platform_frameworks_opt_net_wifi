@@ -419,6 +419,24 @@ public class UtilsTest {
     }
 
     @Test
+    public void testLinkifyAnnotation_annotationWithEmptyUriString_returnOriginalText() {
+        final String annotationId = "url";
+        final CharSequence testText = "test text ";
+        final CharSequence testLink = "Learn More";
+        final CharSequence expectedText = "test text Learn More";
+        final SpannableStringBuilder builder = new SpannableStringBuilder(testText);
+        builder.append(testLink, new Annotation("key", annotationId),
+                Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+
+        final CharSequence output = linkifyAnnotation(mMockContext, builder, annotationId, "");
+
+        final SpannableString outputSpannableString = new SpannableString(output);
+        assertEquals(output.toString(), expectedText.toString());
+        assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
+                ClickableSpan.class).length, 0);
+    }
+
+    @Test
     public void testGetNetworkSelectionDescription_disabledWrongPassword_showsWrongPasswordLabel() {
         String expected = " (NETWORK_SELECTION_TEMPORARY_DISABLED 1:02:03) "
                 + "NETWORK_SELECTION_DISABLED_BY_WRONG_PASSWORD=2";
