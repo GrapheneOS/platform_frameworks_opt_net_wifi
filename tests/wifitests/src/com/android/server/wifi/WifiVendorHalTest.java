@@ -1790,17 +1790,17 @@ public class WifiVendorHalTest extends WifiBaseTest {
         WifiNative.RoamingCapabilities roamingCapabilities = new WifiNative.RoamingCapabilities();
         assertTrue(mWifiVendorHal.startVendorHalSta());
         for (int i = 0; i < 4; i++) {
-            int blacklistSize = i + 10;
-            int whitelistSize = i * 3;
+            int blocklistSize = i + 10;
+            int allowlistSize = i * 3;
             StaRoamingCapabilities caps = new StaRoamingCapabilities();
-            caps.maxBlacklistSize = blacklistSize;
-            caps.maxWhitelistSize = whitelistSize;
+            caps.maxBlacklistSize = blocklistSize;
+            caps.maxWhitelistSize = allowlistSize;
             doAnswer(new GetRoamingCapabilitiesAnswer(mWifiStatusSuccess, caps))
                     .when(mIWifiStaIface).getRoamingCapabilities(
                             any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
             assertTrue(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
-            assertEquals(blacklistSize, roamingCapabilities.maxBlacklistSize);
-            assertEquals(whitelistSize, roamingCapabilities.maxWhitelistSize);
+            assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
+            assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
         }
     }
 
@@ -1810,14 +1810,14 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testUnsuccessfulFirmwareRoamingCapabilityRetrieval() throws Exception {
         assertTrue(mWifiVendorHal.startVendorHalSta());
-        int blacklistSize = 42;
-        int whitelistSize = 17;
+        int blocklistSize = 42;
+        int allowlistSize = 17;
         WifiNative.RoamingCapabilities roamingCapabilities = new WifiNative.RoamingCapabilities();
-        roamingCapabilities.maxBlacklistSize = blacklistSize;
-        roamingCapabilities.maxWhitelistSize = whitelistSize;
+        roamingCapabilities.maxBlocklistSize = blocklistSize;
+        roamingCapabilities.maxAllowlistSize = allowlistSize;
         StaRoamingCapabilities caps = new StaRoamingCapabilities();
-        caps.maxBlacklistSize = blacklistSize + 1; // different value here
-        caps.maxWhitelistSize = whitelistSize + 1;
+        caps.maxBlacklistSize = blocklistSize + 1; // different value here
+        caps.maxWhitelistSize = allowlistSize + 1;
 
         // hal returns a failure status
         doAnswer(new GetRoamingCapabilitiesAnswer(mWifiStatusFailure, null))
@@ -1825,8 +1825,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
                         any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
         assertFalse(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
         // in failure cases, result container should not be changed
-        assertEquals(blacklistSize, roamingCapabilities.maxBlacklistSize);
-        assertEquals(whitelistSize, roamingCapabilities.maxWhitelistSize);
+        assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
+        assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
 
         // hal returns failure status, but supplies caps anyway
         doAnswer(new GetRoamingCapabilitiesAnswer(mWifiStatusFailure, caps))
@@ -1834,8 +1834,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
                         any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
         assertFalse(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
         // in failure cases, result container should not be changed
-        assertEquals(blacklistSize, roamingCapabilities.maxBlacklistSize);
-        assertEquals(whitelistSize, roamingCapabilities.maxWhitelistSize);
+        assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
+        assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
 
         // lost connection
         doThrow(new RemoteException())
@@ -1843,8 +1843,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
                         any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
         assertFalse(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
         // in failure cases, result container should not be changed
-        assertEquals(blacklistSize, roamingCapabilities.maxBlacklistSize);
-        assertEquals(whitelistSize, roamingCapabilities.maxWhitelistSize);
+        assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
+        assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
     }
 
     /**
@@ -1931,11 +1931,11 @@ public class WifiVendorHalTest extends WifiBaseTest {
     public void testConfigureRoamingSuccess() throws Exception {
         assertTrue(mWifiVendorHal.startVendorHalSta());
         WifiNative.RoamingConfig roamingConfig = new WifiNative.RoamingConfig();
-        roamingConfig.blacklistBssids = new ArrayList();
-        roamingConfig.blacklistBssids.add("12:34:56:78:ca:fe");
-        roamingConfig.whitelistSsids = new ArrayList();
-        roamingConfig.whitelistSsids.add("\"xyzzy\"");
-        roamingConfig.whitelistSsids.add("\"\u0F00 \u05D0\"");
+        roamingConfig.blocklistBssids = new ArrayList();
+        roamingConfig.blocklistBssids.add("12:34:56:78:ca:fe");
+        roamingConfig.allowlistSsids = new ArrayList();
+        roamingConfig.allowlistSsids.add("\"xyzzy\"");
+        roamingConfig.allowlistSsids.add("\"\u0F00 \u05D0\"");
         when(mIWifiStaIface.configureRoaming(any())).thenReturn(mWifiStatusSuccess);
         assertTrue(mWifiVendorHal.configureRoaming(TEST_IFACE_NAME, roamingConfig));
         verify(mIWifiStaIface).configureRoaming(any());
@@ -1984,8 +1984,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
     public void testConfigureRoamingBadBssid() throws Exception {
         assertTrue(mWifiVendorHal.startVendorHalSta());
         WifiNative.RoamingConfig roamingConfig = new WifiNative.RoamingConfig();
-        roamingConfig.blacklistBssids = new ArrayList();
-        roamingConfig.blacklistBssids.add("12:34:56:78:zz:zz");
+        roamingConfig.blocklistBssids = new ArrayList();
+        roamingConfig.blocklistBssids.add("12:34:56:78:zz:zz");
         when(mIWifiStaIface.configureRoaming(any())).thenReturn(mWifiStatusSuccess);
         assertFalse(mWifiVendorHal.configureRoaming(TEST_IFACE_NAME, roamingConfig));
         verify(mIWifiStaIface, never()).configureRoaming(any());
@@ -1998,9 +1998,9 @@ public class WifiVendorHalTest extends WifiBaseTest {
     public void testConfigureRoamingBadSsid() throws Exception {
         assertTrue(mWifiVendorHal.startVendorHalSta());
         WifiNative.RoamingConfig roamingConfig = new WifiNative.RoamingConfig();
-        roamingConfig.whitelistSsids = new ArrayList();
+        roamingConfig.allowlistSsids = new ArrayList();
         // Add an SSID that is too long (> 32 bytes) due to the multi-byte utf-8 characters
-        roamingConfig.whitelistSsids.add("\"123456789012345678901234567890\u0F00\u05D0\"");
+        roamingConfig.allowlistSsids.add("\"123456789012345678901234567890\u0F00\u05D0\"");
         when(mIWifiStaIface.configureRoaming(any())).thenReturn(mWifiStatusSuccess);
         assertFalse(mWifiVendorHal.configureRoaming(TEST_IFACE_NAME, roamingConfig));
         verify(mIWifiStaIface, never()).configureRoaming(any());
