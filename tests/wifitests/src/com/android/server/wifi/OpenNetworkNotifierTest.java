@@ -397,7 +397,7 @@ public class OpenNetworkNotifierTest {
         List<ScanDetail> scanResults = mOpenNetworks;
         mNotificationController.handleScanResults(scanResults);
 
-        verify(mWifiMetrics).setNetworkRecommenderBlacklistSize(OPEN_NET_NOTIFIER_TAG, 1);
+        verify(mWifiMetrics).setNetworkRecommenderBlocklistSize(OPEN_NET_NOTIFIER_TAG, 1);
     }
 
     /**
@@ -418,7 +418,7 @@ public class OpenNetworkNotifierTest {
         mBroadcastReceiver.onReceive(mContext, createIntent(ACTION_CONNECT_TO_NETWORK));
 
         verify(mWifiConfigManager).saveToStore(false /* forceWrite */);
-        verify(mWifiMetrics).setNetworkRecommenderBlacklistSize(OPEN_NET_NOTIFIER_TAG, 1);
+        verify(mWifiMetrics).setNetworkRecommenderBlocklistSize(OPEN_NET_NOTIFIER_TAG, 1);
 
         List<ScanDetail> scanResults = mOpenNetworks;
         mNotificationController.handleScanResults(scanResults);
@@ -806,7 +806,7 @@ public class OpenNetworkNotifierTest {
         // Simulate the user connecting to TEST_SSID_1 and verify it is removed from the blacklist
         mNotificationController.handleWifiConnected(mDummyNetwork.SSID);
         verify(mWifiConfigManager, times(2)).saveToStore(false /* forceWrite */);
-        verify(mWifiMetrics).setNetworkRecommenderBlacklistSize(OPEN_NET_NOTIFIER_TAG, 0);
+        verify(mWifiMetrics).setNetworkRecommenderBlocklistSize(OPEN_NET_NOTIFIER_TAG, 0);
         ScanResult actual = mNotificationController.recommendNetwork(mOpenNetworks);
         ScanResult expected = mOpenNetworks.get(0).getScanResult();
         assertEquals(expected, actual);

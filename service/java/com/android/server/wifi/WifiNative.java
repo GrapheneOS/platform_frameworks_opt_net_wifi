@@ -3174,8 +3174,8 @@ public class WifiNative {
      * Class to retrieve firmware roaming capability parameters.
      */
     public static class RoamingCapabilities {
-        public int  maxBlacklistSize;
-        public int  maxWhitelistSize;
+        public int maxBlocklistSize;
+        public int maxAllowlistSize;
     }
 
     /**
@@ -3224,8 +3224,8 @@ public class WifiNative {
      * Class for specifying the roaming configurations.
      */
     public static class RoamingConfig {
-        public ArrayList<String> blacklistBssids;
-        public ArrayList<String> whitelistSsids;
+        public ArrayList<String> blocklistBssids;
+        public ArrayList<String> allowlistSsids;
     }
 
     /**

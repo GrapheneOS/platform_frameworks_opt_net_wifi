@@ -1664,7 +1664,7 @@ public class WifiConfigManager {
         NetworkSelectionStatus networkStatus = config.getNetworkSelectionStatus();
         if (reason != NetworkSelectionStatus.NETWORK_SELECTION_ENABLE) {
 
-            // Do not update SSID blacklist with information if this is the only
+            // Do not update SSID blocklist with information if this is the only
             // SSID be observed. By ignoring it we will cause additional failures
             // which will trigger Watchdog.
             if (reason == NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION
