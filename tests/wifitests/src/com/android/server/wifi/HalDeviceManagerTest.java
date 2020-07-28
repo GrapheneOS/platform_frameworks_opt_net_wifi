@@ -129,7 +129,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         mTestLooper = new TestLooper();
         mHandler = new Handler(mTestLooper.getLooper());
 
-        // initialize dummy status objects
+        // initialize placeholder status objects
         mStatusOk = getStatus(WifiStatusCode.SUCCESS);
         mStatusFail = getStatus(WifiStatusCode.ERROR_UNKNOWN);
 
@@ -3053,7 +3053,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
             doAnswer(new GetChipAnswer(mStatusOk, chip)).when(mWifiMock).getChip(eq(10),
                     any(IWifi.getChipCallback.class));
 
-            // initialize dummy chip modes
+            // initialize placeholder chip modes
             IWifiChip.ChipMode cm;
             IWifiChip.ChipIfaceCombination cic;
             IWifiChip.ChipIfaceCombinationLimit cicl;
@@ -3118,7 +3118,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
             doAnswer(new GetChipAnswer(mStatusOk, chip)).when(mWifiMock).getChip(eq(12),
                     any(IWifi.getChipCallback.class));
 
-            // initialize dummy chip modes
+            // initialize placeholder chip modes
             IWifiChip.ChipMode cm;
             IWifiChip.ChipIfaceCombination cic;
             IWifiChip.ChipIfaceCombinationLimit cicl;
@@ -3180,7 +3180,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
             doAnswer(new GetChipAnswer(mStatusOk, chip)).when(mWifiMock).getChip(eq(15),
                     any(IWifi.getChipCallback.class));
 
-            // initialize dummy chip modes
+            // initialize placeholder chip modes
             IWifiChip.ChipMode cm;
             IWifiChip.ChipIfaceCombination cic;
             IWifiChip.ChipIfaceCombinationLimit cicl;
@@ -3252,7 +3252,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
             doAnswer(new GetChipAnswer(mStatusOk, chip)).when(mWifiMock).getChip(eq(23),
                     any(IWifi.getChipCallback.class));
 
-            // initialize dummy chip modes
+            // initialize placeholder chip modes
             IWifiChip.ChipMode cm;
             IWifiChip.ChipIfaceCombination cic;
             IWifiChip.ChipIfaceCombinationLimit cicl;

@@ -51,7 +51,7 @@ public class RttTestUtils {
     }
 
     /**
-     * Returns a dummy ranging request with 3 requests:
+     * Returns a placeholder ranging request with 3 requests:
      * - First: 802.11mc capable
      * - Second: 802.11mc not capable
      * - Third: Aware peer
@@ -76,7 +76,7 @@ public class RttTestUtils {
     }
 
     /**
-     * Returns a dummy ranging request with 2 requests:
+     * Returns a placeholder ranging request with 2 requests:
      * - First: 802.11mc capable
      */
     public static RangingRequest getDummyRangingRequestMcOnly(byte lastMacByte) {
@@ -93,7 +93,7 @@ public class RttTestUtils {
     }
 
     /**
-     * Returns a dummy ranging request with 2 requests - neither of which support 802.11mc.
+     * Returns a placeholder ranging request with 2 requests - neither of which support 802.11mc.
      */
     public static RangingRequest getDummyRangingRequestNo80211mcSupport(byte lastMacByte) {
         RangingRequest.Builder builder = new RangingRequest.Builder();
@@ -110,7 +110,7 @@ public class RttTestUtils {
     }
 
     /**
-     * Returns a matched set of dummy ranging results: HAL RttResult and the public API
+     * Returns a matched set of placeholder ranging results: HAL RttResult and the public API
      * RangingResult.
      *
      * @param request If non-null will be used as a template (BSSID) for the range results.

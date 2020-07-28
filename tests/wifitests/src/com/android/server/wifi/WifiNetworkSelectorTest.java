@@ -61,8 +61,8 @@ import java.util.List;
 @SmallTest
 public class WifiNetworkSelectorTest extends WifiBaseTest {
     private static final int RSSI_BUMP = 1;
-    private static final int DUMMY_NOMINATOR_ID_1 = -2; // lowest index
-    private static final int DUMMY_NOMINATOR_ID_2 = -1;
+    private static final int PLACEHOLDER_NOMINATOR_ID_1 = -2; // lowest index
+    private static final int PLACEHOLDER_NOMINATOR_ID_2 = -1;
     private static final int WAIT_JUST_A_MINUTE = 60_000;
     private static final HashSet<String> EMPTY_BLACKLIST = new HashSet<>();
 
@@ -92,8 +92,8 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 mWifiChannelUtilization,
                 mWifiGlobals);
 
-        mWifiNetworkSelector.registerNetworkNominator(mDummyNominator);
-        mDummyNominator.setNominatorToSelectCandidate(true);
+        mWifiNetworkSelector.registerNetworkNominator(mPlaceholderNominator);
+        mPlaceholderNominator.setNominatorToSelectCandidate(true);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime());
         when(mWifiScoreCard.lookupBssid(any(), any())).thenReturn(mPerBssid);
         mCompatibilityScorer = new CompatibilityScorer(mScoringParams);
@@ -153,23 +153,23 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
 
     /**
-     * All this dummy network Nominator does is to pick the specified network in the scan results.
+     * All this placeholder does is to pick the specified network in the scan results.
      */
-    public class DummyNetworkNominator implements WifiNetworkSelector.NetworkNominator {
-        private static final String NAME = "DummyNetworkNominator";
+    public class PlaceholderNominator implements WifiNetworkSelector.NetworkNominator {
+        private static final String NAME = "PlaceholderNominator";
 
         private boolean mNominatorShouldSelectCandidate = true;
 
         private int mNetworkIndexToReturn;
         private int mNominatorIdToReturn;
 
-        public DummyNetworkNominator(int networkIndexToReturn, int nominatorIdToReturn) {
+        public PlaceholderNominator(int networkIndexToReturn, int nominatorIdToReturn) {
             mNetworkIndexToReturn = networkIndexToReturn;
             mNominatorIdToReturn = nominatorIdToReturn;
         }
 
-        public DummyNetworkNominator() {
-            this(0, DUMMY_NOMINATOR_ID_1);
+        public PlaceholderNominator() {
+            this(0, PLACEHOLDER_NOMINATOR_ID_1);
         }
 
         public int getNetworkIndexToReturn() {
@@ -231,7 +231,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     private WifiNetworkSelector mWifiNetworkSelector = null;
-    private DummyNetworkNominator mDummyNominator = new DummyNetworkNominator();
+    private PlaceholderNominator mPlaceholderNominator = new PlaceholderNominator();
     @Mock private WifiConfigManager mWifiConfigManager;
     @Mock private Context mContext;
     @Mock private WifiScoreCard mWifiScoreCard;
@@ -718,7 +718,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         WifiConfiguration[] wifiConfigs = scanDetailsAndConfigs.getWifiConfigs();
         HashSet<String> blacklist = new HashSet<>();
 
-        // DummyNominator always selects the first network in the list.
+        // PlaceholderNominator always selects the first network in the list.
         WifiConfiguration networkSelectorChoice = wifiConfigs[0];
         networkSelectorChoice.getNetworkSelectionStatus()
                 .setSeenInLastQualifiedNetworkSelection(true);
@@ -734,7 +734,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         ArgumentCaptor<Integer> nominatorIdCaptor = ArgumentCaptor.forClass(int.class);
         verify(mWifiMetrics, atLeastOnce()).setNominatorForNetwork(eq(candidate.networkId),
                 nominatorIdCaptor.capture());
-        // unknown because DummyNominator does not have a nominator ID
+        // unknown because PlaceholderNominator does not have a nominator ID
         // getValue() returns the argument from the *last* call
         assertEquals(WifiMetricsProto.ConnectionEvent.NOMINATOR_UNKNOWN,
                 nominatorIdCaptor.getValue().intValue());
@@ -767,12 +767,12 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
      */
     @Test
     public void testMultipleNominatorsSetsNominatorIdCorrectly() {
-        // first dummy Nominator is registered in setup, returns index 0
+        // first placeholder Nominator is registered in setup, returns index 0
         // register a second network Nominator that also returns index 0, but with a different ID
-        mWifiNetworkSelector.registerNetworkNominator(new DummyNetworkNominator(0,
+        mWifiNetworkSelector.registerNetworkNominator(new PlaceholderNominator(0,
                 WifiNetworkSelector.NetworkNominator.NOMINATOR_ID_SCORED));
         // register a third network Nominator that also returns index 0, but with a different ID
-        mWifiNetworkSelector.registerNetworkNominator(new DummyNetworkNominator(0,
+        mWifiNetworkSelector.registerNetworkNominator(new PlaceholderNominator(0,
                 WifiNetworkSelector.NetworkNominator.NOMINATOR_ID_SAVED));
 
         String[] ssids = {"\"test1\"", "\"test2\""};
@@ -788,7 +788,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         HashSet<String> blacklist = new HashSet<>();
 
-        // DummyNominator always selects the first network in the list.
+        // PlaceholderNominator always selects the first network in the list.
         WifiConfiguration networkSelectorChoice = scanDetailsAndConfigs.getWifiConfigs()[0];
         networkSelectorChoice.getNetworkSelectionStatus()
                 .setSeenInLastQualifiedNetworkSelection(true);
@@ -995,7 +995,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         HashSet<String> blacklist = new HashSet<String>();
-        // DummyNetworkNominator always return the first network in the scan results
+        // PlaceholderNominator always return the first network in the scan results
         // for connection, so this should connect to the first network.
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
                 scanDetails, blacklist, mWifiInfo, false, true, true);
@@ -1025,7 +1025,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 scanDetails, blacklist, mWifiInfo, true, false, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
-        // DummyNetworkNominator always return the first network in the scan results
+        // PlaceholderNominator always return the first network in the scan results
         // for connection, so if network selection is performed, the first network should
         // be returned as candidate.
         if (shouldSelect) {
@@ -1050,7 +1050,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         int[] freqs = {2437, 5180};
         String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[ESS]"};
         int[] levels = {mThresholdMinimumRssi2G + RSSI_BUMP, mThresholdMinimumRssi5G + RSSI_BUMP};
-        mDummyNominator.setNominatorToSelectCandidate(false);
+        mPlaceholderNominator.setNominatorToSelectCandidate(false);
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
@@ -1082,7 +1082,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         String[] caps = {"[ESS]"};
         int[] levels = {mThresholdMinimumRssi2G + RSSI_BUMP};
         int[] securities = {SECURITY_NONE};
-        mDummyNominator.setNominatorToSelectCandidate(false);
+        mPlaceholderNominator.setNominatorToSelectCandidate(false);
 
         List<ScanDetail> unSavedScanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
@@ -1120,7 +1120,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         int[] freqs = {2437, 5180};
         String[] caps = {"[ESS]", "[ESS]"};
         int[] levels = {mThresholdMinimumRssi2G + RSSI_BUMP, mThresholdMinimumRssi5G + RSSI_BUMP};
-        mDummyNominator.setNominatorToSelectCandidate(false);
+        mPlaceholderNominator.setNominatorToSelectCandidate(false);
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
@@ -1150,7 +1150,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         int[] freqs = {2437, 5180};
         String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
         int[] levels = {mThresholdMinimumRssi2G + RSSI_BUMP, mThresholdMinimumRssi5G + RSSI_BUMP};
-        mDummyNominator.setNominatorToSelectCandidate(false);
+        mPlaceholderNominator.setNominatorToSelectCandidate(false);
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
@@ -1188,7 +1188,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[ESS]", "[RSN-OWE-CCMP][ESS]"};
         int[] levels = {mThresholdMinimumRssi2G, mThresholdMinimumRssi5G + RSSI_BUMP,
                 mThresholdMinimumRssi2G + RSSI_BUMP};
-        mDummyNominator.setNominatorToSelectCandidate(false);
+        mPlaceholderNominator.setNominatorToSelectCandidate(false);
         when(mWifiNative.getSupportedFeatureSet(anyString()))
                 .thenReturn(new Long(WIFI_FEATURE_OWE));
 
@@ -1222,7 +1222,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[ESS]", "[RSN-OWE-CCMP][ESS]"};
         int[] levels = {mThresholdMinimumRssi2G, mThresholdMinimumRssi5G + RSSI_BUMP,
                 mThresholdMinimumRssi2G + RSSI_BUMP};
-        mDummyNominator.setNominatorToSelectCandidate(false);
+        mPlaceholderNominator.setNominatorToSelectCandidate(false);
         when(mWifiNative.getSupportedFeatureSet(anyString()))
                 .thenReturn(new Long(~WIFI_FEATURE_OWE));
 
@@ -1313,7 +1313,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // add a second NetworkNominator that returns the second network in the scan list
         mWifiNetworkSelector.registerNetworkNominator(
-                new DummyNetworkNominator(1, DUMMY_NOMINATOR_ID_2));
+                new PlaceholderNominator(1, PLACEHOLDER_NOMINATOR_ID_2));
 
         int compatibilityExpId = experimentIdFromIdentifier(mCompatibilityScorer.getIdentifier());
         mScoringParams.update("expid=" + compatibilityExpId);
@@ -1347,7 +1347,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // add a second NetworkNominator that returns the second network in the scan list
         mWifiNetworkSelector.registerNetworkNominator(
-                new DummyNetworkNominator(1, DUMMY_NOMINATOR_ID_2));
+                new PlaceholderNominator(1, PLACEHOLDER_NOMINATOR_ID_2));
 
         testNoActiveStream();
 
@@ -1389,7 +1389,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         when(mWifiConfigManager.getConfiguredNetwork(configs[0].networkId))
                 .thenReturn(existingConfig);
         mWifiNetworkSelector.registerNetworkNominator(
-                new DummyNetworkNominator(0, DUMMY_NOMINATOR_ID_2));
+                new PlaceholderNominator(0, PLACEHOLDER_NOMINATOR_ID_2));
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
                 scanDetails, blacklist, mWifiInfo, false, true, true);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);

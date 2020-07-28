@@ -124,7 +124,7 @@ public class WifiNative {
      * Callbacks for SoftAp interface.
      */
     public interface SoftApListener extends WifiNl80211Manager.SoftApCallback {
-        // dummy for now - provide a shell so that clients don't use a
+        // placeholder for now - provide a shell so that clients don't use a
         // WifiNl80211Manager-specific API.
     }
 

@@ -120,7 +120,7 @@ public class WifiScanningServiceTest extends WifiBaseTest {
     private static final String TEST_FEATURE_ID = "test.feature";
     private static final String TEST_IFACE_NAME_0 = "wlan0";
     private static final String TEST_IFACE_NAME_1 = "wlan1";
-    private static final WifiScanner.ScanData DUMMY_SCAN_DATA =
+    private static final WifiScanner.ScanData PLACEHOLDER_SCAN_DATA =
             new WifiScanner.ScanData(0, 0, new ScanResult[0]);
 
     @Mock Context mContext;
@@ -3153,7 +3153,7 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         verify(mBatteryStats).reportWifiScanStartedFromSource(eq(workSource));
 
         when(mWifiScannerImpl0.getLatestSingleScanResults())
-                .thenReturn(new WifiScanner.ScanData(DUMMY_SCAN_DATA));
+                .thenReturn(new WifiScanner.ScanData(PLACEHOLDER_SCAN_DATA));
         // Send scan success on impl1
         when(mWifiScannerImpl1.getLatestSingleScanResults())
                 .thenReturn(results.getRawScanData());
@@ -3265,7 +3265,7 @@ public class WifiScanningServiceTest extends WifiBaseTest {
 
         // then fails to execute on impl0
         when(mWifiScannerImpl0.getLatestSingleScanResults())
-                .thenReturn(new WifiScanner.ScanData(DUMMY_SCAN_DATA));
+                .thenReturn(new WifiScanner.ScanData(PLACEHOLDER_SCAN_DATA));
         eventHandler0.onScanStatus(WifiNative.WIFI_SCAN_FAILED);
         // but succeeds on impl1
         when(mWifiScannerImpl1.getLatestSingleScanResults())

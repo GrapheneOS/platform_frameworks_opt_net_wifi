@@ -319,7 +319,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     }
 
     private byte[] makeSerializedExample() {
-        // Install a dummy memoryStore
+        // Install a placeholder memoryStore
         // trigger extractCurrentSoftwareBuildInfo() call to update currSoftwareBuildInfo
         mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
         mWifiHealthMonitor.setWifiEnabled(true);
@@ -396,7 +396,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
      */
     @Test
     public void testSerializationDeserialization() throws Exception  {
-        // Install a dummy memoryStore
+        // Install a placeholder memoryStore
         // trigger extractCurrentSoftwareBuildInfo() call to update currSoftwareBuildInfo
         mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
         mWifiHealthMonitor.setWifiEnabled(true);

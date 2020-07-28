@@ -268,7 +268,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         ArgumentCaptor<BroadcastReceiver> receiver =
                 ArgumentCaptor.forClass(BroadcastReceiver.class);
         verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
-        receiver.getValue().onReceive(mContext, new Intent("dummyIntent"));
+        receiver.getValue().onReceive(mContext, new Intent("placeholderIntent"));
         verify(mCarrierConfigManager, never()).getConfig();
     }
 
