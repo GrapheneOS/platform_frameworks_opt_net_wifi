@@ -321,7 +321,8 @@ public class WifiConnectivityManager {
 
         // Check if any blocklisted BSSIDs can be freed.
         mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
-        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
+        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
+                mWifiInfo.getSSID());
 
         if (clientModeManager.isSupplicantTransientState()) {
             localLog(listenerName

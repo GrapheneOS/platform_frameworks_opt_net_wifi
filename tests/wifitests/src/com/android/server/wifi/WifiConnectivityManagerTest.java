@@ -2292,11 +2292,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
 
         InOrder inOrder = inOrder(mBssidBlocklistMonitor);
         // Force a connectivity scan
-        inOrder.verify(mBssidBlocklistMonitor, never()).updateAndGetBssidBlocklist();
+        inOrder.verify(mBssidBlocklistMonitor, never())
+                .updateAndGetBssidBlocklistForSsid(anyString());
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
 
         inOrder.verify(mBssidBlocklistMonitor).tryEnablingBlockedBssids(any());
-        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklist();
+        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsid(anyString());
     }
 
     /**
