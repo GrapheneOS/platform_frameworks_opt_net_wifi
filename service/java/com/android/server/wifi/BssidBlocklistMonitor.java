@@ -589,7 +589,7 @@ public class BssidBlocklistMonitor {
                 .sorted((o1, o2) -> (int) (o2.blocklistEndTimeMs - o1.blocklistEndTimeMs))
                 .map(entry -> entry.bssid)
                 .collect(Collectors.toCollection(ArrayList::new));
-        int fwMaxBlocklistSize = mConnectivityHelper.getMaxNumBlacklistBssid();
+        int fwMaxBlocklistSize = mConnectivityHelper.getMaxNumBlocklistBssid();
         if (fwMaxBlocklistSize <= 0) {
             Log.e(TAG, "Invalid max BSSID blocklist size:  " + fwMaxBlocklistSize);
             return;
