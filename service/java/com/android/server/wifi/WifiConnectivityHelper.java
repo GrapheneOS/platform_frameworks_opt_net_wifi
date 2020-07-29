@@ -37,8 +37,8 @@ public class WifiConnectivityHelper {
     public static int INVALID_LIST_SIZE = -1;
     private final WifiNative mWifiNative;
     private boolean mFirmwareRoamingSupported = false;
-    private int mMaxNumBlacklistBssid = INVALID_LIST_SIZE;
-    private int mMaxNumWhitelistSsid = INVALID_LIST_SIZE;
+    private int mMaxNumBlocklistBssid = INVALID_LIST_SIZE;
+    private int mMaxNumAllowlistSsid = INVALID_LIST_SIZE;
 
     WifiConnectivityHelper(WifiNative wifiNative) {
         mWifiNative = wifiNative;
@@ -56,8 +56,8 @@ public class WifiConnectivityHelper {
      */
     public boolean getFirmwareRoamingInfo() {
         mFirmwareRoamingSupported = false;
-        mMaxNumBlacklistBssid = INVALID_LIST_SIZE;
-        mMaxNumWhitelistSsid = INVALID_LIST_SIZE;
+        mMaxNumBlocklistBssid = INVALID_LIST_SIZE;
+        mMaxNumAllowlistSsid = INVALID_LIST_SIZE;
 
         long fwFeatureSet =
                 mWifiNative.getSupportedFeatureSet(mWifiNative.getClientInterfaceName());
@@ -71,16 +71,16 @@ public class WifiConnectivityHelper {
         WifiNative.RoamingCapabilities roamingCap = new WifiNative.RoamingCapabilities();
         if (mWifiNative.getRoamingCapabilities(mWifiNative.getClientInterfaceName(), roamingCap)) {
             if (roamingCap.maxBlocklistSize < 0 || roamingCap.maxAllowlistSize < 0) {
-                Log.e(TAG, "Invalid firmware roaming capabilities: max num blacklist bssid="
-                        + roamingCap.maxBlocklistSize + " max num whitelist ssid="
+                Log.e(TAG, "Invalid firmware roaming capabilities: max num blocklist bssid="
+                        + roamingCap.maxBlocklistSize + " max num allowlist ssid="
                         + roamingCap.maxAllowlistSize);
             } else {
                 mFirmwareRoamingSupported = true;
-                mMaxNumBlacklistBssid = roamingCap.maxBlocklistSize;
-                mMaxNumWhitelistSsid = roamingCap.maxAllowlistSize;
-                Log.d(TAG, "Firmware roaming supported with capabilities: max num blacklist bssid="
-                        + mMaxNumBlacklistBssid + " max num whitelist ssid="
-                        + mMaxNumWhitelistSsid);
+                mMaxNumBlocklistBssid = roamingCap.maxBlocklistSize;
+                mMaxNumAllowlistSsid = roamingCap.maxAllowlistSize;
+                Log.d(TAG, "Firmware roaming supported with capabilities: max num blocklist bssid="
+                        + mMaxNumBlocklistBssid + " max num allowlist ssid="
+                        + mMaxNumAllowlistSsid);
                 return true;
             }
         } else {
@@ -98,31 +98,31 @@ public class WifiConnectivityHelper {
     }
 
     /**
-     * Get the maximum size of BSSID blacklist firmware supports.
+     * Get the maximum size of BSSID blocklist firmware supports.
      *
      * @return INVALID_LIST_SIZE if firmware roaming is not supported, or
-     * maximum size of the BSSID blacklist firmware supports.
+     * maximum size of the BSSID blocklist firmware supports.
      */
-    public int getMaxNumBlacklistBssid() {
+    public int getMaxNumBlocklistBssid() {
         if (mFirmwareRoamingSupported) {
-            return mMaxNumBlacklistBssid;
+            return mMaxNumBlocklistBssid;
         } else {
-            Log.e(TAG, "getMaxNumBlacklistBssid: Firmware roaming is not supported");
+            Log.e(TAG, "getMaxNumBlocklistBssid: Firmware roaming is not supported");
             return INVALID_LIST_SIZE;
         }
     }
 
     /**
-     * Get the maximum size of SSID whitelist firmware supports.
+     * Get the maximum size of SSID allowlist firmware supports.
      *
      * @return INVALID_LIST_SIZE if firmware roaming is not supported, or
-     * maximum size of the SSID whitelist firmware supports.
+     * maximum size of the SSID allowlist firmware supports.
      */
-    public int getMaxNumWhitelistSsid() {
+    public int getMaxNumAllowlistSsid() {
         if (mFirmwareRoamingSupported) {
-            return mMaxNumWhitelistSsid;
+            return mMaxNumAllowlistSsid;
         } else {
-            Log.e(TAG, "getMaxNumWhitelistSsid: Firmware roaming is not supported");
+            Log.e(TAG, "getMaxNumAllowlistSsid: Firmware roaming is not supported");
             return INVALID_LIST_SIZE;
         }
     }
@@ -130,35 +130,35 @@ public class WifiConnectivityHelper {
     /**
      * Write firmware roaming configuration to firmware.
      *
-     * @param blacklistBssids BSSIDs to be blacklisted
-     * @param whitelistSsids  SSIDs to be whitelisted
+     * @param blocklistBssids BSSIDs to be blocklisted
+     * @param allowlistSsids  SSIDs to be allowlisted
      * @return true if succeeded, false otherwise.
      */
-    public boolean setFirmwareRoamingConfiguration(ArrayList<String> blacklistBssids,
-            ArrayList<String> whitelistSsids) {
+    public boolean setFirmwareRoamingConfiguration(ArrayList<String> blocklistBssids,
+            ArrayList<String> allowlistSsids) {
         if (!mFirmwareRoamingSupported) {
             Log.e(TAG, "Firmware roaming is not supported");
             return false;
         }
 
-        if (blacklistBssids == null || whitelistSsids == null) {
+        if (blocklistBssids == null || allowlistSsids == null) {
             Log.e(TAG, "Invalid firmware roaming configuration settings");
             return false;
         }
 
-        int blacklistSize = blacklistBssids.size();
-        int whitelistSize = whitelistSsids.size();
+        int blocklistSize = blocklistBssids.size();
+        int allowlistSize = allowlistSsids.size();
 
-        if (blacklistSize > mMaxNumBlacklistBssid || whitelistSize > mMaxNumWhitelistSsid) {
-            Log.e(TAG, "Invalid BSSID blacklist size " + blacklistSize + " SSID whitelist size "
-                    + whitelistSize + ". Max blacklist size: " + mMaxNumBlacklistBssid
-                    + ", max whitelist size: " + mMaxNumWhitelistSsid);
+        if (blocklistSize > mMaxNumBlocklistBssid || allowlistSize > mMaxNumAllowlistSsid) {
+            Log.e(TAG, "Invalid BSSID blocklist size " + blocklistSize + " SSID allowlist size "
+                    + allowlistSize + ". Max blocklist size: " + mMaxNumBlocklistBssid
+                    + ", max allowlist size: " + mMaxNumAllowlistSsid);
             return false;
         }
 
         WifiNative.RoamingConfig roamConfig = new WifiNative.RoamingConfig();
-        roamConfig.blocklistBssids = blacklistBssids;
-        roamConfig.allowlistSsids = whitelistSsids;
+        roamConfig.blocklistBssids = blocklistBssids;
+        roamConfig.allowlistSsids = allowlistSsids;
 
         return mWifiNative.configureRoaming(mWifiNative.getClientInterfaceName(), roamConfig);
     }
