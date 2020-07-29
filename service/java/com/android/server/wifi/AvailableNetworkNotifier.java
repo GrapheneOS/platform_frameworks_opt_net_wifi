@@ -454,7 +454,7 @@ public class AvailableNetworkNotifier {
 
     private void addNetworkToBlacklist(String ssid) {
         mBlacklistedSsids.add(ssid);
-        mWifiMetrics.setNetworkRecommenderBlacklistSize(mTag, mBlacklistedSsids.size());
+        mWifiMetrics.setNetworkRecommenderBlocklistSize(mTag, mBlacklistedSsids.size());
         mConfigManager.saveToStore(false /* forceWrite */);
         Log.d(mTag, "Network is added to the network notification blacklist: "
                 + "\"" + ssid + "\"");
@@ -467,7 +467,7 @@ public class AvailableNetworkNotifier {
         if (!mBlacklistedSsids.remove(ssid)) {
             return;
         }
-        mWifiMetrics.setNetworkRecommenderBlacklistSize(mTag, mBlacklistedSsids.size());
+        mWifiMetrics.setNetworkRecommenderBlocklistSize(mTag, mBlacklistedSsids.size());
         mConfigManager.saveToStore(false /* forceWrite */);
         Log.d(mTag, "Network is removed from the network notification blacklist: "
                 + "\"" + ssid + "\"");
@@ -540,7 +540,7 @@ public class AvailableNetworkNotifier {
         @Override
         public void setSsids(Set<String> ssidList) {
             mBlacklistedSsids.addAll(ssidList);
-            mWifiMetrics.setNetworkRecommenderBlacklistSize(mTag, mBlacklistedSsids.size());
+            mWifiMetrics.setNetworkRecommenderBlocklistSize(mTag, mBlacklistedSsids.size());
         }
     }
 

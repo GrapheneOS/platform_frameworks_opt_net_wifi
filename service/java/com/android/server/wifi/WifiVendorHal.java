@@ -2212,8 +2212,8 @@ public class WifiVendorHal {
                 WifiNative.RoamingCapabilities out = capabilities;
                 iface.getRoamingCapabilities((status, cap) -> {
                     if (!ok(status)) return;
-                    out.maxBlacklistSize = cap.maxBlacklistSize;
-                    out.maxWhitelistSize = cap.maxWhitelistSize;
+                    out.maxBlocklistSize = cap.maxBlacklistSize;
+                    out.maxAllowlistSize = cap.maxWhitelistSize;
                     ok.value = true;
                 });
                 return ok.value;
@@ -2279,16 +2279,16 @@ public class WifiVendorHal {
                 StaRoamingConfig roamingConfig = new StaRoamingConfig();
 
                 // parse the blacklist BSSIDs if any
-                if (config.blacklistBssids != null) {
-                    for (String bssid : config.blacklistBssids) {
+                if (config.blocklistBssids != null) {
+                    for (String bssid : config.blocklistBssids) {
                         byte[] mac = NativeUtil.macAddressToByteArray(bssid);
                         roamingConfig.bssidBlacklist.add(mac);
                     }
                 }
 
                 // parse the whitelist SSIDs if any
-                if (config.whitelistSsids != null) {
-                    for (String ssidStr : config.whitelistSsids) {
+                if (config.allowlistSsids != null) {
+                    for (String ssidStr : config.allowlistSsids) {
                         byte[] ssid = NativeUtil.byteArrayFromArrayList(
                                 NativeUtil.decodeSsid(ssidStr));
                         roamingConfig.ssidWhitelist.add(ssid);
