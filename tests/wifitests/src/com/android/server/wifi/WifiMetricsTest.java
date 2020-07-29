@@ -465,7 +465,7 @@ public class WifiMetricsTest extends WifiBaseTest {
             {20, 21, 22, 23, 24},
             {30, 31, 32, 33, 34},
             {40, 41, 42, 43, 44}};
-    private static final int SIZE_OPEN_NETWORK_RECOMMENDER_BLACKLIST = 10;
+    private static final int SIZE_OPEN_NETWORK_RECOMMENDER_BLOCKLIST = 10;
     private static final boolean IS_WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON = true;
     private static final int NUM_OPEN_NETWORK_CONNECT_MESSAGE_FAILED_TO_SEND = 5;
     private static final int NUM_OPEN_NETWORK_RECOMMENDATION_UPDATES = 8;
@@ -599,9 +599,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         mockScanDetails.add(buildMockScanDetail(false, null, "[WAPI-WAPI-CERT-SMS4-SMS4]", 0));
         // Number of scans of R2 networks must be equal to NUM_HOTSPOT2_R2_NETWORK_SCAN_RESULTS
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R2,
-                "[WPA-EAP-CCMP+FILS-SHA256-CCMP]", FEATURE_MBO | FEATURE_OCE));
+                "[WPA-EAP-CCMP+EAP-FILS-SHA256-CCMP]", FEATURE_MBO | FEATURE_OCE));
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R2,
-                "[WPA2-EAP+FT/EAP-CCMP+FILS-SHA256-CCMP]", 0));
+                "[WPA2-EAP+FT/EAP-CCMP+EAP-FILS-SHA256-CCMP]", 0));
         // Number of scans of R1 networks must be equal to NUM_HOTSPOT2_R1_NETWORK_SCAN_RESULTS
         mockScanDetails.add(buildMockScanDetail(false, NetworkDetail.HSRelease.R1,
                 "[WPA-EAP-CCMP]", 0));
@@ -945,8 +945,8 @@ public class WifiMetricsTest extends WifiBaseTest {
                 }
             }
         }
-        mWifiMetrics.setNetworkRecommenderBlacklistSize(OPEN_NET_NOTIFIER_TAG,
-                SIZE_OPEN_NETWORK_RECOMMENDER_BLACKLIST);
+        mWifiMetrics.setNetworkRecommenderBlocklistSize(OPEN_NET_NOTIFIER_TAG,
+                SIZE_OPEN_NETWORK_RECOMMENDER_BLOCKLIST);
         mWifiMetrics.setIsWifiNetworksAvailableNotificationEnabled(OPEN_NET_NOTIFIER_TAG,
                 IS_WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON);
         for (int i = 0; i < NUM_OPEN_NETWORK_RECOMMENDATION_UPDATES; i++) {
@@ -1376,7 +1376,7 @@ public class WifiMetricsTest extends WifiBaseTest {
                     notificationActionCount.recommender);
         }
 
-        assertEquals(SIZE_OPEN_NETWORK_RECOMMENDER_BLACKLIST,
+        assertEquals(SIZE_OPEN_NETWORK_RECOMMENDER_BLOCKLIST,
                 mDecodedProto.openNetworkRecommenderBlacklistSize);
         assertEquals(IS_WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON,
                 mDecodedProto.isWifiNetworksAvailableNotificationOn);
@@ -2687,14 +2687,14 @@ public class WifiMetricsTest extends WifiBaseTest {
     }
 
     /**
-     * Test Open Network Notification blacklist size and feature state are not cleared when proto
+     * Test Open Network Notification blocklist size and feature state are not cleared when proto
      * is dumped.
      */
     @Test
-    public void testOpenNetworkNotificationBlacklistSizeAndFeatureStateNotCleared()
+    public void testOpenNetworkNotificationBlocklistSizeAndFeatureStateNotCleared()
             throws Exception {
-        mWifiMetrics.setNetworkRecommenderBlacklistSize(OPEN_NET_NOTIFIER_TAG,
-                SIZE_OPEN_NETWORK_RECOMMENDER_BLACKLIST);
+        mWifiMetrics.setNetworkRecommenderBlocklistSize(OPEN_NET_NOTIFIER_TAG,
+                SIZE_OPEN_NETWORK_RECOMMENDER_BLOCKLIST);
         mWifiMetrics.setIsWifiNetworksAvailableNotificationEnabled(OPEN_NET_NOTIFIER_TAG,
                 IS_WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON);
         for (int i = 0; i < NUM_OPEN_NETWORK_RECOMMENDATION_UPDATES; i++) {
@@ -2703,17 +2703,17 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         // This should clear most metrics in mWifiMetrics
         dumpProtoAndDeserialize();
-        assertEquals(SIZE_OPEN_NETWORK_RECOMMENDER_BLACKLIST,
+        assertEquals(SIZE_OPEN_NETWORK_RECOMMENDER_BLOCKLIST,
                 mDecodedProto.openNetworkRecommenderBlacklistSize);
         assertEquals(IS_WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON,
                 mDecodedProto.isWifiNetworksAvailableNotificationOn);
         assertEquals(NUM_OPEN_NETWORK_RECOMMENDATION_UPDATES,
                 mDecodedProto.numOpenNetworkRecommendationUpdates);
 
-        // Check that blacklist size and feature state persist on next dump but
+        // Check that blocklist size and feature state persist on next dump but
         // others do not.
         dumpProtoAndDeserialize();
-        assertEquals(SIZE_OPEN_NETWORK_RECOMMENDER_BLACKLIST,
+        assertEquals(SIZE_OPEN_NETWORK_RECOMMENDER_BLOCKLIST,
                 mDecodedProto.openNetworkRecommenderBlacklistSize);
         assertEquals(IS_WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON,
                 mDecodedProto.isWifiNetworksAvailableNotificationOn);

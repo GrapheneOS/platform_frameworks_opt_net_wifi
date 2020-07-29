@@ -584,7 +584,7 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
     public void testRequestMacAddress() {
         int uid = 1005;
         List<Integer> list = new ArrayList<>();
-        IWifiAwareMacAddressProvider callback = new IWifiAwareMacAddressProvider() { // dummy
+        IWifiAwareMacAddressProvider callback = new IWifiAwareMacAddressProvider() { // placeholder
             @Override
             public void macAddress(Map peerIdToMacMap) throws RemoteException {
                 // empty

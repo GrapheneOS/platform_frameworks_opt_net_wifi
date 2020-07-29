@@ -229,12 +229,14 @@ public class WifiChannelUtilization {
      * frequency or it reaches the end of cache.
      * @param freq Frequency of current channel
      * @param radioOnTimeMs The latest radioOnTime of current channel
-     * @return the found channelStat reference if search succeeds, or a dummy channelStats with time
-     * zero if channelStats is not found for the given frequency, or a dummy channelStats with the
-     * latest radioOnTimeMs if it reaches the end of cache.
+     * @return the found channelStat reference if search succeeds,
+     *             or a placeholder channelStats with time zero if channelStats is not found
+     *             for the given frequency,
+     *             or a placeholder channelStats with the latest radioOnTimeMs if it reaches
+     *             the end of cache.
      */
     private ChannelStats findChanStatsReference(int freq, int radioOnTimeMs) {
-        // A dummy channelStats with the latest radioOnTimeMs.
+        // A placeholder channelStats with the latest radioOnTimeMs.
         ChannelStats channelStatsCurrRadioOnTime = new ChannelStats();
         channelStatsCurrRadioOnTime.radioOnTimeMs = radioOnTimeMs;
         Iterator iterator = mChannelStatsMapCache.iterator();
@@ -243,7 +245,7 @@ public class WifiChannelUtilization {
             // If the freq can't be found in current channelStatsMap, stop search because it won't
             // appear in older ones either due to the fact that channelStatsMap are accumulated
             // in HW and thus a recent reading should have channels no less than old readings.
-            // Return a dummy channelStats with zero radioOnTimeMs
+            // Return a placeholder channelStats with zero radioOnTimeMs
             if (channelStatsMap == null || channelStatsMap.get(freq) == null) {
                 return new ChannelStats();
             }

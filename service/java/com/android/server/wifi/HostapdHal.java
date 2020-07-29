@@ -70,9 +70,6 @@ public class HostapdHal {
     private boolean mForceApChannel = false;
     private int mForcedApBand;
     private int mForcedApChannel;
-    private String mConfig2gChannelList;
-    private String mConfig5gChannelList;
-    private String mConfig6gChannelList;
 
     // Hostapd HAL interface objects
     private IServiceManager mIServiceManager = null;
@@ -345,62 +342,6 @@ public class HostapdHal {
         mForceApChannel = false;
     }
 
-    private boolean isSendFreqRangesNeeded(@BandType int band) {
-        // Fist we check if one of the selected bands has restrictions in the overlay file.
-        // Note,
-        //   - We store the config string here for future use, hence we need to check all bands.
-        //   - If there is no OEM restriction, we store the full band
-        boolean retVal = false;
-        if ((band & SoftApConfiguration.BAND_2GHZ) != 0) {
-            mConfig2gChannelList =
-                mContext.getResources().getString(R.string.config_wifiSoftap2gChannelList);
-            if (TextUtils.isEmpty(mConfig2gChannelList)) {
-                mConfig2gChannelList = "1-14";
-            } else {
-                retVal = true;
-            }
-        }
-
-        if ((band & SoftApConfiguration.BAND_5GHZ) != 0) {
-            mConfig5gChannelList =
-                mContext.getResources().getString(R.string.config_wifiSoftap5gChannelList);
-            if (TextUtils.isEmpty(mConfig5gChannelList)) {
-                mConfig5gChannelList = "34-173";
-            } else {
-                retVal = true;
-            }
-        }
-
-        if ((band & SoftApConfiguration.BAND_6GHZ) != 0) {
-            mConfig6gChannelList =
-                mContext.getResources().getString(R.string.config_wifiSoftap6gChannelList);
-            if (TextUtils.isEmpty(mConfig6gChannelList)) {
-                mConfig6gChannelList = "1-254";
-            } else {
-                retVal = true;
-            }
-        }
-
-        // If any of the selected band has restriction in the overlay file, we return true.
-        if (retVal) {
-            return true;
-        }
-
-        // Next, if only one of 5G or 6G is selected, then we need freqList to separate them
-        // Since there is no other way.
-        if (((band & SoftApConfiguration.BAND_5GHZ) != 0)
-                && ((band & SoftApConfiguration.BAND_6GHZ) == 0)) {
-            return true;
-        }
-        if (((band & SoftApConfiguration.BAND_5GHZ) == 0)
-                && ((band & SoftApConfiguration.BAND_6GHZ) != 0)) {
-            return true;
-        }
-
-        // In all other cases, we don't need to set the freqList
-        return false;
-    }
-
     /**
      * Add and start a new access point.
      *
@@ -499,7 +440,7 @@ public class HostapdHal {
 
                         // Prepare freq ranges/lists if needed
                         if (ifaceParams.channelParams.enableAcs
-                                && isSendFreqRangesNeeded(band)) {
+                                && ApConfigUtil.isSendFreqRangesNeeded(band, mContext)) {
                             if ((band & SoftApConfiguration.BAND_2GHZ) != 0) {
                                 ifaceParams1_2.channelParams.acsChannelFreqRangesMhz.addAll(
                                         toAcsFreqRanges(SoftApConfiguration.BAND_2GHZ));
@@ -919,13 +860,25 @@ public class HostapdHal {
         String channelListStr;
         switch (band) {
             case SoftApConfiguration.BAND_2GHZ:
-                channelListStr = mConfig2gChannelList;
+                channelListStr = mContext.getResources().getString(
+                        R.string.config_wifiSoftap2gChannelList);
+                if (TextUtils.isEmpty(channelListStr)) {
+                    channelListStr = "1-14";
+                }
                 break;
             case SoftApConfiguration.BAND_5GHZ:
-                channelListStr = mConfig5gChannelList;
+                channelListStr = mContext.getResources().getString(
+                        R.string.config_wifiSoftap5gChannelList);
+                if (TextUtils.isEmpty(channelListStr)) {
+                    channelListStr = "34-173";
+                }
                 break;
             case SoftApConfiguration.BAND_6GHZ:
-                channelListStr = mConfig6gChannelList;
+                channelListStr = mContext.getResources().getString(
+                        R.string.config_wifiSoftap6gChannelList);
+                if (TextUtils.isEmpty(channelListStr)) {
+                    channelListStr = "1-254";
+                }
                 break;
             default:
                 return acsFrequencyRanges;

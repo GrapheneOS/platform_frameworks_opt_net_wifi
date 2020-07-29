@@ -1828,7 +1828,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(oweNetwork);
         verifyAddNetworkToWifiConfigManager(eapSuiteBNetwork);
 
-        // Now create dummy scan detail corresponding to the networks.
+        // Now create fake scan detail corresponding to the networks.
         ScanDetail openNetworkScanDetail = createScanDetailForNetwork(openNetwork);
         ScanDetail wepNetworkScanDetail = createScanDetailForNetwork(wepNetwork);
         ScanDetail pskNetworkScanDetail = createScanDetailForNetwork(pskNetwork);
@@ -1889,7 +1889,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration testNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(testNetwork);
 
-        // Now create a dummy scan detail corresponding to the network.
+        // Now create a fake scan detail corresponding to the network.
         ScanDetail scanDetail = createScanDetailForNetwork(testNetwork);
         ScanResult scanResult = scanDetail.getScanResult();
 
@@ -1913,7 +1913,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration testNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(testNetwork);
 
-        // Now create a dummy scan detail corresponding to the network.
+        // Now create a fake scan detail corresponding to the network.
         ScanDetail scanDetail = createScanDetailForNetwork(testNetwork);
         ScanResult scanResult = scanDetail.getScanResult();
 
@@ -1945,7 +1945,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // |SCAN_CACHE_ENTRIES_MAX_SIZE| times.
         int scanDetailNum = 1;
         for (; scanDetailNum <= WifiConfigManager.SCAN_CACHE_ENTRIES_MAX_SIZE; scanDetailNum++) {
-            // Create dummy scan detail caches with different BSSID for the network.
+            // Create fake scan detail caches with different BSSID for the network.
             ScanDetail scanDetail =
                     createScanDetailForNetwork(
                             openNetwork, String.format("%s%02x", testBssidPrefix, scanDetailNum));
@@ -2272,18 +2272,18 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that the aggressive randomization whitelist works for passpoints. (by checking FQDN)
+     * Verify that the aggressive randomization allowlist works for passpoints. (by checking FQDN)
      */
     @Test
     public void testShouldUseAggressiveRandomizationPasspoint() {
         WifiConfiguration c = WifiConfigurationTestUtil.createPasspointNetwork();
-        // Adds SSID to the whitelist.
+        // Adds SSID to the allowlist.
         Set<String> ssidList = new HashSet<>();
         ssidList.add(c.SSID);
         when(mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist())
                 .thenReturn(ssidList);
 
-        // Verify that if for passpoint networks we don't check for the SSID to be in the whitelist
+        // Verify that if for passpoint networks we don't check for the SSID to be in the allowlist
         assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(c));
 
         // instead we check for the FQDN
@@ -2339,10 +2339,10 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Now disable aggressive randomization and verify the randomized MAC is changed back to
         // the persistent MAC.
-        Set<String> blacklist = new HashSet<>();
-        blacklist.add(config.SSID);
+        Set<String> blocklist = new HashSet<>();
+        blocklist.add(config.SSID);
         when(mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist())
-                .thenReturn(blacklist);
+                .thenReturn(blocklist);
         MacAddress persistentMac = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
 
         // verify internal WifiConfiguration has MacAddress updated correctly by comparing the
@@ -2469,7 +2469,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private void setUpWifiConfigurationForAggressiveRandomization() {
         // sets up a WifiConfiguration for aggressive randomization.
         WifiConfiguration c = WifiConfigurationTestUtil.createOpenNetwork();
-        // Adds the WifiConfiguration to aggressive randomization whitelist.
+        // Adds the WifiConfiguration to aggressive randomization allowlist.
         Set<String> ssidList = new HashSet<>();
         ssidList.add(c.SSID);
         when(mDeviceConfigFacade.getAggressiveMacRandomizationSsidAllowlist())
@@ -2571,7 +2571,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.setNetworkDefaultGwMacAddress(
                 network3.networkId, TEST_DEFAULT_GW_MAC_ADDRESS));
 
-        // Now create dummy scan detail corresponding to the networks.
+        // Now create fake scan detail corresponding to the networks.
         ScanDetail networkScanDetail1 = createScanDetailForNetwork(network1);
         ScanDetail networkScanDetail2 = createScanDetailForNetwork(network2);
         ScanDetail networkScanDetail3 = createScanDetailForNetwork(network3);
@@ -2749,7 +2749,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.setNetworkDefaultGwMacAddress(
                 network2.networkId, "ad:de:fe:45:23:34"));
 
-        // Add some dummy scan results again to re-evaluate the linking of networks.
+        // Add some fake scan results again to re-evaluate the linking of networks.
         assertNotNull(mWifiConfigManager.getConfiguredNetworkForScanDetailAndCache(
                 createScanDetailForNetwork(network1, "af:89:56:34:45:67")));
         assertNotNull(mWifiConfigManager.getConfiguredNetworkForScanDetailAndCache(
@@ -5373,7 +5373,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // First add the provided network.
         verifyAddNetworkToWifiConfigManager(network);
 
-        // Now create a dummy scan detail corresponding to the network.
+        // Now create a fake scan detail corresponding to the network.
         ScanDetail scanDetail = createScanDetailForNetwork(network);
         ScanResult scanResult = scanDetail.getScanResult();
 
@@ -5459,13 +5459,13 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verifies SSID blacklist consistent with Watchdog trigger.
+     * Verifies SSID blocklist consistent with Watchdog trigger.
      *
-     * Expected behavior: A SSID won't gets blacklisted if there only signle SSID
+     * Expected behavior: A SSID won't gets blocklisted if there only single SSID
      * be observed and Watchdog trigger is activated.
      */
     @Test
-    public void verifyConsistentWatchdogAndSsidBlacklist() {
+    public void verifyConsistentWatchdogAndSsidBlocklist() {
 
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);

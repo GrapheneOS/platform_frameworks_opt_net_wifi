@@ -236,8 +236,8 @@ public class WifiScoreCard {
     public WifiScoreCard(Clock clock, String l2KeySeed, DeviceConfigFacade deviceConfigFacade) {
         mClock = clock;
         mL2KeySeed = l2KeySeed;
-        mDummyPerBssid = new PerBssid("", MacAddress.fromString(DEFAULT_MAC_ADDRESS));
-        mDummyPerNetwork = new PerNetwork("");
+        mPlaceholderPerBssid = new PerBssid("", MacAddress.fromString(DEFAULT_MAC_ADDRESS));
+        mPlaceholderPerNetwork = new PerNetwork("");
         mDeviceConfigFacade = deviceConfigFacade;
     }
 
@@ -246,7 +246,7 @@ public class WifiScoreCard {
      */
     public @NonNull Pair<String, String> getL2KeyAndGroupHint(ExtendedWifiInfo wifiInfo) {
         PerBssid perBssid = lookupBssid(wifiInfo.getSSID(), wifiInfo.getBSSID());
-        if (perBssid == mDummyPerBssid) {
+        if (perBssid == mPlaceholderPerBssid) {
             return new Pair<>(null, null);
         }
         return new Pair<>(perBssid.getL2Key(), groupHintFromSsid(perBssid.ssid));
@@ -256,7 +256,7 @@ public class WifiScoreCard {
      * Computes the GroupHint associated with the given ssid.
      */
     public @NonNull String groupHintFromSsid(String ssid) {
-        final long groupIdHash = computeHashLong(ssid, mDummyPerBssid.bssid, mL2KeySeed);
+        final long groupIdHash = computeHashLong(ssid, mPlaceholderPerBssid.bssid, mL2KeySeed);
         return groupHintFromLong(groupIdHash);
     }
 
@@ -1505,7 +1505,7 @@ public class WifiScoreCard {
     }
     // Returned by lookupBssid when the BSSID is not available,
     // for instance when we are not associated.
-    private final PerBssid mDummyPerBssid;
+    private final PerBssid mPlaceholderPerBssid;
 
     private final Map<MacAddress, PerBssid> mApForBssid = new ArrayMap<>();
     private int mApForBssidTargetSize = TARGET_IN_MEMORY_ENTRIES;
@@ -1515,15 +1515,15 @@ public class WifiScoreCard {
     @NonNull PerBssid lookupBssid(String ssid, String bssid) {
         MacAddress mac;
         if (ssid == null || WifiManager.UNKNOWN_SSID.equals(ssid) || bssid == null) {
-            return mDummyPerBssid;
+            return mPlaceholderPerBssid;
         }
         try {
             mac = MacAddress.fromString(bssid);
         } catch (IllegalArgumentException e) {
-            return mDummyPerBssid;
+            return mPlaceholderPerBssid;
         }
-        if (mac.equals(mDummyPerBssid.bssid)) {
-            return mDummyPerBssid;
+        if (mac.equals(mPlaceholderPerBssid.bssid)) {
+            return mPlaceholderPerBssid;
         }
         PerBssid ans = mApForBssid.get(mac);
         if (ans == null || !ans.ssid.equals(ssid)) {
@@ -1560,11 +1560,11 @@ public class WifiScoreCard {
 
     // Returned by lookupNetwork when the network is not available,
     // for instance when we are not associated.
-    private final PerNetwork mDummyPerNetwork;
+    private final PerNetwork mPlaceholderPerNetwork;
     private final Map<String, PerNetwork> mApForNetwork = new ArrayMap<>();
     PerNetwork lookupNetwork(String ssid) {
         if (ssid == null || WifiManager.UNKNOWN_SSID.equals(ssid)) {
-            return mDummyPerNetwork;
+            return mPlaceholderPerNetwork;
         }
 
         PerNetwork ans = mApForNetwork.get(ssid);

@@ -89,7 +89,7 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
         if (!VDBG) return;
 
         if (transactionId == 0) {
-            return; // tid == 0 is used as a dummy transaction ID in several commands - acceptable
+            return; // tid == 0 is used as a placeholder transaction ID in several commands
         }
 
         int count = mTransactionIds.get(transactionId);

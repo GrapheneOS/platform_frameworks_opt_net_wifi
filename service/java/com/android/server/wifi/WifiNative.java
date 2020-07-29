@@ -124,7 +124,7 @@ public class WifiNative {
      * Callbacks for SoftAp interface.
      */
     public interface SoftApListener extends WifiNl80211Manager.SoftApCallback {
-        // dummy for now - provide a shell so that clients don't use a
+        // placeholder for now - provide a shell so that clients don't use a
         // WifiNl80211Manager-specific API.
     }
 
@@ -3452,8 +3452,8 @@ public class WifiNative {
      * Class to retrieve firmware roaming capability parameters.
      */
     public static class RoamingCapabilities {
-        public int  maxBlacklistSize;
-        public int  maxWhitelistSize;
+        public int maxBlocklistSize;
+        public int maxAllowlistSize;
     }
 
     /**
@@ -3502,8 +3502,8 @@ public class WifiNative {
      * Class for specifying the roaming configurations.
      */
     public static class RoamingConfig {
-        public ArrayList<String> blacklistBssids;
-        public ArrayList<String> whitelistSsids;
+        public ArrayList<String> blocklistBssids;
+        public ArrayList<String> allowlistSsids;
     }
 
     /**
