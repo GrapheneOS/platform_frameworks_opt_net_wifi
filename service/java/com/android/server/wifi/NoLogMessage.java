@@ -17,7 +17,7 @@
 package com.android.server.wifi;
 
 /** LogMessage implementation that does nothing. */
-public class DummyLogMessage implements WifiLog.LogMessage {
+public class NoLogMessage implements WifiLog.LogMessage {
     @Override
     public WifiLog.LogMessage r(String value) {
         return this;
