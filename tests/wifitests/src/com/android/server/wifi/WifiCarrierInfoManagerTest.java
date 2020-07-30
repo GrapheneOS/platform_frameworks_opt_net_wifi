@@ -19,7 +19,6 @@ package com.android.server.wifi;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.when;
 import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION;
-import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_CLICKED_INTENT_ACTION;
 import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_DISALLOWED_CARRIER_INTENT_ACTION;
 import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_DISMISSED_INTENT_ACTION;
 
@@ -167,7 +166,6 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         when(mNotificationBuilder.setTicker(any())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.setContentTitle(any())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.setStyle(any())).thenReturn(mNotificationBuilder);
-        when(mNotificationBuilder.setContentIntent(any())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.setDeleteIntent(any())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.setShowWhen(anyBoolean())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.setLocalOnly(anyBoolean())).thenReturn(mNotificationBuilder);
@@ -1540,13 +1538,26 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
         verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
                 WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
+        validateUserApprovalDialog(CARRIER_NAME);
+
+        // Simulate user clicking on allow in the dialog.
+        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
+                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
+        verify(mAlertDialogBuilder, atLeastOnce()).setPositiveButton(
+                any(), clickListenerCaptor.capture());
+        assertNotNull(clickListenerCaptor.getValue());
+        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
+        mLooper.dispatchAll();
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mContext).sendBroadcast(intentCaptor.capture());
+        assertEquals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS, intentCaptor.getValue().getAction());
         verify(mWifiConfigManager).saveToStore(true);
         assertTrue(mImsiDataSource.hasNewDataToSerialize());
         assertTrue(mWifiCarrierInfoManager
                 .hasUserApprovedImsiPrivacyExemptionForCarrier(DATA_CARRIER_ID));
         verify(mListener).onUserAllowed(DATA_CARRIER_ID);
         verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
-                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, true);
     }
 
     @Test
@@ -1596,7 +1607,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         validateImsiProtectionNotification(CARRIER_NAME);
         //Simulate user dismissal the notification
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
-                CARRIER_NAME, DATA_CARRIER_ID);
+                CARRIER_NAME, DATA_SUBID);
         verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
                 WifiCarrierInfoManager.ACTION_USER_DISMISS, false);
         reset(mNotificationManger);
@@ -1607,7 +1618,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
 
         // As there is notification is active, should not send notification again.
         sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_DISMISSED_INTENT_ACTION,
-                CARRIER_NAME, DATA_CARRIER_ID);
+                CARRIER_NAME, DATA_SUBID);
         verifyNoMoreInteractions(mNotificationManger);
         verify(mWifiConfigManager, never()).saveToStore(true);
         assertFalse(mImsiDataSource.hasNewDataToSerialize());
@@ -1631,10 +1642,12 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
 
         mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
         validateImsiProtectionNotification(CARRIER_NAME);
-        // Simulate user clicking on the notification.
-        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_CLICKED_INTENT_ACTION,
-                CARRIER_NAME, DATA_CARRIER_ID);
+        // Simulate user clicking on allow in the notification.
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
+                CARRIER_NAME, DATA_SUBID);
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
         validateUserApprovalDialog(CARRIER_NAME);
 
         // Simulate user clicking on disallow in the dialog.
@@ -1672,10 +1685,11 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
 
         mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
         validateImsiProtectionNotification(CARRIER_NAME);
-        // Simulate user clicking on the notification.
-        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_CLICKED_INTENT_ACTION,
-                CARRIER_NAME, DATA_CARRIER_ID);
+        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_ALLOWED_CARRIER_INTENT_ACTION,
+                CARRIER_NAME, DATA_SUBID);
         verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
+        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
+                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, false);
         validateUserApprovalDialog(CARRIER_NAME);
 
         // Simulate user clicking on dismissal in the dialog.
@@ -1701,45 +1715,6 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         verify(mListener, never()).onUserAllowed(DATA_CARRIER_ID);
         verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
                 WifiCarrierInfoManager.ACTION_USER_DISMISS, true);
-    }
-
-    @Test
-    public void testSendImsiProtectionExemptionDialogWithUserAllowed() {
-        // Setup carrier without IMSI privacy protection
-        when(mCarrierConfigManager.getConfigForSubId(DATA_SUBID))
-                .thenReturn(generateTestCarrierConfig(false));
-        ArgumentCaptor<BroadcastReceiver> receiver =
-                ArgumentCaptor.forClass(BroadcastReceiver.class);
-        verify(mContext).registerReceiver(receiver.capture(), any(IntentFilter.class));
-
-        receiver.getValue().onReceive(mContext,
-                new Intent(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
-        assertFalse(mWifiCarrierInfoManager.requiresImsiEncryption(DATA_SUBID));
-
-        mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
-        validateImsiProtectionNotification(CARRIER_NAME);
-        // Simulate user clicking on the notification.
-        sendBroadcastForUserActionOnImsi(NOTIFICATION_USER_CLICKED_INTENT_ACTION,
-                CARRIER_NAME, DATA_CARRIER_ID);
-        verify(mNotificationManger).cancel(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE);
-        validateUserApprovalDialog(CARRIER_NAME);
-
-        // Simulate user clicking on allow in the dialog.
-        ArgumentCaptor<DialogInterface.OnClickListener> clickListenerCaptor =
-                ArgumentCaptor.forClass(DialogInterface.OnClickListener.class);
-        verify(mAlertDialogBuilder, atLeastOnce()).setPositiveButton(
-                any(), clickListenerCaptor.capture());
-        assertNotNull(clickListenerCaptor.getValue());
-        clickListenerCaptor.getValue().onClick(mAlertDialog, 0);
-        mLooper.dispatchAll();
-        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        verify(mContext).sendBroadcast(intentCaptor.capture());
-        assertEquals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS, intentCaptor.getValue().getAction());
-        verify(mWifiConfigManager).saveToStore(true);
-        assertTrue(mImsiDataSource.hasNewDataToSerialize());
-        verify(mListener).onUserAllowed(DATA_CARRIER_ID);
-        verify(mWifiMetrics).addUserApprovalCarrierUiReaction(
-                WifiCarrierInfoManager.ACTION_USER_ALLOWED_CARRIER, true);
     }
 
     @Test
