@@ -1811,7 +1811,7 @@ public class WifiNetworkSuggestionsManager {
                 || matchingExtNetworkSuggestions.isEmpty()) return;
 
         mWifiMetrics.incrementNetworkSuggestionApiNumConnectFailure();
-        // TODO (b/115504887, b/112196799): Blacklist the corresponding network suggestion if
+        // TODO (b/115504887, b/112196799): Blocklist the corresponding network suggestion if
         // the connection failed.
 
         // Find subset of network suggestions which suggested the connection failure network.

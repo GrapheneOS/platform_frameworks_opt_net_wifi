@@ -91,7 +91,7 @@ public class BssidBlocklistMonitorTest {
         MockitoAnnotations.initMocks(this);
 
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
-        when(mWifiConnectivityHelper.getMaxNumBlacklistBssid())
+        when(mWifiConnectivityHelper.getMaxNumBlocklistBssid())
                 .thenReturn(TEST_NUM_MAX_FIRMWARE_SUPPORT_BSSIDS);
         when(mScoringParams.getSufficientRssi(anyInt())).thenReturn(TEST_SUFFICIENT_RSSI);
         mResources = new MockResources();
@@ -173,13 +173,13 @@ public class BssidBlocklistMonitorTest {
     }
 
     /**
-     * Verify getNumBlockedBssidsForSsid returns the correct number of blocked BSSIDs.
+     * Verify updateAndGetNumBlockedBssidsForSsid returns the correct number of blocked BSSIDs.
      */
     @Test
-    public void testGetNumBlockedBssidsForSsid() {
+    public void testUpdateAndGetNumBlockedBssidsForSsid() {
         verifyAddMultipleBssidsToBlocklist();
-        assertEquals(2, mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(TEST_SSID_1));
-        assertEquals(1, mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(TEST_SSID_2));
+        assertEquals(2, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(TEST_SSID_1));
+        assertEquals(1, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(TEST_SSID_2));
     }
 
     /**
@@ -198,6 +198,34 @@ public class BssidBlocklistMonitorTest {
         // BASE_BLOCKLIST_DURATION
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+    }
+
+    /**
+     * Verify that updateAndGetBssidBlocklist(ssid) updates firmware roaming configuration
+     * if a BSSID that belongs to the ssid is removed from blocklist.
+     */
+    @Test
+    public void testBssidRemovalUpdatesFirmwareConfiguration() {
+        verifyAddTestBssidToBlocklist();
+        when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
+        assertEquals(0, mBssidBlocklistMonitor
+                .updateAndGetBssidBlocklistForSsid(TEST_SSID_1).size());
+        verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(new ArrayList<>()),
+                eq(new ArrayList<>()));
+    }
+
+    /**
+     * Verify that updateAndGetBssidBlocklist(ssid) does not update firmware roaming configuration
+     * if there are no BSSIDs belonging to the ssid removed from blocklist.
+     */
+    @Test
+    public void testBssidRemovalNotUpdateFirmwareConfiguration() {
+        verifyAddTestBssidToBlocklist();
+        when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
+        assertEquals(0, mBssidBlocklistMonitor
+                .updateAndGetBssidBlocklistForSsid(TEST_SSID_2).size());
+        verify(mWifiConnectivityHelper, never()).setFirmwareRoamingConfiguration(
+                eq(new ArrayList<>()), eq(new ArrayList<>()));
     }
 
     /**

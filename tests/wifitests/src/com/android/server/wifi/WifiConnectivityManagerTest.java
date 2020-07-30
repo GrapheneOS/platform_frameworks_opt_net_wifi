@@ -229,7 +229,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final String INVALID_SCAN_RESULT_BSSID = "6c:f3:7f:ae:8c:f4";
     private static final int TEST_FREQUENCY = 2420;
     private static final long CURRENT_SYSTEM_TIME_MS = 1000;
-    private static final int MAX_BSSID_BLACKLIST_SIZE = 16;
+    private static final int MAX_BSSID_BLOCKLIST_SIZE = 16;
     private static final int[] VALID_CONNECTED_SINGLE_SCAN_SCHEDULE_SEC = {10, 30, 50};
     private static final int[] VALID_CONNECTED_SINGLE_SAVED_NETWORK_SCHEDULE_SEC = {15, 35, 55};
     private static final int[] VALID_DISCONNECTED_SINGLE_SCAN_SCHEDULE_SEC = {25, 40, 60};
@@ -332,7 +332,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         WifiConnectivityHelper connectivityHelper = mock(WifiConnectivityHelper.class);
 
         when(connectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
-        when(connectivityHelper.getMaxNumBlacklistBssid()).thenReturn(MAX_BSSID_BLACKLIST_SIZE);
+        when(connectivityHelper.getMaxNumBlocklistBssid()).thenReturn(MAX_BSSID_BLOCKLIST_SIZE);
 
         return connectivityHelper;
     }
@@ -2283,42 +2283,43 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
-     *  Verify that a blacklisted BSSID becomes available only after
-     *  BSSID_BLACKLIST_EXPIRE_TIME_MS.
+     *  Verify that a blocklisted BSSID becomes available only after
+     *  BSSID_BLOCKLIST_EXPIRE_TIME_MS.
      */
     @Test
-    public void verifyBlacklistRefreshedAfterScanResults() {
+    public void verifyBlocklistRefreshedAfterScanResults() {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
         InOrder inOrder = inOrder(mBssidBlocklistMonitor);
         // Force a connectivity scan
-        inOrder.verify(mBssidBlocklistMonitor, never()).updateAndGetBssidBlocklist();
+        inOrder.verify(mBssidBlocklistMonitor, never())
+                .updateAndGetBssidBlocklistForSsid(anyString());
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
 
         inOrder.verify(mBssidBlocklistMonitor).tryEnablingBlockedBssids(any());
-        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklist();
+        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsid(anyString());
     }
 
     /**
-     *  Verify that BSSID blacklist gets cleared when exiting Wifi client mode.
+     *  Verify that BSSID blocklist gets cleared when exiting Wifi client mode.
      */
     @Test
     public void clearBssidBlocklistWhenExitingWifiClientMode() {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
-        // Verify the BSSID blacklist is cleared at start up.
+        // Verify the BSSID blocklist is cleared at start up.
         verify(mBssidBlocklistMonitor).clearBssidBlocklist();
         // Exit Wifi client mode.
         setWifiEnabled(false);
 
-        // Verify the BSSID blacklist is cleared again.
+        // Verify the BSSID blocklist is cleared again.
         verify(mBssidBlocklistMonitor, times(2)).clearBssidBlocklist();
         // Verify WifiNetworkSelector is informed of the disable.
         verify(mWifiNS).resetOnDisable();
     }
 
     /**
-     *  Verify that BSSID blacklist gets cleared when preparing for a forced connection
+     *  Verify that BSSID blocklist gets cleared when preparing for a forced connection
      *  initiated by user/app.
      */
     @Test
@@ -2685,7 +2686,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         final List<ScanDetail> capturedScanDetails = new ArrayList<>();
         doAnswer(new AnswerWithArguments() {
             public List<WifiCandidates.Candidate> answer(
-                    List<ScanDetail> scanDetails, Set<String> bssidBlacklist, WifiInfo wifiInfo,
+                    List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
                     boolean connected, boolean disconnected, boolean untrustedNetworkAllowed)
                     throws Exception {
                 capturedScanDetails.addAll(scanDetails);
@@ -2741,7 +2742,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         final List<ScanDetail> capturedScanDetails = new ArrayList<>();
         doAnswer(new AnswerWithArguments() {
             public List<WifiCandidates.Candidate> answer(
-                    List<ScanDetail> scanDetails, Set<String> bssidBlacklist, WifiInfo wifiInfo,
+                    List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
                     boolean connected, boolean disconnected, boolean untrustedNetworkAllowed)
                     throws Exception {
                 capturedScanDetails.addAll(scanDetails);

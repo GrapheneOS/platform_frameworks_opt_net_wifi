@@ -60,8 +60,8 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
     @Captor ArgumentCaptor<WifiNative.RoamingConfig> mRoamingConfigCaptor;
     private int mFeatureSetValue;
     private static final String TAG = "WifiConnectivityHelperTest";
-    private static final int MAX_BSSID_BLACKLIST_SIZE = 16;
-    private static final int MAX_SSID_WHITELIST_SIZE = 8;
+    private static final int MAX_BSSID_BLOCKLIST_SIZE = 16;
+    private static final int MAX_SSID_ALLOWLIST_SIZE = 8;
 
     private void setupWifiNative() {
         // Return firmware roaming feature as supported by default.
@@ -71,36 +71,36 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
         doAnswer(new AnswerWithArguments() {
             public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
                     throws Exception {
-                roamCap.maxBlocklistSize = MAX_BSSID_BLACKLIST_SIZE;
-                roamCap.maxAllowlistSize = MAX_SSID_WHITELIST_SIZE;
+                roamCap.maxBlocklistSize = MAX_BSSID_BLOCKLIST_SIZE;
+                roamCap.maxAllowlistSize = MAX_SSID_ALLOWLIST_SIZE;
                 return true;
             }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
 
         when(mWifiNative.configureRoaming(any(), anyObject())).thenReturn(true);
     }
 
-    private ArrayList<String> buildBssidBlacklist(int size) {
-        ArrayList<String> bssidBlacklist = new ArrayList<String>();
+    private ArrayList<String> buildBssidBlocklist(int size) {
+        ArrayList<String> bssidBlocklist = new ArrayList<String>();
 
         for (int i = 0; i < size; i++) {
             StringBuilder bssid = new StringBuilder("11:22:33:44:55:66");
             bssid.setCharAt(16, (char) ('0' + i));
-            bssidBlacklist.add(bssid.toString());
+            bssidBlocklist.add(bssid.toString());
         }
 
-        return bssidBlacklist;
+        return bssidBlocklist;
     }
 
-    private ArrayList<String> buildSsidWhitelist(int size) {
-        ArrayList<String> ssidWhitelist = new ArrayList<String>();
+    private ArrayList<String> buildSsidAllowlist(int size) {
+        ArrayList<String> ssidAllowlist = new ArrayList<String>();
 
         for (int i = 0; i < size; i++) {
             StringBuilder ssid = new StringBuilder("\"Test_Ap_0\"");
             ssid.setCharAt(9, (char) ('0' + i));
-            ssidWhitelist.add(ssid.toString());
+            ssidAllowlist.add(ssid.toString());
         }
 
-        return ssidWhitelist;
+        return ssidAllowlist;
     }
 
     /**
@@ -134,13 +134,13 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
     public void verifyFirmwareRoamingCapabilityWithSuccessfulNativeCall() {
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertTrue(mWifiConnectivityHelper.isFirmwareRoamingSupported());
-        assertEquals(MAX_BSSID_BLACKLIST_SIZE, mWifiConnectivityHelper.getMaxNumBlacklistBssid());
-        assertEquals(MAX_SSID_WHITELIST_SIZE, mWifiConnectivityHelper.getMaxNumWhitelistSsid());
+        assertEquals(MAX_BSSID_BLOCKLIST_SIZE, mWifiConnectivityHelper.getMaxNumBlocklistBssid());
+        assertEquals(MAX_SSID_ALLOWLIST_SIZE, mWifiConnectivityHelper.getMaxNumAllowlistSsid());
     }
 
     /**
      * Verify that firmware roaming is set to not supported if WifiNative returned firmware roaming
-     * is supported but failed to return roaming capabilities. Firmware roaming capabilty values
+     * is supported but failed to return roaming capabilities. Firmware roaming capability values
      * should be reset to INVALID_LIST_SIZE.
      */
     @Test
@@ -153,114 +153,114 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
         assertFalse(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
-                mWifiConnectivityHelper.getMaxNumBlacklistBssid());
+                mWifiConnectivityHelper.getMaxNumBlocklistBssid());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
-                mWifiConnectivityHelper.getMaxNumWhitelistSsid());
+                mWifiConnectivityHelper.getMaxNumAllowlistSsid());
     }
 
     /**
      * Verify that firmware roaming is set to not supported if WifiNative returned firmware roaming
-     * is supported but returned invalid max BSSID balcklist size. Firmware roaming capabilty values
-     * should be reset to INVALID_LIST_SIZE.
+     * is supported but returned invalid max BSSID blocklist size. Firmware roaming capability
+     * values should be reset to INVALID_LIST_SIZE.
      */
     @Test
-    public void verifyFirmwareRoamingCapabilityWithInvalidMaxBssidBlacklistSize() {
+    public void verifyFirmwareRoamingCapabilityWithInvalidMaxBssidBlocklistSize() {
         doAnswer(new AnswerWithArguments() {
             public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
                     throws Exception {
                 roamCap.maxBlocklistSize = -5;
-                roamCap.maxAllowlistSize = MAX_SSID_WHITELIST_SIZE;
+                roamCap.maxAllowlistSize = MAX_SSID_ALLOWLIST_SIZE;
                 return true;
             }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
         assertFalse(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
-                mWifiConnectivityHelper.getMaxNumBlacklistBssid());
+                mWifiConnectivityHelper.getMaxNumBlocklistBssid());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
-                mWifiConnectivityHelper.getMaxNumWhitelistSsid());
+                mWifiConnectivityHelper.getMaxNumAllowlistSsid());
     }
 
     /**
      * Verify that firmware roaming is set to not supported if WifiNative returned firmware roaming
-     * is supported but returned invalid max SSID whitelist size. Firmware roaming capabilty values
+     * is supported but returned invalid max SSID allowlist size. Firmware roaming capability values
      * should be reset to INVALID_LIST_SIZE.
      */
     @Test
-    public void verifyFirmwareRoamingCapabilityWithInvalidMaxSsidWhitelistSize() {
+    public void verifyFirmwareRoamingCapabilityWithInvalidMaxSsidAllowlistSize() {
         doAnswer(new AnswerWithArguments() {
             public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
                     throws Exception {
-                roamCap.maxBlocklistSize = MAX_BSSID_BLACKLIST_SIZE;
+                roamCap.maxBlocklistSize = MAX_BSSID_BLOCKLIST_SIZE;
                 roamCap.maxAllowlistSize = -2;
                 return true;
             }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
         assertFalse(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
-                mWifiConnectivityHelper.getMaxNumBlacklistBssid());
+                mWifiConnectivityHelper.getMaxNumBlocklistBssid());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
-                mWifiConnectivityHelper.getMaxNumWhitelistSsid());
+                mWifiConnectivityHelper.getMaxNumAllowlistSsid());
     }
 
     /**
-     * Verify that correct size BSSID blacklist and SSID whitelist are accepted.
+     * Verify that correct size BSSID blocklist and SSID allowlist are accepted.
      */
     @Test
     public void verifySetFirmwareRoamingConfigurationWithGoodInput() {
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
-        ArrayList<String> blacklist = buildBssidBlacklist(MAX_BSSID_BLACKLIST_SIZE);
-        ArrayList<String> whitelist = buildSsidWhitelist(MAX_SSID_WHITELIST_SIZE);
-        assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blacklist, whitelist));
+        ArrayList<String> blocklist = buildBssidBlocklist(MAX_BSSID_BLOCKLIST_SIZE);
+        ArrayList<String> allowlist = buildSsidAllowlist(MAX_SSID_ALLOWLIST_SIZE);
+        assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, allowlist));
 
-        blacklist = buildBssidBlacklist(MAX_BSSID_BLACKLIST_SIZE - 2);
-        whitelist = buildSsidWhitelist(MAX_SSID_WHITELIST_SIZE - 3);
-        assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blacklist, whitelist));
+        blocklist = buildBssidBlocklist(MAX_BSSID_BLOCKLIST_SIZE - 2);
+        allowlist = buildSsidAllowlist(MAX_SSID_ALLOWLIST_SIZE - 3);
+        assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, allowlist));
     }
 
     /**
-     * Verify that null BSSID blacklist or SSID whitelist is rejected.
+     * Verify that null BSSID blocklist or SSID allowlist is rejected.
      */
     @Test
     public void verifySetFirmwareRoamingConfigurationWithNullInput() {
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
-        ArrayList<String> blacklist = buildBssidBlacklist(MAX_BSSID_BLACKLIST_SIZE);
-        ArrayList<String> whitelist = buildSsidWhitelist(MAX_SSID_WHITELIST_SIZE);
-        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(null, whitelist));
-        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blacklist, null));
+        ArrayList<String> blocklist = buildBssidBlocklist(MAX_BSSID_BLOCKLIST_SIZE);
+        ArrayList<String> allowlist = buildSsidAllowlist(MAX_SSID_ALLOWLIST_SIZE);
+        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(null, allowlist));
+        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, null));
     }
 
     /**
-     * Verify that incorrect size BSSID blacklist is rejected.
+     * Verify that incorrect size BSSID blocklist is rejected.
      */
     @Test
-    public void verifySetFirmwareRoamingConfigurationWithIncorrectBlacklist() {
+    public void verifySetFirmwareRoamingConfigurationWithIncorrectBlocklist() {
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
-        ArrayList<String> blacklist = buildBssidBlacklist(MAX_BSSID_BLACKLIST_SIZE + 1);
-        ArrayList<String> whitelist = buildSsidWhitelist(MAX_SSID_WHITELIST_SIZE);
-        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blacklist, whitelist));
+        ArrayList<String> blocklist = buildBssidBlocklist(MAX_BSSID_BLOCKLIST_SIZE + 1);
+        ArrayList<String> allowlist = buildSsidAllowlist(MAX_SSID_ALLOWLIST_SIZE);
+        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, allowlist));
     }
 
     /**
-     * Verify that incorrect size SSID whitelist is rejected.
+     * Verify that incorrect size SSID allowlist is rejected.
      */
     @Test
-    public void verifySetFirmwareRoamingConfigurationWithIncorrectWhitelist() {
+    public void verifySetFirmwareRoamingConfigurationWithIncorrectAllowlist() {
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
-        ArrayList<String> blacklist = buildBssidBlacklist(MAX_BSSID_BLACKLIST_SIZE);
-        ArrayList<String> whitelist = buildSsidWhitelist(MAX_SSID_WHITELIST_SIZE + 1);
-        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blacklist, whitelist));
+        ArrayList<String> blocklist = buildBssidBlocklist(MAX_BSSID_BLOCKLIST_SIZE);
+        ArrayList<String> allowlist = buildSsidAllowlist(MAX_SSID_ALLOWLIST_SIZE + 1);
+        assertFalse(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, allowlist));
     }
 
     /**
-     * Verify that empty BSSID blacklist and SSID whitelist are sent to WifiNative
+     * Verify that empty BSSID blocklist and SSID allowlist are sent to WifiNative
      * to reset the firmware roaming configuration.
      */
     @Test
-    public void verifySetFirmwareRoamingConfigurationWithEmptyBlacklistAndWhitelist() {
+    public void verifySetFirmwareRoamingConfigurationWithEmptyBlocklistAndAllowlist() {
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
-        ArrayList<String> blacklist = buildBssidBlacklist(0);
-        ArrayList<String> whitelist = buildSsidWhitelist(0);
-        assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blacklist, whitelist));
+        ArrayList<String> blocklist = buildBssidBlocklist(0);
+        ArrayList<String> allowlist = buildSsidAllowlist(0);
+        assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, allowlist));
         verify(mWifiNative).configureRoaming(any(), mRoamingConfigCaptor.capture());
         assertEquals(0, mRoamingConfigCaptor.getValue().blocklistBssids.size());
         assertEquals(0, mRoamingConfigCaptor.getValue().allowlistSsids.size());
