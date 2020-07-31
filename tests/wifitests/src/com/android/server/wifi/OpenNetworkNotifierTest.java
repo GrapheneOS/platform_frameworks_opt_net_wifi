@@ -93,7 +93,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
     private TestLooper mLooper;
     private BroadcastReceiver mBroadcastReceiver;
     private ContentObserver mContentObserver;
-    private ScanResult mDummyNetwork;
+    private ScanResult mTestNetwork;
     private List<ScanDetail> mOpenNetworks;
 
     /** Initialize objects before each test run. */
@@ -110,12 +110,12 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         when(mContext.getSystemService(UserManager.class))
                 .thenReturn(mUserManager);
         when(mContext.getResources()).thenReturn(mResources);
-        mDummyNetwork = new ScanResult();
-        mDummyNetwork.SSID = TEST_SSID_1;
-        mDummyNetwork.capabilities = "[ESS]";
-        mDummyNetwork.level = MIN_RSSI_LEVEL;
+        mTestNetwork = new ScanResult();
+        mTestNetwork.SSID = TEST_SSID_1;
+        mTestNetwork.capabilities = "[ESS]";
+        mTestNetwork.level = MIN_RSSI_LEVEL;
         mOpenNetworks = new ArrayList<>();
-        mOpenNetworks.add(new ScanDetail(mDummyNetwork, null /* networkDetail */));
+        mOpenNetworks.add(new ScanDetail(mTestNetwork, null /* networkDetail */));
 
         mLooper = new TestLooper();
         mNotificationController = new OpenNetworkNotifier(
@@ -165,7 +165,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -203,7 +203,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -222,7 +222,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -242,7 +242,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -262,7 +262,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -304,15 +304,15 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
 
         ScanResult newNetwork = new ScanResult();
         newNetwork.SSID = TEST_SSID_2;
-        mDummyNetwork.capabilities = "[ESS]";
-        mDummyNetwork.level = MIN_RSSI_LEVEL + 1;
+        mTestNetwork.capabilities = "[ESS]";
+        mTestNetwork.level = MIN_RSSI_LEVEL + 1;
         mOpenNetworks.add(new ScanDetail(newNetwork, null /* networkDetail */));
 
         mNotificationController.handleScreenStateChanged(false);
@@ -334,7 +334,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -358,7 +358,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -368,7 +368,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder, times(2)).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics, times(2)).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager, times(2)).notify(anyInt(), any());
@@ -387,7 +387,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -413,7 +413,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -436,7 +436,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -449,7 +449,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder, times(2)).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics, times(2)).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager, times(2)).notify(anyInt(), any());
@@ -473,7 +473,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         mNotificationController.handleScanResults(mOpenNetworks);
 
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -507,7 +507,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Initial Notification
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -518,7 +518,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
                 any(ActionListenerWrapper.class), eq(Process.SYSTEM_UID));
         // Connecting Notification
         verify(mNotificationBuilder).createNetworkConnectingNotification(OPEN_NET_NOTIFIER_TAG,
-                mDummyNetwork);
+                mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_CONNECTING_TO_NETWORK);
         verify(mWifiMetrics).incrementConnectToNetworkNotificationAction(OPEN_NET_NOTIFIER_TAG,
@@ -537,7 +537,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Initial Notification
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -576,7 +576,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Initial Notification
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -596,7 +596,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Initial Notification
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -605,7 +605,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Connecting Notification
         verify(mNotificationBuilder).createNetworkConnectingNotification(OPEN_NET_NOTIFIER_TAG,
-                mDummyNetwork);
+                mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_CONNECTING_TO_NETWORK);
         verify(mWifiMetrics).incrementConnectToNetworkNotificationAction(OPEN_NET_NOTIFIER_TAG,
@@ -617,7 +617,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Connected Notification
         verify(mNotificationBuilder).createNetworkConnectedNotification(OPEN_NET_NOTIFIER_TAG,
-                mDummyNetwork);
+                mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_CONNECTED_TO_NETWORK);
         verify(mNotificationManager, times(3)).notify(anyInt(), any());
@@ -646,7 +646,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Initial Notification
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -655,7 +655,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Connecting Notification
         verify(mNotificationBuilder).createNetworkConnectingNotification(OPEN_NET_NOTIFIER_TAG,
-                mDummyNetwork);
+                mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_CONNECTING_TO_NETWORK);
         verify(mWifiMetrics).incrementConnectToNetworkNotificationAction(OPEN_NET_NOTIFIER_TAG,
@@ -683,7 +683,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Initial Notification
         verify(mNotificationBuilder).createConnectToAvailableNetworkNotification(
-                OPEN_NET_NOTIFIER_TAG, mDummyNetwork);
+                OPEN_NET_NOTIFIER_TAG, mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_RECOMMEND_NETWORK);
         verify(mNotificationManager).notify(anyInt(), any());
@@ -701,7 +701,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
 
         // Connecting Notification
         verify(mNotificationBuilder).createNetworkConnectingNotification(OPEN_NET_NOTIFIER_TAG,
-                mDummyNetwork);
+                mTestNetwork);
         verify(mWifiMetrics).incrementConnectToNetworkNotification(OPEN_NET_NOTIFIER_TAG,
                 ConnectToNetworkNotificationAndActionCount.NOTIFICATION_CONNECTING_TO_NETWORK);
         verify(mWifiMetrics).incrementConnectToNetworkNotificationAction(OPEN_NET_NOTIFIER_TAG,
@@ -774,7 +774,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         userDismissedNotification_shouldBlacklistNetwork();
 
         // Scan result with blacklisted SSID
-        List<ScanDetail> scanResults = createOpenScanResults(mDummyNetwork.SSID, TEST_SSID_2);
+        List<ScanDetail> scanResults = createOpenScanResults(mTestNetwork.SSID, TEST_SSID_2);
         scanResults.get(0).getScanResult().level = MIN_RSSI_LEVEL + 1;
         scanResults.get(1).getScanResult().level = MIN_RSSI_LEVEL;
 
@@ -809,7 +809,7 @@ public class OpenNetworkNotifierTest extends WifiBaseTest {
         userDismissedNotification_shouldBlacklistNetwork();
 
         // Simulate the user connecting to TEST_SSID_1 and verify it is removed from the blacklist
-        mNotificationController.handleWifiConnected(mDummyNetwork.SSID);
+        mNotificationController.handleWifiConnected(mTestNetwork.SSID);
         verify(mWifiConfigManager, times(2)).saveToStore(false /* forceWrite */);
         verify(mWifiMetrics).setNetworkRecommenderBlocklistSize(OPEN_NET_NOTIFIER_TAG, 0);
         ScanResult actual = mNotificationController.recommendNetwork(mOpenNetworks);
