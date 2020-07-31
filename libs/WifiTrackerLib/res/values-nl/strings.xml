@@ -33,7 +33,7 @@
     <string name="connected_via_app" msgid="1818040967936972127">"Verbonden via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"Beschikbaar via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"Automatisch verbonden via <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Automatisch verbonden via netwerkbeoordelaar"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Automatisch verbonden via provider van netwerkbeoordelingen"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Beperkte verbinding"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Geen toegang tot privé-DNS-server"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Geen internet"</string>

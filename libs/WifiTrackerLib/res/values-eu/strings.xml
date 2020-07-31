@@ -33,7 +33,7 @@
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> bidez konektatuta"</string>
     <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> bidez erabilgarri"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"Automatikoki konektatu da <xliff:g id="NAME">%1$s</xliff:g> bidez"</string>
-    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Automatikoki konektatuta sareen balorazioen hornitzailearen bidez"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Automatikoki konektatuta sare-balorazioen hornitzailearen bidez"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Konexio mugatua"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Ezin da atzitu DNS zerbitzari pribatua"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Ez dago Interneteko konexiorik"</string>
