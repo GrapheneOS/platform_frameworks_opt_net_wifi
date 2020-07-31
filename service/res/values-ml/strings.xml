@@ -59,7 +59,7 @@
     <string name="wifi_p2p_enter_pin_message" msgid="5661843905965463456">"ആവശ്യമായ പിൻ ടൈപ്പുചെയ്യുക:"</string>
     <string name="wifi_p2p_show_pin_message" msgid="4332876077723766909">"പിൻ:"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="tablet" msgid="3372859876274663802">"ടാബ്‌ലെറ്റ് <xliff:g id="DEVICE_NAME">%1$s</xliff:g> എന്നതിൽ കണക്റ്റുചെയ്‌തിരിക്കുമ്പോൾ അത് താൽക്കാലികമായി Wi-Fi-യിൽ നിന്നും വിച്ഛേദിക്കപ്പെടും."</string>
-    <string name="wifi_p2p_frequency_conflict_message" product="tv" msgid="406603193215934517">"നിങ്ങളുടെ Android ടിവി <xliff:g id="DEVICE_NAME">%1$s</xliff:g> ഉപകരണവുമായി കണക്‌റ്റ് ചെയ്‌തിരിക്കുമ്പോൾ അത് താൽക്കാലികമായി വൈഫൈയിൽ നിന്ന് വിച്‌ഛേദിക്കും"</string>
+    <string name="wifi_p2p_frequency_conflict_message" product="tv" msgid="406603193215934517">"നിങ്ങളുടെ Android TV <xliff:g id="DEVICE_NAME">%1$s</xliff:g> ഉപകരണവുമായി കണക്‌റ്റ് ചെയ്‌തിരിക്കുമ്പോൾ അത് താൽക്കാലികമായി വൈഫൈയിൽ നിന്ന് വിച്‌ഛേദിക്കും"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="default" msgid="2723785832319900478">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> എന്നതിലേക്ക് കണക്റ്റുചെയ്‌തിരിക്കുമ്പോൾ ഫോൺ Wi-Fi-യിൽ നിന്ന് താൽക്കാലികമായി വിച്ഛേദിക്കും"</string>
     <string name="dlg_ok" msgid="3250085870426030310">"ശരി"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g>-ലേക്ക് കണക്‌റ്റ് ചെയ്യാനാവുന്നില്ല"</string>

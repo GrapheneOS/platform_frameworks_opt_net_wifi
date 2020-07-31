@@ -59,7 +59,7 @@
     <string name="wifi_p2p_enter_pin_message" msgid="5661843905965463456">"आवश्यक PIN टाइप गर्नुहोस्:"</string>
     <string name="wifi_p2p_show_pin_message" msgid="4332876077723766909">"PIN:"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="tablet" msgid="3372859876274663802">"यो <xliff:g id="DEVICE_NAME">%1$s</xliff:g>सँग जोडिएको बेला ट्याब्लेट अस्थायी रूपमा वाइ-फाइबाट विच्छेद गरिने छ।"</string>
-    <string name="wifi_p2p_frequency_conflict_message" product="tv" msgid="406603193215934517">"तपाईंको Android TV यन्त्र <xliff:g id="DEVICE_NAME">%1$s</xliff:g> मा जोडिएको बेला यो केही समयका लागि Wi-Fi बाट विच्छेद हुने छ।"</string>
+    <string name="wifi_p2p_frequency_conflict_message" product="tv" msgid="406603193215934517">"तपाईंको Android टिभी यन्त्र <xliff:g id="DEVICE_NAME">%1$s</xliff:g> मा जोडिएको बेला यो केही समयका लागि Wi-Fi बाट विच्छेद हुने छ।"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="default" msgid="2723785832319900478">"जब यो <xliff:g id="DEVICE_NAME">%1$s</xliff:g> सँग जडित हुन्छ, फोन अस्थायी रूपमा वाइ-फाइबाट विच्छेद हुने छ"</string>
     <string name="dlg_ok" msgid="3250085870426030310">"ठिक छ"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> मा जडान गर्न सकिएन"</string>
