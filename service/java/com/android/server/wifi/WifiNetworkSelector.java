@@ -366,10 +366,10 @@ public class WifiNetworkSelector {
     }
 
     private List<ScanDetail> filterScanResults(List<ScanDetail> scanDetails,
-            Set<String> bssidBlacklist, boolean isConnected, String currentBssid) {
+            Set<String> bssidBlocklist, boolean isConnected, String currentBssid) {
         List<ScanDetail> validScanDetails = new ArrayList<>();
         StringBuffer noValidSsid = new StringBuffer();
-        StringBuffer blacklistedBssid = new StringBuffer();
+        StringBuffer blockedBssid = new StringBuffer();
         StringBuffer lowRssi = new StringBuffer();
         StringBuffer mboAssociationDisallowedBssid = new StringBuffer();
         boolean scanResultsHaveCurrentBssid = false;
@@ -392,8 +392,8 @@ public class WifiNetworkSelector {
 
             final String scanId = toScanId(scanResult);
 
-            if (bssidBlacklist.contains(scanResult.BSSID)) {
-                blacklistedBssid.append(scanId).append(" / ");
+            if (bssidBlocklist.contains(scanResult.BSSID)) {
+                blockedBssid.append(scanId).append(" / ");
                 numBssidFiltered++;
                 continue;
             }
@@ -446,8 +446,8 @@ public class WifiNetworkSelector {
             localLog("Networks filtered out due to invalid SSID: " + noValidSsid);
         }
 
-        if (blacklistedBssid.length() != 0) {
-            localLog("Networks filtered out due to blocklist: " + blacklistedBssid);
+        if (blockedBssid.length() != 0) {
+            localLog("Networks filtered out due to blocklist: " + blockedBssid);
         }
 
         if (lowRssi.length() != 0) {
@@ -478,7 +478,7 @@ public class WifiNetworkSelector {
      * The list is further filtered for only open unsaved networks.
      *
      * @return the list of ScanDetails for open unsaved networks that do not have invalid SSIDS,
-     * blacklisted BSSIDS, or low signal strength. This will return an empty list when there are
+     * blocked BSSIDS, or low signal strength. This will return an empty list when there are
      * no open unsaved networks, or when network selection has not been run.
      */
     public List<ScanDetail> getFilteredScanDetailsForOpenUnsavedNetworks() {
@@ -521,7 +521,7 @@ public class WifiNetworkSelector {
      * Iterate thru the list of configured networks (includes all saved network configurations +
      * any ephemeral network configurations created for passpoint networks, suggestions, carrier
      * networks, etc) and do the following:
-     * a) Try to re-enable any temporarily enabled networks (if the blacklist duration has expired).
+     * a) Try to re-enable any temporarily enabled networks (if the blocklist duration has expired).
      * b) Clear the {@link WifiConfiguration.NetworkSelectionStatus#getCandidate()} field for all
      * of them to identify networks that are present in the current scan result.
      * c) Log any disabled networks.
@@ -668,7 +668,7 @@ public class WifiNetworkSelector {
      * Returns the list of Candidates from networks in range.
      *
      * @param scanDetails             List of ScanDetail for all the APs in range
-     * @param bssidBlacklist          Blacklisted BSSIDs
+     * @param bssidBlocklist          Blocked BSSIDs
      * @param wifiInfo                Currently connected network
      * @param connected               True if the device is connected
      * @param disconnected            True if the device is disconnected
@@ -676,7 +676,7 @@ public class WifiNetworkSelector {
      * @return list of valid Candidate(s)
      */
     public List<WifiCandidates.Candidate> getCandidatesFromScan(
-            List<ScanDetail> scanDetails, Set<String> bssidBlacklist, WifiInfo wifiInfo,
+            List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
             boolean connected, boolean disconnected, boolean untrustedNetworkAllowed) {
         mFilteredNetworks.clear();
         mConnectableNetworks.clear();
@@ -709,7 +709,7 @@ public class WifiNetworkSelector {
         }
 
         // Filter out unwanted networks.
-        mFilteredNetworks = filterScanResults(scanDetails, bssidBlacklist,
+        mFilteredNetworks = filterScanResults(scanDetails, bssidBlocklist,
                 connected && wifiInfo.getScore() >= WIFI_POOR_SCORE, currentBssid);
         if (mFilteredNetworks.size() == 0) {
             return null;

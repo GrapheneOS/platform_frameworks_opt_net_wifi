@@ -64,7 +64,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     private static final int PLACEHOLDER_NOMINATOR_ID_1 = -2; // lowest index
     private static final int PLACEHOLDER_NOMINATOR_ID_2 = -1;
     private static final int WAIT_JUST_A_MINUTE = 60_000;
-    private static final HashSet<String> EMPTY_BLACKLIST = new HashSet<>();
+    private static final HashSet<String> EMPTY_BLOCKLIST = new HashSet<>();
 
     /** Sets up test. */
     @Before
@@ -334,9 +334,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                     freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
@@ -365,9 +365,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                     freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         assertEquals("Expect null configuration", null, candidate);
         assertTrue(mWifiNetworkSelector.getConnectableScanDetails().isEmpty());
@@ -397,9 +397,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime()
@@ -407,7 +407,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // Do another network selection with CMI in CONNECTED state.
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, true, false, false);
+                scanDetails, blocklist, mWifiInfo, true, false, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         assertEquals("Expect null configuration", null, candidate);
@@ -441,9 +441,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                     freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         WifiConfigurationTestUtil.assertConfigurationEqual(savedConfigs[0], candidate);
 
@@ -452,7 +452,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // Do another network selection with CMI in DISCONNECTED state.
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         ScanResult chosenScanResult = scanDetails.get(0).getScanResult();
@@ -484,12 +484,12 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                     freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
 
         // connect to test1
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         when(mWifiInfo.getSupplicantState()).thenReturn(SupplicantState.COMPLETED);
         when(mWifiInfo.getNetworkId()).thenReturn(0);
@@ -504,7 +504,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // Do another network selection.
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, true, false, false);
+                scanDetails, blocklist, mWifiInfo, true, false, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         ScanResult chosenScanResult = scanDetails.get(0).getScanResult();
@@ -535,12 +535,12 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
 
         // connect to test1
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         when(mWifiInfo.getSupplicantState()).thenReturn(SupplicantState.COMPLETED);
         when(mWifiInfo.getNetworkId()).thenReturn(0);
@@ -562,7 +562,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // Do another network selection.
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, true, false, false);
+                scanDetails, blocklist, mWifiInfo, true, false, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         ScanResult chosenScanResult = scanDetails.get(0).getScanResult();
@@ -588,12 +588,12 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
 
         // Do network selection.
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, true, false, false);
+                scanDetails, blocklist, mWifiInfo, true, false, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         verify(mWifiMetrics).incrementNetworkSelectionFilteredBssidCount(0);
 
@@ -605,15 +605,15 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     /**
-     * Blacklisted BSSID is filtered out for network selection.
+     * Blocklisted BSSID is filtered out for network selection.
      *
      * ClientModeImpl is disconnected.
-     * scanDetails contains a network which is blacklisted.
+     * scanDetails contains a network which is blocklisted.
      *
      * Expected behavior: no network recommended by Network Selector
      */
     @Test
-    public void filterOutBlacklistedBssid() {
+    public void filterOutBlocklistedBssid() {
         String[] ssids = {"\"test1\""};
         String[] bssids = {"6c:f3:7f:ae:8c:f3"};
         int[] freqs = {5180};
@@ -625,11 +625,11 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                     freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
-        blacklist.add(bssids[0]);
+        HashSet<String> blocklist = new HashSet<String>();
+        blocklist.add(bssids[0]);
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         verify(mWifiMetrics).incrementNetworkSelectionFilteredBssidCount(1);
         assertEquals("Expect null configuration", null, candidate);
@@ -660,9 +660,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                     freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         when(mWifiInfo.getSupplicantState()).thenReturn(SupplicantState.COMPLETED);
@@ -685,7 +685,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(ssidsNew, bssidsNew,
                 freqsNew, capsNew, levelsNew, mClock);
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, true, false, false);
+                scanDetails, blocklist, mWifiInfo, true, false, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         // The second network selection is skipped since current connected network is
@@ -716,7 +716,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         WifiConfiguration[] wifiConfigs = scanDetailsAndConfigs.getWifiConfigs();
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         // PlaceholderNominator always selects the first network in the list.
         WifiConfiguration networkSelectorChoice = wifiConfigs[0];
@@ -728,7 +728,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // With no user choice set, networkSelectorChoice should be chosen.
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         ArgumentCaptor<Integer> nominatorIdCaptor = ArgumentCaptor.forClass(int.class);
@@ -750,7 +750,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         // After user connect choice is set, userChoice should override networkSelectorChoice.
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         verify(mWifiMetrics, atLeastOnce()).setNominatorForNetwork(eq(candidate.networkId),
@@ -786,7 +786,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         // PlaceholderNominator always selects the first network in the list.
         WifiConfiguration networkSelectorChoice = scanDetailsAndConfigs.getWifiConfigs()[0];
@@ -798,7 +798,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 .setCandidate(scanDetailsAndConfigs.getScanDetails().get(1).getScanResult());
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         ArgumentCaptor<Integer> nominatorIdCaptor = ArgumentCaptor.forClass(int.class);
@@ -994,11 +994,11 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
         // PlaceholderNominator always return the first network in the scan results
         // for connection, so this should connect to the first network.
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, true);
+                scanDetails, blocklist, mWifiInfo, false, true, true);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         assertNotNull("Result should be not null", candidate);
         WifiNetworkSelectorTestUtil.verifySelectedScanResult(mWifiConfigManager,
@@ -1022,7 +1022,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 + WifiNetworkSelector.MINIMUM_NETWORK_SELECTION_INTERVAL_MS + 2000);
 
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, true, false, false);
+                scanDetails, blocklist, mWifiInfo, true, false, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         // PlaceholderNominator always return the first network in the scan results
@@ -1054,10 +1054,10 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         List<ScanDetail> expectedOpenUnsavedNetworks = new ArrayList<>();
         expectedOpenUnsavedNetworks.add(scanDetails.get(1));
@@ -1086,10 +1086,10 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<ScanDetail> unSavedScanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                unSavedScanDetails, blacklist, mWifiInfo, false, true, false);
+                unSavedScanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         assertEquals("Expect open unsaved networks",
                 unSavedScanDetails,
@@ -1101,7 +1101,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         List<ScanDetail> savedScanDetails = scanDetailsAndConfigs.getScanDetails();
 
         candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                savedScanDetails, blacklist, mWifiInfo, false, true, false);
+                savedScanDetails, blocklist, mWifiInfo, false, true, false);
         candidate = mWifiNetworkSelector.selectNetwork(candidates);
         // Saved networks are filtered out.
         assertTrue(mWifiNetworkSelector.getFilteredScanDetailsForOpenUnsavedNetworks().isEmpty());
@@ -1109,12 +1109,12 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
     /**
      * {@link WifiNetworkSelector#getFilteredScanDetailsForOpenUnsavedNetworks()} should filter out
-     * bssid blacklisted networks.
+     * bssid blocklisted networks.
      *
-     * Expected behavior: do not return blacklisted network
+     * Expected behavior: do not return blocklisted network
      */
     @Test
-    public void getfilterOpenUnsavedNetworks_filtersOutBlacklistedNetworks() {
+    public void getfilterOpenUnsavedNetworks_filtersOutBlocklistedNetworks() {
         String[] ssids = {"\"test1\"", "\"test2\""};
         String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
         int[] freqs = {2437, 5180};
@@ -1124,11 +1124,11 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
-        HashSet<String> blacklist = new HashSet<>();
-        blacklist.add(bssids[0]);
+        HashSet<String> blocklist = new HashSet<>();
+        blocklist.add(bssids[0]);
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         List<ScanDetail> expectedOpenUnsavedNetworks = new ArrayList<>();
         expectedOpenUnsavedNetworks.add(scanDetails.get(1));
@@ -1154,10 +1154,10 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         assertTrue(mWifiNetworkSelector.getFilteredScanDetailsForOpenUnsavedNetworks().isEmpty());
     }
@@ -1194,10 +1194,10 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         List<ScanDetail> expectedOpenUnsavedNetworks = new ArrayList<>();
         expectedOpenUnsavedNetworks.add(scanDetails.get(1));
@@ -1228,10 +1228,10 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         List<ScanDetail> expectedOpenUnsavedNetworks = new ArrayList<>();
         expectedOpenUnsavedNetworks.add(scanDetails.get(1));
@@ -1259,7 +1259,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
                 setUpTwoNetworks(-35, -40),
-                EMPTY_BLACKLIST, mWifiInfo, false, true, true);
+                EMPTY_BLOCKLIST, mWifiInfo, false, true, true);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
 
         verify(mCandidateScorer, atLeastOnce()).scoreCandidates(any());
@@ -1377,7 +1377,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
         int[] levels = {mThresholdMinimumRssi2G + 1, mThresholdMinimumRssi5G + 1};
         int[] securities = {SECURITY_EAP, SECURITY_EAP};
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
         ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
@@ -1391,7 +1391,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         mWifiNetworkSelector.registerNetworkNominator(
                 new PlaceholderNominator(0, PLACEHOLDER_NOMINATOR_ID_2));
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, true);
+                scanDetails, blocklist, mWifiInfo, false, true, true);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         // Check if the wifiConfig is updated with the latest
         verify(mWifiConfigManager).addOrUpdateNetwork(existingConfig,
@@ -1407,7 +1407,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
         int[] levels = {mThresholdMinimumRssi2G + 1, mThresholdMinimumRssi5G + 1};
         int[] securities = {SECURITY_EAP, SECURITY_EAP};
-        HashSet<String> blacklist = new HashSet<>();
+        HashSet<String> blocklist = new HashSet<>();
         ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
                         freqs, caps, levels, securities, mWifiConfigManager, mClock);
@@ -1419,7 +1419,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         mWifiNetworkSelector.registerNetworkNominator(
                 new AllNetworkNominator(scanDetailsAndConfigs));
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, true);
+                scanDetails, blocklist, mWifiInfo, false, true, true);
         // Expect one privileged and one regular candidate.
         assertEquals(2, candidates.size());
         boolean foundCarrierOrPrivilegedAppCandidate = false;
@@ -1458,7 +1458,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                         (byte) 0x50, (byte) 0x6F, (byte) 0x9A, (byte) 0x16,
                         (byte) 0x01, (byte) 0x01, (byte) 0x40,
                         (byte) 0x04, (byte) 0x01, (byte) 0x03}};
-        HashSet<String> blacklist = new HashSet<String>();
+        HashSet<String> blocklist = new HashSet<String>();
 
         ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
@@ -1466,7 +1466,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
 
         List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
-                scanDetails, blacklist, mWifiInfo, false, true, false);
+                scanDetails, blocklist, mWifiInfo, false, true, false);
         WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
         verify(mWifiMetrics, times(1))
                 .incrementNetworkSelectionFilteredBssidCountDueToMboAssocDisallowInd();
