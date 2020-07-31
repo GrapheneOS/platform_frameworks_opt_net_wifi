@@ -1493,7 +1493,7 @@ public class ClientModeImpl extends StateMachine {
             // we are disabling client mode...   need to exit connect mode now
             transitionTo(mDefaultState);
         } else {
-            // do a quick sanity check on the iface name, make sure it isn't null
+            // do a quick check on the iface name, make sure it isn't null
             if (ifaceName != null) {
                 mInterfaceName = ifaceName;
                 transitionTo(mDisconnectedState);
