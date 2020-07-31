@@ -280,7 +280,7 @@ public class BssidBlocklistMonitorTest {
         when(mClock.getWallClockMillis()).thenReturn(10 * BASE_BLOCKLIST_DURATION);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
-        // Verify that 1 more failure will add the BSSID to blacklist.
+        // Verify that 1 more failure will add the BSSID to blocklist.
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE, 1);
         assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
@@ -463,7 +463,7 @@ public class BssidBlocklistMonitorTest {
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
-        // But the blacklist streak count is not cleared
+        // But the blocklist streak count is not cleared
         verify(mWifiScoreCard, never()).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
                 BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA);
     }
