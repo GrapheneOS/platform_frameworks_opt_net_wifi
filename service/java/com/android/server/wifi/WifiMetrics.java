@@ -4183,7 +4183,7 @@ public class WifiMetrics {
 
             mWifiLogProto.connectToNetworkNotificationActionCount = notificationActionCountArray;
 
-            mWifiLogProto.openNetworkRecommenderBlacklistSize =
+            mWifiLogProto.openNetworkRecommenderBlocklistSize =
                     mOpenNetworkRecommenderBlocklistSize;
             mWifiLogProto.isWifiNetworksAvailableNotificationOn =
                     mIsWifiNetworksAvailableNotificationOn;
