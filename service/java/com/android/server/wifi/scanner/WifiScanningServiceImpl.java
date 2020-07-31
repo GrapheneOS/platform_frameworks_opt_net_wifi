@@ -1297,7 +1297,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
 
         private boolean addBackgroundScanRequest(ClientInfo ci, int handler,
                 ScanSettings settings, WorkSource workSource) {
-            // sanity check the input
+            // check the input
             if (ci == null) {
                 Log.d(TAG, "Failing scan request ClientInfo not found " + handler);
                 return false;
