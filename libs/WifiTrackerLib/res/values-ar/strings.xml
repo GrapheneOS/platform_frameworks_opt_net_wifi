@@ -25,7 +25,7 @@
     <string name="wifi_check_password_try_again" msgid="2643230209986217827">"يُرجى التحقق من كلمة المرور وإعادة المحاولة"</string>
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"‏تعذّرت تهيئة عنوان IP"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"غير مفعّلة"</string>
-    <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"نقطة الدخول ممتلئة مؤقتًا"</string>
+    <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"نقطة الوصول ممتلئة مؤقتًا"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"غير متصلة"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"تم الحفظ"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"تفرض تكلفة استخدام"</string>
