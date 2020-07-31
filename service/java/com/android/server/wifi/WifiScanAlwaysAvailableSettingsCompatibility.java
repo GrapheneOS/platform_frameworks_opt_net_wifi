@@ -81,7 +81,8 @@ public class WifiScanAlwaysAvailableSettingsCompatibility {
                     Log.i(TAG, "settings changed, new value: " + settingsIsAvailable
                             + ", triggering update");
                     mWifiSettingsStore.handleWifiScanAlwaysAvailableToggled(settingsIsAvailable);
-                    mActiveModeWarden.scanAlwaysModeChanged();
+                    mActiveModeWarden.scanAlwaysModeChanged(
+                            mFrameworkFacade.getSettingsWorkSource(mContext));
                 }
             }
         };
