@@ -645,7 +645,7 @@ public class WifiConfigurationUtil {
                     + baseAddress);
             return false;
         }
-        // TBD: Can we do any more sanity checks?
+        // TBD: Can we do any more checks?
         return true;
     }
 
