@@ -398,7 +398,7 @@ public class WifiApConfigStore {
     /**
      * Validate a SoftApConfiguration is properly configured for use by SoftApManager.
      *
-     * This method checks the length of the SSID and for sanity between security settings (if it
+     * This method checks the length of the SSID and validates security settings (if it
      * requires a password, was one provided?).
      *
      * @param apConfig {@link SoftApConfiguration} to use for softap mode
