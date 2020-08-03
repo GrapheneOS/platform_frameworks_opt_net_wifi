@@ -18,37 +18,37 @@ package com.android.server.wifi;
 
 /** WifiLog implementation that does nothing. */
 public class FakeWifiLog implements WifiLog {
-    private static final DummyLogMessage sDummyLogMessage = new DummyLogMessage();
+    private static final NoLogMessage NO_LOG_MESSAGE = new NoLogMessage();
 
     // New-style methods.
     @Override
     public LogMessage err(String format) {
-        return sDummyLogMessage;
+        return NO_LOG_MESSAGE;
     }
 
     @Override
     public LogMessage warn(String format) {
-        return sDummyLogMessage;
+        return NO_LOG_MESSAGE;
     }
 
     @Override
     public LogMessage info(String format) {
-        return sDummyLogMessage;
+        return NO_LOG_MESSAGE;
     }
 
     @Override
     public LogMessage trace(String format) {
-        return sDummyLogMessage;
+        return NO_LOG_MESSAGE;
     }
 
     @Override
     public LogMessage trace(String format, int numFramesToIgnore) {
-        return sDummyLogMessage;
+        return NO_LOG_MESSAGE;
     }
 
     @Override
     public LogMessage dump(String format) {
-        return sDummyLogMessage;
+        return NO_LOG_MESSAGE;
     }
 
     @Override
