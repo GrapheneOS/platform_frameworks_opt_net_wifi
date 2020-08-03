@@ -730,6 +730,7 @@ public class WifiScoreReport {
                     + " sessionId=" + sessionId);
             return;
         }
+        mWifiInfo.setScore(ConnectedScore.WIFI_MAX_SCORE);
         mWifiConnectedNetworkScorerHolder.startSession(sessionId);
         mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
         mLastScoreBreachHighTimeMillis = INVALID_WALL_CLOCK_MILLIS;
