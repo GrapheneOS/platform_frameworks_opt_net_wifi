@@ -2556,7 +2556,7 @@ public class SupplicantStaIfaceHal {
     private boolean checkStatusAndLogFailure(SupplicantStatus status,
             final String methodStr) {
         synchronized (mLock) {
-            if (status.code != SupplicantStatusCode.SUCCESS) {
+            if (status == null || status.code != SupplicantStatusCode.SUCCESS) {
                 Log.e(TAG, "ISupplicantStaIface." + methodStr + " failed: " + status);
                 return false;
             } else {
