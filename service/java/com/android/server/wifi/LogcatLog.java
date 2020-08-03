@@ -35,7 +35,7 @@ import javax.annotation.concurrent.ThreadSafe;
 class LogcatLog implements WifiLog {
     private final String mTag;
     private static volatile boolean sVerboseLogging = false;
-    private static final DummyLogMessage sDummyLogMessage = new DummyLogMessage();
+    private static final NoLogMessage NO_LOG_MESSAGE = new NoLogMessage();
 
     LogcatLog(String tag) {
         mTag = tag;
@@ -71,7 +71,7 @@ class LogcatLog implements WifiLog {
             return new RealLogMessage(Log.DEBUG, mTag, format,
                     getNameOfCallingMethod(0));
         } else {
-            return sDummyLogMessage;
+            return NO_LOG_MESSAGE;
         }
     }
 
@@ -81,7 +81,7 @@ class LogcatLog implements WifiLog {
             return new RealLogMessage(Log.DEBUG, mTag, format,
                     getNameOfCallingMethod(numFramesToIgnore));
         } else {
-            return sDummyLogMessage;
+            return NO_LOG_MESSAGE;
         }
     }
 
@@ -90,7 +90,7 @@ class LogcatLog implements WifiLog {
         if (sVerboseLogging) {
             return new RealLogMessage(Log.VERBOSE, mTag, format);
         } else {
-            return sDummyLogMessage;
+            return NO_LOG_MESSAGE;
         }
     }
 
