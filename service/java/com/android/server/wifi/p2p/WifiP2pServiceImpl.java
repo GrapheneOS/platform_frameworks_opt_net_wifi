@@ -114,6 +114,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * WifiP2pService includes a state machine to perform Wi-Fi p2p operations. Applications
@@ -240,7 +241,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
 
     private final boolean mP2pSupported;
 
-    private WifiP2pDevice mThisDevice = new WifiP2pDevice();
+    private final WifiP2pDevice mThisDevice = new WifiP2pDevice();
 
     // When a group has been explicitly created by an app, we persist the group
     // even after all clients have been disconnected until an explicit remove
@@ -3323,7 +3324,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         /**
          * This method unifies the persisent group list, cleans up unused
          * networks and if required, updates corresponding broadcast receivers
-         * @param boolean if true, reload the group list from scratch
+         * @param reload if true, reload the group list from scratch
          *                and send broadcast message with fresh list
          */
         private void updatePersistentNetworks(boolean reload) {
@@ -3333,7 +3334,11 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             // no network has been found.
             if (mWifiNative.p2pListNetworks(mGroups) || reload) {
                 for (WifiP2pGroup group : mGroups.getGroupList()) {
-                    if (mThisDevice.deviceAddress.equals(group.getOwner().deviceAddress)) {
+                    if (group.getOwner() == null) {
+                        Log.d(TAG, "group.getOwner() null");
+                        continue;
+                    }
+                    if (Objects.equals(mThisDevice.deviceAddress, group.getOwner().deviceAddress)) {
                         group.setOwner(mThisDevice);
                     }
                 }
