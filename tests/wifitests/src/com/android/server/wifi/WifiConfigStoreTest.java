@@ -115,7 +115,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<boolean name=\"IsLegacyPasspointConfig\" value=\"false\" />\n"
                     + "<long-array name=\"RoamingConsortiumOIs\" num=\"0\" />\n"
                     + "<string name=\"RandomizedMacAddress\">%s</string>\n"
-                    + "<int name=\"MacRandomizationSetting\" value=\"1\" />\n"
+                    + "<int name=\"MacRandomizationSetting\" value=\"3\" />\n"
                     + "<int name=\"CarrierId\" value=\"-1\" />\n"
                     + "<boolean name=\"IsMostRecentlyConnected\" value=\"false\" />\n"
                     + "</WifiConfiguration>\n"

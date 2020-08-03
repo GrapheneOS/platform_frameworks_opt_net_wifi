@@ -429,26 +429,38 @@ public class WifiConfigManager {
      * @param config
      * @return
      */
-    public boolean shouldUseAggressiveRandomization(WifiConfiguration config) {
+    public boolean shouldUseEnhancedRandomization(WifiConfiguration config) {
         if (!isMacRandomizationSupported()
-                || config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+                || config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_NONE) {
             return false;
         }
+
+        // Use enhanced randomization if it's forced on by dev option
         if (mFrameworkFacade.getIntegerSetting(mContext,
                 ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG, 0) == 1) {
             return true;
         }
+
+        // use enhanced or persistent randomization if configured to do so.
+        if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_ENHANCED) {
+            return true;
+        }
+        if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+            return false;
+        }
+
+        // otherwise the wifi frameworks should decide automatically
         if (config.getIpConfiguration().getIpAssignment() == IpConfiguration.IpAssignment.STATIC) {
             return false;
         }
         if (config.isPasspoint()) {
-            return isNetworkOptInForAggressiveRandomization(config.FQDN);
+            return isNetworkOptInForEnhancedRandomization(config.FQDN);
         } else {
-            return isNetworkOptInForAggressiveRandomization(config.SSID);
+            return isNetworkOptInForEnhancedRandomization(config.SSID);
         }
     }
 
-    private boolean isNetworkOptInForAggressiveRandomization(String ssidOrFqdn) {
+    private boolean isNetworkOptInForEnhancedRandomization(String ssidOrFqdn) {
         Set<String> perDeviceSsidBlocklist = new ArraySet<>(mContext.getResources().getStringArray(
                 R.array.config_wifi_aggressive_randomization_ssid_blocklist));
         if (mDeviceConfigFacade.getAggressiveMacRandomizationSsidBlocklist().contains(ssidOrFqdn)
@@ -569,7 +581,7 @@ public class WifiConfigManager {
      * @return MacAddress
      */
     public MacAddress getRandomizedMacAndUpdateIfNeeded(WifiConfiguration config) {
-        MacAddress mac = shouldUseAggressiveRandomization(config)
+        MacAddress mac = shouldUseEnhancedRandomization(config)
                 ? updateRandomizedMacIfNeeded(config)
                 : setRandomizedMacToPersistentMac(config);
         return mac;
@@ -1608,7 +1620,7 @@ public class WifiConfigManager {
     public boolean isInFlakyRandomizationSsidHotlist(int networkId) {
         WifiConfiguration config = getConfiguredNetwork(networkId);
         return config != null
-                && config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT
+                && config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_NONE
                 && mDeviceConfigFacade.getRandomizationFlakySsidHotlist().contains(config.SSID);
     }
 
@@ -2961,7 +2973,7 @@ public class WifiConfigManager {
      * @param config
      */
     private void initRandomizedMacForInternalConfig(WifiConfiguration internalConfig) {
-        MacAddress randomizedMac = shouldUseAggressiveRandomization(internalConfig)
+        MacAddress randomizedMac = shouldUseEnhancedRandomization(internalConfig)
                 ? MacAddressUtils.createRandomUnicastAddress()
                 : getPersistentMacAddress(internalConfig);
         if (randomizedMac != null) {

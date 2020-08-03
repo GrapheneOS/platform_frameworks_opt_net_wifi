@@ -774,7 +774,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiConfiguration config = mConnectedNetwork;
         config.networkId = FRAMEWORK_NETWORK_ID;
         config.setRandomizedMacAddress(TEST_LOCAL_MAC_ADDRESS);
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         setupAndStartConnectSequence(config);
         validateSuccessfulConnectSequence(config);
     }
@@ -1124,7 +1124,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         config.SSID = sWifiSsid.toString();
         config.BSSID = sBSSID;
         config.networkId = FRAMEWORK_NETWORK_ID;
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         setupAndStartConnectSequence(config);
         validateSuccessfulConnectSequence(config);
 
@@ -1152,7 +1152,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         config.SSID = sWifiSsid.toString();
         config.BSSID = sBSSID;
         config.networkId = PASSPOINT_NETWORK_ID;
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         setupAndStartConnectSequence(config);
         validateSuccessfulConnectSequence(config);
 
@@ -1184,7 +1184,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         osuConfig.osu = true;
         osuConfig.networkId = FRAMEWORK_NETWORK_ID;
         osuConfig.providerFriendlyName = WifiConfigurationTestUtil.TEST_PROVIDER_FRIENDLY_NAME;
-        osuConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        osuConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         setupAndStartConnectSequence(osuConfig);
         validateSuccessfulConnectSequence(osuConfig);
 
@@ -1214,7 +1214,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         osuConfig.osu = true;
         osuConfig.networkId = PASSPOINT_NETWORK_ID;
         osuConfig.providerFriendlyName = WifiConfigurationTestUtil.TEST_PROVIDER_FRIENDLY_NAME;
-        osuConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        osuConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         setupAndStartConnectSequence(osuConfig);
         validateSuccessfulConnectSequence(osuConfig);
 
@@ -2559,7 +2559,7 @@ public class ClientModeImplTest extends WifiBaseTest {
      * Verifies that when
      * 1. Global feature support flag is set to false
      * 2. connected MAC randomization is on and
-     * 3. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_PERSISTENT and
+     * 3. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_AUTO and
      * 4. randomized MAC for the network to connect to is different from the current MAC.
      *
      * The factory MAC address is used for the connection, and no attempt is made to change it.
@@ -2580,7 +2580,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     /**
      * Verifies that when
      * 1. connected MAC randomization is on and
-     * 2. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_PERSISTENT and
+     * 2. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_AUTO and
      * 3. randomized MAC for the network to connect to is different from the current MAC.
      *
      * Then the current MAC gets set to the randomized MAC when CMD_START_CONNECT executes.
@@ -2601,7 +2601,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     /**
      * Verifies that when
      * 1. connected MAC randomization is on and
-     * 2. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_PERSISTENT and
+     * 2. macRandomizationSetting of the WifiConfiguration is RANDOMIZATION_AUTO and
      * 3. randomized MAC for the network to connect to is same as the current MAC.
      *
      * Then MAC change should not occur when CMD_START_CONNECT executes.
@@ -2712,7 +2712,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         WifiConfiguration config = new WifiConfiguration();
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         config.setRandomizedMacAddress(MacAddress.fromString(WifiInfo.DEFAULT_MAC_ADDRESS));
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(0)).thenReturn(config);
 
@@ -4401,7 +4401,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         config.SSID = ScanResultUtil.createQuotedSSID(sFilsSsid);
         config.networkId = 1;
         config.setRandomizedMacAddress(TEST_LOCAL_MAC_ADDRESS);
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(config);
         if (isDriverSupportFils) {

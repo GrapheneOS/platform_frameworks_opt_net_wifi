@@ -660,7 +660,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(false);
         when(mWifiPermissionsUtil.isDeviceOwner(anyInt(), any())).thenReturn(true);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
 
         verifyAddNetworkToWifiConfigManager(openNetwork);
         verify(mWcmListener).onNetworkAdded(wifiConfigCaptor.capture());
@@ -688,7 +688,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 ArgumentCaptor.forClass(WifiConfiguration.class);
         when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(false);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         List<WifiConfiguration> networks = new ArrayList<>();
         networks.add(openNetwork);
 
@@ -724,7 +724,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(true);
         when(mWifiPermissionsUtil.isDeviceOwner(anyInt(), any())).thenReturn(true);
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        openNetwork.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         List<WifiConfiguration> networks = new ArrayList<>();
         networks.add(openNetwork);
 
@@ -2276,7 +2276,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      * Verify that the aggressive randomization allowlist works for passpoints. (by checking FQDN)
      */
     @Test
-    public void testShouldUseAggressiveRandomizationPasspoint() {
+    public void testshouldUseEnhancedRandomizationPasspoint() {
         WifiConfiguration c = WifiConfigurationTestUtil.createPasspointNetwork();
         // Adds SSID to the allowlist.
         Set<String> ssidList = new HashSet<>();
@@ -2285,12 +2285,34 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 .thenReturn(ssidList);
 
         // Verify that if for passpoint networks we don't check for the SSID to be in the allowlist
-        assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+        assertFalse(mWifiConfigManager.shouldUseEnhancedRandomization(c));
 
         // instead we check for the FQDN
         ssidList.clear();
         ssidList.add(c.FQDN);
-        assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(c));
+        assertTrue(mWifiConfigManager.shouldUseEnhancedRandomization(c));
+    }
+
+    /**
+     * Verify that macRandomizationSetting == RANDOMIZATION_ENHANCED enables
+     * enhanced MAC randomization.
+     */
+    @Test
+    public void testShouldUseEnhancedRandomization_randomizationEnhanced() {
+        WifiConfiguration c = WifiConfigurationTestUtil.createPasspointNetwork();
+        c.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_ENHANCED;
+        assertTrue(mWifiConfigManager.shouldUseEnhancedRandomization(c));
+    }
+
+    /**
+     * Verify that macRandomizationSetting = RANDOMIZATION_PERSISTENT disables enhanced
+     * randomization.
+     */
+    @Test
+    public void testShouldUseEnhancedRandomization_randomizationPersistent() {
+        WifiConfiguration c = WifiConfigurationTestUtil.createPasspointNetwork();
+        c.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        assertFalse(mWifiConfigManager.shouldUseEnhancedRandomization(c));
     }
 
     /**
@@ -2303,10 +2325,10 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 eq(WifiConfigManager.ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG),
                 anyInt())).thenReturn(1);
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-        assertTrue(mWifiConfigManager.shouldUseAggressiveRandomization(config));
+        assertTrue(mWifiConfigManager.shouldUseEnhancedRandomization(config));
 
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
-        assertFalse(mWifiConfigManager.shouldUseAggressiveRandomization(config));
+        assertFalse(mWifiConfigManager.shouldUseEnhancedRandomization(config));
     }
 
     /**
@@ -2495,8 +2517,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Verify macRandomizationSetting is not masked out when feature is supported.
         List<WifiConfiguration> configs = mWifiConfigManager.getSavedNetworks(Process.WIFI_UID);
         assertEquals(1, configs.size());
-        assertEquals(WifiConfiguration.RANDOMIZATION_PERSISTENT,
-                configs.get(0).macRandomizationSetting);
+        assertEquals(WifiConfiguration.RANDOMIZATION_AUTO, configs.get(0).macRandomizationSetting);
     }
 
     /**
