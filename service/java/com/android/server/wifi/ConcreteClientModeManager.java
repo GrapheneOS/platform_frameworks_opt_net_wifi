@@ -901,8 +901,23 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public WifiConfiguration getCurrentWifiConfiguration() {
+    public WifiConfiguration getConnectedWifiConfiguration() {
         return mClientModeImpl.getCurrentWifiConfiguration();
+    }
+
+    @Override
+    public WifiConfiguration getConnectingWifiConfiguration() {
+        return mClientModeImpl.getTargetWifiConfiguration();
+    }
+
+    @Override
+    public String getConnectedBssid() {
+        return mClientModeImpl.getCurrentBssid();
+    }
+
+    @Override
+    public String getConnectingBssid() {
+        return mClientModeImpl.getTargetBssid();
     }
 
     @Override
