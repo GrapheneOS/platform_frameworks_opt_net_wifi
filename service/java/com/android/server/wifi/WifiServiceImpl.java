@@ -3046,6 +3046,28 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     @Override
+    public boolean is60GHzBandSupported() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (mVerboseLoggingEnabled) {
+            mLog.info("is60GHzBandSupported uid=%").c(Binder.getCallingUid()).flush();
+        }
+
+        return is60GHzBandSupportedInternal();
+    }
+
+    private boolean is60GHzBandSupportedInternal() {
+        if (mContext.getResources().getBoolean(R.bool.config_wifi60ghzSupport)) {
+            return true;
+        }
+        return mWifiThreadRunner.call(
+                () -> mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_60_GHZ).length > 0,
+                false);
+    }
+
+    @Override
     public boolean isWifiStandardSupported(@WifiStandard int standard) {
         return mWifiThreadRunner.call(
                 () -> mActiveModeWarden.getPrimaryClientModeManager().isWifiStandardSupported(
