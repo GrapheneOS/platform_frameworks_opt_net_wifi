@@ -304,7 +304,8 @@ public class WifiConnectivityManager {
         updateUserDisabledList(scanDetails);
 
         // Check if any blocklisted BSSIDs can be freed.
-        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
+        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
+                mWifiInfo.getSSID());
 
         if (mStateMachine.isSupplicantTransientState()) {
             localLog(listenerName

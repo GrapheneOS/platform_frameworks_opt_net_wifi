@@ -2211,9 +2211,9 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
         // Force a connectivity scan
-        verify(mBssidBlocklistMonitor, never()).updateAndGetBssidBlocklist();
+        verify(mBssidBlocklistMonitor, never()).updateAndGetBssidBlocklistForSsid(anyString());
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
-        verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklist();
+        verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsid(anyString());
     }
 
     /**

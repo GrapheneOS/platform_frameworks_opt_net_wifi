@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.content.Context;
 import android.net.wifi.WifiManager;
 import android.util.ArrayMap;
@@ -448,9 +449,34 @@ public class BssidBlocklistMonitor {
      * @param ssid
      * @return the number of BSSIDs currently in the blocklist for the |ssid|.
      */
-    public int getNumBlockedBssidsForSsid(@NonNull String ssid) {
+    public int updateAndGetNumBlockedBssidsForSsid(@NonNull String ssid) {
         return (int) updateAndGetBssidBlocklistInternal()
                 .filter(entry -> ssid.equals(entry.ssid)).count();
+    }
+
+    private int getNumBlockedBssidsForSsid(@Nullable String ssid) {
+        if (ssid == null) {
+            return 0;
+        }
+        return (int) mBssidStatusMap.values().stream()
+                .filter(entry -> entry.isInBlocklist && ssid.equals(entry.ssid))
+                .count();
+    }
+
+    /**
+     * Overloaded version of updateAndGetBssidBlocklist.
+     * Accepts a @Nullable String ssid as input, and updates the firmware roaming
+     * configuration if the blocklist for the input ssid has been changed.
+     * @param ssid to update firmware roaming configuration for.
+     * @return Set of BSSIDs currently in the blocklist
+     */
+    public Set<String> updateAndGetBssidBlocklistForSsid(@Nullable String ssid) {
+        int numBefore = getNumBlockedBssidsForSsid(ssid);
+        Set<String> bssidBlocklist = updateAndGetBssidBlocklist();
+        if (getNumBlockedBssidsForSsid(ssid) != numBefore) {
+            updateFirmwareRoamingConfiguration(ssid);
+        }
+        return bssidBlocklist;
     }
 
     /**

@@ -1727,7 +1727,8 @@ public class WifiMetricsTest extends WifiBaseTest {
         config.allowedKeyManagement = new BitSet();
         when(config.getNetworkSelectionStatus()).thenReturn(
                 mock(WifiConfiguration.NetworkSelectionStatus.class));
-        when(mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(eq(config.SSID))).thenReturn(3);
+        when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(eq(config.SSID)))
+                .thenReturn(3);
         mWifiMetrics.startConnectionEvent(config, "RED",
                 WifiMetricsProto.ConnectionEvent.ROAM_NONE);
         mWifiMetrics.endConnectionEvent(
