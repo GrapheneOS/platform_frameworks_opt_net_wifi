@@ -167,7 +167,22 @@ public class DefaultClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public WifiConfiguration getCurrentWifiConfiguration() {
+    public WifiConfiguration getConnectedWifiConfiguration() {
+        return null;
+    }
+
+    @Override
+    public WifiConfiguration getConnectingWifiConfiguration() {
+        return null;
+    }
+
+    @Override
+    public String getConnectedBssid() {
+        return null;
+    }
+
+    @Override
+    public String getConnectingBssid() {
         return null;
     }
 

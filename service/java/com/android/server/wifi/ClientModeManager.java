@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.Nullable;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
 import android.net.wifi.IWifiConnectedNetworkScorer;
@@ -92,7 +93,27 @@ public interface ClientModeManager extends ActiveModeManager {
 
     String getFactoryMacAddress();
 
-    WifiConfiguration getCurrentWifiConfiguration();
+    /**
+     * Returns WifiConfiguration object corresponding to the currently connected network, null if
+     * not connected.
+     */
+    @Nullable WifiConfiguration getConnectedWifiConfiguration();
+
+    /**
+     * Returns WifiConfiguration object corresponding to the currently connecting network, null if
+     * not connecting.
+     */
+    @Nullable WifiConfiguration getConnectingWifiConfiguration();
+
+    /**
+     * Returns bssid corresponding to the currently connected network, null if not connected.
+     */
+    @Nullable String getConnectedBssid();
+
+    /**
+     * Returns bssid corresponding to the currently connecting network, null if not connecting.
+     */
+    @Nullable String getConnectingBssid();
 
     WifiLinkLayerStats getWifiLinkLayerStats();
 

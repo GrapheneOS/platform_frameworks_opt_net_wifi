@@ -234,6 +234,7 @@ public class ClientModeImpl extends StateMachine {
 
     private int mLastSignalLevel = -1;
     private String mLastBssid;
+    // TODO (b/162942761): Ensure this is reset when mTargetNetworkId is set.
     private int mLastNetworkId; // The network Id we successfully joined
     // The subId used by WifiConfiguration with SIM credential which was connected successfully
     private int mLastSubId;
@@ -317,6 +318,7 @@ public class ClientModeImpl extends StateMachine {
     // This one is used to track the current target network ID. This is used for error
     // handling during connection setup since many error message from supplicant does not report
     // SSID. Once connected, it will be set to invalid
+    // TODO (b/162942761): Ensure this is reset when mLastNetworkId is set.
     private int mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
     private WifiConfiguration mTargetWifiConfiguration = null;
 
@@ -2334,7 +2336,7 @@ public class ClientModeImpl extends StateMachine {
         if (mIpClient != null) {
             Pair<String, String> p = mWifiScoreCard.getL2KeyAndGroupHint(mWifiInfo);
             if (!p.equals(mLastL2KeyAndGroupHint)) {
-                final MacAddress lastBssid = getCurrentBssid();
+                final MacAddress lastBssid = getCurrentBssidMacAddress();
                 final Layer2Information l2Information = new Layer2Information(
                         p.first, p.second, lastBssid);
                 // Update current BSSID on IpClient side whenever l2Key and groupHint
@@ -2366,7 +2368,7 @@ public class ClientModeImpl extends StateMachine {
         if (wifiConfig != null) {
             ScanResultMatchInfo matchInfo = ScanResultMatchInfo.fromWifiConfiguration(wifiConfig);
             mWakeupController.setLastDisconnectInfo(matchInfo);
-            mWifiNetworkSuggestionsManager.handleDisconnect(wifiConfig, getCurrentBSSID());
+            mWifiNetworkSuggestionsManager.handleDisconnect(wifiConfig, getCurrentBssid());
         }
         stopRssiMonitoringOffload();
 
@@ -2629,9 +2631,9 @@ public class ClientModeImpl extends StateMachine {
         if (configuration != null) {
             mNetworkFactory.handleConnectionAttemptEnded(level2FailureCode, configuration);
             mWifiNetworkSuggestionsManager.handleConnectionAttemptEnded(
-                    level2FailureCode, configuration, getCurrentBSSID());
+                    level2FailureCode, configuration, getCurrentBssid());
             ScanResult candidate = configuration.getNetworkSelectionStatus().getCandidate();
-            if (candidate != null && !TextUtils.equals(candidate.BSSID, getCurrentBSSID())) {
+            if (candidate != null && !TextUtils.equals(candidate.BSSID, getCurrentBssid())) {
                 mWifiMetrics.incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware();
             }
         }
@@ -3151,18 +3153,30 @@ public class ClientModeImpl extends StateMachine {
      * Returns WifiConfiguration object corresponding to the currently connected network, null if
      * not connected.
      */
-    public WifiConfiguration getCurrentWifiConfiguration() {
+    @Nullable public WifiConfiguration getCurrentWifiConfiguration() {
         if (mLastNetworkId == WifiConfiguration.INVALID_NETWORK_ID) {
             return null;
         }
         return mWifiConfigManager.getConfiguredNetwork(mLastNetworkId);
     }
 
-    private WifiConfiguration getTargetWifiConfiguration() {
+    /**
+     * Returns WifiConfiguration object corresponding to the currently connecting network, null if
+     * not connecting.
+     */
+    @Nullable public WifiConfiguration getTargetWifiConfiguration() {
         if (mTargetNetworkId == WifiConfiguration.INVALID_NETWORK_ID) {
             return null;
         }
         return mWifiConfigManager.getConfiguredNetwork(mTargetNetworkId);
+    }
+
+    @Nullable public String getCurrentBssid() {
+        return mLastBssid;
+    }
+
+    @Nullable public String getTargetBssid() {
+        return mTargetBssid;
     }
 
     ScanResult getCurrentScanResult() {
@@ -3184,11 +3198,7 @@ public class ClientModeImpl extends StateMachine {
         return scanDetailCache.getScanResult(bssid);
     }
 
-    String getCurrentBSSID() {
-        return mLastBssid;
-    }
-
-    MacAddress getCurrentBssid() {
+    private MacAddress getCurrentBssidMacAddress() {
         MacAddress bssid = null;
         try {
             bssid = (mLastBssid != null) ? MacAddress.fromString(mLastBssid) : null;
@@ -3648,7 +3658,7 @@ public class ClientModeImpl extends StateMachine {
             builder.setRequestorPackageName(specificRequestUidAndPackageName.second);
             // Fill up the network agent specifier for this connection.
             builder.setNetworkSpecifier(createNetworkAgentSpecifier(
-                    currentWifiConfiguration, getCurrentBSSID()));
+                    currentWifiConfiguration, getCurrentBssid()));
         }
         updateLinkBandwidth(builder);
         return builder.build();
@@ -5664,7 +5674,7 @@ public class ClientModeImpl extends StateMachine {
                     + " isFilsConnection=" + isFilsConnection);
         }
 
-        final MacAddress currentBssid = getCurrentBssid();
+        final MacAddress currentBssid = getCurrentBssidMacAddress();
         final String l2Key = mLastL2KeyAndGroupHint != null
                 ? mLastL2KeyAndGroupHint.first : null;
         final String groupHint = mLastL2KeyAndGroupHint != null

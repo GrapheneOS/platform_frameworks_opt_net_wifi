@@ -130,6 +130,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
 
         mWifiConnectivityManager = createConnectivityManager();
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+        mWifiConnectivityManager.enableVerboseLogging(true);
         setWifiEnabled(true);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime());
         when(mWifiLastResortWatchdog.shouldIgnoreBssidUpdate(anyString())).thenReturn(false);
@@ -249,6 +250,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final String TEST_SSID = "SSID";
     private static final int TEMP_BSSID_BLOCK_DURATION_MS = 10 * 1000; // 10 seconds
     private static final int TEST_CONNECTED_NETWORK_ID = 55;
+    private static final String TEST_CONNECTED_BSSID = "6c:f3:7f:ae:8c:f1";
     private static final int CHANNEL_CACHE_AGE_MINS = 14400;
     private static final int MOVING_PNO_SCAN_INTERVAL_MILLIS = 20_000;
     private static final int STATIONARY_PNO_SCAN_INTERVAL_MILLIS = 60_000;
@@ -424,11 +426,17 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     void setWifiStateConnected() {
+        setWifiStateConnected(TEST_CONNECTED_NETWORK_ID, TEST_CONNECTED_BSSID);
+    }
+
+    void setWifiStateConnected(int networkId, String bssid) {
         // Prep for setting WiFi to connected state
         WifiConfiguration connectedWifiConfiguration = new WifiConfiguration();
-        connectedWifiConfiguration.networkId = TEST_CONNECTED_NETWORK_ID;
-        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
+        connectedWifiConfiguration.networkId = networkId;
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
                 .thenReturn(connectedWifiConfiguration);
+        when(mPrimaryClientModeManager.getConnectedBssid())
+                .thenReturn(bssid);
 
         mWifiConnectivityManager.handleConnectionStateChanged(
                 mPrimaryClientModeManager,
@@ -1729,7 +1737,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set WiFi to connected state.
         setWifiStateConnected();
         // Simulate remove network, disconnect not finished.
-        when(mPrimaryClientModeManager.getCurrentWifiConfiguration()).thenReturn(null);
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration()).thenReturn(null);
         mNetworkUpdateListenerCaptor.getValue().onNetworkRemoved(null);
 
         // Get the first periodic scan interval
@@ -1906,7 +1914,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         configuration.networkId = TEST_CONNECTED_NETWORK_ID;
         when(mWifiConfigManager.getConfiguredNetwork(TEST_CONNECTED_NETWORK_ID))
                 .thenReturn(configuration);
-        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
                 .thenReturn(configuration);
         when(mWifiScoreCard.lookupNetwork(configuration.SSID)).thenReturn(mPerNetwork);
         when(mPerNetwork.getFrequencies(anyLong())).thenReturn(new ArrayList<>());
@@ -1982,7 +1990,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mWifiConfigManager.getConfiguredNetwork(TEST_CONNECTED_NETWORK_ID))
                 .thenReturn(configuration);
         List<Integer> channelList = linkScoreCardFreqsToNetwork(configuration).get(0);
-        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
                 .thenReturn(configuration);
 
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
@@ -2033,7 +2041,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 .thenReturn(configuration);
         List<Integer> channelList = linkScoreCardFreqsToNetwork(configuration).get(0);
 
-        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
                 .thenReturn(configuration);
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
 
@@ -2080,7 +2088,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 .thenReturn(configuration);
         List<Integer> channelList = linkScoreCardFreqsToNetwork(configuration).get(0);
 
-        when(mPrimaryClientModeManager.getCurrentWifiConfiguration())
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
                 .thenReturn(new WifiConfiguration());
 
         doAnswer(new AnswerWithArguments() {
@@ -2489,14 +2497,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      */
     @Test
     public void frameworkInitiatedRoaming() {
-        // Mock the currently connected network which has the same networkID and
-        // SSID as the one to be selected.
-        WifiConfiguration currentNetwork = generateWifiConfig(
-                0, CANDIDATE_NETWORK_ID, CANDIDATE_SSID, false, true, null, null);
-        when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(currentNetwork);
-
         // Set WiFi to connected state
-        setWifiStateConnected();
+        setWifiStateConnected(CANDIDATE_NETWORK_ID, CANDIDATE_BSSID_2);
 
         // Set screen to on
         setScreenState(true);
@@ -2504,6 +2506,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         verify(mPrimaryClientModeManager).startRoamToNetwork(eq(CANDIDATE_NETWORK_ID),
                 mCandidateScanResultCaptor.capture());
         assertEquals(mCandidateScanResultCaptor.getValue().BSSID, CANDIDATE_BSSID);
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
+                anyInt(), anyInt(), anyObject());
     }
 
     /**
@@ -2516,22 +2520,18 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      */
     @Test
     public void noFrameworkRoamingIfConnectedAndFirmwareRoamingSupported() {
-        // Mock the currently connected network which has the same networkID and
-        // SSID as the one to be selected.
-        WifiConfiguration currentNetwork = generateWifiConfig(
-                0, CANDIDATE_NETWORK_ID, CANDIDATE_SSID, false, true, null, null);
-        when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(currentNetwork);
+        // Set WiFi to connected state
+        setWifiStateConnected(CANDIDATE_NETWORK_ID, CANDIDATE_BSSID_2);
 
         // Firmware controls roaming
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
-        // Set WiFi to connected state
-        setWifiStateConnected();
-
         // Set screen to on
         setScreenState(true);
 
-        verify(mPrimaryClientModeManager, times(0)).startRoamToNetwork(anyInt(), anyObject());
+        verify(mPrimaryClientModeManager, never()).startRoamToNetwork(anyInt(), anyObject());
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
+                anyInt(), anyInt(), anyObject());
     }
 
     /*
@@ -2580,12 +2580,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Mock the currently connected network which has the same networkID and
         // SSID as the one to be selected.
         WifiConfiguration currentNetwork = generateWifiConfig(
-                0, CANDIDATE_NETWORK_ID, CANDIDATE_SSID, false, true, null, null);
+                TEST_CONNECTED_NETWORK_ID, 0, CANDIDATE_SSID, false, true, null, null);
         when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(currentNetwork);
 
         // Set up the candidate configuration such that it has a BSSID specified.
         WifiConfiguration candidate = generateWifiConfig(
-                0, CANDIDATE_NETWORK_ID, CANDIDATE_SSID, false, true, null, null);
+                TEST_CONNECTED_NETWORK_ID, 0, CANDIDATE_SSID, false, true, null, null);
         candidate.BSSID = CANDIDATE_BSSID; // config specified
         ScanResult candidateScanResult = new ScanResult();
         candidateScanResult.SSID = CANDIDATE_SSID;
