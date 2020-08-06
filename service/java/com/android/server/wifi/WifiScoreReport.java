@@ -632,7 +632,8 @@ public class WifiScoreReport {
             mBssidBlocklistMonitor.blockBssidForDurationMs(mWifiInfo.getBSSID(),
                     mWifiInfo.getSSID(),
                     DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS,
-                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
+                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE,
+                    mWifiInfo.getRssi());
             mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
         }
     }
