@@ -22,6 +22,7 @@
           coreApp="true"
           android:versionCode="1"
           android:versionName="R-initial">
+    <protected-broadcast android:name="com.android.server.wifi.action.CarrierNetwork.USER_CLICKED" />
     <application
         android:label="@string/wifiResourcesAppLabel"
         android:defaultToDeviceProtectedStorage="true"

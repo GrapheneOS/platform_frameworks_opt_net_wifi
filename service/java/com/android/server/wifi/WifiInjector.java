@@ -192,6 +192,7 @@ public class WifiInjector {
         mFrameworkFacade = new FrameworkFacade();
         mMacAddressUtil = new MacAddressUtil();
         mContext = context;
+        mScoringParams = new ScoringParams(mContext);
         mSettingsMigrationDataHolder = new SettingsMigrationDataHolder(mContext);
         mConnectionFailureNotificationBuilder = new ConnectionFailureNotificationBuilder(
                 mContext, getWifiStackPackageName(), mFrameworkFacade);
@@ -284,7 +285,6 @@ public class WifiInjector {
         mWifiConnectivityHelper = new WifiConnectivityHelper(mWifiNative);
         mConnectivityLocalLog = new LocalLog(
                 mContext.getSystemService(ActivityManager.class).isLowRamDevice() ? 256 : 512);
-        mScoringParams = new ScoringParams(mContext);
         mWifiMetrics.setScoringParams(mScoringParams);
         mThroughputPredictor = new ThroughputPredictor(mContext);
         mWifiNetworkSelector = new WifiNetworkSelector(mContext, mWifiScoreCard, mScoringParams,
@@ -615,7 +615,8 @@ public class WifiInjector {
                 mWifiMetrics, clientModeImpl, mWifiHandlerThread.getLooper(), mDeviceConfigFacade,
                 mWifiThreadRunner);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
-                mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard);
+                mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard,
+                mScoringParams);
         mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
         return new WifiConnectivityManager(mContext, getScoringParams(),

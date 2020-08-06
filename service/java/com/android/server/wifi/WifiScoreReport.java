@@ -609,6 +609,7 @@ public class WifiScoreReport {
                     + " sessionId=" + sessionId);
             return;
         }
+        mWifiInfo.setScore(ConnectedScore.WIFI_MAX_SCORE);
         mWifiConnectedNetworkScorerHolder.startSession(sessionId);
         mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
     }
@@ -630,7 +631,9 @@ public class WifiScoreReport {
                         >= MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS)) {
             mBssidBlocklistMonitor.blockBssidForDurationMs(mWifiInfo.getBSSID(),
                     mWifiInfo.getSSID(),
-                    DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS);
+                    DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS,
+                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE,
+                    mWifiInfo.getRssi());
             mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
         }
     }

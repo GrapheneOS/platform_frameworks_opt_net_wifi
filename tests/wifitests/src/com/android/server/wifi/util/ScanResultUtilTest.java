@@ -211,8 +211,8 @@ public class ScanResultUtilTest extends WifiBaseTest {
     @Test
     public void testFilsSha256AkmSupportedNetwork() {
         final String ssid = "FILS-AP";
-        String caps = "[WPA2-EAP+EAP-SHA256+FILS-SHA256-CCMP]"
-                + "[RSN-EAP+EAP-SHA256+FILS-SHA256-CCMP][ESS]";
+        String caps = "[WPA2-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP][ESS]";
 
         ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
                 "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,
@@ -231,8 +231,8 @@ public class ScanResultUtilTest extends WifiBaseTest {
     @Test
     public void testFilsSha384AkmSupportedNetwork() {
         final String ssid = "FILS-AP";
-        String caps = "[WPA2-EAP+EAP-SHA384+FILS-SHA384-CCMP]"
-                + "[RSN-EAP+EAP-SHA384+FILS-SHA384-CCMP][ESS]";
+        String caps = "[WPA2-EAP+EAP-SHA384+EAP-FILS-SHA384-CCMP]"
+                + "[RSN-EAP+EAP-SHA384+EAP-FILS-SHA384-CCMP][ESS]";
 
         ScanResult input = new ScanResult(WifiSsid.createFromAsciiEncoded(ssid), ssid,
                 "ab:cd:01:ef:45:89", 1245, 0, caps, -78, 2450, 1025, 22, 33, 20, 0,

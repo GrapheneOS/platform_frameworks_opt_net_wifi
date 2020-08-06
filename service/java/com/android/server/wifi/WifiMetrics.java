@@ -1459,7 +1459,7 @@ public class WifiMetrics {
                     mScanResultRssiTimestampMillis = mClock.getElapsedSinceBootMillis();
                 }
                 mCurrentConnectionEvent.mConnectionEvent.numBssidInBlocklist =
-                        mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(config.SSID);
+                        mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID);
                 mCurrentConnectionEvent.mConnectionEvent.networkType =
                         WifiMetricsProto.ConnectionEvent.TYPE_UNKNOWN;
                 mCurrentConnectionEvent.mConnectionEvent.isOsuProvisioned = false;

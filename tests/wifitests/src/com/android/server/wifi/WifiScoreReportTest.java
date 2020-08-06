@@ -781,7 +781,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong());
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong(),
+                anyInt(), anyInt());
     }
 
     /**
@@ -805,7 +806,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(any(), any(), anyLong());
+        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(any(), any(), anyLong(), anyInt(),
+                anyInt());
     }
 
     /**
@@ -831,6 +833,18 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong());
+        verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(any(), any(), anyLong(),
+                anyInt(), anyInt());
+    }
+
+    /**
+     * Verify that the initial score value in WifiInfo is the max when onStart is called.
+     */
+    @Test
+    public void testOnStartInitialScoreInWifiInfoIsMaxScore() throws Exception {
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, mWifiConnectedNetworkScorer);
+        assertEquals(ConnectedScore.WIFI_MAX_SCORE, mWifiInfo.getScore());
     }
 }
