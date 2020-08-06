@@ -16,24 +16,17 @@
 
 package com.android.server.wifi;
 
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Icon;
-import android.os.UserHandle;
 import android.provider.Settings;
-import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
 import com.android.server.wifi.util.NativeUtil;
-
-import java.util.List;
 
 /**
  * Responsible for notifying user for wrong password errors.
@@ -81,26 +74,13 @@ public class WrongPasswordNotifier {
         }
     }
 
-    private String getSettingsPackageName() {
-        Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
-        List<ResolveInfo> resolveInfos = mContext.getPackageManager().queryIntentActivitiesAsUser(
-                intent, PackageManager.MATCH_SYSTEM_ONLY | PackageManager.MATCH_DEFAULT_ONLY,
-                UserHandle.of(ActivityManager.getCurrentUser()));
-        if (resolveInfos == null || resolveInfos.isEmpty()) {
-            Log.e(TAG, "Failed to resolve wifi settings activity");
-            return null;
-        }
-        // Pick the first one if there are more than 1 since the list is ordered from best to worst.
-        return resolveInfos.get(0).activityInfo.packageName;
-    }
-
     /**
      * Display wrong password notification for a given Wi-Fi network (specified by its SSID).
      *
      * @param ssid SSID of the Wi-FI network
      */
     private void showNotification(String ssid) {
-        String settingsPackage = getSettingsPackageName();
+        String settingsPackage = mFrameworkFacade.getSettingsPackageName(mContext);
         if (settingsPackage == null) return;
         Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS)
                 .setPackage(settingsPackage)

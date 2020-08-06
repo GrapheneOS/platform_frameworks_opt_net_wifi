@@ -48,6 +48,7 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Pair;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
 import com.android.server.wifi.util.GeneralUtil;
@@ -76,7 +77,8 @@ import java.util.concurrent.TimeUnit;
  * enforce the corresponding API permissions.
  */
 public class WifiShellCommand extends BasicShellCommandHandler {
-    private static String SHELL_PACKAGE_NAME = "com.android.shell";
+    @VisibleForTesting
+    public static String SHELL_PACKAGE_NAME = "com.android.shell";
     // These don't require root access.
     // However, these do perform permission checks in the corresponding WifiService methods.
     private static final String[] NON_PRIVILEGED_COMMANDS = {
@@ -312,7 +314,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 }
                 case "start-softap": {
                     SoftApConfiguration config = buildSoftApConfiguration(pw);
-                    if (mWifiService.startTetheredHotspot(config)) {
+                    if (mWifiService.startTetheredHotspot(config, SHELL_PACKAGE_NAME)) {
                         pw.println("Soft AP started successfully");
                     } else {
                         pw.println("Soft AP failed to start. Please check config parameters");
