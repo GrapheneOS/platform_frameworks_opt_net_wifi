@@ -4807,8 +4807,8 @@ public class ClientModeImplTest extends WifiBaseTest {
      *
      */
     private void setupFilsEnabledApInScanResult() {
-        String caps = "[WPA2-EAP+EAP-SHA256+FILS-SHA256-CCMP]"
-                + "[RSN-EAP+EAP-SHA256+FILS-SHA256-CCMP][ESS]";
+        String caps = "[WPA2-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP][ESS]";
         ScanResult scanResult = new ScanResult(WifiSsid.createFromAsciiEncoded(sFilsSsid),
                 sFilsSsid, sBSSID, 1245, 0, caps, -78, 2412, 1025, 22, 33, 20, 0, 0, true);
         ScanResult.InformationElement ie = createIE(ScanResult.InformationElement.EID_SSID,
