@@ -16,11 +16,14 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.WifiShellCommand.SHELL_PACKAGE_NAME;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.validateMockitoUsage;
@@ -410,7 +413,8 @@ public class WifiShellCommandTest extends WifiBaseTest {
                 new String[]{"start-softap", "ap1", "wpa2", "xyzabc321", "-b", "5"});
         ArgumentCaptor<SoftApConfiguration> softApConfigurationCaptor = ArgumentCaptor.forClass(
                 SoftApConfiguration.class);
-        verify(mWifiService).startTetheredHotspot(softApConfigurationCaptor.capture());
+        verify(mWifiService).startTetheredHotspot(
+                softApConfigurationCaptor.capture(), eq(SHELL_PACKAGE_NAME));
         assertEquals(SoftApConfiguration.BAND_5GHZ,
                 softApConfigurationCaptor.getValue().getBand());
         assertEquals(SoftApConfiguration.SECURITY_TYPE_WPA2_PSK,

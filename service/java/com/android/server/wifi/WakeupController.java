@@ -427,7 +427,9 @@ public class WakeupController {
         if (USE_PLATFORM_WIFI_WAKE) {
             // TODO(b/72180295): ensure that there is no race condition with WifiServiceImpl here
             if (mWifiInjector.getWifiSettingsStore().handleWifiToggled(true /* wifiEnabled */)) {
-                mWifiInjector.getActiveModeWarden().wifiToggled();
+                mWifiInjector.getActiveModeWarden().wifiToggled(
+                        // Assumes user toggled it on from settings before.
+                        mFrameworkFacade.getSettingsWorkSource(mContext));
                 mWifiWakeMetrics.recordWakeupEvent(mNumScansHandled);
             }
         }

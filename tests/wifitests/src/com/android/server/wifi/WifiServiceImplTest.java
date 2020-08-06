@@ -138,6 +138,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.WorkSource;
 import android.os.connectivity.WifiActivityEnergyInfo;
 import android.os.test.TestLooper;
 import android.telephony.CarrierConfigManager;
@@ -623,7 +624,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.handleWifiToggled(eq(true))).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -637,7 +639,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.handleWifiToggled(eq(true))).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -656,7 +659,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
 
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -674,7 +678,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
 
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -691,7 +696,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
 
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -708,7 +714,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertFalse(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
 
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -727,7 +733,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         } catch (SecurityException e) {
 
         }
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -743,7 +749,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.handleWifiToggled(eq(true))).thenReturn(true);
 
         mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true);
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -759,7 +765,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(PackageManager.PERMISSION_GRANTED);
 
         assertTrue(mWifiServiceImpl.setWifiEnabled(SYSUI_PACKAGE_NAME, true));
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), SYSUI_PACKAGE_NAME)));
     }
 
     /**
@@ -779,7 +786,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(PackageManager.PERMISSION_DENIED);
 
         assertFalse(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -819,7 +826,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(SYSUI_PACKAGE_NAME, true));
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), SYSUI_PACKAGE_NAME)));
     }
 
     /**
@@ -844,7 +852,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertFalse(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
         verify(mSettingsStore, never()).handleWifiToggled(anyBoolean());
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
 
@@ -857,7 +865,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, true));
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -885,7 +893,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mSettingsStore.handleWifiToggled(eq(false))).thenReturn(true);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -898,7 +907,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mSettingsStore.handleWifiToggled(eq(false))).thenReturn(true);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -917,7 +927,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
 
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -935,7 +946,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
 
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
 
@@ -953,7 +965,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
 
-        verify(mActiveModeWarden).wifiToggled();
+        verify(mActiveModeWarden).wifiToggled(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -970,7 +983,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         assertFalse(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
 
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -982,7 +995,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mSettingsStore.handleWifiToggled(eq(false))).thenReturn(false);
         assertTrue(mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false));
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     /**
@@ -1225,7 +1238,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiConfigManager).loadFromStore();
         verify(mActiveModeWarden).start();
-        verify(mActiveModeWarden, never()).wifiToggled();
+        verify(mActiveModeWarden, never()).wifiToggled(any());
     }
 
     @Test
@@ -1261,9 +1274,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testStartSoftApWithPermissionsAndNullConfig() {
-        boolean result = mWifiServiceImpl.startSoftAp(null);
+        boolean result = mWifiServiceImpl.startSoftAp(null, TEST_PACKAGE_NAME);
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertNull(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -1272,9 +1286,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testStartSoftApWithPermissionsAndInvalidConfig() {
-        boolean result = mWifiServiceImpl.startSoftAp(mApConfig);
+        boolean result = mWifiServiceImpl.startSoftAp(mApConfig, TEST_PACKAGE_NAME);
         assertFalse(result);
-        verify(mActiveModeWarden, never()).startSoftAp(any());
+        verify(mActiveModeWarden, never()).startSoftAp(any(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
     }
 
     /**
@@ -1283,9 +1298,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartSoftApWithPermissionsAndValidConfig() {
         WifiConfiguration config = createValidWifiApConfiguration();
-        boolean result = mWifiServiceImpl.startSoftAp(config);
+        boolean result = mWifiServiceImpl.startSoftAp(config, TEST_PACKAGE_NAME);
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(
+                mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         WifiConfigurationTestUtil.assertConfigurationEqualForSoftAp(
                 config,
                 mSoftApModeConfigCaptor.getValue().getSoftApConfiguration().toWifiConfiguration());
@@ -1301,7 +1318,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(PackageManager.PERMISSION_DENIED);
         doThrow(new SecurityException()).when(mContext).enforceCallingOrSelfPermission(
                 eq(NetworkStack.PERMISSION_MAINLINE_NETWORK_STACK), any());
-        mWifiServiceImpl.startSoftAp(null);
+        mWifiServiceImpl.startSoftAp(null, TEST_PACKAGE_NAME);
     }
 
     /**
@@ -1313,9 +1330,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.checkCallingOrSelfPermission(android.Manifest.permission.NETWORK_STACK))
                 .thenReturn(PackageManager.PERMISSION_DENIED);
         WifiConfiguration config = createValidWifiApConfiguration();
-        boolean result = mWifiServiceImpl.startSoftAp(config);
+        boolean result = mWifiServiceImpl.startSoftAp(config, TEST_PACKAGE_NAME);
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         WifiConfigurationTestUtil.assertConfigurationEqualForSoftAp(
                 config,
                 mSoftApModeConfigCaptor.getValue().getSoftApConfiguration().toWifiConfiguration());
@@ -1329,13 +1347,14 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartSoftApWithValidConfigSucceedsAfterFailure() {
         // First initiate a failed call
-        assertFalse(mWifiServiceImpl.startSoftAp(mApConfig));
-        verify(mActiveModeWarden, never()).startSoftAp(any());
+        assertFalse(mWifiServiceImpl.startSoftAp(mApConfig, TEST_PACKAGE_NAME));
+        verify(mActiveModeWarden, never()).startSoftAp(any(), any());
 
         // Next attempt a valid config
         WifiConfiguration config = createValidWifiApConfiguration();
-        assertTrue(mWifiServiceImpl.startSoftAp(config));
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        assertTrue(mWifiServiceImpl.startSoftAp(config, TEST_PACKAGE_NAME));
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         WifiConfigurationTestUtil.assertConfigurationEqualForSoftAp(
                 config,
                 mSoftApModeConfigCaptor.getValue().getSoftApConfiguration().toWifiConfiguration());
@@ -1346,9 +1365,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testStartTetheredHotspotWithPermissionsAndNullConfig() {
-        boolean result = mWifiServiceImpl.startTetheredHotspot(null);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(null, TEST_PACKAGE_NAME);
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertNull(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -1358,9 +1378,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartTetheredHotspotWithPermissionsAndInvalidConfig() {
         boolean result = mWifiServiceImpl.startTetheredHotspot(
-                new SoftApConfiguration.Builder().build());
+                new SoftApConfiguration.Builder().build(), TEST_PACKAGE_NAME);
         assertFalse(result);
-        verify(mActiveModeWarden, never()).startSoftAp(any());
+        verify(mActiveModeWarden, never()).startSoftAp(any(), any());
     }
 
     /**
@@ -1369,9 +1389,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartTetheredHotspotWithPermissionsAndValidConfig() {
         SoftApConfiguration config = createValidSoftApConfiguration();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -1487,10 +1508,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .build();
 
         mLooper.startAutoDispatch();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
 
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -1508,10 +1530,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .build();
 
         mLooper.startAutoDispatch();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
 
         assertFalse(result);
-        verify(mActiveModeWarden, never()).startSoftAp(any());
+        verify(mActiveModeWarden, never()).startSoftAp(any(), any());
     }
 
     /**
@@ -1531,10 +1553,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .build();
 
         mLooper.startAutoDispatch();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
 
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -1555,10 +1578,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .build();
 
         mLooper.startAutoDispatch();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
 
         assertFalse(result);
-        verify(mActiveModeWarden, never()).startSoftAp(any());
+        verify(mActiveModeWarden, never()).startSoftAp(any(), any());
     }
 
     /**
@@ -1575,10 +1598,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .build();
 
         mLooper.startAutoDispatch();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
 
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -1592,7 +1616,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(PackageManager.PERMISSION_DENIED);
         doThrow(new SecurityException()).when(mContext).enforceCallingOrSelfPermission(
                 eq(NetworkStack.PERMISSION_MAINLINE_NETWORK_STACK), any());
-        mWifiServiceImpl.startTetheredHotspot(null);
+        mWifiServiceImpl.startTetheredHotspot(null, TEST_PACKAGE_NAME);
     }
 
     /**
@@ -1604,9 +1628,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.checkCallingOrSelfPermission(android.Manifest.permission.NETWORK_STACK))
                 .thenReturn(PackageManager.PERMISSION_DENIED);
         SoftApConfiguration config = createValidSoftApConfiguration();
-        boolean result = mWifiServiceImpl.startTetheredHotspot(config);
+        boolean result = mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME);
         assertTrue(result);
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
         verify(mContext).enforceCallingOrSelfPermission(
                 eq(NetworkStack.PERMISSION_MAINLINE_NETWORK_STACK), any());
@@ -1619,12 +1644,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testStartTetheredHotspotWithValidConfigSucceedsAfterFailedCall() {
         // First issue an invalid call
         assertFalse(mWifiServiceImpl.startTetheredHotspot(
-                new SoftApConfiguration.Builder().build()));
-        verify(mActiveModeWarden, never()).startSoftAp(any());
+                new SoftApConfiguration.Builder().build(), TEST_PACKAGE_NAME));
+        verify(mActiveModeWarden, never()).startSoftAp(any(), any());
 
         // Now attempt a successful call
-        assertTrue(mWifiServiceImpl.startTetheredHotspot(null));
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        assertTrue(mWifiServiceImpl.startTetheredHotspot(null, TEST_PACKAGE_NAME));
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertNull(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
     }
 
@@ -2123,8 +2149,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testTetheringDoesNotStartWhenAlreadyTetheringActive() throws Exception {
         WifiConfiguration config = createValidWifiApConfiguration();
-        assertTrue(mWifiServiceImpl.startSoftAp(config));
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        assertTrue(mWifiServiceImpl.startSoftAp(config, TEST_PACKAGE_NAME));
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         WifiConfigurationTestUtil.assertConfigurationEqualForSoftAp(
                 config,
                 mSoftApModeConfigCaptor.getValue().getSoftApConfiguration().toWifiConfiguration());
@@ -2135,7 +2162,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         reset(mActiveModeWarden);
 
         // Start another session without a stop, that should fail.
-        assertFalse(mWifiServiceImpl.startSoftAp(createValidWifiApConfiguration()));
+        assertFalse(mWifiServiceImpl.startSoftAp(
+                createValidWifiApConfiguration(), TEST_PACKAGE_NAME));
 
         verifyNoMoreInteractions(mActiveModeWarden);
     }
@@ -2146,8 +2174,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartTetheredHotspotDoesNotStartWhenAlreadyTetheringActive() throws Exception {
         SoftApConfiguration config = createValidSoftApConfiguration();
-        assertTrue(mWifiServiceImpl.startTetheredHotspot(config));
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        assertTrue(mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME));
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         assertThat(config).isEqualTo(mSoftApModeConfigCaptor.getValue().getSoftApConfiguration());
         mStateMachineSoftApCallback.onStateChanged(WIFI_AP_STATE_ENABLED, 0);
         mWifiServiceImpl.updateInterfaceIpState(WIFI_IFACE_NAME, IFACE_IP_MODE_TETHERED);
@@ -2156,7 +2185,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         reset(mActiveModeWarden);
 
         // Start another session without a stop, that should fail.
-        assertFalse(mWifiServiceImpl.startTetheredHotspot(config));
+        assertFalse(mWifiServiceImpl.startTetheredHotspot(config, TEST_PACKAGE_NAME));
 
         verifyNoMoreInteractions(mActiveModeWarden);
     }
@@ -2167,7 +2196,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testHotspotDoesNotStartWhenAlreadyTethering() throws Exception {
         WifiConfiguration config = createValidWifiApConfiguration();
-        assertTrue(mWifiServiceImpl.startSoftAp(config));
+        assertTrue(mWifiServiceImpl.startSoftAp(config, TEST_PACKAGE_NAME));
         mStateMachineSoftApCallback.onStateChanged(WIFI_AP_STATE_ENABLED, 0);
         mWifiServiceImpl.updateInterfaceIpState(WIFI_IFACE_NAME, IFACE_IP_MODE_TETHERED);
 
@@ -2245,7 +2274,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testStopLocalOnlyHotspotTriggersStopWithOneRegisteredRequest() throws Exception {
         setupLocalOnlyHotspot();
 
-        verify(mActiveModeWarden).startSoftAp(any());
+        verify(mActiveModeWarden).startSoftAp(any(), any());
 
         mWifiServiceImpl.stopLocalOnlyHotspot();
         mLooper.dispatchAll();
@@ -2320,7 +2349,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     private void verifyLohsBand(int expectedBand) {
-        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture());
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         final SoftApConfiguration configuration =
                 mSoftApModeConfigCaptor.getValue().getSoftApConfiguration();
         assertNotNull(configuration);
@@ -2362,7 +2392,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             changeLohsState(WIFI_AP_STATE_ENABLED, WIFI_AP_STATE_DISABLED, HOTSPOT_NO_ERROR);
             mWifiServiceImpl.updateInterfaceIpState(mLohsInterfaceName, IFACE_IP_MODE_LOCAL_ONLY);
             return null;
-        }).when(mActiveModeWarden).startSoftAp(any());
+        }).when(mActiveModeWarden).startSoftAp(any(), any());
     }
 
     @Test(expected = SecurityException.class)
@@ -2390,7 +2420,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         setupForCustomLohs();
         mWifiServiceImpl.registerLOHSForTest(mPid, new LocalOnlyHotspotRequestInfo(
-                sharedCallback, WifiServiceImplTest::nopDeathCallback, null));
+                new WorkSource(), sharedCallback, WifiServiceImplTest::nopDeathCallback, null));
         assertThat(mWifiServiceImpl.startLocalOnlyHotspot(exclusiveCallback, TEST_PACKAGE_NAME,
                 TEST_FEATURE_ID, exclusiveConfig)).isEqualTo(ERROR_GENERIC);
         mLooper.dispatchAll();
@@ -2409,7 +2439,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         setupForCustomLohs();
         mWifiServiceImpl.registerLOHSForTest(mPid, new LocalOnlyHotspotRequestInfo(
-                exclusiveCallback, WifiServiceImplTest::nopDeathCallback, exclusiveConfig));
+                new WorkSource(), exclusiveCallback, WifiServiceImplTest::nopDeathCallback,
+                exclusiveConfig));
         assertThat(mWifiServiceImpl.startLocalOnlyHotspot(sharedCallback, TEST_PACKAGE_NAME,
                 TEST_FEATURE_ID, null)).isEqualTo(ERROR_GENERIC);
         mLooper.dispatchAll();
@@ -5240,10 +5271,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         // start tethering
         mLooper.startAutoDispatch();
-        boolean tetheringResult = mWifiServiceImpl.startSoftAp(null);
+        boolean tetheringResult = mWifiServiceImpl.startSoftAp(null, TEST_PACKAGE_NAME);
         mLooper.stopAutoDispatchAndIgnoreExceptions();
         assertTrue(tetheringResult);
-        verify(mActiveModeWarden).startSoftAp(any());
+        verify(mActiveModeWarden).startSoftAp(any(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
         mWifiServiceImpl.updateInterfaceIpState(WIFI_IFACE_NAME, IFACE_IP_MODE_TETHERED);
         mLooper.dispatchAll();
     }
@@ -6235,13 +6267,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
         doNothing().when(mContext)
                 .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                         eq("WifiService"));
-        mWifiServiceImpl.setScanAlwaysAvailable(true);
+        mWifiServiceImpl.setScanAlwaysAvailable(true, TEST_PACKAGE_NAME);
         verify(mSettingsStore).handleWifiScanAlwaysAvailableToggled(true);
-        verify(mActiveModeWarden).scanAlwaysModeChanged();
+        verify(mActiveModeWarden).scanAlwaysModeChanged(any());
 
-        mWifiServiceImpl.setScanAlwaysAvailable(false);
+        mWifiServiceImpl.setScanAlwaysAvailable(false, TEST_PACKAGE_NAME);
         verify(mSettingsStore).handleWifiScanAlwaysAvailableToggled(false);
-        verify(mActiveModeWarden, times(2)).scanAlwaysModeChanged();
+        verify(mActiveModeWarden, times(2)).scanAlwaysModeChanged(any());
     }
 
     @Test(expected = SecurityException.class)
@@ -6250,9 +6282,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                         eq("WifiService"));
 
-        mWifiServiceImpl.setScanAlwaysAvailable(true);
+        mWifiServiceImpl.setScanAlwaysAvailable(true, TEST_PACKAGE_NAME);
         verify(mSettingsStore, never()).handleWifiScanAlwaysAvailableToggled(anyBoolean());
-        verify(mActiveModeWarden, never()).scanAlwaysModeChanged();
+        verify(mActiveModeWarden, never()).scanAlwaysModeChanged(any());
     }
 
     private List<ScanResult> createScanResultList() {

@@ -35,14 +35,12 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.os.ResultReceiver;
 import android.os.WorkSource;
 
 import java.util.List;
@@ -247,8 +245,13 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    @Deprecated
     public void setScanAlwaysAvailable(boolean isAvailable) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setScanAlwaysAvailable(boolean isAvailable, String packageName) {
         throw new UnsupportedOperationException();
     }
 
@@ -297,13 +300,23 @@ public class BaseWifiService extends IWifiManager.Stub {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    @Deprecated
     public boolean startSoftAp(WifiConfiguration wifiConfig) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    public boolean startSoftAp(WifiConfiguration wifiConfig, String packageName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Deprecated
     public boolean startTetheredHotspot(SoftApConfiguration softApConfig) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean startTetheredHotspot(SoftApConfiguration softApConfig, String packageName) {
         throw new UnsupportedOperationException();
     }
 

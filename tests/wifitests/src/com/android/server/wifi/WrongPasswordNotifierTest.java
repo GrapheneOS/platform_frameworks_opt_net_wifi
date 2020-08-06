@@ -25,7 +25,6 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.os.UserHandle;
@@ -44,8 +43,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 
-import java.util.Arrays;
-
 /**
  * Unit tests for {@link com.android.server.wifi.WrongPasswordNotifier}.
  */
@@ -56,7 +53,6 @@ public class WrongPasswordNotifierTest extends WifiBaseTest {
 
     @Mock WifiContext mContext;
     @Mock Resources mResources;
-    @Mock PackageManager mPackageManager;
     @Mock NotificationManager mNotificationManager;
     @Mock FrameworkFacade mFrameworkFacade;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS) private Notification.Builder mNotificationBuilder;
@@ -72,14 +68,10 @@ public class WrongPasswordNotifierTest extends WifiBaseTest {
         ResolveInfo settingsResolveInfo = new ResolveInfo();
         settingsResolveInfo.activityInfo = new ActivityInfo();
         settingsResolveInfo.activityInfo.packageName = TEST_SETTINGS_PACKAGE;
-        when(mPackageManager.queryIntentActivitiesAsUser(
-                argThat(((intent) -> intent.getAction().equals(Settings.ACTION_WIFI_SETTINGS))),
-                anyInt(), any()))
-                .thenReturn(Arrays.asList(settingsResolveInfo));
+        when(mFrameworkFacade.getSettingsPackageName(any())).thenReturn(TEST_SETTINGS_PACKAGE);
         when(mContext.getSystemService(Context.NOTIFICATION_SERVICE))
                 .thenReturn(mNotificationManager);
         when(mContext.getResources()).thenReturn(mResources);
-        when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
         mWrongPassNotifier = new WrongPasswordNotifier(mContext, mFrameworkFacade);
 
