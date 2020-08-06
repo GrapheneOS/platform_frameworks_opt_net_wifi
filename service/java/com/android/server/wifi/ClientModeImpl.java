@@ -3681,9 +3681,10 @@ public class ClientModeImpl extends StateMachine {
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(false);
 
-        // Let's remove any ephemeral or passpoint networks.
+        // Remove any ephemeral or Passpoint networks, flush ANQP cache
         mWifiConfigManager.removeAllEphemeralOrPasspointConfiguredNetworks();
         mWifiConfigManager.clearUserTemporarilyDisabledList();
+        mPasspointManager.clearAnqpRequestsAndFlushCache();
     }
 
     void registerConnected() {

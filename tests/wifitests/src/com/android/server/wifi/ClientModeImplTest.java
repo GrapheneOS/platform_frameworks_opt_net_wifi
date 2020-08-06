@@ -2364,6 +2364,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         inOrderMetrics.verify(mWifiMetrics).logStaEvent(StaEvent.TYPE_WIFI_DISABLED);
         assertNull(wifiInfo.getBSSID());
         assertEquals(SupplicantState.DISCONNECTED, wifiInfo.getSupplicantState());
+        verify(mPasspointManager).clearAnqpRequestsAndFlushCache();
 
         // Send a SUPPLICANT_STATE_CHANGE_EVENT, verify WifiInfo is not updated
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
