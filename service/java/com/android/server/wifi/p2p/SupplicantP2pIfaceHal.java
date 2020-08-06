@@ -307,7 +307,7 @@ public class SupplicantP2pIfaceHal {
                                 }
                                 supplicantIface.setResult(status, iface);
                             });
-                } catch (RemoteException e) {
+                } catch (RemoteException | IllegalArgumentException e) {
                     Log.e(TAG, "ISupplicant.getInterface exception: " + e);
                     supplicantServiceDiedHandler();
                     return null;
