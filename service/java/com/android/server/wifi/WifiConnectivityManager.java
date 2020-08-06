@@ -1759,7 +1759,8 @@ public class WifiConnectivityManager {
                 // Make sure that the failed BSSID is blocked for at least TEMP_BSSID_BLOCK_DURATION
                 // to prevent the supplicant from trying it again.
                 mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
-                        TEMP_BSSID_BLOCK_DURATION);
+                        TEMP_BSSID_BLOCK_DURATION,
+                        BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT);
                 connectToNetwork(candidate);
             }
         } catch (IllegalArgumentException e) {

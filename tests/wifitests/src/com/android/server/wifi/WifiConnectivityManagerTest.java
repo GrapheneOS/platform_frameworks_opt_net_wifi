@@ -893,7 +893,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 CANDIDATE_SSID);
         // Verify the failed BSSID is added to blocklist
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(CANDIDATE_BSSID),
-                eq(CANDIDATE_SSID), anyLong());
+                eq(CANDIDATE_SSID), anyLong(), anyInt());
         // Verify another connection starting
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
                 argThat(new WifiCandidatesListSizeMatcher(1)));

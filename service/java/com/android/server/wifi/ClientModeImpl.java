@@ -6295,7 +6295,8 @@ public class ClientModeImpl extends StateMachine {
                 duration = MboOceConstants.DEFAULT_BLACKLIST_DURATION_MS;
             }
             // Blacklist the current BSS
-            mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration);
+            mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration,
+                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE);
         }
 
         if (frameData.mStatus != MboOceConstants.BTM_RESPONSE_STATUS_ACCEPT) {
