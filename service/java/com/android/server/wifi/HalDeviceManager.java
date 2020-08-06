@@ -568,7 +568,6 @@ public class HalDeviceManager {
      */
     private final Map<Pair<String, Integer>, InterfaceCacheEntry> mInterfaceInfoCache =
             new HashMap<>();
-    private WifiChipInfo[] mDebugChipsInfo = null;
 
     private class InterfaceCacheEntry {
         public IWifiChip chip;
@@ -1155,8 +1154,6 @@ public class HalDeviceManager {
                     chipInfo.ifaces[IfaceType.P2P] = p2pIfaces;
                     chipInfo.ifaces[IfaceType.NAN] = nanIfaces;
                 }
-
-                if (mDebugChipsInfo == null) mDebugChipsInfo = chipsInfo;
                 return chipsInfo;
             } catch (RemoteException e) {
                 Log.e(TAG, "getAllChipInfoAndValidateCache exception: " + e);
@@ -2363,6 +2360,6 @@ public class HalDeviceManager {
         pw.println("  mInterfaceAvailableForRequestListeners: "
                 + mInterfaceAvailableForRequestListeners);
         pw.println("  mInterfaceInfoCache: " + mInterfaceInfoCache);
-        pw.println("  mDebugChipsInfo: " + Arrays.toString(mDebugChipsInfo));
+        pw.println("  mDebugChipsInfo: " + Arrays.toString(getAllChipInfo()));
     }
 }
