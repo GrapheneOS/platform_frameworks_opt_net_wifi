@@ -141,9 +141,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
      * Start client mode.
      */
     @Override
-    public void start() {
+    public void start(@NonNull WorkSource requestorWs) {
         mTargetRole = ROLE_CLIENT_SCAN_ONLY;
-        mStateMachine.sendMessage(ClientModeStateMachine.CMD_START);
+        mStateMachine.sendMessage(ClientModeStateMachine.CMD_START, requestorWs);
     }
 
     /**
@@ -564,9 +564,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 switch (message.what) {
                     case CMD_START:
                         // Always start in scan mode first.
+                        WorkSource requestorWs = (WorkSource) message.obj;
                         mClientInterfaceName =
                                 mWifiNative.setupInterfaceForClientInScanMode(
-                                        mWifiNativeInterfaceCallback);
+                                        mWifiNativeInterfaceCallback, requestorWs);
                         if (TextUtils.isEmpty(mClientInterfaceName)) {
                             Log.e(getTag(), "Failed to create ClientInterface. Sit in Idle");
                             mModeListener.onStartFailure();

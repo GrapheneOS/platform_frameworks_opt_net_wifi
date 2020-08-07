@@ -16,6 +16,9 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
+import android.os.WorkSource;
+
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
@@ -50,7 +53,7 @@ public interface ActiveModeManager {
     /**
      * Method used to start the Manager for a given Wifi operational mode.
      */
-    void start();
+    void start(@NonNull WorkSource requestorWs);
 
     /**
      * Method used to stop the Manager for a given Wifi operational mode.
@@ -134,7 +137,6 @@ public interface ActiveModeManager {
      * Method to get the role for a mode manager.
      */
     Role getRole();
-
 
     /**
      * Method to get the iface name for the mode manager.
