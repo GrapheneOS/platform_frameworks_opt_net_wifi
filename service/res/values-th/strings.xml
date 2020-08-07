@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"เครือข่ายที่แนะนำโดย <xliff:g id="NAME">%s</xliff:g> และอุปกรณ์อาจเชื่อมต่อโดยอัตโนมัติ"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"อนุญาต"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"ไม่เป็นไร"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ต้องการเชื่อมต่อโดยอัตโนมัติ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"เครือข่ายเหล่านี้จะได้รับรหัสที่ไม่ซ้ำกันซึ่งใช้ในการติดตามตำแหน่งของอุปกรณ์ได้"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"ยังต้องการเชื่อมต่อ"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"เชื่อมต่อกับ Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> ไหม"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"เครือข่ายเหล่านี้จะได้รับรหัส SIM ซึ่งใช้ติดตามตำแหน่งอุปกรณ์ได้"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"เชื่อมต่อ"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"ไม่เชื่อมต่อ"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"ยืนยันการเชื่อมต่อใช่ไหม"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"หากเชื่อมต่อ เครือข่าย Wi-Fi ของ <xliff:g id="CARRIERNAME">%s</xliff:g> อาจเข้าถึงหรือแชร์รหัสที่ไม่ซ้ำกันซึ่งเชื่อมโยงกับซิมของคุณ และอาจอนุญาตให้มีการติดตามตำแหน่งอุปกรณ์ของคุณ"</string>

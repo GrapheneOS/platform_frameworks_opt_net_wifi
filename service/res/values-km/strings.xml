@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"បណ្ដាញ​ដែលបាន​ណែនាំ​របស់ <xliff:g id="NAME">%s</xliff:g> ។ ឧបករណ៍​អាច​ភ្ជាប់​ដោយស្វ័យប្រវត្តិ។"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"អនុញ្ញាត"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"ទេ អរគុណ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ចង់​ភ្ជាប់​ដោយស្វ័យប្រវត្តិ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"បណ្ដាញ​ទាំងនេះ​ទទួលបាន​លេខសម្គាល់​ពិសេស ដែល​អាចប្រើ​ដើម្បី​តាមដាន​ទីតាំង​ឧបករណ៍"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"មិនអីទេ ភ្ជាប់ចុះ"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"ភ្ជាប់ Wi-Fi របស់ <xliff:g id="CARRIERNAME">%s</xliff:g> ឬ?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"បណ្ដាញ​ទាំងនេះ​ទទួលបាន​លេខសម្គាល់ស៊ីម ដែល​អាចប្រើ​ដើម្បី​តាមដាន​ទីតាំង​ឧបករណ៍"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"ភ្ជាប់"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"កុំ​ភ្ជាប់"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"បញ្ជាក់​ការតភ្ជាប់​ដែរទេ​?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"ប្រសិនបើ​អ្នក​ភ្ជាប់ នោះបណ្ដាញ Wi-Fi របស់ <xliff:g id="CARRIERNAME">%s</xliff:g> អាច​ចូលប្រើ ឬ​ចែករំលែក​លេខសម្គាល់​ពិសេស​ដែលភ្ជាប់​ជាមួយ​ស៊ីម​របស់អ្នក​។ សកម្មភាពនេះ​អាច​អនុញ្ញាតឱ្យមាន​ការតាមដាន​ទីតាំង​ឧបករណ៍​របស់អ្នក​។"</string>

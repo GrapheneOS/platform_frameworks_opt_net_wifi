@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Mreže koje predlaže <xliff:g id="NAME">%s</xliff:g>. Uređaj će se možda povezati automatski."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Dozvoli"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ne, hvala"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> želi da se automatski poveže"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Ove mreže zahtevaju jedinstveni ID koji može da se koristi za praćenje lokacije uređaja"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Ipak poveži"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Želite da se povežete na Wi-Fi mrežu <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Ove mreže dobijaju ID SIM kartice koji može da se koristi za praćenje lokacije uređaja"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Poveži"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ne povezuj"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Želite li da potvrdite povezivanje?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Ako se povežete, Wi‑Fi mreže operatera <xliff:g id="CARRIERNAME">%s</xliff:g> mogu da pristupaju jedinstvenom ID-u povezanom sa SIM karticom ili da ga dele. To može da omogući praćenje lokacije uređaja."</string>
