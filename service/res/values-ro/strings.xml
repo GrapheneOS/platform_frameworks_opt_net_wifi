@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> a sugerat rețele. Dispozitivul se poate conecta automat."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Permiteți"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Nu, mulțumesc"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> încearcă să se conecteze automat"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Aceste rețele primesc un ID unic care se poate folosi pentru a urmări locația dispozitivului"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Conectați oricum"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Vă conectați la rețeaua Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Aceste rețele primesc un cod SIM care se poate folosi pentru a urmări locația dispozitivului"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Conectați"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Nu conectați"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Confirmați conexiunea?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Dacă vă conectați, rețelele Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> pot să acceseze sau să trimită un ID unic asociat profilului dvs. SIM. Astfel, locația dispozitivului poate fi urmărită."</string>

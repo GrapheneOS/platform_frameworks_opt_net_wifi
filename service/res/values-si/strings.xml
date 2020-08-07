@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> යෝජිත ජාල. උපාංගය ස්වයංක්‍රියව සම්බන්ධ වනු ඇත."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ඉඩ දෙන්න"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"එපා, ස්තූතියි"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> හට ස්වයං නිවැරදි කිරීමට අවශ්‍යයි"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"උපාංග ස්ථානය නිරීක්ෂණය කිරීමට භාවිත කළ හැකි අනන්‍ය ID එකක් මෙම ජාලවලට ලැබේ"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"කෙසේ වෙතත් සම්බන්ධ කරන්න"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> Wi-Fi වෙත සබඳින්නද?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"උපාංග ස්ථානය නිරීක්ෂණය කිරීමට භාවිත කළ හැකි SIM ID එකක් මෙම ජාලවලට ලැබේ"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"සම්බන්ධ කරන්න"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"සම්බන්ධ නොකරන්න"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"නිවැරදි කිරීම තහවුරු කරන්නද?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"ඔබ සම්බන්ධ වුවහොත්, <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi ජාල ඔබේ SIM එක හා සම්බන්ධිත අනන්‍ය ID එකකට ප්‍රවේශ වීමට හෝ එය බෙදා ගැනීමට හැකිය. මෙය ඔබේ උපාංගයෙහි ස්ථානය නිරීක්ෂණය කිරීමට ඉඩ දිය හැකිය."</string>

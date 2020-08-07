@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> հավելվածի առաջարկվող ցանցեր: Սարքը կարող է ավտոմատ միանալ:"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Թույլատրել"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ոչ, շնորհակալություն"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g>-ը հայցում է ավտոմատ միանալու թույլտվություն"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Այս ցանցերը ստանում են եզակի ID, որը կարող է օգտագործվել սարքի տեղադրությունը հետագծելու համար։"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Միանալ"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Միանա՞լ <xliff:g id="CARRIERNAME">%s</xliff:g> Wi-Fi ցանցին"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Այս ցանցերը ստանում են SIM քարտի ID, որը կարող է օգտագործվել սարքի տեղադրությունը հետագծելու համար։"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Միանալ"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Չմիանալ"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Հաստատե՞լ միացումը"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Միանալու դեպքում <xliff:g id="CARRIERNAME">%s</xliff:g>-ի Wi‑Fi ցանցերը կարող են ստանալ ձեր SIM քարտի հետ կապված եզակի ID-ն կամ կիսվել դրանով։ Դա հնարավորություն կտա հետագծել ձեր սարքի տեղադրությունը։"</string>

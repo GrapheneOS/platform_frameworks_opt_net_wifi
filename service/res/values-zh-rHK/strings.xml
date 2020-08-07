@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"「<xliff:g id="NAME">%s</xliff:g>」已建議網絡連線，裝置可能會自動連接網絡。"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"允許"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"不用了，謝謝"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"「<xliff:g id="CARRIERNAME">%s</xliff:g>」要求自動連線"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"這些網絡會收到可追蹤裝置位置的獨有 ID"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"仍要連線"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"要連線至「<xliff:g id="CARRIERNAME">%s</xliff:g>」Wi-Fi 嗎？"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"這些網絡會收到可追蹤裝置位置的 SIM 卡 ID"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"連接"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"不要連線"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"確定要連線嗎？"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"連線後，「<xliff:g id="CARRIERNAME">%s</xliff:g>」的 Wi‑Fi 網絡就能存取或分享與 SIM 卡相關的獨有 ID，有心人或許可藉此追蹤您裝置的位置。"</string>

@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Lietotnes <xliff:g id="NAME">%s</xliff:g> ieteiktie tīkli. Ierīcē var tikt automātiski izveidots savienojums."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Atļaut"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Nē, paldies"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> vēlas automātiski izveidot savienojumu"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Šie tīkli saņem unikālo ID, ko var izmantot, lai izsekotu ierīces atrašanās vietu"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Tik un tā izveidot savienojumu"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Vai izveidot savienojumu ar <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Šie tīkli saņem SIM ID, ko var izmantot, lai izsekotu ierīces atrašanās vietu."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Izveidot savienojumu"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Neizveidot savienojumu"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Vai apstiprināt savienojumu?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Ja izveidosiet savienojumu, <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi tīkli varēs piekļūt unikālajam ID, kas saistīts ar jūsu SIM, vai kopīgot to. Tādējādi varēs tikt izsekota jūsu ierīces atrašanās vieta."</string>

@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g>建议的网络。设备可能会自动连接到这些网络。"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"允许"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"不用了"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g>想要自动连接"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"这些网络会收到可用于跟踪设备位置的唯一 ID"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"仍然连接"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"要连接到<xliff:g id="CARRIERNAME">%s</xliff:g>的 WLAN 吗？"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"这些网络会收到可用于跟踪设备位置的 SIM 卡 ID"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"连接"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"不连接"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"确认连接？"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"如果您确认连接，<xliff:g id="CARRIERNAME">%s</xliff:g> WLAN 网络可获取或共享与您的 SIM 卡关联的唯一 ID。他人或许可以借此跟踪您的设备位置。"</string>

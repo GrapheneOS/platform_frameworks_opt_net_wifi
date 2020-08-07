@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> aplikazioak sare batzuk iradoki ditu. Baliteke gailua automatikoki konektatzea."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Baimendu"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ez, eskerrik asko"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> operadoreak automatikoki konektatu nahi du"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Sare hauek ID esklusibo bat jasotzen dute, gailuaren kokapenaren jarraipena egin ahal izateko"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Konektatu halere"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> operadorearen wifi-sarera konektatu nahi duzu?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Sare hauek SIM ID bat jasotzen dute, gailuaren kokapenaren jarraipena egin ahal izateko"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Konektatu"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ez konektatu"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Konexioa berretsi nahi duzu?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Konektatzen bazara, baliteke <xliff:g id="CARRIERNAME">%s</xliff:g> operadorearen wifi-sareek zure SIM txartelarekin lotutako ID esklusiboa atzitzea edo partekatzea. Horrela, baliteke zure gailuaren kokapenaren jarraipena egiteko aukera izatea."</string>
@@ -55,7 +55,7 @@
     <string name="wifi_p2p_invitation_sent_title" msgid="6684220950195735982">"Gonbidapena bidali da"</string>
     <string name="wifi_p2p_invitation_to_connect_title" msgid="5020192895172598089">"Konektatzeko gonbidapena"</string>
     <string name="wifi_p2p_from_message" msgid="3857436922001981191">"Igorlea:"</string>
-    <string name="wifi_p2p_to_message" msgid="6664932426704362946">"Hartzailea:"</string>
+    <string name="wifi_p2p_to_message" msgid="6664932426704362946">"Hartzaileak:"</string>
     <string name="wifi_p2p_enter_pin_message" msgid="5661843905965463456">"Idatzi beharrezko PINa:"</string>
     <string name="wifi_p2p_show_pin_message" msgid="4332876077723766909">"PINa:"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="tablet" msgid="3372859876274663802">"Tableta wifi-saretik deskonektatuko da <xliff:g id="DEVICE_NAME">%1$s</xliff:g> gailura konektatuta dagoen bitartean"</string>

@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Xarxes suggerides de l\'aplicació <xliff:g id="NAME">%s</xliff:g>. El dispositiu pot connectar-se automàticament."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Permet"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"No, gràcies"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"L\'operador <xliff:g id="CARRIERNAME">%s</xliff:g> vol connectar-se automàticament"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Aquestes xarxes reben un identificador únic que es pot utilitzar per fer un seguiment de la ubicació del dispositiu"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Connecta\'t de totes maneres"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Vols connectar-te a la Wi‑Fi de l\'operador <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Aquestes xarxes reben un identificador de SIM que es pot utilitzar per fer el seguiment de la ubicació del dispositiu"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Connecta"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"No et connectis"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Vols confirmar la connexió?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Si et connectes, les xarxes Wi‑Fi de l\'operador <xliff:g id="CARRIERNAME">%s</xliff:g> poden compartir un identificador únic associat a la teva SIM o bé accedir-hi. Això pot permetre que es faci un seguiment de la ubicació del teu dispositiu."</string>

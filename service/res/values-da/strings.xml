@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Netværk foreslået af <xliff:g id="NAME">%s</xliff:g>. Enheden opretter muligvis forbindelse automatisk."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Tillad"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Nej tak"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> vil gerne oprette forbindelse automatisk"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Disse netværk modtager et unikt id, der kan bruges til at spore enhedens placering"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Opret forbindelse alligevel"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Opret forbindelse til <xliff:g id="CARRIERNAME">%s</xliff:g>-Wi-Fi"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Disse netværk kræver et SIM-id, der kan bruges til at spore enhedens placering"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Opret forbindelse"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Opret ikke forbindelse"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Vil du bekræfte forbindelsen?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Hvis du opretter forbindelse, kan Wi-Fi-netværk fra <xliff:g id="CARRIERNAME">%s</xliff:g> få adgang til eller dele et unikt id, der er knyttet til dit SIM-kort. Derved kan din enheds placering muligvis spores."</string>
