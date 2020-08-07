@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Registreerimise lõpuleviimine …"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Registreerimist ei saanud lõpule viia. Puudutage, et uuesti proovida."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Registreerimine on lõpule viidud. Ühendamine …"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"See võrk saab kordumatu ID, mida saab kasutada seadme asukoha jälgimiseks. "<annotation id="url">"Lisateave"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"See võrk saab SIM-i ID, mida saab kasutada seadme asukoha jälgimiseks. "<annotation id="url">"Lisateave"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Väga aeglane"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Aeglane"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>

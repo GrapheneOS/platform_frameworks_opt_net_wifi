@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Kinukumpleto ang pag-sign up…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Hindi makumpleto ang pag-sign up. I-tap para subukan ulit."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Kumpleto na ang pag-sign up. Kumokonekta…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Tumatanggap ang network na ito ng natatanging ID na magagamit sa pagsubaybay ng lokasyon ng device. "<annotation id="url">"Matuto pa"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Tumatanggap ang network na ito ng SIM ID na magagamit sa pag-track sa lokasyon ng device. "<annotation id="url">"Matuto pa"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Napakabagal"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Mabagal"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>

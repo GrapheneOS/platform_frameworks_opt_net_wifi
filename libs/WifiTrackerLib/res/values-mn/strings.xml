@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Бүртгэлийг дуусгаж байна…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Бүртгэлийг дуусгаж чадсангүй. Дахин оролдохын тулд товшино уу."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Бүртгэлийг дуусгалаа. Холбогдож байна…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Энэ сүлжээ нь төхөөрөмжийн байршлыг тандахад ашиглах боломжтой цор ганц дугаарыг хүлээн авдаг. "<annotation id="url">"Нэмэлт мэдээлэл авах"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Энэ сүлжээ нь төхөөрөмжийн байршлыг тандахад ашиглах боломжтой SIM ID-г хүлээн авдаг. "<annotation id="url">"Нэмэлт мэдээлэл авах"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Маш удаан"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Удаан"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ОК"</string>

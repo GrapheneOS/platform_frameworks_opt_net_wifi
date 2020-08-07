@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Тіркелу аяқталуда…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Тіркелу аяқталмады. Әрекетті қайталау үшін түртіңіз."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Тіркелу аяқталды. Байланыс орнатылуда…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Бұл желіге бірегей идентификатор беріледі, оның көмегімен құрылғының орналасқан жері қадағаланады. "<annotation id="url">"Толығырақ"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Бұл желіге SIM идентификаторы беріледі, оның көмегімен құрылғының орналасқан жері қадағаланады. "<annotation id="url">"Толығырақ"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Өте баяу"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Баяу"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Иә"</string>

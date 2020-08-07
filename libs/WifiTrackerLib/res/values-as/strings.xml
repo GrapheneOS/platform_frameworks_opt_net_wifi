@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"ছাইন আপ সম্পূৰ্ণ কৰি থকা হৈছে…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ছাইন আপ সম্পূৰ্ণ কৰিব পৰা নগ’ল। পুনৰ চেষ্টা কৰিবলৈ টিপক।"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ছাইন আপ সম্পূৰ্ণ হৈছে। সংযোগ কৰি থকা হৈছে…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"এই নেটৱৰ্কটোৱে এটা সুকীয়া আইডি পায়, যিটো ডিভাইচৰ অৱস্থান ট্ৰেক কৰিবলৈ ব্যৱহাৰ কৰিব পাৰি। "<annotation id="url">"অধিক জানক"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"এই নেটৱৰ্কটোৱে এটা ছিম আইডি পায়, যিটো ডিভাইচৰ অৱস্থান ট্ৰেক কৰিবলৈ ব্যৱহাৰ কৰিব পাৰি। "<annotation id="url">"অধিক জানক"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"অতি লেহেমীয়া"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"লেহেমীয়া"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ঠিক আছে"</string>
