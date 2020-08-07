@@ -815,7 +815,7 @@ public class WifiServiceImpl extends BaseWifiService {
                     : UserActionEvent.EVENT_TOGGLE_WIFI_OFF);
         }
         mWifiMetrics.incrementNumWifiToggles(isPrivileged, enable);
-        mActiveModeWarden.wifiToggled();
+        mActiveModeWarden.wifiToggled(new WorkSource(Binder.getCallingUid(), packageName));
         return true;
     }
 
@@ -882,7 +882,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * @throws SecurityException if the caller does not have permission to start softap
      */
     @Override
-    public boolean startSoftAp(WifiConfiguration wifiConfig) {
+    public boolean startSoftAp(WifiConfiguration wifiConfig, String packageName) {
         // NETWORK_STACK is a signature only permission.
         enforceNetworkStackPermission();
 
@@ -909,7 +909,8 @@ public class WifiServiceImpl extends BaseWifiService {
 
         if (!startSoftApInternal(new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, softApConfig,
-                mTetheredSoftApTracker.getSoftApCapability()))) {
+                mTetheredSoftApTracker.getSoftApCapability()),
+                new WorkSource(Binder.getCallingUid(), packageName))) {
             mTetheredSoftApTracker.setFailedWhileEnabling();
             return false;
         }
@@ -948,7 +949,8 @@ public class WifiServiceImpl extends BaseWifiService {
      * @throws SecurityException if the caller does not have permission to start softap
      */
     @Override
-    public boolean startTetheredHotspot(@Nullable SoftApConfiguration softApConfig) {
+    public boolean startTetheredHotspot(@Nullable SoftApConfiguration softApConfig,
+            @NonNull String packageName) {
         // NETWORK_STACK is a signature only permission.
         enforceNetworkStackPermission();
 
@@ -967,7 +969,8 @@ public class WifiServiceImpl extends BaseWifiService {
 
         if (!startSoftApInternal(new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, softApConfig,
-                mTetheredSoftApTracker.getSoftApCapability()))) {
+                mTetheredSoftApTracker.getSoftApCapability()),
+                new WorkSource(Binder.getCallingUid(), packageName))) {
             mTetheredSoftApTracker.setFailedWhileEnabling();
             return false;
         }
@@ -979,7 +982,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * Internal method to start softap mode. Callers of this method should have already checked
      * proper permissions beyond the NetworkStack permission.
      */
-    private boolean startSoftApInternal(SoftApModeConfiguration apConfig) {
+    private boolean startSoftApInternal(SoftApModeConfiguration apConfig, WorkSource requestorWs) {
         int uid = Binder.getCallingUid();
         boolean privileged = isSettingsOrSuw(Binder.getCallingPid(), uid);
         mLog.trace("startSoftApInternal uid=% mode=%")
@@ -995,7 +998,7 @@ public class WifiServiceImpl extends BaseWifiService {
             return false;
         }
 
-        mActiveModeWarden.startSoftAp(apConfig);
+        mActiveModeWarden.startSoftAp(apConfig, requestorWs);
         return true;
     }
 
@@ -1531,7 +1534,7 @@ public class WifiServiceImpl extends BaseWifiService {
                     softApConfig, mLohsSoftApTracker.getSoftApCapability());
             mIsExclusive = (request.getCustomConfig() != null);
 
-            startSoftApInternal(mActiveConfig);
+            startSoftApInternal(mActiveConfig, request.getWorkSource());
         }
 
         /**
@@ -1845,7 +1848,8 @@ public class WifiServiceImpl extends BaseWifiService {
         }
 
         // now create the new LOHS request info object
-        LocalOnlyHotspotRequestInfo request = new LocalOnlyHotspotRequestInfo(callback,
+        LocalOnlyHotspotRequestInfo request = new LocalOnlyHotspotRequestInfo(
+                new WorkSource(uid, packageName), callback,
                 new LocalOnlyRequestorCallback(), customConfig);
 
         return mLohsSoftApTracker.start(pid, request);
@@ -2021,7 +2025,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * see {@link android.net.wifi.WifiManager#setScanAlwaysAvailable(boolean)}
      */
     @Override
-    public void setScanAlwaysAvailable(boolean isAvailable) {
+    public void setScanAlwaysAvailable(boolean isAvailable, String packageName) {
         enforceNetworkSettingsPermission();
         mLog.info("setScanAlwaysAvailable uid=%").c(Binder.getCallingUid()).flush();
         mSettingsStore.handleWifiScanAlwaysAvailableToggled(isAvailable);
@@ -2032,7 +2036,8 @@ public class WifiServiceImpl extends BaseWifiService {
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
-        mActiveModeWarden.scanAlwaysModeChanged();
+        mActiveModeWarden.scanAlwaysModeChanged(
+                new WorkSource(Binder.getCallingUid(), packageName));
     }
 
     /**

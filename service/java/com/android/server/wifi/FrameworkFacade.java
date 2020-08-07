@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
 import static android.content.pm.PackageManager.FEATURE_DEVICE_ADMIN;
 
+import android.annotation.NonNull;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Notification;
@@ -27,18 +28,25 @@ import android.app.admin.DevicePolicyManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.ContentObserver;
 import android.net.TrafficStats;
 import android.net.Uri;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
 import android.os.PersistableBundle;
+import android.os.Process;
+import android.os.UserHandle;
+import android.os.WorkSource;
 import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.android.server.wifi.util.WifiAsyncChannel;
+
+import java.util.List;
 
 /**
  * This class allows overriding objects with mocks to write unit tests
@@ -291,5 +299,33 @@ public class FrameworkFacade {
      */
     public long getTotalRxBytes() {
         return TrafficStats.getTotalRxBytes();
+    }
+
+    private String mSettingsPackageName;
+
+    /**
+     * @return Get settings package name.
+     */
+    public String getSettingsPackageName(@NonNull Context context) {
+        if (mSettingsPackageName != null) return mSettingsPackageName;
+
+        Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+        List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivitiesAsUser(
+                intent, PackageManager.MATCH_SYSTEM_ONLY | PackageManager.MATCH_DEFAULT_ONLY,
+                UserHandle.of(ActivityManager.getCurrentUser()));
+        if (resolveInfos == null || resolveInfos.isEmpty()) {
+            Log.e(TAG, "Failed to resolve wifi settings activity");
+            return null;
+        }
+        // Pick the first one if there are more than 1 since the list is ordered from best to worst.
+        mSettingsPackageName = resolveInfos.get(0).activityInfo.packageName;
+        return mSettingsPackageName;
+    }
+
+    /**
+     * @return Get a worksource to blame settings apps.
+     */
+    public WorkSource getSettingsWorkSource(Context context) {
+        return new WorkSource(Process.SYSTEM_UID, getSettingsPackageName(context));
     }
 }
