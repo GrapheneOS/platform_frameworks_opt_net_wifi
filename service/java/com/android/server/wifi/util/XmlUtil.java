@@ -746,6 +746,10 @@ public class XmlUtil {
             if (!macRandomizationSettingExists) {
                 configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
             }
+            if (configuration.macRandomizationSetting
+                    == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+                configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
+            }
             return Pair.create(configKeyInData, configuration);
         }
     }
