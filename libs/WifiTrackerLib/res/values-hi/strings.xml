@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"साइन अप किया जा रहा है…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"साइन अप नहीं किया जा सका. फिर से कोशिश करने के लिए टैप करें."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"साइन अप की प्रक्रिया पूरी हो गई. कनेक्ट हो रहा है…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"इस नेटवर्क को एक विशेष आईडी दिया जाता है जिसका इस्तेमाल डिवाइस की जगह की जानकारी का पता लगाने के लिए किया जा सकता है. "<annotation id="url">"ज़्यादा जानें"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"इस नेटवर्क को एक सिम आईडी दिया जाता है जिसका इस्तेमाल डिवाइस की जगह की जानकारी का पता लगाने के लिए किया जा सकता है. "<annotation id="url">"ज़्यादा जानें"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"बहुत धीमी"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"धीमी"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ठीक-ठाक"</string>

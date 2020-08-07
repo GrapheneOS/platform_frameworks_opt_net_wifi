@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Inakamilisha usajili…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Imeshindwa kukamilisha usajili. Gusa ili ujaribu tena."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Imekamilisha usajili. Inaunganisha…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Mtandao huu hupokea kitambulisho cha kipekee ambacho kinaweza kutumiwa kufuatilia mahali kifaa kilipo. "<annotation id="url">"Pata maelezo zaidi"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Mtandao huu hupokea kitambulisho cha SIM ambacho kinaweza kutumiwa kufuatilia mahali kifaa kilipo. "<annotation id="url">"Pata maelezo zaidi"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Polepole Sana"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Polepole"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Sawa"</string>

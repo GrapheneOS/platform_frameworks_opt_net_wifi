@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"가입 완료 중…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"가입을 완료할 수 없음. 탭하여 다시 시도"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"가입 완료. 연결 중…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"이 네트워크는 기기 위치 추적에 사용될 수 있는 고유 ID를 수신합니다. "<annotation id="url">"자세히 알아보기"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"이 네트워크는 기기 위치 추적에 사용될 수 있는 SIM ID를 수신합니다. "<annotation id="url">"자세히 알아보기"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"매우 느림"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"느림"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"양호"</string>

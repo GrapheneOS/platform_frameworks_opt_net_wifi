@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Voltooi tans aanmelding …"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Kon nie aanmelding voltooi nie. Tik om weer te probeer."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Aanmelding is voltooi. Koppel tans …"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Hierdie netwerk ontvang \'n unieke ID wat gebruik kan word om toestelligging na te spoor. "<annotation id="url">"Kom meer te wete"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Hierdie netwerk ontvang \'n SIM-ID wat gebruik kan word om toestelligging na te spoor. "<annotation id="url">"Kom meer te wete"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Baie stadig"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Stadig"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>

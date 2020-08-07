@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Aanmelding voltooien…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Kan aanmelding niet voltooien. Tik om het opnieuw te proberen."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Aanmelding voltooid. Verbinden…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Dit netwerk ontvangt een unieke ID die kan worden gebruikt om de apparaatlocatie bij te houden. "<annotation id="url">"Meer informatie"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Dit netwerk ontvangt een simkaart-ID die kan worden gebruikt om de apparaatlocatie bij te houden. "<annotation id="url">"Meer informatie"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Zeer langzaam"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Langzaam"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>

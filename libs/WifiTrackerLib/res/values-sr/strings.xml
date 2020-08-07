@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Регистрација се довршава…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Довршавање регистрације није успело. Додирните да бисте пробали поново."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Регистрација је довршена. Повезује се…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Ова мрежа захтева јединствени ИД који може да се користи за праћење локације уређаја. "<annotation id="url">"Сазнајте више"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ова мрежа добија ИД SIM картице који може да се користи за праћење локације уређаја. "<annotation id="url">"Сазнајте више"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Веома споро"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Споро"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"У реду"</string>

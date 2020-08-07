@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"साइन अप गर्ने कार्य सम्पन्न गर्दै…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"साइन अप गर्ने कार्य सम्पन्न गर्न सकिएन। फेरि प्रयास गर्न ट्याप गर्नुहोस्।"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"साइन अप गर्ने कार्य सम्पन्न भयो। कनेक्ट गर्दै…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"यो नेटवर्कले यन्त्रको स्थान पहिल्याउन प्रयोग गर्न सकिने एउटा अद्वित्तीय ID प्राप्त गर्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"यो नेटवर्कलाई यन्त्रको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"धेरै सुस्त"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"सुस्त"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ठिकै"</string>

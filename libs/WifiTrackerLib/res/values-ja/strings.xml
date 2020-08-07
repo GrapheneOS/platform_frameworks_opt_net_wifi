@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"登録を完了しています…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"登録を完了できませんでした。タップしてもう一度お試しください。"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"登録が完了しました。接続しています…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"このネットワークは一意の ID を受信します。この ID を使ってデバイスの位置情報が追跡される可能性があります。"<annotation id="url">"詳細"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"このネットワークは SIM ID を受信します。この ID を使ってデバイスの位置情報が追跡される可能性があります。"<annotation id="url">"詳細"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"非常に遅い"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"遅い"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>
