@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"正在完成注册…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"无法完成注册。点按即可重试。"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"注册完毕。正在连接…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"此网络会收到可用于跟踪设备位置的唯一 ID。"<annotation id="url">"了解详情"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"此网络会收到可用于跟踪设备位置的 SIM 卡 ID。"<annotation id="url">"了解详情"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"很慢"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"慢"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"尚可"</string>

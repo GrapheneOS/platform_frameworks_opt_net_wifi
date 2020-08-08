@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Προτεινόμενα δίκτυα <xliff:g id="NAME">%s</xliff:g>. Η συσκευή μπορεί να συνδεθεί αυτόματα."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Αποδοχή"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Όχι, ευχαριστώ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Η εταιρεία κινητής τηλεφωνίας <xliff:g id="CARRIERNAME">%s</xliff:g> θέλει αυτόματη σύνδεση"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Αυτά τα δίκτυα λαμβάνουν ένα μοναδικό αναγνωριστικό που μπορεί να χρησιμοποιηθεί για την παρακολούθηση της τοποθεσίας της συσκευής."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Σύνδεση ούτως ή άλλως"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Σύνδεση στο Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g>;"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Αυτά τα δίκτυα λαμβάνουν ένα αναγνωριστικό SIM που μπορεί να χρησιμοποιηθεί για την παρακολούθηση της τοποθεσίας της συσκευής."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Σύνδεση"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Να μην γίνει σύνδεση."</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Επιβεβαίωση της σύνδεσης;"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Εάν συνδεθείτε, τα δίκτυα Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> ενδέχεται να έχουν πρόσβαση ή να μοιράζονται ένα μοναδικό αναγνωριστικό που σχετίζεται με την κάρτα σας SIM. Αυτό μπορεί να επιτρέψει την παρακολούθηση της τοποθεσίας της συσκευής σας."</string>

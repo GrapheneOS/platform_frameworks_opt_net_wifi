@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Rakenduse <xliff:g id="NAME">%s</xliff:g> soovitatud võrgud. Seade võib automaatselt ühenduse luua."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Luba"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Tänan, ei"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> soovib automaatselt ühenduse luua"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Need võrgud saavad kordumatu ID, mida saab kasutada seadme asukoha jälgimiseks."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Ühenda siiski"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Kas luua ühendus operaatori <xliff:g id="CARRIERNAME">%s</xliff:g> WiFi-võrguga?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Need võrgud saavad SIM-i ID, mida saab kasutada seadme asukoha jälgimiseks."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Ühenda"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ära ühenda"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Kas soovite ühenduse kinnitada?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Kui loote ühenduse, võivad operaatori <xliff:g id="CARRIERNAME">%s</xliff:g> WiFi-võrgud teie SIM-kaardiga seotud kordumatule ID-le juurde pääseda või seda jagada. See võib võimaldada seadme asukohta jälgida."</string>

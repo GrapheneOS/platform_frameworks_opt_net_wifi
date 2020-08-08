@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Các mạng do <xliff:g id="NAME">%s</xliff:g> đề xuất. Thiết bị có thể kết nối tự động."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Cho phép"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Không, cảm ơn"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> muốn kết nối tự động"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Các mạng này nhận được một mã nhận dạng duy nhất dùng để theo dõi vị trí của thiết bị"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Vẫn kết nối"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Kết nối với Wi-Fi của <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Các mạng này nhận được một mã nhận dạng SIM có thể dùng để theo dõi vị trí của thiết bị"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Kết nối"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Không kết nối"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Xác nhận kết nối?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Nếu bạn kết nối, các mạng Wi-Fi của <xliff:g id="CARRIERNAME">%s</xliff:g> có thể truy cập hoặc chia sẻ mã nhận dạng duy nhất liên kết với SIM của bạn. Từ đó, các mạng này có thể theo dõi vị trí thiết bị của bạn."</string>

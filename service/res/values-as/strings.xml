@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g>এ পৰামর্শ হিচাপে দিয়া নেটৱর্কবোৰ। ডিভাইচটো স্বয়ংক্ৰিয়ভাৱে সংযোগ হ\'ব পাৰে।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"অনুমতি দিয়ক"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"নালাগে, ধন্যবাদ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g>এ স্বয়ংক্ৰিয়ভাৱে সংযোগ কৰিবলৈ বিচাৰিছে"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"এই নেটৱৰ্কসমূহে এটা সুকীয়া আইডি পায়, যিটো ডিভাইচৰ অৱস্থান ট্ৰেক কৰিবলৈ ব্যৱহাৰ কৰিব পৰা যায়"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"যিহ’লেও সংযোগ কৰক"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> ৱাই-ফাইৰ সৈতে সংযোগ কৰিবনে?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"এই নেটৱৰ্কটোৱে এটা ছিম আইডি পায়, যিটো ডিভাইচৰ অৱস্থান ট্ৰেক কৰিবলৈ ব্যৱহাৰ কৰিব পাৰি"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"সংযোগ কৰক"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"সংযোগ নকৰিব"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"সংযোগ নিশ্চিত কৰিবনে?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"আপুনি যদি সংযোগ কৰে, <xliff:g id="CARRIERNAME">%s</xliff:g>ৰ ৱাই-ফাই নেটৱৰ্কসমূহে আপোনাৰ ছিমৰ সৈতে জড়িত এটা সুকীয়া আইডি এক্সেছ কৰিব অথবা সেইটো শ্বেয়াৰ কৰিব পাৰে। এইটোৱে আপোনাৰ ডিভাইচটোৰ অৱস্থান ট্ৰেক কৰাৰ অনুমতি দিব পাৰে।"</string>

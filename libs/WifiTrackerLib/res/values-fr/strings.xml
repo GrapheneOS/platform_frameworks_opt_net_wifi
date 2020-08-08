@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Finalisation de l\'inscription…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Impossible de finaliser l\'inscription. Appuyez ici pour réessayer."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Inscription terminée. Connexion…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"Ce réseau reçoit un identifiant unique qui peut être utilisé pour suivre la position de l\'appareil. "<annotation id="url">"En savoir plus"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ce réseau reçoit un ID de SIM qui peut être utilisé pour suivre la position de l\'appareil. "<annotation id="url">"En savoir plus"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Très lente"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Lente"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Correcte"</string>

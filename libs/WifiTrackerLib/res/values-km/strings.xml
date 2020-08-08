@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"កំពុង​បញ្ចប់​ការចុះឈ្មោះ…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"មិនអាច​បញ្ចប់​ការចុះឈ្មោះ​បានទេ។ សូមចុច ដើម្បី​ព្យាយាម​ម្ដង​ទៀត។"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ការចុះ​ឈ្មោះ​បានបញ្ចប់។ កំពុងភ្ជាប់…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"បណ្ដាញនេះទទួលលេខសម្គាល់ពិសេស ដែលអាចប្រើ​សម្រាប់​តាមដាន​ទីតាំងឧបករណ៍។ "<annotation id="url">"ស្វែងយល់បន្ថែម"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"បណ្ដាញ​នេះ​ទទួលបាន​លេខសម្គាល់ស៊ីម ដែល​អាចប្រើ​ដើម្បី​តាមដាន​ទីតាំង​ឧបករណ៍។ "<annotation id="url">"ស្វែងយល់បន្ថែម"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"យឺតណាស់"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"យឺត"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"យល់ព្រម"</string>

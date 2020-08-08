@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Redes sugeridas por <xliff:g id="NAME">%s</xliff:g>. O dispositivo pode estabelecer ligação automaticamente."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Permitir"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Não, obrigado"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"O operador <xliff:g id="CARRIERNAME">%s</xliff:g> pretende efetuar uma ligação automática"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Estas redes recebem um ID exclusivo que pode ser utilizado para monitorizar a localização dos dispositivos."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Ligar mesmo assim"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Pretende estabelecer ligação à rede Wi-Fi do operador <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Estas redes recebem um ID do SIM que pode ser utilizado para monitorizar a localização dos dispositivos."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Ligar"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Não ligar"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Pretende confirmar a ligação?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Caso proceda à ligação, as redes Wi-Fi do operador <xliff:g id="CARRIERNAME">%s</xliff:g> podem partilhar ou aceder a um ID exclusivo associado ao seu SIM. Esta ação pode permitir que a localização do seu dispositivo seja monitorizada."</string>

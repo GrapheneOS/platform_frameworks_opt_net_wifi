@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"సైన్ అప్ పూర్తి కావస్తోంది…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"సైన్ అప్‌ను పూర్తి చేయడం సాధ్యపడలేదు. మళ్ళీ ట్రై చేయడానికి ట్యాప్ చేయండి."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"సైన్ అప్ పూర్తయింది. కనెక్ట్ చేయబడుతోంది…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="5177588159471032092">"పరికర లొకేషన్‌ను ట్రాక్ చేయడానికి ఉపయోగపడే యూనిక్ IDని ఈ నెట్‌వర్క్ అందుకుంటుంది. "<annotation id="url">"మరింత తెలుసుకోండి"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"పరికర లొకేషన్‌ను ట్రాక్ చేయడానికి ఉపయోగపడే SIM IDని ఈ నెట్‌వర్క్ అందుకుంటుంది. "<annotation id="url">"మరింత తెలుసుకోండి"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"చాలా నెమ్మది"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"నెమ్మది"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"సరే"</string>

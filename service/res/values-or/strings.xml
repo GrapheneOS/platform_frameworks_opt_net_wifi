@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ପ୍ରସ୍ତାବିତ ନେଟ୍‌ୱାର୍କଗୁଡ଼ିକ। ଡିଭାଇସ୍ ହୁଏତ ସ୍ୱଚାଳିତ ଭାବେ ସଂଯୋଗ ହୋଇପାରେ।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ଅନୁମତି ଦିଅନ୍ତୁ"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"ନାହିଁ, ଥାଉ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ସ୍ୱତଃ-ସଂଯୋଗ କରିବାକୁ ଚାହେଁ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"ଏହି ନେଟୱାର୍କଗୁଡ଼ିକ ଏକ ସ୍ଵତନ୍ତ୍ର ID ପାଇଥାଏ ଯାହାକୁ ଡିଭାଇସର ଲୋକେସନ୍ ଟ୍ରାକ୍ କରିବାକୁ ବ୍ୟବହାର କରାଯାଇପାରେ"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"ଯେ କୌଣସି ମତେ ସଂଯୋଗ କରନ୍ତୁ"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> ୱାଇ-ଫାଇ ସହ ସଂଯୋଗ କରିବେ?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"ଏହି ନେଟୱାର୍କଗୁଡ଼ିକ ଏକ SIM ID ପ୍ରାପ୍ତ କରେ ଯାହା ଡିଭାଇସର ଲୋକେସନ୍ ଟ୍ରାକ୍ କରିବାରେ ବ୍ୟବହାର କରାଯାଇପାରିବ"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"ସଂଯୋଗ କରନ୍ତୁ"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"ସଂଯୋଗ କରନ୍ତୁ ନାହିଁ"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"ସଂଯୋଗ ସୁନିଶ୍ଚିତ କରିବେ?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"ଯଦି ଆପଣ ସଂଯୋଗ କରିବେ, ତେବେ <xliff:g id="CARRIERNAME">%s</xliff:g> ୱାଇ-ଫାଇ ନେଟୱାର୍କଗୁଡ଼ିକ ଆପଣଙ୍କ SIM ସମ୍ବନ୍ଧିତ ଏକ ସ୍ଵତନ୍ତ୍ର ID ଆକ୍ସେସ୍ କିମ୍ବା ସେୟାର୍ କରିପାରେ। ଏହା ଆପଣଙ୍କ ଡିଭାଇସର ଲୋକେସନ୍ ଟ୍ରାକ୍ କରିବାକୁ ଅନୁମତି ଦେଇପାରେ।"</string>
