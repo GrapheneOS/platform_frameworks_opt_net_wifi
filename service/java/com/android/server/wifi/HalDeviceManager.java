@@ -257,7 +257,7 @@ public class HalDeviceManager {
      * Create NAN interface if possible (see createStaIface doc).
      */
     public IWifiNanIface createNanIface(@Nullable InterfaceDestroyedListener destroyedListener,
-            @Nullable Handler handler) {
+            @Nullable Handler handler, @NonNull WorkSource requestorWs) {
         return (IWifiNanIface) createIface(IfaceType.NAN, destroyedListener, handler);
     }
 

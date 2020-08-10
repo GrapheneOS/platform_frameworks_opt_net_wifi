@@ -355,7 +355,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         chipMock.interfaceNames.get(IfaceType.STA).remove("wlan0");
 
         // now try to request another NAN
-        IWifiIface nanIface2 = mDut.createNanIface(nanDestroyedListener, mHandler);
+        IWifiIface nanIface2 = mDut.createNanIface(nanDestroyedListener, mHandler, TEST_WORKSOURCE);
         collector.checkThat("NAN can't be created", nanIface2, IsNull.nullValue());
 
         mDut.registerInterfaceAvailableForRequestListener(IfaceType.NAN, nanAvailListener,
@@ -2606,7 +2606,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, iface)).when(
                         chipMock.chip).createNanIface(any(IWifiChip.createNanIfaceCallback.class));
 
-                mDut.createNanIface(destroyedListener, mHandler);
+                mDut.createNanIface(destroyedListener, mHandler, TEST_WORKSOURCE);
                 break;
         }
         if (availableListener != null) {
