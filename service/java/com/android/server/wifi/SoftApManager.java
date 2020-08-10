@@ -329,19 +329,19 @@ public class SoftApManager implements ActiveModeManager {
         if (mac == null) {
             // If no BSSID is explicitly requested, (re-)configure the factory MAC address. Some
             // drivers may not support setting the MAC at all, so fail soft in this case.
-            mac = mWifiNative.getFactoryMacAddress(mApInterfaceName);
+            mac = mWifiNative.getApFactoryMacAddress(mApInterfaceName);
             if (mac == null) {
                 Log.e(getTag(), "failed to get factory MAC address");
                 return ERROR_GENERIC;
             }
 
-            if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+            if (!mWifiNative.setApMacAddress(mApInterfaceName, mac)) {
                 Log.w(getTag(), "failed to reset to factory MAC address; "
                         + "continuing with current MAC");
             }
         } else {
-            if (mWifiNative.isSetMacAddressSupported(mApInterfaceName)) {
-                if (!mWifiNative.setMacAddress(mApInterfaceName, mac)) {
+            if (mWifiNative.isApSetMacAddressSupported(mApInterfaceName)) {
+                if (!mWifiNative.setApMacAddress(mApInterfaceName, mac)) {
                     Log.e(getTag(), "failed to set explicitly requested MAC address");
                     return ERROR_GENERIC;
                 }
