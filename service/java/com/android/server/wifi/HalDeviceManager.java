@@ -249,7 +249,7 @@ public class HalDeviceManager {
      * Create P2P interface if possible (see createStaIface doc).
      */
     public IWifiP2pIface createP2pIface(@Nullable InterfaceDestroyedListener destroyedListener,
-            @Nullable Handler handler) {
+            @Nullable Handler handler, @NonNull WorkSource requestorWs) {
         return (IWifiP2pIface) createIface(IfaceType.P2P, destroyedListener, handler);
     }
 
