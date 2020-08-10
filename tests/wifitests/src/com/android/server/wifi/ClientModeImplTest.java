@@ -4330,12 +4330,12 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * Test that handleBssTransitionRequest() blacklist the BSS upon
+     * Test that handleBssTransitionRequest() blocklist the BSS upon
      * receiving BTM request frame that contains MBO-OCE IE with an
      * association retry delay attribute.
      */
     @Test
-    public void testBtmFrameWithMboAssocretryDelayBlackListTheBssid() throws Exception {
+    public void testBtmFrameWithMboAssocretryDelayBlockListTheBssid() throws Exception {
         // Connect to network with |sBSSID|, |sFreq|.
         connect();
 
@@ -4344,14 +4344,37 @@ public class ClientModeImplTest extends WifiBaseTest {
         btmFrmData.mStatus = MboOceConstants.BTM_RESPONSE_STATUS_REJECT_UNSPECIFIED;
         btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT
                 | MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED;
-        btmFrmData.mBlackListDurationMs = 60000;
+        btmFrmData.mBlockListDurationMs = 60000;
 
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
         mLooper.dispatchAll();
 
         verify(mWifiMetrics, times(1)).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
-                eq(btmFrmData.mBlackListDurationMs), anyInt(), anyInt());
+                eq(btmFrmData.mBlockListDurationMs), anyInt(), anyInt());
+    }
+
+    /**
+     * Test that handleBssTransitionRequest() blocklist the BSS upon
+     * receiving BTM request frame that contains disassociation imminent bit
+     * set to 1.
+     */
+    @Test
+    public void testBtmFrameWithDisassocImminentBitBlockListTheBssid() throws Exception {
+        // Connect to network with |sBSSID|, |sFreq|.
+        connect();
+
+        MboOceController.BtmFrameData btmFrmData = new MboOceController.BtmFrameData();
+
+        btmFrmData.mStatus = MboOceConstants.BTM_RESPONSE_STATUS_ACCEPT;
+        btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT;
+
+        mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
+        mLooper.dispatchAll();
+
+        verify(mWifiMetrics, never()).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
+        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
+                eq(MboOceConstants.DEFAULT_BLOCKLIST_DURATION_MS), anyInt(), anyInt());
     }
 
     /**
@@ -4369,13 +4392,13 @@ public class ClientModeImplTest extends WifiBaseTest {
         btmFrmData.mBssTmDataFlagsMask = MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT
                 | MboOceConstants.BTM_DATA_FLAG_BSS_TERMINATION_INCLUDED
                 | MboOceConstants.BTM_DATA_FLAG_MBO_CELL_DATA_CONNECTION_PREFERENCE_INCLUDED;
-        btmFrmData.mBlackListDurationMs = 60000;
+        btmFrmData.mBlockListDurationMs = 60000;
 
         mCmi.sendMessage(WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE, btmFrmData);
         mLooper.dispatchAll();
 
         verify(mBssidBlocklistMonitor, never()).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
-                eq(btmFrmData.mBlackListDurationMs), anyInt(), anyInt());
+                eq(btmFrmData.mBlockListDurationMs), anyInt(), anyInt());
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
         verify(mWifiMetrics, times(1)).incrementMboCellularSwitchRequestCount();
         verify(mWifiMetrics, times(1))
