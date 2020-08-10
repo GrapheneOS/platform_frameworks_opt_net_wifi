@@ -40,6 +40,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.os.UserHandle;
+import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -211,8 +212,8 @@ public class SoftApManager implements ActiveModeManager {
      * Start soft AP, as configured in the constructor.
      */
     @Override
-    public void start() {
-        mStateMachine.sendMessage(SoftApStateMachine.CMD_START);
+    public void start(@NonNull WorkSource requestorWs) {
+        mStateMachine.sendMessage(SoftApStateMachine.CMD_START, requestorWs);
     }
 
     /**
@@ -573,8 +574,9 @@ public class SoftApManager implements ActiveModeManager {
                         mStateMachine.quitNow();
                         break;
                     case CMD_START:
+                        WorkSource requestorWs = (WorkSource) message.obj;
                         mApInterfaceName = mWifiNative.setupInterfaceForSoftApMode(
-                                mWifiNativeInterfaceCallback);
+                                mWifiNativeInterfaceCallback, requestorWs);
                         if (TextUtils.isEmpty(mApInterfaceName)) {
                             Log.e(getTag(), "setup failure when creating ap interface.");
                             updateApState(WifiManager.WIFI_AP_STATE_FAILED,

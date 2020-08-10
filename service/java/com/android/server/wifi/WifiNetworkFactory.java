@@ -668,7 +668,9 @@ public class WifiNetworkFactory extends NetworkFactory {
             if (mVerboseLoggingEnabled) Log.v(TAG, "Requesting new ClientModeManager instance");
             mAwaitingClientModeManagerRetrieval = true;
             mActiveModeWarden.requestLocalOnlyClientModeManager(
-                    new ClientModeManagerRequestListener());
+                    new ClientModeManagerRequestListener(),
+                    new WorkSource(mActiveSpecificNetworkRequest.getRequestorUid(),
+                            mActiveSpecificNetworkRequest.getRequestorPackageName()));
         }
     }
 

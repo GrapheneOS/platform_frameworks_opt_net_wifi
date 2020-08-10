@@ -458,10 +458,11 @@ public class ActiveModeWarden {
      * Request a new local only client manager.
      */
     public void requestLocalOnlyClientModeManager(
-            @NonNull ExternalClientModeManagerRequestListener listener) {
+            @NonNull ExternalClientModeManagerRequestListener listener,
+            @NonNull WorkSource requestorWs) {
         mWifiController.sendMessage(
                 WifiController.CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER,
-                Objects.requireNonNull(listener));
+                Pair.create(Objects.requireNonNull(listener), Objects.requireNonNull(requestorWs)));
     }
 
     /**
@@ -599,7 +600,8 @@ public class ActiveModeWarden {
      *
      * @param softApConfig SoftApModeConfiguration for the hostapd softap
      */
-    private void startSoftApModeManager(@NonNull SoftApModeConfiguration softApConfig) {
+    private void startSoftApModeManager(
+            @NonNull SoftApModeConfiguration softApConfig, @NonNull WorkSource requestorWs) {
         Log.d(TAG, "Starting SoftApModeManager config = "
                 + softApConfig.getSoftApConfiguration());
         Preconditions.checkState(softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
@@ -611,7 +613,7 @@ public class ActiveModeWarden {
         SoftApListener listener = new SoftApListener();
         SoftApManager manager = mWifiInjector.makeSoftApManager(listener, callback, softApConfig);
         listener.softApManager = manager;
-        manager.start();
+        manager.start(requestorWs);
         manager.setRole(getRoleForSoftApIpMode(softApConfig.getTargetMode()));
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mSoftApManagers.add(manager);
@@ -657,7 +659,7 @@ public class ActiveModeWarden {
         ClientListener listener = new ClientListener();
         ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(listener);
         listener.clientModeManager = manager;
-        manager.start();
+        manager.start(requestorWs);
         if (!switchPrimaryOrScanOnlyClientModeManagerRole(manager)) {
             return false;
         }
@@ -723,12 +725,13 @@ public class ActiveModeWarden {
      * Method to enable a new local only client mode manager.
      */
     private boolean startLocalOnlyClientModeManager(
-            @NonNull ExternalClientModeManagerRequestListener externalRequestListener) {
+            @NonNull ExternalClientModeManagerRequestListener externalRequestListener,
+            @NonNull WorkSource requestorWs) {
         Log.d(TAG, "Starting local only ClientModeManager");
         ClientListener listener = new ClientListener(externalRequestListener);
         ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(listener);
         listener.clientModeManager = manager;
-        manager.start();
+        manager.start(requestorWs);
         manager.setRole(ActiveModeManager.ROLE_CLIENT_LOCAL_ONLY);
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mClientModeManagers.add(manager);
@@ -1097,8 +1100,10 @@ public class ActiveModeWarden {
                     case CMD_REMOVE_LOCAL_ONLY_CLIENT_MODE_MANAGER:
                         break;
                     case CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                        Pair<ExternalClientModeManagerRequestListener, WorkSource>
+                                externalListenerAndWs = (Pair) msg.obj;
                         ExternalClientModeManagerRequestListener externalRequestListener =
-                                (ExternalClientModeManagerRequestListener) msg.obj;
+                                externalListenerAndWs.first;
                         externalRequestListener.onAnswer(null);
                         break;
                     case CMD_RECOVERY_DISABLE_WIFI:
@@ -1170,7 +1175,8 @@ public class ActiveModeWarden {
                         if (msg.arg1 == 1) {
                             Pair<SoftApModeConfiguration, WorkSource> softApConfigAndWs =
                                     (Pair) msg.obj;
-                            startSoftApModeManager(softApConfigAndWs.first);
+                            startSoftApModeManager(
+                                    softApConfigAndWs.first, softApConfigAndWs.second);
                             transitionTo(mEnabledState);
                         }
                         break;
@@ -1236,11 +1242,14 @@ public class ActiveModeWarden {
                         }
                         break;
                     case CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                        Pair<ExternalClientModeManagerRequestListener, WorkSource>
+                                externalListenerAndWs = (Pair) msg.obj;
                         ExternalClientModeManagerRequestListener externalRequestListener =
-                                (ExternalClientModeManagerRequestListener) msg.obj;
+                                externalListenerAndWs.first;
+                        WorkSource requestorWs = externalListenerAndWs.second;
                         if (mCanRequestMoreClientModeManagers) {
                             // Can create a concurrent local only client mode manager.
-                            startLocalOnlyClientModeManager(externalRequestListener);
+                            startLocalOnlyClientModeManager(externalRequestListener, requestorWs);
                         } else {
                             // Can't create a concurrent client mode manager, use the primary one
                             // instead.
@@ -1255,7 +1264,8 @@ public class ActiveModeWarden {
                         if (msg.arg1 == 1) {
                             Pair<SoftApModeConfiguration, WorkSource> softApConfigAndWs =
                                     (Pair) msg.obj;
-                            startSoftApModeManager(softApConfigAndWs.first);
+                            startSoftApModeManager(
+                                    softApConfigAndWs.first, softApConfigAndWs.second);
                         } else {
                             stopSoftApModeManagers(msg.arg2);
                         }

@@ -35,6 +35,7 @@ import android.net.wifi.nl80211.RadioChainInfo;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.ArraySet;
 import android.util.Log;
@@ -814,11 +815,11 @@ public class WifiNative {
      * For devices which do not the support the HAL, this will bypass HalDeviceManager &
      * teardown any existing iface.
      */
-    private String createStaIface(@NonNull Iface iface) {
+    private String createStaIface(@NonNull Iface iface, @NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             if (mWifiVendorHal.isVendorHalSupported()) {
                 return mWifiVendorHal.createStaIface(
-                        new InterfaceDestoyedListenerInternal(iface.id));
+                        new InterfaceDestoyedListenerInternal(iface.id), requestorWs);
             } else {
                 Log.i(TAG, "Vendor Hal not supported, ignoring createStaIface.");
                 return handleIfaceCreationWhenVendorHalNotSupported(iface);
@@ -831,11 +832,11 @@ public class WifiNative {
      * For devices which do not the support the HAL, this will bypass HalDeviceManager &
      * teardown any existing iface.
      */
-    private String createApIface(@NonNull Iface iface) {
+    private String createApIface(@NonNull Iface iface, @NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             if (mWifiVendorHal.isVendorHalSupported()) {
                 return mWifiVendorHal.createApIface(
-                        new InterfaceDestoyedListenerInternal(iface.id));
+                        new InterfaceDestoyedListenerInternal(iface.id), requestorWs);
             } else {
                 Log.i(TAG, "Vendor Hal not supported, ignoring createApIface.");
                 return handleIfaceCreationWhenVendorHalNotSupported(iface);
@@ -1019,10 +1020,11 @@ public class WifiNative {
      * (wificond, wpa_supplicant & vendor HAL).
      *
      * @param interfaceCallback Associated callback for notifying status changes for the iface.
+     * @param requestorWs Requestor worksource.
      * @return Returns the name of the allocated interface, will be null on failure.
      */
     public String setupInterfaceForClientInConnectivityMode(
-            @NonNull InterfaceCallback interfaceCallback) {
+            @NonNull InterfaceCallback interfaceCallback, @NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             if (!startHal()) {
                 Log.e(TAG, "Failed to start Hal");
@@ -1040,7 +1042,7 @@ public class WifiNative {
                 return null;
             }
             iface.externalListener = interfaceCallback;
-            iface.name = createStaIface(iface);
+            iface.name = createStaIface(iface, requestorWs);
             if (TextUtils.isEmpty(iface.name)) {
                 Log.e(TAG, "Failed to create STA iface in vendor HAL");
                 mIfaceMgr.removeIface(iface.id);
@@ -1086,10 +1088,11 @@ public class WifiNative {
      * (wificond, vendor HAL).
      *
      * @param interfaceCallback Associated callback for notifying status changes for the iface.
+     * @param requestorWs Requestor worksource.
      * @return Returns the name of the allocated interface, will be null on failure.
      */
     public String setupInterfaceForClientInScanMode(
-            @NonNull InterfaceCallback interfaceCallback) {
+            @NonNull InterfaceCallback interfaceCallback, @NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             if (!startHal()) {
                 Log.e(TAG, "Failed to start Hal");
@@ -1102,7 +1105,7 @@ public class WifiNative {
                 return null;
             }
             iface.externalListener = interfaceCallback;
-            iface.name = createStaIface(iface);
+            iface.name = createStaIface(iface, requestorWs);
             if (TextUtils.isEmpty(iface.name)) {
                 Log.e(TAG, "Failed to create iface in vendor HAL");
                 mIfaceMgr.removeIface(iface.id);
@@ -1141,9 +1144,11 @@ public class WifiNative {
      * (wificond, wpa_supplicant & vendor HAL).
      *
      * @param interfaceCallback Associated callback for notifying status changes for the iface.
+     * @param requestorWs Requestor worksource.
      * @return Returns the name of the allocated interface, will be null on failure.
      */
-    public String setupInterfaceForSoftApMode(@NonNull InterfaceCallback interfaceCallback) {
+    public String setupInterfaceForSoftApMode(
+            @NonNull InterfaceCallback interfaceCallback, @NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             if (!startHal()) {
                 Log.e(TAG, "Failed to start Hal");
@@ -1161,7 +1166,7 @@ public class WifiNative {
                 return null;
             }
             iface.externalListener = interfaceCallback;
-            iface.name = createApIface(iface);
+            iface.name = createApIface(iface, requestorWs);
             if (TextUtils.isEmpty(iface.name)) {
                 Log.e(TAG, "Failed to create AP iface in vendor HAL");
                 mIfaceMgr.removeIface(iface.id);

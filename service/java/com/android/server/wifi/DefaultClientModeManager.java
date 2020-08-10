@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import static android.net.wifi.nl80211.WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_UNKNOWN;
 
+import android.annotation.NonNull;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
 import android.net.wifi.IWifiConnectedNetworkScorer;
@@ -43,10 +44,14 @@ import java.io.PrintWriter;
  */
 public class DefaultClientModeManager implements ClientModeManager {
     @Override
-    public void start() { }
+    public void start(@NonNull WorkSource requestorWs) {
+        throw new IllegalStateException();
+    }
 
     @Override
-    public void stop() { }
+    public void stop() {
+        throw new IllegalStateException();
+    }
 
     @Override
     public Role getRole() {
