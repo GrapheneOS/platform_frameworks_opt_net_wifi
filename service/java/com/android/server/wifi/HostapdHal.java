@@ -161,6 +161,16 @@ public class HostapdHal {
                 android.hardware.wifi.hostapd.V1_2.IHostapd.kInterfaceName);
     }
 
+    /**
+     * Uses the IServiceManager to check if the device is running V1_3 of the HAL from the VINTF for
+     * the device.
+     * @return true if supported, false otherwise.
+     */
+    private boolean isV1_3() {
+        return checkHalVersionByInterfaceName(
+                android.hardware.wifi.hostapd.V1_3.IHostapd.kInterfaceName);
+    }
+
     private boolean checkHalVersionByInterfaceName(String interfaceName) {
         if (interfaceName == null) {
             return false;
@@ -288,6 +298,23 @@ public class HostapdHal {
         }
     }
 
+    private boolean registerCallback_1_3(
+            android.hardware.wifi.hostapd.V1_3.IHostapdCallback callback) {
+        synchronized (mLock) {
+            String methodStr = "registerCallback_1_3";
+            try {
+                android.hardware.wifi.hostapd.V1_3.IHostapd iHostapdV1_3 = getHostapdMockableV1_3();
+                if (iHostapdV1_3 == null) return false;
+                android.hardware.wifi.hostapd.V1_2.HostapdStatus status =
+                        iHostapdV1_3.registerCallback_1_3(callback);
+                return checkStatusAndLogFailure12(status, methodStr);
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
     /**
      * Initialize the IHostapd object.
      * @return true on success, false otherwise.
@@ -313,7 +340,13 @@ public class HostapdHal {
                 return false;
             }
             // Register for callbacks for 1.1 hostapd.
-            if (isV1_1() && !registerCallback(new HostapdCallback())) {
+            if (isV1_3()) {
+                if (!registerCallback_1_3(new HostapdCallback_1_3())) {
+                    Log.e(TAG, "Fail to regiester Callback 1_3, Stopping hostapd HIDL startup");
+                    mIHostapd = null;
+                    return false;
+                }
+            } else if (isV1_1() && !registerCallback(new HostapdCallback())) {
                 Log.e(TAG, "Fail to regiester Callback, Stopping hostapd HIDL startup");
                 mIHostapd = null;
                 return false;
@@ -715,6 +748,19 @@ public class HostapdHal {
         }
     }
 
+    @VisibleForTesting
+    protected android.hardware.wifi.hostapd.V1_3.IHostapd getHostapdMockableV1_3()
+            throws RemoteException {
+        synchronized (mLock) {
+            try {
+                return android.hardware.wifi.hostapd.V1_3.IHostapd.castFrom(mIHostapd);
+            } catch (NoSuchElementException e) {
+                Log.e(TAG, "Failed to get IHostapd", e);
+                return null;
+            }
+        }
+    }
+
     private android.hardware.wifi.hostapd.V1_2.IHostapd.NetworkParams
             prepareNetworkParams(SoftApConfiguration config) {
         android.hardware.wifi.hostapd.V1_2.IHostapd.NetworkParams nwParamsV1_2 =
@@ -986,6 +1032,23 @@ public class HostapdHal {
             if (onFailureListener != null) {
                 onFailureListener.run();
             }
+        }
+    }
+
+    private class HostapdCallback_1_3 extends
+            android.hardware.wifi.hostapd.V1_3.IHostapdCallback.Stub {
+        @Override
+        public void onFailure(String ifaceName) {
+            Log.w(TAG, "Failure on iface " + ifaceName);
+            Runnable onFailureListener = mSoftApFailureListeners.get(ifaceName);
+            if (onFailureListener != null) {
+                onFailureListener.run();
+            }
+        }
+
+        @Override
+        public void onInterfaceInfoChanged(String ifaceName, int hwMode) {
+            Log.w(TAG, "onInterfaceInfoChanged on iface " + ifaceName + "and mode is " + hwMode);
         }
     }
 

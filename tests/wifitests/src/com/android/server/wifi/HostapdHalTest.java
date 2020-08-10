@@ -71,6 +71,7 @@ public class HostapdHalTest extends WifiBaseTest {
     private @Mock WifiNl80211Manager.SoftApCallback mSoftApListener;
     private android.hardware.wifi.hostapd.V1_1.IHostapd mIHostapdMockV11;
     private android.hardware.wifi.hostapd.V1_2.IHostapd mIHostapdMockV12;
+    private android.hardware.wifi.hostapd.V1_3.IHostapd mIHostapdMockV13;
     private IHostapdCallback mIHostapdCallback;
     private MockResources mResources;
     HostapdStatus mStatusSuccess;
@@ -126,6 +127,12 @@ public class HostapdHalTest extends WifiBaseTest {
         protected android.hardware.wifi.hostapd.V1_2.IHostapd getHostapdMockableV1_2()
                 throws RemoteException {
             return mIHostapdMockV12;
+        }
+
+        @Override
+        protected android.hardware.wifi.hostapd.V1_3.IHostapd getHostapdMockableV1_3()
+                throws RemoteException {
+            return mIHostapdMockV13;
         }
     }
 
@@ -683,8 +690,8 @@ public class HostapdHalTest extends WifiBaseTest {
     }
 
     /**
-     * Calls.initialize(), mocking various callback answers and verifying flow, asserting for the
-     * expected result. Verifies if IHostapd manager is initialized or reset.
+     * Calls.initialize() on HIDL 1.0, mocking various callback answers and verifying flow,
+     * asserting for the expected result. Verifies if IHostapd manager is initialized or reset.
      */
     private void executeAndValidateInitializationSequence(
             boolean causeRegisterRemoteException, boolean causeRegisterFailure) throws Exception {
@@ -719,8 +726,8 @@ public class HostapdHalTest extends WifiBaseTest {
     }
 
     /**
-     * Calls.initialize(), mocking various callback answers and verifying flow, asserting for the
-     * expected result. Verifies if IHostapd manager is initialized or reset.
+     * Calls.initialize() on HIDL V1.1, mocking various callback answers and verifying flow,
+     * asserting for the expected result. Verifies if IHostapd manager is initialized or reset.
      */
     private void executeAndValidateInitializationSequenceV1_1(
             boolean causeCallbackFailure) throws Exception {
@@ -757,8 +764,8 @@ public class HostapdHalTest extends WifiBaseTest {
     }
 
     /**
-     * Calls.initialize(), mocking various callback answers and verifying flow, asserting for the
-     * expected result. Verifies if IHostapd manager is initialized or reset.
+     * Calls.initialize() on HIDL 1.2, mocking various callback answers and verifying flow,
+     * asserting for the expected result. Verifies if IHostapd manager is initialized or reset.
      */
     private void executeAndValidateInitializationSequenceV1_2(
             boolean causeCallbackFailure) throws Exception {
@@ -794,6 +801,61 @@ public class HostapdHalTest extends WifiBaseTest {
         assertEquals(shouldSucceed, mHostapdHal.isInitializationComplete());
         mInOrder.verify(mIHostapdMock).linkToDeath(mHostapdDeathCaptor.capture(), anyLong());
         verify(mIHostapdMockV11).registerCallback(any(IHostapdCallback.class));
+    }
+
+    /**
+     * Calls.initialize() on HIDL 1.3, mocking various callback answers and verifying flow,
+     * asserting for the expected result. Verifies if IHostapd manager is initialized or reset.
+     */
+    private void executeAndValidateInitializationSequenceV1_3(
+            boolean causeCallbackFailure) throws Exception {
+        boolean shouldSucceed = !causeCallbackFailure;
+        mInOrder = inOrder(mServiceManagerMock, mIHostapdMock);
+        when(mIHostapdMockV12.setDebugParams(anyInt()))
+                .thenReturn(mStatusSuccess12);
+        if (causeCallbackFailure) {
+            doAnswer(new MockAnswerUtil.AnswerWithArguments() {
+                public android.hardware.wifi.hostapd.V1_2.HostapdStatus answer(
+                        android.hardware.wifi.hostapd.V1_3.IHostapdCallback cb)
+                        throws RemoteException {
+                    return mStatusFailure12;
+                }
+            }).when(mIHostapdMockV13).registerCallback_1_3(
+                    any(android.hardware.wifi.hostapd.V1_3.IHostapdCallback.class));
+        } else {
+            doAnswer(new MockAnswerUtil.AnswerWithArguments() {
+                public android.hardware.wifi.hostapd.V1_2.HostapdStatus answer(
+                        android.hardware.wifi.hostapd.V1_3.IHostapdCallback cb)
+                        throws RemoteException {
+                    mIHostapdCallback = cb;
+                    return mStatusSuccess12;
+                }
+            }).when(mIHostapdMockV13).registerCallback_1_3(
+                    any(android.hardware.wifi.hostapd.V1_3.IHostapdCallback.class));
+        }
+        // Initialize HostapdHal, should call serviceManager.registerForNotifications
+        assertTrue(mHostapdHal.initialize());
+        // verify: service manager initialization sequence
+        mInOrder.verify(mServiceManagerMock).linkToDeath(mServiceManagerDeathCaptor.capture(),
+                anyLong());
+        mInOrder.verify(mServiceManagerMock).registerForNotifications(
+                eq(IHostapd.kInterfaceName), eq(""), mServiceNotificationCaptor.capture());
+        // act: cause the onRegistration(...) callback to execute
+        mServiceNotificationCaptor.getValue().onRegistration(IHostapd.kInterfaceName, "", true);
+        assertEquals(shouldSucceed, mHostapdHal.isInitializationComplete());
+        mInOrder.verify(mIHostapdMock).linkToDeath(mHostapdDeathCaptor.capture(), anyLong());
+        verify(mIHostapdMockV11, never()).registerCallback(any(IHostapdCallback.class));
+        verify(mIHostapdMockV13).registerCallback_1_3(
+                any(android.hardware.wifi.hostapd.V1_3.IHostapdCallback.class));
+    }
+
+    /**
+     * Calls.initialize() on last HIDL, mocking various callback answers and verifying flow,
+     * asserting for the expected result. Verifies if IHostapd manager is initialized or reset.
+     */
+    private void executeAndValidateInitializationSequenceOnLastHIDL(
+            boolean causeCallbackFailure) throws Exception {
+        executeAndValidateInitializationSequenceV1_3(causeCallbackFailure);
     }
 
     private HostapdStatus createHostapdStatus(int code) {
@@ -917,11 +979,65 @@ public class HostapdHalTest extends WifiBaseTest {
      */
     @Test
     public void testInitialize_successV1_2() throws Exception {
-        when(mServiceManagerMock.getTransport(anyString(), anyString()))
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_0.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_1.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_2.IHostapd.kInterfaceName), anyString()))
                 .thenReturn(IServiceManager.Transport.HWBINDER);
         mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
         mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
         executeAndValidateInitializationSequenceV1_2(false);
+    }
+
+    /*
+     * Sunny day scenario for V1.3 HostapdHal initialization
+     * Asserts successful initialization
+     */
+    @Test
+    public void testInitialize_successV1_3() throws Exception {
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_0.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_1.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_2.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_3.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
+        mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
+        executeAndValidateInitializationSequenceV1_3(false);
+    }
+
+    /**
+     * Failure scenario for V1.1 HostapdHal initialization
+     */
+    @Test
+    public void testInitialize_registerCallbackFailureV1_3() throws Exception {
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_0.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_1.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_2.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_3.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
+        mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
+        executeAndValidateInitializationSequenceV1_3(true);
     }
 
     /**
@@ -933,11 +1049,12 @@ public class HostapdHalTest extends WifiBaseTest {
                 .thenReturn(IServiceManager.Transport.HWBINDER);
         mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
         mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
         // Disable ACS in the config.
         mResources.setBoolean(R.bool.config_wifi_softap_acs_supported, false);
         mHostapdHal = new HostapdHalSpy();
 
-        executeAndValidateInitializationSequenceV1_2(false);
+        executeAndValidateInitializationSequenceOnLastHIDL(false);
 
         Builder configurationBuilder = new SoftApConfiguration.Builder();
         configurationBuilder.setSsid(NETWORK_SSID);
@@ -979,11 +1096,12 @@ public class HostapdHalTest extends WifiBaseTest {
                 .thenReturn(IServiceManager.Transport.HWBINDER);
         mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
         mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
         // Disable ACS in the config.
         mResources.setBoolean(R.bool.config_wifi_softap_acs_supported, false);
         mHostapdHal = new HostapdHalSpy();
 
-        executeAndValidateInitializationSequenceV1_2(false);
+        executeAndValidateInitializationSequenceOnLastHIDL(false);
 
         Builder configurationBuilder = new SoftApConfiguration.Builder();
         configurationBuilder.setSsid(NETWORK_SSID);
@@ -1021,7 +1139,11 @@ public class HostapdHalTest extends WifiBaseTest {
      */
     @Test
     public void testAddAccessPointFailure_SAEWithOldHal() throws Exception {
-        when(mServiceManagerMock.getTransport(anyString(), anyString()))
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_0.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_1.IHostapd.kInterfaceName), anyString()))
                 .thenReturn(IServiceManager.Transport.HWBINDER);
         mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
         // Disable ACS in the config.
