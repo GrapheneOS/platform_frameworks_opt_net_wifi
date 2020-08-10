@@ -326,6 +326,8 @@ public class FrameworkFacade {
      * @return Get a worksource to blame settings apps.
      */
     public WorkSource getSettingsWorkSource(Context context) {
-        return new WorkSource(Process.SYSTEM_UID, getSettingsPackageName(context));
+        String settingsPackageName = getSettingsPackageName(context);
+        if (settingsPackageName == null) return new WorkSource(Process.SYSTEM_UID);
+        return new WorkSource(Process.SYSTEM_UID, settingsPackageName);
     }
 }
