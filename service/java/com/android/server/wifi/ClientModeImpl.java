@@ -5813,15 +5813,20 @@ public class ClientModeImpl extends StateMachine {
     }
 
     void handleGsmAuthRequest(SimAuthRequestData requestData) {
+        WifiConfiguration requestingWifiConfiguration = null;
         if (mTargetWifiConfiguration != null
                 && mTargetWifiConfiguration.networkId
                 == requestData.networkId) {
+            requestingWifiConfiguration = mTargetWifiConfiguration;
             logd("id matches targetWifiConfiguration");
         } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
                 && mLastNetworkId == requestData.networkId) {
+            requestingWifiConfiguration = getCurrentWifiConfiguration();
             logd("id matches currentWifiConfiguration");
-        } else {
-            logd("id does not match targetWifiConfiguration");
+        }
+
+        if (requestingWifiConfiguration == null) {
+            logd("GsmAuthRequest received with null target/current WifiConfiguration.");
             return;
         }
 
@@ -5838,15 +5843,15 @@ public class ClientModeImpl extends StateMachine {
          *                            [SRES][Cipher Key Kc]
          */
         String response = mWifiCarrierInfoManager
-                .getGsmSimAuthResponse(requestData.data, mTargetWifiConfiguration);
+                .getGsmSimAuthResponse(requestData.data, requestingWifiConfiguration);
         if (response == null) {
             // In case of failure, issue may be due to sim type, retry as No.2 case
             response = mWifiCarrierInfoManager
-                    .getGsmSimpleSimAuthResponse(requestData.data, mTargetWifiConfiguration);
+                    .getGsmSimpleSimAuthResponse(requestData.data, requestingWifiConfiguration);
             if (response == null) {
                 // In case of failure, issue may be due to sim type, retry as No.3 case
                 response = mWifiCarrierInfoManager.getGsmSimpleSimNoLengthAuthResponse(
-                                requestData.data, mTargetWifiConfiguration);
+                                requestData.data, requestingWifiConfiguration);
             }
         }
         if (response == null || response.length() == 0) {
@@ -5859,20 +5864,25 @@ public class ClientModeImpl extends StateMachine {
     }
 
     void handle3GAuthRequest(SimAuthRequestData requestData) {
+        WifiConfiguration requestingWifiConfiguration = null;
         if (mTargetWifiConfiguration != null
                 && mTargetWifiConfiguration.networkId
                 == requestData.networkId) {
+            requestingWifiConfiguration = mTargetWifiConfiguration;
             logd("id matches targetWifiConfiguration");
         } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
                 && mLastNetworkId == requestData.networkId) {
+            requestingWifiConfiguration = getCurrentWifiConfiguration();
             logd("id matches currentWifiConfiguration");
-        } else {
-            logd("id does not match targetWifiConfiguration");
+        }
+
+        if (requestingWifiConfiguration == null) {
+            logd("3GAuthRequest received with null target/current WifiConfiguration.");
             return;
         }
 
         SimAuthResponseData response = mWifiCarrierInfoManager
-                .get3GAuthResponse(requestData, mTargetWifiConfiguration);
+                .get3GAuthResponse(requestData, requestingWifiConfiguration);
         if (response != null) {
             mWifiNative.simAuthResponse(
                     mInterfaceName, response.type, response.response);
