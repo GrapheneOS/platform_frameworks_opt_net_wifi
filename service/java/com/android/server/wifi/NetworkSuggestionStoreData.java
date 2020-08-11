@@ -424,8 +424,8 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
                         }
                         parsedConfig = WifiConfigurationXmlUtil.parseFromXml(
                                 in, outerTagDepth + 1,
-                            version >= ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
-                            encryptionUtil);
+                                version >= ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION,
+                                encryptionUtil);
                         break;
                     case XML_TAG_SECTION_HEADER_WIFI_ENTERPRISE_CONFIGURATION:
                         if (enterpriseConfig != null) {
