@@ -381,7 +381,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiConnectivityManager mWifiConnectivityManager;
     @Mock WifiStateTracker mWifiStateTracker;
     @Mock PasspointManager mPasspointManager;
-    @Mock SelfRecovery mSelfRecovery;
     @Mock WifiPermissionsUtil mWifiPermissionsUtil;
     @Mock IIpClient mIpClient;
     @Mock TelephonyManager mTelephonyManager;
@@ -392,7 +391,6 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock BaseWifiDiagnostics mWifiDiagnostics;
     @Mock ConnectivityManager mConnectivityManager;
     @Mock IProvisioningCallback mProvisioningCallback;
-    @Mock WifiPermissionsWrapper mWifiPermissionsWrapper;
     @Mock WakeupController mWakeupController;
     @Mock WifiDataStall mWifiDataStall;
     @Mock WifiNetworkFactory mWifiNetworkFactory;
@@ -480,8 +478,6 @@ public class ClientModeImplTest extends WifiBaseTest {
                 WifiManager.WIFI_FREQUENCY_BAND_AUTO)).thenReturn(
                 WifiManager.WIFI_FREQUENCY_BAND_AUTO);
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
-        when(mWifiPermissionsWrapper.getLocalMacAddressPermission(anyInt()))
-                .thenReturn(PackageManager.PERMISSION_DENIED);
         doAnswer(inv -> {
             mIpClientCallback.onQuit();
             return null;
@@ -561,14 +557,14 @@ public class ClientModeImplTest extends WifiBaseTest {
     private void initializeCmi() throws Exception {
         mCmi = new ClientModeImpl(mContext, mWifiMetrics, mClock, mWifiScoreCard, mWifiStateTracker,
                 mWifiPermissionsUtil, mWifiConfigManager, mPasspointManager,
-                mWifiMonitor, mWifiDiagnostics, mWifiPermissionsWrapper, mWifiDataStall,
+                mWifiMonitor, mWifiDiagnostics, mWifiDataStall,
                 new ScoringParams(), new WifiThreadRunner(new Handler(mLooper.getLooper())),
                 mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
                 mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
                 mBssidBlocklistMonitor, mConnectionFailureNotifier,
                 WifiInjector.NETWORK_CAPABILITIES_FILTER, mWifiNetworkFactory,
                 mUntrustedWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
-                mWifiLockManager, mSelfRecovery, mFrameworkFacade, mLooper.getLooper(),
+                mWifiLockManager, mFrameworkFacade, mLooper.getLooper(),
                 mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
                 mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
@@ -2038,28 +2034,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiNative, times(2)).disconnect(WIFI_IFACE_NAME);
-    }
-
-    /**
-     * Test verifying that interface Supplicant update for inactive driver does not trigger
-     * SelfRecovery when WifiNative reports the interface is up.
-     */
-    @Test
-    public void testSupplicantUpdateDriverInactiveIfaceUpClientModeDoesNotTriggerSelfRecovery()
-            throws Exception {
-        // Trigger initialize to capture the death handler registration.
-        loadComponentsInStaMode();
-
-        when(mWifiNative.isInterfaceUp(eq(WIFI_IFACE_NAME))).thenReturn(true);
-
-        // make sure supplicant has been reported as inactive
-        mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
-                new StateChangeResult(0, WifiSsid.createFromAsciiEncoded(""), sBSSID,
-                        SupplicantState.INTERFACE_DISABLED));
-        mLooper.dispatchAll();
-
-        // CMI should trigger self recovery, but not disconnect until externally triggered
-        verify(mSelfRecovery, never()).trigger(eq(SelfRecovery.REASON_STA_IFACE_DOWN));
     }
 
     /**

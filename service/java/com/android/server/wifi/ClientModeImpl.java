@@ -221,7 +221,6 @@ public class ClientModeImpl extends StateMachine {
     private final WifiLastResortWatchdog mWifiLastResortWatchdog;
     private final WakeupController mWakeupController;
     private final WifiLockManager mWifiLockManager;
-    private final SelfRecovery mSelfRecovery;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
 
@@ -627,7 +626,6 @@ public class ClientModeImpl extends StateMachine {
             PasspointManager passpointManager,
             WifiMonitor wifiMonitor,
             BaseWifiDiagnostics wifiDiagnostics,
-            WifiPermissionsWrapper wifiPermissionsWrapper,
             WifiDataStall wifiDataStall,
             ScoringParams scoringParams,
             WifiThreadRunner wifiThreadRunner,
@@ -646,7 +644,6 @@ public class ClientModeImpl extends StateMachine {
             WifiLastResortWatchdog wifiLastResortWatchdog,
             WakeupController wakeupController,
             WifiLockManager wifiLockManager,
-            SelfRecovery selfRecovery,
             FrameworkFacade facade,
             Looper looper,
             WifiCountryCode countryCode,
@@ -727,7 +724,6 @@ public class ClientModeImpl extends StateMachine {
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWakeupController = wakeupController;
         mWifiLockManager = wifiLockManager;
-        mSelfRecovery = selfRecovery;
 
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiHealthMonitor = wifiHealthMonitor;
