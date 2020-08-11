@@ -1227,7 +1227,7 @@ public class XmlUtil {
                                     WifiEnterpriseConfig.PASSWORD_KEY, (String) value);
                             if (shouldExpectEncryptedCredentials
                                     && !TextUtils.isEmpty(enterpriseConfig.getFieldValue(
-                                            WifiEnterpriseConfig.PASSWORD_KEY))) {
+                                    WifiEnterpriseConfig.PASSWORD_KEY))) {
                                 // Indicates that encryption of password failed when it was last
                                 // written.
                                 Log.e(TAG, "password value not expected");

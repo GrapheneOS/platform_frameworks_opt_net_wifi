@@ -446,7 +446,7 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         config.SSID = "\"ssid\"";
         config.networkId = 1;
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         WifiConfiguration spyConfig = spy(config);
         when(spyConfig.getRandomizedMacAddress())
                 .thenReturn(MacAddress.fromString(randomizedMac));

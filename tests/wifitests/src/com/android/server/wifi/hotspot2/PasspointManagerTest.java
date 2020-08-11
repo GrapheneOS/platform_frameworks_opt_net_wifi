@@ -1238,7 +1238,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     public void getWifiConfigsForPasspointProfilesWithoutEnhancedMacRandomization() {
         MacAddress randomizedMacAddress = MacAddress.fromString("01:23:45:67:89:ab");
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(randomizedMacAddress);
-        when(mWifiConfigManager.shouldUseAggressiveRandomization(any())).thenReturn(false);
+        when(mWifiConfigManager.shouldUseEnhancedRandomization(any())).thenReturn(false);
         PasspointProvider provider = addTestProvider(TEST_FQDN, TEST_FRIENDLY_NAME,
                 TEST_PACKAGE, false, null);
         WifiConfiguration config = mManager.getWifiConfigsForPasspointProfiles(
@@ -1255,7 +1255,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     public void getWifiConfigsForPasspointProfilesWithEnhancedMacRandomization() {
         MacAddress randomizedMacAddress = MacAddress.fromString("01:23:45:67:89:ab");
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(randomizedMacAddress);
-        when(mWifiConfigManager.shouldUseAggressiveRandomization(any())).thenReturn(true);
+        when(mWifiConfigManager.shouldUseEnhancedRandomization(any())).thenReturn(true);
         PasspointProvider provider = addTestProvider(TEST_FQDN, TEST_FRIENDLY_NAME,
                 TEST_PACKAGE, false, null);
         WifiConfiguration config = mManager.getWifiConfigsForPasspointProfiles(

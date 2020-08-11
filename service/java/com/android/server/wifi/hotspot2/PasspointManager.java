@@ -1088,7 +1088,7 @@ public class PasspointManager {
                 continue;
             }
             WifiConfiguration config = provider.getWifiConfig();
-            if (mWifiConfigManager.shouldUseAggressiveRandomization(config)) {
+            if (mWifiConfigManager.shouldUseEnhancedRandomization(config)) {
                 config.setRandomizedMacAddress(MacAddress.fromString(DEFAULT_MAC_ADDRESS));
             } else {
                 MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getKey(),

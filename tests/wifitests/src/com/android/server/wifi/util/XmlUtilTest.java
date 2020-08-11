@@ -234,7 +234,7 @@ public class XmlUtilTest extends WifiBaseTest {
         configuration.lastUpdateUid = configuration.lastConnectUid = configuration.creatorUid;
         configuration.creatorName = configuration.lastUpdateName = TEST_PACKAGE_NAME;
         configuration.setRandomizedMacAddress(MacAddressUtils.createRandomUnicastAddress());
-        configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
 
         serializeDeserializeWifiConfigurationForConfigStore(configuration);
     }
