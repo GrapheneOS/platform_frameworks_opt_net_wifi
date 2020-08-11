@@ -1316,27 +1316,41 @@ public class WifiVendorHal {
      * @param mac MAC address to change into
      * @return true for success
      */
-    public boolean setMacAddress(@NonNull String ifaceName, @NonNull MacAddress mac) {
+    public boolean setStaMacAddress(@NonNull String ifaceName, @NonNull MacAddress mac) {
         byte[] macByteArray = mac.toByteArray();
         synchronized (sLock) {
             try {
                 android.hardware.wifi.V1_2.IWifiStaIface sta12 =
                         getWifiStaIfaceForV1_2Mockable(ifaceName);
-                if (sta12 != null) {
-                    return ok(sta12.setMacAddress(macByteArray));
-                }
-
-                android.hardware.wifi.V1_4.IWifiApIface ap14 =
-                        getWifiApIfaceForV1_4Mockable(ifaceName);
-                if (ap14 != null) {
-                    return ok(ap14.setMacAddress(macByteArray));
-                }
+                if (sta12 == null) return boolResult(false);
+                return ok(sta12.setMacAddress(macByteArray));
             } catch (RemoteException e) {
                 handleRemoteException(e);
                 return false;
             }
         }
-        return boolResult(false);
+    }
+
+    /**
+     * Set Mac address on the given interface
+     *
+     * @param ifaceName Name of the interface
+     * @param mac MAC address to change into
+     * @return true for success
+     */
+    public boolean setApMacAddress(@NonNull String ifaceName, @NonNull MacAddress mac) {
+        byte[] macByteArray = mac.toByteArray();
+        synchronized (sLock) {
+            try {
+                android.hardware.wifi.V1_4.IWifiApIface ap14 =
+                        getWifiApIfaceForV1_4Mockable(ifaceName);
+                if (ap14 == null) return boolResult(false);
+                return ok(ap14.setMacAddress(macByteArray));
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return false;
+            }
+        }
     }
 
     /**
@@ -1344,21 +1358,25 @@ public class WifiVendorHal {
      *
      * @param ifaceName Name of the interface
      */
-    public boolean isSetMacAddressSupported(@NonNull String ifaceName) {
+    public boolean isStaSetMacAddressSupported(@NonNull String ifaceName) {
         synchronized (sLock) {
             android.hardware.wifi.V1_2.IWifiStaIface sta12 =
                     getWifiStaIfaceForV1_2Mockable(ifaceName);
-            if (sta12 != null) {
-                return true;
-            }
+            return sta12 != null;
+        }
+    }
 
+    /**
+     * Returns true if Hal version supports setMacAddress, otherwise false.
+     *
+     * @param ifaceName Name of the interface
+     */
+    public boolean isApSetMacAddressSupported(@NonNull String ifaceName) {
+        synchronized (sLock) {
             android.hardware.wifi.V1_4.IWifiApIface ap14 =
                     getWifiApIfaceForV1_4Mockable(ifaceName);
-            if (ap14 != null) {
-                return true;
-            }
+            return ap14 != null;
         }
-        return false;
     }
 
     /**
@@ -1367,7 +1385,7 @@ public class WifiVendorHal {
      * @param ifaceName Name of the interface
      * @return factory MAC address of the interface or null.
      */
-    public MacAddress getFactoryMacAddress(@NonNull String ifaceName) {
+    public MacAddress getStaFactoryMacAddress(@NonNull String ifaceName) {
         class AnswerBox {
             public MacAddress mac = null;
         }
@@ -1377,29 +1395,45 @@ public class WifiVendorHal {
 
                 android.hardware.wifi.V1_3.IWifiStaIface sta13 =
                         getWifiStaIfaceForV1_3Mockable(ifaceName);
-                if (sta13 != null) {
-                    sta13.getFactoryMacAddress((status, macBytes) -> {
-                        if (!ok(status)) return;
-                        box.mac = MacAddress.fromBytes(macBytes);
-                    });
-                    return box.mac;
-                }
-
-                android.hardware.wifi.V1_4.IWifiApIface ap14 =
-                        getWifiApIfaceForV1_4Mockable(ifaceName);
-                if (ap14 != null) {
-                    ap14.getFactoryMacAddress((status, macBytes) -> {
-                        if (!ok(status)) return;
-                        box.mac = MacAddress.fromBytes(macBytes);
-                    });
-                    return box.mac;
-                }
+                if (sta13 == null) return null;
+                sta13.getFactoryMacAddress((status, macBytes) -> {
+                    if (!ok(status)) return;
+                    box.mac = MacAddress.fromBytes(macBytes);
+                });
+                return box.mac;
             } catch (RemoteException e) {
                 handleRemoteException(e);
                 return null;
             }
         }
-        return null;
+    }
+
+    /**
+     * Get factory MAC address of the given interface
+     *
+     * @param ifaceName Name of the interface
+     * @return factory MAC address of the interface or null.
+     */
+    public MacAddress getApFactoryMacAddress(@NonNull String ifaceName) {
+        class AnswerBox {
+            public MacAddress mac = null;
+        }
+        synchronized (sLock) {
+            try {
+                AnswerBox box = new AnswerBox();
+                android.hardware.wifi.V1_4.IWifiApIface ap14 =
+                        getWifiApIfaceForV1_4Mockable(ifaceName);
+                if (ap14 == null) return null;
+                ap14.getFactoryMacAddress((status, macBytes) -> {
+                    if (!ok(status)) return;
+                    box.mac = MacAddress.fromBytes(macBytes);
+                });
+                return box.mac;
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return null;
+            }
+        }
     }
 
     /**

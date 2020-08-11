@@ -1785,12 +1785,22 @@ public class WifiNative {
      * @param mac Mac address to change into
      * @return true on success
      */
-    public boolean setMacAddress(String interfaceName, MacAddress mac) {
+    public boolean setStaMacAddress(String interfaceName, MacAddress mac) {
         // TODO(b/72459123): Suppress interface down/up events from this call
         // Trigger an explicit disconnect to avoid losing the disconnect event reason (if currently
         // connected) from supplicant if the interface is brought down for MAC address change.
         disconnect(interfaceName);
-        return mWifiVendorHal.setMacAddress(interfaceName, mac);
+        return mWifiVendorHal.setStaMacAddress(interfaceName, mac);
+    }
+
+    /**
+     * Set MAC address of the given interface
+     * @param interfaceName Name of the interface
+     * @param mac Mac address to change into
+     * @return true on success
+     */
+    public boolean setApMacAddress(String interfaceName, MacAddress mac) {
+        return mWifiVendorHal.setApMacAddress(interfaceName, mac);
     }
 
     /**
@@ -1798,8 +1808,17 @@ public class WifiNative {
      *
      * @param interfaceName Name of the interface
      */
-    public boolean isSetMacAddressSupported(@NonNull String interfaceName) {
-        return mWifiVendorHal.isSetMacAddressSupported(interfaceName);
+    public boolean isStaSetMacAddressSupported(@NonNull String interfaceName) {
+        return mWifiVendorHal.isStaSetMacAddressSupported(interfaceName);
+    }
+
+    /**
+     * Returns true if Hal version supports setMacAddress, otherwise false.
+     *
+     * @param interfaceName Name of the interface
+     */
+    public boolean isApSetMacAddressSupported(@NonNull String interfaceName) {
+        return mWifiVendorHal.isApSetMacAddressSupported(interfaceName);
     }
 
     /**
@@ -1807,8 +1826,18 @@ public class WifiNative {
      * @param interfaceName Name of the interface.
      * @return factory MAC address, or null on a failed call or if feature is unavailable.
      */
-    public MacAddress getFactoryMacAddress(@NonNull String interfaceName) {
-        return mWifiVendorHal.getFactoryMacAddress(interfaceName);
+    public MacAddress getStaFactoryMacAddress(@NonNull String interfaceName) {
+        return mWifiVendorHal.getStaFactoryMacAddress(interfaceName);
+    }
+
+
+    /**
+     * Get the factory MAC address of the given interface
+     * @param interfaceName Name of the interface.
+     * @return factory MAC address, or null on a failed call or if feature is unavailable.
+     */
+    public MacAddress getApFactoryMacAddress(@NonNull String interfaceName) {
+        return mWifiVendorHal.getApFactoryMacAddress(interfaceName);
     }
 
     /********************************************************
