@@ -20,6 +20,7 @@ import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
+import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
@@ -312,16 +313,21 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public String getMacAddress() {
+        if (mWifiInfo != null) {
+            final String wifiInfoMac = mWifiInfo.getMacAddress();
+            if (!TextUtils.isEmpty(wifiInfoMac)
+                    && !TextUtils.equals(wifiInfoMac, DEFAULT_MAC_ADDRESS)) {
+                return wifiInfoMac;
+            }
+        }
         if (mWifiConfig == null || getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
             final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
             if (factoryMacs.length > 0) {
                 return factoryMacs[0];
-            } else {
-                return null;
             }
-        } else {
-            return mWifiConfig.getRandomizedMacAddress().toString();
+            return null;
         }
+        return mWifiConfig.getRandomizedMacAddress().toString();
     }
 
     @Override

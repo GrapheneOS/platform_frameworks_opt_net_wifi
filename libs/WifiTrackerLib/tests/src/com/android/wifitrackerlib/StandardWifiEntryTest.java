@@ -479,6 +479,32 @@ public class StandardWifiEntryTest {
     }
 
     @Test
+    public void testGetMacAddress_wifiInfoAvailable_usesWifiInfoMacAddress() {
+        final int networkId = 1;
+        final String factoryMac = "01:23:45:67:89:ab";
+        final String wifiInfoMac = "11:23:45:67:89:ab";
+
+        final NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+
+        when(mMockWifiInfo.getNetworkId()).thenReturn(networkId);
+        when(mMockWifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = networkId;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        when(mMockWifiManager.getFactoryMacAddresses()).thenReturn(new String[]{factoryMac});
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE), config,
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+
+        entry.updateConnectionInfo(mMockWifiInfo, networkInfo);
+
+        assertThat(entry.getMacAddress()).isEqualTo(wifiInfoMac);
+    }
+
+    @Test
     public void testCanShare_securityCanShare_shouldReturnTrue() {
         final StandardWifiEntry pskWifiEntry =
                 getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_PSK);

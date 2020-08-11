@@ -221,4 +221,29 @@ public class PasspointWifiEntryTest {
 
         assertThat(entry.getSpeed()).isEqualTo(SPEED_SLOW);
     }
+
+    @Test
+    public void testGetMacAddress_wifiInfoAvailable_usesWifiInfoMacAddress() {
+        final String factoryMac = "01:23:45:67:89:ab";
+        final String wifiInfoMac = "11:23:45:67:89:ab";
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        config.FQDN = FQDN;
+        when(mMockWifiManager.getFactoryMacAddresses()).thenReturn(new String[]{factoryMac});
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.isPasspointAp()).thenReturn(true);
+        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(wifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
+        NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.getMacAddress()).isEqualTo(wifiInfoMac);
+    }
 }
