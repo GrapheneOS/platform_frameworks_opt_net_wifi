@@ -101,7 +101,8 @@ public class WifiKeyStore {
         }
         X509Certificate[] caCertificates = config.getCaCertificates();
         Set<String> oldCaCertificatesToRemove = new ArraySet<>();
-        if (existingConfig != null && existingConfig.getCaCertificateAliases() != null) {
+        if (existingConfig != null && existingConfig.getCaCertificateAliases() != null
+                && existingConfig.isAppInstalledCaCert()) {
             oldCaCertificatesToRemove.addAll(
                     Arrays.asList(existingConfig.getCaCertificateAliases()));
         }
@@ -125,8 +126,10 @@ public class WifiKeyStore {
         }
         // If alias changed, remove the old one.
         if (!alias.equals(existingAlias)) {
-            // Remove old private keys.
-            removeEntryFromKeyStore(existingAlias);
+            if (existingConfig != null && existingConfig.isAppInstalledDeviceKeyAndCert()) {
+                // Remove old private keys.
+                removeEntryFromKeyStore(existingAlias);
+            }
         }
         // Remove any old CA certs.
         for (String oldAlias : oldCaCertificatesToRemove) {
