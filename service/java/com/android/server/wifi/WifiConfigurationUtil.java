@@ -307,6 +307,9 @@ public class WifiConfigurationUtil {
         if (existingConfig.requirePmf != newConfig.requirePmf) {
             return true;
         }
+        if (existingConfig.carrierId != newConfig.carrierId) {
+            return true;
+        }
         if (hasEnterpriseConfigChanged(existingConfig.enterpriseConfig,
                 newConfig.enterpriseConfig)) {
             return true;
