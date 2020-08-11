@@ -16,6 +16,7 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.hardware.wifi.V1_0.IWifiApIface;
 import android.hardware.wifi.V1_0.IWifiChip;
 import android.hardware.wifi.V1_0.IWifiChipEventCallback;
@@ -55,6 +56,7 @@ import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
 import android.os.Handler;
 import android.os.RemoteException;
+import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.MutableBoolean;
@@ -326,7 +328,7 @@ public class WifiVendorHal {
             if (!startVendorHal()) {
                 return false;
             }
-            if (TextUtils.isEmpty(createApIface(null))) {
+            if (TextUtils.isEmpty(createApIface(null, null))) {
                 stopVendorHal();
                 return false;
             }
@@ -344,7 +346,7 @@ public class WifiVendorHal {
             if (!startVendorHal()) {
                 return false;
             }
-            if (TextUtils.isEmpty(createStaIface(null))) {
+            if (TextUtils.isEmpty(createStaIface(null, null))) {
                 stopVendorHal();
                 return false;
             }
@@ -435,12 +437,15 @@ public class WifiVendorHal {
      * Create a STA iface using {@link HalDeviceManager}.
      *
      * @param destroyedListener Listener to be invoked when the interface is destroyed.
+     * @param requestorWs Requestor worksource.
      * @return iface name on success, null otherwise.
      */
-    public String createStaIface(InterfaceDestroyedListener destroyedListener) {
+    public String createStaIface(@Nullable InterfaceDestroyedListener destroyedListener,
+            @NonNull WorkSource requestorWs) {
         synchronized (sLock) {
             IWifiStaIface iface = mHalDeviceManager.createStaIface(
-                    new StaInterfaceDestroyedListenerInternal(destroyedListener), null);
+                    new StaInterfaceDestroyedListenerInternal(destroyedListener), null,
+                    requestorWs);
             if (iface == null) {
                 mLog.err("Failed to create STA iface").flush();
                 return stringResult(null);
@@ -513,12 +518,15 @@ public class WifiVendorHal {
      * Create a AP iface using {@link HalDeviceManager}.
      *
      * @param destroyedListener Listener to be invoked when the interface is destroyed.
+     * @param requestorWs Requestor worksource.
      * @return iface name on success, null otherwise.
      */
-    public String createApIface(InterfaceDestroyedListener destroyedListener) {
+    public String createApIface(@Nullable InterfaceDestroyedListener destroyedListener,
+            @NonNull WorkSource requestorWs) {
         synchronized (sLock) {
             IWifiApIface iface = mHalDeviceManager.createApIface(
-                    new ApInterfaceDestroyedListenerInternal(destroyedListener), null);
+                    new ApInterfaceDestroyedListenerInternal(destroyedListener), null,
+                    requestorWs);
             if (iface == null) {
                 mLog.err("Failed to create AP iface").flush();
                 return stringResult(null);

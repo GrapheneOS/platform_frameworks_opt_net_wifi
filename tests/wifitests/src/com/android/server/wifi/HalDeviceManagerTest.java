@@ -54,6 +54,7 @@ import android.hidl.manager.V1_0.IServiceNotification;
 import android.hidl.manager.V1_2.IServiceManager;
 import android.os.Handler;
 import android.os.IHwBinder;
+import android.os.WorkSource;
 import android.os.test.TestLooper;
 import android.util.Log;
 import android.util.SparseArray;
@@ -87,6 +88,8 @@ import java.util.Set;
  */
 @SmallTest
 public class HalDeviceManagerTest extends WifiBaseTest {
+    private static final WorkSource TEST_WORKSOURCE = new WorkSource();
+
     private HalDeviceManager mDut;
     @Mock IServiceManager mServiceManagerMock;
     @Mock IWifi mWifiMock;
@@ -959,7 +962,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 any(IWifiIface.getTypeCallback.class));
         doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, staIface)).when(
                 chipMock.chip).createStaIface(any(IWifiChip.createStaIfaceCallback.class));
-        assertEquals(staIface, mDut.createStaIface(staIdl, null));
+        assertEquals(staIface, mDut.createStaIface(staIdl, null, TEST_WORKSOURCE));
 
         mInOrder.verify(chipMock.chip).configureChip(TestChipV1.STA_CHIP_MODE_ID);
         mInOrder.verify(staIafrl).onAvailabilityChanged(false);
@@ -972,7 +975,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 any(IWifiIface.getTypeCallback.class));
         doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, apIface)).when(
                 chipMock.chip).createApIface(any(IWifiChip.createApIfaceCallback.class));
-        assertEquals(apIface, mDut.createApIface(apIdl, null));
+        assertEquals(apIface, mDut.createApIface(apIdl, null, TEST_WORKSOURCE));
 
         mInOrder.verify(chipMock.chip).removeStaIface(getName(staIface));
         mInOrder.verify(staIdl).onDestroyed(getName(staIface));
@@ -1122,7 +1125,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
-        IWifiIface staIface2 = mDut.createStaIface(null, null);
+        IWifiIface staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         // register additional InterfaceDestroyedListeners - including a duplicate (verify that
@@ -1170,7 +1173,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
         // request AP2: should fail
-        IWifiIface apIface2 = mDut.createApIface(null, null);
+        IWifiIface apIface2 = mDut.createApIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // Request P2P: expect failure
@@ -1297,7 +1300,8 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         verify(staAvailListener1).onAvailabilityChanged(false);
 
         // get STA interface again
-        IWifiIface staIface2 = mDut.createStaIface(staDestroyedListener2, mHandler);
+        IWifiIface staIface2 = mDut.createStaIface(
+                staDestroyedListener2, mHandler, TEST_WORKSOURCE);
         collector.checkThat("STA created", staIface2, IsNull.nullValue());
 
         verifyNoMoreInteractions(mManagerStatusListenerMock, staDestroyedListener1,
@@ -1546,11 +1550,11 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
-        IWifiIface staIface2 = mDut.createStaIface(null, null);
+        IWifiIface staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         // request AP2: should fail
-        IWifiIface apIface2 = mDut.createApIface(null, null);
+        IWifiIface apIface2 = mDut.createApIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // tear down AP
@@ -1579,7 +1583,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(false);
 
         // request STA3: should fail
-        IWifiIface staIface3 = mDut.createStaIface(null, null);
+        IWifiIface staIface3 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA3 should not be created", staIface3, IsNull.nullValue());
 
         // create AP - this will destroy the last STA created, i.e. STA2
@@ -1916,11 +1920,11 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
-        IWifiIface staIface2 = mDut.createStaIface(null, null);
+        IWifiIface staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         // request AP2: should fail
-        IWifiIface apIface2 = mDut.createApIface(null, null);
+        IWifiIface apIface2 = mDut.createApIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // request P2P: should fail
@@ -1955,7 +1959,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(staAvailListener).onAvailabilityChanged(false);
 
         // request STA3: should fail
-        IWifiIface staIface3 = mDut.createStaIface(null, null);
+        IWifiIface staIface3 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA3 should not be created", staIface3, IsNull.nullValue());
 
         // create NAN: should destroy the last created STA (STA2)
@@ -1978,7 +1982,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         verify(staDestroyedListener2).onDestroyed(getName(staIface2));
 
         // request STA2: should fail
-        staIface2 = mDut.createStaIface(null, null);
+        staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         verifyNoMoreInteractions(mManagerStatusListenerMock, staDestroyedListener,
@@ -2187,11 +2191,11 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(p2pAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
-        IWifiIface staIface2 = mDut.createStaIface(null, null);
+        IWifiIface staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         // request AP2: should fail
-        IWifiIface apIface2 = mDut.createApIface(null, null);
+        IWifiIface apIface2 = mDut.createApIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // request P2P: should fail
@@ -2209,7 +2213,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         verify(apDestroyedListener).onDestroyed(getName(apIface));
 
         // request STA2: should fail
-        staIface2 = mDut.createStaIface(null, null);
+        staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         // create NAN
@@ -2228,7 +2232,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         inOrderAvail.verify(nanAvailListener).onAvailabilityChanged(false);
 
         // request STA2: should fail
-        staIface2 = mDut.createStaIface(null, null);
+        staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 
         // tear down STA
@@ -2569,7 +2573,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, iface)).when(
                         chipMock.chip).createStaIface(any(IWifiChip.createStaIfaceCallback.class));
 
-                mDut.createStaIface(destroyedListener, mHandler);
+                mDut.createStaIface(destroyedListener, mHandler, TEST_WORKSOURCE);
                 break;
             case IfaceType.AP:
                 iface = mock(IWifiApIface.class);
@@ -2580,7 +2584,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, iface)).when(
                         chipMock.chip).createApIface(any(IWifiChip.createApIfaceCallback.class));
 
-                mDut.createApIface(destroyedListener, mHandler);
+                mDut.createApIface(destroyedListener, mHandler, TEST_WORKSOURCE);
                 break;
             case IfaceType.P2P:
                 iface = mock(IWifiP2pIface.class);

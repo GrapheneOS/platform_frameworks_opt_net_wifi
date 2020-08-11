@@ -37,6 +37,7 @@ import android.hidl.manager.V1_2.IServiceManager;
 import android.os.Handler;
 import android.os.IHwBinder.DeathRecipient;
 import android.os.RemoteException;
+import android.os.WorkSource;
 import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.MutableBoolean;
@@ -225,18 +226,22 @@ public class HalDeviceManager {
      * @param handler Handler on which to dispatch listener. Null implies the listener will be
      *                invoked synchronously from the context of the client which triggered the
      *                iface destruction.
+     * @param requestorWs Requestor worksource. This will be used to determine priority of this
+     *                    interface using rules based on the requestor app's context.
      * @return A newly created interface - or null if the interface could not be created.
      */
     public IWifiStaIface createStaIface(
-            @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler) {
+            @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler,
+            @NonNull WorkSource requestorWs) {
         return (IWifiStaIface) createIface(IfaceType.STA, destroyedListener, handler);
     }
 
     /**
      * Create AP interface if possible (see createStaIface doc).
      */
-    public IWifiApIface createApIface(@Nullable InterfaceDestroyedListener destroyedListener,
-            @Nullable Handler handler) {
+    public IWifiApIface createApIface(
+            @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler,
+            @NonNull WorkSource requestorWs) {
         return (IWifiApIface) createIface(IfaceType.AP, destroyedListener, handler);
     }
 
