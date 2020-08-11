@@ -510,6 +510,33 @@ public class XmlUtilTest extends WifiBaseTest {
                 retrieved.second.macRandomizationSetting);
     }
 
+    /**
+     * Verify that when deserializing a XML RANDOMIZATION_PERSISTENT is automatically upgraded to
+     * RANDOIMZATION_ENHANCED.
+     * @throws IOException
+     * @throws XmlPullParserException
+     */
+    @Test
+    public void testMacRandomizationSettingUpgradeToRandomizationAuto()
+            throws IOException, XmlPullParserException {
+        // First generate XML data that only has the header filled in
+        final XmlSerializer out = new FastXmlSerializer();
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        out.setOutput(outputStream, StandardCharsets.UTF_8.name());
+        XmlUtil.writeDocumentStart(out, mXmlDocHeader);
+        XmlUtil.writeNextValue(out, WifiConfigurationXmlUtil.XML_TAG_MAC_RANDOMIZATION_SETTING,
+                WifiConfiguration.RANDOMIZATION_PERSISTENT);
+        XmlUtil.writeDocumentEnd(out, mXmlDocHeader);
+
+        // Deserialize from a config version before MAC randomization upgrade.
+        Pair<String, WifiConfiguration> retrieved =
+                deserializeWifiConfiguration(outputStream.toByteArray());
+
+        // Verify that macRandomizationSetting is set to |RANDOMIZATION_NONE|
+        assertEquals(WifiConfiguration.RANDOMIZATION_AUTO,
+                retrieved.second.macRandomizationSetting);
+    }
+
     private byte[] serializeWifiConfigurationForBackup(WifiConfiguration configuration)
             throws IOException, XmlPullParserException {
         final XmlSerializer out = new FastXmlSerializer();
