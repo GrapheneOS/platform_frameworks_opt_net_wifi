@@ -435,14 +435,14 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mDataTelephonyManager);
         when(mWifiNetworkFactory.getSpecificNetworkRequestUidAndPackageName(any()))
                 .thenReturn(Pair.create(Process.INVALID_UID, ""));
-        when(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(
+        when(mWifiNative.getStaFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(
                 TEST_GLOBAL_MAC_ADDRESS);
         when(mWifiNative.getMacAddress(WIFI_IFACE_NAME))
                 .thenReturn(TEST_GLOBAL_MAC_ADDRESS.toString());
         WifiNative.ConnectionCapabilities cap = new WifiNative.ConnectionCapabilities();
         cap.wifiStandard = ScanResult.WIFI_STANDARD_11AC;
         when(mWifiNative.getConnectionCapabilities(WIFI_IFACE_NAME)).thenReturn(cap);
-        when(mWifiNative.setMacAddress(eq(WIFI_IFACE_NAME), anyObject()))
+        when(mWifiNative.setStaMacAddress(eq(WIFI_IFACE_NAME), anyObject()))
                 .then(new AnswerWithArguments() {
                     public boolean answer(String iface, MacAddress mac) {
                         when(mWifiNative.getMacAddress(iface)).thenReturn(mac.toString());
@@ -1844,7 +1844,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
         verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
         // Set MAC address thrice - once at bootup, once for new connection, once for disconnect.
-        verify(mWifiNative, times(3)).setMacAddress(eq(WIFI_IFACE_NAME), any());
+        verify(mWifiNative, times(3)).setStaMacAddress(eq(WIFI_IFACE_NAME), any());
     }
 
     /**
@@ -2547,8 +2547,8 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         connect();
         assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mWifiInfo.getMacAddress());
-        verify(mWifiNative, never()).setMacAddress(any(), any());
-        verify(mWifiNative, never()).getFactoryMacAddress(any());
+        verify(mWifiNative, never()).setStaMacAddress(any(), any());
+        verify(mWifiNative, never()).getStaFactoryMacAddress(any());
     }
 
     /**
@@ -2566,7 +2566,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(ClientModeImpl.CONNECT_MODE, mCmi.getOperationalModeForTest());
 
         connect();
-        verify(mWifiNative).setMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
+        verify(mWifiNative).setStaMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
         verify(mWifiMetrics)
                 .logStaEvent(eq(StaEvent.TYPE_MAC_CHANGE), any(WifiConfiguration.class));
         assertEquals(TEST_LOCAL_MAC_ADDRESS.toString(), mWifiInfo.getMacAddress());
@@ -2589,7 +2589,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(TEST_LOCAL_MAC_ADDRESS.toString());
 
         connect();
-        verify(mWifiNative, never()).setMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
+        verify(mWifiNative, never()).setStaMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
         verify(mWifiMetrics, never())
                 .logStaEvent(eq(StaEvent.TYPE_MAC_CHANGE), any(WifiConfiguration.class));
         assertEquals(TEST_LOCAL_MAC_ADDRESS.toString(), mWifiInfo.getMacAddress());
@@ -2620,7 +2620,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
-        verify(mWifiNative).setMacAddress(WIFI_IFACE_NAME, TEST_GLOBAL_MAC_ADDRESS);
+        verify(mWifiNative).setStaMacAddress(WIFI_IFACE_NAME, TEST_GLOBAL_MAC_ADDRESS);
         verify(mWifiMetrics)
                 .logStaEvent(eq(StaEvent.TYPE_MAC_CHANGE), any(WifiConfiguration.class));
         assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mWifiInfo.getMacAddress());
@@ -2693,8 +2693,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
-        // setMacAddress is invoked once when ClientModeImpl starts to prevent leak of factory MAC.
-        verify(mWifiNative).setMacAddress(eq(WIFI_IFACE_NAME), any(MacAddress.class));
+        // setStaMacAddress is invoked once when ClientModeImpl starts to prevent leak of factory
+        // MAC.
+        verify(mWifiNative).setStaMacAddress(eq(WIFI_IFACE_NAME), any(MacAddress.class));
     }
 
     /**
@@ -2708,7 +2709,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(ClientModeImpl.CONNECT_MODE, mCmi.getOperationalModeForTest());
 
         connect();
-        verify(mWifiNative).setMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
+        verify(mWifiNative).setStaMacAddress(WIFI_IFACE_NAME, TEST_LOCAL_MAC_ADDRESS);
     }
 
     /**
@@ -3676,7 +3677,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testGetFactoryMacAddressSuccess() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
         assertEquals(TEST_GLOBAL_MAC_ADDRESS.toString(), mCmi.getFactoryMacAddress());
-        verify(mWifiNative).getFactoryMacAddress(WIFI_IFACE_NAME);
+        verify(mWifiNative).getStaFactoryMacAddress(WIFI_IFACE_NAME);
         verify(mWifiNative).getMacAddress(anyString()); // called once when setting up client mode
     }
 
@@ -3686,14 +3687,14 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void testGetFactoryMacAddressFail() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
-        when(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(null);
+        when(mWifiNative.getStaFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(null);
         assertNull(mCmi.getFactoryMacAddress());
-        verify(mWifiNative).getFactoryMacAddress(WIFI_IFACE_NAME);
+        verify(mWifiNative).getStaFactoryMacAddress(WIFI_IFACE_NAME);
         verify(mWifiNative).getMacAddress(anyString()); // called once when setting up client mode
     }
 
     /**
-     * Verify that when WifiNative#getFactoryMacAddress fails, if the device does not support
+     * Verify that when WifiNative#getStaFactoryMacAddress fails, if the device does not support
      * MAC randomization then the currently programmed MAC address gets returned.
      */
     @Test
@@ -3701,9 +3702,9 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(false);
         initializeCmi();
         initializeAndAddNetworkAndVerifySuccess();
-        when(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(null);
+        when(mWifiNative.getStaFactoryMacAddress(WIFI_IFACE_NAME)).thenReturn(null);
         mCmi.getFactoryMacAddress();
-        verify(mWifiNative).getFactoryMacAddress(anyString());
+        verify(mWifiNative).getStaFactoryMacAddress(anyString());
         verify(mWifiNative, times(2)).getMacAddress(WIFI_IFACE_NAME);
     }
 
@@ -3714,7 +3715,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testRandomizeMacAddressOnStart() throws Exception {
         ArgumentCaptor<MacAddress> macAddressCaptor = ArgumentCaptor.forClass(MacAddress.class);
         loadComponentsInStaMode();
-        verify(mWifiNative).setMacAddress(anyString(), macAddressCaptor.capture());
+        verify(mWifiNative).setStaMacAddress(anyString(), macAddressCaptor.capture());
         MacAddress currentMac = macAddressCaptor.getValue();
 
         assertNotEquals("The currently programmed MAC address should be different from the factory "
@@ -3729,7 +3730,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testNoRandomizeMacAddressOnStartIfMacRandomizationNotEnabled() throws Exception {
         when(mWifiGlobals.isConnectedMacRandomizationEnabled()).thenReturn(false);
         loadComponentsInStaMode();
-        verify(mWifiNative, never()).setMacAddress(anyString(), any());
+        verify(mWifiNative, never()).setStaMacAddress(anyString(), any());
     }
 
     /**
@@ -4906,7 +4907,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // address on disconnect.
         verify(mWifiNative, never()).disableNetwork(WIFI_IFACE_NAME);
         // Set MAC address thrice - once at bootup, twice for the 2 connections.
-        verify(mWifiNative, times(3)).setMacAddress(eq(WIFI_IFACE_NAME), any());
+        verify(mWifiNative, times(3)).setStaMacAddress(eq(WIFI_IFACE_NAME), any());
 
         // Send disconnect event for the new network.
         disconnectEventInfo =
@@ -4917,7 +4918,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
         // Set MAC address thrice - once at bootup, twice for the connections,
         // once for the disconnect.
-        verify(mWifiNative, times(4)).setMacAddress(eq(WIFI_IFACE_NAME), any());
+        verify(mWifiNative, times(4)).setStaMacAddress(eq(WIFI_IFACE_NAME), any());
     }
 
     @Test

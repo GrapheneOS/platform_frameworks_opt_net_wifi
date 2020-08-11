@@ -894,7 +894,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * @throws Exception
      */
     @Test
-    public void testGetFactoryMacWithHalV1_3() throws Exception {
+    public void testGetStaFactoryMacWithHalV1_3() throws Exception {
         doAnswer(new AnswerWithArguments() {
             public void answer(
                     android.hardware.wifi.V1_3.IWifiStaIface.getFactoryMacAddressCallback cb)
@@ -905,7 +905,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
                 android.hardware.wifi.V1_3.IWifiStaIface.getFactoryMacAddressCallback.class));
         mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
         assertEquals(MacAddress.BROADCAST_ADDRESS.toString(),
-                mWifiVendorHal.getFactoryMacAddress(TEST_IFACE_NAME).toString());
+                mWifiVendorHal.getStaFactoryMacAddress(TEST_IFACE_NAME).toString());
         verify(mIWifiStaIfaceV13).getFactoryMacAddress(any());
     }
 
@@ -2515,7 +2515,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         when(mIWifiStaIfaceV12.setMacAddress(macByteArray)).thenReturn(mWifiStatusSuccess);
 
-        assertTrue(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+        assertTrue(mWifiVendorHal.setStaMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
         verify(mIWifiStaIfaceV12).setMacAddress(macByteArray);
     }
 
@@ -2529,7 +2529,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         when(mIWifiStaIfaceV12.setMacAddress(macByteArray)).thenReturn(mWifiStatusFailure);
 
-        assertFalse(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+        assertFalse(mWifiVendorHal.setStaMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
         verify(mIWifiStaIfaceV12).setMacAddress(macByteArray);
     }
 
@@ -2543,7 +2543,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         doThrow(new RemoteException()).when(mIWifiStaIfaceV12).setMacAddress(macByteArray);
 
-        assertFalse(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+        assertFalse(mWifiVendorHal.setStaMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
         verify(mIWifiStaIfaceV12).setMacAddress(macByteArray);
     }
 
@@ -2558,7 +2558,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         when(mIWifiApIfaceV14.setMacAddress(macByteArray)).thenReturn(mWifiStatusSuccess);
 
-        assertTrue(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME_1, TEST_MAC_ADDRESS));
+        assertTrue(mWifiVendorHal.setApMacAddress(TEST_IFACE_NAME_1, TEST_MAC_ADDRESS));
         verify(mIWifiApIfaceV14).setMacAddress(macByteArray);
     }
 
@@ -2573,7 +2573,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         when(mIWifiApIfaceV14.setMacAddress(macByteArray)).thenReturn(mWifiStatusFailure);
 
-        assertFalse(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME_1, TEST_MAC_ADDRESS));
+        assertFalse(mWifiVendorHal.setApMacAddress(TEST_IFACE_NAME_1, TEST_MAC_ADDRESS));
         verify(mIWifiApIfaceV14).setMacAddress(macByteArray);
     }
 
@@ -2588,7 +2588,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         doThrow(new RemoteException()).when(mIWifiApIfaceV14).setMacAddress(macByteArray);
 
-        assertFalse(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME_1, TEST_MAC_ADDRESS));
+        assertFalse(mWifiVendorHal.setApMacAddress(TEST_IFACE_NAME_1, TEST_MAC_ADDRESS));
         verify(mIWifiApIfaceV14).setMacAddress(macByteArray);
     }
 
@@ -2598,29 +2598,30 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testSetMacAddressDoesNotCrashOnOlderHal() throws Exception {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
-        assertFalse(mWifiVendorHal.setMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+        assertFalse(mWifiVendorHal.setStaMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+        assertFalse(mWifiVendorHal.setApMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
     }
 
     /**
      * Verifies isSetMacAddressSupported().
      */
     @Test
-    public void testIsSetMacAddressSupportedWhenV1_4Support() throws Exception {
+    public void testIsApSetMacAddressSupportedWhenV1_4Support() throws Exception {
         mWifiVendorHal = spy(mWifiVendorHal);
         when(mWifiVendorHal.getWifiApIfaceForV1_4Mockable(TEST_IFACE_NAME_1))
                 .thenReturn(mIWifiApIfaceV14);
 
-        assertTrue(mWifiVendorHal.isSetMacAddressSupported(TEST_IFACE_NAME_1));
+        assertTrue(mWifiVendorHal.isApSetMacAddressSupported(TEST_IFACE_NAME_1));
     }
 
     /**
      * Verifies isSetMacAddressSupported().
      */
     @Test
-    public void testIsSetMacAddressSupportedWhenV1_2Support() throws Exception {
+    public void testIsStaSetMacAddressSupportedWhenV1_2Support() throws Exception {
         // Expose the 1.2 IWifiStaIface.
         mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
-        assertTrue(mWifiVendorHal.isSetMacAddressSupported(TEST_IFACE_NAME));
+        assertTrue(mWifiVendorHal.isStaSetMacAddressSupported(TEST_IFACE_NAME));
     }
 
     /**
@@ -2628,7 +2629,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
      */
     @Test
     public void testIsSetMacAddressSupportedOnOlderHal() throws Exception {
-        assertFalse(mWifiVendorHal.isSetMacAddressSupported(TEST_IFACE_NAME));
+        assertFalse(mWifiVendorHal.isStaSetMacAddressSupported(TEST_IFACE_NAME));
+        assertFalse(mWifiVendorHal.isApSetMacAddressSupported(TEST_IFACE_NAME));
     }
 
     /**
