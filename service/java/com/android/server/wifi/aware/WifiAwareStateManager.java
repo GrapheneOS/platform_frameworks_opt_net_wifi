@@ -469,6 +469,16 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     }
 
     /**
+     * Try to get capability if it is null.
+     */
+    public void tryToGetAwareCapability() {
+        if (mCapabilities != null) return;
+        getAwareInterface();
+        queryCapabilities();
+        releaseAwareInterface();
+    }
+
+    /**
      * Get the client state for the specified ID (or null if none exists).
      */
     /* package */ WifiAwareClientState getClient(int clientId) {
@@ -2485,12 +2495,6 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
 
     private void enableUsageLocal() {
         if (VDBG) Log.v(TAG, "enableUsageLocal: mUsageEnabled=" + mUsageEnabled);
-
-        if (mCapabilities == null) {
-            getAwareInterface();
-            queryCapabilities();
-            releaseAwareInterface();
-        }
 
         if (mUsageEnabled) {
             return;
