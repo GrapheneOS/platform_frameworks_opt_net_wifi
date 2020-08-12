@@ -304,7 +304,8 @@ public class WifiInjector {
                 mWifiCarrierInfoManager, mWifiKeyStore, mLruConnectionTracker);
         mPasspointManager = new PasspointManager(mContext, this,
                 wifiHandler, mWifiNative, mWifiKeyStore, mClock, new PasspointObjectFactory(),
-                mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager);
+                mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager,
+                mMacAddressUtil);
         PasspointNetworkNominateHelper nominateHelper =
                 new PasspointNetworkNominateHelper(mPasspointManager, mWifiConfigManager,
                         mConnectivityLocalLog);

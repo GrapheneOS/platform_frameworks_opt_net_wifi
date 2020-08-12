@@ -18,12 +18,14 @@ package com.android.server.wifi.hotspot2;
 
 import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
 import static android.net.wifi.WifiConfiguration.MeteredOverride;
+import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 
 import static java.security.cert.PKIXReason.NO_TRUST_ANCHOR;
 
 import android.annotation.NonNull;
 import android.app.AppOpsManager;
 import android.content.Context;
+import android.net.MacAddress;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -40,6 +42,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.server.wifi.Clock;
+import com.android.server.wifi.MacAddressUtil;
 import com.android.server.wifi.NetworkUpdateResult;
 import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiConfigManager;
@@ -118,6 +121,7 @@ public class PasspointManager {
     private final PasspointProvisioner mPasspointProvisioner;
     private final AppOpsManager mAppOps;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
+    private final MacAddressUtil mMacAddressUtil;
 
     /**
      * Map of package name of an app to the app ops changed listener for the app.
@@ -304,7 +308,8 @@ public class PasspointManager {
             PasspointObjectFactory objectFactory, WifiConfigManager wifiConfigManager,
             WifiConfigStore wifiConfigStore,
             WifiMetrics wifiMetrics,
-            WifiCarrierInfoManager wifiCarrierInfoManager) {
+            WifiCarrierInfoManager wifiCarrierInfoManager,
+            MacAddressUtil macAddressUtil) {
         mPasspointEventHandler = objectFactory.makePasspointEventHandler(wifiNative,
                 new CallbackHandler(context));
         mWifiInjector = wifiInjector;
@@ -326,6 +331,7 @@ public class PasspointManager {
                 this, wifiMetrics);
         mAppOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
         sPasspointManager = this;
+        mMacAddressUtil = macAddressUtil;
     }
 
     /**
@@ -1096,6 +1102,15 @@ public class PasspointManager {
                 continue;
             }
             WifiConfiguration config = provider.getWifiConfig();
+            if (mWifiConfigManager.shouldUseAggressiveRandomization(config)) {
+                config.setRandomizedMacAddress(MacAddress.fromString(DEFAULT_MAC_ADDRESS));
+            } else {
+                MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getKey(),
+                        mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
+                if (result != null) {
+                    config.setRandomizedMacAddress(result);
+                }
+            }
             // If the Passpoint configuration is from a suggestion, check if the app shares this
             // suggestion with the user.
             if (provider.isFromSuggestion()
