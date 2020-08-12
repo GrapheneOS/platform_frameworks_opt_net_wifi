@@ -620,7 +620,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     /** Pass a reference to a matching OsuWifiEntry for expiration handling */
     void setOsuWifiEntry(OsuWifiEntry osuWifiEntry) {
         mOsuWifiEntry = osuWifiEntry;
-        mOsuWifiEntry.setListener(this);
+        if (mOsuWifiEntry != null) {
+            mOsuWifiEntry.setListener(this);
+        }
     }
 
     /** Callback for updates to the linked OsuWifiEntry */
