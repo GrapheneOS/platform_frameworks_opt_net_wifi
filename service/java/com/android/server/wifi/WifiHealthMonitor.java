@@ -24,6 +24,7 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.app.AlarmManager;
 import android.content.Context;
+import android.content.pm.ModuleInfo;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
 import android.net.wifi.ScanResult;
@@ -76,7 +77,7 @@ public class WifiHealthMonitor {
             "WifiHealthMonitor Schedule Post-Boot Detection Timer";
     // Package name of WiFi mainline module found from the following adb command
     // adb shell pm list packages --apex-only| grep wifi
-    private static final String WIFI_APK_PACKAGE_NAME = "com.google.android.wifi";
+    private static final String WIFI_APEX_NAME = "com.android.wifi";
     private static final String SYSTEM_INFO_DATA_NAME = "systemInfoData";
     // The time that device waits after device boot before triggering post-boot detection.
     // This needs be long enough so that memory read can complete before post-boot detection.
@@ -542,8 +543,13 @@ public class WifiHealthMonitor {
         PackageManager packageManager = mContext.getPackageManager();
         long wifiStackVersion = 0;
         try {
-            wifiStackVersion = packageManager.getPackageInfo(
-                    WIFI_APK_PACKAGE_NAME, PackageManager.MATCH_APEX).getLongVersionCode();
+            ModuleInfo wifiModule = packageManager.getModuleInfo(
+                    WIFI_APEX_NAME, PackageManager.MODULE_APEX_NAME);
+            String wifiPackageName = wifiModule.getPackageName();
+            if (wifiPackageName != null) {
+                wifiStackVersion = packageManager.getPackageInfo(
+                        wifiPackageName, PackageManager.MATCH_APEX).getLongVersionCode();
+            }
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, " Hit PackageManager exception", e);
         }
