@@ -2197,7 +2197,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Connect to network with |sBSSID|, |sFreq|, and then disconnect.
         disconnect();
 
-        mCmi.reconnectCommand(ClientModeImpl.WIFI_WORK_SOURCE);
+        mCmi.reconnect(ClientModeImpl.WIFI_WORK_SOURCE);
         mLooper.dispatchAll();
         verify(mWifiConnectivityManager).forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
     }
@@ -2211,7 +2211,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Connect to network with |sBSSID|, |sFreq|.
         connect();
 
-        mCmi.reconnectCommand(ClientModeImpl.WIFI_WORK_SOURCE);
+        mCmi.reconnect(ClientModeImpl.WIFI_WORK_SOURCE);
         mLooper.dispatchAll();
         verify(mWifiConnectivityManager, never())
                 .forceConnectivityScan(ClientModeImpl.WIFI_WORK_SOURCE);
@@ -2726,7 +2726,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 WifiManager.ERROR_AUTH_FAILURE_TIMEOUT);
         mLooper.dispatchAll();
 
-        WifiConfiguration config = mCmi.getCurrentWifiConfiguration();
+        WifiConfiguration config = mCmi.getConnectedWifiConfiguration();
         verify(mConnectionFailureNotifier)
                 .showFailedToConnectDueToNoRandomizedMacSupportNotification(FRAMEWORK_NETWORK_ID);
     }
@@ -3503,7 +3503,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiNetworkAgentSpecifier wifiNetworkAgentSpecifier =
                 (WifiNetworkAgentSpecifier) networkSpecifier;
         WifiNetworkAgentSpecifier expectedWifiNetworkAgentSpecifier =
-                new WifiNetworkAgentSpecifier(mCmi.getCurrentWifiConfiguration());
+                new WifiNetworkAgentSpecifier(mCmi.getConnectedWifiConfiguration());
         assertEquals(expectedWifiNetworkAgentSpecifier, wifiNetworkAgentSpecifier);
         assertEquals(TEST_UID, networkCapabilities.getRequestorUid());
         assertEquals(OP_PACKAGE_NAME, networkCapabilities.getRequestorPackageName());
@@ -4847,7 +4847,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(mWifiInfo.getSupplicantState(), SupplicantState.COMPLETED);
 
         // Now trigger disconnect
-        mCmi.disconnectCommand();
+        mCmi.disconnect();
         mLooper.dispatchAll();
 
         // get disconnect event
@@ -4867,7 +4867,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(mWifiInfo.getSupplicantState(), SupplicantState.COMPLETED);
 
         // Now trigger disconnect
-        mCmi.disconnectCommand();
+        mCmi.disconnect();
         mLooper.dispatchAll();
 
         // missing disconnect event, but got supplicant state change with disconnect state instead.
@@ -4954,7 +4954,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         connect();
 
         // Trigger a disconnect event.
-        mCmi.disconnectCommand();
+        mCmi.disconnect();
         mLooper.dispatchAll();
         assertEquals("L3ConnectedState", getCurrentState().getName());
 
