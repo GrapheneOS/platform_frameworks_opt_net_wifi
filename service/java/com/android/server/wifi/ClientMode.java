@@ -130,6 +130,10 @@ public interface ClientMode {
 
     boolean isConnected();
 
+    boolean isConnecting();
+
+    boolean isRoaming();
+
     boolean isDisconnected();
 
     boolean isSupplicantTransientState();
