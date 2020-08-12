@@ -69,15 +69,12 @@ public class ConnectHelperTest extends WifiBaseTest {
 
     @Test
     public void connectToNetwork_success() throws Exception {
-        when(mWifiConfigManager.updateBeforeConnect(eq(TEST_NETWORK_ID), anyInt()))
-                .thenReturn(true);
+        when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID)).thenReturn(mWifiConfig);
 
         NetworkUpdateResult result = new NetworkUpdateResult(TEST_NETWORK_ID);
         mConnectHelper.connectToNetwork(result, mActionListener, TEST_CALLING_UID);
 
-        verify(mWifiConfigManager)
-                .updateBeforeConnect(TEST_NETWORK_ID, TEST_CALLING_UID);
-
+        verify(mWifiConfigManager).updateBeforeConnect(TEST_NETWORK_ID, TEST_CALLING_UID);
         verify(mClientModeManager).connectNetwork(eq(result), any(), eq(TEST_CALLING_UID));
         // success is sent by ClientModeManager, not sent by ConnectHelper
         verify(mActionListener, never()).sendSuccess();
@@ -85,16 +82,13 @@ public class ConnectHelperTest extends WifiBaseTest {
     }
 
     @Test
-    public void connectToNetwork_failure() throws Exception {
-        when(mWifiConfigManager.updateBeforeConnect(eq(TEST_NETWORK_ID), anyInt()))
-                .thenReturn(false);
+    public void connectToNetwork_invalidNetId_failure() throws Exception {
+        when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID)).thenReturn(null);
 
         mConnectHelper.connectToNetwork(new NetworkUpdateResult(TEST_NETWORK_ID), mActionListener,
                 TEST_CALLING_UID);
 
-        verify(mWifiConfigManager)
-                .updateBeforeConnect(TEST_NETWORK_ID, TEST_CALLING_UID);
-
+        verify(mWifiConfigManager, never()).updateBeforeConnect(TEST_NETWORK_ID, TEST_CALLING_UID);
         verify(mClientModeManager, never()).connectNetwork(any(), any(), anyInt());
         verify(mActionListener).sendFailure(WifiManager.ERROR);
         verify(mActionListener, never()).sendSuccess();

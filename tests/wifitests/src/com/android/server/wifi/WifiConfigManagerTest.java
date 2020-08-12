@@ -1604,8 +1604,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 result.getNetworkId() + 1, TEST_CREATOR_UID, TEST_CREATOR_NAME));
         assertFalse(mWifiConfigManager.updateNetworkSelectionStatus(
                 result.getNetworkId() + 1, NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER));
-        assertFalse(mWifiConfigManager.updateBeforeConnect(
-                result.getNetworkId() + 1, TEST_CREATOR_UID));
     }
 
     /**
@@ -5699,7 +5697,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(TEST_CREATOR_UID))
                 .thenReturn(true);
 
-        assertTrue(mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_CREATOR_UID));
+        mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_CREATOR_UID);
 
         config = mWifiConfigManager.getConfiguredNetwork(config.networkId);
         // network became enabled
@@ -5735,7 +5733,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(TEST_CREATOR_UID))
                 .thenReturn(false);
 
-        assertTrue(mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_CREATOR_UID));
+        mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_CREATOR_UID);
 
         config = mWifiConfigManager.getConfiguredNetwork(config.networkId);
         // network became enabled
@@ -5769,7 +5767,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 .thenReturn(false);
         when(mUserManager.isSameProfileGroup(any(), any())).thenReturn(false);
 
-        assertFalse(mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_OTHER_USER_UID));
+        mWifiConfigManager.updateBeforeConnect(config.networkId, TEST_OTHER_USER_UID);
 
         // network still disabled
         assertFalse(config.getNetworkSelectionStatus().isNetworkEnabled());

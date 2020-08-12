@@ -62,12 +62,12 @@ public class ConnectHelper {
             @Nullable ActionListenerWrapper wrapper,
             int callingUid) {
         int netId = result.getNetworkId();
-        boolean success = mWifiConfigManager.updateBeforeConnect(netId, callingUid);
-        if (success) {
-            clientModeManager.connectNetwork(result, wrapper, callingUid);
-        } else {
+        if (mWifiConfigManager.getConfiguredNetwork(netId) == null) {
             Log.e(TAG, "connectToNetwork Invalid network Id=" + netId);
             wrapper.sendFailure(WifiManager.ERROR);
+            return;
         }
+        mWifiConfigManager.updateBeforeConnect(netId, callingUid);
+        clientModeManager.connectNetwork(result, wrapper, callingUid);
     }
 }
