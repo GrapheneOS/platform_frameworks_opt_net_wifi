@@ -3364,26 +3364,17 @@ public class WifiConfigManager {
     }
 
     /** Update WifiConfigManager before connecting to a network. */
-    public boolean updateBeforeConnect(int networkId, int callingUid) {
-        if (!userEnabledNetwork(networkId)) {
-            return false;
-        }
-        if (!enableNetwork(networkId, true, callingUid, null)) {
+    public void updateBeforeConnect(int networkId, int callingUid) {
+        userEnabledNetwork(networkId);
+        if (!enableNetwork(networkId, true, callingUid, null)
+                || !updateLastConnectUid(networkId, callingUid)) {
             Log.i(TAG, "connect Allowing uid " + callingUid
                     + " with insufficient permissions to connect=" + networkId);
-            return false;
-        }
-        if (!updateLastConnectUid(networkId, callingUid)) {
-            Log.i(TAG, "connect Allowing uid " + callingUid
-                    + " with insufficient permissions to connect=" + networkId);
-            return false;
-        }
-        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
+        } else if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
             // Note user connect choice here, so that it will be considered in the
             // next network selection.
             setUserConnectChoice(networkId);
         }
-        return true;
     }
 
     /** See {@link WifiManager#save(WifiConfiguration, WifiManager.ActionListener)} */
