@@ -984,6 +984,50 @@ public class ActiveModeWarden {
         }
 
         @Override
+        protected String getWhatToString(int what) {
+            switch (what) {
+                case CMD_AIRPLANE_TOGGLED:
+                    return "CMD_AIRPLANE_TOGGLED";
+                case CMD_AP_START_FAILURE:
+                    return "CMD_AP_START_FAILURE";
+                case CMD_AP_STOPPED:
+                    return "CMD_AP_STOPPED";
+                case CMD_DEFERRED_RECOVERY_RESTART_WIFI:
+                    return "CMD_DEFERRED_RECOVERY_RESTART_WIFI";
+                case CMD_EMERGENCY_CALL_STATE_CHANGED:
+                    return "CMD_EMERGENCY_CALL_STATE_CHANGED";
+                case CMD_EMERGENCY_MODE_CHANGED:
+                    return "CMD_EMERGENCY_MODE_CHANGED";
+                case CMD_RECOVERY_DISABLE_WIFI:
+                    return "CMD_RECOVERY_DISABLE_WIFI";
+                case CMD_RECOVERY_RESTART_WIFI:
+                    return "CMD_RECOVERY_RESTART_WIFI";
+                case CMD_RECOVERY_RESTART_WIFI_CONTINUE:
+                    return "CMD_RECOVERY_RESTART_WIFI_CONTINUE";
+                case CMD_REMOVE_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                    return "CMD_REMOVE_LOCAL_ONLY_CLIENT_MODE_MANAGER";
+                case CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER:
+                    return "CMD_REQUEST_LOCAL_ONLY_CLIENT_MODE_MANAGER";
+                case CMD_SCAN_ALWAYS_MODE_CHANGED:
+                    return "CMD_SCAN_ALWAYS_MODE_CHANGED";
+                case CMD_SET_AP:
+                    return "CMD_SET_AP";
+                case CMD_STA_START_FAILURE:
+                    return "CMD_STA_START_FAILURE";
+                case CMD_STA_STOPPED:
+                    return "CMD_STA_STOPPED";
+                case CMD_UPDATE_AP_CAPABILITY:
+                    return "CMD_UPDATE_AP_CAPABILITY";
+                case CMD_UPDATE_AP_CONFIG:
+                    return "CMD_UPDATE_AP_CONFIG";
+                case CMD_WIFI_TOGGLED:
+                    return "CMD_WIFI_TOGGLED";
+                default:
+                    return "what:" + what;
+            }
+        }
+
+        @Override
         public void start() {
             boolean isAirplaneModeOn = mSettingsStore.isAirplaneModeOn();
             boolean isWifiEnabled = mSettingsStore.isWifiToggleEnabled();
