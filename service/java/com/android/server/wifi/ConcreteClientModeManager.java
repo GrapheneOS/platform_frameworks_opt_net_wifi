@@ -72,6 +72,7 @@ import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -91,6 +92,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
     private final DefaultClientModeImpl mDefaultClientModeImpl;
+    private final Graveyard mGraveyard = new Graveyard();
 
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
@@ -394,6 +396,41 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     /**
+     * Keep stopped {@link ClientModeImpl} instances so that they can be dumped to aid debugging.
+     *
+     * TODO(b/160283853): Find a smarter way to evict old ClientModeImpls
+     */
+    private static class Graveyard {
+        private static final int INSTANCES_TO_KEEP = 3;
+
+        private final ArrayDeque<ClientModeImpl> mClientModeImpls = new ArrayDeque<>();
+
+        /**
+         * Add this stopped {@link ClientModeImpl} to the graveyard, and evict the oldest
+         * ClientModeImpl if the graveyard is full.
+         */
+        void inter(ClientModeImpl clientModeImpl) {
+            if (mClientModeImpls.size() == INSTANCES_TO_KEEP) {
+                mClientModeImpls.removeFirst();
+            }
+            mClientModeImpls.addLast(clientModeImpl);
+        }
+
+        /** Dump the contents of the graveyard. */
+        void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+            pw.println("Dump of ConcreteClientModeManager.Graveyard");
+            pw.println("Stopped ClientModeImpls: " + mClientModeImpls.size() + " total");
+            int i = 0;
+            for (ClientModeImpl clientModeImpl : mClientModeImpls) {
+                pw.println("Dump of stopped ClientModeImpl " + i);
+                clientModeImpl.dump(fd, pw, args);
+                i++;
+            }
+            pw.println();
+        }
+    }
+
+    /**
      * Dump info about this ClientMode manager.
      */
     @Override
@@ -413,6 +450,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         } else {
             mClientModeImpl.dump(fd, pw, args);
         }
+        mGraveyard.dump(fd, pw, args);
         pw.println();
     }
 
@@ -781,6 +819,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     Log.w(getTag(), "ConnectModeState.exit(): mClientModeImpl is already null?!");
                 } else {
                     mClientModeImpl.stop();
+                    mGraveyard.inter(mClientModeImpl);
                     mClientModeImpl = null;
                 }
             }

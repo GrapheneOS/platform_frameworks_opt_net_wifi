@@ -115,6 +115,7 @@ import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.NativeUtil;
 import com.android.server.wifi.util.RssiUtil;
 import com.android.server.wifi.util.ScanResultUtil;
+import com.android.server.wifi.util.StateMachineObituary;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -581,6 +582,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     public static final long DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS = 30 * 1000;
     private long mDataStallTriggerTimeMs = -1;
     private int mLastStatusDataStall = WifiIsUnusableEvent.TYPE_UNKNOWN;
+
+    @Nullable
+    private StateMachineObituary mObituary = null;
 
     /** Note that this constructor will also start() the StateMachine. */
     public ClientModeImpl(
@@ -1306,6 +1310,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped.
      */
     public void stop() {
+        // capture StateMachine LogRecs since we will lose them after we call quitNow()
+        // This is used for debugging.
+        mObituary = new StateMachineObituary(this);
+
         // quit discarding all unprocessed messages - this is to preserve the legacy behavior of
         // using sendMessageAtFrontOfQueue(CMD_SET_OPERATIONAL_MODE) which would force a state
         // transition immediately
@@ -1496,7 +1504,15 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        super.dump(fd, pw, args);
+        if (mObituary == null) {
+            // StateMachine hasn't quit yet, dump `this` via StateMachineObituary's dump()
+            // method for consistency with `else` branch.
+            new StateMachineObituary(this).dump(fd, pw, args);
+        } else {
+            // StateMachine has quit and cleared all LogRecs.
+            // Get them from the obituary instead.
+            mObituary.dump(fd, pw, args);
+        }
         mSupplicantStateTracker.dump(fd, pw, args);
         // Polls link layer stats and RSSI. This allows the stats to show up in
         // WifiScoreReport's dump() output when taking a bug report even if the screen is off.
