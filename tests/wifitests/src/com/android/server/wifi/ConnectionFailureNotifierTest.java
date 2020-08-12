@@ -118,7 +118,7 @@ public class ConnectionFailureNotifierTest extends WifiBaseTest {
         // Verify that the network is using randomized MAC at the start.
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         when(mWifiConfigManager.getConfiguredNetwork(config.networkId)).thenReturn(config);
-        assertEquals(WifiConfiguration.RANDOMIZATION_PERSISTENT, config.macRandomizationSetting);
+        assertEquals(WifiConfiguration.RANDOMIZATION_AUTO, config.macRandomizationSetting);
 
         mConnectionFailureNotifier.showFailedToConnectDueToNoRandomizedMacSupportNotification(
                 config.networkId);

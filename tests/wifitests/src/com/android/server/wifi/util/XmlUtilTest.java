@@ -234,7 +234,7 @@ public class XmlUtilTest extends WifiBaseTest {
         configuration.lastUpdateUid = configuration.lastConnectUid = configuration.creatorUid;
         configuration.creatorName = configuration.lastUpdateName = TEST_PACKAGE_NAME;
         configuration.setRandomizedMacAddress(MacAddressUtils.createRandomUnicastAddress());
-        configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
 
         serializeDeserializeWifiConfigurationForConfigStore(configuration);
     }
@@ -507,6 +507,33 @@ public class XmlUtilTest extends WifiBaseTest {
 
         // Verify that macRandomizationSetting is set to |RANDOMIZATION_NONE|
         assertEquals(WifiConfiguration.RANDOMIZATION_NONE,
+                retrieved.second.macRandomizationSetting);
+    }
+
+    /**
+     * Verify that when deserializing a XML RANDOMIZATION_PERSISTENT is automatically upgraded to
+     * RANDOIMZATION_ENHANCED.
+     * @throws IOException
+     * @throws XmlPullParserException
+     */
+    @Test
+    public void testMacRandomizationSettingUpgradeToRandomizationAuto()
+            throws IOException, XmlPullParserException {
+        // First generate XML data that only has the header filled in
+        final XmlSerializer out = new FastXmlSerializer();
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        out.setOutput(outputStream, StandardCharsets.UTF_8.name());
+        XmlUtil.writeDocumentStart(out, mXmlDocHeader);
+        XmlUtil.writeNextValue(out, WifiConfigurationXmlUtil.XML_TAG_MAC_RANDOMIZATION_SETTING,
+                WifiConfiguration.RANDOMIZATION_PERSISTENT);
+        XmlUtil.writeDocumentEnd(out, mXmlDocHeader);
+
+        // Deserialize from a config version before MAC randomization upgrade.
+        Pair<String, WifiConfiguration> retrieved =
+                deserializeWifiConfiguration(outputStream.toByteArray());
+
+        // Verify that macRandomizationSetting is set to |RANDOMIZATION_NONE|
+        assertEquals(WifiConfiguration.RANDOMIZATION_AUTO,
                 retrieved.second.macRandomizationSetting);
     }
 

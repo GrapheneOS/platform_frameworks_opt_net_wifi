@@ -592,7 +592,7 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         mWifiConfig.macRandomizationSetting = privacy == PRIVACY_RANDOMIZED_MAC
-                ? WifiConfiguration.RANDOMIZATION_PERSISTENT : WifiConfiguration.RANDOMIZATION_NONE;
+                ? WifiConfiguration.RANDOMIZATION_AUTO : WifiConfiguration.RANDOMIZATION_NONE;
         mWifiManager.save(mWifiConfig, null /* listener */);
     }
 

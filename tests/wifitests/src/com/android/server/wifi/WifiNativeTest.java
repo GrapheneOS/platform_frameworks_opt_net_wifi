@@ -861,19 +861,37 @@ public class WifiNativeTest extends WifiBaseTest {
      * Verifies that setMacAddress() calls underlying WifiVendorHal.
      */
     @Test
-    public void testSetMacAddress() throws Exception {
-        mWifiNative.setMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
+    public void testStaSetMacAddress() throws Exception {
+        mWifiNative.setStaMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
         verify(mStaIfaceHal).disconnect(WIFI_IFACE_NAME);
-        verify(mWifiVendorHal).setMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
+        verify(mWifiVendorHal).setStaMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
+    }
+
+    /**
+     * Verifies that setMacAddress() calls underlying WifiVendorHal.
+     */
+    @Test
+    public void testApSetMacAddress() throws Exception {
+        mWifiNative.setApMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
+        verify(mWifiVendorHal).setApMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
     }
 
     /**
      * Verifies that isSetMacAddressSupported() calls underlying WifiVendorHal.
      */
     @Test
-    public void testIsSetMacAddressSupported() throws Exception {
-        mWifiNative.isSetMacAddressSupported(WIFI_IFACE_NAME);
-        verify(mWifiVendorHal).isSetMacAddressSupported(WIFI_IFACE_NAME);
+    public void testIsStaSetMacAddressSupported() throws Exception {
+        mWifiNative.isStaSetMacAddressSupported(WIFI_IFACE_NAME);
+        verify(mWifiVendorHal).isStaSetMacAddressSupported(WIFI_IFACE_NAME);
+    }
+
+    /**
+     * Verifies that isSetMacAddressSupported() calls underlying WifiVendorHal.
+     */
+    @Test
+    public void testIsApSetMacAddressSupported() throws Exception {
+        mWifiNative.isApSetMacAddressSupported(WIFI_IFACE_NAME);
+        verify(mWifiVendorHal).isApSetMacAddressSupported(WIFI_IFACE_NAME);
     }
 
     /**
@@ -926,10 +944,19 @@ public class WifiNativeTest extends WifiBaseTest {
     }
 
     @Test
-    public void testGetFactoryMacAddress() throws Exception {
-        when(mWifiVendorHal.getFactoryMacAddress(any())).thenReturn(MacAddress.BROADCAST_ADDRESS);
-        assertNotNull(mWifiNative.getFactoryMacAddress(WIFI_IFACE_NAME));
-        verify(mWifiVendorHal).getFactoryMacAddress(any());
+    public void testStaGetFactoryMacAddress() throws Exception {
+        when(mWifiVendorHal.getStaFactoryMacAddress(any()))
+                .thenReturn(MacAddress.BROADCAST_ADDRESS);
+        assertNotNull(mWifiNative.getStaFactoryMacAddress(WIFI_IFACE_NAME));
+        verify(mWifiVendorHal).getStaFactoryMacAddress(any());
+    }
+
+
+    @Test
+    public void testGetApFactoryMacAddress() throws Exception {
+        when(mWifiVendorHal.getApFactoryMacAddress(any())).thenReturn(MacAddress.BROADCAST_ADDRESS);
+        assertNotNull(mWifiNative.getApFactoryMacAddress(WIFI_IFACE_NAME));
+        verify(mWifiVendorHal).getApFactoryMacAddress(any());
     }
 
     /**

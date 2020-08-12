@@ -221,7 +221,6 @@ public class ClientModeImpl extends StateMachine {
     private final WifiLastResortWatchdog mWifiLastResortWatchdog;
     private final WakeupController mWakeupController;
     private final WifiLockManager mWifiLockManager;
-    private final SelfRecovery mSelfRecovery;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
 
@@ -627,7 +626,6 @@ public class ClientModeImpl extends StateMachine {
             PasspointManager passpointManager,
             WifiMonitor wifiMonitor,
             BaseWifiDiagnostics wifiDiagnostics,
-            WifiPermissionsWrapper wifiPermissionsWrapper,
             WifiDataStall wifiDataStall,
             ScoringParams scoringParams,
             WifiThreadRunner wifiThreadRunner,
@@ -646,7 +644,6 @@ public class ClientModeImpl extends StateMachine {
             WifiLastResortWatchdog wifiLastResortWatchdog,
             WakeupController wakeupController,
             WifiLockManager wifiLockManager,
-            SelfRecovery selfRecovery,
             FrameworkFacade facade,
             Looper looper,
             WifiCountryCode countryCode,
@@ -727,7 +724,6 @@ public class ClientModeImpl extends StateMachine {
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWakeupController = wakeupController;
         mWifiLockManager = wifiLockManager;
-        mSelfRecovery = selfRecovery;
 
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
         mWifiHealthMonitor = wifiHealthMonitor;
@@ -2904,7 +2900,7 @@ public class ClientModeImpl extends StateMachine {
         } else {
             mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
             boolean setMacSuccess =
-                    mWifiNative.setMacAddress(mInterfaceName, newMac);
+                    mWifiNative.setStaMacAddress(mInterfaceName, newMac);
             if (setMacSuccess) {
                 mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, newMac);
             }
@@ -2918,14 +2914,14 @@ public class ClientModeImpl extends StateMachine {
      * Sets the current MAC to the factory MAC address.
      */
     private void setCurrentMacToFactoryMac(WifiConfiguration config) {
-        MacAddress factoryMac = mWifiNative.getFactoryMacAddress(mInterfaceName);
+        MacAddress factoryMac = mWifiNative.getStaFactoryMacAddress(mInterfaceName);
         if (factoryMac == null) {
             Log.e(getTag(), "Fail to set factory MAC address. Factory MAC is null.");
             return;
         }
         String currentMacStr = mWifiNative.getMacAddress(mInterfaceName);
         if (!TextUtils.equals(currentMacStr, factoryMac.toString())) {
-            if (mWifiNative.setMacAddress(mInterfaceName, factoryMac)) {
+            if (mWifiNative.setStaMacAddress(mInterfaceName, factoryMac)) {
                 mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, factoryMac);
                 mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
             } else {
@@ -3058,7 +3054,7 @@ public class ClientModeImpl extends StateMachine {
         mLastSimBasedConnectionCarrierName = null;
         mLastSignalLevel = -1;
         if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
-            if (!mWifiNative.setMacAddress(
+            if (!mWifiNative.setStaMacAddress(
                     mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
                 Log.e(getTag(), "Failed to set random MAC address on bootup");
             }
@@ -3883,7 +3879,7 @@ public class ClientModeImpl extends StateMachine {
             // 2. Set a random MAC address to ensure that we're not leaking the MAC address.
             mWifiNative.disableNetwork(mInterfaceName);
             if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
-                if (!mWifiNative.setMacAddress(
+                if (!mWifiNative.setStaMacAddress(
                         mInterfaceName, MacAddressUtils.createRandomUnicastAddress())) {
                     Log.e(getTag(), "Failed to set random MAC address on disconnect");
                 }
@@ -5404,7 +5400,7 @@ public class ClientModeImpl extends StateMachine {
      * @return String representation of the factory MAC address.
      */
     public String getFactoryMacAddress() {
-        MacAddress macAddress = mWifiNative.getFactoryMacAddress(mInterfaceName);
+        MacAddress macAddress = mWifiNative.getStaFactoryMacAddress(mInterfaceName);
         if (macAddress != null) {
             return macAddress.toString();
         }
@@ -5633,7 +5629,7 @@ public class ClientModeImpl extends StateMachine {
         }
 
         if (mWifiGlobals.isConnectedMacRandomizationEnabled()) {
-            if (config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+            if (config.macRandomizationSetting != WifiConfiguration.RANDOMIZATION_NONE) {
                 configureRandomizedMacAddress(config);
             } else {
                 setCurrentMacToFactoryMac(config);
@@ -5670,7 +5666,7 @@ public class ClientModeImpl extends StateMachine {
                 (config.getIpAssignment() == IpConfiguration.IpAssignment.STATIC);
         final boolean isUsingMacRandomization =
                 config.macRandomizationSetting
-                        == WifiConfiguration.RANDOMIZATION_PERSISTENT
+                        != WifiConfiguration.RANDOMIZATION_NONE
                         && mWifiGlobals.isConnectedMacRandomizationEnabled();
         if (mVerboseLoggingEnabled) {
             final String key = config.getKey();

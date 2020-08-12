@@ -1583,7 +1583,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         WifiConfiguration config = mock(WifiConfiguration.class);
         config.SSID = "\"" + SSID + "\"";
         config.dtimInterval = CONFIG_DTIM;
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         config.allowedKeyManagement = new BitSet();
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
@@ -1675,7 +1675,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         WifiConfiguration config = mock(WifiConfiguration.class);
         config.SSID = "\"" + SSID + "\"";
         config.dtimInterval = CONFIG_DTIM;
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         config.allowedKeyManagement = new BitSet();
         WifiConfiguration.NetworkSelectionStatus networkSelectionStat =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
