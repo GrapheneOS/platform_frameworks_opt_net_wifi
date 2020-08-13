@@ -67,6 +67,7 @@ import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
 import com.android.server.wifi.util.ActionListenerWrapper;
+import com.android.server.wifi.util.StateMachineObituary;
 import com.android.server.wifi.util.WifiHandler;
 import com.android.wifi.resources.R;
 
@@ -285,7 +286,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     && deferringDurationMillis >= mMaximumDeferringTimeMillis;
             if (mTargetRole == null) {
                 Log.d(getTag(), "Continue to stop wifi");
-                mStateMachine.quitNow();
+                mStateMachine.captureObituaryAndQuitNow();
                 mWifiMetrics.noteWifiOff(mIsDeferring, isTimedOut, deferringDurationMillis);
             } else if (mTargetRole == ROLE_CLIENT_SCAN_ONLY) {
                 if (!mWifiNative.switchClientInterfaceToScanMode(mClientInterfaceName)) {
@@ -538,6 +539,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
         private final State mScanOnlyModeState = new ScanOnlyModeState();
         private final State mConnectModeState = new ConnectModeState();
 
+        @Nullable
+        private StateMachineObituary mObituary = null;
+
         private final InterfaceCallback mWifiNativeInterfaceCallback = new InterfaceCallback() {
             @Override
             public void onDestroyed(String ifaceName) {
@@ -586,6 +590,27 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
             setInitialState(mIdleState);
             start();
+        }
+
+        void captureObituaryAndQuitNow() {
+            // capture StateMachine LogRecs since we will lose them after we call quitNow()
+            // This is used for debugging.
+            mObituary = new StateMachineObituary(this);
+
+            quitNow();
+        }
+
+        @Override
+        public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+            if (mObituary == null) {
+                // StateMachine hasn't quit yet, dump `this` via StateMachineObituary's dump()
+                // method for consistency with `else` branch.
+                new StateMachineObituary(this).dump(fd, pw, args);
+            } else {
+                // StateMachine has quit and cleared all LogRecs.
+                // Get them from the obituary instead.
+                mObituary.dump(fd, pw, args);
+            }
         }
 
         private void setRoleInternalAndInvokeCallback(ClientRole newRole) {
@@ -717,7 +742,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
                 // once we leave started, nothing else to do...  stop the state machine
                 mRole = null;
-                mStateMachine.quitNow();
+                mStateMachine.captureObituaryAndQuitNow();
                 mModeListener.onStopped();
             }
         }
