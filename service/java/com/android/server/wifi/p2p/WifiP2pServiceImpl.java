@@ -72,6 +72,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.WorkSource;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -453,18 +454,21 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     }
 
     private class DeathHandlerData {
-        DeathHandlerData(DeathRecipient dr, Messenger m) {
+        DeathHandlerData(DeathRecipient dr, Messenger m, WorkSource ws) {
             mDeathRecipient = dr;
             mMessenger = m;
+            mWorkSource = ws;
         }
 
         @Override
         public String toString() {
-            return "deathRecipient=" + mDeathRecipient + ", messenger=" + mMessenger;
+            return "deathRecipient=" + mDeathRecipient + ", messenger=" + mMessenger
+                    + ", worksource=" + mWorkSource;
         }
 
-        DeathRecipient mDeathRecipient;
-        Messenger mMessenger;
+        final DeathRecipient mDeathRecipient;
+        final Messenger mMessenger;
+        final WorkSource mWorkSource;
     }
     private Object mLock = new Object();
     private final Map<IBinder, DeathHandlerData> mDeathDataByBinder = new HashMap<>();
@@ -609,7 +613,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
      * an AsyncChannel communication with WifiP2pService
      */
     @Override
-    public Messenger getMessenger(final IBinder binder) {
+    public Messenger getMessenger(final IBinder binder, final String packageName) {
         enforceAccessPermission();
         enforceChangePermission();
 
@@ -625,14 +629,17 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 close(binder);
             };
 
+            WorkSource ws = packageName != null
+                    ? new WorkSource(Binder.getCallingUid(), packageName)
+                    : new WorkSource(Binder.getCallingUid());
             try {
                 binder.linkToDeath(dr, 0);
-                mDeathDataByBinder.put(binder, new DeathHandlerData(dr, messenger));
+                mDeathDataByBinder.put(binder, new DeathHandlerData(dr, messenger, ws));
             } catch (RemoteException e) {
                 Log.e(TAG, "Error on linkToDeath: e=" + e);
                 // fall-through here - won't clean up
             }
-            mP2pStateMachine.sendMessage(ENABLE_P2P);
+            mP2pStateMachine.sendMessage(ENABLE_P2P, ws);
 
             return messenger;
         }
@@ -1414,11 +1421,12 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                             Log.e(TAG, "Ignore P2P enable since wifi is " + mIsWifiEnabled);
                             break;
                         }
+                        WorkSource requestorWs = (WorkSource) message.obj;
                         mInterfaceName = mWifiNative.setupInterface((String ifaceName) -> {
                             mIsHalInterfaceAvailable = false;
                             sendMessage(DISABLE_P2P);
                             checkAndSendP2pStateChangedBroadcast();
-                        }, getHandler());
+                        }, getHandler(), requestorWs);
                         if (mInterfaceName == null) {
                             Log.e(TAG, "Failed to setup interface for P2P");
                             break;
@@ -3047,7 +3055,12 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                     + mDeathDataByBinder.size());
             if (mIsWifiEnabled && isHalInterfaceAvailable
                     && !mDeathDataByBinder.isEmpty()) {
-                sendMessage(ENABLE_P2P);
+                // TODO(b/162344695): If there are more than 1 concurrent P2P clients, then we
+                // attribute the iface to one of the apps (picked at random).
+
+                DeathHandlerData deathHandlerData =
+                        (DeathHandlerData) mDeathDataByBinder.values().toArray()[0];
+                sendMessage(ENABLE_P2P, deathHandlerData.mWorkSource);
             }
         }
 
