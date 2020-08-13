@@ -116,6 +116,8 @@ public class WifiNetworkSuggestionsManager {
     public static final int ACTION_USER_DISALLOWED_APP = 2;
     public static final int ACTION_USER_DISMISS = 3;
 
+    public static final int DEFAULT_PRIORITY_GROUP = 0;
+
     @IntDef(prefix = { "ACTION_USER_" }, value = {
             ACTION_USER_ALLOWED_APP,
             ACTION_USER_DISALLOWED_APP,
