@@ -1290,7 +1290,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * mark network agent as disconnected and stop the ip client.
      */
     public void handleIfaceDestroyed() {
-        handleNetworkDisconnect(false);
+        handleNetworkDisconnect(false,
+                WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__IFACE_DESTROYED);
     }
 
     /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped.
@@ -2343,8 +2344,15 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /**
      * Resets the Wi-Fi Connections by clearing any state, resetting any sockets
      * using the interface, stopping DHCP & disabling interface
+     *
+     * @param disconnectReason must be one of WifiDisconnectReported.FailureReason values
+     *                         defined in /frameworks/base/cmds/statsd/src/atoms.proto
      */
-    private void handleNetworkDisconnect(boolean newConnectionInProgress) {
+    private void handleNetworkDisconnect(boolean newConnectionInProgress, int disconnectReason) {
+        mWifiMetrics.reportNetworkDisconnect(disconnectReason,
+                mWifiInfo.getRssi(),
+                mWifiInfo.getLinkSpeed());
+
         if (mVerboseLoggingEnabled) {
             Log.v(getTag(), "handleNetworkDisconnect: newConnectionInProgress: "
                     + newConnectionInProgress, new Throwable());
@@ -2612,7 +2620,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
 
         mWifiMetrics.endConnectionEvent(level2FailureCode, connectivityFailureCode,
-                level2FailureReason);
+                level2FailureReason, mWifiInfo.getFrequency());
         mWifiConnectivityManager.handleConnectionAttemptEnded(
                 mClientModeManager, level2FailureCode, bssid, ssid);
         if (configuration != null) {
@@ -3020,7 +3028,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * Helper method to stop external services and clean up state from client mode.
      */
     private void stopClientMode() {
-        handleNetworkDisconnect(false);
+        handleNetworkDisconnect(false,
+                WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__WIFI_DISABLED);
         // exiting supplicant started state is now only applicable to client mode
         mWifiDiagnostics.stopLogging(mInterfaceName);
 
@@ -3888,7 +3897,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         if (mVerboseLoggingEnabled) {
                             log("Missed CTRL-EVENT-DISCONNECTED, disconnect");
                         }
-                        handleNetworkDisconnect(false);
+                        handleNetworkDisconnect(false,
+                                WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__SUPPLICANT_DISCONNECTED);
                         if (stateChangeResult.wifiSsid.toString().equals(
                                 WifiInfo.sanitizeSsid(getConnectingSsidInternal()))) {
                             transitionTo(mDisconnectedState);
@@ -4004,7 +4014,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     // If network is removed while connecting, targetSsid can be null.
                     boolean newConnectionInProgress =
                             targetSsid != null && !eventInfo.ssid.equals(targetSsid);
-                    handleNetworkDisconnect(newConnectionInProgress);
+                    handleNetworkDisconnect(newConnectionInProgress, eventInfo.reasonCode);
                     if (!newConnectionInProgress) {
                         transitionTo(mDisconnectedState);
                     }
@@ -4280,7 +4290,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 case CMD_CONNECTING_WATCHDOG_TIMER: {
                     if (mConnectingWatchdogCount == message.arg1) {
                         if (mVerboseLoggingEnabled) log("Connecting watchdog! -> disconnect");
-                        handleNetworkDisconnect(false);
+                        handleNetworkDisconnect(false,
+                                WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__CONNECTING_WATCHDOG_TIMER);
                         transitionTo(mDisconnectedState);
                     }
                     break;
@@ -4832,7 +4843,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         }
                         if (isValidBssid(stateChangeResult.bssid)
                                 && stateChangeResult.bssid.equals(mTargetBssid)) {
-                            handleNetworkDisconnect(false);
+                            handleNetworkDisconnect(false,
+                                    WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__SUPPLICANT_DISCONNECTED);
                             transitionTo(mDisconnectedState);
                         }
                     }
@@ -4849,9 +4861,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         mWifiMetrics.endConnectionEvent(
                                 WifiMetrics.ConnectionEvent.FAILURE_ROAM_TIMEOUT,
                                 WifiMetricsProto.ConnectionEvent.HLF_NONE,
-                                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+                                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN,
+                                mWifiInfo.getFrequency());
                         mRoamFailCount++;
-                        handleNetworkDisconnect(false);
+                        handleNetworkDisconnect(false,
+                                WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__ROAM_WATCHDOG_TIMER);
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_ROAM_WATCHDOG_TIMER);
                         mWifiNative.disconnect(mInterfaceName);
@@ -4911,7 +4925,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     clearNetworkCachedDataIfNeeded(
                             getConnectingWifiConfigurationInternal(), eventInfo.reasonCode);
                     if (eventInfo.bssid.equals(mTargetBssid)) {
-                        handleNetworkDisconnect(false);
+                        handleNetworkDisconnect(false, eventInfo.reasonCode);
                         transitionTo(mDisconnectedState);
                     }
                     break;
@@ -5071,7 +5085,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 + " Network Selection Status=" + (config == null ? "Unavailable"
                                 : config.getNetworkSelectionStatus().getNetworkStatusString()));
                     }
-                    handleNetworkDisconnect(false);
+                    handleNetworkDisconnect(false, eventInfo.reasonCode);
                     transitionTo(mDisconnectedState);
                     break;
                 }

@@ -35,6 +35,7 @@ import android.net.wifi.WifiScanner.WifiBandIndex;
 import android.util.ArraySet;
 
 import com.android.server.wifi.WifiNative;
+import com.android.server.wifi.proto.WifiStatsLog;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -223,6 +224,38 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             }
         }
         return false;
+    }
+
+    /**
+     * Convert Wifi channel frequency to a bucketed band value.
+     *
+     * @param frequency Frequency (e.g. 2417)
+     * @return WifiBandBucket enum value (e.g. BAND_2G)
+     */
+    public static int getBand(int frequency) {
+        int band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__UNKNOWN;
+
+        if (ScanResult.is24GHz(frequency)) {
+            band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_2G;
+        } else if (ScanResult.is5GHz(frequency)) {
+            if (frequency <= BAND_5_GHZ_LOW_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_LOW;
+            } else if (frequency <= BAND_5_GHZ_MID_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_MIDDLE;
+            } else {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_HIGH;
+            }
+        } else if (ScanResult.is6GHz(frequency)) {
+            if (frequency <= BAND_6_GHZ_LOW_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_LOW;
+            } else if (frequency <= BAND_6_GHZ_MID_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_MIDDLE;
+            } else {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_HIGH;
+            }
+        }
+
+        return band;
     }
 
     /**

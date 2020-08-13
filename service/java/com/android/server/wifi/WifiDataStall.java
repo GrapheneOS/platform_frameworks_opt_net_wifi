@@ -19,7 +19,6 @@ package com.android.server.wifi;
 import static com.android.server.wifi.util.InformationElementUtil.BssLoad.CHANNEL_UTILIZATION_SCALE;
 
 import android.content.Context;
-import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager.DeviceMobilityState;
 import android.os.Handler;
@@ -499,35 +498,9 @@ public class WifiDataStall {
     private void reportWifiHealthStat(int frequency, int timeDeltaLastTwoPollsMs,
             boolean isThroughputSufficient,
             boolean isCellularDataAvailable) {
-        int band = getBand(frequency);
+        int band = KnownBandsChannelHelper.getBand(frequency);
         WifiStatsLog.write(WifiStatsLog.WIFI_HEALTH_STAT_REPORTED, timeDeltaLastTwoPollsMs,
                 isThroughputSufficient,  isCellularDataAvailable, band);
-    }
-
-    private int getBand(int frequency) {
-        int band;
-        if (ScanResult.is24GHz(frequency)) {
-            band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_2G;
-        } else if (ScanResult.is5GHz(frequency)) {
-            if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_LOW_END_FREQ) {
-                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_LOW;
-            } else if (frequency <= KnownBandsChannelHelper.BAND_5_GHZ_MID_END_FREQ) {
-                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_MIDDLE;
-            } else {
-                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_HIGH;
-            }
-        } else if (ScanResult.is6GHz(frequency)) {
-            if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_LOW_END_FREQ) {
-                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_LOW;
-            } else if (frequency <= KnownBandsChannelHelper.BAND_6_GHZ_MID_END_FREQ) {
-                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_MIDDLE;
-            } else {
-                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_HIGH;
-            }
-        } else {
-            band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__UNKNOWN;
-        }
-        return band;
     }
 
     private void logd(String string) {
