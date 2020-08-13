@@ -246,4 +246,15 @@ public class PasspointWifiEntryTest {
 
         assertThat(entry.getMacAddress()).isEqualTo(wifiInfoMac);
     }
+
+    @Test
+    public void testIsAutoJoinEnabled_nullConfigs_returnsFalse() {
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        entry.updatePasspointConfig(null);
+
+        assertThat(entry.isAutoJoinEnabled()).isFalse();
+    }
 }

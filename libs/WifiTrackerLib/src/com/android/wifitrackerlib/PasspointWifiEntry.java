@@ -476,26 +476,27 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Override
     public boolean isAutoJoinEnabled() {
         // Suggestion network; use WifiConfig instead
-        if (mPasspointConfig == null && mWifiConfig != null) {
+        if (mPasspointConfig != null) {
+            return mPasspointConfig.isAutojoinEnabled();
+        }
+        if (mWifiConfig != null) {
             return mWifiConfig.allowAutojoin;
         }
-
-        return mPasspointConfig.isAutojoinEnabled();
+        return false;
     }
 
     @Override
     public boolean canSetAutoJoinEnabled() {
-        return true;
+        return mPasspointConfig != null || mWifiConfig != null;
     }
 
     @Override
     public void setAutoJoinEnabled(boolean enabled) {
-        if (mPasspointConfig == null && mWifiConfig != null) {
+        if (mPasspointConfig != null) {
+            mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);
+        } else if (mWifiConfig != null) {
             mWifiManager.allowAutojoin(mWifiConfig.networkId, enabled);
-            return;
         }
-
-        mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);
     }
 
     @Override
