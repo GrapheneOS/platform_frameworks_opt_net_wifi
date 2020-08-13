@@ -4192,7 +4192,12 @@ public class WifiServiceImpl extends BaseWifiService {
             mConnectHelper.connectToNetwork(result, wrapper, uid);
         });
         if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
-            mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
+            if (config == null) {
+                mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
+            } else {
+                mWifiMetrics.logUserActionEvent(
+                        UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK, config.networkId);
+            }
         }
     }
 
@@ -4214,6 +4219,10 @@ public class WifiServiceImpl extends BaseWifiService {
             if (result.isSuccess()) {
                 broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
                 mActiveModeWarden.getPrimaryClientModeManager().saveNetwork(result, wrapper, uid);
+                if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
+                    mWifiMetrics.logUserActionEvent(
+                            UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK, config.networkId);
+                }
             } else {
                 wrapper.sendFailure(WifiManager.ERROR);
             }
