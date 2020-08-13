@@ -56,10 +56,12 @@ import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -524,33 +526,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "list-suggestions": {
                     List<WifiNetworkSuggestion> suggestions =
                             mWifiService.getNetworkSuggestions(SHELL_PACKAGE_NAME);
-                    if (suggestions == null || suggestions.isEmpty()) {
-                        pw.println("No suggestions");
-                    } else {
-                        pw.println("SSID                         Security type");
-                        for (WifiNetworkSuggestion suggestion : suggestions) {
-                            String securityType = null;
-                            if (WifiConfigurationUtil.isConfigForSaeNetwork(
-                                    suggestion.getWifiConfiguration())) {
-                                securityType = "wpa3";
-                            } else if (WifiConfigurationUtil.isConfigForPskNetwork(
-                                    suggestion.getWifiConfiguration())) {
-                                securityType = "wpa2";
-                            } else if (WifiConfigurationUtil.isConfigForEapNetwork(
-                                    suggestion.getWifiConfiguration())) {
-                                securityType = "eap";
-                            } else if (WifiConfigurationUtil.isConfigForOweNetwork(
-                                    suggestion.getWifiConfiguration())) {
-                                securityType = "owe";
-                            } else if (WifiConfigurationUtil.isConfigForOpenNetwork(
-                                    suggestion.getWifiConfiguration())) {
-                                securityType = "open";
-                            }
-                            pw.println(String.format("%-32s %-4s",
-                                    WifiInfo.sanitizeSsid(suggestion.getWifiConfiguration().SSID),
-                                    securityType));
-                        }
-                    }
+                    printWifiNetworkSuggestions(pw, suggestions);
+                    return 0;
+                }
+                case "list-all-suggestions": {
+                    Set<WifiNetworkSuggestion> suggestions =
+                            mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
+                    printWifiNetworkSuggestions(pw, suggestions);
                     return 0;
                 }
                 case "add-request": {
@@ -1024,6 +1006,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Removes all suggestions added via shell");
         pw.println("  list-suggestions");
         pw.println("    Lists the suggested networks added via shell");
+        pw.println("  list-all-suggestions");
+        pw.println("    Lists the all suggested networks on this device");
         pw.println("  set-connected-score <score>");
         pw.println("    Set connected wifi network score (to choose between LTE & Wifi for "
                 + "default route).");
@@ -1138,5 +1122,38 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             onHelpPrivileged(pw);
         }
         pw.println();
+    }
+
+    private void printWifiNetworkSuggestions(PrintWriter pw,
+            Collection<WifiNetworkSuggestion> suggestions) {
+        if (suggestions == null || suggestions.isEmpty()) {
+            pw.println("No suggestions on this device");
+        } else {
+            pw.println("SSID                         Security type");
+            for (WifiNetworkSuggestion suggestion : suggestions) {
+                String securityType = null;
+                if (suggestion.getPasspointConfig() != null) {
+                    securityType = "passpoint";
+                } else if (WifiConfigurationUtil.isConfigForSaeNetwork(
+                        suggestion.getWifiConfiguration())) {
+                    securityType = "wpa3";
+                } else if (WifiConfigurationUtil.isConfigForPskNetwork(
+                        suggestion.getWifiConfiguration())) {
+                    securityType = "wpa2";
+                } else if (WifiConfigurationUtil.isConfigForEapNetwork(
+                        suggestion.getWifiConfiguration())) {
+                    securityType = "eap";
+                } else if (WifiConfigurationUtil.isConfigForOweNetwork(
+                        suggestion.getWifiConfiguration())) {
+                    securityType = "owe";
+                } else if (WifiConfigurationUtil.isConfigForOpenNetwork(
+                        suggestion.getWifiConfiguration())) {
+                    securityType = "open";
+                }
+                pw.println(String.format("%-32s %-4s",
+                        WifiInfo.sanitizeSsid(suggestion.getWifiConfiguration().SSID),
+                        securityType));
+            }
+        }
     }
 }

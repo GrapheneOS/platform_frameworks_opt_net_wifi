@@ -89,10 +89,8 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
-import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.internal.util.MessageUtils;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -521,10 +519,6 @@ public class ClientModeImpl extends StateMachine {
 
     /* Start connection to FILS AP*/
     static final int CMD_START_FILS_CONNECTION                          = BASE + 262;
-
-    // For message logging.
-    private static final SparseArray<String> sGetWhatToString =
-            MessageUtils.findMessageNames(new Class[] {ClientModeImpl.class});
 
     /* Wifi state machine modes of operation */
     /* CONNECT_MODE - connect to any 'known' AP when it becomes available */
@@ -1890,76 +1884,134 @@ public class ClientModeImpl extends StateMachine {
 
     @Override
     protected String getWhatToString(int what) {
-        String s = sGetWhatToString.get(what);
-        if (s != null) {
-            return s;
-        }
         switch (what) {
+            case CMD_ACCEPT_UNVALIDATED:
+                return "CMD_ACCEPT_UNVALIDATED";
+            case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
+                return "CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF";
+            case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
+                return "CMD_BLUETOOTH_CONNECTION_STATE_CHANGE";
+            case CMD_CONFIG_ND_OFFLOAD:
+                return "CMD_CONFIG_ND_OFFLOAD";
+            case CMD_CONNECTING_WATCHDOG_TIMER:
+                return "CMD_CONNECTING_WATCHDOG_TIMER";
             case CMD_CONNECT_NETWORK:
-                s = "CMD_CONNECT_NETWORK";
-                break;
+                return "CMD_CONNECT_NETWORK";
+            case CMD_DIAGS_CONNECT_TIMEOUT:
+                return "CMD_DIAGS_CONNECT_TIMEOUT";
+            case CMD_DISCONNECT:
+                return "CMD_DISCONNECT";
+            case CMD_ENABLE_RSSI_POLL:
+                return "CMD_ENABLE_RSSI_POLL";
+            case CMD_ENABLE_TDLS:
+                return "CMD_ENABLE_TDLS";
+            case CMD_INSTALL_PACKET_FILTER:
+                return "CMD_INSTALL_PACKET_FILTER";
+            case CMD_IP_CONFIGURATION_LOST:
+                return "CMD_IP_CONFIGURATION_LOST";
+            case CMD_IP_CONFIGURATION_SUCCESSFUL:
+                return "CMD_IP_CONFIGURATION_SUCCESSFUL";
+            case CMD_IP_REACHABILITY_LOST:
+                return "CMD_IP_REACHABILITY_LOST";
+            case CMD_IPV4_PROVISIONING_FAILURE:
+                return "CMD_IPV4_PROVISIONING_FAILURE";
+            case CMD_IPV4_PROVISIONING_SUCCESS:
+                return "CMD_IPV4_PROVISIONING_SUCCESS";
+            case CMD_NETWORK_STATUS:
+                return "CMD_NETWORK_STATUS";
+            case CMD_ONESHOT_RSSI_POLL:
+                return "CMD_ONESHOT_RSSI_POLL";
+            case CMD_POST_DHCP_ACTION:
+                return "CMD_POST_DHCP_ACTION";
+            case CMD_PRE_DHCP_ACTION:
+                return "CMD_PRE_DHCP_ACTION";
+            case CMD_PRE_DHCP_ACTION_COMPLETE:
+                return "CMD_PRE_DHCP_ACTION_COMPLETE";
+            case CMD_READ_PACKET_FILTER:
+                return "CMD_READ_PACKET_FILTER";
+            case CMD_REASSOCIATE:
+                return "CMD_REASSOCIATE";
+            case CMD_RECONNECT:
+                return "CMD_RECONNECT";
+            case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF:
+                return "CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF";
+            case CMD_RESET_SIM_NETWORKS:
+                return "CMD_RESET_SIM_NETWORKS";
+            case CMD_RESET_SUPPLICANT_STATE:
+                return "CMD_RESET_SUPPLICANT_STATE";
+            case CMD_ROAM_WATCHDOG_TIMER:
+                return "CMD_ROAM_WATCHDOG_TIMER";
+            case CMD_RSSI_POLL:
+                return "CMD_RSSI_POLL";
+            case CMD_RSSI_THRESHOLD_BREACHED:
+                return "CMD_RSSI_THRESHOLD_BREACHED";
             case CMD_SAVE_NETWORK:
-                s = "CMD_SAVE_NETWORK";
-                break;
+                return "CMD_SAVE_NETWORK";
+            case CMD_SCREEN_STATE_CHANGED:
+                return "CMD_SCREEN_STATE_CHANGED";
+            case CMD_SET_FALLBACK_PACKET_FILTERING:
+                return "CMD_SET_FALLBACK_PACKET_FILTERING";
+            case CMD_SET_OPERATIONAL_MODE:
+                return "CMD_SET_OPERATIONAL_MODE";
+            case CMD_SET_SUSPEND_OPT_ENABLED:
+                return "CMD_SET_SUSPEND_OPT_ENABLED";
+            case CMD_START_CONNECT:
+                return "CMD_START_CONNECT";
+            case CMD_START_FILS_CONNECTION:
+                return "CMD_START_FILS_CONNECTION";
+            case CMD_START_IP_PACKET_OFFLOAD:
+                return "CMD_START_IP_PACKET_OFFLOAD";
+            case CMD_START_ROAM:
+                return "CMD_START_ROAM";
+            case CMD_START_RSSI_MONITORING_OFFLOAD:
+                return "CMD_START_RSSI_MONITORING_OFFLOAD";
+            case CMD_STOP_IP_PACKET_OFFLOAD:
+                return "CMD_STOP_IP_PACKET_OFFLOAD";
+            case CMD_STOP_RSSI_MONITORING_OFFLOAD:
+                return "CMD_STOP_RSSI_MONITORING_OFFLOAD";
+            case CMD_UNWANTED_NETWORK:
+                return "CMD_UNWANTED_NETWORK";
+            case CMD_UPDATE_LINKPROPERTIES:
+                return "CMD_UPDATE_LINKPROPERTIES";
             case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
-                s = "SUPPLICANT_STATE_CHANGE_EVENT";
-                break;
+                return "SUPPLICANT_STATE_CHANGE_EVENT";
             case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
-                s = "AUTHENTICATION_FAILURE_EVENT";
-                break;
+                return "AUTHENTICATION_FAILURE_EVENT";
             case WifiMonitor.SUP_REQUEST_IDENTITY:
-                s = "SUP_REQUEST_IDENTITY";
-                break;
+                return "SUP_REQUEST_IDENTITY";
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
-                s = "NETWORK_CONNECTION_EVENT";
-                break;
+                return "NETWORK_CONNECTION_EVENT";
             case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
-                s = "NETWORK_DISCONNECTION_EVENT";
-                break;
+                return "NETWORK_DISCONNECTION_EVENT";
             case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
-                s = "ASSOCIATION_REJECTION_EVENT";
-                break;
+                return "ASSOCIATION_REJECTION_EVENT";
             case WifiMonitor.ANQP_DONE_EVENT:
-                s = "ANQP_DONE_EVENT";
-                break;
+                return "ANQP_DONE_EVENT";
             case WifiMonitor.RX_HS20_ANQP_ICON_EVENT:
-                s = "RX_HS20_ANQP_ICON_EVENT";
-                break;
+                return "RX_HS20_ANQP_ICON_EVENT";
             case WifiMonitor.GAS_QUERY_DONE_EVENT:
-                s = "GAS_QUERY_DONE_EVENT";
-                break;
+                return "GAS_QUERY_DONE_EVENT";
             case WifiMonitor.HS20_REMEDIATION_EVENT:
-                s = "HS20_REMEDIATION_EVENT";
-                break;
+                return "HS20_REMEDIATION_EVENT";
             case WifiMonitor.GAS_QUERY_START_EVENT:
-                s = "GAS_QUERY_START_EVENT";
-                break;
+                return "GAS_QUERY_START_EVENT";
             case WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE:
-                s = "MBO_OCE_BSS_TM_HANDLING_DONE";
-                break;
+                return "MBO_OCE_BSS_TM_HANDLING_DONE";
             case WifiP2pServiceImpl.GROUP_CREATING_TIMED_OUT:
-                s = "GROUP_CREATING_TIMED_OUT";
-                break;
+                return "GROUP_CREATING_TIMED_OUT";
             case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
-                s = "P2P_CONNECTION_CHANGED";
-                break;
+                return "P2P_CONNECTION_CHANGED";
             case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST:
-                s = "DISCONNECT_WIFI_REQUEST";
-                break;
+                return "DISCONNECT_WIFI_REQUEST";
             case WifiP2pServiceImpl.DISCONNECT_WIFI_RESPONSE:
-                s = "DISCONNECT_WIFI_RESPONSE";
-                break;
+                return "DISCONNECT_WIFI_RESPONSE";
             case WifiP2pServiceImpl.SET_MIRACAST_MODE:
-                s = "SET_MIRACAST_MODE";
-                break;
+                return "SET_MIRACAST_MODE";
             case WifiP2pServiceImpl.BLOCK_DISCOVERY:
-                s = "BLOCK_DISCOVERY";
-                break;
+                return "BLOCK_DISCOVERY";
             default:
-                s = "what:" + Integer.toString(what);
-                break;
+                return "what:" + what;
         }
-        return s;
     }
 
     private void handleScreenStateChanged(boolean screenOn) {
