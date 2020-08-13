@@ -33,6 +33,7 @@ import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.RemoteException;
+import android.os.WorkSource;
 
 import androidx.test.filters.SmallTest;
 
@@ -59,6 +60,7 @@ import org.mockito.MockitoAnnotations;
 public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
     private static final String P2P_IFACE_NAME = "p2p0";
     private static final String P2P_INTERFACE_PROPERTY = "wifi.direct.interface";
+    private static final WorkSource TEST_WS = new WorkSource();
 
     @Mock private SupplicantP2pIfaceHal mSupplicantP2pIfaceHal;
     @Mock private HalDeviceManager mHalDeviceManager;
@@ -86,7 +88,7 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
 
         when(mHalDeviceManager.isSupported()).thenReturn(true);
         when(mHalDeviceManager.createP2pIface(any(InterfaceDestroyedListener.class),
-                any(Handler.class))).thenReturn(mIWifiP2pIface);
+                any(Handler.class), any(WorkSource.class))).thenReturn(mIWifiP2pIface);
         doAnswer(new MockAnswerUtil.AnswerWithArguments() {
             public void answer(IWifiIface.getNameCallback cb)
                     throws RemoteException {
@@ -132,10 +134,11 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
     @Test
     public void testSetUpInterface() throws Exception {
         assertEquals(P2P_IFACE_NAME,
-                mWifiP2pNative.setupInterface(mHalDeviceInterfaceDestroyedListener, mHandler));
+                mWifiP2pNative.setupInterface(
+                        mHalDeviceInterfaceDestroyedListener, mHandler, TEST_WS));
 
         verify(mHalDeviceManager).createP2pIface(any(InterfaceDestroyedListener.class),
-                eq(mHandler));
+                eq(mHandler), eq(TEST_WS));
         verify(mSupplicantP2pIfaceHal).setupIface(eq(P2P_IFACE_NAME));
     }
 
@@ -147,10 +150,11 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
         when(mHalDeviceManager.isSupported()).thenReturn(false);
 
         assertEquals(P2P_IFACE_NAME, mWifiP2pNative.setupInterface(
-                mHalDeviceInterfaceDestroyedListener, mHandler));
+                mHalDeviceInterfaceDestroyedListener, mHandler, TEST_WS));
 
         verify(mHalDeviceManager, never())
-                .createP2pIface(any(InterfaceDestroyedListener.class), any(Handler.class));
+                .createP2pIface(any(InterfaceDestroyedListener.class), any(Handler.class),
+                        any(WorkSource.class));
         verify(mSupplicantP2pIfaceHal).setupIface(eq(P2P_IFACE_NAME));
     }
 
@@ -161,7 +165,7 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
     public void testTeardownInterface() throws Exception {
         assertEquals(P2P_IFACE_NAME,
                 mWifiP2pNative.setupInterface(mHalDeviceInterfaceDestroyedListener,
-                    mHandler));
+                    mHandler, TEST_WS));
 
         mWifiP2pNative.teardownInterface();
 
@@ -177,7 +181,7 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
         when(mHalDeviceManager.isSupported()).thenReturn(false);
 
         assertEquals(P2P_IFACE_NAME, mWifiP2pNative.setupInterface(
-                mHalDeviceInterfaceDestroyedListener, mHandler));
+                mHalDeviceInterfaceDestroyedListener, mHandler, TEST_WS));
 
         mWifiP2pNative.teardownInterface();
 

@@ -76,6 +76,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.WorkSource;
 import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
@@ -122,6 +123,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
     private static final String thisDeviceMac = "11:22:33:44:55:66";
     private static final String thisDeviceName = "thisDeviceName";
     private static final String ANONYMIZED_DEVICE_ADDRESS = "02:00:00:00:00:00";
+    private static final String TEST_PACKAGE_NAME = "com.p2p.test";
 
     private ArgumentCaptor<HalDeviceManager.InterfaceAvailableForRequestListener>
             mAvailListenerCaptor = ArgumentCaptor.forClass(
@@ -645,14 +647,15 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
      */
     private void checkIsP2pInitWhenClientConnected(boolean expectInit, Binder clientBinder)
             throws Exception {
-        mWifiP2pServiceImpl.getMessenger(clientBinder);
+        mWifiP2pServiceImpl.getMessenger(clientBinder, TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
         if (expectInit) {
-            verify(mWifiNative).setupInterface(any(), any());
+            verify(mWifiNative).setupInterface(any(), any(),
+                    eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
             verify(mNetdWrapper).setInterfaceUp(anyString());
             verify(mWifiMonitor, atLeastOnce()).registerHandler(anyString(), anyInt(), any());
         } else {
-            verify(mWifiNative, never()).setupInterface(any(), any());
+            verify(mWifiNative, never()).setupInterface(any(), any(), any());
             verify(mNetdWrapper, never()).setInterfaceUp(anyString());
             verify(mWifiMonitor, never()).registerHandler(anyString(), anyInt(), any());
         }
@@ -772,7 +775,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkStackPermission(anyInt())).thenReturn(true);
         when(mWifiPermissionsUtil.checkReadWifiCredentialPermission(anyInt())).thenReturn(true);
         when(mWifiPermissionsUtil.checkConfigOverridePermission(anyInt())).thenReturn(true);
-        when(mWifiNative.setupInterface(any(), any())).thenReturn(IFACE_NAME_P2P);
+        when(mWifiNative.setupInterface(any(), any(), any())).thenReturn(IFACE_NAME_P2P);
         when(mWifiNative.p2pGetDeviceAddress()).thenReturn(thisDeviceMac);
         doAnswer(new AnswerWithArguments() {
             public boolean answer(WifiP2pGroupList groups) {
@@ -912,7 +915,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
 
         simulateWifiStateChange(true);
         mLooper.dispatchAll();
-        verify(mWifiNative, times(2)).setupInterface(any(), any());
+        verify(mWifiNative, times(2)).setupInterface(any(), any(), any());
         verify(mNetdWrapper, times(2)).setInterfaceUp(anyString());
         verify(mWifiMonitor, atLeastOnce()).registerHandler(anyString(), anyInt(), any());
     }
