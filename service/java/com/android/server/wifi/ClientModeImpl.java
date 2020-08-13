@@ -93,6 +93,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.internal.util.IState;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -1259,10 +1260,24 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return mWifiNative.stopRssiMonitoring(mInterfaceName);
     }
 
+    @Override
     public boolean isConnected() {
         return getCurrentState() == mL3ConnectedState;
     }
 
+    @Override
+    public boolean isConnecting() {
+        IState state = getCurrentState();
+        return state == mL2ConnectingState || state == mL2ConnectedState
+                || state == mL3ProvisioningState;
+    }
+
+    @Override
+    public boolean isRoaming() {
+        return getCurrentState() == mRoamingState;
+    }
+
+    @Override
     public boolean isDisconnected() {
         return getCurrentState() == mDisconnectedState;
     }
@@ -1655,7 +1670,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 sb.append(Integer.toString(msg.arg2));
                 sb.append(" ").append(mLastBssid);
                 sb.append(" nid=").append(mLastNetworkId);
-                config = getConnectedWifiConfiguration();
+                config = getConnectedWifiConfigurationInternal();
                 if (config != null) {
                     sb.append(" ").append(config.getKey());
                 }
@@ -1734,7 +1749,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     sb.append(" targetBssid=").append(mTargetBssid);
                 }
                 sb.append(" roam=").append(Boolean.toString(mIsAutoRoaming));
-                config = getConnectedWifiConfiguration();
+                config = getConnectedWifiConfigurationInternal();
                 if (config != null) {
                     sb.append(" currentConfigKey=").append(config.getKey());
                 }
@@ -1797,7 +1812,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 break;
             case CMD_IP_CONFIGURATION_LOST:
                 int count = -1;
-                WifiConfiguration c = getConnectedWifiConfiguration();
+                WifiConfiguration c = getConnectedWifiConfigurationInternal();
                 if (c != null) {
                     count = c.getNetworkSelectionStatus().getDisableReasonCounter(
                             WifiConfiguration.NetworkSelectionStatus.DISABLED_DHCP_FAILURE);
@@ -2323,10 +2338,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         // SSID might have been updated, so call updateCapabilities
         updateCapabilities();
 
-        WifiConfiguration config = getConnectedWifiConfiguration();
+        WifiConfiguration config = getConnectedWifiConfigurationInternal();
         if (config == null) {
             // If not connected, this should be non-null.
-            config = getConnectingWifiConfiguration();
+            config = getConnectingWifiConfigurationInternal();
         }
         if (config != null && config.networkId == mWifiInfo.getNetworkId()) {
             mWifiInfo.setEphemeral(config.ephemeral);
@@ -2382,7 +2397,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (mIpClient != null) {
             Pair<String, String> p = mWifiScoreCard.getL2KeyAndGroupHint(mWifiInfo);
             if (!p.equals(mLastL2KeyAndGroupHint)) {
-                final MacAddress lastBssid = getCurrentBssidMacAddress();
+                final MacAddress lastBssid = getCurrentBssidInternalMacAddress();
                 final Layer2Information l2Information = new Layer2Information(
                         p.first, p.second, lastBssid);
                 // Update current BSSID on IpClient side whenever l2Key and groupHint
@@ -2410,11 +2425,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     + newConnectionInProgress, new Throwable());
         }
 
-        WifiConfiguration wifiConfig = getConnectedWifiConfiguration();
+        WifiConfiguration wifiConfig = getConnectedWifiConfigurationInternal();
         if (wifiConfig != null) {
             ScanResultMatchInfo matchInfo = ScanResultMatchInfo.fromWifiConfiguration(wifiConfig);
             mWakeupController.setLastDisconnectInfo(matchInfo);
-            mWifiNetworkSuggestionsManager.handleDisconnect(wifiConfig, getConnectedBssid());
+            mWifiNetworkSuggestionsManager.handleDisconnect(
+                    wifiConfig, getConnectedBssidInternal());
         }
         stopRssiMonitoringOffload();
 
@@ -2619,16 +2635,16 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private void reportConnectionAttemptEnd(int level2FailureCode, int connectivityFailureCode,
             int level2FailureReason) {
         // if connected, this should be non-null.
-        WifiConfiguration configuration = getConnectedWifiConfiguration();
+        WifiConfiguration configuration = getConnectedWifiConfigurationInternal();
         if (configuration == null) {
             // If not connected, this should be non-null.
-            configuration = getConnectingWifiConfiguration();
+            configuration = getConnectingWifiConfigurationInternal();
         }
 
         String bssid = mLastBssid == null ? mTargetBssid : mLastBssid;
         String ssid = mWifiInfo.getSSID();
         if (WifiManager.UNKNOWN_SSID.equals(ssid)) {
-            ssid = getTargetSsid();
+            ssid = getConnectingSsidInternal();
         }
         if (level2FailureCode != WifiMetrics.ConnectionEvent.FAILURE_NONE) {
             int blocklistReason = convertToBssidBlocklistMonitorFailureReason(
@@ -2677,9 +2693,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (configuration != null) {
             mNetworkFactory.handleConnectionAttemptEnded(level2FailureCode, configuration);
             mWifiNetworkSuggestionsManager.handleConnectionAttemptEnded(
-                    level2FailureCode, configuration, getConnectedBssid());
+                    level2FailureCode, configuration, getConnectedBssidInternal());
             ScanResult candidate = configuration.getNetworkSelectionStatus().getCandidate();
-            if (candidate != null && !TextUtils.equals(candidate.BSSID, getConnectedBssid())) {
+            if (candidate != null
+                    && !TextUtils.equals(candidate.BSSID, getConnectedBssidInternal())) {
                 mWifiMetrics.incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware();
             }
         }
@@ -2776,7 +2793,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mWifiInfo.setInetAddress(addr);
 
-        final WifiConfiguration config = getConnectedWifiConfiguration();
+        final WifiConfiguration config = getConnectedWifiConfigurationInternal();
         if (config != null) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
@@ -2797,7 +2814,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private void handleSuccessfulIpConfiguration() {
         mLastSignalLevel = -1; // Force update of signal strength
-        WifiConfiguration c = getConnectedWifiConfiguration();
+        WifiConfiguration c = getConnectedWifiConfigurationInternal();
         if (c != null) {
             // Reset IP failure tracking
             c.getNetworkSelectionStatus().clearDisableReasonCounter(
@@ -2815,7 +2832,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mWifiDiagnostics.triggerBugReportDataCapture(WifiDiagnostics.REPORT_REASON_DHCP_FAILURE);
         if (mVerboseLoggingEnabled) {
             int count = -1;
-            WifiConfiguration config = getConnectedWifiConfiguration();
+            WifiConfiguration config = getConnectedWifiConfigurationInternal();
             if (config != null) {
                 count = config.getNetworkSelectionStatus().getDisableReasonCounter(
                         WifiConfiguration.NetworkSelectionStatus.DISABLED_DHCP_FAILURE);
@@ -3182,7 +3199,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID) {
             mWifiConfigManager.updateNetworkAfterConnect(mLastNetworkId);
             // Notify PasspointManager of Passpoint network connected event.
-            WifiConfiguration currentNetwork = getConnectedWifiConfiguration();
+            WifiConfiguration currentNetwork = getConnectedWifiConfigurationInternal();
             if (currentNetwork != null && currentNetwork.isPasspoint()) {
                 mPasspointManager.onPasspointNetworkConnected(currentNetwork.getKey());
             }
@@ -3199,7 +3216,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * Returns WifiConfiguration object corresponding to the currently connected network, null if
      * not connected.
      */
-    @Nullable public WifiConfiguration getConnectedWifiConfiguration() {
+    @Nullable private WifiConfiguration getConnectedWifiConfigurationInternal() {
         if (mLastNetworkId == WifiConfiguration.INVALID_NETWORK_ID) {
             return null;
         }
@@ -3210,23 +3227,55 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * Returns WifiConfiguration object corresponding to the currently connecting network, null if
      * not connecting.
      */
-    @Nullable public WifiConfiguration getConnectingWifiConfiguration() {
+    @Nullable private WifiConfiguration getConnectingWifiConfigurationInternal() {
         if (mTargetNetworkId == WifiConfiguration.INVALID_NETWORK_ID) {
             return null;
         }
         return mWifiConfigManager.getConfiguredNetwork(mTargetNetworkId);
     }
 
-    @Nullable public String getConnectedBssid() {
+    @Nullable private String getConnectedBssidInternal() {
         return mLastBssid;
     }
 
-    @Nullable public String getConnectingBssid() {
+    @Nullable private String getConnectingBssidInternal() {
         return mTargetBssid;
     }
 
+    /**
+     * Returns WifiConfiguration object corresponding to the currently connected network, null if
+     * not connected.
+     */
+    @Override
+    @Nullable public WifiConfiguration getConnectedWifiConfiguration() {
+        if (!isConnected()) return null;
+        return getConnectedWifiConfigurationInternal();
+    }
+
+    /**
+     * Returns WifiConfiguration object corresponding to the currently connecting network, null if
+     * not connecting.
+     */
+    @Override
+    @Nullable public WifiConfiguration getConnectingWifiConfiguration() {
+        if (!isConnecting() && !isRoaming()) return null;
+        return getConnectingWifiConfigurationInternal();
+    }
+
+    @Override
+    @Nullable public String getConnectedBssid() {
+        if (!isConnected()) return null;
+        return getConnectedBssidInternal();
+    }
+
+    @Override
+    @Nullable public String getConnectingBssid() {
+        if (!isConnecting() && !isRoaming()) return null;
+        return getConnectingBssidInternal();
+    }
+
     ScanResult getCurrentScanResult() {
-        WifiConfiguration config = getConnectedWifiConfiguration();
+        WifiConfiguration config = getConnectedWifiConfigurationInternal();
         if (config == null) {
             return null;
         }
@@ -3244,7 +3293,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return scanDetailCache.getScanResult(bssid);
     }
 
-    private MacAddress getCurrentBssidMacAddress() {
+    private MacAddress getCurrentBssidInternalMacAddress() {
         MacAddress bssid = null;
         try {
             bssid = (mLastBssid != null) ? MacAddress.fromString(mLastBssid) : null;
@@ -3473,7 +3522,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 if (mIpClient != null) {
                                     log("Reconfiguring proxy on connection");
                                     WifiConfiguration currentConfig =
-                                            getConnectedWifiConfiguration();
+                                            getConnectedWifiConfigurationInternal();
                                     if (currentConfig != null) {
                                         mIpClient.setHttpProxy(currentConfig.getHttpProxy());
                                     } else {
@@ -3488,7 +3537,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 // We switched from DHCP to static or from static to DHCP, or the
                                 // static IP address has changed.
                                 log("Reconfiguring IP on connection");
-                                WifiConfiguration currentConfig = getConnectedWifiConfiguration();
+                                WifiConfiguration currentConfig =
+                                        getConnectedWifiConfigurationInternal();
                                 if (currentConfig != null) {
                                     transitionTo(mL3ProvisioningState);
                                 } else {
@@ -3705,7 +3755,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             builder.setRequestorPackageName(specificRequestUidAndPackageName.second);
             // Fill up the network agent specifier for this connection.
             builder.setNetworkSpecifier(createNetworkAgentSpecifier(
-                    currentWifiConfiguration, getConnectedBssid()));
+                    currentWifiConfiguration, getConnectedBssidInternal()));
         }
         updateLinkBandwidth(builder);
         return builder.build();
@@ -3750,7 +3800,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * Method to update network capabilities from the current WifiConfiguration.
      */
     public void updateCapabilities() {
-        updateCapabilities(getConnectedWifiConfiguration());
+        updateCapabilities(getConnectedWifiConfigurationInternal());
     }
 
     private void updateCapabilities(WifiConfiguration currentWifiConfiguration) {
@@ -3962,7 +4012,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         }
                         handleNetworkDisconnect(false);
                         if (stateChangeResult.wifiSsid.toString().equals(
-                                WifiInfo.sanitizeSsid(getTargetSsid()))) {
+                                WifiInfo.sanitizeSsid(getConnectingSsidInternal()))) {
                             transitionTo(mDisconnectedState);
                         }
                     }
@@ -4003,7 +4053,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     // to it after a config store reload. Hence the old network Id lookups may not
                     // work, so disconnect the network and let network selector reselect a new
                     // network.
-                    WifiConfiguration config = getConnectedWifiConfiguration();
+                    WifiConfiguration config = getConnectedWifiConfigurationInternal();
                     if (config != null) {
                         mWifiInfo.setBSSID(mLastBssid);
                         mWifiInfo.setNetworkId(mLastNetworkId);
@@ -4067,12 +4117,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         String bssid = !isValidBssid(eventInfo.bssid)
                                 ? mTargetBssid : eventInfo.bssid;
                         mWifiLastResortWatchdog.noteConnectionFailureAndTriggerIfNeeded(
-                                getTargetSsid(), bssid,
+                                getConnectingSsidInternal(), bssid,
                                 WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
                     }
                     clearNetworkCachedDataIfNeeded(
-                            getConnectingWifiConfiguration(), eventInfo.reasonCode);
-                    String targetSsid = getTargetSsid();
+                            getConnectingWifiConfigurationInternal(), eventInfo.reasonCode);
+                    String targetSsid = getConnectingSsidInternal();
                     // If network is removed while connecting, targetSsid can be null.
                     boolean newConnectionInProgress =
                             targetSsid != null && !eventInfo.ssid.equals(targetSsid);
@@ -4144,7 +4194,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     if (mVerboseLoggingEnabled) {
                         log("L2ConnectingState: Association rejection " + assocRejectEventInfo);
                     }
-                    if (!assocRejectEventInfo.ssid.equals(getTargetSsid())) {
+                    if (!assocRejectEventInfo.ssid.equals(getConnectingSsidInternal())) {
                         loge("Association rejection event received on not target network");
                         break;
                     }
@@ -4187,7 +4237,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             level2FailureReason);
                     if (statusCode != StatusCode.AP_UNABLE_TO_HANDLE_NEW_STA) {
                         mWifiLastResortWatchdog.noteConnectionFailureAndTriggerIfNeeded(
-                                getTargetSsid(), bssid,
+                                getConnectingSsidInternal(), bssid,
                                 WifiLastResortWatchdog.FAILURE_CODE_ASSOCIATION);
                     }
                     transitionTo(mDisconnectedState);
@@ -4257,7 +4307,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     if (reasonCode != WifiManager.ERROR_AUTH_FAILURE_WRONG_PSWD && reasonCode
                             != WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE) {
                         mWifiLastResortWatchdog.noteConnectionFailureAndTriggerIfNeeded(
-                                getTargetSsid(),
+                                getConnectingSsidInternal(),
                                 (mLastBssid == null) ? mTargetBssid : mLastBssid,
                                 WifiLastResortWatchdog.FAILURE_CODE_AUTHENTICATION);
                     }
@@ -4394,7 +4444,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
             // If this network was explicitly selected by the user, evaluate whether to inform
             // ConnectivityService of that fact so the system can treat it appropriately.
-            final WifiConfiguration config = getConnectedWifiConfiguration();
+            final WifiConfiguration config = getConnectedWifiConfigurationInternal();
 
             boolean explicitlySelected = false;
             if (shouldEvaluateWhetherToSendExplicitlySelected(config)) {
@@ -4423,7 +4473,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             explicitlySelected && config.noInternetAccessExpected)
                     .setPartialConnectivityAcceptable(config.noInternetAccessExpected)
                     .build();
-            final NetworkCapabilities nc = getCapabilities(getConnectedWifiConfiguration());
+            final NetworkCapabilities nc = getCapabilities(getConnectedWifiConfigurationInternal());
             // This should never happen.
             if (mNetworkAgent != null) {
                 Log.wtf(getTag(), "mNetworkAgent is not null: " + mNetworkAgent);
@@ -4496,13 +4546,13 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 case CMD_IPV4_PROVISIONING_FAILURE: {
                     handleIPv4Failure();
                     mWifiLastResortWatchdog.noteConnectionFailureAndTriggerIfNeeded(
-                            getTargetSsid(),
+                            getConnectingSsidInternal(),
                             (mLastBssid == null) ? mTargetBssid : mLastBssid,
                             WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     break;
                 }
                 case CMD_IP_CONFIGURATION_SUCCESSFUL: {
-                    if (getConnectedWifiConfiguration() == null) {
+                    if (getConnectedWifiConfigurationInternal() == null) {
                         // The current config may have been removed while we were connecting,
                         // trigger a disconnect to clear up state.
                         reportConnectionAttemptEnd(
@@ -4526,7 +4576,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             WifiMetricsProto.ConnectionEvent.HLF_NONE,
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
                     mWifiLastResortWatchdog.noteConnectionFailureAndTriggerIfNeeded(
-                            getTargetSsid(),
+                            getConnectingSsidInternal(),
                             (mLastBssid == null) ? mTargetBssid : mLastBssid,
                             WifiLastResortWatchdog.FAILURE_CODE_DHCP);
                     break;
@@ -4608,7 +4658,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     if (mLastBssid != null && (mWifiInfo.getBSSID() == null
                             || !mLastBssid.equals(mWifiInfo.getBSSID()))) {
                         mWifiInfo.setBSSID(mLastBssid);
-                        WifiConfiguration config = getConnectedWifiConfiguration();
+                        WifiConfiguration config = getConnectedWifiConfigurationInternal();
                         if (config != null) {
                             ScanDetailCache scanDetailCache = mWifiConfigManager
                                     .getScanDetailCacheForNetwork(config.networkId);
@@ -4782,7 +4832,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     class L3ProvisioningState extends State {
         @Override
         public void enter() {
-            WifiConfiguration currentConfig = getConnectedWifiConfiguration();
+            WifiConfiguration currentConfig = getConnectedWifiConfigurationInternal();
             if (mIpClientWithPreConnection && mIpClient != null) {
                 mIpClient.notifyPreconnectionComplete(mSentHLPs);
                 mIpClientWithPreConnection = false;
@@ -4806,7 +4856,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             WifiMetricsProto.ConnectionEvent.HLF_NONE,
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
                     mWifiLastResortWatchdog.noteConnectionFailureAndTriggerIfNeeded(
-                            getTargetSsid(),
+                            getConnectingSsidInternal(),
                             !isValidBssid(eventInfo.bssid)
                             ? mTargetBssid : eventInfo.bssid,
                             WifiLastResortWatchdog.FAILURE_CODE_DHCP);
@@ -4871,7 +4921,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
             switch (message.what) {
                 case CMD_IP_CONFIGURATION_LOST: {
-                    WifiConfiguration config = getConnectedWifiConfiguration();
+                    WifiConfiguration config = getConnectedWifiConfigurationInternal();
                     if (config != null) {
                         mWifiDiagnostics.triggerBugReportDataCapture(
                                 WifiDiagnostics.REPORT_REASON_AUTOROAM_FAILURE);
@@ -4981,7 +5031,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 + " target=" + target);
                     }
                     clearNetworkCachedDataIfNeeded(
-                            getConnectingWifiConfiguration(), eventInfo.reasonCode);
+                            getConnectingWifiConfigurationInternal(), eventInfo.reasonCode);
                     if (eventInfo.bssid.equals(mTargetBssid)) {
                         handleNetworkDisconnect(false);
                         transitionTo(mDisconnectedState);
@@ -5052,7 +5102,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         Log.d(getTag(), (message.arg1 == NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN
                                 ? "NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN"
                                 : "NETWORK_STATUS_UNWANTED_VALIDATION_FAILED"));
-                        WifiConfiguration config = getConnectedWifiConfiguration();
+                        WifiConfiguration config = getConnectedWifiConfigurationInternal();
                         if (config != null) {
                             // Disable autojoin
                             if (message.arg1 == NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN) {
@@ -5096,7 +5146,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         mWifiScoreCard.noteValidationSuccess(mWifiInfo);
                         mBssidBlocklistMonitor.handleNetworkValidationSuccess(mLastBssid,
                                 mWifiInfo.getSSID());
-                        WifiConfiguration config = getConnectedWifiConfiguration();
+                        WifiConfiguration config = getConnectedWifiConfigurationInternal();
                         if (config != null) {
                             // re-enable autojoin
                             mWifiConfigManager.updateNetworkSelectionStatus(
@@ -5133,7 +5183,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 mWifiInfo.getSSID(),
                                 BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, rssi);
                     }
-                    WifiConfiguration config = getConnectedWifiConfiguration();
+                    WifiConfiguration config = getConnectedWifiConfigurationInternal();
 
                     if (mVerboseLoggingEnabled) {
                         log("NETWORK_DISCONNECTION_EVENT in connected state"
@@ -5295,7 +5345,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             logd("id matches targetWifiConfiguration");
         } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
                 && mLastNetworkId == requestData.networkId) {
-            requestingWifiConfiguration = getConnectedWifiConfiguration();
+            requestingWifiConfiguration = getConnectedWifiConfigurationInternal();
             logd("id matches currentWifiConfiguration");
         }
 
@@ -5346,7 +5396,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             logd("id matches targetWifiConfiguration");
         } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
                 && mLastNetworkId == requestData.networkId) {
-            requestingWifiConfiguration = getConnectedWifiConfiguration();
+            requestingWifiConfiguration = getConnectedWifiConfigurationInternal();
             logd("id matches currentWifiConfiguration");
         }
 
@@ -5433,8 +5483,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * Gets the SSID from the WifiConfiguration pointed at by 'mTargetNetworkId'
      * This should match the network config framework is attempting to connect to.
      */
-    private String getTargetSsid() {
-        WifiConfiguration config = getConnectingWifiConfiguration();
+    private String getConnectingSsidInternal() {
+        WifiConfiguration config = getConnectingWifiConfigurationInternal();
         return config != null ? config.SSID : null;
     }
 
@@ -5729,7 +5779,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     + " isFilsConnection=" + isFilsConnection);
         }
 
-        final MacAddress currentBssid = getCurrentBssidMacAddress();
+        final MacAddress currentBssid = getCurrentBssidInternalMacAddress();
         final String l2Key = mLastL2KeyAndGroupHint != null
                 ? mLastL2KeyAndGroupHint.first : null;
         final String groupHint = mLastL2KeyAndGroupHint != null

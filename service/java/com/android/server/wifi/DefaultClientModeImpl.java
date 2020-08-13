@@ -199,6 +199,16 @@ public class DefaultClientModeImpl implements ClientMode {
     }
 
     @Override
+    public boolean isConnecting() {
+        return false;
+    }
+
+    @Override
+    public boolean isRoaming() {
+        return false;
+    }
+
+    @Override
     public boolean isDisconnected() {
         return true;
     }

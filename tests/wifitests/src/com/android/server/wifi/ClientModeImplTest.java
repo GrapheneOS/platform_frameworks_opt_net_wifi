@@ -819,7 +819,14 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void connect() throws Exception {
+        assertNull(mCmi.getConnectingWifiConfiguration());
+        assertNull(mCmi.getConnectedWifiConfiguration());
+
         triggerConnect();
+
+        assertNotNull(mCmi.getConnectingWifiConfiguration());
+        assertNull(mCmi.getConnectedWifiConfiguration());
+
         WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(FRAMEWORK_NETWORK_ID);
         config.carrierId = CARRIER_ID_1;
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
@@ -837,6 +844,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
+        // L2 connected, but not L3 connected yet. So, still "Connecting"...
+        assertNotNull(mCmi.getConnectingWifiConfiguration());
+        assertNull(mCmi.getConnectedWifiConfiguration());
+
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.COMPLETED));
         mLooper.dispatchAll();
@@ -853,6 +864,9 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         injectDhcpSuccess(dhcpResults);
         mLooper.dispatchAll();
+
+        assertNull(mCmi.getConnectingWifiConfiguration());
+        assertNotNull(mCmi.getConnectedWifiConfiguration());
 
         // Verify WifiMetrics logging for metered metrics based on DHCP results
         verify(mWifiMetrics).addMeteredStat(any(), anyBoolean());
@@ -3431,6 +3445,18 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertEquals("L3ProvisioningState", getCurrentState().getName());
+
+        DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
+        dhcpResults.baseConfiguration = new StaticIpConfiguration();
+        dhcpResults.baseConfiguration.gateway = InetAddresses.parseNumericAddress("1.2.3.4");
+        dhcpResults.baseConfiguration.ipAddress =
+                new LinkAddress(InetAddresses.parseNumericAddress("192.168.1.100"), 0);
+        dhcpResults.baseConfiguration.dnsServers.add(InetAddresses.parseNumericAddress("8.8.8.8"));
+        dhcpResults.leaseDuration = 3600;
+
+        injectDhcpSuccess(dhcpResults);
+        mLooper.dispatchAll();
+
     }
 
     /**
@@ -5075,6 +5101,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         scanResult.BSSID = sBSSID1;
         mCmi.startRoamToNetwork(FRAMEWORK_NETWORK_ID, scanResult);
         mLooper.dispatchAll();
+
+
+        assertEquals(sBSSID1, mCmi.getConnectingBssid());
+        assertEquals(FRAMEWORK_NETWORK_ID, mCmi.getConnectingWifiConfiguration().networkId);
 
         verify(mWifiNative).roamToNetwork(any(), any());
         assertEquals("RoamingState", getCurrentState().getName());
