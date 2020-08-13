@@ -65,9 +65,10 @@ import android.hardware.wifi.supplicant.V1_0.IfaceType;
 import android.hardware.wifi.supplicant.V1_0.SupplicantStatus;
 import android.hardware.wifi.supplicant.V1_0.SupplicantStatusCode;
 import android.hardware.wifi.supplicant.V1_0.WpsConfigMethods;
-import android.hardware.wifi.supplicant.V1_3.ConnectionCapabilities;
 import android.hardware.wifi.supplicant.V1_3.ISupplicantStaIfaceCallback.BssTmData;
 import android.hardware.wifi.supplicant.V1_3.WifiTechnology;
+import android.hardware.wifi.supplicant.V1_4.ConnectionCapabilities;
+import android.hardware.wifi.supplicant.V1_4.LegacyMode;
 import android.hidl.manager.V1_0.IServiceManager;
 import android.hidl.manager.V1_0.IServiceNotification;
 import android.net.MacAddress;
@@ -136,6 +137,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     private android.hardware.wifi.supplicant.V1_1.ISupplicant mISupplicantMockV1_1;
     private android.hardware.wifi.supplicant.V1_2.ISupplicant mISupplicantMockV1_2;
     private android.hardware.wifi.supplicant.V1_3.ISupplicant mISupplicantMockV13;
+    private android.hardware.wifi.supplicant.V1_3.ISupplicant mISupplicantMockV14;
     private @Mock ISupplicantIface mISupplicantIfaceMock;
     private @Mock ISupplicantStaIface mISupplicantStaIfaceMock;
     private @Mock android.hardware.wifi.supplicant.V1_1.ISupplicantStaIface
@@ -144,6 +146,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
             mISupplicantStaIfaceMockV1_2;
     private @Mock android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface
             mISupplicantStaIfaceMockV13;
+    private @Mock android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
+            mISupplicantStaIfaceMockV14;
     private @Mock Context mContext;
     private @Mock WifiMonitor mWifiMonitor;
     private @Mock FrameworkFacade mFrameworkFacade;
@@ -223,6 +227,14 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 getStaIfaceMockableV1_3(ISupplicantIface iface) {
             return (mISupplicantMockV13 != null)
                     ? mISupplicantStaIfaceMockV13
+                    : null;
+        }
+
+        @Override
+        protected android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
+                getStaIfaceMockableV1_4(ISupplicantIface iface) {
+            return (mISupplicantMockV14 != null)
+                    ? mISupplicantStaIfaceMockV14
                     : null;
         }
 
@@ -2010,12 +2022,12 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         assertEquals(ScanResult.WIFI_STANDARD_UNKNOWN, cap.wifiStandard);
     }
 
-    private class GetConnCapabilitiesAnswer extends MockAnswerUtil.AnswerWithArguments {
-        private ConnectionCapabilities mConnCapabilities;
+    private class GetConnCapabilitiesAnswerV1_3 extends MockAnswerUtil.AnswerWithArguments {
+        private android.hardware.wifi.supplicant.V1_3.ConnectionCapabilities mConnCapabilities;
 
-        GetConnCapabilitiesAnswer(int wifiTechnology, int channelBandwidth,
+        GetConnCapabilitiesAnswerV1_3(int wifiTechnology, int channelBandwidth,
                 int maxNumberTxSpatialStreams, int maxNumberRxSpatialStreams) {
-            mConnCapabilities = new ConnectionCapabilities();
+            mConnCapabilities = new android.hardware.wifi.supplicant.V1_3.ConnectionCapabilities();
             mConnCapabilities.technology = wifiTechnology;
             mConnCapabilities.channelBandwidth = channelBandwidth;
             mConnCapabilities.maxNumberTxSpatialStreams = maxNumberTxSpatialStreams;
@@ -2024,6 +2036,25 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
 
         public void answer(android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface
                 .getConnectionCapabilitiesCallback cb) {
+            cb.onValues(mStatusSuccess, mConnCapabilities);
+        }
+    }
+
+    private class GetConnCapabilitiesAnswerV1_4 extends MockAnswerUtil.AnswerWithArguments {
+        private ConnectionCapabilities mConnCapabilities;
+
+        GetConnCapabilitiesAnswerV1_4(int wifiTechnology, int legacyMode, int channelBandwidth,
+                int maxNumberTxSpatialStreams, int maxNumberRxSpatialStreams) {
+            mConnCapabilities = new ConnectionCapabilities();
+            mConnCapabilities.V1_3.technology = wifiTechnology;
+            mConnCapabilities.legacyMode = legacyMode;
+            mConnCapabilities.V1_3.channelBandwidth = channelBandwidth;
+            mConnCapabilities.V1_3.maxNumberTxSpatialStreams = maxNumberTxSpatialStreams;
+            mConnCapabilities.V1_3.maxNumberRxSpatialStreams = maxNumberRxSpatialStreams;
+        }
+
+        public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
+                .getConnectionCapabilities_1_4Callback cb) {
             cb.onValues(mStatusSuccess, mConnCapabilities);
         }
     }
@@ -2043,13 +2074,43 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         int maxNumberTxSpatialStreams = 3;
         int maxNumberRxSpatialStreams = 1;
 
-        doAnswer(new GetConnCapabilitiesAnswer(testWifiTechnologyHal, testChannelBandwidthHal,
+        doAnswer(new GetConnCapabilitiesAnswerV1_3(testWifiTechnologyHal, testChannelBandwidthHal,
                 maxNumberTxSpatialStreams, maxNumberRxSpatialStreams))
                 .when(mISupplicantStaIfaceMockV13).getConnectionCapabilities(any(
                 android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface
                         .getConnectionCapabilitiesCallback.class));
         WifiNative.ConnectionCapabilities cap = mDut.getConnectionCapabilities(WLAN0_IFACE_NAME);
         assertEquals(testWifiStandardWifiInfo, cap.wifiStandard);
+        assertEquals(false, cap.is11bMode);
+        assertEquals(testChannelBandwidth, cap.channelBandwidth);
+        assertEquals(maxNumberTxSpatialStreams, cap.maxNumberTxSpatialStreams);
+        assertEquals(maxNumberRxSpatialStreams, cap.maxNumberRxSpatialStreams);
+    }
+
+    /**
+     * Test getConnectionCapabilities if running with HAL V1_4
+     */
+    @Test
+    public void testGetConnectionCapabilitiesV1_4() throws Exception {
+        setupMocksForHalV1_4();
+
+        executeAndValidateInitializationSequenceV1_3();
+        int testWifiTechnologyHal = WifiTechnology.LEGACY;
+        int testLegacyMode = LegacyMode.B_MODE;
+        int testWifiStandardWifiInfo = ScanResult.WIFI_STANDARD_LEGACY;
+        int testChannelBandwidthHal = WifiChannelWidthInMhz.WIDTH_20;
+        int testChannelBandwidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+        int maxNumberTxSpatialStreams = 1;
+        int maxNumberRxSpatialStreams = 1;
+
+        doAnswer(new GetConnCapabilitiesAnswerV1_4(testWifiTechnologyHal, testLegacyMode,
+                testChannelBandwidthHal, maxNumberTxSpatialStreams, maxNumberRxSpatialStreams))
+                .when(mISupplicantStaIfaceMockV14).getConnectionCapabilities_1_4(any(
+                android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
+                        .getConnectionCapabilities_1_4Callback.class));
+        WifiNative.ConnectionCapabilities cap = mDut.getConnectionCapabilities(WLAN0_IFACE_NAME);
+        assertEquals(testWifiStandardWifiInfo, cap.wifiStandard);
+        assertEquals(true, cap.is11bMode);
         assertEquals(testChannelBandwidth, cap.channelBandwidth);
         assertEquals(maxNumberTxSpatialStreams, cap.maxNumberTxSpatialStreams);
         assertEquals(maxNumberRxSpatialStreams, cap.maxNumberRxSpatialStreams);
@@ -2615,6 +2676,14 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 .kInterfaceName), anyString()))
                 .thenReturn(IServiceManager.Transport.HWBINDER);
         mISupplicantMockV13 = mock(android.hardware.wifi.supplicant.V1_3.ISupplicant.class);
+    }
+
+    private void setupMocksForHalV1_4() throws Exception {
+        setupMocksForHalV1_3();
+        when(mServiceManagerMock.getTransport(eq(android.hardware.wifi.supplicant.V1_4.ISupplicant
+                .kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        mISupplicantMockV14 = mock(android.hardware.wifi.supplicant.V1_4.ISupplicant.class);
     }
 
     private void setupMocksForPmkCache() throws Exception {
