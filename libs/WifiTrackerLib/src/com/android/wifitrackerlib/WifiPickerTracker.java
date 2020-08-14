@@ -491,7 +491,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
         // Remove entries that are now unreachable
         mPasspointWifiEntryCache.entrySet()
                 .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE
-                        || !seenKeys.contains(entry.getKey()));
+                        || (!seenKeys.contains(entry.getKey()))
+                        && entry.getValue().getConnectedState() == CONNECTED_STATE_DISCONNECTED);
     }
 
     @WorkerThread
