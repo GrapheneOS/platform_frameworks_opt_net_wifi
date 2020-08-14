@@ -59,6 +59,9 @@ endif
 ifdef WIFI_DRIVER_STATE_OFF
 wifi_hal_cflags += -DWIFI_DRIVER_STATE_OFF=\"$(WIFI_DRIVER_STATE_OFF)\"
 endif
+ifeq ($(WIFI_MULTIPLE_VENDOR_HALS), true)
+wifi_hal_cflags += -DWIFI_MULTIPLE_VENDOR_HALS
+endif
 
 # Common code shared between the HALs.
 # ============================================================
@@ -85,26 +88,31 @@ include $(BUILD_STATIC_LIBRARY)
 
 # Pick a vendor provided HAL implementation library.
 # ============================================================
-LIB_WIFI_HAL := libwifi-hal-fallback
-VENDOR_LOCAL_SHARED_LIBRARIES :=
-ifeq ($(BOARD_WLAN_DEVICE), bcmdhd)
-  LIB_WIFI_HAL := libwifi-hal-bcm
-  VENDOR_LOCAL_SHARED_LIBRARIES := libcrypto
-else ifeq ($(BOARD_WLAN_DEVICE), qcwcn)
-  LIB_WIFI_HAL := libwifi-hal-qcom
-  VENDOR_LOCAL_SHARED_LIBRARIES := libcld80211
-else ifeq ($(BOARD_WLAN_DEVICE), mrvl)
-  # this is commented because none of the nexus devices
-  # that sport Marvell's wifi have support for HAL
-  # LIB_WIFI_HAL := libwifi-hal-mrvl
-else ifeq ($(BOARD_WLAN_DEVICE), MediaTek)
-  # support MTK WIFI HAL
-  LIB_WIFI_HAL := libwifi-hal-mt66xx
-else ifeq ($(BOARD_WLAN_DEVICE), realtek)
-  # support Realtek WIFI HAL
-  LIB_WIFI_HAL := libwifi-hal-rtk
-else ifeq ($(BOARD_WLAN_DEVICE), emulator)
-  LIB_WIFI_HAL := libwifi-hal-emu
+ifeq ($(WIFI_MULTIPLE_VENDOR_HALS), true)
+  # vendor HALs are loaded dynamically and not linked here
+  LIB_WIFI_HAL :=
+else
+  LIB_WIFI_HAL := libwifi-hal-fallback
+  VENDOR_LOCAL_SHARED_LIBRARIES :=
+  ifeq ($(BOARD_WLAN_DEVICE), bcmdhd)
+    LIB_WIFI_HAL := libwifi-hal-bcm
+    VENDOR_LOCAL_SHARED_LIBRARIES := libcrypto
+  else ifeq ($(BOARD_WLAN_DEVICE), qcwcn)
+    LIB_WIFI_HAL := libwifi-hal-qcom
+    VENDOR_LOCAL_SHARED_LIBRARIES := libcld80211
+  else ifeq ($(BOARD_WLAN_DEVICE), mrvl)
+    # this is commented because none of the nexus devices
+    # that sport Marvell's wifi have support for HAL
+    # LIB_WIFI_HAL := libwifi-hal-mrvl
+  else ifeq ($(BOARD_WLAN_DEVICE), MediaTek)
+    # support MTK WIFI HAL
+    LIB_WIFI_HAL := libwifi-hal-mt66xx
+  else ifeq ($(BOARD_WLAN_DEVICE), realtek)
+    # support Realtek WIFI HAL
+    LIB_WIFI_HAL := libwifi-hal-rtk
+  else ifeq ($(BOARD_WLAN_DEVICE), emulator)
+    LIB_WIFI_HAL := libwifi-hal-emu
+  endif
 endif
 
 # The WiFi HAL that you should be linking.
