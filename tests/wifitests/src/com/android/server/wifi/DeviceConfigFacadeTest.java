@@ -205,6 +205,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getStationaryScanRssiValidTimeMs());
         assertEquals(DeviceConfigFacade.DEFAULT_HEALTH_MONITOR_FW_ALERT_VALID_TIME_MS,
                 mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs());
+        assertEquals(DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS,
+                mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs());
+        assertEquals(DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS,
+                mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs());
     }
 
     /**
@@ -307,6 +311,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(3000);
         when(DeviceConfig.getInt(anyString(), eq("health_monitor_fw_alert_valid_time_ms"),
                 anyInt())).thenReturn(1000);
+        when(DeviceConfig.getInt(anyString(), eq("min_confirmation_duration_send_low_score_ms"),
+                anyInt())).thenReturn(4000);
+        when(DeviceConfig.getInt(anyString(), eq("min_confirmation_duration_send_high_score_ms"),
+                anyInt())).thenReturn(1000);
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
         // Verifying fields are updated to the new values
@@ -363,5 +371,7 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(4000, mDeviceConfigFacade.getNonstationaryScanRssiValidTimeMs());
         assertEquals(3000, mDeviceConfigFacade.getStationaryScanRssiValidTimeMs());
         assertEquals(1000, mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs());
+        assertEquals(4000, mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs());
+        assertEquals(1000, mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs());
     }
 }
