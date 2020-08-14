@@ -116,6 +116,7 @@ import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.NativeUtil;
 import com.android.server.wifi.util.RssiUtil;
 import com.android.server.wifi.util.ScanResultUtil;
+import com.android.server.wifi.util.StateMachineObituary;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.wifi.resources.R;
 
@@ -142,9 +143,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * Note: No external modules should be calling into {@link ClientModeImpl}. Please plumb it via
  * {@link ClientModeManager} until b/160014176 is fixed.
- *
- * TODO(b/117601161): Remove the {@link DefaultState} and make {@link ConnectableState} the parent
- * state once ClientModeImpl is fully disposable.
  */
 public class ClientModeImpl extends StateMachine implements ClientMode {
     private static final String NETWORKTYPE = "WIFI";
@@ -223,10 +221,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private boolean mScreenOn = false;
 
-    // TODO (b/116233964): This should be sent in via constructor when ClientModeImpl is dynamically
-    // created by ClientModeManager.
+    // TODO(b/160335531): These should be final. Right now they are set to null when exiting
+    //  ConnectableState (i.e. when stop() is called), which ensures that any processing will be
+    //  a no-op if we get a late-coming callback.
     private String mInterfaceName;
-    private ActiveModeManager mActiveModeManager;
+    private ConcreteClientModeManager mClientModeManager;
 
     private int mLastSignalLevel = -1;
     private String mLastBssid;
@@ -268,12 +267,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private boolean mEnableRssiPolling = false;
     private int mRssiPollToken = 0;
-    /* 3 operational states for STA operation: CONNECT_MODE, SCAN_ONLY_MODE, SCAN_ONLY_WIFI_OFF_MODE
-    * In CONNECT_MODE, the STA can scan and connect to an access point
-    * In SCAN_ONLY_MODE, the STA can only scan for access points
-    * In SCAN_ONLY_WIFI_OFF_MODE, the STA can only scan for access points with wifi toggle being off
-    */
-    private int mOperationalMode = DISABLED_MODE;
 
     private PowerManager.WakeLock mSuspendWakeLock;
 
@@ -385,8 +378,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     static final int CMD_BLUETOOTH_CONNECTION_STATE_CHANGE              = BASE + 31;
 
     /* Supplicant commands after driver start*/
-    /* Set operational mode. CONNECT, SCAN ONLY, SCAN_ONLY with Wi-Fi off mode */
-    static final int CMD_SET_OPERATIONAL_MODE                           = BASE + 72;
     /* Disconnect from a network */
     static final int CMD_DISCONNECT                                     = BASE + 73;
     /* Reconnect to a network */
@@ -519,19 +510,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /* Start connection to FILS AP*/
     static final int CMD_START_FILS_CONNECTION                          = BASE + 262;
 
-    /* Wifi state machine modes of operation */
-    /* CONNECT_MODE - connect to any 'known' AP when it becomes available */
-    public static final int CONNECT_MODE = 1;
-    /* SCAN_ONLY_MODE - don't connect to any APs; scan, but only while apps hold lock */
-    public static final int SCAN_ONLY_MODE = 2;
-    /* SCAN_ONLY_WITH_WIFI_OFF - scan, but don't connect to any APs */
-    public static final int SCAN_ONLY_WITH_WIFI_OFF_MODE = 3;
-    /* DISABLED_MODE - Don't connect, don't scan, don't be an AP */
-    public static final int DISABLED_MODE = 4;
-
-    private static final int SUCCESS = 1;
-    private static final int FAILURE = -1;
-
     /* Tracks if suspend optimizations need to be disabled by DHCP,
      * screen or due to high perf mode.
      * When any of them needs to disable it, we keep the suspend optimizations
@@ -562,8 +540,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     int mRunningBeaconCount = 0;
 
-    /* Default parent state where connections are disallowed */
-    private State mDefaultState = new DefaultState();
     /* Parent state where connections are allowed */
     private State mConnectableState = new ConnectableState();
     /* Connecting/Connected to an access point */
@@ -608,6 +584,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private long mDataStallTriggerTimeMs = -1;
     private int mLastStatusDataStall = WifiIsUnusableEvent.TYPE_UNKNOWN;
 
+    @Nullable
+    private StateMachineObituary mObituary = null;
+
+    /** Note that this constructor will also start() the StateMachine. */
     public ClientModeImpl(
             Context context,
             WifiMetrics wifiMetrics,
@@ -652,7 +632,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             SimRequiredNotifier simRequiredNotifier,
             WifiScoreReport wifiScoreReport,
             WifiP2pConnection wifiP2pConnection,
-            WifiGlobals wifiGlobals) {
+            WifiGlobals wifiGlobals,
+            String ifaceName,
+            ConcreteClientModeManager clientModeManager) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
         mClock = clock;
@@ -723,6 +705,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mWifiP2pConnection = wifiP2pConnection;
         mWifiGlobals = wifiGlobals;
 
+        mInterfaceName = ifaceName;
+        mClientModeManager = clientModeManager;
+        updateInterfaceCapabilities(ifaceName);
+        // TODO(b/160335531): ifaceName should be a constructor arg in WifiScoreReport
+        mWifiScoreReport.setInterfaceName(ifaceName);
+
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
         mSuspendWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WifiSuspend");
@@ -730,27 +718,25 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mWifiConfigManager.addOnNetworkUpdateListener(new OnNetworkUpdateListener());
 
-        // CHECKSTYLE:OFF IndentationCheck
-        addState(mDefaultState);
-            addState(mConnectableState, mDefaultState);
-                addState(mConnectingOrConnectedState, mConnectableState);
-                    addState(mL2ConnectingState, mConnectingOrConnectedState);
-                    addState(mL2ConnectedState, mConnectingOrConnectedState);
-                        addState(mL3ProvisioningState, mL2ConnectedState);
-                        addState(mL3ConnectedState, mL2ConnectedState);
-                        addState(mRoamingState, mL2ConnectedState);
-                addState(mDisconnectedState, mConnectableState);
-        // CHECKSTYLE:ON IndentationCheck
+        addState(mConnectableState); {
+            addState(mConnectingOrConnectedState, mConnectableState); {
+                addState(mL2ConnectingState, mConnectingOrConnectedState);
+                addState(mL2ConnectedState, mConnectingOrConnectedState); {
+                    addState(mL3ProvisioningState, mL2ConnectedState);
+                    addState(mL3ConnectedState, mL2ConnectedState);
+                    addState(mRoamingState, mL2ConnectedState);
+                }
+            }
+            addState(mDisconnectedState, mConnectableState);
+        }
 
-        setInitialState(mDefaultState);
+        setInitialState(mDisconnectedState);
 
         setLogRecSize(NUM_LOG_RECS_NORMAL);
         setLogOnlyTransitions(false);
-    }
 
-    @Override
-    public void start() {
-        super.start();
+        // Start the StateMachine
+        start();
     }
 
     private void registerForWifiMonitorEvents()  {
@@ -1336,30 +1322,17 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         handleNetworkDisconnect(false);
     }
 
-    /**
-     * TODO: doc
+    /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped.
      */
-    public void setOperationalMode(int mode, @Nullable String ifaceName,
-                @Nullable ActiveModeManager activeModeManager) {
-        if (mVerboseLoggingEnabled) {
-            log("setting operational mode to " + mode + " for iface: " + ifaceName);
-        }
-        if (mode != CONNECT_MODE) {
-            // we are disabling client mode...   need to exit connect mode now
-            transitionTo(mDefaultState);
-        } else if (ifaceName == null) {
-            Log.e(getTag(), "supposed to enter connect mode, but iface is null -> DefaultState");
-            transitionTo(mDefaultState);
-        } else {
-            mInterfaceName = ifaceName;
-            mActiveModeManager = activeModeManager;
-            updateInterfaceCapabilities(ifaceName);
-            transitionTo(mDisconnectedState);
-            mWifiScoreReport.setInterfaceName(ifaceName);
-        }
-        // use the CMD_SET_OPERATIONAL_MODE to force the transitions before other messages are
-        // handled.
-        sendMessageAtFrontOfQueue(CMD_SET_OPERATIONAL_MODE);
+    public void stop() {
+        // capture StateMachine LogRecs since we will lose them after we call quitNow()
+        // This is used for debugging.
+        mObituary = new StateMachineObituary(this);
+
+        // quit discarding all unprocessed messages - this is to preserve the legacy behavior of
+        // using sendMessageAtFrontOfQueue(CMD_SET_OPERATIONAL_MODE) which would force a state
+        // transition immediately
+        quitNow();
     }
 
     private void checkAbnormalConnectionFailureAndTakeBugReport(String ssid) {
@@ -1384,14 +1357,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 mWifiDiagnostics.takeBugReport(bugTitle, bugDetail);
             }
         }
-    }
-
-    /**
-     * Allow tests to confirm the operational mode for ClientModeImpl for testing.
-     */
-    @VisibleForTesting
-    protected int getOperationalModeForTest() {
-        return mOperationalMode;
     }
 
     /**
@@ -1554,7 +1519,15 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        super.dump(fd, pw, args);
+        if (mObituary == null) {
+            // StateMachine hasn't quit yet, dump `this` via StateMachineObituary's dump()
+            // method for consistency with `else` branch.
+            new StateMachineObituary(this).dump(fd, pw, args);
+        } else {
+            // StateMachine has quit and cleared all LogRecs.
+            // Get them from the obituary instead.
+            mObituary.dump(fd, pw, args);
+        }
         mSupplicantStateTracker.dump(fd, pw, args);
         // Polls link layer stats and RSSI. This allows the stats to show up in
         // WifiScoreReport's dump() output when taking a bug report even if the screen is off.
@@ -1568,7 +1541,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         pw.println("mLastNetworkId " + mLastNetworkId);
         pw.println("mLastSubId " + mLastSubId);
         pw.println("mLastSimBasedConnectionCarrierName " + mLastSimBasedConnectionCarrierName);
-        pw.println("mOperationalMode " + mOperationalMode);
         pw.println("mSuspendOptimizationsEnabled " + mContext.getResources().getBoolean(
                 R.bool.config_wifiSuspendOptimizationsEnabled));
         pw.println("mSuspendOptNeedsDisabled " + mSuspendOptNeedsDisabled);
@@ -1964,8 +1936,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 return "CMD_SCREEN_STATE_CHANGED";
             case CMD_SET_FALLBACK_PACKET_FILTERING:
                 return "CMD_SET_FALLBACK_PACKET_FILTERING";
-            case CMD_SET_OPERATIONAL_MODE:
-                return "CMD_SET_OPERATIONAL_MODE";
             case CMD_SET_SUSPEND_OPT_ENABLED:
                 return "CMD_SET_SUSPEND_OPT_ENABLED";
             case CMD_START_CONNECT:
@@ -2689,7 +2659,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mWifiMetrics.endConnectionEvent(level2FailureCode, connectivityFailureCode,
                 level2FailureReason);
         mWifiConnectivityManager.handleConnectionAttemptEnded(
-                mActiveModeManager, level2FailureCode, bssid, ssid);
+                mClientModeManager, level2FailureCode, bssid, ssid);
         if (configuration != null) {
             mNetworkFactory.handleConnectionAttemptEnded(level2FailureCode, configuration);
             mWifiNetworkSuggestionsManager.handleConnectionAttemptEnded(
@@ -3016,82 +2986,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return mContext.getResources().getBoolean(R.bool.config_wifiSaeUpgradeOffloadEnabled);
     }
 
-    /********************************************************
-     * HSM states
-     *******************************************************/
-
-    class DefaultState extends State {
-
-        @Override
-        public boolean processMessage(Message message) {
-            boolean handleStatus = HANDLED;
-
-            switch (message.what) {
-                case CMD_DIAGS_CONNECT_TIMEOUT:
-                case CMD_SET_FALLBACK_PACKET_FILTERING:
-                case CMD_READ_PACKET_FILTER:
-                case CMD_INSTALL_PACKET_FILTER:
-                case CMD_START_IP_PACKET_OFFLOAD:
-                case CMD_STOP_IP_PACKET_OFFLOAD:
-                case CMD_ADD_KEEPALIVE_PACKET_FILTER_TO_APF:
-                case CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF:
-                case CMD_UPDATE_LINKPROPERTIES:
-                case CMD_SET_SUSPEND_OPT_ENABLED:
-                case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST:
-                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
-                case CMD_ENABLE_RSSI_POLL:
-                case CMD_RESET_SIM_NETWORKS:
-                case CMD_BLUETOOTH_CONNECTION_STATE_CHANGE:
-                case WifiMonitor.NETWORK_CONNECTION_EVENT:
-                case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
-                case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
-                case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
-                case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
-                case CMD_RSSI_POLL:
-                case CMD_ONESHOT_RSSI_POLL:
-                case CMD_PRE_DHCP_ACTION:
-                case CMD_PRE_DHCP_ACTION_COMPLETE:
-                case CMD_POST_DHCP_ACTION:
-                case WifiMonitor.SUP_REQUEST_IDENTITY:
-                case WifiMonitor.SUP_REQUEST_SIM_AUTH:
-                case WifiMonitor.TARGET_BSSID_EVENT:
-                case WifiMonitor.ASSOCIATED_BSSID_EVENT:
-                case CMD_UNWANTED_NETWORK:
-                case CMD_CONNECTING_WATCHDOG_TIMER:
-                case CMD_ROAM_WATCHDOG_TIMER:
-                case CMD_SET_OPERATIONAL_MODE: {
-                    // using the CMD_SET_OPERATIONAL_MODE (sent at front of queue) to trigger the
-                    // state transitions performed in setOperationalMode.
-                    break;
-                }
-                case CMD_START_RSSI_MONITORING_OFFLOAD:
-                case CMD_STOP_RSSI_MONITORING_OFFLOAD:
-                case CMD_IP_CONFIGURATION_SUCCESSFUL:
-                case CMD_IP_CONFIGURATION_LOST:
-                case CMD_IP_REACHABILITY_LOST: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
-                    break;
-                }
-                case 0: {
-                    // We want to notice any empty messages (with what == 0) that might crop up.
-                    // For example, we may have recycled a message sent to multiple handlers.
-                    Log.wtf(getTag(), "Error! empty message encountered");
-                    break;
-                }
-                default: {
-                    loge("Error! unhandled message" + message);
-                    break;
-                }
-            }
-
-            if (handleStatus == HANDLED) {
-                logStateAndMessage(message, this);
-            }
-
-            return handleStatus;
-        }
-    }
-
     /**
      * Helper method to start other services and get state ready for client mode
      */
@@ -3184,7 +3078,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
         mCountryCode.setReadyForChange(false);
         mInterfaceName = null;
-        mActiveModeManager = null;
+        mClientModeManager = null;
         mWifiScoreReport.setInterfaceName(null);
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(false);
@@ -3321,6 +3215,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
     }
 
+    /********************************************************
+     * HSM states
+     *******************************************************/
+
     class ConnectableState extends State {
         BroadcastReceiver mScreenStateChangeReceiver = new BroadcastReceiver() {
             @Override
@@ -3337,7 +3235,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         @Override
         public void enter() {
             Log.d(getTag(), "entering ConnectableState: ifaceName = " + mInterfaceName);
-            mOperationalMode = CONNECT_MODE;
 
             setupClientMode();
 
@@ -3368,8 +3265,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void exit() {
-            mOperationalMode = DISABLED_MODE;
-
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
             mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_DISABLED);
@@ -3389,8 +3284,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public boolean processMessage(Message message) {
-            boolean handleStatus = HANDLED;
-
             switch (message.what) {
                 case CMD_ENABLE_RSSI_POLL: {
                     mEnableRssiPolling = (message.arg1 == 1);
@@ -3418,10 +3311,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 case CMD_REASSOCIATE: {
                     mLastConnectAttemptTimestamp = mClock.getWallClockMillis();
                     mWifiNative.reassociate(mInterfaceName);
-                    break;
-                }
-                case CMD_START_ROAM: {
-                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
                     break;
                 }
                 case CMD_START_CONNECT: {
@@ -3651,17 +3540,52 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT);
                     break;
                 }
+                case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:
+                case CMD_RESET_SIM_NETWORKS:
+                case WifiMonitor.NETWORK_CONNECTION_EVENT:
+                case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
+                case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
+                case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
+                case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
+                case CMD_RSSI_POLL:
+                case CMD_ONESHOT_RSSI_POLL:
+                case CMD_PRE_DHCP_ACTION:
+                case CMD_PRE_DHCP_ACTION_COMPLETE:
+                case CMD_POST_DHCP_ACTION:
+                case WifiMonitor.SUP_REQUEST_IDENTITY:
+                case WifiMonitor.SUP_REQUEST_SIM_AUTH:
+                case WifiMonitor.TARGET_BSSID_EVENT:
+                case WifiMonitor.ASSOCIATED_BSSID_EVENT:
+                case CMD_UNWANTED_NETWORK:
+                case CMD_CONNECTING_WATCHDOG_TIMER:
+                case CMD_ROAM_WATCHDOG_TIMER: {
+                    // no-op: all messages must be handled in the base state in case it was missed
+                    // in one of the child states.
+                    break;
+                }
+                case CMD_START_ROAM:
+                case CMD_START_RSSI_MONITORING_OFFLOAD:
+                case CMD_STOP_RSSI_MONITORING_OFFLOAD:
+                case CMD_IP_CONFIGURATION_SUCCESSFUL:
+                case CMD_IP_CONFIGURATION_LOST:
+                case CMD_IP_REACHABILITY_LOST: {
+                    mMessageHandlingStatus = MESSAGE_HANDLING_STATUS_DISCARD;
+                    break;
+                }
+                case 0: {
+                    // We want to notice any empty messages (with what == 0) that might crop up.
+                    // For example, we may have recycled a message sent to multiple handlers.
+                    Log.wtf(getTag(), "Error! empty message encountered");
+                    break;
+                }
                 default: {
-                    handleStatus = NOT_HANDLED;
+                    loge("Error! unhandled message" + message);
                     break;
                 }
             }
 
-            if (handleStatus == HANDLED) {
-                logStateAndMessage(message, this);
-            }
-
-            return handleStatus;
+            logStateAndMessage(message, this);
+            return HANDLED;
         }
     }
 
@@ -5068,7 +4992,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     WifiMetricsProto.ConnectionEvent.HLF_NONE,
                     WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
             mWifiConnectivityManager.handleConnectionStateChanged(
-                    mActiveModeManager,
+                    mClientModeManager,
                     WifiConnectivityManager.WIFI_STATE_CONNECTED);
             registerConnected();
             mLastConnectAttemptTimestamp = 0;
@@ -5265,7 +5189,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         public void exit() {
             logd("ClientModeImpl: Leaving Connected state");
             mWifiConnectivityManager.handleConnectionStateChanged(
-                     mActiveModeManager,
+                    mClientModeManager,
                      WifiConnectivityManager.WIFI_STATE_TRANSITIONING);
 
             mWifiLastResortWatchdog.connectedStateTransition(false);
@@ -5295,7 +5219,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
 
             mWifiConnectivityManager.handleConnectionStateChanged(
-                    mActiveModeManager,
+                    mClientModeManager,
                     WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
         }
 
@@ -5331,7 +5255,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         @Override
         public void exit() {
             mWifiConnectivityManager.handleConnectionStateChanged(
-                     mActiveModeManager,
+                    mClientModeManager,
                      WifiConnectivityManager.WIFI_STATE_TRANSITIONING);
         }
     }
