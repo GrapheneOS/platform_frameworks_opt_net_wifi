@@ -23,6 +23,7 @@ import android.hardware.wifi.V1_0.WifiStatus;
 import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.os.Handler;
 import android.os.RemoteException;
+import android.os.WorkSource;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -130,11 +131,11 @@ public class WifiAwareNativeManager {
     /**
      * Attempt to obtain the HAL NAN interface.
      */
-    public void tryToGetAware() {
+    public void tryToGetAware(@NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             if (mDbg) {
                 Log.d(TAG, "tryToGetAware: mWifiNanIface=" + mWifiNanIface + ", mReferenceCount="
-                        + mReferenceCount);
+                        + mReferenceCount + ", requestorWs=" + requestorWs);
             }
 
             if (mWifiNanIface != null) {
@@ -149,7 +150,7 @@ public class WifiAwareNativeManager {
 
             mInterfaceDestroyedListener = new InterfaceDestroyedListener();
             IWifiNanIface iface = mHalDeviceManager.createNanIface(mInterfaceDestroyedListener,
-                    mHandler);
+                    mHandler, requestorWs);
             if (iface == null) {
                 Log.e(TAG, "Was not able to obtain an IWifiNanIface (even though enabled!?)");
                 awareIsDown();

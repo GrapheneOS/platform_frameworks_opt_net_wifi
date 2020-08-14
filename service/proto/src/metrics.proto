@@ -3156,6 +3156,8 @@ message UserActionEvent {
     EVENT_MANUAL_CONNECT = 11;
     // User changes the metered setting to "detect automatically"
     EVENT_CONFIGURE_METERED_STATUS_AUTO = 12;
+    // User adds a new network or updates configurations for an existing network.
+    EVENT_ADD_OR_UPDATE_NETWORK = 13;
   }
 
   // The type of user action

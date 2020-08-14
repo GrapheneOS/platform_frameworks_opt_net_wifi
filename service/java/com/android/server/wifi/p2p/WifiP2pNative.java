@@ -26,6 +26,7 @@ import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pGroupList;
 import android.net.wifi.p2p.nsd.WifiP2pServiceInfo;
 import android.os.Handler;
+import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -183,10 +184,10 @@ public class WifiP2pNative {
      * For devices which do not the support the HAL, this will bypass HalDeviceManager &
      * teardown any existing iface.
      */
-    private String createP2pIface(Handler handler) {
+    private String createP2pIface(Handler handler, WorkSource requestorWs) {
         if (mHalDeviceManager.isSupported()) {
             mIWifiP2pIface = mHalDeviceManager
-                                .createP2pIface(mInterfaceDestroyedListener, handler);
+                                .createP2pIface(mInterfaceDestroyedListener, handler, requestorWs);
             if (mIWifiP2pIface == null) {
                 Log.e(TAG, "Failed to create P2p iface in HalDeviceManager");
                 return null;
@@ -233,15 +234,16 @@ public class WifiP2pNative {
      *
      * @param destroyedListener Listener to be invoked when the interface is destroyed.
      * @param handler Handler to be used for invoking the destroyedListener.
+     * @param requestorWs Worksource to attribute the request to.
      */
     public String setupInterface(
             @NonNull HalDeviceManager.InterfaceDestroyedListener destroyedListener,
-            Handler handler) {
+            @NonNull Handler handler, @NonNull WorkSource requestorWs) {
         Log.d(TAG, "Setup P2P interface");
         if (mIWifiP2pIface == null) {
             mInterfaceDestroyedListener =
                     new InterfaceDestroyedListenerInternal(destroyedListener);
-            String ifaceName = createP2pIface(handler);
+            String ifaceName = createP2pIface(handler, requestorWs);
             if (ifaceName == null) {
                 Log.e(TAG, "Failed to create P2p iface");
                 return null;

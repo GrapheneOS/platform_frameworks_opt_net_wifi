@@ -45,7 +45,6 @@ import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +58,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private final PasspointWifiEntry mChosenEntry;
     private OsuWifiEntry mOsuWifiEntry;
     private NetworkInfo mCurrentNetworkInfo;
+    private WifiConfiguration mCurrentWifiConfig;
 
     PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
@@ -180,14 +180,16 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
             final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
 
             if (TextUtils.equals(key, mChosenEntry.getKey())) {
-                mChosenEntry.updateScanResultInfo(wifiConfig,
+                mCurrentWifiConfig = wifiConfig;
+                mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
                         pair.second.get(WifiManager.PASSPOINT_HOME_NETWORK),
                         pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK));
                 return;
             }
         }
-        // No AP in range; set scan results and connection config to null.
-        mChosenEntry.updateScanResultInfo(null /* wifiConfig */,
+        // No AP in range; set scan results to null but keep the last seen WifiConfig to display
+        // the previous information while out of range.
+        mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
                 null /* homeScanResults */,
                 null /* roamingScanResults */);
     }
@@ -235,8 +237,9 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
      */
     private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
-            mChosenEntry.updateScanResultInfo(null /* wifiConfig */,
-                    Collections.emptyList(), Collections.emptyList());
+            mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
+                    null /* homeScanResults */,
+                    null /* roamingScanResults */);
             return;
         }
 

@@ -16,6 +16,7 @@
 
 package com.android.server.wifi.aware;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -40,9 +41,11 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
+import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -473,7 +476,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
      */
     public void tryToGetAwareCapability() {
         if (mCapabilities != null) return;
-        getAwareInterface();
+        // Internal request for fetching capabilities.
+        getAwareInterface(new WorkSource(Process.WIFI_UID));
         queryCapabilities();
         releaseAwareInterface();
     }
@@ -562,9 +566,10 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
      * Place a request to get the Wi-Fi Aware interface (before which no HAL command can be
      * executed).
      */
-    public void getAwareInterface() {
+    public void getAwareInterface(@NonNull WorkSource requestorWs) {
         Message msg = mSm.obtainMessage(MESSAGE_TYPE_COMMAND);
         msg.arg1 = COMMAND_TYPE_GET_AWARE;
+        msg.obj = requestorWs;
         mSm.sendMessage(msg);
     }
 
@@ -1803,7 +1808,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                     waitForResponse = false;
                     break;
                 case COMMAND_TYPE_GET_AWARE:
-                    mWifiAwareNativeManager.tryToGetAware();
+                    WorkSource requestorWs = (WorkSource) msg.obj;
+                    mWifiAwareNativeManager.tryToGetAware(requestorWs);
                     waitForResponse = false;
                     break;
                 case COMMAND_TYPE_RELEASE_AWARE:
@@ -2254,7 +2260,9 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                 doesAnyClientNeedIdentityChangeNotifications() || notifyIdentityChange;
 
         if (mCurrentAwareConfiguration == null) {
-            mWifiAwareNativeManager.tryToGetAware();
+            // TODO(b/162344695): If there are more than 1 concurrent aware clients, then we
+            // attribute the iface to one of the apps (first one is picked).
+            mWifiAwareNativeManager.tryToGetAware(new WorkSource(uid, callingPackage));
         }
 
         boolean success = mWifiAwareNativeApi.enableAndConfigure(transactionId, merged,

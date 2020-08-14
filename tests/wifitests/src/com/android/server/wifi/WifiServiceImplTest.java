@@ -3743,7 +3743,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).addOrUpdateNetwork(eq(config), anyInt());
         verify(mConnectHelper).connectToNetwork(any(NetworkUpdateResult.class),
                 any(ActionListenerWrapper.class), anyInt());
-        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_MANUAL_CONNECT), anyInt());
+        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK),
+                anyInt());
     }
 
     @Test
@@ -3801,6 +3802,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void connectToExistingNetwork() throws Exception {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         when(mWifiPermissionsUtil.isLocationModeEnabled()).thenReturn(true);
 
         mWifiServiceImpl.connect(null, TEST_NETWORK_ID, mActionListener);
@@ -3811,6 +3813,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mConnectHelper).connectToNetwork(
                 eq(new NetworkUpdateResult(TEST_NETWORK_ID)), any(), anyInt());
         verify(mContextAsUser, never()).sendBroadcastWithMultiplePermissions(any(), any());
+        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_MANUAL_CONNECT), anyInt());
     }
 
     /**
@@ -3821,11 +3824,14 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testSaveNetworkWithPrivilegedPermission() throws Exception {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
             anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         when(mWifiConfigManager.updateBeforeSaveNetwork(any(), anyInt()))
                 .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
         mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(IActionListener.class));
         mLooper.dispatchAll();
         verify(mWifiConfigManager).updateBeforeSaveNetwork(any(WifiConfiguration.class), anyInt());
+        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK),
+                anyInt());
     }
 
     @Test

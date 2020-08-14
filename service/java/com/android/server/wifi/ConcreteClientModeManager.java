@@ -784,17 +784,17 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public void disconnect() {
-        mClientModeImpl.disconnectCommand();
+        mClientModeImpl.disconnect();
     }
 
     @Override
     public void reconnect(WorkSource ws) {
-        mClientModeImpl.reconnectCommand(ws);
+        mClientModeImpl.reconnect(ws);
     }
 
     @Override
     public void reassociate() {
-        mClientModeImpl.reassociateCommand();
+        mClientModeImpl.reassociate();
     }
 
     @Override
@@ -810,12 +810,12 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public boolean setWifiConnectedNetworkScorer(
             IBinder binder, IWifiConnectedNetworkScorer scorer) {
-        return mClientModeImpl.getWifiScoreReport().setWifiConnectedNetworkScorer(binder, scorer);
+        return mClientModeImpl.setWifiConnectedNetworkScorer(binder, scorer);
     }
 
     @Override
     public void clearWifiConnectedNetworkScorer() {
-        mClientModeImpl.getWifiScoreReport().clearWifiConnectedNetworkScorer();
+        mClientModeImpl.clearWifiConnectedNetworkScorer();
     }
 
     @Override
@@ -882,7 +882,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args) {
-        mClientModeImpl.getWifiScoreReport().dump(fd, pw, args);
+        mClientModeImpl.dumpWifiScoreReport(fd, pw, args);
     }
 
     @Override
@@ -903,22 +903,22 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public WifiConfiguration getConnectedWifiConfiguration() {
-        return mClientModeImpl.getCurrentWifiConfiguration();
+        return mClientModeImpl.getConnectedWifiConfiguration();
     }
 
     @Override
     public WifiConfiguration getConnectingWifiConfiguration() {
-        return mClientModeImpl.getTargetWifiConfiguration();
+        return mClientModeImpl.getConnectingWifiConfiguration();
     }
 
     @Override
     public String getConnectedBssid() {
-        return mClientModeImpl.getCurrentBssid();
+        return mClientModeImpl.getConnectedBssid();
     }
 
     @Override
     public String getConnectingBssid() {
-        return mClientModeImpl.getTargetBssid();
+        return mClientModeImpl.getConnectingBssid();
     }
 
     @Override
@@ -947,6 +947,16 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
+    public boolean isConnecting() {
+        return mClientModeImpl.isConnecting();
+    }
+
+    @Override
+    public boolean isRoaming() {
+        return mClientModeImpl.isRoaming();
+    }
+
+    @Override
     public boolean isDisconnected() {
         return mClientModeImpl.isDisconnected();
     }
@@ -963,6 +973,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public void sendMessageToClientModeImpl(Message msg) {
-        mClientModeImpl.sendMessage(msg);
+        mClientModeImpl.sendMessageToClientModeImpl(msg);
     }
 }

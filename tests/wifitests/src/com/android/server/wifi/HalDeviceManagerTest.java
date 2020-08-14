@@ -355,7 +355,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         chipMock.interfaceNames.get(IfaceType.STA).remove("wlan0");
 
         // now try to request another NAN
-        IWifiIface nanIface2 = mDut.createNanIface(nanDestroyedListener, mHandler);
+        IWifiIface nanIface2 = mDut.createNanIface(nanDestroyedListener, mHandler, TEST_WORKSOURCE);
         collector.checkThat("NAN can't be created", nanIface2, IsNull.nullValue());
 
         mDut.registerInterfaceAvailableForRequestListener(IfaceType.NAN, nanAvailListener,
@@ -1177,7 +1177,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // Request P2P: expect failure
-        p2pIface = mDut.createP2pIface(p2pDestroyedListener, mHandler);
+        p2pIface = mDut.createP2pIface(p2pDestroyedListener, mHandler, TEST_WORKSOURCE);
         collector.checkThat("P2P can't be created", p2pIface, IsNull.nullValue());
 
         // Request STA: expect success
@@ -1928,7 +1928,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // request P2P: should fail
-        p2pIface = mDut.createP2pIface(null, null);
+        p2pIface = mDut.createP2pIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("P2P should not be created", p2pIface, IsNull.nullValue());
 
         // tear down AP
@@ -2199,7 +2199,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("AP2 should not be created", apIface2, IsNull.nullValue());
 
         // request P2P: should fail
-        p2pIface = mDut.createP2pIface(null, null);
+        p2pIface = mDut.createP2pIface(null, null, TEST_WORKSOURCE);
         collector.checkThat("P2P should not be created", p2pIface, IsNull.nullValue());
 
         // tear down AP
@@ -2595,7 +2595,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, iface)).when(
                         chipMock.chip).createP2pIface(any(IWifiChip.createP2pIfaceCallback.class));
 
-                mDut.createP2pIface(destroyedListener, mHandler);
+                mDut.createP2pIface(destroyedListener, mHandler, TEST_WORKSOURCE);
                 break;
             case IfaceType.NAN:
                 iface = mock(IWifiNanIface.class);
@@ -2606,7 +2606,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, iface)).when(
                         chipMock.chip).createNanIface(any(IWifiChip.createNanIfaceCallback.class));
 
-                mDut.createNanIface(destroyedListener, mHandler);
+                mDut.createNanIface(destroyedListener, mHandler, TEST_WORKSOURCE);
                 break;
         }
         if (availableListener != null) {
