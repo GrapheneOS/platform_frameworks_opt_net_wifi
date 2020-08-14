@@ -1323,10 +1323,12 @@ public class WifiConfigManager {
         // Stage the backup of the SettingsProvider package which backs this up.
         mBackupManagerProxy.notifyDataChanged();
 
-        NetworkUpdateResult result =
-                new NetworkUpdateResult(hasIpChanged, hasProxyChanged, hasCredentialChanged);
-        result.setIsNewNetwork(newNetwork);
-        result.setNetworkId(newInternalConfig.networkId);
+        NetworkUpdateResult result = new NetworkUpdateResult(
+                newInternalConfig.networkId,
+                hasIpChanged,
+                hasProxyChanged,
+                hasCredentialChanged,
+                newNetwork);
 
         localLog("addOrUpdateNetworkInternal: added/updated config."
                 + " netId=" + newInternalConfig.networkId

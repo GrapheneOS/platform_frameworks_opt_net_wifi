@@ -247,7 +247,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 continue;
             }
             WifiConfiguration currentWCmConfiguredNetwork =
-                    mWifiConfigManager.getConfiguredNetwork(result.netId);
+                    mWifiConfigManager.getConfiguredNetwork(result.getNetworkId());
             // Try to enable network selection
             if (wCmConfiguredNetwork == null) {
                 if (!mWifiConfigManager.updateNetworkSelectionStatus(result.getNetworkId(),
