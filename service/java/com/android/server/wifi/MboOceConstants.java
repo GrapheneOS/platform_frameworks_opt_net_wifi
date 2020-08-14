@@ -176,7 +176,7 @@ public class MboOceConstants {
     @Retention(RetentionPolicy.SOURCE)
     @interface MboCellularDataConnectionPreference{}
 
-    /** default Blacklist duration when AP doesn't advertise it */
-    public static final long DEFAULT_BLACKLIST_DURATION_MS = 300_000; // 5 minutes
+    /** default Blocklist duration when AP doesn't advertise non zero MBO assoc retry delay */
+    public static final long DEFAULT_BLOCKLIST_DURATION_MS = 300_000; // 5 minutes
 
 }
