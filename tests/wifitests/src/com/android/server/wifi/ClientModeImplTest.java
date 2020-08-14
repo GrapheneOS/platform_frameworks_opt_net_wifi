@@ -121,6 +121,7 @@ import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.IState;
 import com.android.internal.util.StateMachine;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.hotspot2.NetworkDetail;
 import com.android.server.wifi.hotspot2.PasspointManager;
@@ -883,6 +884,16 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(sFreq, wifiInfo.getFrequency());
         assertTrue(sWifiSsid.equals(wifiInfo.getWifiSsid()));
         assertNull(wifiInfo.getPasspointProviderFriendlyName());
+        expectRegisterNetworkAgent((na) -> {
+        }, (nc) -> {
+                if (SdkLevel.isAtLeastS()) {
+                    WifiInfo wifiInfoFromTi = (WifiInfo) nc.getTransportInfo();
+                    assertEquals(sBSSID, wifiInfoFromTi.getBSSID());
+                    assertEquals(sFreq, wifiInfoFromTi.getFrequency());
+                    assertTrue(sWifiSsid.equals(wifiInfoFromTi.getWifiSsid()));
+                    assertNull(wifiInfoFromTi.getPasspointProviderFriendlyName());
+                }
+            });
         // Ensure the connection stats for the network is updated.
         verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID),
                 anyBoolean(), anyInt());
@@ -2365,7 +2376,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         WifiInfo connectionInfo = mCmi.syncRequestConnectionInfo();
         mLooper.stopAutoDispatch();
 
-        assertNotEquals(wifiInfo, connectionInfo);
         assertEquals(wifiInfo.getSSID(), connectionInfo.getSSID());
         assertEquals(wifiInfo.getBSSID(), connectionInfo.getBSSID());
         assertEquals(wifiInfo.getMacAddress(), connectionInfo.getMacAddress());
