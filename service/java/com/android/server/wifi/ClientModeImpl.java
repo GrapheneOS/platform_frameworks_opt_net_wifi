@@ -135,7 +135,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of ClientMode.  Event handling for Client mode logic is done here,
@@ -157,11 +156,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     @VisibleForTesting public static final long CONNECTING_WATCHDOG_TIMEOUT_MS = 30_000; // 30 secs.
 
     private boolean mVerboseLoggingEnabled = false;
-
-    /* debug flag, indicating if handling of ASSOCIATION_REJECT ended up blacklisting
-     * the corresponding BSSID.
-     */
-    private boolean mDidBlackListBSSID = false;
 
     /**
      * Log with error attribute
@@ -531,13 +525,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     /* Tracks if user has enabled Connected Mac Randomization through settings */
 
-    /**
-     * Supplicant scan interval in milliseconds.
-     * Comes from {@link Settings.Global#WIFI_SUPPLICANT_SCAN_INTERVAL_MS} or
-     * from the default config if the setting is not set
-     */
-    private long mSupplicantScanIntervalMs;
-
     int mRunningBeaconCount = 0;
 
     /* Parent state where connections are allowed */
@@ -573,10 +560,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private final BatteryStatsManager mBatteryStatsManager;
 
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
-
-
-    // Used for debug and stats gathering
-    private static int sScanAlarmIntentCount = 0;
 
     // Maximum duration to continue to log Wifi usability stats after a data stall is triggered.
     @VisibleForTesting
@@ -1076,10 +1059,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return new Messenger(getHandler());
     }
 
-    // Last connect attempt is used to prevent scan requests:
-    //  - for a period of 10 seconds after attempting to connect
-    private long mLastConnectAttemptTimestamp = 0;
-
     // For debugging, keep track of last message status handling
     // TODO, find an equivalent mechanism as part of parent class
     private static final int MESSAGE_HANDLING_STATUS_PROCESSED = 2;
@@ -1401,23 +1380,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     }
 
     /**
-     * Checks for a null Message.
-     *
-     * This can happen with sendMessageSynchronously, for example if an
-     * InterruptedException occurs. If this just happens once, silently
-     * ignore it, because it is probably a side effect of shutting down.
-     * If it happens a second time, generate a WTF.
-     */
-    private boolean messageIsNull(Message resultMsg) {
-        if (resultMsg != null) return false;
-        if (mNullMessageCounter.getAndIncrement() > 0) {
-            Log.wtf(getTag(), "Persistent null Message", new RuntimeException());
-        }
-        return true;
-    }
-    private AtomicInteger mNullMessageCounter = new AtomicInteger(0);
-
-    /**
      * Start subscription provisioning synchronously
      *
      * @param provider {@link OsuProvider} the provider to provision with
@@ -1633,7 +1595,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 if (msg.obj != null) {
                     sb.append(" ").append((AssocRejectEventInfo) msg.obj);
                 }
-                sb.append(" blacklist=" + Boolean.toString(mDidBlackListBSSID));
                 break;
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 sb.append(" ");
@@ -3201,7 +3162,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if ((config != null) && mWifiNative.connectToNetwork(mInterfaceName, config)) {
             mWifiLastResortWatchdog.noteStartConnectTime();
             mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_START_CONNECT, config);
-            mLastConnectAttemptTimestamp = mClock.getWallClockMillis();
             mIsAutoRoaming = false;
             transitionTo(mL2ConnectingState);
         } else {
@@ -3309,7 +3269,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     break;
                 }
                 case CMD_REASSOCIATE: {
-                    mLastConnectAttemptTimestamp = mClock.getWallClockMillis();
                     mWifiNative.reassociate(mInterfaceName);
                     break;
                 }
@@ -4125,7 +4084,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     stopIpClient();
                     mWifiDiagnostics.triggerBugReportDataCapture(
                             WifiDiagnostics.REPORT_REASON_ASSOC_FAILURE);
-                    mDidBlackListBSSID = false;
                     String bssid = assocRejectEventInfo.bssid;
                     boolean timedOut = assocRejectEventInfo.timedOut;
                     int statusCode = assocRejectEventInfo.statusCode;
@@ -4995,7 +4953,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mClientModeManager,
                     WifiConnectivityManager.WIFI_STATE_CONNECTED);
             registerConnected();
-            mLastConnectAttemptTimestamp = 0;
             mTargetWifiConfiguration = null;
             mWifiScoreReport.reset();
             mLastSignalLevel = -1;
@@ -5151,7 +5108,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     reportConnectionAttemptStart(config, mTargetBssid,
                             WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
                     if (mWifiNative.roamToNetwork(mInterfaceName, config)) {
-                        mLastConnectAttemptTimestamp = mClock.getWallClockMillis();
                         mTargetWifiConfiguration = config;
                         mIsAutoRoaming = true;
                         mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_START_ROAM, config);
