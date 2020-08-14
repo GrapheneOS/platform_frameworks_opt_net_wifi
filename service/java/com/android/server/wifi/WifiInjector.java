@@ -636,7 +636,8 @@ public class WifiInjector {
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 mSimRequiredNotifier,
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
-                        mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall),
+                        mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
+                        mDeviceConfigFacade, mContext),
                 mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager);
     }
 
