@@ -1327,9 +1327,12 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // try to reconnect to the same network with a credential changed (before connection is
         // established).
-        NetworkUpdateResult networkUpdateResult =
-                new NetworkUpdateResult(false /* ip */, false /* proxy */, true /* credential */);
-        networkUpdateResult.setNetworkId(FRAMEWORK_NETWORK_ID);
+        NetworkUpdateResult networkUpdateResult = new NetworkUpdateResult(
+                FRAMEWORK_NETWORK_ID,
+                false /* ip */,
+                false /* proxy */,
+                true /* credential */,
+                false /* isNewNetwork */);
         IActionListener connectActionListener = mock(IActionListener.class);
         mCmi.connectNetwork(
                 networkUpdateResult,

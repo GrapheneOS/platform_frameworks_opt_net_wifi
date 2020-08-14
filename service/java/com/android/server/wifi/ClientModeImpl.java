@@ -1594,8 +1594,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             case CMD_SAVE_NETWORK: {
                 ConnectNetworkMessage cnm = (ConnectNetworkMessage) msg.obj;
                 sb.append(" ");
-                sb.append(cnm.result.netId);
-                config = mWifiConfigManager.getConfiguredNetwork(cnm.result.netId);
+                sb.append(cnm.result.getNetworkId());
+                config = mWifiConfigManager.getConfiguredNetwork(cnm.result.getNetworkId());
                 if (config != null) {
                     sb.append(" ").append(config.getKey());
                     sb.append(" nid=").append(config.networkId);
