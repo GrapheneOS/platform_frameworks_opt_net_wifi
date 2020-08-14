@@ -810,9 +810,9 @@ public class WifiNetworkFactory extends NetworkFactory {
                         network, mActiveSpecificNetworkRequest.getRequestorUid(),
                         mActiveSpecificNetworkRequest.getRequestorPackageName());
         if (mVerboseLoggingEnabled) {
-            Log.v(TAG, "Added network to config manager " + networkUpdateResult.netId);
+            Log.v(TAG, "Added network to config manager " + networkUpdateResult.getNetworkId());
         }
-        return networkUpdateResult.netId;
+        return networkUpdateResult.getNetworkId();
     }
 
     // Helper method to remove the provided network configuration from WifiConfigManager, if it was
