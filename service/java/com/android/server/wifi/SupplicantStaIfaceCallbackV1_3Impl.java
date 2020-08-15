@@ -230,7 +230,7 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
 
         btmFrmData.mStatus = halToFrameworkBtmResponseStatus(tmData.status);
         btmFrmData.mBssTmDataFlagsMask = halToFrameworkBssTmDataFlagsMask(tmData.flags);
-        btmFrmData.mBlackListDurationMs = tmData.assocRetryDelayMs;
+        btmFrmData.mBlockListDurationMs = tmData.assocRetryDelayMs;
         if ((tmData.flags & BssTmDataFlagsMask.MBO_TRANSITION_REASON_CODE_INCLUDED) != 0) {
             btmFrmData.mTransitionReason = halToFrameworkMboTransitionReason(
                     tmData.mboTransitionReason);

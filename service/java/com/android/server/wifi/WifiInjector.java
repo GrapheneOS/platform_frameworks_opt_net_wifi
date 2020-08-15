@@ -191,6 +191,7 @@ public class WifiInjector {
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
     private final SimRequiredNotifier mSimRequiredNotifier;
+    private final DefaultClientModeImpl mDefaultClientModeImpl;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -434,6 +435,8 @@ public class WifiInjector {
         mWifiNetworkSelector.registerNetworkNominator(mScoredNetworkNominator);
 
         mSimRequiredNotifier = new SimRequiredNotifier(mContext, mFrameworkFacade);
+
+        mDefaultClientModeImpl = new DefaultClientModeImpl();
     }
 
     /**
@@ -610,13 +613,14 @@ public class WifiInjector {
     }
 
     /**
-     * Create a ClientModeManager
-     *
-     * @param listener listener for ClientModeManager state changes
-     * @return a new instance of ClientModeManager
+     * Create a ClientModeImpl
+     * @param ifaceName interface name for the ClientModeImpl
+     * @param clientModeManager ClientModeManager that will own the ClientModeImpl
      */
-    public ConcreteClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
-        ClientModeImpl clientModeImpl = new ClientModeImpl(mContext, mWifiMetrics, mClock,
+    public ClientModeImpl makeClientModeImpl(
+            @NonNull String ifaceName,
+            @NonNull ConcreteClientModeManager clientModeManager) {
+        return new ClientModeImpl(mContext, mWifiMetrics, mClock,
                 mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
                 mPasspointManager, mWifiMonitor, mWifiDiagnostics,
                 mWifiDataStall, mScoringParams, mWifiThreadRunner,
@@ -631,12 +635,22 @@ public class WifiInjector {
                 mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 mSimRequiredNotifier,
-                new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo, mWifiNative,
-                        mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall),
-                mWifiP2pConnection, mWifiGlobals);
+                new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
+                        mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
+                        mDeviceConfigFacade, mContext),
+                mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager);
+    }
+
+    /**
+     * Create a ClientModeManager
+     *
+     * @param listener listener for ClientModeManager state changes
+     * @return a new instance of ClientModeManager
+     */
+    public ConcreteClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
-                clientModeImpl, mSelfRecovery, mWifiGlobals);
+                this, mSelfRecovery, mWifiGlobals, mDefaultClientModeImpl);
     }
 
     /**

@@ -434,10 +434,11 @@ public class AvailableNetworkNotifier {
 
         NetworkUpdateResult result = mConfigManager.addOrUpdateNetwork(network, Process.WIFI_UID);
         if (result.isSuccess()) {
-            mWifiMetrics.setNominatorForNetwork(result.netId, mNominatorId);
+            mWifiMetrics.setNominatorForNetwork(result.getNetworkId(), mNominatorId);
             ConnectActionListener listener = new ConnectActionListener();
             mConnectHelper.connectToNetwork(
-                    new NetworkUpdateResult(result.netId), // only keep netId, discard other fields
+                    // only keep netId, discard other fields
+                    new NetworkUpdateResult(result.getNetworkId()),
                     new ActionListenerWrapper(listener),
                     Process.SYSTEM_UID);
             addNetworkToBlocklist(mRecommendedNetwork.SSID);
