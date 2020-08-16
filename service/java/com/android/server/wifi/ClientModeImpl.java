@@ -1113,6 +1113,10 @@ public class ClientModeImpl extends StateMachine {
             // Clear invalid cached data.
             mWifiNative.removeNetworkCachedData(oldConfig.networkId);
 
+            if (WifiConfigurationUtil.hasCredentialChanged(oldConfig, newConfig)) {
+                mBssidBlocklistMonitor.handleNetworkRemoved(newConfig.SSID);
+            }
+
             // Check if user/app change meteredOverride for connected network.
             if (newConfig.networkId != mLastNetworkId
                     || newConfig.meteredOverride == oldConfig.meteredOverride) {
