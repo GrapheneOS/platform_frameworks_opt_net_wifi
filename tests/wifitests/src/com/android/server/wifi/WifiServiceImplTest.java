@@ -71,6 +71,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
@@ -328,10 +329,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
     WifiConfiguration mWifiConfig;
 
-    WifiLog mLog = new LogcatLog(TAG);
+    WifiLog mLog;
 
     @Before public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        mLog = spy(new LogcatLog(TAG));
         mLooper = new TestLooper();
         mApplicationInfo = new ApplicationInfo();
         mApplicationInfo.targetSdkVersion = Build.VERSION_CODES.CUR_DEVELOPMENT;
@@ -6173,6 +6175,19 @@ public class WifiServiceImplTest extends WifiBaseTest {
                         featureP2pMacRandomization, true, true, false));
         assertEquals(featureStaConnectedMacRandomization | featureApMacRandomization,
                 testGetSupportedFeaturesCaseForMacRandomization(0, true, true, false));
+    }
+
+    @Test
+    public void getSupportedFeaturesVerboseLoggingThrottled() {
+        mWifiServiceImpl.enableVerboseLogging(1); // this logs
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(1000L);
+        testGetSupportedFeaturesCaseForMacRandomization(0, true, true, false);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(1001L);
+        testGetSupportedFeaturesCaseForMacRandomization(0, true, true, false); // should not log
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(5000L);
+        testGetSupportedFeaturesCaseForMacRandomization(0, true, true, false);
+        testGetSupportedFeaturesCaseForMacRandomization(0, true, false, false);
+        verify(mLog, times(4)).info(any());
     }
 
     /**

@@ -532,6 +532,7 @@ public class HalDeviceManager {
         if (VDBG) Log.d(TAG, "canSupportIfaceCombo: ifaceCombo=" + ifaceCombo);
 
         synchronized (mLock) {
+            if (mWifi == null) return false;
             int[] ifaceComboArr = new int[IFACE_TYPES_BY_PRIORITY.length];
             for (int type : IFACE_TYPES_BY_PRIORITY) {
                 ifaceComboArr[type] = ifaceCombo.get(type, 0);
