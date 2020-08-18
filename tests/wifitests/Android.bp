@@ -25,6 +25,7 @@ android_test {
 
     static_libs: [
         "androidx.test.rules",
+        "collector-device-lib",
         "hamcrest-library",
         "mockito-target-extended-minus-junit4",
         "frameworks-base-testutils",
