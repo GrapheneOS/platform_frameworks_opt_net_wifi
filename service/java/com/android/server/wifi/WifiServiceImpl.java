@@ -2111,15 +2111,44 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * Returns true if we should log the call to getSupportedFeatures.
+     *
+     * Because of the way getSupportedFeatures is used in WifiManager, there are
+     * often clusters of several back-to-back calls; avoid repeated logging if
+     * the feature set has not changed and the time interval is short.
+     */
+    private boolean needToLogSupportedFeatures(long features) {
+        if (mVerboseLoggingEnabled) {
+            long now = mClock.getElapsedSinceBootMillis();
+            synchronized (this) {
+                if (now > mLastLoggedSupportedFeaturesTimestamp + A_FEW_MILLISECONDS
+                        || features != mLastLoggedSupportedFeatures) {
+                    mLastLoggedSupportedFeaturesTimestamp = now;
+                    mLastLoggedSupportedFeatures = features;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    private static final int A_FEW_MILLISECONDS = 250;
+    private long mLastLoggedSupportedFeatures = -1;
+    private long mLastLoggedSupportedFeaturesTimestamp = 0;
+
+    /**
      * see {@link android.net.wifi.WifiManager#getSupportedFeatures}
      */
     @Override
     public long getSupportedFeatures() {
         enforceAccessPermission();
-        if (mVerboseLoggingEnabled) {
-            mLog.info("getSupportedFeatures uid=%").c(Binder.getCallingUid()).flush();
+        long features = getSupportedFeaturesInternal();
+        if (needToLogSupportedFeatures(features)) {
+            mLog.info("getSupportedFeatures uid=% returns %")
+                    .c(Binder.getCallingUid())
+                    .c(Long.toHexString(features))
+                    .flush();
         }
-        return getSupportedFeaturesInternal();
+        return features;
     }
 
     @Override
