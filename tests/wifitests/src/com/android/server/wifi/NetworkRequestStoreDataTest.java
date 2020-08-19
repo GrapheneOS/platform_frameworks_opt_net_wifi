@@ -19,13 +19,13 @@ package com.android.server.wifi;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import android.net.util.MacAddressUtils;
 import android.net.wifi.WifiConfiguration;
 import android.util.Xml;
 
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
+import com.android.net.module.util.MacAddressUtils;
 import com.android.server.wifi.WifiNetworkFactory.AccessPoint;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 

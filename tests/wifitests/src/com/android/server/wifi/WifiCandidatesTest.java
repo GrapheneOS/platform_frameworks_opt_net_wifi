@@ -23,12 +23,12 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.net.MacAddress;
-import android.net.util.MacAddressUtils;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.net.module.util.MacAddressUtils;
 import com.android.wifi.resources.R;
 
 import org.junit.Before;

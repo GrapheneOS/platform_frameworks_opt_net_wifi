@@ -20,7 +20,6 @@ import android.annotation.NonNull;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.net.MacAddress;
-import android.net.util.MacAddressUtils;
 import android.net.wifi.SoftApConfiguration;
 import android.os.Handler;
 import android.os.Process;
@@ -29,6 +28,7 @@ import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.build.SdkLevel;
+import com.android.net.module.util.MacAddressUtils;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.wifi.resources.R;
 
