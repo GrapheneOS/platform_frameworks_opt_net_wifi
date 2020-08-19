@@ -191,7 +191,7 @@ public class WifiInjector {
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
     private final SimRequiredNotifier mSimRequiredNotifier;
-    private final DefaultClientModeImpl mDefaultClientModeImpl;
+    private final ScanOnlyModeImpl mScanOnlyModeImpl;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -436,7 +436,7 @@ public class WifiInjector {
 
         mSimRequiredNotifier = new SimRequiredNotifier(mContext, mFrameworkFacade);
 
-        mDefaultClientModeImpl = new DefaultClientModeImpl();
+        mScanOnlyModeImpl = new ScanOnlyModeImpl();
     }
 
     /**
@@ -650,7 +650,7 @@ public class WifiInjector {
     public ConcreteClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
         return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
-                this, mSelfRecovery, mWifiGlobals, mDefaultClientModeImpl);
+                this, mSelfRecovery, mWifiGlobals, mScanOnlyModeImpl);
     }
 
     /**

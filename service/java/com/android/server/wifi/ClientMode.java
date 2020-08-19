@@ -38,7 +38,7 @@ import java.io.PrintWriter;
 
 /**
  * This interface is used to respond to calls independent of a STA's current mode.
- * If the STA is in scan only mode, ClientMode is implemented using {@link DefaultClientModeImpl}.
+ * If the STA is in scan only mode, ClientMode is implemented using {@link ScanOnlyModeImpl}.
  * If the STA is in client mode, ClientMode is implemented using {@link ClientModeImpl}.
  */
 public interface ClientMode {

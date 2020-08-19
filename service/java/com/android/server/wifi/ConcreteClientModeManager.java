@@ -86,7 +86,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * This class will dynamically instantiate {@link ClientModeImpl} when it enters client mode, and
  * tear it down when it exits client mode. No instance of ClientModeImpl will be active in
- * scan-only mode, instead {@link DefaultClientModeImpl} will be used to respond to calls.
+ * scan-only mode, instead {@link ScanOnlyModeImpl} will be used to respond to calls.
  *
  * <pre>
  *                                           ActiveModeWarden
@@ -96,8 +96,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *                      (Client Mode + Scan Only Mode)            (Wifi off)
  *                             /            \
  *                           /               \
- *                     ClientModeImpl       DefaultClientModeImpl
- *                     (Client Mode)          (Scan Only Mode)
+ *                     ClientModeImpl       ScanOnlyModeImpl
  * </pre>
  */
 public class ConcreteClientModeManager implements ClientModeManager {
@@ -114,7 +113,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WifiInjector mWifiInjector;
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
-    private final DefaultClientModeImpl mDefaultClientModeImpl;
+    private final ScanOnlyModeImpl mScanOnlyModeImpl;
     private final Graveyard mGraveyard = new Graveyard();
 
     private String mClientInterfaceName;
@@ -146,7 +145,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            DefaultClientModeImpl defaultClientModeImpl) {
+            ScanOnlyModeImpl scanOnlyModeImpl) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -158,7 +157,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mDeferStopHandler = new DeferStopHandler(looper);
         mSelfRecovery = selfRecovery;
         mWifiGlobals = wifiGlobals;
-        mDefaultClientModeImpl = defaultClientModeImpl;
+        mScanOnlyModeImpl = scanOnlyModeImpl;
     }
 
     private String getTag() {
@@ -882,7 +881,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @NonNull
     private ClientMode getClientMode() {
         if (mClientModeImpl == null) {
-            return mDefaultClientModeImpl;
+            return mScanOnlyModeImpl;
         } else {
             return mClientModeImpl;
         }
