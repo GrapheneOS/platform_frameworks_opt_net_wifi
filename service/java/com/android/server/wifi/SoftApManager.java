@@ -119,7 +119,7 @@ public class SoftApManager implements ActiveModeManager {
 
     private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("MM-dd HH:mm:ss.SSS");
 
-    private BaseWifiDiagnostics mWifiDiagnostics;
+    private WifiDiagnostics mWifiDiagnostics;
 
     @Nullable
     private SoftApRole mRole = null;
@@ -170,7 +170,7 @@ public class SoftApManager implements ActiveModeManager {
                          @NonNull WifiApConfigStore wifiApConfigStore,
                          @NonNull SoftApModeConfiguration apConfig,
                          @NonNull WifiMetrics wifiMetrics,
-                         @NonNull BaseWifiDiagnostics wifiDiagnostics) {
+                         @NonNull WifiDiagnostics wifiDiagnostics) {
         mContext = context;
         mFrameworkFacade = framework;
         mSoftApNotifier = new SoftApNotifier(mContext, mFrameworkFacade);
