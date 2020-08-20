@@ -182,7 +182,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private final WifiConfigManager mWifiConfigManager;
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
-    private final BaseWifiDiagnostics mWifiDiagnostics;
+    private final WifiDiagnostics mWifiDiagnostics;
     private final Clock mClock;
     private final WifiCountryCode mCountryCode;
     private final WifiScoreCard mWifiScoreCard;
@@ -581,7 +581,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             WifiConfigManager wifiConfigManager,
             PasspointManager passpointManager,
             WifiMonitor wifiMonitor,
-            BaseWifiDiagnostics wifiDiagnostics,
+            WifiDiagnostics wifiDiagnostics,
             WifiDataStall wifiDataStall,
             ScoringParams scoringParams,
             WifiThreadRunner wifiThreadRunner,
@@ -3500,7 +3500,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 }
                 case CMD_DIAGS_CONNECT_TIMEOUT: {
                     mWifiDiagnostics.reportConnectionEvent(
-                            BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT);
+                            WifiDiagnostics.CONNECTION_EVENT_TIMEOUT);
                     break;
                 }
                 case WifiP2pServiceImpl.P2P_CONNECTION_CHANGED:

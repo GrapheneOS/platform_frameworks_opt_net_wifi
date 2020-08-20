@@ -50,21 +50,21 @@ public class LastMileLogger {
 
     /**
      * Informs LastMileLogger that a connection event has occurred.
-     * @param event an event defined in BaseWifiDiagnostics
+     * @param event an event defined in WifiDiagnostics
      */
     public void reportConnectionEvent(byte event) {
         switch (event) {
-            case BaseWifiDiagnostics.CONNECTION_EVENT_STARTED:
+            case WifiDiagnostics.CONNECTION_EVENT_STARTED:
                 enableTracing();
                 return;
-            case BaseWifiDiagnostics.CONNECTION_EVENT_SUCCEEDED:
+            case WifiDiagnostics.CONNECTION_EVENT_SUCCEEDED:
                 disableTracing();
                 return;
-            case BaseWifiDiagnostics.CONNECTION_EVENT_FAILED:
+            case WifiDiagnostics.CONNECTION_EVENT_FAILED:
                 disableTracing();
                 mLastMileLogForLastFailure = readTrace();
                 return;
-            case BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT:
+            case WifiDiagnostics.CONNECTION_EVENT_TIMEOUT:
                 disableTracing();
                 mLastMileLogForLastFailure = readTrace();
                 return;

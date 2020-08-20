@@ -81,7 +81,7 @@ public class ActiveModeWarden {
     private final Looper mLooper;
     private final Handler mHandler;
     private final Context mContext;
-    private final BaseWifiDiagnostics mWifiDiagnostics;
+    private final WifiDiagnostics mWifiDiagnostics;
     private final WifiSettingsStore mSettingsStore;
     private final FrameworkFacade mFacade;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
@@ -202,7 +202,7 @@ public class ActiveModeWarden {
                      WifiNative wifiNative,
                      DefaultClientModeManager defaultClientModeManager,
                      BatteryStatsManager batteryStatsManager,
-                     BaseWifiDiagnostics wifiDiagnostics,
+                     WifiDiagnostics wifiDiagnostics,
                      Context context,
                      WifiSettingsStore settingsStore,
                      FrameworkFacade facade,

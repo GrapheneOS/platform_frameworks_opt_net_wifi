@@ -158,7 +158,7 @@ public class WifiInjector {
     private final SelfRecovery mSelfRecovery;
     private final WakeupController mWakeupController;
     private final ScanRequestProxy mScanRequestProxy;
-    private final BaseWifiDiagnostics mWifiDiagnostics;
+    private final WifiDiagnostics mWifiDiagnostics;
     private final WifiDataStall mWifiDataStall;
     private final WifiScoreCard mWifiScoreCard;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
@@ -858,7 +858,7 @@ public class WifiInjector {
         return mUntrustedWifiNetworkFactory;
     }
 
-    public BaseWifiDiagnostics getWifiDiagnostics() {
+    public WifiDiagnostics getWifiDiagnostics() {
         return mWifiDiagnostics;
     }
 
