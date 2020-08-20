@@ -285,6 +285,21 @@ public class XmlUtilTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that a permanently disabled network selection status object is serialized &
+     * deserialized correctly.
+     */
+    @Test
+    public void testPermanentlyDisabledNetworkSelectionStatusSerializeDeserialize()
+            throws IOException, XmlPullParserException {
+        NetworkSelectionStatus status = new NetworkSelectionStatus();
+        status.setNetworkSelectionStatus(
+                NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED);
+        status.setNetworkSelectionDisableReason(
+                NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT);
+        serializeDeserializeNetworkSelectionStatus(status);
+    }
+
+    /**
      * Verify that a network selection status deprecation is handled correctly during restore
      * of data after upgrade.
      * This test tries to simulate the scenario where we have a
@@ -606,6 +621,12 @@ public class XmlUtilTest extends WifiBaseTest {
         assertEquals(retrieved.first, retrieved.second.getKey());
         WifiConfigurationTestUtil.assertConfigurationEqualForConfigStore(
                 configuration, retrieved.second);
+        // Counter should be non-zero for a disabled network
+        NetworkSelectionStatus status = retrieved.second.getNetworkSelectionStatus();
+        if (!status.isNetworkEnabled()) {
+            assertNotEquals(0, status.getDisableReasonCounter(
+                    status.getNetworkSelectionDisableReason()));
+        }
     }
 
     /**
