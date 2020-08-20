@@ -54,7 +54,7 @@ import java.util.zip.Deflater;
 /**
  * Tracks various logs for framework.
  */
-class WifiDiagnostics extends BaseWifiDiagnostics {
+public class WifiDiagnostics {
     /**
      * Thread-safety:
      * 1) All non-private methods are |synchronized|.
@@ -64,6 +64,11 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
 
     private static final String TAG = "WifiDiags";
     private static final boolean DBG = false;
+
+    public static final byte CONNECTION_EVENT_STARTED = 0;
+    public static final byte CONNECTION_EVENT_SUCCEEDED = 1;
+    public static final byte CONNECTION_EVENT_FAILED = 2;
+    public static final byte CONNECTION_EVENT_TIMEOUT = 3;
 
     /** log level flags; keep these consistent with wifi_logger.h */
 
@@ -124,10 +129,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     @VisibleForTesting public static final String DRIVER_DUMP_SECTION_HEADER =
             "Driver state dump";
 
-    private int mLogLevel = VERBOSE_NO_LOG;
-    private boolean mIsLoggingEventHandlerRegistered;
-    private WifiNative.RingBufferStatus[] mRingBuffers;
-    private WifiNative.RingBufferStatus mPerPacketRingBuffer;
+    private final WifiNative mWifiNative;
     private final Context mContext;
     private final BuildProperties mBuildProperties;
     private final WifiLog mLog;
@@ -137,6 +139,14 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     private final WifiInjector mWifiInjector;
     private final Clock mClock;
     private final Handler mWorkerThreadHandler;
+
+    private int mLogLevel = VERBOSE_NO_LOG;
+    private boolean mIsLoggingEventHandlerRegistered;
+    private WifiNative.RingBufferStatus[] mRingBuffers;
+    private WifiNative.RingBufferStatus mPerPacketRingBuffer;
+    private String mFirmwareVersion;
+    private String mDriverVersion;
+    private int mSupportedFeatureSet;
     private int mMaxRingBufferSizeBytes;
 
     /** Interfaces started logging */
@@ -145,9 +155,8 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     public WifiDiagnostics(Context context, WifiInjector wifiInjector,
                            WifiNative wifiNative, BuildProperties buildProperties,
                            LastMileLogger lastMileLogger, Clock clock, Looper workerLooper) {
-        super(wifiNative);
-
         mContext = context;
+        mWifiNative = wifiNative;
         mBuildProperties = buildProperties;
         mIsLoggingEventHandlerRegistered = false;
         mLog = wifiInjector.makeLog(TAG);
@@ -166,7 +175,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
      *
      * @param ifaceName the interface requesting to start logging.
      */
-    @Override
     public synchronized void startLogging(@NonNull String ifaceName) {
         if (mActiveInterfaces.contains(ifaceName)) {
             Log.w(TAG, "Interface: " + ifaceName + " had already started logging");
@@ -190,7 +198,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
                 + " after adding " + ifaceName);
     }
 
-    @Override
     public synchronized void startPacketLog() {
         if (mPerPacketRingBuffer != null) {
             startLoggingRingBuffer(mPerPacketRingBuffer);
@@ -199,7 +206,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         }
     }
 
-    @Override
     public synchronized void stopPacketLog() {
         if (mPerPacketRingBuffer != null) {
             stopLoggingRingBuffer(mPerPacketRingBuffer);
@@ -215,7 +221,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
      *
      * @param ifaceName the interface requesting to stop logging.
      */
-    @Override
     public synchronized void stopLogging(@NonNull String ifaceName) {
         if (!mActiveInterfaces.contains(ifaceName)) {
             Log.w(TAG, "ifaceName: " + ifaceName + " is not in the start log user list");
@@ -246,7 +251,10 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         }
     }
 
-    @Override
+    /**
+     * Inform the diagnostics module of a connection event.
+     * @param event The type of connection event (see CONNECTION_EVENT_* constants)
+     */
     public synchronized void reportConnectionEvent(byte event) {
         mLastMileLogger.reportConnectionEvent(event);
         if (event == CONNECTION_EVENT_FAILED || event == CONNECTION_EVENT_TIMEOUT) {
@@ -255,14 +263,12 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
     }
 
 
-    @Override
     public synchronized void captureBugReportData(int reason) {
         BugReport report = captureBugreport(reason, isVerboseLoggingEnabled());
         mLastBugReports.addLast(report);
         flushDump(reason);
     }
 
-    @Override
     public void triggerBugReportDataCapture(int reason) {
         mWorkerThreadHandler.post(() -> {
             captureBugReportData(reason);
@@ -286,9 +292,11 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         });
     }
 
-    @Override
     public synchronized void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        super.dump(pw);
+        pw.println("Chipset information :-----------------------------------------------");
+        pw.println("FW Version is: " + mFirmwareVersion);
+        pw.println("Driver Version is: " + mDriverVersion);
+        pw.println("Supported Feature set: " + mSupportedFeatureSet);
 
         for (int i = 0; i < mLastAlerts.size(); i++) {
             pw.println("--------------------------------------------------------------------");
@@ -317,7 +325,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
      * Initiates a system-level bug report if there is no bug report taken recently.
      * This is done in a non-blocking fashion.
      */
-    @Override
     public void takeBugReport(String bugTitle, String bugDetail) {
         if (mBuildProperties.isUserBuild()
                 || !mContext.getResources().getBoolean(
@@ -437,7 +444,7 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         }
     }
 
-    class LimitedCircularArray<E> {
+    static class LimitedCircularArray<E> {
         private ArrayList<E> mArrayList;
         private int mMax;
         LimitedCircularArray(int max) {
@@ -497,7 +504,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
      *
      * @param verbose - with the obvious interpretation
      */
-    @Override
     public synchronized void enableVerboseLogging(boolean verboseEnabled) {
         final int ringBufferByteLimitSmall = mContext.getResources().getInteger(
                 R.integer.config_wifi_logger_ring_buffer_default_size_limit_kb) * 1024;
@@ -843,7 +849,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
      *
      * @param ifaceName Name of the interface.
      */
-    @Override
     public void startPktFateMonitoring(@NonNull String ifaceName) {
         if (!mWifiNative.startPktFateMonitoring(ifaceName)) {
             mLog.wC("Failed to start packet fate monitoring");

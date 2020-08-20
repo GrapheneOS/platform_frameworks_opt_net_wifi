@@ -388,7 +388,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WrongPasswordNotifier mWrongPasswordNotifier;
     @Mock Clock mClock;
     @Mock ScanDetailCache mScanDetailCache;
-    @Mock BaseWifiDiagnostics mWifiDiagnostics;
+    @Mock WifiDiagnostics mWifiDiagnostics;
     @Mock ConnectivityManager mConnectivityManager;
     @Mock IProvisioningCallback mProvisioningCallback;
     @Mock WakeupController mWakeupController;
@@ -2781,7 +2781,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.moveTimeForward(ClientModeImpl.DIAGS_CONNECT_TIMEOUT_MILLIS);
         mLooper.dispatchAll();
         verify(mWifiDiagnostics).reportConnectionEvent(
-                eq(BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT));
+                eq(WifiDiagnostics.CONNECTION_EVENT_TIMEOUT));
     }
 
     /**
@@ -2797,14 +2797,14 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.moveTimeForward(ClientModeImpl.DIAGS_CONNECT_TIMEOUT_MILLIS - 1000);
         mLooper.dispatchAll();
         verify(mWifiDiagnostics, never()).reportConnectionEvent(
-                eq(BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT));
+                eq(WifiDiagnostics.CONNECTION_EVENT_TIMEOUT));
     }
 
     private void verifyConnectionEventTimeoutDoesNotOccur() {
         mLooper.moveTimeForward(ClientModeImpl.DIAGS_CONNECT_TIMEOUT_MILLIS);
         mLooper.dispatchAll();
         verify(mWifiDiagnostics, never()).reportConnectionEvent(
-                eq(BaseWifiDiagnostics.CONNECTION_EVENT_TIMEOUT));
+                eq(WifiDiagnostics.CONNECTION_EVENT_TIMEOUT));
     }
 
     /**

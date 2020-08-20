@@ -114,7 +114,7 @@ public class WifiLastResortWatchdog {
 
     private final WifiInjector mWifiInjector;
     private final WifiMetrics mWifiMetrics;
-    private final BaseWifiDiagnostics mWifiDiagnostics;
+    private final WifiDiagnostics mWifiDiagnostics;
     private final Clock mClock;
     private final Context mContext;
     private final DeviceConfigFacade mDeviceConfigFacade;
@@ -131,7 +131,7 @@ public class WifiLastResortWatchdog {
             WifiInjector wifiInjector,
             Context context, Clock clock,
             WifiMetrics wifiMetrics,
-            BaseWifiDiagnostics wifiDiagnostics,
+            WifiDiagnostics wifiDiagnostics,
             Looper clientModeImplLooper,
             DeviceConfigFacade deviceConfigFacade,
             WifiThreadRunner wifiThreadRunner,
