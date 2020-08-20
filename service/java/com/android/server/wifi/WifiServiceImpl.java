@@ -811,8 +811,14 @@ public class WifiServiceImpl extends BaseWifiService {
             Binder.restoreCallingIdentity(ident);
         }
         if (mWifiPermissionsUtil.checkNetworkSettingsPermission(Binder.getCallingUid())) {
-            mWifiMetrics.logUserActionEvent(enable ? UserActionEvent.EVENT_TOGGLE_WIFI_ON
-                    : UserActionEvent.EVENT_TOGGLE_WIFI_OFF);
+            if (enable) {
+                mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_TOGGLE_WIFI_ON);
+            } else {
+                WifiInfo wifiInfo =
+                        mActiveModeWarden.getPrimaryClientModeManager().syncRequestConnectionInfo();
+                mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_TOGGLE_WIFI_OFF,
+                        wifiInfo == null ? -1 : wifiInfo.getNetworkId());
+            }
         }
         mWifiMetrics.incrementNumWifiToggles(isPrivileged, enable);
         mActiveModeWarden.wifiToggled(new WorkSource(Binder.getCallingUid(), packageName));
@@ -4208,6 +4214,10 @@ public class WifiServiceImpl extends BaseWifiService {
             final NetworkUpdateResult result;
             // if connecting using WifiConfiguration, save the network first
             if (config != null) {
+                if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
+                    mWifiMetrics.logUserActionEvent(
+                            UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK, config.networkId);
+                }
                 result = mWifiConfigManager.addOrUpdateNetwork(config, uid);
                 if (!result.isSuccess()) {
                     Log.e(TAG, "connect adding/updating config=" + config + " failed");
@@ -4216,18 +4226,13 @@ public class WifiServiceImpl extends BaseWifiService {
                 }
                 broadcastWifiCredentialChanged(WifiManager.WIFI_CREDENTIAL_SAVED, config);
             } else {
+                if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
+                    mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
+                }
                 result = new NetworkUpdateResult(netId);
             }
             mConnectHelper.connectToNetwork(result, wrapper, uid);
         });
-        if (mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
-            if (config == null) {
-                mWifiMetrics.logUserActionEvent(UserActionEvent.EVENT_MANUAL_CONNECT, netId);
-            } else {
-                mWifiMetrics.logUserActionEvent(
-                        UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK, config.networkId);
-            }
-        }
     }
 
     /**
