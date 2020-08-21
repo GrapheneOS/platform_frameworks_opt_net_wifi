@@ -75,6 +75,7 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
     private static final String XML_TAG_SUGGESTOR_MAX_SIZE = "SuggestorMaxSize";
     private static final String XML_TAG_SECTION_HEADER_PASSPOINT_CONFIGURATION =
             "PasspointConfiguration";
+    private static final String XML_TAG_PRIORITY_GROUP = "PriorityGroup";
 
     /**
      * Interface define the data source for the network suggestions store data.
@@ -247,6 +248,7 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
                 suggestion.isInitialAutoJoinEnabled);
         XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN,
                 extSuggestion.isAutojoinEnabled);
+        XmlUtil.writeNextValue(out, XML_TAG_PRIORITY_GROUP, suggestion.priorityGroup);
         XmlUtil.writeNextSectionEnd(out, XML_TAG_SECTION_HEADER_NETWORK_SUGGESTION);
     }
 
@@ -378,6 +380,7 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         boolean isInitializedAutoJoinEnabled = true; // backward compat
         boolean isAutoJoinEnabled = true; // backward compat
         boolean isNetworkUntrusted = false;
+        int priorityGroup = WifiNetworkSuggestionsManager.DEFAULT_PRIORITY_GROUP;
         int suggestorUid = Process.INVALID_UID;
 
         // Loop through and parse out all the elements from the stream within this section.
@@ -405,6 +408,9 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
                     case XML_TAG_SUGGESTOR_UID:
                         // Only needed for migration of data from Q to R.
                         suggestorUid = (int) value;
+                        break;
+                    case XML_TAG_PRIORITY_GROUP:
+                        priorityGroup = (int) value;
                         break;
                     default:
                         Log.w(TAG, "Ignoring unknown value name found: " + valueName[0]);
@@ -468,7 +474,7 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         }
         return Pair.create(new WifiNetworkSuggestion(wifiConfiguration, passpointConfiguration,
                 isAppInteractionRequired, isUserInteractionRequired, isUserAllowedToManuallyConnect,
-                isInitializedAutoJoinEnabled), isAutoJoinEnabled);
+                isInitializedAutoJoinEnabled, priorityGroup), isAutoJoinEnabled);
     }
 }
 
