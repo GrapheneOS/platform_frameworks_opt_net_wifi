@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Jaringan yang disarankan <xliff:g id="NAME">%s</xliff:g>. Perangkat dapat terhubung secara otomatis."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Izinkan"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Lain kali"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> ingin terhubung otomatis"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Jaringan berikut menerima ID unik yang dapat digunakan untuk melacak lokasi perangkat"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Tetap hubungkan"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Hubungkan ke Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Jaringan ini menerima ID SIM yang dapat digunakan untuk melacak lokasi perangkat"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Hubungkan"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Jangan hubungkan"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Konfirmasi koneksi?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Jika Anda menghubungkan, jaringan Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> mungkin mengakses atau membagikan ID unik terkait dengan SIM Anda. Ini memungkinkan lokasi perangkat Anda untuk dilacak."</string>

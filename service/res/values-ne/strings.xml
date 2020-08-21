@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> ले सिफारिस गरेका नेटवर्कहरू। यन्त्र स्वतः जडान हुन सक्छ।"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"अनुमति दिनुहोस्"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"पर्दैन, धन्यवाद"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> स्वतः जोडिन चाहन्छ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"यी नेटवर्कहरूले यन्त्रको स्थान पहिल्याउन प्रयोग गर्न सकिने एउटा अद्वित्तीय ID प्राप्त गर्छन्"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"जे भए पनि पनि जोड्नुहोस्"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> Wi-Fi मा कनेक्ट गर्ने हो?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"यी नेटवर्कहरूलाई यन्त्रको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"कनेक्ट गर्नुहोस्"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"नजोड्नुहोस्"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"जोडिने हो?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"तपाईं जोडिनुभयो भने <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi नेटवर्कहरूले तपाईंको SIM सँग सम्बद्ध अद्वित्तीय ID प्रयोग गर्न वा उक्त ID आदान प्रदान गर्न सक्छ। उक्त ID प्रयोग गरी तपाईंको यन्त्रको स्थान पहिल्याउन सकिन्छ।"</string>

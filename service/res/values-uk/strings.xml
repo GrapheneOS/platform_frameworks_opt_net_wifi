@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Мережі, пропоновані додатком <xliff:g id="NAME">%s</xliff:g>. Пристрій може підключитися автоматично."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Дозволити"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ні, дякую"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Оператор \"<xliff:g id="CARRIERNAME">%s</xliff:g>\" хоче підключатися автоматично"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Ці мережі отримують унікальний ідентифікатор, за допомогою якого можна відстежити місцезнаходження пристрою"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Усе одно підключитися"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Підключитися до мережі Wi‑Fi <xliff:g id="CARRIERNAME">%s</xliff:g>?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Ці мережі отримують ідентифікатор SIM-карти, за допомогою якого можна відстежити місцезнаходження пристрою"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Підключитися"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Не підключатися"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Підтвердити підключення?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Якщо ви під\'єднаєтеся, мережі Wi‑Fi оператора \"<xliff:g id="CARRIERNAME">%s</xliff:g>\" зможуть розкрити унікальний ідентифікатор вашої SIM-карти й відстежити місцезнаходження вашого пристрою."</string>

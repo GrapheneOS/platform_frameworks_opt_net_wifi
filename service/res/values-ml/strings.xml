@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> നിർദ്ദേശിച്ച നെറ്റ്‌വർക്കുകൾ. ഉപകരണം സ്വയമേവ കണക്‌റ്റ് ചെയ്‌തേക്കാം."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"അനുവദിക്കുക"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"വേണ്ട"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> സ്വയമേവ കണക്റ്റ് ചെയ്യാൻ താൽപ്പര്യപ്പെടുന്നു"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"ഉപകരണ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ ഉപയോഗിക്കാവുന്ന തനത് ഐഡി ഈ നെറ്റ്‌വർക്കുകൾക്ക് ലഭിക്കും"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"എന്തായാലും കണക്‌റ്റ് ചെയ്യുക"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> വൈഫൈയിൽ കണക്റ്റ് ചെയ്യണോ?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"ഉപകരണ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ ഉപയോഗിക്കാവുന്ന സിം ഐഡി ഈ നെറ്റ്‌വർക്കുകൾക്ക് ലഭിക്കും"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"കണക്‌റ്റ് ചെയ്യുക"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"കണക്റ്റ് ചെയ്യരുത്"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"കണക്ഷൻ സ്ഥിരീകരിക്കണോ?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"നിങ്ങൾ കണക്റ്റ് ചെയ്യുകയാണെങ്കിൽ, സിമ്മുമായി ബന്ധപ്പെട്ട തനത് ഐഡി <xliff:g id="CARRIERNAME">%s</xliff:g> വൈഫൈ നെറ്റ്‌വർക്കുകൾ ആക്സസ് ചെയ്യുകയോ പങ്കിടുകയോ ചെയ്തേക്കാം. നിങ്ങളുടെ ഉപകരണ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യാൻ ഇത് അനുവദിച്ചേക്കാം."</string>
