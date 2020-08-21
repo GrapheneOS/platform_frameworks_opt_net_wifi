@@ -67,6 +67,8 @@ public class WakeupControllerTest extends WifiBaseTest {
 
     private static final String SAVED_SSID = "test scan ssid";
     private static final int DFS_CHANNEL_FREQ = 5540;
+    private static final int TEST_PRIORITY_GROUP =
+            WifiNetworkSuggestionsManager.DEFAULT_PRIORITY_GROUP;
 
     @Mock private Context mContext;
     @Mock private WakeupLock mWakeupLock;
@@ -386,10 +388,12 @@ public class WakeupControllerTest extends WifiBaseTest {
         // suggestions
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork(quotedSsid);
         WifiNetworkSuggestion openNetworkSuggestion =
-                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true);
+                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true,
+                        TEST_PRIORITY_GROUP);
         WifiConfiguration wepNetwork = WifiConfigurationTestUtil.createWepNetwork();
         WifiNetworkSuggestion wepNetworkSuggestion =
-                new WifiNetworkSuggestion(wepNetwork, null, false, false, true, true);
+                new WifiNetworkSuggestion(wepNetwork, null, false, false, true, true,
+                        TEST_PRIORITY_GROUP);
         when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>(Arrays.asList(
                         openNetworkSuggestion, wepNetworkSuggestion)));
@@ -431,7 +435,8 @@ public class WakeupControllerTest extends WifiBaseTest {
 
         WifiConfiguration oweNetwork = WifiConfigurationTestUtil.createOweNetwork(quotedSsid2);
         WifiNetworkSuggestion oweNetworkSuggestion =
-                new WifiNetworkSuggestion(oweNetwork, null, false, false, true, true);
+                new WifiNetworkSuggestion(oweNetwork, null, false, false, true, true,
+                        TEST_PRIORITY_GROUP);
         when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>(Arrays.asList(oweNetworkSuggestion)));
 
@@ -529,7 +534,8 @@ public class WakeupControllerTest extends WifiBaseTest {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil
                 .createOpenNetwork(ScanResultUtil.createQuotedSSID(SAVED_SSID));
         WifiNetworkSuggestion openNetworkSuggestion =
-                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true);
+                new WifiNetworkSuggestion(openNetwork, null, false, false, true, true,
+                        TEST_PRIORITY_GROUP);
         when(mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions())
                 .thenReturn(new HashSet<>(Collections.singletonList(openNetworkSuggestion)));
 

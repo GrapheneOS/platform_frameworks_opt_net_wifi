@@ -16,8 +16,12 @@
 
 package com.android.server.wifi;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.net.wifi.EAPConstants;
 import android.net.wifi.WifiConfiguration;
@@ -60,6 +64,8 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
     private static final String TEST_FQDN = "FQDN";
     private static final String TEST_FRIENDLY_NAME = "test_friendly_name";
     private static final String TEST_REALM = "realm.test.com";
+    private static final int TEST_PRIORITY_GROUP =
+            WifiNetworkSuggestionsManager.DEFAULT_PRIORITY_GROUP;
     private static final String TEST_PRE_R_STORE_FORMAT_XML_STRING =
             "<NetworkSuggestionPerApp>\n"
                     + "<string name=\"SuggestorPackageName\">%1$s</string>\n"
@@ -291,7 +297,8 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         configuration.enterpriseConfig =
                 WifiConfigurationTestUtil.createPEAPWifiEnterpriseConfigWithGTCPhase2();
         WifiNetworkSuggestion networkSuggestion =
-                new WifiNetworkSuggestion(configuration, null, false, false, true, true);
+                new WifiNetworkSuggestion(configuration, null, false, false, true, true,
+                        TEST_PRIORITY_GROUP);
         appInfo.hasUserApproved = false;
         appInfo.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
@@ -320,7 +327,8 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo1 = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_NAME_1, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                TEST_PRIORITY_GROUP);
         appInfo1.hasUserApproved = false;
         appInfo1.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion1, appInfo1, true));
@@ -328,7 +336,8 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo2 = new PerAppInfo(TEST_UID_2, TEST_PACKAGE_NAME_2, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                TEST_PRIORITY_GROUP);
         appInfo2.hasUserApproved = true;
         appInfo2.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion2, appInfo2, true));
@@ -346,9 +355,11 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo1 = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_NAME_1, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true,
+                TEST_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                TEST_PRIORITY_GROUP);
         appInfo1.hasUserApproved = true;
         appInfo1.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion1, appInfo1, true));
@@ -358,9 +369,11 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
 
         PerAppInfo appInfo2 = new PerAppInfo(TEST_UID_2, TEST_PACKAGE_NAME_2, TEST_FEATURE_ID);
         WifiNetworkSuggestion networkSuggestion3 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                TEST_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion4 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, true, true, true,
+                TEST_PRIORITY_GROUP);
         appInfo2.hasUserApproved = true;
         appInfo2.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion3, appInfo2, true));
