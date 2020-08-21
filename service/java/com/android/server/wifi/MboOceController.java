@@ -130,7 +130,7 @@ public class MboOceController {
         public @MboOceConstants.BtmResponseStatus int mStatus =
                 MboOceConstants.BTM_RESPONSE_STATUS_INVALID;
         public int mBssTmDataFlagsMask = 0;
-        public long mBlackListDurationMs = 0;
+        public long mBlockListDurationMs = 0;
         public @MboOceConstants.MboTransitionReason int mTransitionReason =
                 MboOceConstants.MBO_TRANSITION_REASON_INVALID;
         public @MboOceConstants.MboCellularDataConnectionPreference int mCellPreference =
@@ -140,7 +140,7 @@ public class MboOceController {
         public String toString() {
             return new StringBuilder("BtmFrameData status=").append(mStatus).append(
                     ", flags=").append(mBssTmDataFlagsMask).append(
-                    ", assocRetryDelay=").append(mBlackListDurationMs).append(
+                    ", assocRetryDelay=").append(mBlockListDurationMs).append(
                     ", transitionReason=").append(mTransitionReason).append(
                     ", cellPref=").append(mCellPreference).toString();
         }

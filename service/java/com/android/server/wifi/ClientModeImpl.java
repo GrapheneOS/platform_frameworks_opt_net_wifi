@@ -6285,18 +6285,22 @@ public class ClientModeImpl extends StateMachine {
 
 
         if ((frameData.mBssTmDataFlagsMask
-                & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED)
-                != 0) {
-            long duration = frameData.mBlackListDurationMs;
-            mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
+                & MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT) != 0) {
+            long duration = 0;
+            if ((frameData.mBssTmDataFlagsMask
+                    & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED) != 0) {
+                mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
+                duration = frameData.mBlockListDurationMs;
+            }
             if (duration == 0) {
                 /*
-                 * When MBO assoc retry delay is set to zero(reserved as per spec),
-                 * blacklist the BSS for sometime to avoid AP rejecting the re-connect request.
+                 * When disassoc imminent bit alone is set or MBO assoc retry delay is
+                 * set to zero(reserved as per spec), blocklist the BSS for sometime to
+                 * avoid AP rejecting the re-connect request.
                  */
-                duration = MboOceConstants.DEFAULT_BLACKLIST_DURATION_MS;
+                duration = MboOceConstants.DEFAULT_BLOCKLIST_DURATION_MS;
             }
-            // Blacklist the current BSS
+            // Blocklist the current BSS
             mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration,
                     BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 0);
         }
