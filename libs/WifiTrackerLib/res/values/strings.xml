@@ -85,6 +85,9 @@
     <!-- Summary for Connected wifi network without internet [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_wifi_connected_no_internet">No internet</string>
 
+    <!-- Summary for Connected wifi network with a low quality connection [CHAR LIMIT=NONE] -->
+    <string name="wifi_connected_low_quality">Low quality</string>
+
     <!-- Do not translate.  Concise terminology for wifi with 802.1x EAP security -->
     <string name="wifitrackerlib_wifi_security_short_eap" translatable="false">802.1x</string>
 
