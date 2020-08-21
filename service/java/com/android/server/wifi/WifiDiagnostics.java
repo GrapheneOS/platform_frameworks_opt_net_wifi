@@ -57,9 +57,11 @@ import java.util.zip.Deflater;
 public class WifiDiagnostics {
     /**
      * Thread-safety:
-     * 1) All non-private methods are |synchronized|.
-     * 2) Callbacks into WifiDiagnostics use non-private (and hence, synchronized) methods. See, e.g,
-     *    onRingBufferData(), onWifiAlert().
+     * 1) Most non-private methods are |synchronized| with the exception of
+     *      {@link #captureBugReportData(int)} and {@link #triggerBugReportDataCapture(int)}, and
+     *      a few others. See those methods' documentation.
+     * 2) Callbacks into WifiDiagnostics use non-private (and hence, synchronized) methods.
+     *      See, e.g, onRingBufferData(), onWifiAlert().
      */
 
     private static final String TAG = "WifiDiags";
@@ -263,12 +265,30 @@ public class WifiDiagnostics {
     }
 
 
-    public synchronized void captureBugReportData(int reason) {
-        BugReport report = captureBugreport(reason, isVerboseLoggingEnabled());
-        mLastBugReports.addLast(report);
-        flushDump(reason);
+    /**
+     * Synchronously capture bug report data.
+     *
+     * Note: this method is not marked as synchronized, but it is synchronized internally.
+     * getLogcat*() methods are very slow, so do not synchronize these calls (they are thread safe,
+     * do not need to be synchronized).
+     */
+    public void captureBugReportData(int reason) {
+        final boolean verbose;
+        synchronized (this) {
+            verbose = isVerboseLoggingEnabled();
+        }
+        BugReport report = captureBugreport(reason, verbose);
+        synchronized (this) {
+            mLastBugReports.addLast(report);
+            flushDump(reason);
+        }
     }
 
+    /**
+     * Asynchronously capture bug report data.
+     *
+     * Not synchronized because no work is performed on the calling thread.
+     */
     public void triggerBugReportDataCapture(int reason) {
         mWorkerThreadHandler.post(() -> {
             captureBugReportData(reason);
@@ -277,8 +297,13 @@ public class WifiDiagnostics {
 
     private void triggerAlertDataCapture(int errorCode, byte[] alertData) {
         mWorkerThreadHandler.post(() -> {
+            final boolean verbose;
             synchronized (this) {
-                BugReport report = captureBugreport(errorCode, isVerboseLoggingEnabled());
+                verbose = isVerboseLoggingEnabled();
+            }
+            // This is very slow, don't put this inside `synchronized(this)`!
+            BugReport report = captureBugreport(errorCode, verbose);
+            synchronized (this) {
                 report.alertData = alertData;
                 mLastAlerts.addLast(report);
 
@@ -661,19 +686,22 @@ public class WifiDiagnostics {
         report.systemTimeMs = System.currentTimeMillis();
         report.kernelTimeNanos = System.nanoTime();
 
-        if (mRingBuffers != null) {
-            for (WifiNative.RingBufferStatus buffer : mRingBuffers) {
-                /* this will push data in mRingBuffers */
-                mWifiNative.getRingBufferData(buffer.name);
-                ByteArrayRingBuffer data = mRingBufferData.get(buffer.name);
-                byte[][] buffers = new byte[data.getNumBuffers()][];
-                for (int i = 0; i < data.getNumBuffers(); i++) {
-                    buffers[i] = data.getBuffer(i).clone();
+        synchronized (this) {
+            if (mRingBuffers != null) {
+                for (WifiNative.RingBufferStatus buffer : mRingBuffers) {
+                    /* this will push data in mRingBuffers */
+                    mWifiNative.getRingBufferData(buffer.name);
+                    ByteArrayRingBuffer data = mRingBufferData.get(buffer.name);
+                    byte[][] buffers = new byte[data.getNumBuffers()][];
+                    for (int i = 0; i < data.getNumBuffers(); i++) {
+                        buffers[i] = data.getBuffer(i).clone();
+                    }
+                    report.ringBuffers.put(buffer.name, buffers);
                 }
-                report.ringBuffers.put(buffer.name, buffers);
             }
         }
 
+        // getLogcat*() is very slow, do not put them inside `synchronize(this)`!
         report.logcatLines = getLogcatSystem(127);
         report.kernelLogLines = getLogcatKernel(127);
 
@@ -748,6 +776,7 @@ public class WifiDiagnostics {
         }
     }
 
+    /** This method is thread safe */
     private ArrayList<String> getLogcat(String logcatSections, int maxLines) {
         ArrayList<String> lines = new ArrayList<>(maxLines);
         try {
@@ -762,13 +791,14 @@ public class WifiDiagnostics {
             mLog.dump("Exception while capturing logcat: %").c(e.toString()).flush();
         }
         return lines;
-
     }
 
+    /** This method is thread safe */
     private ArrayList<String> getLogcatSystem(int maxLines) {
         return getLogcat("main,system,crash", maxLines);
     }
 
+    /** This method is thread safe */
     private ArrayList<String> getLogcatKernel(int maxLines) {
         return getLogcat("kernel", maxLines);
     }

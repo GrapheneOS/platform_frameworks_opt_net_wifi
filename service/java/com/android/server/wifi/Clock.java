@@ -17,9 +17,13 @@
 package com.android.server.wifi;
 
 import android.os.SystemClock;
+
+import javax.annotation.concurrent.ThreadSafe;
+
 /**
  * Wrapper class for time operations. Allows replacement of clock operations for testing.
  */
+@ThreadSafe
 public class Clock {
 
     /**
