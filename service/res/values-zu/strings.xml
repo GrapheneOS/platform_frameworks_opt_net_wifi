@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> amanethiwekhi aphakanyisiwe. Idivayisi ingaxhumeka ngokuzenzakalela."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Vumela"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Cha ngiyabonga"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"I-<xliff:g id="CARRIERNAME">%s</xliff:g> ifuna ukuxhuma ngokuzenzekelayo"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Lama nethiwekhi athola i-ID ehlukile engasetshenziselwa ukulandelela indawo yedivayisi"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Xhuma noma kunjalo"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Xhuma ku-Wi-Fi ye-<xliff:g id="CARRIERNAME">%s</xliff:g>"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Lama nethiwekhi athola i-SIM ID engasetshenziselwa ukulandelela indawo yedivayisi"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Xhuma"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ungaxhumi"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Qinisekisa ukuxhuma?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Uma uxhuma, amanethiwekhi we-Wi-Fi ye-<xliff:g id="CARRIERNAME">%s</xliff:g> angase akwazi ukufinyelela ku-ID yakho ehlukile ehlobene ne-SIM yakho. Lokhu kungase kuvumele ukuthi indawo yedivayisi yakho ilandelelwe."</string>

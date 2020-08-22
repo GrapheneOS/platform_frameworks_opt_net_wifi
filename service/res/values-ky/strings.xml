@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> сунуштаган тармактар. Түзмөк автоматтык түрдө туташышы мүмкүн."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Уруксат берүү"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Жок, рахмат"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> байланыш оператору автоматтык түрдө туташкысы келип жатат"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Бул тармактарга өзгөчө идентификатор берилип, анын жардамы менен түзмөктүн жайгашкан жерин аныктоого болот"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Баары бир туташуу"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi тармагына туташтырылсынбы?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Бул тармактарга SIM-картанын идентификатору берилип, анын жардамы менен түзмөктүн жайгашкан жерин аныктоого болот"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Туташуу"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Туташпасын"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Туташууну ырастайсызбы?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Туташсаңыз, <xliff:g id="CARRIERNAME">%s</xliff:g> операторунун Wi‑Fi тармактары SIM картаңызга байланышкан өзгөчө идентификаторго мүмкүнчүлүк алып, аны башкалар менен бөлүшө алат. Ушуну менен, түзмөгүңүздүн жайгашкан жерин аныктай аласыз."</string>

@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Von <xliff:g id="NAME">%s</xliff:g> vorgeschlagene Netzwerke. Gerät verbindet sich möglicherweise automatisch."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Zulassen"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Nein danke"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> möchte sich automatisch verbinden"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Diese Mobilfunknetze empfangen eine eindeutige ID, mit der der Gerätestandort ermittelt werden kann"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Trotzdem verbinden"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"Mit <xliff:g id="CARRIERNAME">%s</xliff:g>-WLAN verbinden?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Diese Netzwerke empfangen eine SIM-ID, mit der der Gerätestandort erfasst werden kann"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Verbinden"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Nicht verbinden"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Verbindung bestätigen?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Wenn du eine Verbindung herstellst, können die WLANs von <xliff:g id="CARRIERNAME">%s</xliff:g> möglicherweise eine eindeutige ID abrufen oder teilen, die deiner SIM zugewiesen ist. Damit lässt sich unter Umständen der Standort deines Geräts ermitteln."</string>

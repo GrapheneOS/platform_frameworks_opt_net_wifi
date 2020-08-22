@@ -31,9 +31,9 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> təklif edilən şəbəkə. Cihaz avtomatik qoşula bilər."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"İcazə verin"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Xeyr, təşəkkürlər"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> avtomatik qoşulmaq istəyir"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Bu şəbəkələr cihaz məkanını izləmək üçün istifadə edilə biləcək unikal ID qəbul edir"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"İstənilən halda qoşulun"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"<xliff:g id="CARRIERNAME">%s</xliff:g> Wi-Fi şəbəkəsinə qoşulsun?"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"Bu şəbəkələr cihaz məkanını izləmək üçün istifadə edilə biləcək SIM ID qəbul edir"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="6445286383390779291">"Qoşun"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Qoşulmayın"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Bağlantı təsdiq edilsin?"</string>
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Qoşulsanız, <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi şəbəkələri SIM kartınızla əlaqəli unikal ID\'ə daxil ola və ya onu paylaşa bilər. Bu, cihazınızın məkanının izlənilməsinə icazə verə bilər."</string>
