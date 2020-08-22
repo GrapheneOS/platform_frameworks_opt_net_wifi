@@ -49,7 +49,7 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
     @Mock WifiInjector mWifiInjector;
     @Mock WifiMetrics mWifiMetrics;
     @Mock SelfRecovery mSelfRecovery;
-    @Mock BaseWifiDiagnostics mWifiDiagnostics;
+    @Mock WifiDiagnostics mWifiDiagnostics;
     @Mock Clock mClock;
     @Mock WifiInfo mWifiInfo;
     @Mock Context mContext;

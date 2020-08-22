@@ -25,6 +25,7 @@ android_test {
 
     static_libs: [
         "androidx.test.rules",
+        "collector-device-lib",
         "hamcrest-library",
         "mockito-target-extended-minus-junit4",
         "frameworks-base-testutils",
@@ -104,9 +105,6 @@ android_test {
             "com.android.server.wifi.BackupManagerProxy",
             "com.android.server.wifi.BackupManagerProxy$*",
             "com.android.server.wifi.BackupManagerProxy.**",
-            "com.android.server.wifi.BaseWifiDiagnostics",
-            "com.android.server.wifi.BaseWifiDiagnostics$*",
-            "com.android.server.wifi.BaseWifiDiagnostics.**",
             "com.android.server.wifi.BaseWifiService",
             "com.android.server.wifi.BaseWifiService$*",
             "com.android.server.wifi.BaseWifiService.**",

@@ -128,7 +128,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Mock FrameworkFacade mFrameworkFacade;
     @Mock WifiApConfigStore mWifiApConfigStore;
     @Mock WifiMetrics mWifiMetrics;
-    @Mock BaseWifiDiagnostics mWifiDiagnostics;
+    @Mock WifiDiagnostics mWifiDiagnostics;
     @Mock NotificationManager mNotificationManager;
     @Mock SoftApNotifier mFakeSoftApNotifier;
 

@@ -116,7 +116,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Mock DefaultClientModeManager mDefaultClientModeManager;
     @Mock BatteryStatsManager mBatteryStats;
     @Mock SelfRecovery mSelfRecovery;
-    @Mock BaseWifiDiagnostics mWifiDiagnostics;
+    @Mock WifiDiagnostics mWifiDiagnostics;
     @Mock ScanRequestProxy mScanRequestProxy;
     @Mock FrameworkFacade mFacade;
     @Mock WifiSettingsStore mSettingsStore;

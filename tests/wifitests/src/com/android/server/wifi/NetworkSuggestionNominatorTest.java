@@ -106,12 +106,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {};
         boolean[] autojoin = {};
         boolean[] shareWithUser = {};
+        int[] priorityGroup = {};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
 
@@ -145,12 +146,12 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
-
+        int[] priorityGroup = {0};
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -183,12 +184,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         WifiConfiguration config = suggestions[0].wns.wifiConfiguration;
         config.enterpriseConfig.setCaPath(null);
         // Link the scan result with suggestions.
@@ -227,12 +229,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE, TEST_PACKAGE};
         boolean[] autojoin = {true, true};
         boolean[] shareWithUser = {true, true};
+        int[] priorityGroup = {0, 0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -273,12 +276,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE, TEST_PACKAGE};
         boolean[] autojoin = {true, true};
         boolean[] shareWithUser = {true, true};
+        int[] priorityGroup = {1, 1};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -295,6 +299,58 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         validateConnectableNetworks(connectableNetworks, scanSsids[0]);
 
         verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+    }
+
+    /**
+     * Ensure that we nominate the network suggestion corresponding to the scan result with
+     * higest priority from each priority group within same suggestor app.
+     * Expected connectable Networks: {suggestionSsids[0], suggestionSsids[2]}
+     */
+    @Test
+    public void testSelectNetworkSuggestionForMultipleMatchHighPriorityFromEachPriorityGroupWins() {
+        String[] scanSsids = {"test1", "test2", "test3", "test4"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4", "6c:f3:7f:ae:8c:f5",
+                "6c:f3:7f:ae:8c:f6"};
+        int[] freqs = {2470, 2437, 2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]",
+                "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-56, -45, -44, -43};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\"", "\"" + scanSsids[1] + "\"",
+                "\"" + scanSsids[2] + "\"", "\"" + scanSsids[3] + "\""};
+        int[] securities = {SECURITY_PSK, SECURITY_PSK, SECURITY_PSK, SECURITY_PSK};
+        boolean[] appInteractions = {true, true, true, true};
+        boolean[] meteredness = {false, false, false, false};
+        int[] priorities = {5, 4, 3, 1};
+        int[] uids = {TEST_UID, TEST_UID, TEST_UID, TEST_UID};
+        String[] packageNames = {TEST_PACKAGE, TEST_PACKAGE, TEST_PACKAGE, TEST_PACKAGE};
+        boolean[] autojoin = {true, true, true, true};
+        boolean[] shareWithUser = {true, true, true, true};
+        int[] priorityGroup = {0, 0 , 1 , 1};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+        // setup config manager interactions.
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration,
+                suggestions[1].wns.wifiConfiguration, suggestions[2].wns.wifiConfiguration,
+                suggestions[3].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+        validateConnectableNetworks(connectableNetworks, scanSsids[0], scanSsids[2]);
+
+        verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration,
+                suggestions[2].wns.wifiConfiguration);
     }
 
     /**
@@ -320,12 +376,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE, TEST_PACKAGE, TEST_PACKAGE_OTHER};
         boolean[] autojoin = {true, true, true};
         boolean[] shareWithUser = {true, true, true};
+        int[] priorityGroup = {0, 0, 0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -377,12 +434,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 TEST_PACKAGE_OTHER};
         boolean[] autojoin = {true, true, true, true};
         boolean[] shareWithUser = {true, true, true, true};
+        int[] priorityGroup = {0, 0, 0, 0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -425,12 +483,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {1};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // Fail add to WifiConfigManager
@@ -478,12 +537,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -535,12 +595,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -587,12 +648,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -649,12 +711,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -710,12 +773,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids, packageNames,
-                autojoin, shareWithUser);
+                autojoin, shareWithUser, priorityGroup);
         HashSet<ExtendedWifiNetworkSuggestion> matchedExtSuggestions = new HashSet<>();
         matchedExtSuggestions.add(suggestions[0]);
         List<Pair<ScanDetail, WifiConfiguration>> passpointCandidates = new ArrayList<>();
@@ -757,12 +821,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE, TEST_PACKAGE};
         boolean[] autojoin = {false, false};
         boolean[] shareWithUser = {true, false};
+        int[] priorityGroup = {0, 0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
         // setup config manager interactions.
@@ -801,12 +866,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         WifiConfiguration eapSimConfig = suggestions[0].wns.wifiConfiguration;
         eapSimConfig.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.SIM);
         eapSimConfig.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
@@ -847,12 +913,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         WifiConfiguration eapSimConfig = suggestions[0].wns.wifiConfiguration;
         eapSimConfig.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.SIM);
         eapSimConfig.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
@@ -900,12 +967,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         suggestions[0].wns.wifiConfiguration.trusted = false;
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
@@ -941,12 +1009,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         suggestions[0].wns.wifiConfiguration.trusted = false;
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
@@ -987,12 +1056,13 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         String[] packageNames = {TEST_PACKAGE};
         boolean[] autojoin = {true};
         boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
 
         ScanDetail[] scanDetails =
                 buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
-                packageNames, autojoin, shareWithUser);
+                packageNames, autojoin, shareWithUser, priorityGroup);
         suggestions[0].wns.wifiConfiguration.meteredHint = true;
         when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(any())).thenReturn(true);
         // Link the scan result with suggestions.
@@ -1099,7 +1169,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
     private ExtendedWifiNetworkSuggestion[] buildNetworkSuggestions(
             String[] ssids, int[] securities, boolean[] appInteractions, boolean[] meteredness,
             int[] priorities, int[] uids, String[] packageNames, boolean[] autojoin,
-            boolean[] shareWithUser) {
+            boolean[] shareWithUser, int[] priorityGroup) {
         WifiConfiguration[] configs = buildWifiConfigurations(ssids, securities);
         ExtendedWifiNetworkSuggestion[] suggestions =
                 new ExtendedWifiNetworkSuggestion[configs.length];
@@ -1115,7 +1185,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
             PerAppInfo perAppInfo = new PerAppInfo(uids[i], packageNames[i], null);
             WifiNetworkSuggestion suggestion =
                     new WifiNetworkSuggestion(configs[i], null, appInteractions[i], false,
-                            shareWithUser[i], true);
+                            shareWithUser[i], true, priorityGroup[i]);
             suggestions[i] = new ExtendedWifiNetworkSuggestion(suggestion, perAppInfo, autojoin[i]);
         }
         return suggestions;

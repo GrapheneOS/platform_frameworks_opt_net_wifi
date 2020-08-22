@@ -124,6 +124,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     private static final int TEST_NETWORK_ID = 110;
     private static final int TEST_CARRIER_ID = 1911;
     private static final String TEST_IMSI = "123456*";
+    private static final int DEFAULT_PRIORITY_GROUP = 0;
+    private static final int TEST_PRIORITY_GROUP = 1;
 
     private @Mock WifiContext mContext;
     private @Mock Resources mResources;
@@ -280,9 +282,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -332,9 +336,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.setPasspointUniqueId(passpointConfiguration.getUniqueId());
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -383,7 +389,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         // Clear the data source, and user data store is not loaded
         mDataSource.reset();
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
@@ -396,9 +403,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAddRemoveEnterpriseNetworkSuggestion() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -417,7 +426,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 mWifiNetworkSuggestionsManager.getAllNetworkSuggestions();
         assertEquals(1, allNetworkSuggestions.size());
         WifiNetworkSuggestion removingSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         removingSuggestion.wifiConfiguration.SSID = networkSuggestion1.wifiConfiguration.SSID;
         // Remove with the networkSuggestion from external.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
@@ -432,7 +442,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAddInsecureEnterpriseNetworkSuggestion() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         networkSuggestion.wifiConfiguration.enterpriseConfig.setCaPath(null);
         List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
@@ -440,7 +451,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_1, TEST_FEATURE));
 
         networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         networkSuggestion.wifiConfiguration.enterpriseConfig.setDomainSuffixMatch("");
         networkSuggestionList = Arrays.asList(networkSuggestion);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
@@ -457,9 +469,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
@@ -500,7 +514,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testReplaceNetworkSuggestionsSuccess() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -532,7 +547,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAddNetworkSuggestionsSuccessOnInPlaceModificationWhenNotInWcm() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                 add(networkSuggestion);
@@ -572,7 +588,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAddNetworkSuggestionsSuccessOnInPlaceModificationWhenInWcm() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -628,7 +645,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         for (int i = 0; i < WifiManager.NETWORK_SUGGESTIONS_MAX_PER_APP_HIGH_RAM; i++) {
             networkSuggestionList.add(new WifiNetworkSuggestion(
-                    WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true));
+                    WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                    DEFAULT_PRIORITY_GROUP));
         }
         // The first add should succeed.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
@@ -640,7 +658,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             networkSuggestionList.add(new WifiNetworkSuggestion(
-                    WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true));
+                    WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                    DEFAULT_PRIORITY_GROUP));
         }
         // The second add should fail.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_EXCEEDS_MAX_PER_APP,
@@ -661,7 +680,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         networkSuggestionList = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             networkSuggestionList.add(new WifiNetworkSuggestion(
-                    WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true));
+                    WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                    DEFAULT_PRIORITY_GROUP));
         }
         // This add should now succeed.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
@@ -675,9 +695,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testRemoveNetworkSuggestionsFailureOnInvalid() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -703,7 +725,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void
             testGetNetworkSuggestionsForScanDetailSuccessWithOneMatchForCarrierProvisioningApp() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -737,7 +760,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 mWifiNetworkSuggestionsManager.add(Collections.singletonList(null),
                         TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(Collections.singletonList(networkSuggestion),
                         TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE));
@@ -752,7 +776,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testGetNetworkSuggestionsForScanDetailSuccessWithOneMatch() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -780,10 +805,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testGetNetworkSuggestionsForScanDetailSuccessWithMultipleMatch() {
         WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         // Reuse the same network credentials to ensure they both match.
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -825,7 +850,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         wifiConfiguration.BSSID = scanDetail.getBSSIDString();
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -854,10 +879,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         wifiConfiguration.BSSID = scanDetail.getBSSIDString();
 
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         // Reuse the same network credentials to ensure they both match.
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -898,10 +923,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         wifiConfiguration.BSSID = scanDetail.getBSSIDString();
 
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         // Reuse the same network credentials to ensure they both match.
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -936,10 +961,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         wifiConfiguration2.BSSID = scanDetail.getBSSIDString();
 
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration1, null, false, false, true, true);
+                wifiConfiguration1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         // Reuse the same network credentials to ensure they both match.
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration2, null, false, false, true, true);
+                wifiConfiguration2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -987,7 +1012,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testGetNetworkSuggestionsForScanDetailFailureOnAppNotApproved() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1009,7 +1035,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testGetNetworkSuggestionsForScanDetailFailureOnSuggestionRemoval() {
         WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         ScanDetail scanDetail = createScanDetailForNetwork(wifiConfiguration);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -1037,7 +1063,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testGetNetworkSuggestionsForScanDetailFailureOnWrongNetwork() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1068,7 +1095,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .registerSuggestionConnectionStatusListener(mBinder, mListener,
                         NETWORK_CALLBACK_ID, TEST_PACKAGE_1));
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1107,7 +1135,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(TEST_PACKAGE_1))
                 .thenReturn(TEST_CARRIER_ID);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createPskNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createPskNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1157,7 +1186,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .thenReturn(true);
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                new WifiConfiguration(config), null, true, false, true, true);
+                new WifiConfiguration(config), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
@@ -1167,7 +1197,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_1, TEST_FEATURE));
 
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                new WifiConfiguration(config), null, true, false, true, true);
+                new WifiConfiguration(config), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList2 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion2);
@@ -1202,7 +1233,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         NETWORK_CALLBACK_ID, TEST_PACKAGE_1));
         verify(mBinder).linkToDeath(drCaptor.capture(), anyInt());
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1251,7 +1283,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .registerSuggestionConnectionStatusListener(mBinder, mListener,
                         NETWORK_CALLBACK_ID, TEST_PACKAGE_1));
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1294,13 +1327,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testOnNetworkConnectionSuccessWithMultipleMatch() {
         WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, true, false, true, true);
+                wifiConfiguration, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
                 }};
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, true, false, true, true);
+                wifiConfiguration, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList2 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion2);
@@ -1355,13 +1388,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
         wifiConfiguration.BSSID = TEST_BSSID;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, true, false, true, true);
+                wifiConfiguration, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
                 }};
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, true, false, true, true);
+                wifiConfiguration, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList2 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion2);
@@ -1416,13 +1449,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration wifiConfiguration2 = new WifiConfiguration(wifiConfiguration1);
         wifiConfiguration2.BSSID = TEST_BSSID;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration1, null, true, false, true, true);
+                wifiConfiguration1, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
                 }};
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration2, null, true, false, true, true);
+                wifiConfiguration2, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList2 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion2);
@@ -1477,7 +1510,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testOnNetworkConnectionWhenAppNotApproved() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1517,7 +1551,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testOnNetworkConnectionWhenIsAppInteractionRequiredNotSet() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1557,7 +1592,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testOnNetworkConnectionWhenAppDoesNotHoldLocationPermission() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1596,7 +1632,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAddNetworkSuggestionsConfigStoreWrite() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -1637,7 +1674,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testRemoveNetworkSuggestionsConfigStoreWrite() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -1677,9 +1715,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         PerAppInfo appInfo = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
         appInfo.hasUserApproved = true;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         appInfo.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
         appInfo.extNetworkSuggestions.add(
@@ -1736,7 +1776,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         PerAppInfo appInfo1 = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
         appInfo1.hasUserApproved = true;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         appInfo1.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion1, appInfo1, true));
         mDataSource.fromDeserialized(new HashMap<String, PerAppInfo>() {{
@@ -1749,7 +1790,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         PerAppInfo appInfo2 = new PerAppInfo(TEST_UID_2, TEST_PACKAGE_2, TEST_FEATURE);
         appInfo2.hasUserApproved = true;
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         appInfo2.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion2, appInfo2, true));
         mDataSource.fromDeserialized(new HashMap<String, PerAppInfo>() {{
@@ -1787,7 +1829,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void
             testRemoveNetworkSuggestionsMatchingConnectionSuccessWithOneMatch() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1822,7 +1865,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void
             testRemoveAllNetworkSuggestionsMatchingConnectionSuccessWithOneMatch() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1859,13 +1903,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testRemoveAppMatchingConnectionSuccessWithMultipleMatch() {
         WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, true, false, true, true);
+                wifiConfiguration, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
                 }};
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, true, false, true, true);
+                wifiConfiguration, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList2 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion2);
@@ -1907,7 +1951,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testRemoveAppNotMatchingConnectionSuccess() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1934,7 +1979,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testRemoveNetworkSuggestionsNotMatchingConnectionSuccessAfterConnectionFailure() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -1970,9 +2016,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAddRemoveNetworkSuggestionsStartStopAppOpsWatch() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -2017,7 +2065,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAppOpsChangeAfterSuggestionsAdd() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
@@ -2069,7 +2118,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testAppOpsChangeAfterConfigStoreLoad() {
         PerAppInfo appInfo = new PerAppInfo(TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         appInfo.extNetworkSuggestions.add(
                 ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
         mDataSource.fromDeserialized(new HashMap<String, PerAppInfo>() {{
@@ -2115,7 +2165,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testAppOpsChangeWrongUid() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion1);
@@ -2157,9 +2208,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testRemoveApp() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -2221,9 +2274,11 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testClear() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -2276,7 +2331,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testUserApprovalNotificationDismissalWhenGetScanResult() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2317,7 +2373,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testUserApprovalNotificationClickOnAllowWhenGetScanResult() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2364,7 +2421,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testUserApprovalNotificationClickOnDisallowWhenGetScanResult() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2434,7 +2492,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testUserApprovalNotificationWhilePreviousNotificationActive() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2472,13 +2531,17 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
 
         // App add network suggestions then get stored suggestions.
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOweNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOweNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion3 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createSaeNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createSaeNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion4 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion1);
         networkSuggestionList.add(networkSuggestion2);
@@ -2509,11 +2572,14 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testGetHiddenNetworks() {
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion hiddenNetworkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createPskHiddenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createPskHiddenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion hiddenNetworkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createPskHiddenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createPskHiddenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2547,7 +2613,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mActivityManager.getPackageImportance(any())).thenReturn(IMPORTANCE_FOREGROUND);
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2588,7 +2655,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mActivityManager.getPackageImportance(any())).thenReturn(IMPORTANCE_FOREGROUND);
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false,  true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false,  true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2647,7 +2715,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mActivityManager.getPackageImportance(any())).thenReturn(IMPORTANCE_FOREGROUND);
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2686,7 +2755,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mNetworkScoreManager.getActiveScorerPackage()).thenReturn(TEST_PACKAGE_1);
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2708,7 +2778,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mNetworkScoreManager.getActiveScorerPackage()).thenReturn(TEST_PACKAGE_1);
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2729,7 +2800,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testUserApprovalNotificationClickOnAllowDuringAddingSuggestionsFromNonFgApp() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2760,7 +2832,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void getNetworkSuggestionsForScanDetail_exemptsActiveScorerFromUserApproval() {
         when(mNetworkScoreManager.getActiveScorerPackage()).thenReturn(TEST_PACKAGE_1);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2783,7 +2856,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testUserApprovalNotificationClickOnDisallowWhenAddSuggestionsFromNonFgApp() {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false,  true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false,  true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2843,7 +2917,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, true, false, true, true);
+                placeholderConfig, passpointConfiguration, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -2956,7 +3031,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.carrierId = VALID_CARRIER_ID;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -2975,7 +3050,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.carrierId = VALID_CARRIER_ID;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -2992,7 +3067,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testAddSuggestionWithDefaultCarrierIdWithoutCarrierProvisionPermission() {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -3014,7 +3089,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, true, false, true, true);
+                passpointConfiguration, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mPasspointManager.addOrUpdateProvider(any(PasspointConfiguration.class),
@@ -3038,7 +3113,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, true, false, true, true);
+                passpointConfiguration, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         placeholderConfig.creatorUid = TEST_UID_1;
@@ -3059,7 +3134,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, true, false, true, true);
+                passpointConfiguration, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
         placeholderConfig.creatorUid = TEST_UID_1;
         when(mPasspointManager.addOrUpdateProvider(any(PasspointConfiguration.class),
@@ -3085,7 +3160,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, true, false, true, true);
+                passpointConfiguration, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         placeholderConfig.creatorUid = TEST_UID_1;
@@ -3118,7 +3193,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, true, false, false, true);
+                passpointConfiguration, true, false, false, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mPasspointManager.addOrUpdateProvider(any(PasspointConfiguration.class),
@@ -3145,11 +3220,14 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testGetWifiConfigForMatchedNetworkSuggestionsSharedWithUser() {
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, false, true);
+                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, false, true,
+                DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion networkSuggestion3 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<ScanResult> scanResults = new ArrayList<>();
         scanResults.add(
                 createScanDetailForNetwork(networkSuggestion1.wifiConfiguration).getScanResult());
@@ -3211,7 +3289,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.SIM,
                         WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -3235,7 +3313,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.SIM,
                         WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -3260,7 +3338,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.SIM,
                         WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, TEST_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -3283,7 +3361,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.SIM,
                         WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -3319,7 +3397,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.SIM,
                         WifiEnterpriseConfig.Phase2.NONE);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                config, null, true, false, true, true);
+                config, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
         networkSuggestionList.add(networkSuggestion);
         when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
@@ -3340,7 +3418,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_NOT_ALLOWED, status);
         networkSuggestionList.clear();
         networkSuggestionList.add(new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true));
+                WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP));
         status = mWifiNetworkSuggestionsManager
                 .add(networkSuggestionList, TEST_UID_1, TEST_PACKAGE_1, TEST_FEATURE);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS, status);
@@ -3353,7 +3432,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     @Test
     public void testSetAllowAutoJoinOnSuggestionNetwork()  {
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3395,7 +3475,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, false, false, true, true);
+                placeholderConfig, passpointConfiguration, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3447,10 +3528,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         placeholderConfig.FQDN = TEST_FQDN;
         PasspointConfiguration mockPasspoint = mock(PasspointConfiguration.class);
         WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(
-                placeholderConfig, mockPasspoint, false, false, true, true);
+                placeholderConfig, mockPasspoint, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion nonPasspointSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(),
-                null, false, false, true, true);
+                null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> suggestions = new ArrayList<>() {{
                 add(passpointSuggestion);
                 add(nonPasspointSuggestion);
@@ -3502,7 +3583,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void getMatchingScanResultsTestWithMatchNothing() {
         WifiNetworkSuggestion nonPasspointSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(),
-                null, false, false, true, true);
+                null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> suggestions = new ArrayList<>() {{
                 add(nonPasspointSuggestion);
                 }};
@@ -3539,7 +3620,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void getMatchingScanResultsTestWithInvalidWifiConfiguration() {
         WifiNetworkSuggestion nonPasspointSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(),
-                null, false, false, true, true);
+                null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> suggestions = new ArrayList<>() {{
                 add(nonPasspointSuggestion);
             }};
@@ -3589,9 +3670,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.setPasspointUniqueId(passpointConfiguration.getUniqueId());
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                eapSimConfig, null, true, false, true, true);
+                eapSimConfig, null, true, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(
-                placeholderConfig, passpointConfiguration, true, false, true, true);
+                placeholderConfig, passpointConfiguration, true, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 Arrays.asList(networkSuggestion, passpointSuggestion);
 
@@ -3629,7 +3711,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration invalidConfig = WifiConfigurationTestUtil.createOpenNetwork();
         invalidConfig.SSID = "";
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(invalidConfig,
-                null, false, false, true, true);
+                null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3651,7 +3733,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = new WifiConfiguration();
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, false, false, true, true);
+                passpointConfiguration, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3674,9 +3756,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = new WifiConfiguration();
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion =
-                new WifiNetworkSuggestion(network1, null, false, false, true, true);
+                new WifiNetworkSuggestion(network1, null, false, false, true, true,
+                        DEFAULT_PRIORITY_GROUP);
         WifiNetworkSuggestion passpointSuggestion = new WifiNetworkSuggestion(placeholderConfig,
-                passpointConfiguration, false, false, true, true);
+                passpointConfiguration, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList =
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
@@ -3699,7 +3782,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mNetworkScoreManager.getActiveScorerPackage()).thenReturn(TEST_PACKAGE_1);
         WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion =
-                new WifiNetworkSuggestion(network, null, false, false, true, true);
+                new WifiNetworkSuggestion(network, null, false, false, true, true,
+                        DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager
@@ -3719,7 +3803,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testIsMostRecentlyConnectedSuggestion() {
         WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion =
-                new WifiNetworkSuggestion(network, null, false, false, true, true);
+                new WifiNetworkSuggestion(network, null, false, false, true, true,
+                        DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager
@@ -3752,7 +3837,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
         placeholderConfig.FQDN = TEST_FQDN;
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
@@ -3780,12 +3866,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Without same open suggestion in the framework, should not be ignored.
@@ -3808,12 +3894,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Without secure suggestion in the framework, should not be ignored.
@@ -3836,12 +3922,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Without CarrierProvisioningPermission, should not be ignored.
@@ -3864,12 +3950,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = VALID_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Open and secure suggestions have different carrierId, should not be ignored.
@@ -3892,12 +3978,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, false);
+                network2, null, false, false, true, false, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Secure suggestions is auto-join disabled, should not be ignored.
@@ -3920,13 +4006,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         network2.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Secure suggestions is auto-join disabled, should not be ignored.
@@ -3949,12 +4035,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         WifiConfiguration wcmConfig = new WifiConfiguration(network2);
         WifiConfiguration.NetworkSelectionStatus status =
@@ -3984,12 +4070,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Both open and secure suggestions with same carrierId,
@@ -4012,12 +4098,12 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         ScanDetail scanDetail1 = createScanDetailForNetwork(network1);
         network1.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion1 = new WifiNetworkSuggestion(
-                network1, null, false, false, true, true);
+                network1, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         WifiConfiguration network2 = WifiConfigurationTestUtil.createPskNetwork();
         ScanDetail scanDetail2 = createScanDetailForNetwork(network2);
         network2.carrierId = TEST_CARRIER_ID;
         WifiNetworkSuggestion suggestion2 = new WifiNetworkSuggestion(
-                network2, null, false, false, true, true);
+                network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Both open and secure suggestions with same carrierId,
@@ -4043,10 +4129,10 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     public void testGetApprovedNetworkSuggestions() {
         WifiConfiguration wifiConfiguration = WifiConfigurationTestUtil.createOpenNetwork();
         WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
         // Reuse the same network credentials to ensure they both match.
         WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
-                wifiConfiguration, null, false, false, true, true);
+                wifiConfiguration, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
