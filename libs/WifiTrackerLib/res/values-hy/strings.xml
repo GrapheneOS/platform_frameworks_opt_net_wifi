@@ -33,7 +33,7 @@
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Միացվել է <xliff:g id="NAME">%1$s</xliff:g> հավելվածի միջոցով"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Հասանելի է <xliff:g id="NAME">%1$s</xliff:g> հավելվածի միջոցով"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Ավտոմատ միացվել է <xliff:g id="NAME">%1$s</xliff:g> հավելվածի միջոցով"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Ավտոմատ կերպով միացվել է ցանցի վարկանիշի ծառայության մատակարարի միջոցով"</string>
+    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Ավտոմատ միացել է ցանցերի վարկանիշի մատակարարի միջոցով"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Սահմանափակ կապ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Մասնավոր DNS սերվերն անհասանելի է"</string>
     <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"Կապ չկա"</string>
