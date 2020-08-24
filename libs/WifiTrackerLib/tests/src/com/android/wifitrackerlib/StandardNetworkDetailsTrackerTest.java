@@ -189,24 +189,21 @@ public class StandardNetworkDetailsTrackerTest {
 
         assertThat(wifiEntry.isSaved()).isFalse();
 
-        // Add a config via broadcast. isSaved() should return true.
+        // Add a config and send a broadcast. isSaved() should return true.
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"" + "ssid" + "\"";
-
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_WIFI_CONFIGURATION, config)
-                        .putExtra(WifiManager.EXTRA_CHANGE_REASON,
-                                WifiManager.CHANGE_REASON_ADDED));
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
 
         assertThat(wifiEntry.isSaved()).isTrue();
 
-        // Remove the config via broadcast. isSaved() should be false.
+        // Remove the config and send a broadcast. isSaved() should be false.
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.emptyList());
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_WIFI_CONFIGURATION, config)
-                        .putExtra(WifiManager.EXTRA_CHANGE_REASON,
-                                WifiManager.CHANGE_REASON_REMOVED));
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
 
         assertThat(wifiEntry.isSaved()).isFalse();
     }
