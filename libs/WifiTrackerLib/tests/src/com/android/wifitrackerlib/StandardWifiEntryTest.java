@@ -40,6 +40,7 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -622,6 +623,8 @@ public class StandardWifiEntryTest {
         when(mockResources.getString(R.string.summary_separator)).thenReturn(summarySeparator);
         when(mockResources.getStringArray(R.array.wifi_status)).thenReturn(wifiStatusArray);
         final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mockConnectivityManager);
 
@@ -638,8 +641,40 @@ public class StandardWifiEntryTest {
                 mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
 
         entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.setDefaultNetwork(true);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
+    }
+
+    @Test
+    public void testGetSummary_validatedAndNotDefault_showsLowQuality() {
+        final int networkId = 1;
+        final Resources mockResources = mock(Resources.class);
+        when(mMockContext.getResources()).thenReturn(mockResources);
+        when(mockResources.getString(anyInt())).thenReturn("");
+        when(mockResources.getString(R.string.wifi_connected_low_quality))
+                .thenReturn("Low quality");
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mMockConnectivityManager);
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
+        final WifiInfo wifiInfo = new WifiInfo.Builder().setNetworkId(networkId).build();
+        final NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = networkId;
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE), config,
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.setDefaultNetwork(false);
+
+        assertThat(entry.getSummary()).isEqualTo("Low quality");
     }
 
     @Test

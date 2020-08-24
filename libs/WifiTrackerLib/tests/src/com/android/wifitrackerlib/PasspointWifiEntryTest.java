@@ -23,6 +23,7 @@ import static com.android.wifitrackerlib.WifiEntry.SPEED_SLOW;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkKey;
 import android.net.ScoredNetwork;
@@ -147,7 +149,8 @@ public class PasspointWifiEntryTest {
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mockConnectivityManager);
-
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
         WifiInfo wifiInfo = mock(WifiInfo.class);
         when(wifiInfo.isPasspointAp()).thenReturn(true);
         when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
@@ -159,8 +162,39 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
                 false /* forSavedNetworksPage */);
         entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.setDefaultNetwork(true);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
+    }
+
+    @Test
+    public void testGetSummary_validatedAndNotDefault_showsLowQuality() {
+        final Resources mockResources = mock(Resources.class);
+        when(mMockContext.getResources()).thenReturn(mockResources);
+        when(mockResources.getString(anyInt())).thenReturn("");
+        when(mockResources.getString(R.string.wifi_connected_low_quality))
+                .thenReturn("Low quality");
+        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mockConnectivityManager);
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.isPasspointAp()).thenReturn(true);
+        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        final NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.setDefaultNetwork(false);
+
+        assertThat(entry.getSummary()).isEqualTo("Low quality");
     }
 
     @Test

@@ -284,8 +284,11 @@ public class StandardWifiEntry extends WifiEntry {
                 return mContext.getString(R.string.connected_via_network_scorer_default);
             }
 
+            final boolean isDefaultNetwork = mConnectedInfo != null
+                    && mConnectedInfo.isDefaultNetwork;
             String networkCapabilitiesinformation =
-                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
+                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities,
+                            isDefaultNetwork);
             if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
                 return networkCapabilitiesinformation;
             }

@@ -245,8 +245,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                         ? carrierName
                         : suggestorLabel);
             }
+
+            final boolean isDefaultNetwork = mConnectedInfo != null
+                    && mConnectedInfo.isDefaultNetwork;
             String networkCapabilitiesinformation =
-                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
+                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities,
+                            isDefaultNetwork);
             if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
                 return networkCapabilitiesinformation;
             }
