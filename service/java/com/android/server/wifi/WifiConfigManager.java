@@ -279,7 +279,7 @@ public class WifiConfigManager {
     /**
      * Store the network update listeners.
      */
-    private final List<OnNetworkUpdateListener> mListeners;
+    private final Set<OnNetworkUpdateListener> mListeners;
 
     private final FrameworkFacade mFrameworkFacade;
     private final DeviceConfigFacade mDeviceConfigFacade;
@@ -369,7 +369,7 @@ public class WifiConfigManager {
         mUserTemporarilyDisabledList =
                 new MissingCounterTimerLockList<>(SCAN_RESULT_MISSING_COUNT_THRESHOLD, mClock);
         mRandomizedMacAddressMapping = new HashMap<>();
-        mListeners = new ArrayList<>();
+        mListeners = new ArraySet<>();
 
         // Register store data for network list and deleted ephemeral SSIDs.
         mNetworkListSharedStoreData = networkListSharedStoreData;
@@ -3243,6 +3243,13 @@ public class WifiConfigManager {
      */
     public void addOnNetworkUpdateListener(OnNetworkUpdateListener listener) {
         mListeners.add(listener);
+    }
+
+    /**
+     * Remove the network update event listener
+     */
+    public void removeOnNetworkUpdateListener(OnNetworkUpdateListener listener) {
+        mListeners.remove(listener);
     }
 
     /**
