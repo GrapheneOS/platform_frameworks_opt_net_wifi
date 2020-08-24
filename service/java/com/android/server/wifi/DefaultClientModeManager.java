@@ -23,7 +23,7 @@ import android.os.WorkSource;
 /**
  * This is used for creating a public {@link ClientModeManager} instance when wifi is off.
  */
-public class DefaultClientModeManager extends DefaultClientModeImpl implements ClientModeManager {
+public class DefaultClientModeManager extends ScanOnlyModeImpl implements ClientModeManager {
     @Override
     public void start(@NonNull WorkSource requestorWs) {
         throw new IllegalStateException();

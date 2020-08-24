@@ -39,10 +39,12 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
 /**
- * Used to handle API calls to ClientModeImpl when ClientModeImpl is not up
- * (e.g. in scan only mode).
+ * Used to respond to calls to ClientMode interface when ClientModeImpl is not up
+ * i.e. in scan only mode.
+ *
+ * Note: this class is currently a singleton as it has no state.
  */
-public class DefaultClientModeImpl implements ClientMode {
+public class ScanOnlyModeImpl implements ClientMode {
 
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) { }
