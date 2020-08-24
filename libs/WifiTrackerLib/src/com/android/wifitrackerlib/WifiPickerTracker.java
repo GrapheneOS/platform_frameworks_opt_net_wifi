@@ -195,10 +195,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final Network currentNetwork = mWifiManager.getCurrentNetwork();
         mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
         updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
-        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
+
+        // Populate mConnectedWifiEntry with information from missed callbacks.
+        handleNetworkCapabilitiesChanged(
+                mConnectivityManager.getNetworkCapabilities(currentNetwork));
+        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
+        handleDefaultRouteChanged();
     }
 
     @WorkerThread
@@ -276,6 +281,13 @@ public class WifiPickerTracker extends BaseWifiTracker {
         if (mConnectedWifiEntry != null
                 && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mConnectedWifiEntry.updateNetworkCapabilities(capabilities);
+        }
+    }
+
+    @WorkerThread
+    protected void handleDefaultRouteChanged() {
+        if (mConnectedWifiEntry != null) {
+            mConnectedWifiEntry.setDefaultNetwork(mIsWifiDefaultRoute);
         }
     }
 

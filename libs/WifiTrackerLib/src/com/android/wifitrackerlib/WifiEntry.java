@@ -359,6 +359,8 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
         public List<String> ipv6Addresses = new ArrayList<>();
         public String gateway;
         public String subnetMask;
+        public boolean isValidated;
+        public boolean isDefaultNetwork;
     }
 
     // User actions on a network
@@ -686,10 +688,25 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
         notifyOnUpdated();
     }
 
+    @WorkerThread
+    void setDefaultNetwork(boolean isDefaultNetwork) {
+        if (mConnectedInfo == null) {
+            return;
+        }
+        mConnectedInfo.isDefaultNetwork = isDefaultNetwork;
+        notifyOnUpdated();
+    }
+
     // Method for WifiTracker to update a connected WifiEntry's network capabilities.
     @WorkerThread
     void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
         mNetworkCapabilities = capabilities;
+        if (mConnectedInfo == null) {
+            return;
+        }
+        mConnectedInfo.isValidated = mNetworkCapabilities != null
+                && mNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        notifyOnUpdated();
     }
 
     String getWifiInfoDescription() {
