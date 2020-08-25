@@ -771,6 +771,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 suggestionBuilder.setIsInitialAutojoinEnabled(false);
             } else if (option.equals("-b")) {
                 suggestionBuilder.setBssid(MacAddress.fromString(getNextArgRequired()));
+            } else if (option.equals("-p")) {
+                suggestionBuilder.setIsEnhancedMacRandomizationEnabled(false);
             } else {
                 pw.println("Ignoring unknown option " + option);
             }
@@ -983,7 +985,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  set-verbose-logging enabled|disabled ");
         pw.println("    Set the verbose logging enabled or disabled");
         pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-m] [-s] [-d]"
-                + "[-b <bssid>]");
+                + "[-b <bssid>] [-p]");
         pw.println("    Add a network suggestion with provided params");
         pw.println("    Use 'network-suggestions-set-user-approved " + SHELL_PACKAGE_NAME + " yes'"
                 +  " to approve suggestions added via shell (Needs root access)");
@@ -1000,6 +1002,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    -s - Share the suggestion with user.");
         pw.println("    -d - Mark the suggestion autojoin disabled.");
         pw.println("    -b <bssid> - Set specific BSSID.");
+        pw.println("    -p - Mark the suggestion to use persistent MAC randomization.");
         pw.println("  remove-suggestion <ssid>");
         pw.println("    Remove a network suggestion with provided SSID of the network");
         pw.println("  remove-all-suggestions");
