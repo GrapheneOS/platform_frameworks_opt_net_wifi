@@ -561,6 +561,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
 
+    private final OnNetworkUpdateListener mOnNetworkUpdateListener;
+
     // Maximum duration to continue to log Wifi usability stats after a data stall is triggered.
     @VisibleForTesting
     public static final long DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS = 30 * 1000;
@@ -699,7 +701,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mSuspendWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WifiSuspend");
         mSuspendWakeLock.setReferenceCounted(false);
 
-        mWifiConfigManager.addOnNetworkUpdateListener(new OnNetworkUpdateListener());
+        mOnNetworkUpdateListener = new OnNetworkUpdateListener();
+        mWifiConfigManager.addOnNetworkUpdateListener(mOnNetworkUpdateListener);
 
         addState(mConnectableState); {
             addState(mConnectingOrConnectedState, mConnectableState); {
@@ -1316,6 +1319,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         // using sendMessageAtFrontOfQueue(CMD_SET_OPERATIONAL_MODE) which would force a state
         // transition immediately
         quitNow();
+
+        mWifiConfigManager.removeOnNetworkUpdateListener(mOnNetworkUpdateListener);
     }
 
     private void checkAbnormalConnectionFailureAndTakeBugReport(String ssid) {

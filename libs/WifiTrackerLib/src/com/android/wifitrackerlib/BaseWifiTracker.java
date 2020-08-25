@@ -133,6 +133,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     protected final long mScanIntervalMillis;
     protected final ScanResultUpdater mScanResultUpdater;
     protected final WifiNetworkScoreCache mWifiNetworkScoreCache;
+    protected boolean mIsWifiDefaultRoute;
     private final Set<NetworkKey> mRequestedScoreKeys = new HashSet<>();
 
     // Network request for listening on changes to Wifi link properties and network capabilities
@@ -151,6 +152,33 @@ public class BaseWifiTracker implements LifecycleObserver {
                 public void onCapabilitiesChanged(Network network,
                         NetworkCapabilities networkCapabilities) {
                     handleNetworkCapabilitiesChanged(networkCapabilities);
+                }
+            };
+
+    private final ConnectivityManager.NetworkCallback mDefaultNetworkCallback =
+            new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onCapabilitiesChanged(Network network,
+                        NetworkCapabilities networkCapabilities) {
+                    if (mIsWifiDefaultRoute != networkCapabilities.hasTransport(TRANSPORT_WIFI)) {
+                        mIsWifiDefaultRoute = !mIsWifiDefaultRoute;
+                        if (isVerboseLoggingEnabled()) {
+                            if (mIsWifiDefaultRoute) {
+                                Log.v(mTag, "Wifi is the default route");
+                            } else {
+                                Log.v(mTag, "Wifi is not the default route");
+                            }
+                        }
+                        handleDefaultRouteChanged();
+                    }
+                }
+
+                public void onLost(@NonNull Network network) {
+                    mIsWifiDefaultRoute = false;
+                    if (isVerboseLoggingEnabled()) {
+                        Log.v(mTag, "Wifi is not the default route");
+                    }
+                    handleDefaultRouteChanged();
                 }
             };
 
@@ -220,6 +248,12 @@ public class BaseWifiTracker implements LifecycleObserver {
                 /* broadcastPermission */ null, mWorkerHandler);
         mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
                 mWorkerHandler);
+        mConnectivityManager.registerDefaultNetworkCallback(mDefaultNetworkCallback,
+                mWorkerHandler);
+        final NetworkCapabilities defaultNetworkCapabilities = mConnectivityManager
+                .getNetworkCapabilities(mConnectivityManager.getActiveNetwork());
+        mIsWifiDefaultRoute = defaultNetworkCapabilities != null
+                && defaultNetworkCapabilities.hasTransport(TRANSPORT_WIFI);
         mNetworkScoreManager.registerNetworkScoreCache(
                 NetworkKey.TYPE_WIFI,
                 mWifiNetworkScoreCache,
@@ -241,6 +275,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         mWorkerHandler.post(mScanner::stop);
         mContext.unregisterReceiver(mBroadcastReceiver);
         mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
+        mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
         mNetworkScoreManager.unregisterNetworkScoreCache(NetworkKey.TYPE_WIFI,
                 mWifiNetworkScoreCache);
         mWorkerHandler.post(mRequestedScoreKeys::clear);
@@ -326,6 +361,15 @@ public class BaseWifiTracker implements LifecycleObserver {
     }
 
     /**
+     * Handle when the default route changes. Whether Wifi is the default route is stored in
+     * mIsWifiDefaultRoute.
+     */
+    @WorkerThread
+    protected void handleDefaultRouteChanged() {
+        // Do nothing.
+    }
+
+    /**
      * Handle updates to the Wifi network score cache, which is stored in mWifiNetworkScoreCache
      */
     @WorkerThread
@@ -393,8 +437,8 @@ public class BaseWifiTracker implements LifecycleObserver {
      */
     protected interface BaseWifiTrackerCallback {
         /**
-         * Called when the state of Wi-Fi has changed. The new value can be read through
-         * {@link #getWifiState()}
+         * Called when the values for {@link #getWifiState()}
+         * or {@link #isWifiDefaultNetwork()} have changed.
          */
         @MainThread
         void onWifiStateChanged();

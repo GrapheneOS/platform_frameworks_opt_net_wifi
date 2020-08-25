@@ -104,7 +104,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     @Mock SubscriptionInfo mActiveSubscriptionInfo;
     @Mock SelfRecovery mSelfRecovery;
     @Mock WifiGlobals mWifiGlobals;
-    @Mock DefaultClientModeImpl mDefaultClientModeImpl;
+    @Mock ScanOnlyModeImpl mScanOnlyModeImpl;
     private RegistrationManager.RegistrationCallback mImsMmTelManagerRegistrationCallback = null;
     private @RegistrationManager.ImsRegistrationState int mCurrentImsRegistrationState =
             RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
@@ -236,7 +236,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private ConcreteClientModeManager createClientModeManager() {
         return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
                 mListener, mWifiMetrics, mWakeupController, mWifiInjector, mSelfRecovery,
-                mWifiGlobals, mDefaultClientModeImpl);
+                mWifiGlobals, mScanOnlyModeImpl);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {

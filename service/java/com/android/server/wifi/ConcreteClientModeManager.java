@@ -77,7 +77,28 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Manager WiFi in Client Mode where we connect to configured networks. */
+/**
+ * Manage WiFi in Client Mode where we connect to configured networks and in Scan Only Mode where
+ * we do not connect to configured networks but do perform scanning.
+ *
+ * An instance of this class is active to manage each client interface. This is in contrast to
+ * {@link DefaultClientModeManager} which handles calls when no client interfaces are active.
+ *
+ * This class will dynamically instantiate {@link ClientModeImpl} when it enters client mode, and
+ * tear it down when it exits client mode. No instance of ClientModeImpl will be active in
+ * scan-only mode, instead {@link ScanOnlyModeImpl} will be used to respond to calls.
+ *
+ * <pre>
+ *                                           ActiveModeWarden
+ *                                      /                        \
+ *                                     /                          \
+ *                        ConcreteClientModeManager         DefaultClientModeManager
+ *                      (Client Mode + Scan Only Mode)            (Wifi off)
+ *                             /            \
+ *                           /               \
+ *                     ClientModeImpl       ScanOnlyModeImpl
+ * </pre>
+ */
 public class ConcreteClientModeManager implements ClientModeManager {
     private static final String TAG = "WifiClientModeManager";
 
@@ -92,7 +113,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WifiInjector mWifiInjector;
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
-    private final DefaultClientModeImpl mDefaultClientModeImpl;
+    private final ScanOnlyModeImpl mScanOnlyModeImpl;
     private final Graveyard mGraveyard = new Graveyard();
 
     private String mClientInterfaceName;
@@ -124,7 +145,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            DefaultClientModeImpl defaultClientModeImpl) {
+            ScanOnlyModeImpl scanOnlyModeImpl) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -136,7 +157,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mDeferStopHandler = new DeferStopHandler(looper);
         mSelfRecovery = selfRecovery;
         mWifiGlobals = wifiGlobals;
-        mDefaultClientModeImpl = defaultClientModeImpl;
+        mScanOnlyModeImpl = scanOnlyModeImpl;
     }
 
     private String getTag() {
@@ -777,7 +798,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         private class ConnectModeState extends State {
             @Override
             public void enter() {
-                Log.d(getTag(), "entering ConnectModeState");
+                Log.d(getTag(), "entering ConnectModeState, starting ClientModeImpl");
                 if (mClientInterfaceName == null) {
                     Log.e(getTag(), "Supposed to start ClientModeImpl, but iface is null!");
                 } else {
@@ -843,6 +864,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 if (mClientModeImpl == null) {
                     Log.w(getTag(), "ConnectModeState.exit(): mClientModeImpl is already null?!");
                 } else {
+                    Log.d(getTag(), "Stopping ClientModeImpl");
                     mClientModeImpl.stop();
                     mGraveyard.inter(mClientModeImpl);
                     mClientModeImpl = null;
@@ -856,9 +878,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
         return mWifiState.get();
     }
 
+    @NonNull
     private ClientMode getClientMode() {
         if (mClientModeImpl == null) {
-            return mDefaultClientModeImpl;
+            return mScanOnlyModeImpl;
         } else {
             return mClientModeImpl;
         }
@@ -866,8 +889,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     /*
      * Note: These are simple wrappers over methods to {@link ClientModeImpl}.
-     * TODO(next CL in the stack): get rid of these methods and instead just expose a
-     *  getClientMode() method
      */
 
     @Override
