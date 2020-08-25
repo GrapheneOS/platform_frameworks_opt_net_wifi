@@ -22,11 +22,15 @@ import android.hardware.wifi.hostapd.V1_0.HostapdStatusCode;
 import android.hardware.wifi.hostapd.V1_0.IHostapd;
 import android.hardware.wifi.hostapd.V1_2.DebugLevel;
 import android.hardware.wifi.hostapd.V1_2.Ieee80211ReasonCode;
+import android.hardware.wifi.hostapd.V1_3.Bandwidth;
+import android.hardware.wifi.hostapd.V1_3.Generation;
 import android.hidl.manager.V1_0.IServiceManager;
 import android.hidl.manager.V1_0.IServiceNotification;
 import android.net.MacAddress;
+import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.BandType;
+import android.net.wifi.SoftApInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.IHwBinder.DeathRecipient;
@@ -36,6 +40,7 @@ import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.WifiNative.HostapdDeathEventHandler;
+import com.android.server.wifi.WifiNative.SoftApListener;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.NativeUtil;
 import com.android.wifi.resources.R;
@@ -74,6 +79,7 @@ public class HostapdHal {
     private IServiceManager mIServiceManager = null;
     private IHostapd mIHostapd;
     private HashMap<String, Runnable> mSoftApFailureListeners = new HashMap<>();
+    private SoftApListener mSoftApEventListener;
     private HostapdDeathEventHandler mDeathEventHandler;
     private ServiceManagerDeathRecipient mServiceManagerDeathRecipient;
     private HostapdDeathRecipient mHostapdDeathRecipient;
@@ -375,6 +381,32 @@ public class HostapdHal {
     }
 
     /**
+     * Register the provided callback handler for SoftAp events.
+     * <p>
+     * Note that only one callback can be registered at a time - any registration overrides previous
+     * registrations.
+     *
+     * @param ifaceName Name of the interface.
+     * @param listener Callback listener for AP events.
+     * @return true on success, false on failure.
+     */
+    public boolean registerApCallback(@NonNull String ifaceName,
+            @NonNull SoftApListener listener) {
+        if (listener == null) {
+            Log.e(TAG, "registerApCallback called with a null callback");
+            return false;
+        }
+
+        if (!isV1_3()) {
+            Log.d(TAG, "The current HAL doesn't support event callback.");
+            return false;
+        }
+        mSoftApEventListener = listener;
+        Log.i(TAG, "registerApCallback Successful in " + ifaceName);
+        return true;
+    }
+
+    /**
      * Add and start a new access point.
      *
      * @param ifaceName Name of the interface.
@@ -525,6 +557,7 @@ public class HostapdHal {
                     return false;
                 }
                 mSoftApFailureListeners.remove(ifaceName);
+                mSoftApEventListener = null;
                 return true;
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
@@ -1034,6 +1067,54 @@ public class HostapdHal {
         }
     }
 
+    /**
+     * Map hal bandwidth to SoftApInfo.
+     *
+     * @param bandwidth The channel bandwidth of the AP which is defined in the HAL.
+     * @return The channel bandwidth in the SoftApinfo.
+     */
+    @VisibleForTesting
+    public int mapHalBandwidthToSoftApInfo(int bandwidth) {
+        switch (bandwidth) {
+            case Bandwidth.WIFI_BANDWIDTH_20_NOHT:
+                return SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
+            case Bandwidth.WIFI_BANDWIDTH_20:
+                return SoftApInfo.CHANNEL_WIDTH_20MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_40:
+                return SoftApInfo.CHANNEL_WIDTH_40MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_80:
+                return SoftApInfo.CHANNEL_WIDTH_80MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_80P80:
+                return SoftApInfo.CHANNEL_WIDTH_80MHZ_PLUS_MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_160:
+                return SoftApInfo.CHANNEL_WIDTH_160MHZ;
+            default:
+                return SoftApInfo.CHANNEL_WIDTH_INVALID;
+        }
+    }
+
+    /**
+     * Map hal generation to wifi standard.
+     *
+     * @param generation The operation mode of the AP which is defined in HAL.
+     * @return The wifi standard in the ScanResult.
+     */
+    @VisibleForTesting
+    public int mapHalGenerationToWifiStandard(int generation) {
+        switch (generation) {
+            case Generation.WIFI_STANDARD_LEGACY:
+                return ScanResult.WIFI_STANDARD_LEGACY;
+            case Generation.WIFI_STANDARD_11N:
+                return ScanResult.WIFI_STANDARD_11N;
+            case Generation.WIFI_STANDARD_11AC:
+                return ScanResult.WIFI_STANDARD_11AC;
+            case Generation.WIFI_STANDARD_11AX:
+                return ScanResult.WIFI_STANDARD_11AX;
+            default:
+                return ScanResult.WIFI_STANDARD_UNKNOWN;
+        }
+    }
+
     private class HostapdCallback_1_3 extends
             android.hardware.wifi.hostapd.V1_3.IHostapdCallback.Stub {
         @Override
@@ -1046,8 +1127,13 @@ public class HostapdHal {
         }
 
         @Override
-        public void onInterfaceInfoChanged(String ifaceName, int hwMode) {
-            Log.w(TAG, "onInterfaceInfoChanged on iface " + ifaceName + "and mode is " + hwMode);
+        public void onApInstanceInfoChanged(String ifaceName, String apIfaceInstance,
+                int frequency, int bandwidth, int generation) {
+            if (mSoftApEventListener != null) {
+                mSoftApEventListener.onInfoChanged(apIfaceInstance, frequency,
+                        mapHalBandwidthToSoftApInfo(bandwidth),
+                        mapHalGenerationToWifiStandard(generation));
+            }
         }
 
         @Override
@@ -1056,6 +1142,10 @@ public class HostapdHal {
             Log.d(TAG, "onConnectedClientsChanged on " + ifaceName + " / " + apIfaceInstance
                     + " and Mac is " + MacAddress.fromBytes(clientAddress).toString()
                     + " isConnected: " + isConnected);
+            if (mSoftApEventListener != null) {
+                mSoftApEventListener.onConnectedClientsChanged(apIfaceInstance,
+                        MacAddress.fromBytes(clientAddress), isConnected);
+            }
         }
     }
 
