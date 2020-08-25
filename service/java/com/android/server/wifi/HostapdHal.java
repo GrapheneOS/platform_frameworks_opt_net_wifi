@@ -15,7 +15,6 @@
  */
 package com.android.server.wifi;
 
-
 import android.annotation.NonNull;
 import android.content.Context;
 import android.hardware.wifi.hostapd.V1_0.HostapdStatus;
@@ -1049,6 +1048,14 @@ public class HostapdHal {
         @Override
         public void onInterfaceInfoChanged(String ifaceName, int hwMode) {
             Log.w(TAG, "onInterfaceInfoChanged on iface " + ifaceName + "and mode is " + hwMode);
+        }
+
+        @Override
+        public void onConnectedClientsChanged(String ifaceName, String apIfaceInstance,
+                    byte[] clientAddress, boolean isConnected) {
+            Log.d(TAG, "onConnectedClientsChanged on " + ifaceName + " / " + apIfaceInstance
+                    + " and Mac is " + MacAddress.fromBytes(clientAddress).toString()
+                    + " isConnected: " + isConnected);
         }
     }
 
