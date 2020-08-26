@@ -319,6 +319,14 @@
         <item>160</item>
     </integer-array>
 
+    <!-- Integer specifying minimum wait time in seconds for next PNO scan when a network is found
+    by PNO scan but gets rejected by Wifi Network Selector due to its low RSSI value-->
+    <integer translatable="false" name="config_wifiPnoScanLowRssiNetworkRetryStartDelaySec"> 20 </integer>
+
+    <!-- Integer specifying maximum wait time in seconds for next PNO scan when a network is found
+    by PNO scan but gets rejected by Wifi Network Selector due to its low RSSI value-->
+    <integer translatable="false" name="config_wifiPnoScanLowRssiNetworkRetryMaxDelaySec"> 80 </integer>
+
     <!-- Integer for minimum time between the last network selection and next high RSSI scan
          in seconds when device is connected and screen is on -->
     <integer translatable="false" name="config_wifiConnectedHighRssiScanMinimumWindowSizeSec"> 600 </integer>

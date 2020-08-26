@@ -95,10 +95,6 @@ public class WifiConnectivityManager {
     // PNO scan interval in milli-seconds. This is the scan
     // performed when screen is off and connected.
     private static final int CONNECTED_PNO_SCAN_INTERVAL_MS = 160 * 1000; // 160 seconds
-    // When a network is found by PNO scan but gets rejected by Wifi Network Selector due
-    // to its low RSSI value, scan will be reschduled in an exponential back off manner.
-    private static final int LOW_RSSI_NETWORK_RETRY_START_DELAY_MS = 20 * 1000; // 20 seconds
-    private static final int LOW_RSSI_NETWORK_RETRY_MAX_DELAY_MS = 80 * 1000; // 80 seconds
     // Maximum number of retries when starting a scan failed
     @VisibleForTesting
     public static final int MAX_SCAN_RESTART_ALLOWED = 5;
@@ -636,8 +632,13 @@ public class WifiConnectivityManager {
     // A PNO scan is initiated when screen is off.
     private class PnoScanListener implements WifiScanner.PnoScanListener {
         private List<ScanDetail> mScanDetails = new ArrayList<ScanDetail>();
-        private int mLowRssiNetworkRetryDelay =
-                LOW_RSSI_NETWORK_RETRY_START_DELAY_MS;
+        private int mLowRssiNetworkRetryDelayMs;
+
+        private void limitLowRssiNetworkRetryDelay() {
+            mLowRssiNetworkRetryDelayMs = Math.min(mLowRssiNetworkRetryDelayMs,
+                    mContext.getResources().getInteger(R.integer
+                            .config_wifiPnoScanLowRssiNetworkRetryMaxDelaySec) * 1000);
+        }
 
         public void clearScanDetails() {
             mScanDetails.clear();
@@ -646,12 +647,13 @@ public class WifiConnectivityManager {
         // Reset to the start value when either a non-PNO scan is started or
         // WifiNetworkSelector selects a candidate from the PNO scan results.
         public void resetLowRssiNetworkRetryDelay() {
-            mLowRssiNetworkRetryDelay = LOW_RSSI_NETWORK_RETRY_START_DELAY_MS;
+            mLowRssiNetworkRetryDelayMs = mContext.getResources().getInteger(R.integer
+                    .config_wifiPnoScanLowRssiNetworkRetryStartDelaySec) * 1000;
         }
 
         @VisibleForTesting
         public int getLowRssiNetworkRetryDelay() {
-            return mLowRssiNetworkRetryDelay;
+            return mLowRssiNetworkRetryDelayMs;
         }
 
         @Override
@@ -707,13 +709,17 @@ public class WifiConnectivityManager {
 
             if (!wasConnectAttempted) {
                 // The scan results were rejected by WifiNetworkSelector due to low RSSI values
-                if (mLowRssiNetworkRetryDelay > LOW_RSSI_NETWORK_RETRY_MAX_DELAY_MS) {
-                    mLowRssiNetworkRetryDelay = LOW_RSSI_NETWORK_RETRY_MAX_DELAY_MS;
+
+                // Lazy initialization
+                if (mLowRssiNetworkRetryDelayMs == 0) {
+                    resetLowRssiNetworkRetryDelay();
                 }
-                scheduleDelayedConnectivityScan(mLowRssiNetworkRetryDelay);
+
+                scheduleDelayedConnectivityScan(mLowRssiNetworkRetryDelayMs);
 
                 // Set up the delay value for next retry.
-                mLowRssiNetworkRetryDelay *= 2;
+                mLowRssiNetworkRetryDelayMs *= 2;
+                limitLowRssiNetworkRetryDelay();
             } else {
                 resetLowRssiNetworkRetryDelay();
             }
