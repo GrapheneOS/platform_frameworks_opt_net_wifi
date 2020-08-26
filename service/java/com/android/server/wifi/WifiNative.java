@@ -2956,11 +2956,13 @@ public class WifiNative {
         public int channelBandwidth;
         public int maxNumberTxSpatialStreams;
         public int maxNumberRxSpatialStreams;
+        public boolean is11bMode;
         ConnectionCapabilities() {
             wifiStandard = ScanResult.WIFI_STANDARD_UNKNOWN;
             channelBandwidth = ScanResult.CHANNEL_WIDTH_20MHZ;
             maxNumberTxSpatialStreams = 1;
             maxNumberRxSpatialStreams = 1;
+            is11bMode = false;
         }
     }
 
