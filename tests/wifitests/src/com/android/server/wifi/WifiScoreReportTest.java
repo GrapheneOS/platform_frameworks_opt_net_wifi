@@ -101,6 +101,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
     @Mock WifiNative mWifiNative;
     @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
     @Mock Network mNetwork;
+    @Mock DeviceConfigFacade mDeviceConfigFacade;
     private TestLooper mLooper;
 
     public class WifiConnectedNetworkScorerImpl extends IWifiConnectedNetworkScorer.Stub {
@@ -174,6 +175,9 @@ public class WifiScoreReportTest extends WifiBaseTest {
         when(resources.getInteger(
                 R.integer.config_wifiFrameworkMinPacketPerSecondHighTraffic))
             .thenReturn(100);
+        when(resources.getBoolean(
+                R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled))
+            .thenReturn(false);
     }
 
     /**
@@ -197,8 +201,13 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mScoringParams = new ScoringParams();
         mWifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
-                mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner);
+                mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner,
+                mDeviceConfigFacade, mContext);
         mWifiScoreReport.setNetworkAgent(mNetworkAgent);
+        when(mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS);
+        when(mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()).thenReturn(
+                DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS);
     }
 
     /**
@@ -846,5 +855,148 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
         mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, mWifiConnectedNetworkScorer);
         assertEquals(ConnectedScore.WIFI_MAX_SCORE, mWifiInfo.getScore());
+    }
+
+    /**
+     * Verify confirmation duration is not added when it is not enabled in config overlay by default
+     */
+    @Test
+    public void confirmationDurationIsNotAddedWhenItIsNotEnabledInConfigOverlay() throws Exception {
+        WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
+        // Register Client for verification.
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mClock.mStepMillis = 0;
+
+        mClock.mWallClockMillis = 10;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(anyInt());
+    }
+
+    /**
+     * Verify confirmation duration is not added when there is no score breacht
+     */
+    @Test
+    public void confirmationDurationIsNotAddedWhenThereIsNoScoreBreach() throws Exception {
+        WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
+        // Register Client for verification.
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mClock.mStepMillis = 0;
+        when(mContext.getResources().getBoolean(
+            R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)).thenReturn(true);
+
+        mClock.mWallClockMillis = 10;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 60);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(60);
+        mClock.mWallClockMillis = 3010;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 59);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(59);
+        mClock.mWallClockMillis = 6010;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 58);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(58);
+    }
+
+    /**
+     * Verify confirmation duration is added for reporting low score when it is enabled in
+     * config overlay
+     */
+    @Test
+    public void confirmationDurationIsAddedForSendingLowScore() throws Exception {
+        WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
+        // Register Client for verification.
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mClock.mStepMillis = 0;
+        when(mContext.getResources().getBoolean(
+                R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)).thenReturn(true);
+
+        mClock.mWallClockMillis = 10;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 10
+                + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS - 1;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 48);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 10
+                + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 47);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(47);
+        mClock.mWallClockMillis = 10
+                + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS + 3000;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 46);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(46);
+    }
+
+    /**
+     * Verify confirmation duration is not added for reporting high score with default zero value
+     */
+    @Test
+    public void confirmationDurationIsNotAddedForSendingHighScore() throws Exception {
+        WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
+        // Register Client for verification.
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mClock.mStepMillis = 0;
+        when(mContext.getResources().getBoolean(
+                R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)).thenReturn(true);
+
+        mClock.mWallClockMillis = 10;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 3000;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 51);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(51);
+        mClock.mWallClockMillis = 6000;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 52);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(52);
+    }
+
+    /**
+     * Verify confirmation duration is added for reporting high score with non-zero value
+     */
+    @Test
+    public void confirmationDurationIsAddedForSendingHighScore() throws Exception {
+        WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
+        // Register Client for verification.
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mClock.mStepMillis = 0;
+        when(mContext.getResources().getBoolean(
+                R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)).thenReturn(true);
+        when(mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()).thenReturn(4000);
+
+        mClock.mWallClockMillis = 10;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 3000;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 51);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 6999;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 52);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 7000;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 53);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(53);
     }
 }

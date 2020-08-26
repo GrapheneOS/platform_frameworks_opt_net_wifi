@@ -494,6 +494,12 @@ class Utils {
             sj.add(wifiInfoDescription);
         }
 
+        WifiEntry.ConnectedInfo connectedInfo = wifiEntry.getConnectedInfo();
+        if (connectedInfo != null) {
+            sj.add("isValidated=" + connectedInfo.isValidated);
+            sj.add("isDefaultNetwork=" + connectedInfo.isDefaultNetwork);
+        }
+
         final String scanResultsDescription = wifiEntry.getScanResultDescription();
         if (!TextUtils.isEmpty(scanResultsDescription)) {
             sj.add(scanResultsDescription);
@@ -541,7 +547,7 @@ class Utils {
     }
 
     static String getCurrentNetworkCapabilitiesInformation(Context context,
-            NetworkCapabilities networkCapabilities) {
+            NetworkCapabilities networkCapabilities, boolean isDefaultNetwork) {
         if (context == null || networkCapabilities == null) {
             return "";
         }
@@ -556,7 +562,11 @@ class Utils {
             return context.getString(R.string.wifi_limited_connection);
         }
 
-        if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+        if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+            if (!isDefaultNetwork) {
+                return context.getString(R.string.wifi_connected_low_quality);
+            }
+        } else {
             if (networkCapabilities.isPrivateDnsBroken()) {
                 return context.getString(R.string.private_dns_broken);
             }

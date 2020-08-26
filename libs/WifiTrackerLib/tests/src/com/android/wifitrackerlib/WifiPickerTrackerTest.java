@@ -596,7 +596,6 @@ public class WifiPickerTrackerTest {
         config.networkId = networkId;
         config.allowedKeyManagement = new BitSet();
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
-
         when(config.isPasspoint()).thenReturn(true);
         when(config.getKey()).thenReturn(passpointConfig.getUniqueId());
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
@@ -614,6 +613,51 @@ public class WifiPickerTrackerTest {
         mTestLooper.dispatchAll();
 
         verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo(friendlyName);
+    }
+
+    @Test
+    public void testGetConnectedEntry_passpointWithoutScans_returnsPasspointEntry() {
+        final String fqdn = "fqdn";
+        final String friendlyName = "friendlyName";
+        final int networkId = 1;
+        // Create a passpoint configuration to match with the current network
+        final PasspointConfiguration passpointConfig = new PasspointConfiguration();
+        final HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn(fqdn);
+        homeSp.setFriendlyName(friendlyName);
+        passpointConfig.setHomeSp(homeSp);
+        passpointConfig.setCredential(new Credential());
+        when(mMockWifiManager.getPasspointConfigurations())
+                .thenReturn(Collections.singletonList(passpointConfig));
+        // Create a wifi config to match the WifiInfo netId and unique id of the passpoint config
+        final WifiConfiguration config = Mockito.mock(WifiConfiguration.class);
+        config.SSID = "\"ssid\"";
+        config.networkId = networkId;
+        config.allowedKeyManagement = new BitSet();
+        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
+        when(config.isPasspoint()).thenReturn(true);
+        when(config.getKey()).thenReturn(passpointConfig.getUniqueId());
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getNetworkId()).thenReturn(networkId);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(fqdn);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+        // Update with SCAN_RESULTS_AVAILABLE action while there are no scan results available yet.
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        mTestLooper.dispatchAll();
+
+        verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo(friendlyName);
     }
 

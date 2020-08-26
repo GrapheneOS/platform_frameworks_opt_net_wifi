@@ -20,6 +20,7 @@ import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
+import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
@@ -54,6 +55,9 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
 import androidx.annotation.GuardedBy;
@@ -280,8 +284,11 @@ public class StandardWifiEntry extends WifiEntry {
                 return mContext.getString(R.string.connected_via_network_scorer_default);
             }
 
+            final boolean isDefaultNetwork = mConnectedInfo != null
+                    && mConnectedInfo.isDefaultNetwork;
             String networkCapabilitiesinformation =
-                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
+                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities,
+                            isDefaultNetwork);
             if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
                 return networkCapabilitiesinformation;
             }
@@ -309,16 +316,21 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public String getMacAddress() {
+        if (mWifiInfo != null) {
+            final String wifiInfoMac = mWifiInfo.getMacAddress();
+            if (!TextUtils.isEmpty(wifiInfoMac)
+                    && !TextUtils.equals(wifiInfoMac, DEFAULT_MAC_ADDRESS)) {
+                return wifiInfoMac;
+            }
+        }
         if (mWifiConfig == null || getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
             final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
             if (factoryMacs.length > 0) {
                 return factoryMacs[0];
-            } else {
-                return null;
             }
-        } else {
-            return mWifiConfig.getRandomizedMacAddress().toString();
+            return null;
         }
+        return mWifiConfig.getRandomizedMacAddress().toString();
     }
 
     @Override
@@ -357,8 +369,35 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public boolean canConnect() {
-        return mLevel != WIFI_LEVEL_UNREACHABLE
-                && getConnectedState() == CONNECTED_STATE_DISCONNECTED;
+        if (mLevel == WIFI_LEVEL_UNREACHABLE
+                || getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
+            return false;
+        }
+        // Allow connection for EAP SIM dependent methods if the SIM of specified carrier ID is
+        // active in the device.
+        if (getSecurity() == SECURITY_EAP && mWifiConfig != null
+                && mWifiConfig.enterpriseConfig != null) {
+            if (!mWifiConfig.enterpriseConfig.isAuthenticationSimBased()) {
+                return true;
+            }
+            List<SubscriptionInfo> activeSubscriptionInfos = ((SubscriptionManager) mContext
+                    .getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
+                    .getActiveSubscriptionInfoList();
+            if (activeSubscriptionInfos == null || activeSubscriptionInfos.size() == 0) {
+                return false;
+            }
+            if (mWifiConfig.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+                // To connect via default subscription.
+                return true;
+            }
+            for (SubscriptionInfo subscriptionInfo : activeSubscriptionInfos) {
+                if (subscriptionInfo.getCarrierId() == mWifiConfig.carrierId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
