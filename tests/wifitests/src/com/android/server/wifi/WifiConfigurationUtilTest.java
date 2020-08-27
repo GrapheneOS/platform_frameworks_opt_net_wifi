@@ -16,6 +16,9 @@
 
 package com.android.server.wifi;
 
+import static android.net.wifi.WifiEnterpriseConfig.OCSP_NONE;
+import static android.net.wifi.WifiEnterpriseConfig.OCSP_REQUIRE_CERT_STATUS;
+
 import static org.junit.Assert.*;
 
 import android.content.pm.UserInfo;
@@ -979,5 +982,83 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
             caCerts = certs;
             return this;
         }
+    }
+
+    /**
+     * Verify WifiEnterpriseConfig CA Certificate alias changes are detected.
+     */
+    @Test
+    public void testCaCertificateAliasChangesDetected() {
+        EnterpriseConfig eapConfig1 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS)
+                .setPhase2(WifiEnterpriseConfig.Phase2.MSCHAPV2)
+                .setIdentity("username", "password");
+        eapConfig1.enterpriseConfig.setCaCertificateAlias("ALIAS_1");
+
+        EnterpriseConfig eapConfig2 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS)
+                .setPhase2(WifiEnterpriseConfig.Phase2.MSCHAPV2)
+                .setIdentity("username", "password");
+        eapConfig2.enterpriseConfig.setCaCertificateAlias("ALIAS_2");
+
+        assertTrue(WifiConfigurationUtil.hasEnterpriseConfigChanged(eapConfig1.enterpriseConfig,
+                eapConfig2.enterpriseConfig));
+    }
+
+    /**
+     * Verify WifiEnterpriseConfig Client Certificate alias changes are detected.
+     */
+    @Test
+    public void testClientCertificateAliasChangesDetected() {
+        EnterpriseConfig eapConfig1 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TLS);
+        eapConfig1.enterpriseConfig.setCaCertificateAlias("ALIAS_1");
+        eapConfig1.enterpriseConfig.setClientCertificateAlias("CLIENT_ALIAS_1");
+
+        EnterpriseConfig eapConfig2 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS);
+        eapConfig2.enterpriseConfig.setCaCertificateAlias("ALIAS_1");
+        eapConfig2.enterpriseConfig.setClientCertificateAlias("CLIENT_ALIAS_2");
+
+        assertTrue(WifiConfigurationUtil.hasEnterpriseConfigChanged(eapConfig1.enterpriseConfig,
+                eapConfig2.enterpriseConfig));
+    }
+
+    /**
+     * Verify WifiEnterpriseConfig OCSP changes are detected.
+     */
+    @Test
+    public void testOcspChangesDetected() {
+        EnterpriseConfig eapConfig1 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS)
+                .setPhase2(WifiEnterpriseConfig.Phase2.MSCHAPV2)
+                .setIdentity("username", "password")
+                .setCaCerts(new X509Certificate[]{FakeKeys.CA_CERT0});
+        eapConfig1.enterpriseConfig.setOcsp(OCSP_NONE);
+
+        EnterpriseConfig eapConfig2 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS)
+                .setPhase2(WifiEnterpriseConfig.Phase2.MSCHAPV2)
+                .setIdentity("username", "password")
+                .setCaCerts(new X509Certificate[]{FakeKeys.CA_CERT0});
+        eapConfig2.enterpriseConfig.setOcsp(OCSP_REQUIRE_CERT_STATUS);
+
+        assertTrue(WifiConfigurationUtil.hasEnterpriseConfigChanged(eapConfig1.enterpriseConfig,
+                eapConfig2.enterpriseConfig));
+    }
+
+    /**
+     * Verify WifiEnterpriseConfig subject match changes are detected.
+     */
+    @Test
+    public void testSubjectMatchChangesDetected() {
+        EnterpriseConfig eapConfig1 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS)
+                .setPhase2(WifiEnterpriseConfig.Phase2.MSCHAPV2)
+                .setIdentity("username", "password")
+                .setCaCerts(new X509Certificate[]{FakeKeys.CA_CERT0});
+        eapConfig1.enterpriseConfig.setAltSubjectMatch("domain1.com");
+
+        EnterpriseConfig eapConfig2 = new EnterpriseConfig(WifiEnterpriseConfig.Eap.TTLS)
+                .setPhase2(WifiEnterpriseConfig.Phase2.MSCHAPV2)
+                .setIdentity("username", "password")
+                .setCaCerts(new X509Certificate[]{FakeKeys.CA_CERT0});
+        eapConfig1.enterpriseConfig.setAltSubjectMatch("domain2.com");
+
+        assertTrue(WifiConfigurationUtil.hasEnterpriseConfigChanged(eapConfig1.enterpriseConfig,
+                eapConfig2.enterpriseConfig));
     }
 }
