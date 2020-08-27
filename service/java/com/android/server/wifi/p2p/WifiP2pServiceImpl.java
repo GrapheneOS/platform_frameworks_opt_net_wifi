@@ -268,7 +268,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     private boolean mTemporarilyDisconnectedWifi = false;
 
     // The transaction Id of service discovery request
-    private byte mServiceTransactionId = 0;
+    private int mServiceTransactionId = 0;
 
     // Service discovery request ID of wpa_supplicant.
     // null means it's not set yet.
@@ -4009,9 +4009,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             }
 
             ++mServiceTransactionId;
-            //The Wi-Fi p2p spec says transaction id should be non-zero
-            if (mServiceTransactionId == 0) ++mServiceTransactionId;
-            req.setTransactionId(mServiceTransactionId);
+            // The Wi-Fi p2p spec says transaction id should be 1 byte and non-zero.
+            if (mServiceTransactionId == 256) mServiceTransactionId = 1;
+            req.setTransactionId((mServiceTransactionId));
             clientInfo.mReqList.put(mServiceTransactionId, req);
 
             if (mServiceDiscReqId == null) {

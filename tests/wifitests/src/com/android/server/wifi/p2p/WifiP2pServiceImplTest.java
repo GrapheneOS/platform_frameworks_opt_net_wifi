@@ -3772,6 +3772,23 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
      * Verify the caller sends WifiP2pManager.ADD_SERVICE_REQUEST without services discover.
      */
     @Test
+    public void testAddServiceRequestNoOverflow() throws Exception {
+        forceP2pEnabled(mClient1);
+        sendChannelInfoUpdateMsg("testPkg1", "testFeature", mClient1, mClientMessenger);
+
+        for (int i = 0; i < 256; i++) {
+            reset(mTestWifiP2pServiceRequest);
+            sendAddServiceRequestMsg(mClientMessenger);
+            ArgumentCaptor<Integer> idCaptor = ArgumentCaptor.forClass(int.class);
+            verify(mTestWifiP2pServiceRequest).setTransactionId(idCaptor.capture());
+            assertTrue(idCaptor.getValue().intValue() > 0);
+        }
+    }
+
+    /**
+     * Verify the caller sends WifiP2pManager.ADD_SERVICE_REQUEST without services discover.
+     */
+    @Test
     public void testAddServiceRequestSuccessWithoutServiceDiscover() throws Exception {
         forceP2pEnabled(mClient1);
         sendChannelInfoUpdateMsg("testPkg1", "testFeature", mClient1, mClientMessenger);

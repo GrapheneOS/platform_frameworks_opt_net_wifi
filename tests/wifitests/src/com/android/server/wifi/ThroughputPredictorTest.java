@@ -299,6 +299,15 @@ public class ThroughputPredictorTest extends WifiBaseTest {
     }
 
     @Test
+    public void verifyMaxThroughput11BMode() {
+        mConnectionCap.wifiStandard = ScanResult.WIFI_STANDARD_LEGACY;
+        mConnectionCap.is11bMode = true;
+        mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+        mConnectionCap.maxNumberTxSpatialStreams = 2;
+        assertEquals(11, mThroughputPredictor.predictMaxTxThroughput(mConnectionCap));
+    }
+
+    @Test
     public void verifyMaxThroughputAc40Mhz2ss() {
         mConnectionCap.wifiStandard = ScanResult.WIFI_STANDARD_11AC;
         mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_40MHZ;
@@ -353,6 +362,16 @@ public class ThroughputPredictorTest extends WifiBaseTest {
         mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_80MHZ;
         mConnectionCap.maxNumberTxSpatialStreams = 2;
         assertEquals(-1, mThroughputPredictor.predictMaxTxThroughput(mConnectionCap));
+    }
+
+    @Test
+    public void verifyTxThroughput11BModeLowSnr() {
+        mConnectionCap.wifiStandard = ScanResult.WIFI_STANDARD_LEGACY;
+        mConnectionCap.is11bMode = true;
+        mConnectionCap.channelBandwidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+        mConnectionCap.maxNumberTxSpatialStreams = 1;
+        assertEquals(8, mThroughputPredictor.predictTxThroughput(mConnectionCap,
+                -80, 2437, 80));
     }
 
     @Test
