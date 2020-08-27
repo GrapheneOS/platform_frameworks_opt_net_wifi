@@ -744,6 +744,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                             scanSettings, new ScanEventHandler(ifaceName));
                     if (!success) {
                         Log.e(TAG, "Failed to start single scan on " + ifaceName);
+                        mStatusPerImpl.put(ifaceName, STATUS_FAILED);
                         continue;
                     }
                     mStatusPerImpl.put(ifaceName, STATUS_PENDING);
@@ -759,6 +760,10 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
             public @Nullable ScanData getLatestSingleScanResults() {
                 ScanData consolidatedScanData = null;
                 for (WifiScannerImpl impl : mScannerImpls.values()) {
+                    Integer ifaceStatus = mStatusPerImpl.get(impl.getIfaceName());
+                    if (ifaceStatus == null || ifaceStatus != STATUS_SUCCEEDED) {
+                        continue;
+                    }
                     ScanData scanData = impl.getLatestSingleScanResults();
                     if (consolidatedScanData == null) {
                         consolidatedScanData = new ScanData(scanData);

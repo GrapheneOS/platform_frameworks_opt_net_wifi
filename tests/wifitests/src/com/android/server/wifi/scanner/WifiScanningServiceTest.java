@@ -167,10 +167,12 @@ public class WifiScanningServiceTest extends WifiBaseTest {
                 .create(any(), any(), any(), eq(TEST_IFACE_NAME_0)))
                 .thenReturn(mWifiScannerImpl0);
         when(mWifiScannerImpl0.getChannelHelper()).thenReturn(mChannelHelper0);
+        when(mWifiScannerImpl0.getIfaceName()).thenReturn(TEST_IFACE_NAME_0);
         when(mWifiScannerImplFactory
                 .create(any(), any(), any(), eq(TEST_IFACE_NAME_1)))
                 .thenReturn(mWifiScannerImpl1);
         when(mWifiScannerImpl1.getChannelHelper()).thenReturn(mChannelHelper1);
+        when(mWifiScannerImpl1.getIfaceName()).thenReturn(TEST_IFACE_NAME_1);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
         when(mWifiInjector.makeLog(anyString())).thenReturn(mLog);
         WifiAsyncChannel mWifiAsyncChannel = new WifiAsyncChannel("ScanningServiceTest");
