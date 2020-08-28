@@ -250,7 +250,7 @@ public class XmlUtilTest extends WifiBaseTest {
         configuration.status = WifiConfiguration.Status.CURRENT;
         byte[] xmlData = serializeWifiConfigurationForConfigStore(configuration);
         Pair<String, WifiConfiguration> deserializedConfiguration =
-                deserializeWifiConfiguration(xmlData);
+                deserializeWifiConfiguration(xmlData, false);
         assertEquals(WifiConfiguration.Status.ENABLED, deserializedConfiguration.second.status);
     }
 
@@ -518,7 +518,7 @@ public class XmlUtilTest extends WifiBaseTest {
 
         // Deserialize the data
         Pair<String, WifiConfiguration> retrieved =
-                deserializeWifiConfiguration(outputStream.toByteArray());
+                deserializeWifiConfiguration(outputStream.toByteArray(), false);
 
         // Verify that macRandomizationSetting is set to |RANDOMIZATION_NONE|
         assertEquals(WifiConfiguration.RANDOMIZATION_NONE,
@@ -539,16 +539,46 @@ public class XmlUtilTest extends WifiBaseTest {
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         out.setOutput(outputStream, StandardCharsets.UTF_8.name());
         XmlUtil.writeDocumentStart(out, mXmlDocHeader);
+        // Mark the configuration to use persistent MAC randomization.
         XmlUtil.writeNextValue(out, WifiConfigurationXmlUtil.XML_TAG_MAC_RANDOMIZATION_SETTING,
                 WifiConfiguration.RANDOMIZATION_PERSISTENT);
         XmlUtil.writeDocumentEnd(out, mXmlDocHeader);
 
-        // Deserialize from a config version before MAC randomization upgrade.
+        // Deserialize the saved WifiConfiguration and expect a MAC randomization upgrade.
         Pair<String, WifiConfiguration> retrieved =
-                deserializeWifiConfiguration(outputStream.toByteArray());
+                deserializeWifiConfiguration(outputStream.toByteArray(), false);
 
-        // Verify that macRandomizationSetting is set to |RANDOMIZATION_NONE|
+        // Verify that macRandomizationSetting is set to |RANDOMIZATION_AUTO| due to auto upgrade.
         assertEquals(WifiConfiguration.RANDOMIZATION_AUTO,
+                retrieved.second.macRandomizationSetting);
+    }
+
+    /**
+     * Verify that when deserializing a XML RANDOMIZATION_PERSISTENT is not automatically upgraded
+     * for suggestion networks.
+     * @throws IOException
+     * @throws XmlPullParserException
+     */
+    @Test
+    public void testMacRandomizationSettingNoUpgradeToRandomizationAutoForSuggestion()
+            throws IOException, XmlPullParserException {
+        // First generate XML data that only has the header filled in
+        final XmlSerializer out = new FastXmlSerializer();
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        out.setOutput(outputStream, StandardCharsets.UTF_8.name());
+        XmlUtil.writeDocumentStart(out, mXmlDocHeader);
+        // Mark the configuration to use persistent MAC randomization.
+        XmlUtil.writeNextValue(out, WifiConfigurationXmlUtil.XML_TAG_MAC_RANDOMIZATION_SETTING,
+                WifiConfiguration.RANDOMIZATION_PERSISTENT);
+        XmlUtil.writeDocumentEnd(out, mXmlDocHeader);
+
+        // Deserialize the saved WifiConfiguration. Do not expect an auto upgrade since this is
+        // a suggested network.
+        Pair<String, WifiConfiguration> retrieved =
+                deserializeWifiConfiguration(outputStream.toByteArray(), true);
+
+        // Verify that macRandomizationSetting is still RANDOMIZATION_PERSISTENT.
+        assertEquals(WifiConfiguration.RANDOMIZATION_PERSISTENT,
                 retrieved.second.macRandomizationSetting);
     }
 
@@ -576,7 +606,8 @@ public class XmlUtilTest extends WifiBaseTest {
         return outputStream.toByteArray();
     }
 
-    private Pair<String, WifiConfiguration> deserializeWifiConfiguration(byte[] data)
+    private Pair<String, WifiConfiguration> deserializeWifiConfiguration(byte[] data,
+            boolean fromSuggestion)
             throws IOException, XmlPullParserException {
         // Deserialize the configuration object.
         final XmlPullParser in = Xml.newPullParser();
@@ -586,7 +617,7 @@ public class XmlUtilTest extends WifiBaseTest {
         return WifiConfigurationXmlUtil.parseFromXml(
                 in, in.getDepth(),
                 mWifiConfigStoreEncryptionUtil != null,
-                mWifiConfigStoreEncryptionUtil);
+                mWifiConfigStoreEncryptionUtil, fromSuggestion);
     }
 
     /**
@@ -599,7 +630,7 @@ public class XmlUtilTest extends WifiBaseTest {
         // Test serialization/deserialization for config store.
         retrieved =
                 deserializeWifiConfiguration(
-                        serializeWifiConfigurationForBackup(configuration));
+                        serializeWifiConfigurationForBackup(configuration), false);
         assertEquals(retrieved.first, retrieved.second.getKey());
         WifiConfigurationTestUtil.assertConfigurationEqualForBackup(
                 configuration, retrieved.second);
@@ -617,7 +648,7 @@ public class XmlUtilTest extends WifiBaseTest {
         // Test serialization/deserialization for config store.
         retrieved =
                 deserializeWifiConfiguration(
-                        serializeWifiConfigurationForConfigStore(configuration));
+                        serializeWifiConfigurationForConfigStore(configuration), false);
         assertEquals(retrieved.first, retrieved.second.getKey());
         WifiConfigurationTestUtil.assertConfigurationEqualForConfigStore(
                 configuration, retrieved.second);
