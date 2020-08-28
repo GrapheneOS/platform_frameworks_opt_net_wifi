@@ -64,7 +64,8 @@ public class WificondScannerTest extends BaseWifiScannerImplTest {
                 new int[]{2400, 2450},
                 new int[]{5150, 5175},
                 new int[]{5600, 5650},
-                new int[]{5945, 5985});
+                new int[]{5945, 5985},
+                new int[]{58320, 60480});
         mWifiMonitorSpy = spy(mWifiMonitor);
         mScanner = new WificondScannerImpl(mContext, BaseWifiScannerImplTest.IFACE_NAME,
                 mWifiNative, mWifiMonitorSpy, new WificondChannelHelper(mWifiNative),

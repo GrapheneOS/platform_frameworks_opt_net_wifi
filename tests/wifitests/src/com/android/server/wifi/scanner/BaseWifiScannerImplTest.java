@@ -372,7 +372,7 @@ public abstract class BaseWifiScannerImplTest extends WifiBaseTest {
                 .withBasePeriod(10000)
                 .withMaxApPerScan(10)
                 .addBucketWithBand(10000, WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN,
-                        WifiScanner.WIFI_BAND_BOTH_WITH_DFS)
+                        WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ)
                 .build();
 
         WifiNative.ScanEventHandler eventHandler = mock(WifiNative.ScanEventHandler.class);
@@ -394,9 +394,9 @@ public abstract class BaseWifiScannerImplTest extends WifiBaseTest {
         assertTrue(mScanner.startSingleScan(settings2, eventHandler));
 
         expectSuccessfulSingleScan(order, WifiScanner.SCAN_TYPE_LOW_POWER, eventHandler,
-                expectedBandScanFreqs(WifiScanner.WIFI_BAND_BOTH_WITH_DFS),
+                expectedBandScanFreqs(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ),
                 new ArrayList<String>(),
-                ScanResults.create(0, WifiScanner.WIFI_BAND_BOTH_WITH_DFS,
+                ScanResults.create(0, WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ,
                         5150, 5175), false);
 
         verifyNoMoreInteractions(eventHandler);

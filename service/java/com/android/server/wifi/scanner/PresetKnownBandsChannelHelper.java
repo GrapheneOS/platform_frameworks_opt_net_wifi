@@ -21,7 +21,7 @@ package com.android.server.wifi.scanner;
  */
 public class PresetKnownBandsChannelHelper extends KnownBandsChannelHelper {
     public PresetKnownBandsChannelHelper(int[] channels2G, int[] channels5G, int[] channelsDfs,
-            int[] channels6G) {
-        setBandChannels(channels2G, channels5G, channelsDfs, channels6G);
+            int[] channels6G, int[] channels60G) {
+        setBandChannels(channels2G, channels5G, channelsDfs, channels6G, channels60G);
     }
 }
