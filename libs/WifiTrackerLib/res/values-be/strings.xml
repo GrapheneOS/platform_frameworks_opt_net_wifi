@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2020 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="summary_separator" msgid="6533720408587140819">" / "</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"Аўтападключэнне выключана"</string>
+    <string name="saved_network" msgid="6241977554502802914">"Захавана праз: <xliff:g id="NAME">%1$s</xliff:g>"</string>
+    <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"Не будзе аўтаматычна падключацца"</string>
+    <string name="wifi_no_internet" msgid="4461212237521310895">"Няма доступу да інтэрнэту"</string>
+    <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"Памылка аўтэнтыфікацыі"</string>
+    <string name="wifi_check_password_try_again" msgid="2643230209986217827">"Праверце пароль і паўтарыце спробу"</string>
+    <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"Збой канфігурацыі IP"</string>
+    <string name="wifi_disabled_generic" msgid="8307050327779256414">"Адключана"</string>
+    <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"Пункт доступу часова заняты"</string>
+    <string name="wifi_disconnected" msgid="3720926757662831062">"Адключана"</string>
+    <string name="wifi_remembered" msgid="5126903736498678708">"Захавана"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"Сетка з улікам трафіка"</string>
+    <string name="wifi_unmetered_label" msgid="499466875639448350">"Сетка без уліку трафіка"</string>
+    <string name="connected_via_app" msgid="1818040967936972127">"Падключана праз праграму \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
+    <string name="connected_via_network_scorer" msgid="8081366798449871179">"Аўтаматычна падключана праз %1$s"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"Аўтаматычна падключана праз пастаўшчыка паслугі ацэнкі сеткі"</string>
+    <string name="wifi_limited_connection" msgid="3646701342701276239">"Абмежаваныя магчымасці падключэння"</string>
+    <string name="private_dns_broken" msgid="2212227512243587416">"Не ўдалося атрымаць доступ да прыватнага DNS-сервера"</string>
+    <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Не падключана да інтэрнэту"</string>
+    <string name="wifi_security_none" msgid="6680263031386719053">"Няма"</string>
+    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Тэрмін скончыўся"</string>
+</resources>

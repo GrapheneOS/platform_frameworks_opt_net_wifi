@@ -39,6 +39,8 @@ import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -50,7 +52,7 @@ import org.mockito.MockitoAnnotations;
  * Unit tests for {@link ConnectionFailureNotifier}.
  */
 @SmallTest
-public class ConnectionFailureNotifierTest {
+public class ConnectionFailureNotifierTest extends WifiBaseTest {
     @Mock private Context mContext;
     @Mock private WifiInjector mWifiInjector;
     @Mock private Resources mResources;
@@ -125,8 +127,7 @@ public class ConnectionFailureNotifierTest {
                 config.networkId);
         // verify that a notification is sent
         verify(mNotificationManager).notify(
-                eq(ConnectionFailureNotifier.NO_RANDOMIZED_MAC_SUPPORT_NOTIFICATION_ID),
-                eq(mNotification));
+                eq(SystemMessage.NOTE_NETWORK_NO_MAC_RANDOMIZATION_SUPPORT), eq(mNotification));
 
         // sets up the intent that simulates the user tapping on the notification.
         Intent intent = buildBroadcastForRandomizationSettingsDialog(config);
@@ -162,8 +163,7 @@ public class ConnectionFailureNotifierTest {
                 config.networkId);
         // verify that a notification is sent
         verify(mNotificationManager).notify(
-                eq(ConnectionFailureNotifier.NO_RANDOMIZED_MAC_SUPPORT_NOTIFICATION_ID),
-                any());
+                eq(SystemMessage.NOTE_NETWORK_NO_MAC_RANDOMIZATION_SUPPORT), any());
 
         // sets up the intent that simulates the user tapping on the notification.
         Intent intent = buildBroadcastForRandomizationSettingsDialog(config);

@@ -16,8 +16,17 @@
 
 package com.android.server.wifi;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.android.internal.annotations.VisibleForTesting;
+import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -33,15 +42,13 @@ import java.util.Locale;
  */
 public class WifiCountryCode {
     private static final String TAG = "WifiCountryCode";
+    private final Context mContext;
+    private final TelephonyManager mTelephonyManager;
     private final WifiNative mWifiNative;
     private boolean DBG = false;
     private boolean mReady = false;
     private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("MM-dd HH:mm:ss.SSS");
 
-    /** config option that indicate whether or not to reset country code to default when
-     * cellular radio indicates country code loss
-     */
-    private boolean mRevertCountryCodeOnCellularLoss;
     private String mDefaultCountryCode = null;
     private String mTelephonyCountryCode = null;
     private String mDriverCountryCode = null;
@@ -51,25 +58,26 @@ public class WifiCountryCode {
     private boolean mForceCountryCode = false;
 
     public WifiCountryCode(
+            Context context,
+            Handler handler,
             WifiNative wifiNative,
-            String oemDefaultCountryCode,
-            boolean revertCountryCodeOnCellularLoss) {
-
+            String oemDefaultCountryCode) {
+        mContext = context;
+        mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         mWifiNative = wifiNative;
-        mRevertCountryCodeOnCellularLoss = revertCountryCodeOnCellularLoss;
 
         if (!TextUtils.isEmpty(oemDefaultCountryCode)) {
             mDefaultCountryCode = oemDefaultCountryCode.toUpperCase(Locale.US);
-        } else {
-            if (mRevertCountryCodeOnCellularLoss) {
-                Log.w(TAG, "config_wifi_revert_country_code_on_cellular_loss is set, "
-                         + "but there is no default country code.");
-                mRevertCountryCodeOnCellularLoss = false;
-            }
         }
+        context.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String countryCode = intent.getStringExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY);
+                Log.d(TAG, "Country code changed");
+                setCountryCodeAndUpdate(countryCode);
+            }}, new IntentFilter(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED), null, handler);
 
-        Log.d(TAG, "mDefaultCountryCode " + mDefaultCountryCode
-                + " mRevertCountryCodeOnCellularLoss " + mRevertCountryCodeOnCellularLoss);
+        Log.d(TAG, "mDefaultCountryCode " + mDefaultCountryCode);
     }
 
     /**
@@ -80,6 +88,14 @@ public class WifiCountryCode {
             DBG = true;
         } else {
             DBG = false;
+        }
+    }
+
+    private void initializeTelephonyCountryCodeIfNeeded() {
+        // If we don't have telephony country code set yet, poll it.
+        if (mTelephonyCountryCode == null) {
+            Log.d(TAG, "Reading country code from telephony");
+            setCountryCode(mTelephonyManager.getNetworkCountryIso());
         }
     }
 
@@ -101,6 +117,9 @@ public class WifiCountryCode {
 
     /**
      * Enable force-country-code mode
+     * This is for forcing a country using cmd wifi from adb shell
+     * This is for test purpose only and we should disallow any update from
+     * telephony in this mode
      * @param countryCode The forced two-letter country code
      */
     synchronized void enableForceCountryCode(String countryCode) {
@@ -110,6 +129,7 @@ public class WifiCountryCode {
         }
         mForceCountryCode = true;
         mTelephonyCountryCode = countryCode.toUpperCase(Locale.US);
+
         // If wpa_supplicant is ready we set the country code now, otherwise it will be
         // set once wpa_supplicant is ready.
         if (mReady) {
@@ -124,9 +144,36 @@ public class WifiCountryCode {
      */
     synchronized void disableForceCountryCode() {
         mForceCountryCode = false;
-        // Set mTelephonyCountryCode to null so that default country code is used until
-        // next call of setCountryCode().
         mTelephonyCountryCode = null;
+
+        // If wpa_supplicant is ready we set the country code now, otherwise it will be
+        // set once wpa_supplicant is ready.
+        if (mReady) {
+            updateCountryCode();
+        } else {
+            Log.d(TAG, "skip update supplicant not ready yet");
+        }
+    }
+
+    private boolean setCountryCode(String countryCode) {
+        if (mForceCountryCode) {
+            Log.d(TAG, "Telephony Country code ignored due to force-country-code mode");
+            return false;
+        }
+        Log.d(TAG, "Set telephony country code to: " + countryCode);
+        mTelephonyCountryTimestamp = FORMATTER.format(new Date(System.currentTimeMillis()));
+
+        // Empty country code.
+        if (TextUtils.isEmpty(countryCode)) {
+            if (mContext.getResources()
+                        .getBoolean(R.bool.config_wifi_revert_country_code_on_cellular_loss)) {
+                Log.d(TAG, "Received empty country code, reset to default country code");
+                mTelephonyCountryCode = null;
+            }
+        } else {
+            mTelephonyCountryCode = countryCode.toUpperCase(Locale.US);
+        }
+        return true;
     }
 
     /**
@@ -136,23 +183,8 @@ public class WifiCountryCode {
      * otherwise we think it is from other applications.
      * @return Returns true if the country code passed in is acceptable.
      */
-    public synchronized boolean setCountryCode(String countryCode) {
-        if (mForceCountryCode) {
-            Log.d(TAG, "Country code can't be set because it is the force-country-code mode");
-            return false;
-        }
-        Log.d(TAG, "Receive set country code request: " + countryCode);
-        mTelephonyCountryTimestamp = FORMATTER.format(new Date(System.currentTimeMillis()));
-
-        // Empty country code.
-        if (TextUtils.isEmpty(countryCode)) {
-            if (mRevertCountryCodeOnCellularLoss) {
-                Log.d(TAG, "Received empty country code, reset to default country code");
-                mTelephonyCountryCode = null;
-            }
-        } else {
-            mTelephonyCountryCode = countryCode.toUpperCase(Locale.US);
-        }
+    private boolean setCountryCodeAndUpdate(String countryCode) {
+        if (!setCountryCode(countryCode)) return false;
         // If wpa_supplicant is ready we set the country code now, otherwise it will be
         // set once wpa_supplicant is ready.
         if (mReady) {
@@ -173,6 +205,7 @@ public class WifiCountryCode {
      * country code.
      * Returns null if no Country Code was sent to driver.
      */
+    @VisibleForTesting
     public synchronized String getCountryCodeSentToDriver() {
         return mDriverCountryCode;
     }
@@ -192,8 +225,9 @@ public class WifiCountryCode {
      * Method to dump the current state of this WifiCounrtyCode object.
      */
     public synchronized void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-
-        pw.println("mRevertCountryCodeOnCellularLoss: " + mRevertCountryCodeOnCellularLoss);
+        pw.println("mRevertCountryCodeOnCellularLoss: "
+                + mContext.getResources().getBoolean(
+                        R.bool.config_wifi_revert_country_code_on_cellular_loss));
         pw.println("mDefaultCountryCode: " + mDefaultCountryCode);
         pw.println("mDriverCountryCode: " + mDriverCountryCode);
         pw.println("mTelephonyCountryCode: " + mTelephonyCountryCode);
@@ -221,6 +255,9 @@ public class WifiCountryCode {
     }
 
     private String pickCountryCode() {
+
+        initializeTelephonyCountryCodeIfNeeded();
+
         if (mTelephonyCountryCode != null) {
             return mTelephonyCountryCode;
         }

@@ -27,7 +27,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
 /**
- * Network factory to handle untrusted (used for {@link ScoredNetworkEvaluator}) wifi network
+ * Network factory to handle untrusted (used for {@link ScoredNetworkNominator}) wifi network
  * requests.
  */
 public class UntrustedWifiNetworkFactory extends NetworkFactory {

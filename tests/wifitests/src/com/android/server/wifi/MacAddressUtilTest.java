@@ -38,7 +38,7 @@ import javax.crypto.Mac;
  * Unit tests for {@link com.android.server.wifi.MacAddressUtil}.
  */
 @SmallTest
-public class MacAddressUtilTest {
+public class MacAddressUtilTest extends WifiBaseTest {
     private MacAddressUtil mMacAddressUtil;
 
     @Mock private Mac mMac;
@@ -50,23 +50,21 @@ public class MacAddressUtilTest {
     }
 
     /**
-     * Verifies that calculatePersistentMacForConfiguration valid randomized MACs.
+     * Verifies that calculatePersistentMac generate valid randomized MACs.
      */
     @Test
-    public void testCalculatePersistentMacForConfiguration() {
+    public void testCalculatePersistentMac() {
         // verify null inputs
-        assertNull(mMacAddressUtil.calculatePersistentMacForConfiguration(null, null));
+        assertNull(mMacAddressUtil.calculatePersistentMac(null, null));
 
         Random rand = new Random();
         // Verify that a the MAC address calculated is valid
         for (int i = 0; i < 10; i++) {
-            WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-
             byte[] bytes = new byte[32];
             rand.nextBytes(bytes);
             when(mMac.doFinal(any())).thenReturn(bytes);
-            MacAddress macAddress = mMacAddressUtil.calculatePersistentMacForConfiguration(
-                    config, mMac);
+            MacAddress macAddress = mMacAddressUtil.calculatePersistentMac(
+                    "TEST_SSID_AND_SECURITY_TYPE_" + i, mMac);
             assertTrue(WifiConfiguration.isValidMacAddressForRandomization(macAddress));
         }
     }
@@ -78,8 +76,8 @@ public class MacAddressUtilTest {
     public void testCalculatePersistentMacCatchesException() {
         when(mMac.doFinal(any())).thenThrow(new ProviderException("error occurred"));
         try {
-            WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
-            assertNull(mMacAddressUtil.calculatePersistentMacForConfiguration(config, mMac));
+            assertNull(mMacAddressUtil.calculatePersistentMac("TEST_SSID_AND_SECURITY_TYPE",
+                    mMac));
         } catch (Exception e) {
             fail("Exception not caught.");
         }

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2020 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="summary_separator" msgid="6533720408587140819">" / "</string>
+    <string name="auto_connect_disable" msgid="1078319396240632542">"ራስ-ተገናኝ ጠፍቷል"</string>
+    <string name="saved_network" msgid="6241977554502802914">"የተቀመጠው በ<xliff:g id="NAME">%1$s</xliff:g>"</string>
+    <string name="wifi_no_internet_no_reconnect" msgid="4378129479815195671">"በራስ-ሰር አይገናኝም"</string>
+    <string name="wifi_no_internet" msgid="4461212237521310895">"ምንም የበይነመረብ መዳረሻ የለም"</string>
+    <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"የማረጋገጥ ችግር"</string>
+    <string name="wifi_check_password_try_again" msgid="2643230209986217827">"የይለፍ ቃልን ይፈትሹ እና እንደገና ይሞክሩ"</string>
+    <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"የአይፒ ውቅረት መሰናከል"</string>
+    <string name="wifi_disabled_generic" msgid="8307050327779256414">"ተሰናክሏል"</string>
+    <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"የመዳረሻ ነጥብ ለጊዜው ሞልቷል"</string>
+    <string name="wifi_disconnected" msgid="3720926757662831062">"ተቋርጧል"</string>
+    <string name="wifi_remembered" msgid="5126903736498678708">"ተቀምጧል"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"የሚለካ"</string>
+    <string name="wifi_unmetered_label" msgid="499466875639448350">"ያልተለካ"</string>
+    <string name="connected_via_app" msgid="1818040967936972127">"በ <xliff:g id="NAME">%1$s</xliff:g> በኩል ተገናኝተዋል"</string>
+    <string name="connected_via_network_scorer" msgid="8081366798449871179">"በ%1$s በኩል በራስ-ሰር ተገናኝቷል"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"በአውታረ መረብ ደረጃ ሰጪ አቅራቢ በኩል በራስ-ሰር ተገናኝቷል"</string>
+    <string name="wifi_limited_connection" msgid="3646701342701276239">"የተገደበ ግንኙነት"</string>
+    <string name="private_dns_broken" msgid="2212227512243587416">"የግል ዲኤንኤስ አገልጋይ ሊደረስበት አይችልም"</string>
+    <string name="wifi_connected_no_internet" msgid="7273909077465731259">"ምንም በይነመረብ የለም"</string>
+    <string name="wifi_security_none" msgid="6680263031386719053">"የለም"</string>
+    <string name="wifi_passpoint_expired" msgid="3257021415099577815">"ጊዜው አልፏል"</string>
+</resources>

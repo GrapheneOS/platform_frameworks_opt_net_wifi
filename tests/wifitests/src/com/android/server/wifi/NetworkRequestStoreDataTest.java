@@ -50,7 +50,7 @@ import java.util.Set;
  * Unit tests for {@link com.android.server.wifi.NetworkRequestStoreData}.
  */
 @SmallTest
-public class NetworkRequestStoreDataTest {
+public class NetworkRequestStoreDataTest extends WifiBaseTest {
     private static final String TEST_PACKAGE_NAME_1 = "com.android.test.1";
     private static final String TEST_PACKAGE_NAME_2 = "com.android.test.2";
     private static final String TEST_CORRUPT_DATA_INVALID_SSID =

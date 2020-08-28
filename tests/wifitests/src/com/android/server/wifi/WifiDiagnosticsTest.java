@@ -26,6 +26,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -36,11 +37,11 @@ import static org.mockito.Mockito.when;
 
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.content.Context;
+import android.os.BugreportManager;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.internal.R;
-import com.android.server.am.ActivityManagerService;
+import com.android.wifi.resources.R;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -59,18 +60,22 @@ import java.util.regex.Pattern;
  * Unit tests for {@link WifiDiagnostics}.
  */
 @SmallTest
-public class WifiDiagnosticsTest {
+public class WifiDiagnosticsTest extends WifiBaseTest {
     @Mock WifiNative mWifiNative;
     @Mock BuildProperties mBuildProperties;
     @Mock Context mContext;
     @Mock WifiInjector mWifiInjector;
+    @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Spy FakeWifiLog mLog;
     @Mock LastMileLogger mLastMileLogger;
     @Mock Runtime mJavaRuntime;
     @Mock Process mExternalProcess;
-    @Mock ActivityManagerService mActivityManagerService;
     @Mock WifiMetrics mWifiMetrics;
     @Mock Clock mClock;
+    @Mock BugreportManager mBugreportManager;
+    @Mock WifiScoreCard mWifiScoreCard;
+    private long mBootTimeMs = 0L;
+    MockResources mResources;
     WifiDiagnostics mWifiDiagnostics;
 
     private static final String FAKE_RING_BUFFER_NAME = "fake-ring-buffer";
@@ -82,9 +87,10 @@ public class WifiDiagnosticsTest {
     private static final int ALERT_REASON_CODE = 1;
     private static final byte[] ALERT_DATA = {0 , 4, 5};
     /** Mock resource for fatal firmware alert list */
-    private static final int[] FATAL_FW_ALART_LIST = {256, 257, 258};
+    private static final int[] FATAL_FW_ALERT_LIST = {256, 257, 258};
     /** Mock a non fatal firmware alert */
-    private static final int NON_FATAL_FW_ALART = 0;
+    private static final int NON_FATAL_FW_ALERT = 0;
+    private static final int BUG_REPORT_MIN_WINDOW_MS = 3600_000;
 
     private WifiNative.RingBufferStatus mFakeRbs;
     /**
@@ -110,7 +116,6 @@ public class WifiDiagnosticsTest {
         };
 
         when(mWifiNative.getRingBufferStatus()).thenReturn(ringBufferStatuses);
-        when(mWifiNative.readKernelLog()).thenReturn("");
         when(mBuildProperties.isEngBuild()).thenReturn(false);
         when(mBuildProperties.isUserdebugBuild()).thenReturn(false);
         when(mBuildProperties.isUserBuild()).thenReturn(true);
@@ -118,19 +123,29 @@ public class WifiDiagnosticsTest {
         when(mExternalProcess.getErrorStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
         when(mJavaRuntime.exec(anyString())).thenReturn(mExternalProcess);
 
-        MockResources resources = new MockResources();
-        resources.setInteger(R.integer.config_wifi_logger_ring_buffer_default_size_limit_kb,
+        mResources = new MockResources();
+        mResources.setInteger(R.integer.config_wifi_logger_ring_buffer_default_size_limit_kb,
                 SMALL_RING_BUFFER_SIZE_KB);
-        resources.setInteger(R.integer.config_wifi_logger_ring_buffer_verbose_size_limit_kb,
+        mResources.setInteger(R.integer.config_wifi_logger_ring_buffer_verbose_size_limit_kb,
                 LARGE_RING_BUFFER_SIZE_KB);
-        resources.setIntArray(R.array.config_wifi_fatal_firmware_alert_error_code_list,
-                FATAL_FW_ALART_LIST);
-        when(mContext.getResources()).thenReturn(resources);
+        mResources.setIntArray(R.array.config_wifi_fatal_firmware_alert_error_code_list,
+                FATAL_FW_ALERT_LIST);
+        mResources.setBoolean(R.bool.config_wifi_diagnostics_bugreport_enabled, true);
+        when(mContext.getResources()).thenReturn(mResources);
+        when(mContext.getSystemService(BugreportManager.class)).thenReturn(mBugreportManager);
         when(mWifiInjector.makeLog(anyString())).thenReturn(mLog);
         when(mWifiInjector.getJavaRuntime()).thenReturn(mJavaRuntime);
-        when(mWifiInjector.getActivityManagerService()).thenReturn(mActivityManagerService);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
-
+        when(mWifiInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
+        when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
+        when(mDeviceConfigFacade.getBugReportMinWindowMs()).thenReturn(BUG_REPORT_MIN_WINDOW_MS);
+        // needed to for the loop in WifiDiagnostics.readLogcatStreamLinesWithTimeout().
+        doAnswer(new AnswerWithArguments() {
+            public long answer() throws Exception {
+                mBootTimeMs += WifiDiagnostics.LOGCAT_READ_TIMEOUT_MILLIS / 2;
+                return mBootTimeMs;
+            }
+        }).when(mClock).getElapsedSinceBootMillis();
         mWifiDiagnostics = new WifiDiagnostics(
                 mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
         mWifiNative.enableVerboseLogging(0);
@@ -731,6 +746,7 @@ public class WifiDiagnosticsTest {
         assertArrayEquals(ALERT_DATA, alertReport.alertData);
 
         verify(mWifiMetrics).logFirmwareAlert(ALERT_REASON_CODE);
+        verify(mWifiScoreCard).noteFirmwareAlert(ALERT_REASON_CODE);
     }
 
     /** Verifies that we skip the firmware and driver dumps if verbose is not enabled. */
@@ -860,25 +876,47 @@ public class WifiDiagnosticsTest {
     public void takeBugReportCallsActivityManagerOnUserDebug() {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         mWifiDiagnostics.takeBugReport("", "");
-        verify(mActivityManagerService, times(1)).requestWifiBugReport(
-                anyString(), anyString());
+        verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
     }
 
     @Test
     public void takeBugReportSwallowsExceptions() {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
-        doThrow(new RuntimeException()).when(mActivityManagerService).requestWifiBugReport(
-                anyString(), anyString());
+        doThrow(new RuntimeException()).when(mBugreportManager).requestBugreport(
+                any(), any(), any());
         mWifiDiagnostics.takeBugReport("", "");
-        verify(mActivityManagerService, times(1)).requestWifiBugReport(
-                anyString(), anyString());
+        verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
     }
 
     @Test
     public void takeBugReportDoesNothingOnUserBuild() {
         when(mBuildProperties.isUserBuild()).thenReturn(true);
         mWifiDiagnostics.takeBugReport("", "");
-        verify(mActivityManagerService, never()).requestWifiBugReport(anyString(), anyString());
+        verify(mBugreportManager, never()).requestBugreport(any(), any(), any());
+    }
+
+    @Test
+    public void tryTakeBugReportTwiceWithInsufficientTimeGap() {
+        when(mBuildProperties.isUserBuild()).thenReturn(false);
+        // 1st attempt should succeed
+        when(mClock.getWallClockMillis()).thenReturn(10L);
+        mWifiDiagnostics.takeBugReport("", "");
+        verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
+        // 2nd attempt should fail
+        when(mClock.getWallClockMillis()).thenReturn(BUG_REPORT_MIN_WINDOW_MS - 20L);
+        mWifiDiagnostics.takeBugReport("", "");
+        verify(mBugreportManager, times(1)).requestBugreport(any(), any(), any());
+    }
+
+    @Test
+    public void takeBugReportDoesNothingWhenConfigOverlayDisabled() {
+        when(mBuildProperties.isUserBuild()).thenReturn(false);
+        mResources.setBoolean(R.bool.config_wifi_diagnostics_bugreport_enabled, false);
+        mWifiDiagnostics = new WifiDiagnostics(
+                mContext, mWifiInjector, mWifiNative, mBuildProperties, mLastMileLogger, mClock);
+
+        mWifiDiagnostics.takeBugReport("", "");
+        verify(mBugreportManager, never()).requestBugreport(any(), any(), any());
     }
 
     /** Verifies that we flush HAL ringbuffer when capture bugreport. */
@@ -896,7 +934,7 @@ public class WifiDiagnosticsTest {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         when(mWifiNative.flushRingBufferData()).thenReturn(true);
         /** captureAlertData with mock fatal firmware alert*/
-        mWifiDiagnostics.captureAlertData(FATAL_FW_ALART_LIST[0], ALERT_DATA);
+        mWifiDiagnostics.captureAlertData(FATAL_FW_ALERT_LIST[0], ALERT_DATA);
         verify(mWifiNative).flushRingBufferData();
     }
 
@@ -906,7 +944,7 @@ public class WifiDiagnosticsTest {
         when(mBuildProperties.isUserBuild()).thenReturn(false);
         when(mWifiNative.flushRingBufferData()).thenReturn(true);
         /** captureAlertData with mock non fatal firmware alert*/
-        mWifiDiagnostics.captureAlertData(NON_FATAL_FW_ALART, ALERT_DATA);
+        mWifiDiagnostics.captureAlertData(NON_FATAL_FW_ALERT, ALERT_DATA);
         verify(mWifiNative, never()).flushRingBufferData();
     }
 

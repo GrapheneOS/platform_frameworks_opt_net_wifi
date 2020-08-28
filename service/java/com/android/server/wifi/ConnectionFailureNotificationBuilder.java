@@ -21,16 +21,14 @@ import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
+import android.graphics.drawable.Icon;
 import android.net.wifi.WifiConfiguration;
 import android.os.Handler;
 import android.view.WindowManager;
 
-import com.android.internal.R;
-import com.android.internal.notification.SystemNotificationChannels;
+import com.android.wifi.resources.R;
 
 /**
  * Helper class for ConnectionFailureNotifier.
@@ -45,19 +43,17 @@ public class ConnectionFailureNotificationBuilder {
     public static final String RANDOMIZATION_SETTINGS_NETWORK_SSID =
             "com.android.server.wifi.RANDOMIZATION_SETTINGS_NETWORK_SSID";
 
-    private Context mContext;
+    private WifiContext mContext;
     private String mPackageName;
-    private Resources mResources;
     private FrameworkFacade mFrameworkFacade;
     private WifiConnectivityManager mWifiConnectivityManager;
     private NotificationManager mNotificationManager;
     private Handler mHandler;
 
-    public ConnectionFailureNotificationBuilder(Context context, String packageName,
+    public ConnectionFailureNotificationBuilder(WifiContext context, String packageName,
             FrameworkFacade framework) {
         mContext = context;
         mPackageName = packageName;
-        mResources = context.getResources();
         mFrameworkFacade = framework;
     }
 
@@ -70,9 +66,9 @@ public class ConnectionFailureNotificationBuilder {
             @NonNull WifiConfiguration config) {
         String ssid = config.SSID;
         String ssidAndSecurityType = config.getSsidAndSecurityTypeString();
-        String title = mResources.getString(
+        String title = mContext.getResources().getString(
                 R.string.wifi_cannot_connect_with_randomized_mac_title, ssid);
-        String content = mResources.getString(
+        String content = mContext.getResources().getString(
                 R.string.wifi_cannot_connect_with_randomized_mac_message);
 
         Intent showDetailIntent = new Intent(ACTION_SHOW_SET_RANDOMIZATION_DETAILS)
@@ -82,17 +78,18 @@ public class ConnectionFailureNotificationBuilder {
         PendingIntent pendingShowDetailIntent = mFrameworkFacade.getBroadcast(
                 mContext, 0, showDetailIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        return mFrameworkFacade.makeNotificationBuilder(mContext,
-                SystemNotificationChannels.NETWORK_ALERTS)
-                .setSmallIcon(R.drawable.stat_notify_wifi_in_range)
+        return mFrameworkFacade.makeNotificationBuilder(
+                mContext, WifiService.NOTIFICATION_NETWORK_ALERTS)
+                .setSmallIcon(Icon.createWithResource(mContext.getWifiOverlayApkPkgName(),
+                        com.android.wifi.resources.R.drawable.stat_notify_wifi_in_range))
                 .setTicker(title)
                 .setContentTitle(title)
                 .setContentText(content)
                 .setContentIntent(pendingShowDetailIntent)
                 .setShowWhen(false)
                 .setLocalOnly(true)
-                .setColor(mResources.getColor(R.color.system_notification_accent_color,
-                        mContext.getTheme()))
+                .setColor(mContext.getResources().getColor(
+                        android.R.color.system_notification_accent_color, mContext.getTheme()))
                 .setAutoCancel(true)
                 .build();
     }
@@ -105,16 +102,16 @@ public class ConnectionFailureNotificationBuilder {
     public AlertDialog buildChangeMacRandomizationSettingDialog(
             String ssid, DialogInterface.OnClickListener onUserConfirm) {
         AlertDialog.Builder builder = mFrameworkFacade.makeAlertDialogBuilder(mContext)
-                .setTitle(mResources.getString(
+                .setTitle(mContext.getResources().getString(
                         R.string.wifi_disable_mac_randomization_dialog_title))
-                .setMessage(mResources.getString(
+                .setMessage(mContext.getResources().getString(
                         R.string.wifi_disable_mac_randomization_dialog_message, ssid))
                 .setPositiveButton(
-                        mResources.getString(
+                        mContext.getResources().getString(
                                 R.string.wifi_disable_mac_randomization_dialog_confirm_text),
                         onUserConfirm)
                 // A null listener allows the dialog to be dismissed directly.
-                .setNegativeButton(R.string.no, null);
+                .setNegativeButton(android.R.string.no, null);
         AlertDialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);
         dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);

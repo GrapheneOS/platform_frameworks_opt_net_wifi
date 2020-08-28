@@ -265,8 +265,8 @@ public class NetworkRequestStoreData implements WifiConfigStore.StoreData {
                     networkType = (int) value;
                     break;
                 default:
-                    throw new XmlPullParserException(
-                            "Unknown value name found: " + valueName[0]);
+                    Log.w(TAG, "Ignoring unknown value name found: " + valueName[0]);
+                    break;
             }
         }
         if (ssid == null) {

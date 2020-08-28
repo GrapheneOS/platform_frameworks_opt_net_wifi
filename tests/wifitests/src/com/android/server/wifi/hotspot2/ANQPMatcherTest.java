@@ -16,7 +16,6 @@
 
 package com.android.server.wifi.hotspot2;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -25,6 +24,7 @@ import android.net.wifi.EAPConstants;
 import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.IMSIParameter;
+import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.hotspot2.anqp.CellularNetwork;
 import com.android.server.wifi.hotspot2.anqp.DomainNameElement;
 import com.android.server.wifi.hotspot2.anqp.NAIRealmData;
@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,10 +48,7 @@ import java.util.Set;
  * Unit tests for {@link com.android.server.wifi.hotspot2.ANQPMatcher}.
  */
 @SmallTest
-public class ANQPMatcherTest {
-    private static final String TEST_MCC_MNC = "123456";
-    private static final String TEST_3GPP_FQDN = String.format("wlan.mnc%s.mcc%s.3gppnetwork.org",
-            TEST_MCC_MNC.substring(3), TEST_MCC_MNC.substring(0, 3));
+public class ANQPMatcherTest extends WifiBaseTest {
     /**
      * Verify that domain name match will fail when a null Domain Name ANQP element is provided.
      *
@@ -85,12 +81,12 @@ public class ANQPMatcherTest {
      */
     @Test
     public void matchDomainNameUsingIMSI() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        List<String> simImsiList = Arrays.asList(new String[] {"123457890", "123498723"});
+        IMSIParameter imsiParam = new IMSIParameter("123456", true);
+        String simImsi = "123456789012345";
         // 3GPP network domain with MCC=123 and MNC=456.
-        String[] domains = new String[] {"wlan.mnc457.mcc123.3gppnetwork.org"};
+        String[] domains = new String[] {"wlan.mnc456.mcc123.3gppnetwork.org"};
         DomainNameElement element = new DomainNameElement(Arrays.asList(domains));
-        assertTrue(ANQPMatcher.matchDomainName(element, null, imsiParam, simImsiList));
+        assertTrue(ANQPMatcher.matchDomainName(element, null, imsiParam, simImsi));
     }
 
     /**
@@ -270,47 +266,66 @@ public class ANQPMatcherTest {
      */
     @Test
     public void matchThreeGPPNetworkWithNullElement() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        List<String> simImsiList = Arrays.asList(new String[] {"123456789", "123498723"});
-        assertFalse(ANQPMatcher.matchThreeGPPNetwork(null, imsiParam, simImsiList));
+        IMSIParameter imsiParam = new IMSIParameter("12345", true);
+        String simImsi = "123456789012345";
+        assertFalse(ANQPMatcher.matchThreeGPPNetwork(null, imsiParam, simImsi));
     }
 
     /**
      * Verify that 3GPP network will succeed when the given 3GPP Network ANQP element contained
-     * a MCC-MNC that matches the both IMSI parameter and an IMSI from the IMSI list.
+     * a MCC-MNC that matches the both IMSI parameter and a SIM IMSI.
      *
      * @throws Exception
      */
     @Test
     public void matchThreeGPPNetwork() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        List<String> simImsiList = Arrays.asList(new String[] {"123456789", "123498723"});
+        IMSIParameter imsiParam = new IMSIParameter("123456", true);
+        String simImsi = "123456789012345";
 
         CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123456"}));
         ThreeGPPNetworkElement element =
                 new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
         // The MCC-MNC provided in 3GPP Network ANQP element matches both IMSI parameter
         // and an IMSI from the installed SIM card.
-        assertTrue(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsiList));
+        assertTrue(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsi));
+    }
+
+    /**
+     * Verify that 3GPP network will succeed when the given 3GPP Network ANQP element contained
+     * a MCC-MNC that matches the both IMSI parameter and a SIM IMSI contains 5 digits mccmnc.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void matchThreeGPPNetworkWith5DigitsMccMnc() throws Exception {
+        IMSIParameter imsiParam = new IMSIParameter("12345", true);
+        String simImsi = "123456789012345";
+
+        CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"12345"}));
+        ThreeGPPNetworkElement element =
+                new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
+        // The MCC-MNC provided in 3GPP Network ANQP element matches both IMSI parameter
+        // and an IMSI from the installed SIM card.
+        assertTrue(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsi));
     }
 
     /**
      * Verify that 3GPP network will failed when the given 3GPP Network ANQP element contained
-     * a MCC-MNC that match the IMSI parameter but not the IMSI list.
+     * a MCC-MNC that match the IMSI parameter but not the SIM IMSI.
      *
      * @throws Exception
      */
     @Test
     public void matchThreeGPPNetworkWithoutSimImsiMatch() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        List<String> simImsiList = Arrays.asList(new String[] {"123457890", "123498723"});
+        IMSIParameter imsiParam = new IMSIParameter("123457", true);
+        String simImsi = "123456789012345";
 
-        CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123456"}));
+        CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123457"}));
         ThreeGPPNetworkElement element =
                 new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
         // The MCC-MNC provided in 3GPP Network ANQP element doesn't match any of the IMSIs
         // from the installed SIM card.
-        assertFalse(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsiList));
+        assertFalse(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsi));
     }
 
     /**
@@ -321,107 +336,29 @@ public class ANQPMatcherTest {
      */
     @Test
     public void matchThreeGPPNetworkWithImsiParamMismatch() throws Exception {
-        IMSIParameter imsiParam = new IMSIParameter("1234", true);
-        List<String> simImsiList = Arrays.asList(new String[] {"123457890", "123498723"});
+        IMSIParameter imsiParam = new IMSIParameter("12345", true);
+        String simImsi = "123456789012345";
 
         CellularNetwork network = new CellularNetwork(Arrays.asList(new String[] {"123356"}));
         ThreeGPPNetworkElement element =
                 new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
         // The MCC-MNC provided in 3GPP Network ANQP element doesn't match the IMSI parameter.
-        assertFalse(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsiList));
+        assertFalse(ANQPMatcher.matchThreeGPPNetwork(element, imsiParam, simImsi));
     }
 
     /**
-     * Verify that it will return a EAP-Method from the NAI realm when there is a matched realm in
-     * the NAIRealm element.
+     * Verify that domain name match will fail when domain contains invalid values.
+     *
+     * @throws Exception
      */
     @Test
-    public void getEapMethodForNAIRealmWithCarrierInMatch() {
-        // Test data.
-        String realm = TEST_3GPP_FQDN;
-        int eapMethodID = EAPConstants.EAP_AKA;
-
-        // Create a realm that has the EAP method
-        EAPMethod method = new EAPMethod(eapMethodID, null);
-        NAIRealmData realmData = new NAIRealmData(
-                Arrays.asList(new String[]{realm}), Arrays.asList(new EAPMethod[]{method}));
-
-        // Setup NAI Realm element.
-        NAIRealmElement element = new NAIRealmElement(
-                Arrays.asList(new NAIRealmData[]{realmData}));
-
-        assertEquals(EAPConstants.EAP_AKA,
-                ANQPMatcher.getCarrierEapMethodFromMatchingNAIRealm(TEST_3GPP_FQDN, element));
-    }
-
-    /**
-     * Verify that it will return -1 when there is a matched realm in the NAIRealm element, but it
-     * does not have a EAP Method.
-     */
-    @Test
-    public void getEapMethodForNAIRealmWithCarrierInMatchButNotEapMethod() {
-        // Test data.
-        String realm = TEST_3GPP_FQDN;
-        NAIRealmData realmData = new NAIRealmData(Arrays.asList(new String[]{realm}),
-                new ArrayList<>());
-
-        // Setup NAI Realm element.
-        NAIRealmElement element = new NAIRealmElement(
-                Arrays.asList(new NAIRealmData[]{realmData}));
-
-        assertEquals(-1,
-                ANQPMatcher.getCarrierEapMethodFromMatchingNAIRealm(TEST_3GPP_FQDN, element));
-    }
-
-    /**
-     * Verify that it will return -1 when there is a matched realm in the NAIRealm element, but it
-     * does have non-carrier EAP-method.
-     */
-    @Test
-    public void getEapMethodForNAIRealmWithCarrierInMatchButNotCarrierEapMethod() {
-        // Test data.
-        String realm = TEST_3GPP_FQDN;
-        int eapMethodID = EAPConstants.EAP_TTLS;
-        NonEAPInnerAuth authParam = new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAP);
-        Set<AuthParam> authSet = new HashSet<>();
-        authSet.add(authParam);
-        Map<Integer, Set<AuthParam>> authMap = new HashMap<>();
-        authMap.put(authParam.getAuthTypeID(), authSet);
-
-        // Setup NAI Realm element.
-        EAPMethod method = new EAPMethod(eapMethodID, authMap);
-        NAIRealmData realmData = new NAIRealmData(
-                Arrays.asList(new String[]{realm}), Arrays.asList(new EAPMethod[]{method}));
-        NAIRealmElement element = new NAIRealmElement(
-                Arrays.asList(new NAIRealmData[]{realmData}));
-
-        assertEquals(-1,
-                ANQPMatcher.getCarrierEapMethodFromMatchingNAIRealm(TEST_3GPP_FQDN, element));
-    }
-
-    /**
-     * Verify that it will return -1 when there is no matched realm in the NAIRealm element.
-     */
-    @Test
-    public void getEapMethodForNAIRealmWithCarrierInNoMatch() {
-        // Test data.
-        String realm = "test.com";
-        int eapMethodID = EAPConstants.EAP_TTLS;
-        NonEAPInnerAuth authParam = new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAP);
-        Set<AuthParam> authSet = new HashSet<>();
-        authSet.add(authParam);
-        Map<Integer, Set<AuthParam>> authMap = new HashMap<>();
-        authMap.put(authParam.getAuthTypeID(), authSet);
-
-        // Setup NAI Realm element.
-        EAPMethod method = new EAPMethod(eapMethodID, authMap);
-        NAIRealmData realmData = new NAIRealmData(
-                Arrays.asList(new String[]{realm}), Arrays.asList(new EAPMethod[]{method}));
-        NAIRealmElement element = new NAIRealmElement(
-                Arrays.asList(new NAIRealmData[]{realmData}));
-
-        assertEquals(-1,
-                ANQPMatcher.getCarrierEapMethodFromMatchingNAIRealm(TEST_3GPP_FQDN, element));
+    public void verifyInvalidDomain() throws Exception {
+        IMSIParameter imsiParam = new IMSIParameter("123456", true);
+        String simImsi = "123456789012345";
+        // 3GPP network domain with MCC=123 and MNC=456.
+        String[] domains = new String[] {"wlan.mnc456.mccI23.3gppnetwork.org"};
+        DomainNameElement element = new DomainNameElement(Arrays.asList(domains));
+        assertFalse(ANQPMatcher.matchDomainName(element, null, imsiParam, simImsi));
     }
 
     /**
