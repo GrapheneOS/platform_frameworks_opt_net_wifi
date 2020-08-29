@@ -168,6 +168,10 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 MOVING_PNO_SCAN_INTERVAL_MILLIS);
         resources.setInteger(R.integer.config_wifiStationaryPnoScanIntervalMillis,
                 STATIONARY_PNO_SCAN_INTERVAL_MILLIS);
+        resources.setInteger(R.integer.config_wifiPnoScanLowRssiNetworkRetryStartDelaySec,
+                LOW_RSSI_NETWORK_RETRY_START_DELAY_SEC);
+        resources.setInteger(R.integer.config_wifiPnoScanLowRssiNetworkRetryMaxDelaySec,
+                LOW_RSSI_NETWORK_RETRY_MAX_DELAY_SEC);
     }
 
     /**
@@ -255,6 +259,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final int MOVING_PNO_SCAN_INTERVAL_MILLIS = 20_000;
     private static final int STATIONARY_PNO_SCAN_INTERVAL_MILLIS = 60_000;
     private static final int POWER_SAVE_SCAN_INTERVAL_MULTIPLIER = 2;
+    private static final int LOW_RSSI_NETWORK_RETRY_START_DELAY_SEC = 20;
+    private static final int LOW_RSSI_NETWORK_RETRY_MAX_DELAY_SEC = 80;
 
     Context mockContext() {
         Context context = mock(Context.class);
@@ -731,7 +737,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      *
      * Expected behavior: WifiConnectivityManager doubles the low RSSI
      * network retry delay value after QNS skips the PNO scan results
-     * because of their low RSSI values.
+     * because of their low RSSI values and reaches max after three scans
      */
     @Test
     public void pnoRetryForLowRssiNetwork() {
@@ -740,22 +746,29 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Set screen to off
         setScreenState(false);
 
-        // Get the current retry delay value
-        int lowRssiNetworkRetryDelayStartValue = mWifiConnectivityManager
-                .getLowRssiNetworkRetryDelay();
-
         // Set WiFi to disconnected state to trigger PNO scan
         mWifiConnectivityManager.handleConnectionStateChanged(
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
         // Get the retry delay value after QNS didn't select a
-        // network candicate from the PNO scan results.
-        int lowRssiNetworkRetryDelayAfterPnoValue = mWifiConnectivityManager
+        // network candidate from the PNO scan results.
+        int lowRssiNetworkRetryDelayAfterOnePnoMs = mWifiConnectivityManager
                 .getLowRssiNetworkRetryDelay();
 
-        assertEquals(lowRssiNetworkRetryDelayStartValue * 2,
-                lowRssiNetworkRetryDelayAfterPnoValue);
+        assertEquals(LOW_RSSI_NETWORK_RETRY_START_DELAY_SEC * 2000,
+                lowRssiNetworkRetryDelayAfterOnePnoMs);
+
+        // Set WiFi to disconnected state to trigger two more PNO scans
+        for (int i = 0; i < 2; i++) {
+            mWifiConnectivityManager.handleConnectionStateChanged(
+                    mPrimaryClientModeManager,
+                    WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+        }
+        int lowRssiNetworkRetryDelayAfterThreePnoMs = mWifiConnectivityManager
+                .getLowRssiNetworkRetryDelay();
+        assertEquals(LOW_RSSI_NETWORK_RETRY_MAX_DELAY_SEC * 1000,
+                lowRssiNetworkRetryDelayAfterThreePnoMs);
     }
 
     /**
