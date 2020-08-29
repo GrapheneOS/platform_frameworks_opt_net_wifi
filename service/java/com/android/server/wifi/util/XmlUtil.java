@@ -556,12 +556,13 @@ public class XmlUtil {
          * @param outerTagDepth depth of the outer tag in the XML document.
          * @param shouldExpectEncryptedCredentials Whether to expect encrypted credentials or not.
          * @param encryptionUtil Instance of {@link EncryptedDataXmlUtil}.
+         * @param fromSuggestion Is this WifiConfiguration created from a WifiNetworkSuggestion.
          * @return Pair<Config key, WifiConfiguration object> if parsing is successful,
          * null otherwise.
          */
         public static Pair<String, WifiConfiguration> parseFromXml(
                 XmlPullParser in, int outerTagDepth, boolean shouldExpectEncryptedCredentials,
-                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil)
+                @Nullable WifiConfigStoreEncryptionUtil encryptionUtil, boolean fromSuggestion)
                 throws XmlPullParserException, IOException {
             WifiConfiguration configuration = new WifiConfiguration();
             String configKeyInData = null;
@@ -747,7 +748,7 @@ public class XmlUtil {
                 configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
             }
             if (configuration.macRandomizationSetting
-                    == WifiConfiguration.RANDOMIZATION_PERSISTENT) {
+                    == WifiConfiguration.RANDOMIZATION_PERSISTENT && !fromSuggestion) {
                 configuration.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
             }
             return Pair.create(configKeyInData, configuration);
