@@ -327,7 +327,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         // trigger extractCurrentSoftwareBuildInfo() call to update currSoftwareBuildInfo
         mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
         mWifiHealthMonitor.setWifiEnabled(true);
-        assertEquals(0, mWifiHealthMonitor.getWifiStackVersion());
+        assertEquals(MODULE_VERSION, mWifiHealthMonitor.getWifiStackVersion());
         millisecondsPass(5000);
         mWifiScanner.startScan(mScanSettings, mScanListener);
         mAlarmManager.dispatch(WifiHealthMonitor.POST_BOOT_DETECTION_TIMER_TAG);
