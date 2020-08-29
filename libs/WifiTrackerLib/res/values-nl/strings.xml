@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Beperkte verbinding"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Geen toegang tot privé-DNS-server"</string>
     <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"Geen internet"</string>
-    <!-- no translation found for wifi_connected_low_quality (4478331645458058445) -->
-    <skip />
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Lage kwaliteit"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Geen"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Verlopen"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Tik om aan te melden"</string>
