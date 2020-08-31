@@ -2947,6 +2947,23 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                     case WifiP2pMonitor.P2P_GROUP_STARTED_EVENT:
                         loge("Duplicate group creation event notice, ignore");
                         break;
+                    case WifiP2pManager.CANCEL_CONNECT:
+                        mWifiNative.p2pCancelConnect();
+                        mWifiP2pMetrics.endConnectionEvent(
+                                P2pConnectionEvent.CLF_CANCEL);
+
+                        ArrayList<WifiP2pDevice> invitingPeers = new ArrayList<>();
+                        mPeers.getDeviceList().forEach(dev -> {
+                            if (dev.status == WifiP2pDevice.INVITED) {
+                                invitingPeers.add(dev);
+                            }
+                        });
+                        if (mPeers.remove(new WifiP2pDeviceList(invitingPeers))) {
+                            sendPeersChangedBroadcast();
+                        }
+
+                        replyToMessage(message, WifiP2pManager.CANCEL_CONNECT_SUCCEEDED);
+                        break;
                     default:
                         return NOT_HANDLED;
                 }
