@@ -678,7 +678,7 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
         req.baseConfigs.useRssiThreshold = false;
         req.baseConfigs.disableDiscoveryTerminationIndication =
                 !publishConfig.mEnableTerminateNotification;
-        req.baseConfigs.disableMatchExpirationIndication = true;
+        req.baseConfigs.disableMatchExpirationIndication = false;
         req.baseConfigs.disableFollowupReceivedIndication = false;
 
         req.autoAcceptDataPathRequests = false;

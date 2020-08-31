@@ -160,6 +160,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     private static final int NOTIFICATION_TYPE_ON_DATA_PATH_CONFIRM = 310;
     private static final int NOTIFICATION_TYPE_ON_DATA_PATH_END = 311;
     private static final int NOTIFICATION_TYPE_ON_DATA_PATH_SCHED_UPDATE = 312;
+    private static final int NOTIFICATION_TYPE_MATCH_EXPIRED = 313;
 
     private static final SparseArray<String> sSmToString = MessageUtils.findMessageNames(
             new Class[]{WifiAwareStateManager.class},
@@ -1090,6 +1091,18 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     }
 
     /**
+     * Place a callback request on the state machine queue: a discovered session
+     * has expired - e.g. some discovered peer is no longer visible.
+     */
+    public void onMatchExpiredNotification(int pubSubId, int requestorInstanceId) {
+        Message msg = mSm.obtainMessage(MESSAGE_TYPE_NOTIFICATION);
+        msg.arg1 = NOTIFICATION_TYPE_MATCH_EXPIRED;
+        msg.arg2 = pubSubId;
+        msg.getData().putInt(MESSAGE_BUNDLE_KEY_REQ_INSTANCE_ID, requestorInstanceId);
+        mSm.sendMessage(msg);
+    }
+
+    /**
      * Place a callback request on the state machine queue: a session (publish
      * or subscribe) has terminated (per plan or due to an error).
      */
@@ -1411,6 +1424,13 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
 
                     onMatchLocal(pubSubId, requestorInstanceId, peerMac, serviceSpecificInfo,
                             matchFilter, rangingIndication, rangeMm);
+                    break;
+                }
+                case NOTIFICATION_TYPE_MATCH_EXPIRED: {
+                    int pubSubId = msg.arg2;
+                    int requestorInstanceId = msg.getData()
+                            .getInt(MESSAGE_BUNDLE_KEY_REQ_INSTANCE_ID);
+                    onMatchExpiredLocal(pubSubId, requestorInstanceId);
                     break;
                 }
                 case NOTIFICATION_TYPE_SESSION_TERMINATED: {
@@ -3070,6 +3090,22 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         }
         data.second.onMatch(requestorInstanceId, peerMac, serviceSpecificInfo, matchFilter,
                 rangingIndication, rangeMm);
+    }
+
+    private void onMatchExpiredLocal(int pubSubId, int requestorInstanceId) {
+        if (VDBG) {
+            Log.v(TAG,
+                    "onMatchExpiredNotification: pubSubId=" + pubSubId
+                            + ", requestorInstanceId=" + requestorInstanceId);
+        }
+
+        Pair<WifiAwareClientState, WifiAwareDiscoverySessionState> data =
+                getClientSessionForPubSubId(pubSubId);
+        if (data == null) {
+            Log.e(TAG, "onMatch: no session found for pubSubId=" + pubSubId);
+            return;
+        }
+        data.second.onMatchExpired(requestorInstanceId);
     }
 
     private void onSessionTerminatedLocal(int pubSubId, boolean isPublish, int reason) {
