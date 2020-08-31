@@ -16,7 +16,11 @@
 
 package com.android.server.wifi.util;
 
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.util.SparseIntArray;
+
+import com.android.server.wifi.BssidBlocklistMonitor;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkDisableReason;
 
 /**
  * Utilities for Metrics collections.
@@ -187,5 +191,66 @@ public class MetricsUtils {
         }
 
         return protoArray;
+    }
+
+    /**
+     * Converts NetworkSelectionStatus.NetworkSelectionDisableReason to
+     * WifiMetricsProto.NetworkDisableReason.DisableReason
+     */
+    public static int convertNetworkSelectionDisableReasonToWifiProtoEnum(int reason) {
+        switch (reason) {
+            case NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION:
+                return NetworkDisableReason.REASON_ASSOCIATION_REJECTION;
+            case NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE:
+                return NetworkDisableReason.REASON_AUTHENTICATION_FAILURE;
+            case NetworkSelectionStatus.DISABLED_DHCP_FAILURE:
+                return NetworkDisableReason.REASON_DHCP_FAILURE;
+            case NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY:
+            case NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT:
+                return NetworkDisableReason.REASON_NETWORK_VALIDATION_FAILURE;
+            case NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS:
+                return NetworkDisableReason.REASON_AUTHENTICATION_NO_CREDENTIALS;
+            case NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD:
+                return NetworkDisableReason.REASON_WRONG_PASSWORD;
+            case NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_SUBSCRIPTION:
+                return NetworkDisableReason.REASON_AUTHENTICATION_NO_SUBSCRIPTION;
+            default:
+                return NetworkDisableReason.REASON_UNKNOWN;
+        }
+    }
+
+    /**
+     * Converts BssidBlocklistMonitor.FailureReason to
+     * WifiMetricsProto.NetworkDisableReason.DisableReason
+     */
+    public static int convertBssidBlocklistReasonToWifiProtoEnum(int reason) {
+        switch (reason) {
+            case BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA:
+                return NetworkDisableReason.REASON_AP_UNABLE_TO_HANDLE_NEW_STA;
+            case BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE:
+                return NetworkDisableReason.REASON_NETWORK_VALIDATION_FAILURE;
+            case BssidBlocklistMonitor.REASON_WRONG_PASSWORD:
+                return NetworkDisableReason.REASON_WRONG_PASSWORD;
+            case BssidBlocklistMonitor.REASON_EAP_FAILURE:
+                return NetworkDisableReason.REASON_EAP_FAILURE;
+            case BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION:
+                return NetworkDisableReason.REASON_ASSOCIATION_REJECTION;
+            case BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT:
+                return NetworkDisableReason.REASON_ASSOCIATION_TIMEOUT;
+            case BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE:
+                return NetworkDisableReason.REASON_AUTHENTICATION_FAILURE;
+            case BssidBlocklistMonitor.REASON_DHCP_FAILURE:
+                return NetworkDisableReason.REASON_DHCP_FAILURE;
+            case BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT:
+                return NetworkDisableReason.REASON_ABNORMAL_DISCONNECT;
+            case BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE:
+                return NetworkDisableReason.REASON_FRAMEWORK_DISCONNECT_MBO_OCE;
+            case BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT:
+                return NetworkDisableReason.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT;
+            case BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE:
+                return NetworkDisableReason.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE;
+            default:
+                return NetworkDisableReason.REASON_UNKNOWN;
+        }
     }
 }
