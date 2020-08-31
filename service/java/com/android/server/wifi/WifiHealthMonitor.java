@@ -330,8 +330,20 @@ public class WifiHealthMonitor {
      * @Return a non-zero value if version code is available, 0 otherwise.
      */
     public long getWifiStackVersion() {
-        WifiSoftwareBuildInfo currentBuild = getWifiSystemInfoStats().getCurrSoftwareBuildInfo();
-        return (currentBuild == null) ? 0 : currentBuild.getWifiStackVersion();
+        PackageManager packageManager = mContext.getPackageManager();
+        long wifiStackVersion = 0;
+        try {
+            ModuleInfo wifiModule = packageManager.getModuleInfo(
+                    WIFI_APEX_NAME, PackageManager.MODULE_APEX_NAME);
+            String wifiPackageName = wifiModule.getPackageName();
+            if (wifiPackageName != null) {
+                wifiStackVersion = packageManager.getPackageInfo(
+                        wifiPackageName, PackageManager.MATCH_APEX).getLongVersionCode();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, " Hit PackageManager exception", e);
+        }
+        return wifiStackVersion;
     }
 
     private synchronized void dailyDetectionHandler() {
@@ -540,19 +552,7 @@ public class WifiHealthMonitor {
         if (!mWifiEnabled) {
             return null;
         }
-        PackageManager packageManager = mContext.getPackageManager();
-        long wifiStackVersion = 0;
-        try {
-            ModuleInfo wifiModule = packageManager.getModuleInfo(
-                    WIFI_APEX_NAME, PackageManager.MODULE_APEX_NAME);
-            String wifiPackageName = wifiModule.getPackageName();
-            if (wifiPackageName != null) {
-                wifiStackVersion = packageManager.getPackageInfo(
-                        wifiPackageName, PackageManager.MATCH_APEX).getLongVersionCode();
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, " Hit PackageManager exception", e);
-        }
+        long wifiStackVersion = getWifiStackVersion();
         String osBuildVersion = replaceNullByEmptyString(Build.DISPLAY);
         if (mWifiNative == null) {
             return null;
