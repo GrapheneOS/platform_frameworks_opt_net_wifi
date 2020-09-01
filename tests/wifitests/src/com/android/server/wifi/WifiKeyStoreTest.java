@@ -330,6 +330,33 @@ public class WifiKeyStoreTest extends WifiBaseTest {
     }
 
     /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 fails when a client certificate
+     * key length is less than 3072 bits
+     */
+    @Test
+    public void testConfigurationFailureSuiteB2048Rsa() throws Exception {
+        when(mWifiEnterpriseConfig.getCaCertificateAliases())
+                .thenReturn(new String[]{USER_CA_CERT_ALIAS});
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_BAD_SUITE_B_RSA2048_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_BAD_SUITE_B_RSA2048_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[]{FakeKeys.CA_SUITE_B_RSA3072_CERT});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_BAD_SUITE_B_RSA2048_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_RSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+    }
+
+    /**
      * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 fails when one CA in the list
      * is RSA but not with the required security
      */
@@ -392,6 +419,32 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
     }
 
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for ECDSA fails when a client
+     * certificate key bit length is less than 384 bits.
+     */
+    @Test
+    public void testConfigureFailureSuiteBEcdsa256() throws Exception {
+        when(mWifiEnterpriseConfig.getCaCertificateAliases())
+                .thenReturn(new String[]{USER_CA_CERT_ALIAS});
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_BAD_SUITE_B_ECC_256_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_BAD_SUITE_B_ECDSA_256_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_BAD_SUITE_B_ECDSA_256_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[]{FakeKeys.CA_SUITE_B_ECDSA_CERT});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_BAD_SUITE_B_ECDSA_256_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_ECDSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+    }
     /**
      * Test to confirm that old CA alias was removed only if the certificate was installed
      * by the app.
