@@ -32,6 +32,7 @@ import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -77,6 +78,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.Experi
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.LinkProbeFailureReasonCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkSpeedCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.MeteredNetworkStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkDisableReason;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkSelectionExperimentDecisions;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.PasspointProfileTypeCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.PasspointProvisionStats;
@@ -117,6 +119,7 @@ import org.json.JSONObject;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -811,6 +814,35 @@ public class WifiMetrics {
         }
     }
 
+    private NetworkDisableReason convertToNetworkDisableReason(
+            WifiConfiguration config, Set<Integer> bssidBlocklistReasons) {
+        NetworkSelectionStatus status = config.getNetworkSelectionStatus();
+        NetworkDisableReason result = new NetworkDisableReason();
+        if (config.allowAutojoin) {
+            if (!status.isNetworkEnabled()) {
+                result.disableReason =
+                        MetricsUtils.convertNetworkSelectionDisableReasonToWifiProtoEnum(
+                                status.getNetworkSelectionDisableReason());
+                if (status.isNetworkPermanentlyDisabled()) {
+                    result.configPermanentlyDisabled = true;
+                } else {
+                    result.configTemporarilyDisabled = true;
+                }
+            }
+        } else {
+            result.disableReason = NetworkDisableReason.REASON_AUTO_JOIN_DISABLED;
+            result.configPermanentlyDisabled = true;
+        }
+
+        int[] convertedBssidBlockReasons = bssidBlocklistReasons.stream()
+                .mapToInt(i -> MetricsUtils.convertBssidBlocklistReasonToWifiProtoEnum(i))
+                .toArray();
+        if (convertedBssidBlockReasons.length > 0) {
+            result.bssidDisableReasons = convertedBssidBlockReasons;
+        }
+        return result;
+    }
+
     class UserActionEventWithTime {
         private UserActionEvent mUserActionEvent;
         private long mWallClockTimeMs = 0; // wall clock time for debugging only
@@ -833,6 +865,8 @@ public class WifiMetrics {
                     networkInfo.isEphemeral = config.isEphemeral();
                     networkInfo.isPasspoint = config.isPasspoint();
                     mUserActionEvent.targetNetworkInfo = networkInfo;
+                    mUserActionEvent.networkDisableReason = convertToNetworkDisableReason(
+                            config, mBssidBlocklistMonitor.getFailureReasonsForSsid(config.SSID));
                 }
             }
         }
@@ -893,7 +927,24 @@ public class WifiMetrics {
             }
             WifiStatus wifiStatus = mUserActionEvent.wifiStatus;
             if (wifiStatus != null) {
-                sb.append("\nWifiStatus=" + wifiStatus.toString());
+                sb.append("\nWifiStatus: isConnected=").append(wifiStatus.isConnected);
+                sb.append(" isValidated=").append(wifiStatus.isValidated);
+                sb.append(" lastRssi=").append(wifiStatus.lastRssi);
+                sb.append(" estimatedTxKbps=").append(wifiStatus.estimatedTxKbps);
+                sb.append(" estimatedRxKbps=").append(wifiStatus.estimatedRxKbps);
+                sb.append(" isStuckDueToUserConnectChoice=")
+                        .append(wifiStatus.isStuckDueToUserConnectChoice);
+            }
+            NetworkDisableReason disableReason = mUserActionEvent.networkDisableReason;
+            if (disableReason != null) {
+                sb.append("\nNetworkDisableReason: DisableReason=")
+                        .append(disableReason.disableReason);
+                sb.append(" configTemporarilyDisabled=")
+                        .append(disableReason.configTemporarilyDisabled);
+                sb.append(" configPermanentlyDisabled=")
+                        .append(disableReason.configPermanentlyDisabled);
+                sb.append(" bssidDisableReasons=")
+                        .append(Arrays.toString(disableReason.bssidDisableReasons));
             }
             return sb.toString();
         }
