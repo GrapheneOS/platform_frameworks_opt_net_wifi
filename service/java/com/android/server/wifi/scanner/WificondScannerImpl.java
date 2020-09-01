@@ -473,6 +473,7 @@ public class WificondScannerImpl extends WifiScannerImpl implements Handler.Call
     protected void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         synchronized (mSettingsLock) {
             long nowMs = mClock.getElapsedSinceBootMillis();
+            Log.d(TAG, "Latest native scan results nowMs = " + nowMs);
             pw.println("Latest native scan results:");
             if (mNativeScanResults != null) {
                 List<ScanResult> scanResults = mNativeScanResults.stream().map(r -> {
