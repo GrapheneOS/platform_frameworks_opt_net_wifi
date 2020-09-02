@@ -880,7 +880,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mSimRequiredNotifier, never()).showSimRequiredNotification(any(), any());
-
         assertEquals("L3ProvisioningState", getCurrentState().getName());
     }
 
@@ -898,6 +897,23 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mSimRequiredNotifier).showSimRequiredNotification(any(), any());
         verify(mWifiNative, times(2)).removeAllNetworks(WIFI_IFACE_NAME);
+    }
+
+    /**
+     * When the SIM card was removed, if the current wifi connection is using it, the connection
+     * should be disconnected, otherwise, the connection shouldn't be impacted.
+     */
+    @Test
+    public void testResetSimWhenConnectedSimRemovedAfterNetworkRemoval() throws Exception {
+        setupEapSimConnection();
+        doReturn(false).when(mWifiCarrierInfoManager).isSimPresent(eq(DATA_SUBID));
+        when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(null);
+        mCmi.sendMessage(ClientModeImpl.CMD_RESET_SIM_NETWORKS,
+                ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED);
+        mLooper.dispatchAll();
+
+        verify(mSimRequiredNotifier, never()).showSimRequiredNotification(any(), any());
+        assertEquals("L3ProvisioningState", getCurrentState().getName());
     }
 
     /**
