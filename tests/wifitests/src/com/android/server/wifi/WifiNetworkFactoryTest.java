@@ -52,6 +52,7 @@ import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiScanner.ScanListener;
 import android.net.wifi.WifiScanner.ScanSettings;
+import android.net.wifi.WifiSsid;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Message;
@@ -1122,9 +1123,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         verify(mWifiMetrics).setNominatorForNetwork(anyInt(),
                 eq(WifiMetricsProto.ConnectionEvent.NOMINATOR_SPECIFIER));
 
-        verify(mClientModeImpl).disconnectCommand();
-        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID_1), any(Binder.class),
-                mConnectListenerArgumentCaptor.capture(), anyInt(), anyInt());
+
     }
 
     /**
@@ -1324,6 +1323,134 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
 
         // Verify WifiConfiguration params.
         validateConnectParams(mSelectedNetwork.SSID, matchingScanResult.BSSID);
+        verify(mWifiMetrics).setNominatorForNetwork(anyInt(),
+                eq(WifiMetricsProto.ConnectionEvent.NOMINATOR_SPECIFIER));
+
+        verify(mClientModeImpl).disconnectCommand();
+        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID_1), any(Binder.class),
+                mConnectListenerArgumentCaptor.capture(), anyInt(), anyInt());
+    }
+
+    /**
+     * Verify handling of user selection to trigger connection to a network when the selected bssid
+     * is no longer seen in scan results within the cache expiry duration. Ensure we fill up the
+     * BSSID field.
+     */
+    @Test
+    public void
+            testNetworkSpecifierHandleUserSelectionConnectToNetworkMissingBssidInLatest()
+            throws Exception {
+        WifiScanner.ScanData[] scanDatas1 =
+                ScanTestUtil.createScanDatas(new int[][]{ { 2417, 2427, 5180, 5170 }});
+        setupScanData(scanDatas1, SCAN_RESULT_TYPE_WPA_PSK,
+                TEST_SSID_1, TEST_SSID_2, TEST_SSID_3, TEST_SSID_4);
+        // Modify the next set of scan results to simulate missing |TEST_SSID_1| ScanResult.
+        WifiScanner.ScanData[] scanDatas2 =
+                ScanTestUtil.createScanDatas(new int[][]{ { 2417, 2427, 5180, 5170 }});
+        setupScanData(scanDatas2, SCAN_RESULT_TYPE_WPA_PSK,
+                TEST_SSID_2, TEST_SSID_2, TEST_SSID_3, TEST_SSID_4);
+
+        // Make a specific AP request.
+        ScanResult matchingScanResult = scanDatas1[0].getResults()[0];
+        PatternMatcher ssidPatternMatch =
+                new PatternMatcher(TEST_SSID_1, PatternMatcher.PATTERN_LITERAL);
+        Pair<MacAddress, MacAddress> bssidPatternMatch =
+                Pair.create(MacAddress.fromString(matchingScanResult.BSSID),
+                        MacAddress.BROADCAST_ADDRESS);
+        WifiConfiguration wifiConfiguration = new WifiConfiguration();
+        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
+        attachWifiNetworkSpecifierAndAppInfo(
+                ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
+                TEST_PACKAGE_NAME_1);
+        mWifiNetworkFactory.needNetworkFor(mNetworkRequest, 0);
+        mWifiNetworkFactory.addCallback(mAppBinder, mNetworkRequestMatchCallback,
+                TEST_CALLBACK_IDENTIFIER);
+        verify(mNetworkRequestMatchCallback).onUserSelectionCallbackRegistration(
+                mNetworkRequestUserSelectionCallback.capture());
+        verifyPeriodicScans(
+                0L,
+                new PeriodicScanParams(0, scanDatas1),
+                new PeriodicScanParams(PERIODIC_SCAN_INTERVAL_MS, scanDatas2));
+
+        // Now trigger user selection to the network.
+        mSelectedNetwork = ScanResultUtil.createNetworkFromScanResult(matchingScanResult);
+        mSelectedNetwork.SSID = "\"" + matchingScanResult.SSID + "\"";
+        INetworkRequestUserSelectionCallback networkRequestUserSelectionCallback =
+                mNetworkRequestUserSelectionCallback.getValue();
+        assertNotNull(networkRequestUserSelectionCallback);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
+        mLooper.dispatchAll();
+
+        // Verify WifiConfiguration params.
+        validateConnectParams(mSelectedNetwork.SSID, matchingScanResult.BSSID);
+        verify(mWifiMetrics).setNominatorForNetwork(anyInt(),
+                eq(WifiMetricsProto.ConnectionEvent.NOMINATOR_SPECIFIER));
+
+        verify(mClientModeImpl).disconnectCommand();
+        verify(mClientModeImpl).connect(eq(null), eq(TEST_NETWORK_ID_1), any(Binder.class),
+                mConnectListenerArgumentCaptor.capture(), anyInt(), anyInt());
+    }
+
+    /**
+     * Verify handling of user selection to trigger connection to a network when the selected bssid
+     * is no longer seen in scan results beyond the cache expiry duration. Ensure we don't fill up
+     * the BSSID field.
+     */
+    @Test
+    public void
+            testNetworkSpecifierHandleUserSelectionConnectToNetworkStaleMissingBssidInLatest()
+            throws Exception {
+        WifiScanner.ScanData[] scanDatas1 =
+                ScanTestUtil.createScanDatas(new int[][]{ { 2417, 2427, 5180, 5170 }});
+        setupScanData(scanDatas1, SCAN_RESULT_TYPE_WPA_PSK,
+                TEST_SSID_1, TEST_SSID_2, TEST_SSID_3, TEST_SSID_4);
+        // Modify the next set of scan results to simulate missing |TEST_SSID_1| ScanResult.
+        WifiScanner.ScanData[] scanDatas2 =
+                ScanTestUtil.createScanDatas(new int[][]{ { 2417, 2427, 5180, 5170 }});
+        setupScanData(scanDatas2, SCAN_RESULT_TYPE_WPA_PSK,
+                TEST_SSID_2, TEST_SSID_2, TEST_SSID_3, TEST_SSID_4);
+
+        // Make a specific AP request.
+        ScanResult matchingScanResult = scanDatas1[0].getResults()[0];
+        PatternMatcher ssidPatternMatch =
+                new PatternMatcher(TEST_SSID_1, PatternMatcher.PATTERN_LITERAL);
+        Pair<MacAddress, MacAddress> bssidPatternMatch =
+                Pair.create(MacAddress.fromString(matchingScanResult.BSSID),
+                        MacAddress.BROADCAST_ADDRESS);
+        WifiConfiguration wifiConfiguration = new WifiConfiguration();
+        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
+        attachWifiNetworkSpecifierAndAppInfo(
+                ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
+                TEST_PACKAGE_NAME_1);
+        mWifiNetworkFactory.needNetworkFor(mNetworkRequest, 0);
+        mWifiNetworkFactory.addCallback(mAppBinder, mNetworkRequestMatchCallback,
+                TEST_CALLBACK_IDENTIFIER);
+        verify(mNetworkRequestMatchCallback).onUserSelectionCallbackRegistration(
+                mNetworkRequestUserSelectionCallback.capture());
+
+        long nowMs = WifiNetworkFactory.CACHED_SCAN_RESULTS_MAX_AGE_IN_MILLIS + 1;
+        scanDatas2[0].getResults()[0].timestamp = nowMs;
+        scanDatas2[0].getResults()[1].timestamp = nowMs;
+        scanDatas2[0].getResults()[2].timestamp = nowMs;
+        scanDatas2[0].getResults()[3].timestamp = nowMs;
+        verifyPeriodicScans(
+                nowMs,
+                new PeriodicScanParams(0, scanDatas1),
+                new PeriodicScanParams(PERIODIC_SCAN_INTERVAL_MS, scanDatas2));
+
+        // Now trigger user selection to the network.
+        mSelectedNetwork = ScanResultUtil.createNetworkFromScanResult(matchingScanResult);
+        mSelectedNetwork.SSID = "\"" + matchingScanResult.SSID + "\"";
+        INetworkRequestUserSelectionCallback networkRequestUserSelectionCallback =
+                mNetworkRequestUserSelectionCallback.getValue();
+        assertNotNull(networkRequestUserSelectionCallback);
+        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
+        mLooper.dispatchAll();
+
+        // Verify WifiConfiguration params.
+        validateConnectParams(mSelectedNetwork.SSID, null);
         verify(mWifiMetrics).setNominatorForNetwork(anyInt(),
                 eq(WifiMetricsProto.ConnectionEvent.NOMINATOR_SPECIFIER));
 
@@ -2669,13 +2796,33 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         verify(mNetworkRequestMatchCallback, atLeastOnce()).onMatch(anyList());
     }
 
+    private void verifyPeriodicScans(long...expectedIntervalsInSeconds) {
+        PeriodicScanParams[] periodicScanParams =
+                new PeriodicScanParams[expectedIntervalsInSeconds.length];
+        for (int i = 0; i < expectedIntervalsInSeconds.length; i++) {
+            periodicScanParams[i] =
+                    new PeriodicScanParams(expectedIntervalsInSeconds[i], mTestScanDatas);
+        }
+        verifyPeriodicScans(0L, periodicScanParams);
+    }
+
+    private static class PeriodicScanParams {
+        public final long expectedIntervalInSeconds;
+        public final WifiScanner.ScanData[] scanDatas;
+
+        PeriodicScanParams(long expectedIntervalInSeconds, WifiScanner.ScanData[] scanDatas) {
+            this.expectedIntervalInSeconds = expectedIntervalInSeconds;
+            this.scanDatas = scanDatas;
+        }
+    }
+
     // Simulates the periodic scans performed to find a matching network.
     // a) Start scan
     // b) Scan results received.
     // c) Set alarm for next scan at the expected interval.
     // d) Alarm fires, go to step a) again and repeat.
-    private void verifyPeriodicScans(long...expectedIntervalsInSeconds) {
-        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
+    private void verifyPeriodicScans(long nowMs, PeriodicScanParams... scanParams) {
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(nowMs);
 
         OnAlarmListener alarmListener = null;
         ScanListener scanListener = null;
@@ -2685,9 +2832,9 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         // Before we start scans, ensure that we look at the latest cached scan results.
         mInOrder.verify(mWifiScanner).getSingleScanResults();
 
-        for (int i = 0; i < expectedIntervalsInSeconds.length - 1; i++) {
-            long expectedCurrentIntervalInMs = expectedIntervalsInSeconds[i];
-            long expectedNextIntervalInMs = expectedIntervalsInSeconds[i + 1];
+        for (int i = 0; i < scanParams.length - 1; i++) {
+            long expectedCurrentIntervalInMs = scanParams[i].expectedIntervalInSeconds;
+            long expectedNextIntervalInMs = scanParams[i + 1].expectedIntervalInSeconds;
 
             // First scan is immediately fired, so need for the alarm to fire.
             if (expectedCurrentIntervalInMs != 0) {
@@ -2700,10 +2847,10 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
             assertNotNull(scanListener);
 
             // Now trigger the scan results callback and verify the alarm set for the next scan.
-            scanListener.onResults(mTestScanDatas);
+            scanListener.onResults(scanParams[i].scanDatas);
 
             mInOrder.verify(mAlarmManager).set(eq(AlarmManager.ELAPSED_REALTIME_WAKEUP),
-                    eq(expectedNextIntervalInMs), any(),
+                    eq(expectedNextIntervalInMs + nowMs), any(),
                     mPeriodicScanListenerArgumentCaptor.capture(), any());
             alarmListener = mPeriodicScanListenerArgumentCaptor.getValue();
             assertNotNull(alarmListener);
@@ -2770,30 +2917,39 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         return "";
     }
 
-    // Helper method to setup the scan data for verifying the matching algo.
     private void setupScanData(int scanResultType, String ssid1, String ssid2, String ssid3,
             String ssid4) {
+        setupScanData(mTestScanDatas, scanResultType, ssid1, ssid2, ssid3, ssid4);
+    }
+
+    // Helper method to setup the scan data for verifying the matching algo.
+    private void setupScanData(WifiScanner.ScanData[] testScanDatas, int scanResultType,
+            String ssid1, String ssid2, String ssid3, String ssid4) {
         // 4 scan results,
-        assertEquals(1, mTestScanDatas.length);
-        ScanResult[] scanResults = mTestScanDatas[0].getResults();
+        assertEquals(1, testScanDatas.length);
+        ScanResult[] scanResults = testScanDatas[0].getResults();
         assertEquals(4, scanResults.length);
 
         String caps = getScanResultCapsForType(scanResultType);
 
         // Scan results have increasing RSSI.
         scanResults[0].SSID = ssid1;
+        scanResults[0].wifiSsid = WifiSsid.createFromAsciiEncoded(ssid1);
         scanResults[0].BSSID = TEST_BSSID_1;
         scanResults[0].capabilities = caps;
         scanResults[0].level = -45;
         scanResults[1].SSID = ssid2;
+        scanResults[1].wifiSsid = WifiSsid.createFromAsciiEncoded(ssid2);
         scanResults[1].BSSID = TEST_BSSID_2;
         scanResults[1].capabilities = caps;
         scanResults[1].level = -35;
         scanResults[2].SSID = ssid3;
+        scanResults[2].wifiSsid = WifiSsid.createFromAsciiEncoded(ssid3);
         scanResults[2].BSSID = TEST_BSSID_3;
         scanResults[2].capabilities = caps;
         scanResults[2].level = -25;
         scanResults[3].SSID = ssid4;
+        scanResults[3].wifiSsid = WifiSsid.createFromAsciiEncoded(ssid4);
         scanResults[3].BSSID = TEST_BSSID_4;
         scanResults[3].capabilities = caps;
         scanResults[3].level = -15;
