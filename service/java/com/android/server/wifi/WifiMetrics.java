@@ -414,6 +414,8 @@ public class WifiMetrics {
     /** DPP */
     private final DppMetrics mDppMetrics;
 
+    private final WifiMonitor mWifiMonitor;
+
     /** WifiConfigStore read duration histogram. */
     private SparseIntArray mWifiConfigStoreReadDurationHistogram = new SparseIntArray();
 
@@ -1348,7 +1350,7 @@ public class WifiMetrics {
     public WifiMetrics(Context context, FrameworkFacade facade, Clock clock, Looper looper,
             WifiAwareMetrics awareMetrics, RttMetrics rttMetrics,
             WifiPowerMetrics wifiPowerMetrics, WifiP2pMetrics wifiP2pMetrics,
-            DppMetrics dppMetrics) {
+            DppMetrics dppMetrics, WifiMonitor wifiMonitor) {
         mContext = context;
         mFacade = facade;
         mClock = clock;
@@ -1360,6 +1362,7 @@ public class WifiMetrics {
         mWifiPowerMetrics = wifiPowerMetrics;
         mWifiP2pMetrics = wifiP2pMetrics;
         mDppMetrics = dppMetrics;
+        mWifiMonitor = wifiMonitor;
         mHandler = new Handler(looper) {
             public void handleMessage(Message msg) {
                 synchronized (mLock) {
@@ -4964,8 +4967,26 @@ public class WifiMetrics {
         return info;
     }
 
-    public Handler getHandler() {
-        return mHandler;
+    private static final int[] WIFI_MONITOR_EVENTS = {
+            WifiMonitor.ASSOCIATION_REJECTION_EVENT,
+            WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
+            WifiMonitor.NETWORK_CONNECTION_EVENT,
+            WifiMonitor.NETWORK_DISCONNECTION_EVENT,
+            WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT,
+            WifiMonitor.ASSOCIATED_BSSID_EVENT,
+            WifiMonitor.TARGET_BSSID_EVENT,
+    };
+
+    public void registerForWifiMonitorEvents(String ifaceName) {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.registerHandler(ifaceName, event, mHandler);
+        }
+    }
+
+    public void deregisterForWifiMonitorEvents(String ifaceName) {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.deregisterHandler(ifaceName, event, mHandler);
+        }
     }
 
     public WifiAwareMetrics getWifiAwareMetrics() {
