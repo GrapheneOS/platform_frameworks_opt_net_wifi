@@ -725,57 +725,42 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         start();
     }
 
+    private static final int[] WIFI_MONITOR_EVENTS = {
+            WifiMonitor.TARGET_BSSID_EVENT,
+            WifiMonitor.ASSOCIATED_BSSID_EVENT,
+            WifiMonitor.ANQP_DONE_EVENT,
+            WifiMonitor.ASSOCIATION_REJECTION_EVENT,
+            WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
+            WifiMonitor.GAS_QUERY_DONE_EVENT,
+            WifiMonitor.GAS_QUERY_START_EVENT,
+            WifiMonitor.HS20_REMEDIATION_EVENT,
+            WifiMonitor.NETWORK_CONNECTION_EVENT,
+            WifiMonitor.NETWORK_DISCONNECTION_EVENT,
+            WifiMonitor.RX_HS20_ANQP_ICON_EVENT,
+            WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT,
+            WifiMonitor.SUP_REQUEST_IDENTITY,
+            WifiMonitor.SUP_REQUEST_SIM_AUTH,
+            WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE,
+    };
+
     private void registerForWifiMonitorEvents()  {
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.TARGET_BSSID_EVENT, getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.ASSOCIATED_BSSID_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.ANQP_DONE_EVENT, getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.ASSOCIATION_REJECTION_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.GAS_QUERY_DONE_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.GAS_QUERY_START_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.HS20_REMEDIATION_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_CONNECTION_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_DISCONNECTION_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.RX_HS20_ANQP_ICON_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.SUP_REQUEST_IDENTITY,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.SUP_REQUEST_SIM_AUTH,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.ASSOCIATION_REJECTION_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_CONNECTION_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_DISCONNECTION_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.ASSOCIATED_BSSID_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.TARGET_BSSID_EVENT,
-                mWifiMetrics.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_CONNECTION_EVENT,
-                mWifiLastResortWatchdog.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.ASSOCIATION_REJECTION_EVENT,
-                mSupplicantStateTracker.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
-                mSupplicantStateTracker.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT,
-                mSupplicantStateTracker.getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE,
-                getHandler());
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.registerHandler(mInterfaceName, event, getHandler());
+        }
+
+        mWifiMetrics.registerForWifiMonitorEvents(mInterfaceName);
+        mWifiLastResortWatchdog.registerForWifiMonitorEvents(mInterfaceName);
+        mSupplicantStateTracker.registerForWifiMonitorEvents(mInterfaceName);
+    }
+
+    private void deregisterForWifiMonitorEvents()  {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.deregisterHandler(mInterfaceName, event, getHandler());
+        }
+
+        mWifiMetrics.deregisterForWifiMonitorEvents(mInterfaceName);
+        mWifiLastResortWatchdog.deregisterForWifiMonitorEvents(mInterfaceName);
+        mSupplicantStateTracker.deregisterForWifiMonitorEvents(mInterfaceName);
     }
 
     private static boolean isValidBssid(String bssidStr) {
@@ -3047,6 +3032,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mIpClientCallbacks.awaitShutdown();
         }
         mCountryCode.setReadyForChange(false);
+        deregisterForWifiMonitorEvents(); // uses mInterfaceName, must call before nulling out
         mInterfaceName = null;
         mClientModeManager = null;
         mWifiScoreReport.setInterfaceName(null);

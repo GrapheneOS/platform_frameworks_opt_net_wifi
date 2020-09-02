@@ -179,9 +179,11 @@ public class WifiMetricsTest extends WifiBaseTest {
     @Mock WifiScoreCard mWifiScoreCard;
     @Mock WifiScoreCard.PerNetwork mPerNetwork;
     @Mock WifiScoreCard.NetworkConnectionStats mNetworkConnectionStats;
-    @Mock WifiConfiguration mWifiConfig;
     @Mock PowerManager mPowerManager;
+    @Mock WifiMonitor mWifiMonitor;
+
     @Captor ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor;
+    @Captor ArgumentCaptor<Handler> mHandlerCaptor;
 
     @Before
     public void setUp() throws Exception {
@@ -195,7 +197,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         when(mPowerManager.isInteractive()).thenReturn(true);
         mWifiMetrics = new WifiMetrics(mContext, mFacade, mClock, mTestLooper.getLooper(),
                 new WifiAwareMetrics(mClock), new RttMetrics(mClock), mWifiPowerMetrics,
-                mWifiP2pMetrics, mDppMetrics);
+                mWifiP2pMetrics, mDppMetrics, mWifiMonitor);
         mWifiMetrics.setWifiConfigManager(mWcm);
         mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
         mWifiMetrics.setPasspointManager(mPpm);
@@ -208,6 +210,10 @@ public class WifiMetricsTest extends WifiBaseTest {
         when(mPerNetwork.getRecentStats()).thenReturn(mNetworkConnectionStats);
         verify(mContext, atLeastOnce()).registerReceiver(
                 mBroadcastReceiverCaptor.capture(), any(), any(), any());
+
+        mWifiMetrics.registerForWifiMonitorEvents("wlan0");
+        verify(mWifiMonitor, atLeastOnce())
+                .registerHandler(eq("wlan0"), anyInt(), mHandlerCaptor.capture());
     }
 
     /**
@@ -2306,7 +2312,7 @@ public class WifiMetricsTest extends WifiBaseTest {
      * Generates events from all the rows in mTestStaMessageInts, and then mTestStaLogInts
      */
     private void generateStaEvents(WifiMetrics wifiMetrics) {
-        Handler handler = wifiMetrics.getHandler();
+        Handler handler = mHandlerCaptor.getValue();
         for (int i = 0; i < mTestStaMessageInts.length; i++) {
             int[] mia = mTestStaMessageInts[i];
             handler.sendMessage(

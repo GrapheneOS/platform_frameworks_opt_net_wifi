@@ -17,7 +17,6 @@ package com.android.server.wifi;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -52,6 +51,7 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
     private @Mock WifiConfigManager mWcm;
     private @Mock Context mContext;
     private @Mock BatteryStatsManager mBatteryStats;
+    private @Mock WifiMonitor mWifiMonitor;
     private Handler mHandler;
     private SupplicantStateTracker mSupplicantStateTracker;
     private TestLooper mLooper;
@@ -69,7 +69,7 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
         mHandler = new Handler(mLooper.getLooper());
         MockitoAnnotations.initMocks(this);
         mSupplicantStateTracker = new SupplicantStateTracker(mContext, mWcm, mBatteryStats,
-                mHandler);
+                mHandler, mWifiMonitor);
     }
 
     /**
