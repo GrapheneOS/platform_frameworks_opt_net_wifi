@@ -2556,9 +2556,10 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
         if (mSingleScanStateMachine != null) {
             mSingleScanStateMachine.dump(fd, pw, args);
             pw.println();
-            pw.println("Latest scan results:");
             List<ScanResult> scanResults = mSingleScanStateMachine.getCachedScanResultsAsList();
             long nowMs = mClock.getElapsedSinceBootMillis();
+            Log.d(TAG, "Latest scan results nowMs = " + nowMs);
+            pw.println("Latest scan results:");
             ScanResultUtil.dumpScanResults(pw, scanResults, nowMs);
             pw.println();
         }
