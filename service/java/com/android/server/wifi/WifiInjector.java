@@ -245,12 +245,12 @@ public class WifiInjector {
         RttMetrics rttMetrics = new RttMetrics(mClock);
         mWifiP2pMetrics = new WifiP2pMetrics(mClock);
         mDppMetrics = new DppMetrics();
+        mWifiMonitor = new WifiMonitor();
         mWifiMetrics = new WifiMetrics(mContext, mFrameworkFacade, mClock, wifiLooper,
                 awareMetrics, rttMetrics, new WifiPowerMetrics(mBatteryStats), mWifiP2pMetrics,
-                mDppMetrics);
+                mDppMetrics, mWifiMonitor);
         mDeviceConfigFacade = new DeviceConfigFacade(mContext, wifiHandler, mWifiMetrics);
         // Modules interacting with Native.
-        mWifiMonitor = new WifiMonitor();
         mHalDeviceManager = new HalDeviceManager(mClock, wifiHandler);
         mWifiVendorHal = new WifiVendorHal(mHalDeviceManager, wifiHandler);
         mSupplicantStaIfaceHal = new SupplicantStaIfaceHal(
@@ -301,7 +301,7 @@ public class WifiInjector {
                 new LastMileLogger(this), mClock, mWifiDiagnosticsHandlerThread.getLooper());
         mWifiLastResortWatchdog = new WifiLastResortWatchdog(this, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
-                mDeviceConfigFacade, mWifiThreadRunner, mWifiInfo);
+                mDeviceConfigFacade, mWifiThreadRunner, mWifiInfo, mWifiMonitor);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard,
                 mScoringParams);
@@ -369,7 +369,7 @@ public class WifiInjector {
         mLinkProbeManager = new LinkProbeManager(mClock, mWifiNative, mWifiMetrics,
                 mFrameworkFacade, wifiHandler, mContext);
         mSupplicantStateTracker = new SupplicantStateTracker(
-                mContext, mWifiConfigManager, mBatteryStats, wifiHandler);
+                mContext, mWifiConfigManager, mBatteryStats, wifiHandler, mWifiMonitor);
         mMboOceController = new MboOceController(makeTelephonyManager(), mWifiNative);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);

@@ -35,6 +35,8 @@ import com.android.wifi.resources.R;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 
 import java.util.ArrayList;
@@ -54,6 +56,9 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
     @Mock WifiInfo mWifiInfo;
     @Mock Context mContext;
     @Mock DeviceConfigFacade mDeviceConfigFacade;
+    @Mock WifiMonitor mWifiMonitor;
+
+    @Captor ArgumentCaptor<Handler> mHandlerCaptor;
 
     private WifiLastResortWatchdog mLastResortWatchdog;
     private MockResources mResources;
@@ -83,13 +88,17 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         when(mContext.getResources()).thenReturn(mResources);
         createWifiLastResortWatchdog();
         when(mWifiInfo.getSSID()).thenReturn(TEST_NETWORK_SSID);
+
+        mLastResortWatchdog.registerForWifiMonitorEvents("wlan0");
+        verify(mWifiMonitor, atLeastOnce())
+                .registerHandler(eq("wlan0"), anyInt(), mHandlerCaptor.capture());
     }
 
     private void createWifiLastResortWatchdog() {
         WifiThreadRunner wifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
         mLastResortWatchdog = new WifiLastResortWatchdog(mWifiInjector, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, mLooper.getLooper(), mDeviceConfigFacade,
-                wifiThreadRunner, mWifiInfo);
+                wifiThreadRunner, mWifiInfo, mWifiMonitor);
         mLastResortWatchdog.setBugReportProbability(1);
     }
 
@@ -2189,7 +2198,7 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         mLooper.dispatchAll();
         when(mClock.getElapsedSinceBootMillis()).thenReturn(
                 (long) DEFAULT_ABNORMAL_CONNECTION_DURATION_MS);
-        Handler handler = mLastResortWatchdog.getHandler();
+        Handler handler = mHandlerCaptor.getValue();
         handler.sendMessage(
                 handler.obtainMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, null));
         mLooper.dispatchAll();
@@ -2230,7 +2239,7 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         mLastResortWatchdog.noteStartConnectTime();
         mLooper.dispatchAll();
         when(mClock.getElapsedSinceBootMillis()).thenReturn((long) testDurationMs + 2);
-        Handler handler = mLastResortWatchdog.getHandler();
+        Handler handler = mHandlerCaptor.getValue();
         handler.sendMessage(
                 handler.obtainMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, null));
         mLooper.dispatchAll();
@@ -2252,7 +2261,7 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         mLooper.dispatchAll();
         when(mClock.getElapsedSinceBootMillis()).thenReturn(
                 (long) DEFAULT_ABNORMAL_CONNECTION_DURATION_MS + 2);
-        Handler handler = mLastResortWatchdog.getHandler();
+        Handler handler = mHandlerCaptor.getValue();
         handler.sendMessage(
                 handler.obtainMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, null));
         mLooper.dispatchAll();
