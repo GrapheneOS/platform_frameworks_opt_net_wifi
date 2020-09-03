@@ -345,6 +345,10 @@ public class WifiScoreReport {
             super.onChange(selfChange);
             mAdaptiveConnectivityEnabled = getValue();
             Log.d(TAG, "Adaptive connectivity status changed: " + mAdaptiveConnectivityEnabled);
+            mWifiMetrics.setAdaptiveConnectivityState(mAdaptiveConnectivityEnabled);
+            mWifiMetrics.logUserActionEvent(
+                    mWifiMetrics.convertAdaptiveConnectivityStateToUserActionEventType(
+                            mAdaptiveConnectivityEnabled));
         }
 
         /**
@@ -358,6 +362,7 @@ public class WifiScoreReport {
             }
             mFrameworkFacade.registerContentObserver(mContext, uri, true, this);
             mAdaptiveConnectivityEnabled = mAdaptiveConnectivityEnabledSettingObserver.getValue();
+            mWifiMetrics.setAdaptiveConnectivityState(mAdaptiveConnectivityEnabled);
         }
 
         public boolean getValue() {
