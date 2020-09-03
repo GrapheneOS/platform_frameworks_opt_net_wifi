@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> تجویز کردہ نیٹ ورکس۔ آلہ خودکار طور پر منسلک ہو سکتا ہے۔"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"اجازت ہیں"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"نہیں شکریہ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"‏IMSI حفاظت کے لیے رازداری کی وارننگ"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> تجویز کردہ نیٹ ورکس رازداری کے تحفظ کے بغیر آپ کے سم کارڈ کی معلومات کا استعمال کرتے ہوئے، نیٹ ورک کو خودکار طور پر جڑنے کی اجازت دیتے ہیں؟"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"اجازت دیں"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"اجازت نہ دیں"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> خود کار طور پر منسلک ہونا چاہتا ہے"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"‏یہ نیٹ ورکس ایک منفرد ID موصول کرتے ہیں جسے آلہ کا مقام ٹریک کرنے کے لیے استعمال کیا جا سکتا ہے"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"بہرحال منسلک کریں"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"منسلک نہ کریں"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"کنکشن کی تصدیق کریں؟"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"‏اگر آب منسلک ہیں، Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> نیٹ ورکس آپ کے SIM سے وابستہ ایک منفرد ID تک رسائی حاصل یا اشتراک کر سکتے ہیں۔ یہ آپ کے آلہ کے مقام کو ٹریک کیے جانے کی اجازت دے سکتا ہے۔"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"منسلک کریں"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"منسلک نہ کریں"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"‏Wi‑Fi از خود آن ہو جائے گا"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"جب آپ اعلی معیار کے محفوظ کردہ نیٹ ورک کے قریب ہوں"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"دوبارہ آن نہ کریں"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> سے منسلک نہیں کر سکتے"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"رازداری کی ترتیبات تبدیل کرنے اور دوبارہ کوشش کرنے کے لیے تھپتھپائیں"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"رازداری کی ترتیب تبدیل کریں؟"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"‏<xliff:g id="SSID_0">%1$s</xliff:g> آپ کے آلہ MAC پتہ، منفرد شناخت کار کے ذریعے مربوط ہونا چاہتا ہے۔ یہ آپ کے آلے کے مقام کو قریبی آلات کے ذریعہ ٹریک کرنے کی اجازت دے سکتا ہے۔ \n\nاگر آپ جاری رکھتے ہیں، تو <xliff:g id="SSID_1">%1$s</xliff:g> آپ کی رازداری کی ترتیب کو تبدیل کردے گا اور دوبارہ مربوط ہونے کی کوشش کرے گا۔"</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"‏منسلک کرنے کے ليے، <xliff:g id="SSID">%1$s</xliff:g> کو آپ کے آلہ کا MAC پتہ استعمال کرنے کی ضرورت ہے، ایک منفرد شناخت کار ہے۔ فی الحال، اس نیٹ ورک کے ليے آپ کی رازداری کی ترتیب بے ترتیب شناخت کار استعمال کرتی ہے۔ \n\nاس تبدیلی سے آپ کے آلے کے مقام کو قریبی آلات کے ذریعہ ٹریک کرنے کی اجازت دے سکتا ہے۔"</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"ترتیب تبدیل کریں"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"ترتیبات اپ ڈیٹ کر دی گئیں۔ دوبارہ منسلک کرنے کی کوشش کریں۔"</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"ترتیبات اپ ڈیٹ کر دی گئی۔ دوبارہ منسلک کرنے کی کوشش کریں۔"</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"رازداری کی ترتیب تبدیل نہیں ہو سکتی"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"نیٹ ورک نہیں ملا"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"‏<xliff:g id="SSID">%1$s</xliff:g> : EAP توثیق کی خرابی 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"‏<xliff:g id="SSID">%1$s</xliff:g> : EAP توثیق کی خرابی 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"‏<xliff:g id="SSID">%1$s</xliff:g> : EAP توثیق کی خرابی 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"‏<xliff:g id="SSID">%1$s</xliff:g> : EAP توثیق کی خرابی 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"موبائل ہاٹ اسپاٹ غیرفعال کر دیا گیا"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"موبائل ہاٹ اسپاٹ غیرفعال کر دیا گیا ہے"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"موبائل ہاٹ اسپاٹ غیر فعالیت ٹائم آؤٹ کے میعاد کے اختتام کی وجہ سے غیرفعال کر دیا گیا ہے۔"</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"ہاٹ اسپاٹ کو آف کر دیا گیا"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"کوئی آلات منسلک نہیں ہیں۔ ترمیم کرنے کے لیے تھپتھپائیں۔"</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"‏Wifi غیر منسلک ہو گیا"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"‏<xliff:g id="SSID">%1$s</xliff:g> سے منسلک ہونے کے ليے <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM داخل کریں"</string>
 </resources>

@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Rakenduse <xliff:g id="NAME">%s</xliff:g> soovitatud võrgud. Seade võib automaatselt ühenduse luua."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Luba"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Tänan, ei"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Privaatsushoiatus IMSI kaitse kohta"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> soovitas ilma privaatsuskaitseta võrke, mis kasutavad teie SIM-kaardi teavet. Kas lubada võrguga automaatselt ühendus luua?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Luba"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Keela"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> soovib automaatselt ühenduse luua"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Need võrgud saavad kordumatu ID, mida saab kasutada seadme asukoha jälgimiseks."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Ühenda siiski"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ära ühenda"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Kas soovite ühenduse kinnitada?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Kui loote ühenduse, võivad operaatori <xliff:g id="CARRIERNAME">%s</xliff:g> WiFi-võrgud teie SIM-kaardiga seotud kordumatule ID-le juurde pääseda või seda jagada. See võib võimaldada seadme asukohta jälgida."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Ühenda"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Ära ühenda"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"WiFi lülitub sisse automaatselt"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Kui olete kvaliteetse salvestatud võrgu läheduses"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Ära lülita tagasi sisse"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Võrguga <xliff:g id="SSID">%1$s</xliff:g> ei õnnestu ühendada"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Puudutage privaatsusseadete muutmiseks ja uuesti proovimiseks"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Kas muuta privaatsusseadet?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> võib soovida luua ühenduse teie seadme kordumatu identifikaatori ehk MAC-aadressi abil. See võib võimaldada läheduses asuvatel seadmetel jälgida teie seadme asukohta. \n\nKui jätkate, muudab <xliff:g id="SSID_1">%1$s</xliff:g> teie privaatsusseadet ja proovib uuesti ühendada."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Ühendamiseks peab <xliff:g id="SSID">%1$s</xliff:g> kasutama teie seadme MAC-aadressi, mis on teie kordumatu ID. Praegu kasutab teie privaatsusseade selle võrgu puhul juhuslikku ID-d. \n\nSee muudatus võib võimaldada läheduses asuvatel seadmetel jälgida teie seadme asukohta."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Muuda seadet"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Seadet muudeti. Proovige uuesti ühendada."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Seadet värskendati. Proovige uuesti ühendada."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Privaatsusseadet ei saa muuta"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Võrku ei leitud"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: EAP autentimise viga 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: EAP autentimise viga 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: EAP autentimise viga 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: EAP autentimise viga 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobiilne kuumkoht on keelatud"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Mobiilne kuumkoht on keelatud"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Mobiilne kuumkoht on passiivsuse tõttu keelatud."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Kuumkoht lülitati välja"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Ükski seade pole ühendatud. Puudutage muutmiseks."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"WiFi-ühendus on katkestatud"</string>
-    <string name="wifi_sim_required_message" msgid="8337512370882674437">"Võrguga <xliff:g id="SSID">%1$s</xliff:g> ühendamiseks sisestage operaatori <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM-kaart."</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Võrguga <xliff:g id="SSID">%1$s</xliff:g> ühendamiseks sisestage operaatori <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM-kaart"</string>
 </resources>
