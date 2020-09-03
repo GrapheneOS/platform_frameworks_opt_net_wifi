@@ -237,6 +237,7 @@ public class WifiMetrics {
     private int mLastPollRxLinkSpeed = -1;
     private int mLastPollFreq = -1;
     private int mLastScore = -1;
+    private boolean mAdaptiveConnectivityEnabled = true;
 
     /**
      * Metrics are stored within an instance of the WifiLog proto during runtime,
@@ -4787,6 +4788,7 @@ public class WifiMetrics {
         if (mWifiDataStall != null) {
             staEvent.isCellularDataAvailable = mWifiDataStall.isCellularDataAvailable();
         }
+        staEvent.isAdaptiveConnectivityEnabled = mAdaptiveConnectivityEnabled;
         mSupplicantStateChangeBitmask = 0;
         mLastPollRssi = -127;
         mLastPollFreq = -1;
@@ -5003,6 +5005,7 @@ public class WifiMetrics {
         if (event.totalRxBytes > 0) sb.append(" totalRxBytes=").append(event.totalRxBytes);
         sb.append(" screenOn=").append(event.screenOn);
         sb.append(" cellularData=").append(event.isCellularDataAvailable);
+        sb.append(" adaptiveConnectivity=").append(event.isAdaptiveConnectivityEnabled);
         if (event.supplicantStateChangesBitmask != 0) {
             sb.append(", ").append(supplicantStateChangesBitmaskToString(
                     event.supplicantStateChangesBitmask));
@@ -5220,6 +5223,15 @@ public class WifiMetrics {
                 break;
         }
         return result;
+    }
+
+    /**
+     * Converts Adaptive Connectivity state to UserActionEvent type.
+     * @param value
+     */
+    public static int convertAdaptiveConnectivityStateToUserActionEventType(boolean value) {
+        return value ? UserActionEvent.EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_ON
+                : UserActionEvent.EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_OFF;
     }
 
     static class MeteredNetworkStatsBuilder {
@@ -6583,6 +6595,15 @@ public class WifiMetrics {
     public void incrementNumOfCarrierWifiConnectionNonAuthFailure() {
         synchronized (mLock) {
             mCarrierWifiMetrics.numConnectionNonAuthFailure++;
+        }
+    }
+
+    /**
+     *  Set Adaptive Connectivity state (On/Off)
+     */
+    public void setAdaptiveConnectivityState(boolean adaptiveConnectivityEnabled) {
+        synchronized (mLock) {
+            mAdaptiveConnectivityEnabled = adaptiveConnectivityEnabled;
         }
     }
 }
