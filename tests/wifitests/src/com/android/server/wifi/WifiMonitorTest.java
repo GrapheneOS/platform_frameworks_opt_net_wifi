@@ -85,8 +85,11 @@ public class WifiMonitorTest extends WifiBaseTest {
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mHandlerSpy).handleMessage(messageCaptor.capture());
-        assertEquals(WifiMonitor.WPS_FAIL_EVENT, messageCaptor.getValue().what);
-        assertEquals(WifiManager.WPS_TKIP_ONLY_PROHIBITED, messageCaptor.getValue().arg1);
+
+        Message message = messageCaptor.getValue();
+        assertEquals(WifiMonitor.WPS_FAIL_EVENT, message.what);
+        assertEquals(WifiManager.WPS_TKIP_ONLY_PROHIBITED, message.arg1);
+        assertEquals(WLAN_IFACE_NAME, message.getData().getString(WifiMonitor.KEY_IFACE));
     }
 
     /**
