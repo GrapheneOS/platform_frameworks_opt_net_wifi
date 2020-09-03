@@ -3562,6 +3562,114 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         verifyNoMoreInteractions(mMockNative, mockCallback);
     }
 
+    /**
+     * Validate (1) subscribe (success), (2) match (i.e. discovery), (3) discovered peer is no
+     * longer visible.
+     */
+    @Test
+    public void testMatchAndLost() throws Exception {
+        final int clientId = 1005;
+        final int uid = 1000;
+        final int pid = 2000;
+        final String callingPackage = "com.google.somePackage";
+        final String callingFeature = "com.google.someFeature";
+        final String serviceName = "some-service-name";
+        final String ssi = "some much longer and more arbitrary data";
+        final int reasonFail = NanStatusType.INTERNAL_FAILURE;
+        final byte subscribeId = 15;
+        final int requestorId = 22;
+        final byte[] peerMac = HexEncoding.decode("060708090A0B".toCharArray(), false);
+        final String peerSsi = "some peer ssi data";
+        final String peerMatchFilter = "filter binary array represented as string";
+        final String peerMsg = "some message from peer";
+        final int messageId = 6948;
+        final int messageId2 = 6949;
+        final int rangeMin = 0;
+        final int rangeMax = 55;
+        final int rangedDistance = 30;
+
+        ConfigRequest configRequest = new ConfigRequest.Builder().build();
+        SubscribeConfig subscribeConfig = new SubscribeConfig.Builder().setServiceName(serviceName)
+                .setServiceSpecificInfo(ssi.getBytes())
+                .setSubscribeType(SubscribeConfig.SUBSCRIBE_TYPE_PASSIVE)
+                .setMinDistanceMm(rangeMin)
+                .setMaxDistanceMm(rangeMax)
+                .build();
+
+        IWifiAwareEventCallback mockCallback = mock(IWifiAwareEventCallback.class);
+        IWifiAwareDiscoverySessionCallback mockSessionCallback = mock(
+                IWifiAwareDiscoverySessionCallback.class);
+        ArgumentCaptor<Short> transactionId = ArgumentCaptor.forClass(Short.class);
+        ArgumentCaptor<Integer> sessionId = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> peerIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        InOrder inOrder = inOrder(mockCallback, mockSessionCallback, mMockNative);
+        InOrder inOrderM = inOrder(mAwareMetricsMock);
+
+        mDut.enableUsage();
+        mMockLooper.dispatchAll();
+        inOrder.verify(mMockNative).getCapabilities(transactionId.capture());
+        inOrderM.verify(mAwareMetricsMock).recordEnableUsage();
+        mDut.onCapabilitiesUpdateResponse(transactionId.getValue(), getCapabilities());
+        mMockLooper.dispatchAll();
+
+        // (0) connect
+        mDut.connect(clientId, uid, pid, callingPackage, callingFeature, mockCallback,
+                configRequest, false);
+        mMockLooper.dispatchAll();
+        inOrder.verify(mMockNative).enableAndConfigure(transactionId.capture(),
+                eq(configRequest), eq(false), eq(true), eq(true), eq(false), eq(false));
+        mDut.onConfigSuccessResponse(transactionId.getValue());
+        mMockLooper.dispatchAll();
+        inOrder.verify(mockCallback).onConnectSuccess(clientId);
+        inOrderM.verify(mAwareMetricsMock).recordAttachSession(eq(uid), eq(false), any());
+
+        // (1) subscribe
+        mDut.subscribe(clientId, subscribeConfig, mockSessionCallback);
+        mMockLooper.dispatchAll();
+        inOrder.verify(mMockNative).subscribe(transactionId.capture(), eq((byte) 0),
+                eq(subscribeConfig));
+        mDut.onSessionConfigSuccessResponse(transactionId.getValue(), false, subscribeId);
+        mMockLooper.dispatchAll();
+        inOrder.verify(mockSessionCallback).onSessionStarted(sessionId.capture());
+        inOrderM.verify(mAwareMetricsMock).recordDiscoverySessionWithRanging(eq(uid), eq(true),
+                eq(rangeMin), eq(rangeMax), any());
+        inOrderM.verify(mAwareMetricsMock).recordDiscoveryStatus(uid, NanStatusType.SUCCESS, false);
+        // Verify reconfigure aware to enable ranging.
+        mMockLooper.dispatchAll();
+        inOrder.verify(mMockNative).enableAndConfigure(transactionId.capture(), eq(configRequest),
+                eq(false), eq(false), eq(true), eq(false), eq(true));
+        mDut.onConfigSuccessResponse(transactionId.getValue());
+        mMockLooper.dispatchAll();
+
+
+        // (2) 2 matches : with and w/o range
+        mDut.onMatchNotification(subscribeId, requestorId, peerMac, peerSsi.getBytes(),
+                peerMatchFilter.getBytes(), 0, 0);
+        mMockLooper.dispatchAll();
+        inOrder.verify(mockSessionCallback).onMatch(peerIdCaptor.capture(), eq(peerSsi.getBytes()),
+                eq(peerMatchFilter.getBytes()));
+        inOrderM.verify(mAwareMetricsMock).recordMatchIndicationForRangeEnabledSubscribe(false);
+        int peerId1 = peerIdCaptor.getValue();
+
+        mDut.onMatchNotification(subscribeId, requestorId, peerMac, peerSsi.getBytes(),
+                peerMatchFilter.getBytes(), EGRESS_MET_MASK, rangedDistance);
+        mMockLooper.dispatchAll();
+        inOrder.verify(mockSessionCallback).onMatchWithDistance(peerIdCaptor.capture(),
+                eq(peerSsi.getBytes()), eq(peerMatchFilter.getBytes()), eq(rangedDistance));
+        inOrderM.verify(mAwareMetricsMock).recordMatchIndicationForRangeEnabledSubscribe(true);
+        int peerId2 = peerIdCaptor.getValue();
+
+        assertEquals(peerId1, peerId2);
+
+        // (3) peer is no longer visible.
+        mDut.onMatchExpiredNotification(subscribeId, requestorId);
+        mMockLooper.dispatchAll();
+        inOrder.verify(mockSessionCallback).onMatchExpired(peerIdCaptor.capture());
+        assertEquals(peerId1, (int) peerIdCaptor.getValue());
+
+        verifyNoMoreInteractions(mockCallback, mockSessionCallback, mMockNative, mAwareMetricsMock);
+    }
+
     /*
      * Tests of internal state of WifiAwareStateManager: very limited (not usually
      * a good idea). However, these test that the internal state is cleaned-up
