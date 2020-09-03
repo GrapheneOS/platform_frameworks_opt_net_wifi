@@ -370,7 +370,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 }
                 case "set-scan-always-available": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
-                    mWifiService.setScanAlwaysAvailable(enabled);
+                    mWifiService.setScanAlwaysAvailable(enabled, SHELL_PACKAGE_NAME);
                     return 0;
                 }
                 case "get-softap-supported-features":

@@ -430,4 +430,18 @@ public class WifiShellCommandTest extends WifiBaseTest {
                 new String[]{"stop-softap"});
         verify(mWifiService).stopSoftAp();
     }
+
+
+    @Test
+    public void testSetScanAlwaysAvailable() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-scan-always-available", "enabled"});
+        verify(mWifiService).setScanAlwaysAvailable(true, SHELL_PACKAGE_NAME);
+
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-scan-always-available", "disabled"});
+        verify(mWifiService).setScanAlwaysAvailable(false, SHELL_PACKAGE_NAME);
+    }
 }
