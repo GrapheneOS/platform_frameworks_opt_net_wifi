@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> からのネットワーク候補に、デバイスが自動的に接続される可能性があります。"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"許可"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"許可しない"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI の保護に関するプライバシー通知"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> からのネットワーク候補のうち、プライバシー保護なしで SIM カード情報を使用するものに、ネットワークへの自動接続を許可しますか？"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"許可する"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"許可しない"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> が自動接続をリクエストしています"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"これらのネットワークは一意の ID を受信します。この ID を使ってデバイスの位置情報が追跡される可能性があります"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"接続する"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"接続しない"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"接続を確認しますか？"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"接続すると、<xliff:g id="CARRIERNAME">%s</xliff:g> の Wi‑Fi ネットワークが、SIM に関連付けられている一意の ID にアクセスしたりその ID を共有したりする可能性があります。これにより、デバイスの位置情報が追跡される可能性もあります。"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"接続"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"接続しない"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi-Fi は自動的にオンになります"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"高品質の保存済みネットワークの検出時"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"再度オンにしない"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> に接続できません"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"タップしてプライバシー設定を変更し、もう一度お試しください"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"プライバシー設定を変更しますか？"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> があなたのデバイスの MAC アドレス（固有の識別番号）を使用して接続できるようになります。これにより、付近のデバイスがあなたのデバイスの位置情報を追跡できるようになる可能性があります。\n\n続行すると、<xliff:g id="SSID_1">%1$s</xliff:g> があなたのプライバシー設定を変更し、もう一度接続を試みます。"</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"<xliff:g id="SSID">%1$s</xliff:g> は接続のために、あなたのデバイスの MAC アドレス（固有の識別番号）を使用する必要があります。現在、このネットワークのプライバシー設定では、ランダム ID を使用しています。\n\nこの変更により、付近のデバイスがあなたのデバイスの位置情報を追跡できるようになる可能性があります。"</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"設定を変更"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"設定を更新しました。もう一度接続してみてください。"</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"設定を更新しました。もう一度接続してみてください。"</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"プライバシー設定を変更できません"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"ネットワークが見つかりません"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: EAP 認証エラー 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: EAP 認証エラー 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: EAP 認証エラー 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: EAP 認証エラー 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"モバイル アクセス ポイントが無効になりました"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"モバイル アクセス ポイントは無効になっています"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"一定時間操作がなかったため、モバイル アクセス ポイントは無効になりました。"</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"アクセス ポイントが OFF になりました"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"デバイスは接続されていません。タップすると変更できます。"</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi が切断されました"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> に接続するには、<xliff:g id="CARRIER_NAME">%2$s</xliff:g> の SIM を挿入します"</string>
 </resources>

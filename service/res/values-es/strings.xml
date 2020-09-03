@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> te ha sugerido alguna red. El dispositivo puede que se conecte automáticamente."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Permitir"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"No, gracias"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Advertencia por privacidad de la protección IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"Las redes sugeridas de <xliff:g id="CARRIERNAME">%s</xliff:g> están usando la información de tu tarjeta SIM sin proteger tu privacidad, ¿quieres permitir que estas redes se conecten automáticamente?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Permitir"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"No permitir"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> quiere conectarse automáticamente"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Estas redes reciben un ID único con el que se puede rastrear la ubicación del dispositivo"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Conectar de todos modos"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"No conectar"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"¿Confirmar conexión?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Si te conectas, es posible que la red Wi‑Fi de <xliff:g id="CARRIERNAME">%s</xliff:g> obtenga o comparta un ID único asociado a tu SIM, lo que puede permitir que se rastree la ubicación de tu dispositivo."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Conectar"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"No conectar"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"La conexión Wi‑Fi se activará automáticamente"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Cuando estés cerca de una red de alta calidad guardada"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"No volver a activar"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"No se puede conectar a <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Toca para cambiar los ajustes de privacidad y vuelve a intentarlo"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"¿Quieres cambiar el ajuste de privacidad?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Es posible que <xliff:g id="SSID_0">%1$s</xliff:g> quiera conectarse mediante la dirección MAC de tu dispositivo, que es un identificador único, lo que quizá permita que los dispositivos cercanos rastreen la ubicación de tu dispositivo. \n\nSi continúas, <xliff:g id="SSID_1">%1$s</xliff:g> cambiará tu ajuste de privacidad e intentará conectarse de nuevo."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Para conectarse, <xliff:g id="SSID">%1$s</xliff:g> necesita la dirección MAC de tu dispositivo, que es un identificador único; no obstante, ahora el ajuste de privacidad que has configurado para usar en esta red utiliza un identificador aleatorio. \n\nEs posible que este cambio permita que los dispositivos cercanos registren la ubicación de tu dispositivo."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Cambiar ajuste"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Se ha actualizado el ajuste. Prueba a conectarte de nuevo."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Se ha cambiado el ajuste. Prueba a conectarte de nuevo."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"No se ha podido cambiar el ajuste de privacidad"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"No se ha encontrado la red"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: error de autenticación de EAP 32760"</string>
@@ -73,9 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: error de autenticación de EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: error de autenticación de EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: error de autenticación de EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Punto de acceso móvil inhabilitado"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Se ha inhabilitado el punto de acceso móvil"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Se ha inhabilitado el punto de acceso móvil porque se ha agotado el tiempo de espera por inactividad."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Punto de acceso desactivado"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"No hay dispositivos conectados. Toca para modificar este ajuste."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi‑Fi desconectado"</string>
-    <string name="wifi_sim_required_message" msgid="8337512370882674437">"Para conectarte a <xliff:g id="SSID">%1$s</xliff:g>, inserta una tarjeta SIM de <xliff:g id="CARRIER_NAME">%2$s</xliff:g>."</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Para conectarte a <xliff:g id="SSID">%1$s</xliff:g>, inserta una tarjeta SIM de <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
 </resources>

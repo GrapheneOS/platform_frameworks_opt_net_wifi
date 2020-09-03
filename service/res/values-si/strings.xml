@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"<xliff:g id="NAME">%s</xliff:g> යෝජිත ජාල. උපාංගය ස්වයංක්‍රියව සම්බන්ධ වනු ඇත."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"ඉඩ දෙන්න"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"එපා, ස්තූතියි"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI ආරක්ෂණය සඳහා රහස්‍යතා අනතුරු ඇඟවීම"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"රහස්‍යතා ආරක්ෂණය නොමැතිව ඔබේ SIM කාඩ්පත් තොරතුරු භාවිතයෙන් <xliff:g id="CARRIERNAME">%s</xliff:g> ජාල යෝජනා කරන ලදී, ජාලයට ස්වයංක්‍රියව සම්බන්ධ වීමට ඉඩ දෙන්නද?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"ඉඩ දෙන්න"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"ඉඩ නොදෙන්න"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> හට ස්වයං නිවැරදි කිරීමට අවශ්‍යයි"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"උපාංග ස්ථානය නිරීක්ෂණය කිරීමට භාවිත කළ හැකි අනන්‍ය ID එකක් මෙම ජාලවලට ලැබේ"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"කෙසේ වෙතත් සම්බන්ධ කරන්න"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"සම්බන්ධ නොකරන්න"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"නිවැරදි කිරීම තහවුරු කරන්නද?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"ඔබ සම්බන්ධ වුවහොත්, <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi ජාල ඔබේ SIM එක හා සම්බන්ධිත අනන්‍ය ID එකකට ප්‍රවේශ වීමට හෝ එය බෙදා ගැනීමට හැකිය. මෙය ඔබේ උපාංගයෙහි ස්ථානය නිරීක්ෂණය කිරීමට ඉඩ දිය හැකිය."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"සම්බන්ධ කරන්න"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"සම්බන්ධ නොකරන්න"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi ස්වයංක්‍රියව ක්‍රියාත්මක වනු ඇත"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"ඔබ උසස් තත්ත්වයේ සුරැකි ජාලයක් අවට සිටින විට"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"නැවත ක්‍රියාත්මක නොකරන්න"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"<xliff:g id="SSID">%1$s</xliff:g> වෙත සම්බන්ධ විය නොහැකිය"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"රහස්‍යතා සැකසීම් වෙනස් කිරීමට තට්ටු කර යළි උත්සාහ කරන්න"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"රහස්‍යතා සැකසීම වෙනස් කරන්නද?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"අනුපම අනන්‍යකාරකයක් වන ඔබේ උපාංග MAC ලිපිනය භාවිතයෙන් <xliff:g id="SSID_0">%1$s</xliff:g> හට සම්බන්ධ වීමට අවශ්‍ය විය හැකිය. මෙය ඔබේ උපාංගයේ ස්ථානය අවට උපාංග මගින් නිරීක්ෂණය කිරීමට ඉඩ දිය හැකිය. \n\nඔබ ඉදිරියට යන්නේ නම්, <xliff:g id="SSID_1">%1$s</xliff:g> මගින් ඔබේ රහස්‍යතා සැකසීම වෙනස් කර නැවත සම්බන්ධ වීමට උත්සාහ කරනු ඇත."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"සම්බන්ධ වීමට, <xliff:g id="SSID">%1$s</xliff:g> හට ඔබේ උපාංග MAC ලිපිනය, අනන්‍ය අනන්‍යකාරකයක් භාවිත කිරීමට අවශ්‍යය. දැනට, මෙම ජාලය සඳහා ඔබේ රහස්‍යතා සැකසීම සසම්භාවීකරණය කළ අනන්‍යකාරකයක් භාවිත කරයි. \n\nමෙය ඔබේ උපාංගයේ ස්ථානය අවට උපාංග මගින් නිරීක්ෂණය කිරීමට ඉඩ දිය හැකිය."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"සැකසීම වෙනස් කරන්න"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"සැකසීම යාවත්කාලීනයි. නැවත සබැඳීමට උත්සාහ කරන්න."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"සැකසීම යාවත්කාලීනයි. නැවත සබැඳීමට උත්සාහ කරන්න."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"රහස්‍යතා සැකසීම වෙනස් කළ නොහැකිය"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"ජාලය හමු වූයේ නැත"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP සත්‍යාපනය කිරීමේ දෝෂය 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP සත්‍යාපනය කිරීමේ දෝෂය 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP සත්‍යාපනය කිරීමේ දෝෂය 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP සත්‍යාපනය කිරීමේ දෝෂය 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"ජංගම හොට්ස්පොට් අබල කරන ලදී"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"ජංගම හොට්ස්පොට් අබල කර ඇත"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"අක්‍රිය කාල නිමාව කල් ඉකුත්වීම හේතුවෙන් ජංගම හොට්ස්පොට් අබල කර ඇත."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"හොට්ස්පොට් ක්‍රියා විරහිතයි"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"උපාංග කිසිවක් සම්බන්ධ කර නැත. වෙනස් කිරීමට තට්ටු කරන්න."</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi‑Fi විසන්ධි විය"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"<xliff:g id="SSID">%1$s</xliff:g> වෙත සම්බන්ධ වීමට, <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM එකක් ඇතුල් කරන්න"</string>
 </resources>
