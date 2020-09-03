@@ -4795,6 +4795,8 @@ public class WifiMetrics {
      * Message handler for interesting WifiMonitor messages. Generates StaEvents
      */
     private void processMessage(Message msg) {
+        String ifaceName = msg.getData().getString(WifiMonitor.KEY_IFACE);
+
         StaEvent event = new StaEvent();
         boolean logEvent = true;
         switch (msg.what) {
