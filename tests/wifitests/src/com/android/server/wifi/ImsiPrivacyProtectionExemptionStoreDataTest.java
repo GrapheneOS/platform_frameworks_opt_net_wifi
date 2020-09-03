@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -101,6 +102,17 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
         Map<Integer, Boolean> imsiPrivacyProtectionExemptionMap = new HashMap<>();
         assertSerializeDeserialize(imsiPrivacyProtectionExemptionMap);
     }
+
+    @Test
+    public void testDeserializeOnNewDeviceOrNewUser() throws Exception {
+        ArgumentCaptor<Map> deserializedNetworkSuggestionsMap =
+                ArgumentCaptor.forClass(Map.class);
+        mImsiPrivacyProtectionExemptionStoreData.deserializeData(null, 0,
+                WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
+        verify(mDataSource).fromDeserialized(deserializedNetworkSuggestionsMap.capture());
+        assertTrue(deserializedNetworkSuggestionsMap.getValue().isEmpty());
+    }
+
 
     private Map<Integer, Boolean> assertSerializeDeserialize(
             Map<Integer, Boolean> mImsiPrivacyProtectionExemptionMap) throws Exception {
