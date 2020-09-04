@@ -449,8 +449,7 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
                     + ", peerId=" + peerId);
         }
         incrementCbCount(CB_EV_MATCH_EXPIRED);
-
-        // NOP
+        mWifiAwareStateManager.onMatchExpiredNotification(discoverySessionId, peerId);
     }
 
     @Override

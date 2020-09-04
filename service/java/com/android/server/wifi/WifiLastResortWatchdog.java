@@ -121,6 +121,7 @@ public class WifiLastResortWatchdog {
     private final Handler mHandler;
     private final WifiThreadRunner mWifiThreadRunner;
     private final WifiInfo mWifiInfo;
+    private final WifiMonitor mWifiMonitor;
 
     /**
      * Local log used for debugging any WifiLastResortWatchdog issues.
@@ -135,7 +136,8 @@ public class WifiLastResortWatchdog {
             Looper clientModeImplLooper,
             DeviceConfigFacade deviceConfigFacade,
             WifiThreadRunner wifiThreadRunner,
-            WifiInfo wifiInfo) {
+            WifiInfo wifiInfo,
+            WifiMonitor wifiMonitor) {
         mWifiInjector = wifiInjector;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
@@ -144,6 +146,7 @@ public class WifiLastResortWatchdog {
         mDeviceConfigFacade = deviceConfigFacade;
         mWifiThreadRunner = wifiThreadRunner;
         mWifiInfo = wifiInfo;
+        mWifiMonitor = wifiMonitor;
         mHandler = new Handler(clientModeImplLooper) {
             public void handleMessage(Message msg) {
                 processMessage(msg);
@@ -151,12 +154,20 @@ public class WifiLastResortWatchdog {
         };
     }
 
-    /**
-     * Returns handler for L2 events from supplicant.
-     * @return Handler
-     */
-    public Handler getHandler() {
-        return mHandler;
+    private static final int[] WIFI_MONITOR_EVENTS = {
+            WifiMonitor.NETWORK_CONNECTION_EVENT
+    };
+
+    public void registerForWifiMonitorEvents(String ifaceName) {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.registerHandler(ifaceName, event, mHandler);
+        }
+    }
+
+    public void deregisterForWifiMonitorEvents(String ifaceName) {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.deregisterHandler(ifaceName, event, mHandler);
+        }
     }
 
     /**

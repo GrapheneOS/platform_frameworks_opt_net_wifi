@@ -454,7 +454,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         /** uncomment this to enable logs from ClientModeImpls */
         // enableDebugLogs();
-        mWifiMonitor = new MockWifiMonitor();
+        mWifiMonitor = spy(new MockWifiMonitor());
         when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mDataTelephonyManager);
         when(mWifiNetworkFactory.getSpecificNetworkRequestUidAndPackageName(any()))
                 .thenReturn(Pair.create(Process.INVALID_UID, ""));
@@ -3931,6 +3931,24 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mMboOceController).disable();
         verify(mWifiDataStall).disablePhoneStateListener();
+    }
+
+    @Test
+    public void verifyWifiMonitorHandlersDeregisteredOnStop() throws Exception {
+        verify(mWifiMonitor, atLeastOnce())
+                .registerHandler(eq(WIFI_IFACE_NAME), anyInt(), any());
+        verify(mWifiMetrics).registerForWifiMonitorEvents(WIFI_IFACE_NAME);
+        verify(mWifiLastResortWatchdog).registerForWifiMonitorEvents(WIFI_IFACE_NAME);
+        verify(mSupplicantStateTracker).registerForWifiMonitorEvents(WIFI_IFACE_NAME);
+
+        mCmi.stop();
+        mLooper.dispatchAll();
+
+        verify(mWifiMonitor, atLeastOnce())
+                .deregisterHandler(eq(WIFI_IFACE_NAME), anyInt(), any());
+        verify(mWifiMetrics).deregisterForWifiMonitorEvents(WIFI_IFACE_NAME);
+        verify(mWifiLastResortWatchdog).deregisterForWifiMonitorEvents(WIFI_IFACE_NAME);
+        verify(mSupplicantStateTracker).deregisterForWifiMonitorEvents(WIFI_IFACE_NAME);
     }
 
     @Test

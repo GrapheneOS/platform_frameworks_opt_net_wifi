@@ -45,7 +45,7 @@ public class SupplicantStateTracker extends StateMachine {
     private static final String TAG = "SupplicantStateTracker";
     private static boolean DBG = false;
     private final WifiConfigManager mWifiConfigManager;
-    private FrameworkFacade mFacade;
+    private final WifiMonitor mWifiMonitor;
     private final BatteryStatsManager mBatteryStatsManager;
     /* Indicates authentication failure in supplicant broadcast.
      * TODO: enhance auth failure reporting to include notification
@@ -87,12 +87,14 @@ public class SupplicantStateTracker extends StateMachine {
     }
 
     public SupplicantStateTracker(Context c, WifiConfigManager wcs,
-            BatteryStatsManager batteryStatsManager, Handler t) {
+            BatteryStatsManager batteryStatsManager, Handler t,
+            WifiMonitor wifiMonitor) {
         super(TAG, t.getLooper());
 
         mContext = c;
         mWifiConfigManager = wcs;
         mBatteryStatsManager = batteryStatsManager;
+        mWifiMonitor = wifiMonitor;
         // CHECKSTYLE:OFF IndentationCheck
         addState(mDefaultState);
             addState(mUninitializedState, mDefaultState);
@@ -110,6 +112,24 @@ public class SupplicantStateTracker extends StateMachine {
         setLogOnlyTransitions(true);
         //start the state machine
         start();
+    }
+
+    private static final int[] WIFI_MONITOR_EVENTS = {
+            WifiMonitor.ASSOCIATION_REJECTION_EVENT,
+            WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
+            WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT,
+    };
+
+    public void registerForWifiMonitorEvents(String ifaceName) {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.registerHandler(ifaceName, event, getHandler());
+        }
+    }
+
+    public void deregisterForWifiMonitorEvents(String ifaceName) {
+        for (int event : WIFI_MONITOR_EVENTS) {
+            mWifiMonitor.deregisterHandler(ifaceName, event, getHandler());
+        }
     }
 
     private void handleNetworkConnectionFailure(int netId, int disableReason) {
