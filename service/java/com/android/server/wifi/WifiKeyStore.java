@@ -33,6 +33,9 @@ import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -361,6 +364,7 @@ public class WifiKeyStore {
                 Log.d(TAG, "Checking cert " + p.getName());
             }
         }
+        int bitLength = 0;
 
         // Wi-Fi alliance requires the use of both ECDSA secp384r1 and RSA 3072 certificates
         // in WPA3-Enterprise 192-bit security networks, which are also known as Suite-B-192
@@ -372,18 +376,36 @@ public class WifiKeyStore {
         // we are supporting both types here.
         if (sigAlgOid.equals("1.2.840.113549.1.1.12")) {
             // sha384WithRSAEncryption
-            if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Found Suite-B RSA certificate");
+            if (x509Certificate.getPublicKey() instanceof RSAPublicKey) {
+                final RSAPublicKey rsaPublicKey = (RSAPublicKey) x509Certificate.getPublicKey();
+                if (rsaPublicKey.getModulus() != null) {
+                    bitLength = rsaPublicKey.getModulus().bitLength();
+                    if (bitLength >= 3072) {
+                        if (mVerboseLoggingEnabled) {
+                            Log.d(TAG, "Found Suite-B RSA certificate");
+                        }
+                        return WifiConfiguration.SuiteBCipher.ECDHE_RSA;
+                    }
+                }
             }
-            return WifiConfiguration.SuiteBCipher.ECDHE_RSA;
         } else if (sigAlgOid.equals("1.2.840.10045.4.3.3")) {
             // ecdsa-with-SHA384
-            if (mVerboseLoggingEnabled) {
-                Log.d(TAG, "Found Suite-B ECDSA certificate");
+            if (x509Certificate.getPublicKey() instanceof ECPublicKey) {
+                final ECPublicKey ecPublicKey = (ECPublicKey) x509Certificate.getPublicKey();
+                final ECParameterSpec ecParameterSpec = ecPublicKey.getParams();
+                if (ecParameterSpec != null && ecParameterSpec.getOrder() != null) {
+                    bitLength = ecParameterSpec.getOrder().bitLength();
+                    if (bitLength >= 384) {
+                        if (mVerboseLoggingEnabled) {
+                            Log.d(TAG, "Found Suite-B ECDSA certificate");
+                        }
+                        return WifiConfiguration.SuiteBCipher.ECDHE_ECDSA;
+                    }
+                }
             }
-            return WifiConfiguration.SuiteBCipher.ECDHE_ECDSA;
         }
-        Log.e(TAG, "Invalid certificate type for Suite-B: " + sigAlgOid);
+        Log.e(TAG, "Invalid certificate type for Suite-B: " + sigAlgOid + " or insufficient"
+                + " bit length: " + bitLength);
         return -1;
     }
 }
