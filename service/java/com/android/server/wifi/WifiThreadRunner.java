@@ -42,6 +42,9 @@ public class WifiThreadRunner {
     /** Max wait time for posting blocking runnables */
     private static final int RUN_WITH_SCISSORS_TIMEOUT_MILLIS = 4000;
 
+    /** For test only */
+    private boolean mTimeoutsAreErrors = false;
+
     private final Handler mHandler;
 
     public WifiThreadRunner(Handler handler) {
@@ -77,6 +80,9 @@ public class WifiThreadRunner {
         if (runWithScissorsSuccess) {
             return result.value;
         } else {
+            if (mTimeoutsAreErrors) {
+                throw new RuntimeException("WifiThreadRunner.call() timed out!");
+            }
             Log.e(TAG, "WifiThreadRunner.call() timed out!", new Throwable("Stack trace:"));
             return valueToReturnOnTimeout;
         }
@@ -96,9 +102,22 @@ public class WifiThreadRunner {
         if (runWithScissorsSuccess) {
             return true;
         } else {
+            if (mTimeoutsAreErrors) {
+                throw new RuntimeException("WifiThreadRunner.run() timed out!");
+            }
             Log.e(TAG, "WifiThreadRunner.run() timed out!", new Throwable("Stack trace:"));
             return false;
         }
+    }
+
+    /**
+     * Sets whether or not a RuntimeError should be thrown when a timeout occurs.
+     *
+     * For test purposes only!
+     */
+    public void setTimeoutsAreErrors(boolean timeoutsAreErrors) {
+        Log.d(TAG, "setTimeoutsAreErrors " + timeoutsAreErrors);
+        mTimeoutsAreErrors = timeoutsAreErrors;
     }
 
     /**
