@@ -1464,7 +1464,7 @@ public class WifiNative {
      * Returns an empty ArrayList on failure.
      */
     public ArrayList<ScanDetail> getScanResults(@NonNull String ifaceName) {
-        return convertNativeScanResults(mWifiCondManager.getScanResults(
+        return convertNativeScanResults(ifaceName, mWifiCondManager.getScanResults(
                 ifaceName, WifiNl80211Manager.SCAN_TYPE_SINGLE_SCAN));
     }
 
@@ -1475,11 +1475,12 @@ public class WifiNative {
      * Returns an empty ArrayList on failure.
      */
     public ArrayList<ScanDetail> getPnoScanResults(@NonNull String ifaceName) {
-        return convertNativeScanResults(mWifiCondManager.getScanResults(ifaceName,
+        return convertNativeScanResults(ifaceName, mWifiCondManager.getScanResults(ifaceName,
                 WifiNl80211Manager.SCAN_TYPE_PNO_SCAN));
     }
 
-    private ArrayList<ScanDetail> convertNativeScanResults(List<NativeScanResult> nativeResults) {
+    private ArrayList<ScanDetail> convertNativeScanResults(@NonNull String ifaceName,
+            List<NativeScanResult> nativeResults) {
         ArrayList<ScanDetail> results = new ArrayList<>();
         for (NativeScanResult result : nativeResults) {
             WifiSsid wifiSsid = WifiSsid.createFromByteArray(result.getSsid());
@@ -1508,6 +1509,7 @@ public class WifiNative {
                     null, result.getInformationElements());
             ScanResult scanResult = scanDetail.getScanResult();
             scanResult.setWifiStandard(wifiModeToWifiStandard(networkDetail.getWifiMode()));
+            scanResult.ifaceName = ifaceName;
 
             // Fill up the radio chain info.
             scanResult.radioChainInfos =
