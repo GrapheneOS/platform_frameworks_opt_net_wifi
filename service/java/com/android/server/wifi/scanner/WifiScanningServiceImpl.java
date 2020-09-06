@@ -685,7 +685,10 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                  */
                 @Override
                 public void onScanStatus(int event) {
-                    if (DBG) localLog("onScanStatus event received, event=" + event);
+                    if (DBG) {
+                        localLog("onScanStatus event received, event=" + event
+                                + ", iface=" + mImplIfaceName);
+                    }
                     switch (event) {
                         case WifiNative.WIFI_SCAN_RESULTS_AVAILABLE:
                         case WifiNative.WIFI_SCAN_THRESHOLD_NUM_SCANS:
@@ -706,7 +709,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                  */
                 @Override
                 public void onFullScanResult(ScanResult fullScanResult, int bucketsScanned) {
-                    if (DBG) localLog("onFullScanResult received");
+                    if (DBG) localLog("onFullScanResult received on iface " + mImplIfaceName);
                     reportFullScanResultForImpl(mImplIfaceName, fullScanResult, bucketsScanned);
                 }
 
