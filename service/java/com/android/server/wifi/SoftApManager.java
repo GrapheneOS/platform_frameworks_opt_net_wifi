@@ -34,7 +34,6 @@ import android.net.wifi.SoftApInfo;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiClient;
 import android.net.wifi.WifiManager;
-import android.net.wifi.nl80211.NativeWifiClient;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -136,27 +135,27 @@ public class SoftApManager implements ActiveModeManager {
      * Listener for soft AP events.
      */
     private final SoftApListener mSoftApListener = new SoftApListener() {
-
         @Override
         public void onFailure() {
             mStateMachine.sendMessage(SoftApStateMachine.CMD_FAILURE);
         }
 
         @Override
-        public void onConnectedClientsChanged(NativeWifiClient client, boolean isConnected) {
-            if (client != null) {
-                mStateMachine.sendMessage(SoftApStateMachine.CMD_ASSOCIATED_STATIONS_CHANGED,
-                        isConnected ? 1 : 0, 0, client);
-            } else {
-                Log.e(getTag(), "onConnectedClientsChanged: Invalid type returned");
-            }
+        public void onInfoChanged(String apIfaceInstance, int frequency, int bandwidth,
+                int generation) {
+            mStateMachine.sendMessage(
+                    SoftApStateMachine.CMD_SOFT_AP_CHANNEL_SWITCHED, frequency, bandwidth);
         }
 
         @Override
-        public void onSoftApChannelSwitched(int frequency,
-                @WifiAnnotations.Bandwidth int bandwidth) {
-            mStateMachine.sendMessage(
-                    SoftApStateMachine.CMD_SOFT_AP_CHANNEL_SWITCHED, frequency, bandwidth);
+        public void onConnectedClientsChanged(String apIfaceInstance, MacAddress clientAddress,
+                boolean isConnected) {
+            if (clientAddress != null) {
+                mStateMachine.sendMessage(SoftApStateMachine.CMD_ASSOCIATED_STATIONS_CHANGED,
+                        isConnected ? 1 : 0, 0, clientAddress);
+            } else {
+                Log.e(getTag(), "onConnectedClientsChanged: Invalid type returned");
+            }
         }
     };
 
@@ -882,20 +881,18 @@ public class SoftApManager implements ActiveModeManager {
             public boolean processMessage(Message message) {
                 switch (message.what) {
                     case CMD_ASSOCIATED_STATIONS_CHANGED:
-                        if (!(message.obj instanceof NativeWifiClient)) {
+                        if (!(message.obj instanceof MacAddress)) {
                             Log.e(getTag(), "Invalid type returned for"
                                     + " CMD_ASSOCIATED_STATIONS_CHANGED");
                             break;
                         }
-                        NativeWifiClient nativeClient = (NativeWifiClient) message.obj;
+                        MacAddress madAddress = (MacAddress) message.obj;
                         boolean isConnected = (message.arg1 == 1);
-                        if (nativeClient != null && nativeClient.getMacAddress() != null) {
-                            WifiClient client = new WifiClient(nativeClient.getMacAddress());
-                            Log.d(getTag(), "CMD_ASSOCIATED_STATIONS_CHANGED, Client: "
-                                    + nativeClient.getMacAddress().toString() + " isConnected: "
-                                    + isConnected);
-                            updateConnectedClients(client, isConnected);
-                        }
+                        WifiClient client = new WifiClient(madAddress);
+                        Log.d(getTag(), "CMD_ASSOCIATED_STATIONS_CHANGED, Client: "
+                                + madAddress.toString() + " isConnected: "
+                                + isConnected);
+                        updateConnectedClients(client, isConnected);
                         break;
                     case CMD_SOFT_AP_CHANNEL_SWITCHED:
                         if (message.arg1 < 0) {

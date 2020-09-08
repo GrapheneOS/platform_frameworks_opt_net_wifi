@@ -29,13 +29,14 @@ import android.hardware.wifi.hostapd.V1_0.HostapdStatusCode;
 import android.hardware.wifi.hostapd.V1_0.IHostapd;
 import android.hardware.wifi.hostapd.V1_1.IHostapdCallback;
 import android.hardware.wifi.hostapd.V1_2.DebugLevel;
+import android.hardware.wifi.hostapd.V1_3.Bandwidth;
+import android.hardware.wifi.hostapd.V1_3.Generation;
 import android.hidl.manager.V1_0.IServiceManager;
 import android.hidl.manager.V1_0.IServiceNotification;
 import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
 import android.net.wifi.WifiManager;
-import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.IHwBinder;
 import android.os.RemoteException;
@@ -63,16 +64,19 @@ public class HostapdHalTest extends WifiBaseTest {
     private static final String IFACE_NAME = "mock-wlan0";
     private static final String NETWORK_SSID = "test-ssid";
     private static final String NETWORK_PSK = "test-psk";
+    private static final String TEST_CLIENT_MAC = "11:22:33:44:55:66";
+    private static final String TEST_AP_INSTANCE = "instance-wlan0";
 
     private @Mock Context mContext;
     private @Mock IServiceManager mServiceManagerMock;
     private @Mock IHostapd mIHostapdMock;
     private @Mock WifiNative.HostapdDeathEventHandler mHostapdHalDeathHandler;
-    private @Mock WifiNl80211Manager.SoftApCallback mSoftApListener;
+    private @Mock WifiNative.SoftApListener mSoftApListener;
     private android.hardware.wifi.hostapd.V1_1.IHostapd mIHostapdMockV11;
     private android.hardware.wifi.hostapd.V1_2.IHostapd mIHostapdMockV12;
     private android.hardware.wifi.hostapd.V1_3.IHostapd mIHostapdMockV13;
     private IHostapdCallback mIHostapdCallback;
+    private android.hardware.wifi.hostapd.V1_3.IHostapdCallback mIHostapdCallback13;
     private MockResources mResources;
     HostapdStatus mStatusSuccess;
     HostapdStatus mStatusFailure;
@@ -827,7 +831,7 @@ public class HostapdHalTest extends WifiBaseTest {
                 public android.hardware.wifi.hostapd.V1_2.HostapdStatus answer(
                         android.hardware.wifi.hostapd.V1_3.IHostapdCallback cb)
                         throws RemoteException {
-                    mIHostapdCallback = cb;
+                    mIHostapdCallback13 = cb;
                     return mStatusSuccess12;
                 }
             }).when(mIHostapdMockV13).registerCallback_1_3(
@@ -1200,6 +1204,63 @@ public class HostapdHalTest extends WifiBaseTest {
         assertFalse(mNetworkParamsCaptor.getValue().isHidden);
         assertEquals(IHostapd.EncryptionType.WPA2, mNetworkParamsCaptor.getValue().encryptionType);
         assertEquals(NETWORK_PSK, mNetworkParamsCaptor.getValue().pskPassphrase);
+    }
+
+
+    /*
+     * Sunny day scenario for V1.3 HostapdHal initialization
+     * Asserts successful initialization
+     */
+    @Test
+    public void testHostapdCallbackEventAfter1_3() throws Exception {
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_0.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_1.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_2.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        when(mServiceManagerMock.getTransport(eq(
+                android.hardware.wifi.hostapd.V1_3.IHostapd.kInterfaceName), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
+        mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
+        executeAndValidateInitializationSequenceV1_3(false);
+        Builder configurationBuilder = new SoftApConfiguration.Builder();
+        configurationBuilder.setSsid(NETWORK_SSID);
+        configurationBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+
+        when(mIHostapdMockV12.addAccessPoint_1_2(any(), any()))
+                .thenReturn(mStatusSuccess12);
+        assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
+                configurationBuilder.build(),
+                () -> mSoftApListener.onFailure()));
+        verify(mIHostapdMockV12).addAccessPoint_1_2(any(), any());
+
+        // Trigger on failure.
+        mIHostapdCallback13.onFailure(IFACE_NAME);
+        verify(mSoftApListener).onFailure();
+        // Register SoftApManager callback
+        mHostapdHal.registerApCallback(IFACE_NAME, mSoftApListener);
+
+        int testFreq = 2412;
+        int testBandwidth = Bandwidth.WIFI_BANDWIDTH_20;
+        int testGeneration = Generation.WIFI_STANDARD_11N;
+        // Trigger on info changed.
+        mIHostapdCallback13.onApInstanceInfoChanged(IFACE_NAME, TEST_AP_INSTANCE,
+                testFreq, testBandwidth, testGeneration);
+        verify(mSoftApListener).onInfoChanged(eq(TEST_AP_INSTANCE), eq(testFreq),
+                eq(mHostapdHal.mapHalBandwidthToSoftApInfo(testBandwidth)),
+                eq(mHostapdHal.mapHalGenerationToWifiStandard(testGeneration)));
+
+        // Trigger on client connected.
+        mIHostapdCallback13.onConnectedClientsChanged(IFACE_NAME, TEST_AP_INSTANCE,
+                MacAddress.fromString(TEST_CLIENT_MAC).toByteArray(), true);
+        verify(mSoftApListener).onConnectedClientsChanged(eq(TEST_AP_INSTANCE),
+                eq(MacAddress.fromString(TEST_CLIENT_MAC)), eq(true));
     }
 }
 

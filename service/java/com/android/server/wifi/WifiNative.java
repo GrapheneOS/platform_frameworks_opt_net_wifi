@@ -31,6 +31,7 @@ import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
 import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.net.wifi.nl80211.NativeScanResult;
+import android.net.wifi.nl80211.NativeWifiClient;
 import android.net.wifi.nl80211.RadioChainInfo;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
@@ -124,9 +125,67 @@ public class WifiNative {
     /**
      * Callbacks for SoftAp interface.
      */
-    public interface SoftApListener extends WifiNl80211Manager.SoftApCallback {
+    public class SoftApListenerFromWificond implements WifiNl80211Manager.SoftApCallback {
         // placeholder for now - provide a shell so that clients don't use a
         // WifiNl80211Manager-specific API.
+        private String mIfaceName;
+        private SoftApListener mSoftApListener;
+
+        SoftApListenerFromWificond(String ifaceName,
+                SoftApListener softApListener) {
+            mIfaceName = ifaceName;
+            mSoftApListener = softApListener;
+        }
+
+        @Override
+        public void onFailure() {
+            mSoftApListener.onFailure();
+        }
+
+        @Override
+        public void onSoftApChannelSwitched(int frequency, int bandwidth) {
+            mSoftApListener.onInfoChanged(mIfaceName, frequency, bandwidth,
+                    ScanResult.WIFI_STANDARD_UNKNOWN);
+        }
+
+        @Override
+        public void onConnectedClientsChanged(NativeWifiClient client, boolean isConnected) {
+            mSoftApListener.onConnectedClientsChanged(mIfaceName,
+                    client.getMacAddress(), isConnected);
+        }
+    }
+
+    /**
+     * Callbacks for SoftAp instance.
+     */
+    public interface SoftApListener {
+        /**
+         * Invoked when there is a fatal failure and the SoftAp is shutdown.
+         */
+        void onFailure();
+
+        /**
+         * Invoked when a channel switch event happens - i.e. the SoftAp is moved to a different
+         * channel. Also called on initial registration.
+         *
+         * @param apIfaceInstance The identity of the ap instance.
+         * @param frequency The new frequency of the SoftAp. A value of 0 is invalid and is an
+         *                     indication that the SoftAp is not enabled.
+         * @param bandwidth The new bandwidth of the SoftAp.
+         * @param generation The new generation of the SoftAp.
+         */
+        void onInfoChanged(String apIfaceInstance, int frequency, int bandwidth,
+                int generation);
+        /**
+         * Invoked when there is a change in the associated station (STA).
+         *
+         * @param apIfaceInstance The identity of the ap instance.
+         * @param clientAddress Macaddress of the client.
+         * @param isConnected Indication as to whether the client is connected (true), or
+         *                    disconnected (false).
+         */
+        void onConnectedClientsChanged(String apIfaceInstance, MacAddress clientAddress,
+                boolean isConnected);
     }
 
     /********************************************************
@@ -1756,15 +1815,23 @@ public class WifiNative {
      */
     public boolean startSoftAp(
             @NonNull String ifaceName, SoftApConfiguration config, SoftApListener listener) {
-        if (!mWifiCondManager.registerApCallback(ifaceName, Runnable::run, listener)) {
-            Log.e(TAG, "Failed to register ap listener");
-            return false;
+        if (!mHostapdHal.registerApCallback(ifaceName, listener)) {
+            SoftApListenerFromWificond softApListenerFromWificond =
+                    new SoftApListenerFromWificond(ifaceName, listener);
+            Log.i(TAG, "Register ap listener from wificond");
+            if (!mWifiCondManager.registerApCallback(ifaceName,
+                    Runnable::run, softApListenerFromWificond)) {
+                Log.e(TAG, "Failed to register ap listener");
+                return false;
+            }
         }
+
         if (!mHostapdHal.addAccessPoint(ifaceName, config, listener::onFailure)) {
             Log.e(TAG, "Failed to add acccess point");
             mWifiMetrics.incrementNumSetupSoftApInterfaceFailureDueToHostapd();
             return false;
         }
+
         return true;
     }
 
