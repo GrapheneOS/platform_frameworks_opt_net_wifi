@@ -907,16 +907,16 @@ public class WifiServiceImpl extends BaseWifiService {
             return false;
         }
 
+        WorkSource requestorWs = new WorkSource(Binder.getCallingUid(), packageName);
         if (!mWifiThreadRunner.call(
-                () -> mActiveModeWarden.canRequestMoreSoftApManagers(), false)) {
+                () -> mActiveModeWarden.canRequestMoreSoftApManagers(requestorWs), false)) {
             // Take down LOHS if it is up.
             mLohsSoftApTracker.stopAll();
         }
 
         if (!startSoftApInternal(new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, softApConfig,
-                mTetheredSoftApTracker.getSoftApCapability()),
-                new WorkSource(Binder.getCallingUid(), packageName))) {
+                mTetheredSoftApTracker.getSoftApCapability()), requestorWs)) {
             mTetheredSoftApTracker.setFailedWhileEnabling();
             return false;
         }
@@ -967,16 +967,16 @@ public class WifiServiceImpl extends BaseWifiService {
             return false;
         }
 
+        WorkSource requestorWs = new WorkSource(Binder.getCallingUid(), packageName);
         if (!mWifiThreadRunner.call(
-                () -> mActiveModeWarden.canRequestMoreSoftApManagers(), false)) {
+                () -> mActiveModeWarden.canRequestMoreSoftApManagers(requestorWs), false)) {
             // Take down LOHS if it is up.
             mLohsSoftApTracker.stopAll();
         }
 
         if (!startSoftApInternal(new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, softApConfig,
-                mTetheredSoftApTracker.getSoftApCapability()),
-                new WorkSource(Binder.getCallingUid(), packageName))) {
+                mTetheredSoftApTracker.getSoftApCapability()), requestorWs)) {
             mTetheredSoftApTracker.setFailedWhileEnabling();
             return false;
         }
@@ -1844,8 +1844,9 @@ public class WifiServiceImpl extends BaseWifiService {
             Binder.restoreCallingIdentity(ident);
         }
 
+        WorkSource requestorWs = new WorkSource(uid, packageName);
         // check if we are currently tethering
-        if (!mActiveModeWarden.canRequestMoreSoftApManagers()
+        if (!mActiveModeWarden.canRequestMoreSoftApManagers(requestorWs)
                 && mTetheredSoftApTracker.getState() == WIFI_AP_STATE_ENABLED) {
             // Tethering is enabled, cannot start LocalOnlyHotspot
             mLog.info("Cannot start localOnlyHotspot when WiFi Tethering is active.")
@@ -1855,8 +1856,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
         // now create the new LOHS request info object
         LocalOnlyHotspotRequestInfo request = new LocalOnlyHotspotRequestInfo(
-                new WorkSource(uid, packageName), callback,
-                new LocalOnlyRequestorCallback(), customConfig);
+                requestorWs, callback, new LocalOnlyRequestorCallback(), customConfig);
 
         return mLohsSoftApTracker.start(pid, request);
     }

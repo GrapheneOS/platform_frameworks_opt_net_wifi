@@ -65,7 +65,6 @@ import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.HexDump;
-import com.android.internal.util.Preconditions;
 import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
 import com.android.server.wifi.WifiLinkLayerStats.ChannelStats;
 import com.android.server.wifi.util.ArrayUtils;
@@ -241,10 +240,6 @@ public class WifiVendorHal {
     private IWifiChip mIWifiChip;
     private HashMap<String, IWifiStaIface> mIWifiStaIfaces = new HashMap<>();
     private HashMap<String, IWifiApIface> mIWifiApIfaces = new HashMap<>();
-    private HalDeviceManager.InterfaceAvailableForRequestListener
-            mStaIfaceAvailableForRequestListener;
-    private HalDeviceManager.InterfaceAvailableForRequestListener
-            mApIfaceAvailableForRequestListener;
     private final HalDeviceManager mHalDeviceManager;
     private final HalDeviceManagerStatusListener mHalDeviceManagerStatusCallbacks;
     private final IWifiStaIfaceEventCallback mIWifiStaIfaceEventCallback;
@@ -369,44 +364,6 @@ public class WifiVendorHal {
         }
     }
 
-    /**
-     * Register a STA iface availability listener listed with {@link HalDeviceManager}.
-     *
-     * @param listener Instance of {@link WifiNative.InterfaceAvailableForRequestListener}.
-     */
-    public void registerStaIfaceAvailabilityListener(
-            @NonNull WifiNative.InterfaceAvailableForRequestListener listener) {
-        synchronized (sLock) {
-            Preconditions.checkState(mStaIfaceAvailableForRequestListener == null);
-            mStaIfaceAvailableForRequestListener =
-                    (isAvailable) -> listener.onAvailabilityChanged(isAvailable);
-            if (mHalDeviceManager.isStarted()) {
-                mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                        IfaceType.STA, mStaIfaceAvailableForRequestListener,
-                        mHalEventHandler);
-            }
-        }
-    }
-
-    /**
-     * Register a AP iface availability listener listed with {@link HalDeviceManager}.
-     *
-     * @param listener Instance of {@link WifiNative.InterfaceAvailableForRequestListener}.
-     *
-     */
-    public void registerApIfaceAvailabilityListener(
-            @NonNull WifiNative.InterfaceAvailableForRequestListener listener) {
-        synchronized (sLock) {
-            Preconditions.checkState(mApIfaceAvailableForRequestListener == null);
-            mApIfaceAvailableForRequestListener =
-                    (isAvailable) -> listener.onAvailabilityChanged(isAvailable);
-            if (mHalDeviceManager.isStarted()) {
-                mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                        IfaceType.AP, mApIfaceAvailableForRequestListener,
-                        mHalEventHandler);
-            }
-        }
-    }
 
     /** Helper method to lookup the corresponding STA iface object using iface name. */
     private IWifiStaIface getStaIface(@NonNull String ifaceName) {
@@ -2530,6 +2487,24 @@ public class WifiVendorHal {
         }
     }
 
+    /**
+     * Returns whether a new AP iface can be created or not.
+     */
+    public boolean isItPossibleToCreateApIface(@NonNull WorkSource requestorWs) {
+        synchronized (sLock) {
+            return mHalDeviceManager.isItPossibleToCreateIface(IfaceType.AP, requestorWs);
+        }
+    }
+
+    /**
+     * Returns whether a new STA iface can be created or not.
+     */
+    public boolean isItPossibleToCreateStaIface(@NonNull WorkSource requestorWs) {
+        synchronized (sLock) {
+            return mHalDeviceManager.isItPossibleToCreateIface(IfaceType.STA, requestorWs);
+        }
+    }
+
     // This creates a blob of IE elements from the array received.
     // TODO: This ugly conversion can be removed if we put IE elements in ScanResult.
     private static byte[] hidlIeArrayToFrameworkIeBlob(ArrayList<WifiInformationElement> ies) {
@@ -2978,20 +2953,6 @@ public class WifiVendorHal {
                 }
                 if (handler != null) {
                     handler.onDeath();
-                }
-            }
-            if (isStarted) {
-                synchronized (sLock) {
-                    if (mStaIfaceAvailableForRequestListener != null) {
-                        mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                                IfaceType.STA, mStaIfaceAvailableForRequestListener,
-                                mHalEventHandler);
-                    }
-                    if (mApIfaceAvailableForRequestListener != null) {
-                        mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                                IfaceType.AP, mApIfaceAvailableForRequestListener,
-                                mHalEventHandler);
-                    }
                 }
             }
         }

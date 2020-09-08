@@ -543,6 +543,24 @@ public class HalDeviceManager {
         }
     }
 
+    /**
+     * Returns whether the provided Iface can be requested by specifier requestor.
+     *
+     * @param ifaceType Type of iface requested.
+     * @param requestorWs Requestor worksource. This will be used to determine priority of this
+     *                    interface using rules based on the requestor app's context.
+     * @return true if the device supports the provided combo, false otherwise.
+     */
+    public boolean isItPossibleToCreateIface(int ifaceType, WorkSource requestorWs) {
+        if (VDBG) Log.d(TAG, "isItPossibleToCreateIface: ifaceType=" + ifaceType);
+        synchronized (mLock) {
+            if (mWifi == null) return false;
+            WifiChipInfo[] chipInfos = getAllChipInfo();
+            if (chipInfos == null) return false;
+            return isItPossibleToCreateIface(chipInfos, ifaceType);
+        }
+    }
+
     // internal state
 
     /* This "PRIORITY" is not for deciding interface elimination (that is controlled by
