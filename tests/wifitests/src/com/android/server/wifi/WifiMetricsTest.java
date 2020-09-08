@@ -2417,6 +2417,41 @@ public class WifiMetricsTest extends WifiBaseTest {
     }
 
     /**
+     * Verify the WifiStatus field in a UserActionEvent is populated correctly.
+     * @throws Exception
+     */
+    @Test
+    public void testLogWifiStatusInUserActionEvent() throws Exception {
+        // setups WifiStatus for information
+        int expectedRssi = -55;
+        int testNetworkId = 1;
+        int expectedTx = 1234;
+        int expectedRx = 2345;
+
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getRssi()).thenReturn(expectedRssi);
+        when(wifiInfo.getNetworkId()).thenReturn(testNetworkId);
+        mWifiMetrics.handlePollResult(wifiInfo);
+        mWifiMetrics.incrementThroughputKbpsCount(expectedTx, expectedRx, RSSI_POLL_FREQUENCY);
+        mWifiMetrics.setNominatorForNetwork(testNetworkId,
+                WifiMetricsProto.ConnectionEvent.NOMINATOR_SAVED_USER_CONNECT_CHOICE);
+
+        // generate a user action event and then verify fields
+        int testEventType = WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI;
+        mWifiMetrics.logUserActionEvent(testEventType, testNetworkId);
+        dumpProtoAndDeserialize();
+
+        WifiMetricsProto.UserActionEvent[] userActionEvents = mDecodedProto.userActionEvents;
+        assertEquals(1, userActionEvents.length);
+        assertEquals(WifiMetricsProto.UserActionEvent.EVENT_FORGET_WIFI,
+                userActionEvents[0].eventType);
+        assertEquals(expectedRssi, userActionEvents[0].wifiStatus.lastRssi);
+        assertEquals(expectedTx, userActionEvents[0].wifiStatus.estimatedTxKbps);
+        assertEquals(expectedRx, userActionEvents[0].wifiStatus.estimatedRxKbps);
+        assertTrue(userActionEvents[0].wifiStatus.isStuckDueToUserConnectChoice);
+    }
+
+    /**
      * Test the logging of UserActionEvent with invalid network ID
      */
     @Test

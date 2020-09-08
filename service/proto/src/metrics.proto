@@ -3169,6 +3169,29 @@ message UserActionEvent {
   // Additional information on the target network for the action. This is not applicable and will
   // be null for some actions such as EVENT_TOGGLE_WIFI_ON.
   optional TargetNetworkInfo target_network_info = 3;
+
+  // Information about the currently connected network.
+  optional WifiStatus wifi_status = 4;
+}
+
+message WifiStatus {
+  // Wifi is connected.
+  optional bool is_connected = 1;
+
+  // Wifi is validated
+  optional bool is_validated = 2;
+
+  // The last observed RSSI
+  optional sint32 last_rssi = 3;
+
+  // Estimated TX
+  optional int32 estimated_tx_kbps = 4;
+
+  // Estimated RX
+  optional int32 estimated_rx_kbps = 5;
+
+  // There is another candidate with better score, but user connect choice is preventing the switch.
+  optional bool is_stuck_due_to_user_connect_choice = 6;
 }
 
 // Additional information on a network
