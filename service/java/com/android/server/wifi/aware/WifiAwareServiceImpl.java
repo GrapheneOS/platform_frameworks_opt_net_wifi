@@ -160,6 +160,12 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
     }
 
     @Override
+    public boolean isDeviceAttached() {
+        enforceAccessPermission();
+        return mDeathRecipientsByClientId.size() != 0;
+    }
+
+    @Override
     public void connect(final IBinder binder, String callingPackage, String callingFeatureId,
             IWifiAwareEventCallback callback, ConfigRequest configRequest,
             boolean notifyOnIdentityChanged) {
