@@ -24,24 +24,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
 import android.net.wifi.WifiConfiguration;
 import android.os.Handler;
 import android.os.Process;
 import android.util.Log;
 
-import com.android.internal.R;
+import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
+import com.android.wifi.resources.R;
 
 /**
  * This class may be used to launch notifications when wifi connections fail.
  */
 public class ConnectionFailureNotifier {
     private static final String TAG = "ConnectionFailureNotifier";
-    public static final int NO_RANDOMIZED_MAC_SUPPORT_NOTIFICATION_ID = 123;
 
     private Context mContext;
     private WifiInjector mWifiInjector;
-    private Resources mResources;
     private FrameworkFacade mFrameworkFacade;
     private WifiConfigManager mWifiConfigManager;
     private WifiConnectivityManager mWifiConnectivityManager;
@@ -55,7 +53,6 @@ public class ConnectionFailureNotifier {
             Handler handler) {
         mContext = context;
         mWifiInjector = wifiInjector;
-        mResources = context.getResources();
         mFrameworkFacade = framework;
         mWifiConfigManager = wifiConfigManager;
         mWifiConnectivityManager = wifiConnectivityManager;
@@ -99,7 +96,8 @@ public class ConnectionFailureNotifier {
         }
         Notification notification = mConnectionFailureNotificationBuilder
                 .buildNoMacRandomizationSupportNotification(config);
-        mNotificationManager.notify(NO_RANDOMIZED_MAC_SUPPORT_NOTIFICATION_ID, notification);
+        mNotificationManager.notify(SystemMessage.NOTE_NETWORK_NO_MAC_RANDOMIZATION_SUPPORT,
+                notification);
     }
 
     class DisableMacRandomizationListener implements DialogInterface.OnClickListener {
@@ -119,16 +117,16 @@ public class ConnectionFailureNotifier {
                         mWifiConfigManager.getConfiguredNetwork(mConfig.networkId);
                 if (updatedConfig.macRandomizationSetting
                         == WifiConfiguration.RANDOMIZATION_NONE) {
-                    String message = mResources.getString(
+                    String message = mContext.getResources().getString(
                             R.string.wifi_disable_mac_randomization_dialog_success);
                     mFrameworkFacade.showToast(mContext, message);
                     mWifiConfigManager.enableNetwork(updatedConfig.networkId, true,
-                            Process.SYSTEM_UID);
+                            Process.SYSTEM_UID, null);
                     mWifiConnectivityManager.forceConnectivityScan(
                             ClientModeImpl.WIFI_WORK_SOURCE);
                 } else {
                     // Shouldn't ever fail, but here for completeness
-                    String message = mResources.getString(
+                    String message = mContext.getResources().getString(
                             R.string.wifi_disable_mac_randomization_dialog_failure);
                     mFrameworkFacade.showToast(mContext, message);
                     Log.e(TAG, "Failed to modify mac randomization setting");
@@ -148,7 +146,7 @@ public class ConnectionFailureNotifier {
         // it's tapped.
         if (config == null || ssidAndSecurityType == null
                 || !ssidAndSecurityType.equals(config.getSsidAndSecurityTypeString())) {
-            String message = mResources.getString(
+            String message = mContext.getResources().getString(
                     R.string.wifi_disable_mac_randomization_dialog_network_not_found);
             mFrameworkFacade.showToast(mContext, message);
             return;

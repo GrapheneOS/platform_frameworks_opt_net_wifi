@@ -23,19 +23,20 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AlarmManager;
 import android.content.Context;
-import android.os.Environment;
-import android.os.FileUtils;
+import android.net.wifi.WifiMigration;
 import android.os.Handler;
-import android.os.Looper;
+import android.os.UserHandle;
+import android.util.AtomicFile;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.Xml;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.internal.os.AtomicFile;
 import com.android.internal.util.FastXmlSerializer;
 import com.android.internal.util.Preconditions;
 import com.android.server.wifi.util.EncryptedData;
+import com.android.server.wifi.util.Environment;
+import com.android.server.wifi.util.FileUtils;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
 
@@ -50,6 +51,7 @@ import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -82,16 +84,21 @@ public class WifiConfigStore {
      */
     public static final int STORE_FILE_SHARED_GENERAL = 0;
     /**
+     * Config store file for softap shared store file.
+     */
+    public static final int STORE_FILE_SHARED_SOFTAP = 1;
+    /**
      * Config store file for general user store file.
      */
-    public static final int STORE_FILE_USER_GENERAL = 1;
+    public static final int STORE_FILE_USER_GENERAL = 2;
     /**
      * Config store file for network suggestions user store file.
      */
-    public static final int STORE_FILE_USER_NETWORK_SUGGESTIONS = 2;
+    public static final int STORE_FILE_USER_NETWORK_SUGGESTIONS = 3;
 
     @IntDef(prefix = { "STORE_FILE_" }, value = {
             STORE_FILE_SHARED_GENERAL,
+            STORE_FILE_SHARED_SOFTAP,
             STORE_FILE_USER_GENERAL,
             STORE_FILE_USER_NETWORK_SUGGESTIONS
     })
@@ -142,10 +149,6 @@ public class WifiConfigStore {
      */
     private static final String TAG = "WifiConfigStore";
     /**
-     * Directory to store the config store files in.
-     */
-    private static final String STORE_DIRECTORY_NAME = "wifi";
-    /**
      * Time interval for buffering file writes for non-forced writes
      */
     private static final int BUFFERED_WRITE_ALARM_INTERVAL_MS = 10 * 1000;
@@ -153,6 +156,10 @@ public class WifiConfigStore {
      * Config store file name for general shared store file.
      */
     private static final String STORE_FILE_NAME_SHARED_GENERAL = "WifiConfigStore.xml";
+    /**
+     * Config store file name for SoftAp shared store file.
+     */
+    private static final String STORE_FILE_NAME_SHARED_SOFTAP = "WifiConfigStoreSoftAp.xml";
     /**
      * Config store file name for general user store file.
      */
@@ -168,6 +175,7 @@ public class WifiConfigStore {
     private static final SparseArray<String> STORE_ID_TO_FILE_NAME =
             new SparseArray<String>() {{
                 put(STORE_FILE_SHARED_GENERAL, STORE_FILE_NAME_SHARED_GENERAL);
+                put(STORE_FILE_SHARED_SOFTAP, STORE_FILE_NAME_SHARED_SOFTAP);
                 put(STORE_FILE_USER_GENERAL, STORE_FILE_NAME_USER_GENERAL);
                 put(STORE_FILE_USER_NETWORK_SUGGESTIONS, STORE_FILE_NAME_USER_NETWORK_SUGGESTIONS);
             }};
@@ -185,10 +193,10 @@ public class WifiConfigStore {
     private final Clock mClock;
     private final WifiMetrics mWifiMetrics;
     /**
-     * Shared config store file instance. There is 1 shared store file:
-     * {@link #STORE_FILE_NAME_SHARED_GENERAL}.
+     * Shared config store file instance. There are 2 shared store files:
+     * {@link #STORE_FILE_NAME_SHARED_GENERAL} & {@link #STORE_FILE_NAME_SHARED_SOFTAP}.
      */
-    private StoreFile mSharedStore;
+    private final List<StoreFile> mSharedStores;
     /**
      * User specific store file instances. There are 2 user store files:
      * {@link #STORE_FILE_NAME_USER_GENERAL} & {@link #STORE_FILE_NAME_USER_NETWORK_SUGGESTIONS}.
@@ -226,23 +234,24 @@ public class WifiConfigStore {
      * Note: The store file instances have been made inputs to this class to ease unit-testing.
      *
      * @param context     context to use for retrieving the alarm manager.
-     * @param looper      looper instance to post alarm timeouts to.
+     * @param handler     handler instance to post alarm timeouts to.
      * @param clock       clock instance to retrieve timestamps for alarms.
      * @param wifiMetrics Metrics instance.
-     * @param sharedStore StoreFile instance pointing to the shared store file. This should
-     *                    be retrieved using {@link #createSharedFile()} method.
+     * @param sharedStores List of {@link StoreFile} instances pointing to the shared store files.
+     *                     This should be retrieved using {@link #createSharedFiles(boolean)}
+     *                     method.
      */
-    public WifiConfigStore(Context context, Looper looper, Clock clock, WifiMetrics wifiMetrics,
-            StoreFile sharedStore) {
+    public WifiConfigStore(Context context, Handler handler, Clock clock, WifiMetrics wifiMetrics,
+            List<StoreFile> sharedStores) {
 
         mAlarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        mEventHandler = new Handler(looper);
+        mEventHandler = handler;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
         mStoreDataList = new ArrayList<>();
 
         // Initialize the store files.
-        mSharedStore = sharedStore;
+        mSharedStores = sharedStores;
         // The user store is initialized to null, this will be set when the user unlocks and
         // CE storage is accessible via |switchUserStoresAndRead|.
         mUserStores = null;
@@ -251,7 +260,8 @@ public class WifiConfigStore {
     /**
      * Set the user store files.
      * (Useful for mocking in unit tests).
-     * @param userStores List of {@link StoreFile} created using {@link #createUserFiles(int)}.
+     * @param userStores List of {@link StoreFile} created using
+     * {@link #createUserFiles(int, boolean)}.
      */
     public void setUserStores(@NonNull List<StoreFile> userStores) {
         Preconditions.checkNotNull(userStores);
@@ -285,15 +295,15 @@ public class WifiConfigStore {
      * Note: The method creates the store directory if not already present. This may be needed for
      * user store files.
      *
-     * @param storeBaseDir Base directory under which the store file is to be stored. The store file
-     *                     will be at <storeBaseDir>/wifi/WifiConfigStore.xml.
+     * @param storeDir Base directory under which the store file is to be stored. The store file
+     *                 will be at <storeDir>/WifiConfigStore.xml.
      * @param fileId Identifier for the file. See {@link StoreFileId}.
+     * @param userHandle User handle. Meaningful only for user specific store files.
      * @param shouldEncryptCredentials Whether to encrypt credentials or not.
      * @return new instance of the store file or null if the directory cannot be created.
      */
-    private static @Nullable StoreFile createFile(File storeBaseDir, @StoreFileId int fileId,
-            boolean shouldEncryptCredentials) {
-        File storeDir = new File(storeBaseDir, STORE_DIRECTORY_NAME);
+    private static @Nullable StoreFile createFile(@NonNull File storeDir,
+            @StoreFileId int fileId, UserHandle userHandle, boolean shouldEncryptCredentials) {
         if (!storeDir.exists()) {
             if (!storeDir.mkdir()) {
                 Log.w(TAG, "Could not create store directory " + storeDir);
@@ -305,7 +315,21 @@ public class WifiConfigStore {
         if (shouldEncryptCredentials) {
             encryptionUtil = new WifiConfigStoreEncryptionUtil(file.getName());
         }
-        return new StoreFile(file, fileId, encryptionUtil);
+        return new StoreFile(file, fileId, userHandle, encryptionUtil);
+    }
+
+    private static @Nullable List<StoreFile> createFiles(File storeDir, List<Integer> storeFileIds,
+            UserHandle userHandle, boolean shouldEncryptCredentials) {
+        List<StoreFile> storeFiles = new ArrayList<>();
+        for (int fileId : storeFileIds) {
+            StoreFile storeFile =
+                    createFile(storeDir, fileId, userHandle, shouldEncryptCredentials);
+            if (storeFile == null) {
+                return null;
+            }
+            storeFiles.add(storeFile);
+        }
+        return storeFiles;
     }
 
     /**
@@ -314,8 +338,11 @@ public class WifiConfigStore {
      * @param shouldEncryptCredentials Whether to encrypt credentials or not.
      * @return new instance of the store file or null if the directory cannot be created.
      */
-    public static @Nullable StoreFile createSharedFile(boolean shouldEncryptCredentials) {
-        return createFile(Environment.getDataMiscDirectory(), STORE_FILE_SHARED_GENERAL,
+    public static @NonNull List<StoreFile> createSharedFiles(boolean shouldEncryptCredentials) {
+        return createFiles(
+                Environment.getWifiSharedDirectory(),
+                Arrays.asList(STORE_FILE_SHARED_GENERAL, STORE_FILE_SHARED_SOFTAP),
+                UserHandle.ALL,
                 shouldEncryptCredentials);
     }
 
@@ -330,18 +357,12 @@ public class WifiConfigStore {
      */
     public static @Nullable List<StoreFile> createUserFiles(int userId,
             boolean shouldEncryptCredentials) {
-        List<StoreFile> storeFiles = new ArrayList<>();
-        for (int fileId : Arrays.asList(
-                STORE_FILE_USER_GENERAL, STORE_FILE_USER_NETWORK_SUGGESTIONS)) {
-            StoreFile storeFile =
-                    createFile(Environment.getDataMiscCeDirectory(userId), fileId,
-                            shouldEncryptCredentials);
-            if (storeFile == null) {
-                return null;
-            }
-            storeFiles.add(storeFile);
-        }
-        return storeFiles;
+        UserHandle userHandle = UserHandle.of(userId);
+        return createFiles(
+                Environment.getWifiUserDirectory(userId),
+                Arrays.asList(STORE_FILE_USER_GENERAL, STORE_FILE_USER_NETWORK_SUGGESTIONS),
+                userHandle,
+                shouldEncryptCredentials);
     }
 
     /**
@@ -352,25 +373,13 @@ public class WifiConfigStore {
     }
 
     /**
-     * API to check if any of the store files are present on the device. This can be used
-     * to detect if the device needs to perform data migration from legacy stores.
-     *
-     * @return true if any of the store file is present, false otherwise.
-     */
-    public boolean areStoresPresent() {
-        // Checking for the shared store file existence is sufficient since this is guaranteed
-        // to be present on migrated devices.
-        return mSharedStore.exists();
-    }
-
-    /**
      * Retrieve the list of {@link StoreData} instances registered for the provided
      * {@link StoreFile}.
      */
     private List<StoreData> retrieveStoreDataListForStoreFile(@NonNull StoreFile storeFile) {
         return mStoreDataList
                 .stream()
-                .filter(s -> s.getStoreFileId() == storeFile.mFileId)
+                .filter(s -> s.getStoreFileId() == storeFile.getFileId())
                 .collect(Collectors.toList());
     }
 
@@ -396,10 +405,12 @@ public class WifiConfigStore {
         boolean hasAnyNewData = false;
         // Serialize the provided data and send it to the respective stores. The actual write will
         // be performed later depending on the |forceSync| flag .
-        if (hasNewDataToSerialize(mSharedStore)) {
-            byte[] sharedDataBytes = serializeData(mSharedStore);
-            mSharedStore.storeRawDataToWrite(sharedDataBytes);
-            hasAnyNewData = true;
+        for (StoreFile sharedStoreFile : mSharedStores) {
+            if (hasNewDataToSerialize(sharedStoreFile)) {
+                byte[] sharedDataBytes = serializeData(sharedStoreFile);
+                sharedStoreFile.storeRawDataToWrite(sharedDataBytes);
+                hasAnyNewData = true;
+            }
         }
         if (mUserStores != null) {
             for (StoreFile userStoreFile : mUserStores) {
@@ -490,7 +501,9 @@ public class WifiConfigStore {
         stopBufferedWriteAlarm();
 
         long writeStartTime = mClock.getElapsedSinceBootMillis();
-        mSharedStore.writeBufferedRawData();
+        for (StoreFile sharedStoreFile : mSharedStores) {
+            sharedStoreFile.writeBufferedRawData();
+        }
         if (mUserStores != null) {
             for (StoreFile userStoreFile : mUserStores) {
                 userStoreFile.writeBufferedRawData();
@@ -506,27 +519,147 @@ public class WifiConfigStore {
     }
 
     /**
+     * Note: This is a copy of {@link AtomicFile#readFully()} modified to use the passed in
+     * {@link InputStream} which was returned using {@link AtomicFile#openRead()}.
+     */
+    private static byte[] readAtomicFileFully(InputStream stream) throws IOException {
+        try {
+            int pos = 0;
+            int avail = stream.available();
+            byte[] data = new byte[avail];
+            while (true) {
+                int amt = stream.read(data, pos, data.length - pos);
+                if (amt <= 0) {
+                    return data;
+                }
+                pos += amt;
+                avail = stream.available();
+                if (avail > data.length - pos) {
+                    byte[] newData = new byte[pos + avail];
+                    System.arraycopy(data, 0, newData, 0, pos);
+                    data = newData;
+                }
+            }
+        } finally {
+            stream.close();
+        }
+    }
+
+    /**
+     * Conversion for file id's to use in WifiMigration API surface.
+     */
+    private static Integer getMigrationStoreFileId(@StoreFileId int fileId) {
+        switch (fileId) {
+            case STORE_FILE_SHARED_GENERAL:
+                return WifiMigration.STORE_FILE_SHARED_GENERAL;
+            case STORE_FILE_SHARED_SOFTAP:
+                return WifiMigration.STORE_FILE_SHARED_SOFTAP;
+            case STORE_FILE_USER_GENERAL:
+                return WifiMigration.STORE_FILE_USER_GENERAL;
+            case STORE_FILE_USER_NETWORK_SUGGESTIONS:
+                return WifiMigration.STORE_FILE_USER_NETWORK_SUGGESTIONS;
+            default:
+                return null;
+        }
+    }
+
+    private static byte[] readDataFromMigrationSharedStoreFile(@StoreFileId int fileId)
+            throws IOException {
+        Integer migrationStoreFileId = getMigrationStoreFileId(fileId);
+        if (migrationStoreFileId == null) return null;
+        InputStream migrationIs =
+                WifiMigration.convertAndRetrieveSharedConfigStoreFile(migrationStoreFileId);
+        if (migrationIs == null) return null;
+        return readAtomicFileFully(migrationIs);
+    }
+
+    private static byte[] readDataFromMigrationUserStoreFile(@StoreFileId int fileId,
+            UserHandle userHandle) throws IOException {
+        Integer migrationStoreFileId = getMigrationStoreFileId(fileId);
+        if (migrationStoreFileId == null) return null;
+        InputStream migrationIs =
+                WifiMigration.convertAndRetrieveUserConfigStoreFile(
+                        migrationStoreFileId, userHandle);
+        if (migrationIs == null) return null;
+        return readAtomicFileFully(migrationIs);
+    }
+
+    /**
+     * Helper method to read from the shared store files.
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    private void readFromSharedStoreFiles() throws XmlPullParserException, IOException {
+        for (StoreFile sharedStoreFile : mSharedStores) {
+            byte[] sharedDataBytes =
+                    readDataFromMigrationSharedStoreFile(sharedStoreFile.getFileId());
+            if (sharedDataBytes == null) {
+                // nothing to migrate, do normal read.
+                sharedDataBytes = sharedStoreFile.readRawData();
+            } else {
+                Log.i(TAG, "Read data out of shared migration store file: "
+                        + sharedStoreFile.getName());
+                // Save the migrated file contents to the regular store file and delete the
+                // migrated stored file.
+                sharedStoreFile.storeRawDataToWrite(sharedDataBytes);
+                sharedStoreFile.writeBufferedRawData();
+                // Note: If the migrated store file is at the same location as the store file,
+                // then the OEM implementation should ignore this remove.
+                WifiMigration.removeSharedConfigStoreFile(
+                        getMigrationStoreFileId(sharedStoreFile.getFileId()));
+            }
+            deserializeData(sharedDataBytes, sharedStoreFile);
+        }
+    }
+
+    /**
+     * Helper method to read from the user store files.
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    private void readFromUserStoreFiles() throws XmlPullParserException, IOException {
+        for (StoreFile userStoreFile : mUserStores) {
+            byte[] userDataBytes = readDataFromMigrationUserStoreFile(
+                    userStoreFile.getFileId(), userStoreFile.mUserHandle);
+            if (userDataBytes == null) {
+                // nothing to migrate, do normal read.
+                userDataBytes = userStoreFile.readRawData();
+            } else {
+                Log.i(TAG, "Read data out of user migration store file: "
+                        + userStoreFile.getName());
+                // Save the migrated file contents to the regular store file and delete the
+                // migrated stored file.
+                userStoreFile.storeRawDataToWrite(userDataBytes);
+                userStoreFile.writeBufferedRawData();
+                // Note: If the migrated store file is at the same location as the store file,
+                // then the OEM implementation should ignore this remove.
+                WifiMigration.removeUserConfigStoreFile(
+                        getMigrationStoreFileId(userStoreFile.getFileId()),
+                        userStoreFile.mUserHandle);
+            }
+            deserializeData(userDataBytes, userStoreFile);
+        }
+    }
+
+    /**
      * API to read the store data from the config stores.
      * The method reads the user specific configurations from user specific config store and the
      * shared configurations from the shared config store.
      */
     public void read() throws XmlPullParserException, IOException {
         // Reset both share and user store data.
-        resetStoreData(mSharedStore);
+        for (StoreFile sharedStoreFile : mSharedStores) {
+            resetStoreData(sharedStoreFile);
+        }
         if (mUserStores != null) {
             for (StoreFile userStoreFile : mUserStores) {
                 resetStoreData(userStoreFile);
             }
         }
-
         long readStartTime = mClock.getElapsedSinceBootMillis();
-        byte[] sharedDataBytes = mSharedStore.readRawData();
-        deserializeData(sharedDataBytes, mSharedStore);
+        readFromSharedStoreFiles();
         if (mUserStores != null) {
-            for (StoreFile userStoreFile : mUserStores) {
-                byte[] userDataBytes = userStoreFile.readRawData();
-                deserializeData(userDataBytes, userStoreFile);
-            }
+            readFromUserStoreFiles();
         }
         long readTime = mClock.getElapsedSinceBootMillis() - readStartTime;
         try {
@@ -557,12 +690,9 @@ public class WifiConfigStore {
         stopBufferedWriteAlarm();
         mUserStores = userStores;
 
-        // Now read from the user store file.
+        // Now read from the user store files.
         long readStartTime = mClock.getElapsedSinceBootMillis();
-        for (StoreFile userStoreFile : mUserStores) {
-            byte[] userDataBytes = userStoreFile.readRawData();
-            deserializeData(userDataBytes, userStoreFile);
-        }
+        readFromUserStoreFiles();
         long readTime = mClock.getElapsedSinceBootMillis() - readStartTime;
         mWifiMetrics.noteWifiConfigStoreReadDuration(toIntExact(readTime));
         Log.d(TAG, "Reading from user stores completed in " + readTime + " ms.");
@@ -625,15 +755,16 @@ public class WifiConfigStore {
         String[] headerName = new String[1];
         Set<StoreData> storeDatasInvoked = new HashSet<>();
         while (XmlUtil.gotoNextSectionOrEnd(in, headerName, rootTagDepth)) {
-            // There can only be 1 store data matching the tag (O indicates a fatal
-            // error).
+            // There can only be 1 store data matching the tag, O indicates a previous StoreData
+            // module that no longer exists (ignore this XML section).
             StoreData storeData = storeDataList.stream()
                     .filter(s -> s.getName().equals(headerName[0]))
                     .findAny()
                     .orElse(null);
             if (storeData == null) {
-                throw new XmlPullParserException("Unknown store data: " + headerName[0]
-                        + ". List of store data: " + storeDataList);
+                Log.e(TAG, "Unknown store data: " + headerName[0] + ". List of store data: "
+                        + storeDataList);
+                continue;
             }
             storeData.deserializeData(in, rootTagDepth + 1, version,
                     storeFile.getEncryptionUtil());
@@ -681,11 +812,13 @@ public class WifiConfigStore {
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("Dump of WifiConfigStore");
         pw.println("WifiConfigStore - Store File Begin ----");
-        Stream.of(Arrays.asList(mSharedStore), mUserStores)
+        Stream.of(mSharedStores, mUserStores)
                 .flatMap(List::stream)
                 .forEach((storeFile) -> {
                     pw.print("Name: " + storeFile.mFileName);
-                    pw.println(", Credentials encrypted: " + storeFile.getEncryptionUtil() != null);
+                    pw.print(", File Id: " + storeFile.mFileId);
+                    pw.println(", Credentials encrypted: "
+                            + (storeFile.getEncryptionUtil() != null));
                 });
         pw.println("WifiConfigStore - Store Data Begin ----");
         for (StoreData storeData : mStoreDataList) {
@@ -729,25 +862,30 @@ public class WifiConfigStore {
          */
         private final @StoreFileId int mFileId;
         /**
+         * User handle. Meaningful only for user specific store files.
+         */
+        private final UserHandle mUserHandle;
+        /**
          * Integrity checking for the store file.
          */
         private final WifiConfigStoreEncryptionUtil mEncryptionUtil;
 
         public StoreFile(File file, @StoreFileId int fileId,
+                @NonNull UserHandle userHandle,
                 @Nullable WifiConfigStoreEncryptionUtil encryptionUtil) {
             mAtomicFile = new AtomicFile(file);
             mFileName = file.getAbsolutePath();
             mFileId = fileId;
+            mUserHandle = userHandle;
             mEncryptionUtil = encryptionUtil;
         }
 
-        /**
-         * Returns whether the store file already exists on disk or not.
-         *
-         * @return true if it exists, false otherwise.
-         */
-        public boolean exists() {
-            return mAtomicFile.exists();
+        public String getName() {
+            return mAtomicFile.getBaseFile().getName();
+        }
+
+        public @StoreFileId int getFileId() {
+            return mFileId;
         }
 
         /**
@@ -798,7 +936,7 @@ public class WifiConfigStore {
             FileOutputStream out = null;
             try {
                 out = mAtomicFile.startWrite();
-                FileUtils.setPermissions(mFileName, FILE_MODE, -1, -1);
+                FileUtils.chmod(mFileName, FILE_MODE);
                 out.write(mWriteData);
                 mAtomicFile.finishWrite(out);
             } catch (IOException e) {

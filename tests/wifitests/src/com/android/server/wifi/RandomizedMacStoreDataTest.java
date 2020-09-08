@@ -41,7 +41,7 @@ import java.util.Map;
  * Unit tests for {@link com.android.server.wifi.RandomizedMacStoreData}.
  */
 @SmallTest
-public class RandomizedMacStoreDataTest {
+public class RandomizedMacStoreDataTest extends WifiBaseTest {
     private static final String TEST_MAC_ADDRESS_1 = "da:a1:19:0:0:0";
     private static final String TEST_MAC_ADDRESS_2 = "ff:ff:ff:0:0:0";
     private static final String TEST_CONFIG_KEY_1 = "TP-LINK_B6C1_5GWPA_PSK";

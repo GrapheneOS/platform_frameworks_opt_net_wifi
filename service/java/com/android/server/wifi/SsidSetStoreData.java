@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 import com.android.server.wifi.util.XmlUtil;
@@ -39,6 +40,7 @@ import java.util.Set;
  * - Set of blacklisted SSIDs
  */
 public class SsidSetStoreData implements WifiConfigStore.StoreData {
+    private static final String TAG = "SsidSetStoreData";
     private static final String XML_TAG_SECTION_HEADER_SUFFIX = "ConfigData";
     private static final String XML_TAG_SSID_SET = "SSIDSet";
 
@@ -105,8 +107,8 @@ public class SsidSetStoreData implements WifiConfigStore.StoreData {
                     mDataSource.setSsids((Set<String>) value);
                     break;
                 default:
-                    throw new XmlPullParserException("Unknown tag under "
-                            + mTagName + ": " + valueName[0]);
+                    Log.w(TAG, "Ignoring unknown tag under " + mTagName + ": " + valueName[0]);
+                    break;
             }
         }
     }

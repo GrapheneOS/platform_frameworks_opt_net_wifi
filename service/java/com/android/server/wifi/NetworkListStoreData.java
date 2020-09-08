@@ -41,6 +41,8 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -135,6 +137,8 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         if (networkList == null) {
             return;
         }
+        // Sort by SSID
+        Collections.sort(networkList, Comparator.comparing(a -> a.SSID));
         for (WifiConfiguration network : networkList) {
             serializeNetwork(out, network, encryptionUtil);
         }
@@ -270,8 +274,9 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
                             encryptionUtil);
                     break;
                 default:
-                    throw new XmlPullParserException("Unknown tag under "
-                            + XML_TAG_SECTION_HEADER_NETWORK + ": " + headerName[0]);
+                    Log.w(TAG, "Ignoring unknown tag under " + XML_TAG_SECTION_HEADER_NETWORK
+                            + ": " + headerName[0]);
+                    break;
             }
         }
         if (parsedConfig == null || parsedConfig.first == null || parsedConfig.second == null) {
@@ -279,7 +284,20 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         }
         String configKeyParsed = parsedConfig.first;
         WifiConfiguration configuration = parsedConfig.second;
-        String configKeyCalculated = configuration.configKey();
+
+        if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+            fixSaeNetworkSecurityBits(configuration);
+        }
+        // b/153435438: Added to deal with badly formed WifiConfiguration from apps.
+        if (configuration.preSharedKey != null && !configuration.needsPreSharedKey()) {
+            Log.e(TAG, "preSharedKey set with an invalid KeyMgmt, resetting KeyMgmt to WPA_PSK");
+            configuration.allowedKeyManagement.clear();
+            configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+            // Recreate configKey to pass the check below.
+            configKeyParsed = configuration.getKey();
+        }
+
+        String configKeyCalculated = configuration.getKey();
         if (!configKeyParsed.equals(configKeyCalculated)) {
             throw new XmlPullParserException(
                     "Configuration key does not match. Retrieved: " + configKeyParsed
@@ -288,13 +306,13 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         // Set creatorUid/creatorName for networks which don't have it set to valid value.
         String creatorName = mContext.getPackageManager().getNameForUid(configuration.creatorUid);
         if (creatorName == null) {
-            Log.e(TAG, "Invalid creatorUid for saved network " + configuration.configKey()
+            Log.e(TAG, "Invalid creatorUid for saved network " + configuration.getKey()
                     + ", creatorUid=" + configuration.creatorUid);
             configuration.creatorUid = Process.SYSTEM_UID;
             configuration.creatorName =
                     mContext.getPackageManager().getNameForUid(Process.SYSTEM_UID);
         } else if (!creatorName.equals(configuration.creatorName)) {
-            Log.w(TAG, "Invalid creatorName for saved network " + configuration.configKey()
+            Log.w(TAG, "Invalid creatorName for saved network " + configuration.getKey()
                     + ", creatorUid=" + configuration.creatorUid
                     + ", creatorName=" + configuration.creatorName);
             configuration.creatorName = creatorName;
@@ -306,6 +324,35 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
             configuration.enterpriseConfig = enterpriseConfig;
         }
         return configuration;
+    }
+
+    private void fixSaeNetworkSecurityBits(WifiConfiguration saeNetwork) {
+        // SAE saved networks Auth Algorithm set to OPEN need to be have this field cleared.
+        if (saeNetwork.allowedAuthAlgorithms.get(WifiConfiguration.AuthAlgorithm.OPEN)) {
+            saeNetwork.allowedAuthAlgorithms.clear();
+        }
+        // SAE saved networks Pairwise Cipher with TKIP enabled need to be have this bit
+        // cleared.
+        if (saeNetwork.allowedPairwiseCiphers.get(WifiConfiguration.PairwiseCipher.TKIP)) {
+            saeNetwork.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.TKIP);
+        }
+        // SAE saved networks Protocols with WPA enabled need to be have this bit cleared.
+        if (saeNetwork.allowedProtocols.get(WifiConfiguration.Protocol.WPA)) {
+            saeNetwork.allowedProtocols.clear(WifiConfiguration.Protocol.WPA);
+        }
+        // SAE saved networks Group Ciphers with legacy ciphers enabled, need to be have these
+        // bits cleared.
+        if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP40)) {
+            saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.WEP40);
+        }
+        if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP104)) {
+            saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.WEP104);
+        }
+        if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.TKIP)) {
+            saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.TKIP);
+        }
+        saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
     }
 }
 

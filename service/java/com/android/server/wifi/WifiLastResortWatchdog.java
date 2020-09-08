@@ -28,13 +28,16 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This Class is a Work-In-Progress, intended behavior is as follows:
@@ -77,9 +80,6 @@ public class WifiLastResortWatchdog {
     @VisibleForTesting
     public static final long LAST_TRIGGER_TIMEOUT_MILLIS = 2 * 3600 * 1000; // 2 hours
 
-    private int mAbnormalConnectionDurationMs;
-    private boolean mAbnormalConnectionBugreportEnabled;
-
 
     /**
      * Cached WifiConfigurations of available networks seen within MAX_BSSID_AGE scan results
@@ -93,6 +93,9 @@ public class WifiLastResortWatchdog {
      */
     private Map<String, Pair<AvailableNetworkFailureCount, Integer>> mSsidFailureCount =
             new HashMap<>();
+
+    /* List of failure BSSID */
+    private Set<String> mBssidFailureList = new HashSet<>();
 
     // Tracks: if ClientModeImpl is in ConnectedState
     private boolean mWifiIsConnected = false;
@@ -114,7 +117,10 @@ public class WifiLastResortWatchdog {
     // did not fix the problem
     private boolean mWatchdogFixedWifi = true;
     private long mLastStartConnectTime = 0;
-    private Handler mHandler;
+    private final Handler mHandler;
+    private final WifiThreadRunner mWifiThreadRunner;
+
+    private Boolean mWatchdogFeatureEnabled = null;
 
     /**
      * Local log used for debugging any WifiLastResortWatchdog issues.
@@ -123,7 +129,7 @@ public class WifiLastResortWatchdog {
 
     WifiLastResortWatchdog(WifiInjector wifiInjector, Context context, Clock clock,
             WifiMetrics wifiMetrics, ClientModeImpl clientModeImpl, Looper clientModeImplLooper,
-            DeviceConfigFacade deviceConfigFacade) {
+            DeviceConfigFacade deviceConfigFacade, WifiThreadRunner wifiThreadRunner) {
         mWifiInjector = wifiInjector;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
@@ -131,29 +137,12 @@ public class WifiLastResortWatchdog {
         mClientModeImplLooper = clientModeImplLooper;
         mContext = context;
         mDeviceConfigFacade = deviceConfigFacade;
-        updateDeviceConfigFlags();
+        mWifiThreadRunner = wifiThreadRunner;
         mHandler = new Handler(clientModeImplLooper) {
             public void handleMessage(Message msg) {
                 processMessage(msg);
             }
         };
-
-        mDeviceConfigFacade.addOnPropertiesChangedListener(
-                command -> mHandler.post(command),
-                properties -> {
-                    updateDeviceConfigFlags();
-                });
-    }
-
-    private void updateDeviceConfigFlags() {
-        mAbnormalConnectionBugreportEnabled =
-                mDeviceConfigFacade.isAbnormalConnectionBugreportEnabled();
-        mAbnormalConnectionDurationMs =
-                mDeviceConfigFacade.getAbnormalConnectionDurationMs();
-        logv("updateDeviceConfigFlags: mAbnormalConnectionDurationMs = "
-                + mAbnormalConnectionDurationMs
-                + ", mAbnormalConnectionBugreportEnabled = "
-                + mAbnormalConnectionBugreportEnabled);
     }
 
     /**
@@ -177,17 +166,19 @@ public class WifiLastResortWatchdog {
         switch (msg.what) {
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 // Trigger bugreport for successful connections that take abnormally long
-                if (mAbnormalConnectionBugreportEnabled && mLastStartConnectTime > 0) {
+                if (mDeviceConfigFacade.isAbnormalConnectionBugreportEnabled()
+                        && mLastStartConnectTime > 0) {
                     long durationMs = mClock.getElapsedSinceBootMillis() - mLastStartConnectTime;
-                    if (durationMs > mAbnormalConnectionDurationMs) {
+                    long abnormalConnectionDurationMs =
+                            mDeviceConfigFacade.getAbnormalConnectionDurationMs();
+                    if (durationMs > abnormalConnectionDurationMs) {
                         final String bugTitle = "Wi-Fi Bugreport: Abnormal connection time";
                         final String bugDetail = "Expected connection to take less than "
-                                + mAbnormalConnectionDurationMs + " milliseconds. "
+                                + abnormalConnectionDurationMs + " milliseconds. "
                                 + "Actually took " + durationMs + " milliseconds.";
                         logv("Triggering bug report for abnormal connection time.");
-                        mWifiInjector.getClientModeImplHandler().post(() -> {
-                            mClientModeImpl.takeBugReport(bugTitle, bugDetail);
-                        });
+                        mWifiThreadRunner.post(() ->
+                                mClientModeImpl.takeBugReport(bugTitle, bugDetail));
                     }
                 }
                 // Should reset last connection time after each connection regardless if bugreport
@@ -208,11 +199,11 @@ public class WifiLastResortWatchdog {
      */
     public void updateAvailableNetworks(
             List<Pair<ScanDetail, WifiConfiguration>> availableNetworks) {
-        if (mVerboseLoggingEnabled) {
-            Log.v(TAG, "updateAvailableNetworks: size = " + availableNetworks.size());
-        }
         // Add new networks to mRecentAvailableNetworks
         if (availableNetworks != null) {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "updateAvailableNetworks: size = " + availableNetworks.size());
+            }
             for (Pair<ScanDetail, WifiConfiguration> pair : availableNetworks) {
                 final ScanDetail scanDetail = pair.first;
                 final WifiConfiguration config = pair.second;
@@ -240,9 +231,9 @@ public class WifiLastResortWatchdog {
                                 1);
                         // Do not re-enable Watchdog in LAST_TRIGGER_TIMEOUT_MILLIS
                         // after last time Watchdog be triggered
-                        if (mTimeLastTrigger == 0
+                        if (!mWatchdogAllowedToTrigger && (mTimeLastTrigger == 0
                                 || (mClock.getElapsedSinceBootMillis() - mTimeLastTrigger)
-                                    >= LAST_TRIGGER_TIMEOUT_MILLIS) {
+                                    >= LAST_TRIGGER_TIMEOUT_MILLIS)) {
                             localLog("updateAvailableNetworks: setWatchdogTriggerEnabled to true");
                             setWatchdogTriggerEnabled(true);
                         }
@@ -320,17 +311,23 @@ public class WifiLastResortWatchdog {
             Log.v(TAG, "isRestartNeeded = " + isRestartNeeded);
         }
         if (isRestartNeeded) {
-            // Stop the watchdog from triggering until re-enabled
-            localLog("noteConnectionFailureAndTriggerIfNeeded: setWatchdogTriggerEnabled to false");
-            setWatchdogTriggerEnabled(false);
-            mWatchdogFixedWifi = true;
-            loge("Watchdog triggering recovery");
-            mSsidLastTrigger = ssid;
-            mTimeLastTrigger = mClock.getElapsedSinceBootMillis();
-            localLog(toString());
-            mWifiInjector.getSelfRecovery().trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
-            incrementWifiMetricsTriggerCounts();
-            clearAllFailureCounts();
+            if (getWifiWatchdogFeature()) {
+                // Stop the watchdog from triggering until re-enabled
+                localLog("Trigger recovery: setWatchdogTriggerEnabled to false");
+                setWatchdogTriggerEnabled(false);
+                mWatchdogFixedWifi = true;
+                loge("Watchdog triggering recovery");
+                mSsidLastTrigger = ssid;
+                mTimeLastTrigger = mClock.getElapsedSinceBootMillis();
+                localLog(toString());
+                mWifiInjector.getSelfRecovery().trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+                incrementWifiMetricsTriggerCounts();
+            } else {
+                // auto bugreport if issue happens
+                loge("bugreport notification");
+                setWatchdogTriggerEnabled(false);
+                takeBugReportWithCurrentProbability("Wifi Watchdog bite");
+            }
         }
         return isRestartNeeded;
     }
@@ -348,8 +345,10 @@ public class WifiLastResortWatchdog {
             return;
         }
         if (!mWatchdogAllowedToTrigger && mWatchdogFixedWifi
+                && getWifiWatchdogFeature()
                 && checkIfAtleastOneNetworkHasEverConnected()
-                && checkIfConnectedBackToSameSsid()) {
+                && checkIfConnectedBackToSameSsid()
+                && checkIfConnectedBssidHasEverFailed()) {
             takeBugReportWithCurrentProbability("Wifi fixed after restart");
             // WiFi has connected after a Watchdog trigger, without any new networks becoming
             // available, log a Watchdog success in wifi metrics
@@ -357,12 +356,18 @@ public class WifiLastResortWatchdog {
             long durationMs = mClock.getElapsedSinceBootMillis() - mTimeLastTrigger;
             mWifiMetrics.setWatchdogSuccessTimeDurationMs(durationMs);
         }
-        // We connected to something! Reset failure counts for everything
-        clearAllFailureCounts();
         // If the watchdog trigger was disabled (it triggered), connecting means we did
         // something right, re-enable it so it can fire again.
         localLog("connectedStateTransition: setWatchdogTriggerEnabled to true");
         setWatchdogTriggerEnabled(true);
+    }
+
+    /**
+     * Helper function to check if device connected to BSSID
+     * which is in BSSID failure list after watchdog trigger.
+     */
+    private boolean checkIfConnectedBssidHasEverFailed() {
+        return mBssidFailureList.contains(mClientModeImpl.getWifiInfo().getBSSID());
     }
 
     /**
@@ -408,6 +413,7 @@ public class WifiLastResortWatchdog {
             // Bssid count is actually unused except for logging purposes
             // SSID count is incremented within the BSSID counting method
             incrementBssidFailureCount(ssid, bssid, reason);
+            mBssidFailureList.add(bssid);
         }
     }
 
@@ -540,7 +546,7 @@ public class WifiLastResortWatchdog {
         for (Map.Entry<String, AvailableNetworkFailureCount> entry
                 : mRecentAvailableNetworks.entrySet()) {
             if (entry.getValue().config != null
-                    && entry.getValue().config.getNetworkSelectionStatus().getHasEverConnected()) {
+                    && entry.getValue().config.getNetworkSelectionStatus().hasEverConnected()) {
                 return true;
             }
         }
@@ -587,7 +593,7 @@ public class WifiLastResortWatchdog {
     }
 
     /**
-     * Clear failure counts for each network in recentAvailableNetworks
+     * Clear all failure counts
      */
     public void clearAllFailureCounts() {
         if (mVerboseLoggingEnabled) Log.v(TAG, "clearAllFailureCounts.");
@@ -601,6 +607,7 @@ public class WifiLastResortWatchdog {
             final AvailableNetworkFailureCount failureCount = entry.getValue().first;
             failureCount.resetCounts();
         }
+        mBssidFailureList.clear();
     }
     /**
      * Gets the buffer of recently available networks
@@ -615,6 +622,10 @@ public class WifiLastResortWatchdog {
      */
     private void setWatchdogTriggerEnabled(boolean enable) {
         if (mVerboseLoggingEnabled) Log.v(TAG, "setWatchdogTriggerEnabled: enable = " + enable);
+        // Reset failure counts before actives watchdog
+        if (enable) {
+            clearAllFailureCounts();
+        }
         mWatchdogAllowedToTrigger = enable;
     }
 
@@ -623,7 +634,8 @@ public class WifiLastResortWatchdog {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("mWatchdogAllowedToTrigger: ").append(mWatchdogAllowedToTrigger);
+        sb.append("mWatchdogFeatureEnabled: ").append(getWifiWatchdogFeature());
+        sb.append("\nmWatchdogAllowedToTrigger: ").append(mWatchdogAllowedToTrigger);
         sb.append("\nmWifiIsConnected: ").append(mWifiIsConnected);
         sb.append("\nmRecentAvailableNetworks: ").append(mRecentAvailableNetworks.size());
         for (Map.Entry<String, AvailableNetworkFailureCount> entry
@@ -680,6 +692,27 @@ public class WifiLastResortWatchdog {
             default:
                 return 0;
         }
+    }
+
+    /**
+     * Sets whether wifi watchdog should trigger recovery
+     */
+    public void setWifiWatchdogFeature(boolean enable) {
+        logv("setWifiWatchdogFeature: " + enable);
+        mWatchdogFeatureEnabled = enable;
+        // for debugging purpose, reset mWatchdogAllowedToTrigger as well
+        setWatchdogTriggerEnabled(true);
+    }
+
+    /**
+     * Returns whether wifi watchdog should trigger recovery.
+     */
+    public boolean getWifiWatchdogFeature() {
+        if (mWatchdogFeatureEnabled == null) {
+            mWatchdogFeatureEnabled = mContext.getResources().getBoolean(
+                    R.bool.config_wifi_watchdog_enabled);
+        }
+        return mWatchdogFeatureEnabled;
     }
 
     protected void enableVerboseLogging(int verbose) {
@@ -758,7 +791,7 @@ public class WifiLastResortWatchdog {
 
         public String toString() {
             return  ssid + " HasEverConnected: " + ((config != null)
-                    ? config.getNetworkSelectionStatus().getHasEverConnected() : "null_config")
+                    ? config.getNetworkSelectionStatus().hasEverConnected() : "null_config")
                     + ", Failures: {"
                     + "Assoc: " + associationRejection
                     + ", Auth: " + authenticationFailure

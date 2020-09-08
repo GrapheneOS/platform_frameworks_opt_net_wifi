@@ -16,16 +16,16 @@
 
 package com.android.server.wifi;
 
-import android.os.FileUtils;
 
 import com.android.internal.annotations.VisibleForTesting;
-
-import libcore.io.IoUtils;
+import com.android.server.wifi.util.FileUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Provides a facility for capturing kernel trace events related to Wifi control and data paths.
@@ -133,7 +133,7 @@ public class LastMileLogger {
 
     private byte[] readTrace() {
         try {
-            return IoUtils.readFileAsByteArray(mEventBufferPath);
+            return Files.readAllBytes(Paths.get(mEventBufferPath));
         } catch (IOException e) {
             mLog.warn("Failed to read event trace: %").r(e.getMessage()).flush();
             return new byte[0];

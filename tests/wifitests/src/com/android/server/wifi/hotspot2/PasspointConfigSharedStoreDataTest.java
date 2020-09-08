@@ -24,6 +24,7 @@ import android.util.Xml;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
+import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.util.WifiConfigStoreEncryptionUtil;
 
@@ -42,7 +43,7 @@ import java.nio.charset.StandardCharsets;
  * Unit tests for {@link com.android.server.wifi.hotspot2.PasspointConfigSharedStoreData}.
  */
 @SmallTest
-public class PasspointConfigSharedStoreDataTest {
+public class PasspointConfigSharedStoreDataTest extends WifiBaseTest {
     @Mock PasspointConfigSharedStoreData.DataSource mDataSource;
     PasspointConfigSharedStoreData mConfigStoreData;
 

@@ -50,7 +50,7 @@ import java.util.Set;
  * Unit tests for {@link WakeupConfigStoreData}.
  */
 @SmallTest
-public class WakeupConfigStoreDataTest {
+public class WakeupConfigStoreDataTest extends WifiBaseTest {
 
     @Mock private WakeupConfigStoreData.DataSource<Boolean> mActiveDataSource;
     @Mock private WakeupConfigStoreData.DataSource<Boolean> mIsOnboardedDataSource;

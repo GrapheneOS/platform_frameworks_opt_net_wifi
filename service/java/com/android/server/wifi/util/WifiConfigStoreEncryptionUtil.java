@@ -19,7 +19,6 @@ package com.android.server.wifi.util;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.os.Process;
-import android.os.SystemProperties;
 import android.security.keystore.AndroidKeyStoreProvider;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -32,6 +31,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.ProviderException;
 import java.security.UnrecoverableEntryException;
 
 import javax.crypto.BadPaddingException;
@@ -178,18 +178,14 @@ public class WifiConfigStoreEncryptionUtil {
             reportException(e, "getOrCreateSecretKey cannot find crypto provider");
         } catch (UnrecoverableEntryException e) {
             reportException(e, "getOrCreateSecretKey had an unrecoverable entry exception.");
+        } catch (ProviderException e) {
+            reportException(e, "getOrCreateSecretKey had a provider exception.");
         }
         return secretKey;
     }
 
-    /* TODO(b/128526030): Remove this error reporting code upon resolving the bug. */
-    private static final boolean REQUEST_BUG_REPORT = false;
     private void reportException(Exception exception, String error) {
         Log.wtf(TAG, "An irrecoverable key store error was encountered: " + error, exception);
-        if (REQUEST_BUG_REPORT) {
-            SystemProperties.set("dumpstate.options", "bugreportwifi");
-            SystemProperties.set("ctl.start", "bugreport");
-        }
     }
 
 }

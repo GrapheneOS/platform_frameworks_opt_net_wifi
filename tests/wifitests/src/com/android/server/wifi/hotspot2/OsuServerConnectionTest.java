@@ -36,7 +36,7 @@ import android.util.Pair;
 import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.org.conscrypt.TrustManagerImpl;
+import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.hotspot2.soap.HttpsServiceConnection;
 import com.android.server.wifi.hotspot2.soap.HttpsTransport;
 import com.android.server.wifi.hotspot2.soap.SoapParser;
@@ -58,7 +58,6 @@ import org.mockito.MockitoSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.Socket;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -74,13 +73,14 @@ import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 /**
  * Unit tests for {@link OsuServerConnection}.
  */
 @SmallTest
-public class OsuServerConnectionTest {
+public class OsuServerConnectionTest extends WifiBaseTest {
     private static final String TEST_VALID_URL = "https://www.google.com";
     private static final String TEST_INVALID_URL = "http://www.google.com";
     private static final String AUTH_TYPE = "ECDHE_RSA";
@@ -97,6 +97,9 @@ public class OsuServerConnectionTest {
     private ArgumentCaptor<TrustManager[]> mTrustManagerCaptor =
             ArgumentCaptor.forClass(TrustManager[].class);
     private Map<Integer, Map<String, byte[]>> mTrustCertsInfo = new HashMap<>();
+    private ArgumentCaptor<X509Certificate[]> mX509CertificateCaptor =
+            ArgumentCaptor.forClass(X509Certificate[].class);
+    private X509Certificate[] mCertificateArray;
 
     @Mock PasspointProvisioner.OsuServerCallbacks mOsuServerCallbacks;
     @Mock Network mNetwork;
@@ -104,10 +107,11 @@ public class OsuServerConnectionTest {
     @Mock WfaKeyStore mWfaKeyStore;
     @Mock SSLContext mTlsContext;
     @Mock KeyStore mKeyStore;
-    @Mock TrustManagerImpl mDelegate;
+    @Mock X509TrustManager mX509TrustManager;
     @Mock HttpsTransport mHttpsTransport;
     @Mock HttpsServiceConnection mHttpsServiceConnection;
     @Mock SppResponseMessage mSppResponseMessage;
+    @Mock TrustManagerFactory mTrustManagerFactory;
 
     @Before
     public void setUp() throws Exception {
@@ -120,9 +124,12 @@ public class OsuServerConnectionTest {
         when(mOsuServerCallbacks.getSessionId()).thenReturn(TEST_SESSION_ID);
         when(mNetwork.openConnection(any(URL.class))).thenReturn(mUrlConnection);
         when(mHttpsTransport.getServiceConnection()).thenReturn(mHttpsServiceConnection);
-        when(mDelegate.getTrustedChainForServer(any(X509Certificate[].class), anyString(),
-                (Socket) isNull()))
-                .thenReturn(PasspointProvisioningTestUtil.getOsuCertsForTest());
+        when(mTrustManagerFactory.getTrustManagers())
+                .thenReturn(new X509TrustManager[]{mX509TrustManager});
+        mCertificateArray = new X509Certificate[]{
+                PasspointProvisioningTestUtil.getOsuCertsForTest().get(0),
+                PasspointProvisioningTestUtil.getOsuCertsForTest().get(1)
+        };
     }
 
     /**
@@ -142,7 +149,7 @@ public class OsuServerConnectionTest {
             TrustManager[] trustManagers = mTrustManagerCaptor.getValue();
             X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
 
-            trustManager.checkServerTrusted(new X509Certificate[1], AUTH_TYPE);
+            trustManager.checkServerTrusted(mCertificateArray, AUTH_TYPE);
 
             verify(mOsuServerCallbacks).onServerValidationStatus(anyInt(), eq(true));
             Map<String, String> providerNames = new HashMap<>();
@@ -167,7 +174,7 @@ public class OsuServerConnectionTest {
             establishServerConnection();
             TrustManager[] trustManagers = mTrustManagerCaptor.getValue();
             X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
-            trustManager.checkServerTrusted(new X509Certificate[1], AUTH_TYPE);
+            trustManager.checkServerTrusted(mCertificateArray, AUTH_TYPE);
             Map<String, String> friendlyNames = new HashMap<>();
             friendlyNames.put(
                     Locale.SIMPLIFIED_CHINESE.getISO3Language(), TEST_PROVIDER_CHINESE_NAME);
@@ -193,7 +200,7 @@ public class OsuServerConnectionTest {
             establishServerConnection();
             TrustManager[] trustManagers = mTrustManagerCaptor.getValue();
             X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
-            trustManager.checkServerTrusted(new X509Certificate[1], AUTH_TYPE);
+            trustManager.checkServerTrusted(mCertificateArray, AUTH_TYPE);
             Map<String, String> friendlyNames = new HashMap<>();
             friendlyNames.put(
                     Locale.SIMPLIFIED_CHINESE.getISO3Language(), TEST_PROVIDER_CHINESE_NAME);
@@ -218,7 +225,7 @@ public class OsuServerConnectionTest {
             establishServerConnection();
             TrustManager[] trustManagers = mTrustManagerCaptor.getValue();
             X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
-            trustManager.checkServerTrusted(new X509Certificate[1], AUTH_TYPE);
+            trustManager.checkServerTrusted(mCertificateArray, AUTH_TYPE);
             Map<String, String> friendlyNames = new HashMap<>();
             friendlyNames.put(
                     Locale.CANADA.getISO3Language(), PROVIDER_NAME_VALID);
@@ -234,7 +241,7 @@ public class OsuServerConnectionTest {
      */
     @Test
     public void verifyInvalidTlsContext() {
-        mOsuServerConnection.init(null, mDelegate);
+        mOsuServerConnection.init(null, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
 
         assertFalse(mOsuServerConnection.canValidateServer());
@@ -247,7 +254,7 @@ public class OsuServerConnectionTest {
     public void verifyTlsContextInitFailure() throws Exception {
         doThrow(new KeyManagementException()).when(mTlsContext).init(any(), any(), any());
 
-        mOsuServerConnection.init(mTlsContext, mDelegate);
+        mOsuServerConnection.init(mTlsContext, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
 
         assertFalse(mOsuServerConnection.canValidateServer());
@@ -260,7 +267,7 @@ public class OsuServerConnectionTest {
     public void verifyInitAndNetworkOpenURLConnectionFailed() throws Exception {
         doThrow(new IOException()).when(mNetwork).openConnection(any(URL.class));
 
-        mOsuServerConnection.init(mTlsContext, mDelegate);
+        mOsuServerConnection.init(mTlsContext, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
 
         assertTrue(mOsuServerConnection.canValidateServer());
@@ -278,7 +285,7 @@ public class OsuServerConnectionTest {
     public void verifyInitAndServerConnectFailure() throws Exception {
         doThrow(new IOException()).when(mUrlConnection).connect();
 
-        mOsuServerConnection.init(mTlsContext, mDelegate);
+        mOsuServerConnection.init(mTlsContext, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
 
         assertTrue(mOsuServerConnection.canValidateServer());
@@ -300,9 +307,8 @@ public class OsuServerConnectionTest {
         certificates[0] = certificateList.get(0);
         TrustManager[] trustManagers = mTrustManagerCaptor.getValue();
         X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
-        doThrow(new CertificateException()).when(mDelegate)
-                .getTrustedChainForServer(any(X509Certificate[].class), anyString(),
-                        (Socket) isNull());
+        doThrow(new CertificateException()).when(mX509TrustManager)
+                .checkServerTrusted(any(X509Certificate[].class), anyString());
 
         trustManager.checkServerTrusted(certificates, AUTH_TYPE);
 
@@ -326,7 +332,7 @@ public class OsuServerConnectionTest {
             TrustManager[] trustManagers = mTrustManagerCaptor.getValue();
             X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
 
-            trustManager.checkServerTrusted(new X509Certificate[1], AUTH_TYPE);
+            trustManager.checkServerTrusted(mCertificateArray, AUTH_TYPE);
 
             verify(mOsuServerCallbacks).onServerValidationStatus(anyInt(), eq(true));
             Map<String, String> providerNames = new HashMap<>();
@@ -425,7 +431,7 @@ public class OsuServerConnectionTest {
      */
     @Test
     public void verifyRetrieveTrustRootCertsWithEmptyOfTrustCertsInfo() {
-        mOsuServerConnection.init(mTlsContext, mDelegate);
+        mOsuServerConnection.init(mTlsContext, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
         assertFalse(mOsuServerConnection.retrieveTrustRootCerts(mTrustCertsInfo));
     }
@@ -565,7 +571,7 @@ public class OsuServerConnectionTest {
     @Test
     public void verifyInitAndNetworkOpenURLConnectionFailedWithHttpUrl() throws Exception {
         mServerUrl = new URL(TEST_INVALID_URL);
-        mOsuServerConnection.init(mTlsContext, mDelegate);
+        mOsuServerConnection.init(mTlsContext, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
 
         assertTrue(mOsuServerConnection.canValidateServer());
@@ -573,9 +579,10 @@ public class OsuServerConnectionTest {
     }
 
     private void establishServerConnection() throws Exception {
-        mOsuServerConnection.init(mTlsContext, mDelegate);
+        mOsuServerConnection.init(mTlsContext, mTrustManagerFactory);
         mOsuServerConnection.setEventCallback(mOsuServerCallbacks);
         verify(mTlsContext).init(isNull(), mTrustManagerCaptor.capture(), isNull());
+        verify(mTrustManagerFactory).getTrustManagers();
 
         assertTrue(mOsuServerConnection.canValidateServer());
         assertTrue(mOsuServerConnection.connect(mServerUrl, mNetwork));

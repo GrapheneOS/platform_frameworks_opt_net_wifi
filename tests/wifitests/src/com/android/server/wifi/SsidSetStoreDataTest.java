@@ -51,7 +51,7 @@ import java.util.Set;
  * Unit tests for {@link com.android.server.wifi.SsidSetStoreData}.
  */
 @SmallTest
-public class SsidSetStoreDataTest {
+public class SsidSetStoreDataTest extends WifiBaseTest {
     private static final String TEST_NOTIFIER_NAME = "TestNetwork";
     private static final String TEST_SSID1 = "SSID 1";
     private static final String TEST_SSID2 = "SSID 2";
