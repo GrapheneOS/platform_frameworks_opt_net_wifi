@@ -812,7 +812,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiScoreReport = new WifiScoreReport(mWifiInjector.getScoringParams(), mClock,
                 mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor,
                 mWifiInjector.getWifiThreadRunner(), mWifiInjector.getDeviceConfigFacade(),
-                mContext);
+                mContext, looper, mFacade);
 
         mNetworkCapabilitiesFilter = new NetworkCapabilities.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -3441,6 +3441,7 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_INITIALIZE:
                     mWifiNative.initialize();
+                    mWifiScoreReport.initialize();
                     break;
                 case CMD_BOOT_COMPLETED:
                     // get other services that we need to manage

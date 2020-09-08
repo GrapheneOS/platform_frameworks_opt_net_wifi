@@ -17,16 +17,22 @@
 package com.android.server.wifi;
 
 import android.content.Context;
+import android.database.ContentObserver;
 import android.net.Network;
 import android.net.NetworkAgent;
+import android.net.Uri;
 import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.nl80211.WifiNl80211Manager;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.util.Log;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
@@ -57,6 +63,15 @@ public class WifiScoreReport {
     private static final long DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS = 30000;
     private static final long INVALID_WALL_CLOCK_MILLIS = -1;
 
+    /**
+     * Copy of the settings string. Can't directly use the constant because it is @hide.
+     * See {@link android.provider.Settings.Secure.ADAPTIVE_CONNECTIVITY_ENABLED}.
+     * TODO(b/167709538) remove this hardcoded string and create new API in Wifi mainline.
+     */
+    @VisibleForTesting
+    public static final String SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED =
+            "adaptive_connectivity_enabled";
+
     // Cache of the last score
     private int mScore = ConnectedScore.WIFI_MAX_SCORE;
 
@@ -78,6 +93,8 @@ public class WifiScoreReport {
     WifiNative mWifiNative;
     WifiThreadRunner mWifiThreadRunner;
     DeviceConfigFacade mDeviceConfigFacade;
+    Handler mHandler;
+    FrameworkFacade mFrameworkFacade;
 
     /**
      * Callback proxy. See {@link android.net.wifi.WifiManager.ScoreUpdateObserver}.
@@ -200,6 +217,10 @@ public class WifiScoreReport {
                 return;
             }
         }
+        // Stay a notch above the transition score if adaptive connectivity is disabled.
+        if (!mAdaptiveConnectivityEnabled) {
+            score = ConnectedScore.WIFI_TRANSITION_SCORE + 1;
+        }
         mNetworkAgent.sendNetworkScore(score);
     }
 
@@ -286,10 +307,50 @@ public class WifiScoreReport {
 
     private WifiConnectedNetworkScorerHolder mWifiConnectedNetworkScorerHolder;
 
+    /**
+     * Observer for adaptive connectivity enable settings changes.
+     * This is enabled by default. Will be toggled off via adb command or a settings
+     * toggle by the user to disable adaptive connectivity.
+     */
+    private class AdaptiveConnectivityEnabledSettingObserver extends ContentObserver {
+        AdaptiveConnectivityEnabledSettingObserver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+            mAdaptiveConnectivityEnabled = getValue();
+            Log.d(TAG, "Adaptive connectivity status changed: " + mAdaptiveConnectivityEnabled);
+        }
+
+        /**
+         * Register settings change observer.
+         */
+        public void initialize() {
+            Uri uri = Settings.Secure.getUriFor(SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED);
+            if (uri == null) {
+                Log.e(TAG, "Adaptive connectivity user toggle does not exist in Settings");
+                return;
+            }
+            mFrameworkFacade.registerContentObserver(mContext, uri, true, this);
+            mAdaptiveConnectivityEnabled = mAdaptiveConnectivityEnabledSettingObserver.getValue();
+        }
+
+        public boolean getValue() {
+            return mFrameworkFacade.getIntegerSetting(
+                    mContext, SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED, 1) == 1;
+        }
+    }
+
+    private final AdaptiveConnectivityEnabledSettingObserver
+            mAdaptiveConnectivityEnabledSettingObserver;
+    private boolean mAdaptiveConnectivityEnabled = true;
+
     WifiScoreReport(ScoringParams scoringParams, Clock clock, WifiMetrics wifiMetrics,
             WifiInfo wifiInfo, WifiNative wifiNative, BssidBlocklistMonitor bssidBlocklistMonitor,
             WifiThreadRunner wifiThreadRunner, DeviceConfigFacade deviceConfigFacade,
-            Context context) {
+            Context context, Looper looper, FrameworkFacade frameworkFacade) {
         mScoringParams = scoringParams;
         mClock = clock;
         mAggressiveConnectedScore = new AggressiveConnectedScore(scoringParams, clock);
@@ -301,6 +362,10 @@ public class WifiScoreReport {
         mWifiThreadRunner = wifiThreadRunner;
         mDeviceConfigFacade = deviceConfigFacade;
         mContext = context;
+        mFrameworkFacade = frameworkFacade;
+        mHandler = new Handler(looper);
+        mAdaptiveConnectivityEnabledSettingObserver =
+                new AdaptiveConnectivityEnabledSettingObserver(mHandler);
     }
 
     /**
@@ -463,6 +528,10 @@ public class WifiScoreReport {
      * @return true to indicate that an IP reachability check is recommended
      */
     public boolean shouldCheckIpLayer() {
+        // Don't recommend if adaptive connectivity is disabled.
+        if (!mAdaptiveConnectivityEnabled) {
+            return false;
+        }
         int nud = mScoringParams.getNudKnob();
         if (nud == 0) {
             return false;
@@ -702,5 +771,12 @@ public class WifiScoreReport {
         mVelocityBasedConnectedScore = new VelocityBasedConnectedScore(mScoringParams, mClock);
         mWifiConnectedNetworkScorerHolder = null;
         mWifiMetrics.setIsExternalWifiScorerOn(false);
+    }
+
+    /**
+     * Initialize WifiScoreReport
+     */
+    public void initialize() {
+        mAdaptiveConnectivityEnabledSettingObserver.initialize();
     }
 }

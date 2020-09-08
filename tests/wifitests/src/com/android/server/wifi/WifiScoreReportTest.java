@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalAnswers.answerVoid;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
@@ -50,6 +52,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.os.test.TestLooper;
 
@@ -60,6 +63,7 @@ import com.android.wifi.resources.R;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -102,6 +106,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
     @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
     @Mock Network mNetwork;
     @Mock DeviceConfigFacade mDeviceConfigFacade;
+    @Mock Looper mWifiLooper;
+    @Mock FrameworkFacade mFrameworkFacade;
     private TestLooper mLooper;
 
     public class WifiConnectedNetworkScorerImpl extends IWifiConnectedNetworkScorer.Stub {
@@ -200,10 +206,14 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock = new FakeClock();
         mScoringParams = new ScoringParams();
         mWifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
+        when(mFrameworkFacade.getIntegerSetting(any(Context.class),
+                eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
+                .thenReturn(1);
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                 mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner,
-                mDeviceConfigFacade, mContext);
+                mDeviceConfigFacade, mContext, mWifiLooper, mFrameworkFacade);
         mWifiScoreReport.setNetworkAgent(mNetworkAgent);
+        mWifiScoreReport.initialize();
         when(mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()).thenReturn(
                 DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS);
         when(mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()).thenReturn(
@@ -998,5 +1008,67 @@ public class WifiScoreReportTest extends WifiBaseTest {
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 53);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(53);
+    }
+
+    /**
+     * Verify NUD check is not recommended and the score of 51 is sent to connectivity service
+     * when adaptive connectivity is disabled for AOSP scorer.
+     */
+    @Test
+    public void verifyNudCheckAndScoreIfToggleOffForAospScorer() throws Exception {
+        mWifiInfo.setFrequency(5220);
+        mWifiInfo.setRssi(-85);
+        ArgumentCaptor<ContentObserver> observer = ArgumentCaptor.forClass(ContentObserver.class);
+        verify(mFrameworkFacade).registerContentObserver(
+                any(), any(), eq(true), observer.capture());
+        when(mFrameworkFacade.getIntegerSetting(any(Context.class),
+                eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
+                .thenReturn(0);
+        observer.getValue().onChange(true);
+        mWifiScoreReport.calculateAndReportScore();
+        assertFalse(mWifiScoreReport.shouldCheckIpLayer());
+        verify(mNetworkAgent).sendNetworkScore(51);
+    }
+
+    /**
+     * Verify NUD check is not recommended and the score of 51 is sent to connectivity service
+     * when adaptive connectivity is disabled for external Wi-Fi scorer.
+     */
+    @Test
+    public void verifyNudCheckAndScoreIfToggleOffForExternalScorer() throws Exception {
+        WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
+        // Register Client for verification.
+        mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
+        when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
+        mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
+        mClock.mStepMillis = 0;
+        when(mContext.getResources().getBoolean(
+                R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)).thenReturn(true);
+        when(mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()).thenReturn(4000);
+
+        ArgumentCaptor<ContentObserver> observer = ArgumentCaptor.forClass(ContentObserver.class);
+        verify(mFrameworkFacade).registerContentObserver(
+                any(), any(), eq(true), observer.capture());
+        when(mFrameworkFacade.getIntegerSetting(any(Context.class),
+                eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
+                .thenReturn(0);
+        observer.getValue().onChange(true);
+
+        mClock.mWallClockMillis = 10;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        assertFalse(mWifiScoreReport.shouldCheckIpLayer());
+
+        mClock.mWallClockMillis = 10
+                + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS - 1;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 48);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
+        mClock.mWallClockMillis = 10
+                + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS;
+        scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 47);
+        mLooper.dispatchAll();
+        verify(mNetworkAgent).sendNetworkScore(51);
     }
 }
