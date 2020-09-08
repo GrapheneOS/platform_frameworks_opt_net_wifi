@@ -3621,7 +3621,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 mock(IActionListener.class), 0);
         verify(mClientModeImpl).connect(any(WifiConfiguration.class), anyInt(),
                 any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
-        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_MANUAL_CONNECT), anyInt());
+        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK),
+                anyInt());
     }
 
     /**
@@ -3632,8 +3633,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testSaveNetworkWithPrivilegedPermission() throws Exception {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
             anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         mWifiServiceImpl.save(mock(WifiConfiguration.class), mock(Binder.class),
                 mock(IActionListener.class), 0);
+        verify(mWifiMetrics).logUserActionEvent(eq(UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK),
+                anyInt());
         verify(mClientModeImpl).save(any(WifiConfiguration.class),
                 any(Binder.class), any(IActionListener.class), anyInt(), anyInt());
     }
