@@ -28,6 +28,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -153,6 +154,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         when(mHostapdHal.startDaemon()).thenReturn(true);
         when(mHostapdHal.addAccessPoint(any(), any(), any())).thenReturn(true);
         when(mHostapdHal.removeAccessPoint(any())).thenReturn(true);
+        when(mHostapdHal.registerApCallback(any(), any())).thenReturn(true);
 
         when(mWifiInjector.makeNetdWrapper()).thenReturn(mNetdWrapper);
 
@@ -797,6 +799,34 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         assertTrue(mWifiNative.startSoftAp(IFACE_NAME_0, new SoftApConfiguration.Builder().build(),
                 mock(WifiNative.SoftApListener.class)));
 
+        mInOrder.verify(mHostapdHal).registerApCallback(any(), any());
+        mInOrder.verify(mHostapdHal).addAccessPoint(any(), any(), any());
+
+        // Trigger vendor HAL death
+        mHostapdDeathHandlerCaptor.getValue().onDeath();
+
+        mInOrder.verify(mWifiMetrics).incrementNumHostapdCrashes();
+
+        verify(mStatusListener).onStatusChanged(false);
+        verify(mStatusListener).onStatusChanged(true);
+        verify(mWificondControl, never()).registerApCallback(any(), any(), any());
+    }
+
+    /**
+     * Verifies the setup of a soft ap interface and hostapd death handling.
+     */
+    @Test
+    public void testStartSoftApWithWifiCondCallbackAndHostapdDied() throws Exception {
+        when(mHostapdHal.registerApCallback(any(), any())).thenReturn(false);
+        executeAndValidateSetupSoftApInterface(
+                false, false, IFACE_NAME_0, mIfaceCallback0, mIfaceDestroyedListenerCaptor0,
+                mNetworkObserverCaptor0);
+
+        // Start softap
+        assertTrue(mWifiNative.startSoftAp(IFACE_NAME_0, new SoftApConfiguration.Builder().build(),
+                mock(WifiNative.SoftApListener.class)));
+
+        mInOrder.verify(mHostapdHal).registerApCallback(any(), any());
         mInOrder.verify(mWificondControl).registerApCallback(any(), any(), any());
         mInOrder.verify(mHostapdHal).addAccessPoint(any(), any(), any());
 
