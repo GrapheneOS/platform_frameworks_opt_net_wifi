@@ -239,6 +239,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private SoftApInfo mTestSoftApInfo;
     private WifiServiceImpl mWifiServiceImpl;
     private TestLooper mLooper;
+    private WifiThreadRunner mWifiThreadRunner;
     private PowerManager mPowerManager;
     private PhoneStateListener mPhoneStateListener;
     private int mPid;
@@ -399,10 +400,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiNetworkScoreCache())
                 .thenReturn(mock(WifiNetworkScoreCache.class));
 
-        WifiThreadRunner wifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
-        // TODO(b/165812799) - put back setTimeoutsAreErrors after fixing remaining timeouts
-        // wifiThreadRunner.setTimeoutsAreErrors(true);
-        when(mWifiInjector.getWifiThreadRunner()).thenReturn(wifiThreadRunner);
+        mWifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
+        mWifiThreadRunner.setTimeoutsAreErrors(true);
+        when(mWifiInjector.getWifiThreadRunner()).thenReturn(mWifiThreadRunner);
 
         when(mWifiInjector.getSettingsConfigStore()).thenReturn(mWifiSettingsConfigStore);
         when(mWifiInjector.getWifiScanAlwaysAvailableSettingsCompatibility())
@@ -475,6 +475,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiConfig = new WifiConfiguration();
         mWifiConfig.SSID = TEST_SSID;
         mWifiConfig.networkId = TEST_NETWORK_ID;
+
+        mWifiThreadRunner.prepareForAutoDispatch();
     }
 
     /**
@@ -4056,19 +4058,21 @@ public class WifiServiceImplTest extends WifiBaseTest {
         // Tell the wifi service that the device became idle.
         when(mPowerManager.isDeviceIdleMode()).thenReturn(true);
         TestUtil.sendIdleModeChanged(mBroadcastReceiverCaptor.getValue(), mContext);
-        mLooper.dispatchAll();
 
         // Send a scan request while the device is idle.
+        mWifiThreadRunner.prepareForAutoDispatch();
         mLooper.startAutoDispatch();
         assertFalse(mWifiServiceImpl.startScan(SCAN_PACKAGE_NAME, TEST_FEATURE_ID));
-        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        mLooper.stopAutoDispatch();
         // No scans must be made yet as the device is idle.
         verify(mScanRequestProxy, never()).startScan(Process.myUid(), SCAN_PACKAGE_NAME);
 
         // Tell the wifi service that idle mode ended.
         when(mPowerManager.isDeviceIdleMode()).thenReturn(false);
+        mWifiThreadRunner.prepareForAutoDispatch();
+        mLooper.startAutoDispatch();
         TestUtil.sendIdleModeChanged(mBroadcastReceiverCaptor.getValue(), mContext);
-        mLooper.dispatchAll();
+        mLooper.stopAutoDispatch();
 
         // Must scan now.
         verify(mScanRequestProxy).startScan(Process.myUid(), TEST_PACKAGE_NAME);
@@ -4079,9 +4083,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         // Send another scan request. The device is not idle anymore, so it must be executed
         // immediately.
+        mWifiThreadRunner.prepareForAutoDispatch();
         mLooper.startAutoDispatch();
         assertTrue(mWifiServiceImpl.startScan(SCAN_PACKAGE_NAME, TEST_FEATURE_ID));
-        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        mLooper.stopAutoDispatch();
         verify(mScanRequestProxy).startScan(Process.myUid(), SCAN_PACKAGE_NAME);
     }
 
