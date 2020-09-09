@@ -141,10 +141,19 @@ public class SoftApManager implements ActiveModeManager {
         }
 
         @Override
-        public void onInfoChanged(String apIfaceInstance, int frequency, int bandwidth,
-                int generation) {
+        public void onInfoChanged(String apIfaceInstance, int frequency,
+                @WifiAnnotations.Bandwidth int bandwidth,
+                @WifiAnnotations.WifiStandard int generation,
+                MacAddress apIfaceInstanceMacAddress) {
+            SoftApInfo apInfo = new SoftApInfo();
+            apInfo.setFrequency(frequency);
+            apInfo.setBandwidth(bandwidth);
+            apInfo.setWifiStandard(generation);
+            if (apIfaceInstanceMacAddress != null) {
+                apInfo.setBssid(apIfaceInstanceMacAddress);
+            }
             mStateMachine.sendMessage(
-                    SoftApStateMachine.CMD_SOFT_AP_CHANNEL_SWITCHED, frequency, bandwidth);
+                    SoftApStateMachine.CMD_AP_INFO_CHANGED, 0, 0, apInfo);
         }
 
         @Override
@@ -351,7 +360,6 @@ public class SoftApManager implements ActiveModeManager {
             }
         }
 
-        mCurrentSoftApInfo.setBssid(mac);
         return SUCCESS;
     }
 
@@ -518,7 +526,7 @@ public class SoftApManager implements ActiveModeManager {
         public static final int CMD_NO_ASSOCIATED_STATIONS_TIMEOUT = 5;
         public static final int CMD_INTERFACE_DESTROYED = 7;
         public static final int CMD_INTERFACE_DOWN = 8;
-        public static final int CMD_SOFT_AP_CHANNEL_SWITCHED = 9;
+        public static final int CMD_AP_INFO_CHANGED = 9;
         public static final int CMD_UPDATE_CAPABILITY = 10;
         public static final int CMD_UPDATE_CONFIG = 11;
 
@@ -754,26 +762,20 @@ public class SoftApManager implements ActiveModeManager {
                 scheduleTimeoutMessage();
             }
 
-            private void setSoftApChannel(int freq, @WifiAnnotations.Bandwidth int apBandwidth) {
-                Log.d(getTag(), "Channel switched. Frequency: " + freq
-                        + " Bandwidth: " + apBandwidth);
+            private void updateSoftApInfo(SoftApInfo apInfo) {
+                Log.d(getTag(), "SoftApInfo update " + apInfo);
 
-                if (freq == mCurrentSoftApInfo.getFrequency()
-                        && apBandwidth == mCurrentSoftApInfo.getBandwidth()) {
+                if (apInfo.equals(mCurrentSoftApInfo)) {
                     return; // no change
                 }
 
-                mCurrentSoftApInfo.setFrequency(freq);
-                mCurrentSoftApInfo.setBandwidth(apBandwidth);
-                if (freq == 0) { // reset bssid to null when freq is 0 (disable)
-                    mCurrentSoftApInfo.setBssid(null);
-                }
+                mCurrentSoftApInfo = new SoftApInfo(apInfo);
                 mSoftApCallback.onInfoChanged(mCurrentSoftApInfo);
-
                 // ignore invalid freq and softap disable case for metrics
-                if (freq > 0 && apBandwidth != SoftApInfo.CHANNEL_WIDTH_INVALID) {
-                    mWifiMetrics.addSoftApChannelSwitchedEvent(mCurrentSoftApInfo.getFrequency(),
-                            mCurrentSoftApInfo.getBandwidth(), mApConfig.getTargetMode());
+                if (apInfo.getFrequency() > 0
+                        && apInfo.getBandwidth() != SoftApInfo.CHANNEL_WIDTH_INVALID) {
+                    mWifiMetrics.addSoftApChannelSwitchedEvent(mCurrentSoftApInfo,
+                            mApConfig.getTargetMode());
                     updateUserBandPreferenceViolationMetricsIfNeeded();
                 }
             }
@@ -854,7 +856,7 @@ public class SoftApManager implements ActiveModeManager {
                 mRole = null;
                 mStateMachine.quitNow();
                 mModeListener.onStopped();
-                setSoftApChannel(0, SoftApInfo.CHANNEL_WIDTH_INVALID);
+                updateSoftApInfo(new SoftApInfo());
             }
 
             private void updateUserBandPreferenceViolationMetricsIfNeeded() {
@@ -894,12 +896,19 @@ public class SoftApManager implements ActiveModeManager {
                                 + isConnected);
                         updateConnectedClients(client, isConnected);
                         break;
-                    case CMD_SOFT_AP_CHANNEL_SWITCHED:
-                        if (message.arg1 < 0) {
-                            Log.e(getTag(), "Invalid ap channel frequency: " + message.arg1);
+                    case CMD_AP_INFO_CHANGED:
+                        if (!(message.obj instanceof SoftApInfo)) {
+                            Log.e(getTag(), "Invalid type returned for"
+                                    + " CMD_AP_INFO_CHANGED");
                             break;
                         }
-                        setSoftApChannel(message.arg1, message.arg2);
+                        SoftApInfo apInfo = (SoftApInfo) message.obj;
+                        if (apInfo.getFrequency() < 0) {
+                            Log.e(getTag(), "Invalid ap channel frequency: "
+                                    + apInfo.getFrequency());
+                            break;
+                        }
+                        updateSoftApInfo(apInfo);
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
                         boolean isUp = message.arg1 == 1;
