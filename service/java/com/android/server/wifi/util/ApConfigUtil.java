@@ -65,7 +65,8 @@ public class ApConfigUtil {
         sBandToOperatingClass.append(SoftApConfiguration.BAND_2GHZ, new int[]{81, 82, 83, 84});
         sBandToOperatingClass.append(SoftApConfiguration.BAND_5GHZ, new int[]{115, 116, 117, 118,
                 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130});
-        sBandToOperatingClass.append(SoftApConfiguration.BAND_6GHZ, new int[]{131, 132, 133, 134});
+        sBandToOperatingClass.append(SoftApConfiguration.BAND_6GHZ, new int[]{131, 132, 133, 134,
+                135, 136});
     }
 
     /**

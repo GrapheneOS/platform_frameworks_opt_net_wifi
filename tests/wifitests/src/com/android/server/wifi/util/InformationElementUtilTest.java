@@ -1367,7 +1367,7 @@ public class InformationElementUtilTest extends WifiBaseTest {
         assertTrue(heOperation.is6GhzInfoPresent());
         assertFalse(heOperation.isVhtInfoPresent());
         assertEquals(ScanResult.CHANNEL_WIDTH_80MHZ, heOperation.getChannelWidth());
-        assertEquals(6040, heOperation.getCenterFreq0());
+        assertEquals(6050, heOperation.getCenterFreq0());
         assertEquals(0, heOperation.getCenterFreq1());
     }
 
@@ -1412,8 +1412,8 @@ public class InformationElementUtilTest extends WifiBaseTest {
         assertTrue(heOperation.is6GhzInfoPresent());
         assertFalse(heOperation.isVhtInfoPresent());
         assertEquals(ScanResult.CHANNEL_WIDTH_160MHZ, heOperation.getChannelWidth());
-        assertEquals(6040, heOperation.getCenterFreq0());
-        assertEquals(6080, heOperation.getCenterFreq1());
+        assertEquals(6050, heOperation.getCenterFreq0());
+        assertEquals(6090, heOperation.getCenterFreq1());
     }
 
     /**
