@@ -480,12 +480,12 @@ public class KnownBandsChannelHelperTest {
          */
         @Test
         public void addChannel_and_addBand_all() {
-            mChannelCollection.addBand(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_GHZ);
+            mChannelCollection.addBand(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ);
             mChannelCollection.addChannel(5160);
 
             WifiNative.BucketSettings bucketSettings = new WifiNative.BucketSettings();
             mChannelCollection.fillBucketSettings(bucketSettings, Integer.MAX_VALUE);
-            assertThat(bucketSettings, bandIs(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_GHZ));
+            assertThat(bucketSettings, bandIs(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ));
 
             assertNull(mChannelCollection.getScanFreqs());
 
