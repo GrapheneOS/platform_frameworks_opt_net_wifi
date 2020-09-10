@@ -1645,7 +1645,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiMetrics).endConnectionEvent(
-                eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION), anyInt(), anyInt());
+                eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION),
+                anyInt(), anyInt(), anyInt());
         verify(mWifiConnectivityManager).handleConnectionAttemptEnded(
                 any(), anyInt(), any(), any());
         assertEquals("DisconnectedState", getCurrentState().getName());
