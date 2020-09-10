@@ -462,6 +462,17 @@ public class WifiNetworkSelector {
         return validScanDetails;
     }
 
+    private ScanDetail findScanDetailForBssid(List<ScanDetail> scanDetails,
+            String currentBssid) {
+        for (ScanDetail scanDetail : scanDetails) {
+            ScanResult scanResult = scanDetail.getScanResult();
+            if (scanResult.BSSID.equals(currentBssid)) {
+                return scanDetail;
+            }
+        }
+        return null;
+    }
+
     private boolean isEnhancedOpenSupported() {
         if (mIsEnhancedOpenSupportedInitialized) {
             return mIsEnhancedOpenSupported;
@@ -790,6 +801,8 @@ public class WifiNetworkSelector {
             WifiCandidates.Key key = new WifiCandidates.Key(
                     ScanResultMatchInfo.fromWifiConfiguration(currentNetwork),
                     bssid, currentNetwork.networkId);
+            ScanDetail scanDetail = findScanDetailForBssid(mFilteredNetworks, currentBssid);
+            int predictedTputMbps = (scanDetail == null) ? 0 : predictThroughput(scanDetail);
             wifiCandidates.add(key, currentNetwork,
                     NetworkNominator.NOMINATOR_ID_CURRENT,
                     wifiInfo.getRssi(),
@@ -797,7 +810,7 @@ public class WifiNetworkSelector {
                     calculateLastSelectionWeight(currentNetwork.networkId),
                     WifiConfiguration.isMetered(currentNetwork, wifiInfo),
                     isFromCarrierOrPrivilegedApp(currentNetwork),
-                    0 /* Mbps */);
+                    predictedTputMbps);
         }
         for (NetworkNominator registeredNominator : mNominators) {
             localLog("About to run " + registeredNominator.getName() + " :");

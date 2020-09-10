@@ -37,8 +37,7 @@
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Begrænset forbindelse"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Der er ikke adgang til den private DNS-server"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Intet internet"</string>
-    <!-- no translation found for wifi_connected_low_quality (4478331645458058445) -->
-    <skip />
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Dårlig kvalitet"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Ingen"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Udløbet"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"Tryk for at registrere"</string>

@@ -776,4 +776,24 @@ public class BssidBlocklistMonitorTest {
         simulateRssiUpdate(TEST_BSSID_1, TEST_SUFFICIENT_RSSI);
         assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
+
+    /**
+     * Verify the failure reasons for all blocked BSSIDs are retrieved.
+     */
+    @Test
+    public void testGetFailureReasonsForSsid() {
+        // Null input should not crash
+        mBssidBlocklistMonitor.getFailureReasonsForSsid(null).size();
+        assertEquals(0, mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1).size());
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, 1000,
+                BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, TEST_GOOD_RSSI);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_2, TEST_SSID_1, 1000,
+                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI);
+
+        assertEquals(2, mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1).size());
+        assertTrue(mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
+                .contains(BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA));
+        assertTrue(mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
+                .contains(BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
+    }
 }

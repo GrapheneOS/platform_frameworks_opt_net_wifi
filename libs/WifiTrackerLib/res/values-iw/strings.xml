@@ -37,8 +37,7 @@
     <string name="wifi_limited_connection" msgid="3646701342701276239">"חיבור מוגבל"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"‏לא ניתן לגשת לשרת DNS הפרטי"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"אין אינטרנט"</string>
-    <!-- no translation found for wifi_connected_low_quality (4478331645458058445) -->
-    <skip />
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"איכות נמוכה"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"ללא"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"התוקף פג"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"יש להקיש כדי להירשם"</string>

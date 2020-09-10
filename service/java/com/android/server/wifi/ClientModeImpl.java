@@ -812,7 +812,7 @@ public class ClientModeImpl extends StateMachine {
         mWifiScoreReport = new WifiScoreReport(mWifiInjector.getScoringParams(), mClock,
                 mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor,
                 mWifiInjector.getWifiThreadRunner(), mWifiInjector.getDeviceConfigFacade(),
-                mContext);
+                mContext, looper, mFacade);
 
         mNetworkCapabilitiesFilter = new NetworkCapabilities.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -3441,6 +3441,7 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_INITIALIZE:
                     mWifiNative.initialize();
+                    mWifiScoreReport.initialize();
                     break;
                 case CMD_BOOT_COMPLETED:
                     // get other services that we need to manage
@@ -5013,11 +5014,12 @@ public class ClientModeImpl extends StateMachine {
                             && mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID) {
                         WifiConfiguration config =
                                 mWifiConfigManager.getConfiguredNetwork(mLastNetworkId);
-                        if ((message.arg1 == RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED
+                        if (config != null
+                            && ((message.arg1 == RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED
                                 && config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID)
                                 || (config.enterpriseConfig != null
                                         && config.enterpriseConfig.isAuthenticationSimBased()
-                                        && !mWifiCarrierInfoManager.isSimPresent(mLastSubId))) {
+                                        && !mWifiCarrierInfoManager.isSimPresent(mLastSubId)))) {
                             mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                     StaEvent.DISCONNECT_RESET_SIM_NETWORKS);
                             // remove local PMKSA cache in framework

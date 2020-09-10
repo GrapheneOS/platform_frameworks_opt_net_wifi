@@ -37,6 +37,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class BssidBlocklistMonitor {
     public static final int REASON_EAP_FAILURE = 3;
     // Other association rejection failures
     public static final int REASON_ASSOCIATION_REJECTION = 4;
-    // Associated timeout failures, when the RSSI is good
+    // Association timeout failures.
     public static final int REASON_ASSOCIATION_TIMEOUT = 5;
     // Other authentication failures
     public static final int REASON_AUTHENTICATION_FAILURE = 6;
@@ -524,6 +525,20 @@ public class BssidBlocklistMonitor {
     public Set<String> updateAndGetBssidBlocklist() {
         return updateAndGetBssidBlocklistInternal()
                 .map(entry -> entry.bssid)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets the list of block reasons for BSSIDs currently in the blocklist.
+     * @return The set of unique reasons for blocking BSSIDs with this SSID.
+     */
+    public Set<Integer> getFailureReasonsForSsid(@NonNull String ssid) {
+        if (ssid == null) {
+            return Collections.emptySet();
+        }
+        return mBssidStatusMap.values().stream()
+                .filter(entry -> entry.isInBlocklist && ssid.equals(entry.ssid))
+                .map(entry -> entry.blockReason)
                 .collect(Collectors.toSet());
     }
 

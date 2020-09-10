@@ -37,8 +37,7 @@
     <string name="wifi_limited_connection" msgid="3646701342701276239">"ସୀମିତ ସଂଯୋଗ"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"ବ୍ୟକ୍ତିଗତ DNS ସର୍ଭର୍ ଆକ୍ସେସ୍ କରିହେବ ନାହିଁ"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"ଇଣ୍ଟର୍ନେଟ୍ ସଂଯୋଗ ନାହିଁ"</string>
-    <!-- no translation found for wifi_connected_low_quality (4478331645458058445) -->
-    <skip />
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ନିମ୍ନ ଗୁଣବତ୍ତା"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"କିଛି ନାହିଁ"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"ମିଆଦ ଶେଷ ହୋଇଯାଇଛି"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"ସାଇନ୍ ଅପ୍ କରିବାକୁ ଟାପ୍ କରନ୍ତୁ"</string>
