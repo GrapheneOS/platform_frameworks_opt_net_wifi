@@ -1180,9 +1180,13 @@ public class InformationElementUtil {
          * @param ies            -- Information Element array
          * @param beaconCap      -- 16-bit Beacon Capability Information field
          * @param isOweSupported -- Boolean flag to indicate if OWE is supported by the device
+         * @param freq           -- Frequency on which frame/beacon was transmitted.
+         *                          Some parsing may be affected such as DMG parameters in
+         *                          DMG (60GHz) beacon.
          */
 
-        public void from(InformationElement[] ies, int beaconCap, boolean isOweSupported) {
+        public void from(InformationElement[] ies, int beaconCap, boolean isOweSupported,
+                int freq) {
             protocol = new ArrayList<>();
             keyManagement = new ArrayList<>();
             groupCipher = new ArrayList<>();
@@ -1191,9 +1195,19 @@ public class InformationElementUtil {
             if (ies == null) {
                 return;
             }
-            isESS = (beaconCap & NativeScanResult.BSS_CAPABILITY_ESS) != 0;
-            isIBSS = (beaconCap & NativeScanResult.BSS_CAPABILITY_IBSS) != 0;
             isPrivacy = (beaconCap & NativeScanResult.BSS_CAPABILITY_PRIVACY) != 0;
+            if (ScanResult.is60GHz(freq)) {
+                /* In DMG, bits 0 and 1 are parsed together, where ESS=0x3 and IBSS=0x1 */
+                if ((beaconCap & NativeScanResult.BSS_CAPABILITY_DMG_ESS)
+                        == NativeScanResult.BSS_CAPABILITY_DMG_ESS) {
+                    isESS = true;
+                } else if ((beaconCap & NativeScanResult.BSS_CAPABILITY_DMG_IBSS) != 0) {
+                    isIBSS = true;
+                }
+            } else {
+                isESS = (beaconCap & NativeScanResult.BSS_CAPABILITY_ESS) != 0;
+                isIBSS = (beaconCap & NativeScanResult.BSS_CAPABILITY_IBSS) != 0;
+            }
             for (InformationElement ie : ies) {
                 WifiNl80211Manager.OemSecurityType oemSecurityType =
                         WifiNl80211Manager.parseOemSecurityTypeElement(

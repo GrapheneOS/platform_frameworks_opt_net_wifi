@@ -537,7 +537,7 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
 
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GTK_NOT_USED + 3);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GTK_NOT_USED + 4);
         assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
     }
 
@@ -550,7 +550,7 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
 
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP + 3);
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP + 4);
         assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
     }
 
