@@ -36,7 +36,9 @@ import android.util.ArraySet;
 
 import com.android.server.wifi.WifiNative;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,6 +65,10 @@ public class KnownBandsChannelHelper extends ChannelHelper {
     protected void setBandChannels(int[] channels2G, int[] channels5G, int[] channelsDfs,
             int[] channels6G) {
         mBandsToChannels = new WifiScanner.ChannelSpec[WIFI_BAND_COUNT][];
+
+        for (int i = 0; i < WIFI_BAND_COUNT; i++) {
+            mBandsToChannels[i] = NO_CHANNELS;
+        }
 
         if (channels2G.length != 0) {
             mBandsToChannels[WIFI_BAND_INDEX_24_GHZ] =
@@ -111,15 +117,14 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             return null;
         }
 
-        WifiScanner.ChannelSpec[][] channels = new WifiScanner.ChannelSpec[WIFI_BAND_COUNT][];
+        List<WifiScanner.ChannelSpec[]> channelList = new ArrayList<>();
         for (@WifiBandIndex int index = 0; index < WIFI_BAND_COUNT; index++) {
-            if ((band & (1 << index)) != 0) {
-                channels[index] = mBandsToChannels[index];
-            } else {
-                channels[index] = NO_CHANNELS;
+            if ((band & (1 << index)) != 0 && mBandsToChannels[index].length > 0) {
+                channelList.add(mBandsToChannels[index]);
             }
         }
-        return channels;
+
+        return channelList.toArray(new WifiScanner.ChannelSpec[0][0]);
     }
 
     @Override
@@ -271,6 +276,8 @@ public class KnownBandsChannelHelper extends ChannelHelper {
         @Override
         public boolean containsBand(int band) {
             WifiScanner.ChannelSpec[][] bandChannels = getAvailableScanChannels(band);
+            if (bandChannels.length == 0) return false;
+
             for (int i = 0; i < bandChannels.length; ++i) {
                 for (int j = 0; j < bandChannels[i].length; ++j) {
                     if (!mChannels.contains(bandChannels[i][j].frequency)) {
