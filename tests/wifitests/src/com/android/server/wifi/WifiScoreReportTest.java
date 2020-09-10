@@ -218,6 +218,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS);
         when(mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()).thenReturn(
                 DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS);
+        when(mDeviceConfigFacade.getRssiThresholdNotSendLowScoreToCsDbm()).thenReturn(
+                DeviceConfigFacade.DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM);
     }
 
     /**
@@ -880,6 +882,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock.mStepMillis = 0;
 
         mClock.mWallClockMillis = 10;
+        mWifiInfo.setRssi(-65);
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(anyInt());
@@ -901,9 +904,11 @@ public class WifiScoreReportTest extends WifiBaseTest {
 
         mClock.mWallClockMillis = 10;
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 60);
+        mWifiInfo.setRssi(-70);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(60);
         mClock.mWallClockMillis = 3010;
+        mWifiInfo.setRssi(-65);
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 59);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(59);
@@ -914,11 +919,11 @@ public class WifiScoreReportTest extends WifiBaseTest {
     }
 
     /**
-     * Verify confirmation duration is added for reporting low score when it is enabled in
-     * config overlay
+     * Verify confirmation duration and RSSI check is added for reporting low score when it is
+     * enabled in config overlay
      */
     @Test
-    public void confirmationDurationIsAddedForSendingLowScore() throws Exception {
+    public void confirmationDurationAndRssiCheckIsAddedForSendingLowScore() throws Exception {
         WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
         // Register Client for verification.
         mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
@@ -939,11 +944,13 @@ public class WifiScoreReportTest extends WifiBaseTest {
         verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
         mClock.mWallClockMillis = 10
                 + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS;
+        mWifiInfo.setRssi(-65);
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 47);
         mLooper.dispatchAll();
-        verify(mNetworkAgent).sendNetworkScore(47);
+        verify(mNetworkAgent, never()).sendNetworkScore(47);
         mClock.mWallClockMillis = 10
                 + mDeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS + 3000;
+        mWifiInfo.setRssi(-68);
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 46);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(46);
@@ -968,6 +975,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
         mClock.mWallClockMillis = 3000;
+        mWifiInfo.setRssi(-70);
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 51);
         mLooper.dispatchAll();
         verify(mNetworkAgent).sendNetworkScore(51);
