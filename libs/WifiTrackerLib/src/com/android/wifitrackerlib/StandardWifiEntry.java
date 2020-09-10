@@ -894,7 +894,8 @@ public class StandardWifiEntry extends WifiEntry {
         description.append("[");
         description.append(getScanResultDescription(MIN_FREQ_24GHZ, MAX_FREQ_24GHZ)).append(";");
         description.append(getScanResultDescription(MIN_FREQ_5GHZ, MAX_FREQ_5GHZ)).append(";");
-        description.append(getScanResultDescription(MIN_FREQ_6GHZ, MAX_FREQ_6GHZ));
+        description.append(getScanResultDescription(MIN_FREQ_6GHZ, MAX_FREQ_6GHZ)).append(";");
+        description.append(getScanResultDescription(MIN_FREQ_60GHZ, MAX_FREQ_60GHZ));
         description.append("]");
         return description.toString();
     }

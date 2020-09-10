@@ -154,6 +154,7 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
             FREQUENCY_2_4_GHZ,
             FREQUENCY_5_GHZ,
             FREQUENCY_6_GHZ,
+            FREQUENCY_60_GHZ,
             FREQUENCY_UNKNOWN
     })
 
@@ -162,6 +163,7 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     public static final int FREQUENCY_2_4_GHZ = 2_400;
     public static final int FREQUENCY_5_GHZ = 5_000;
     public static final int FREQUENCY_6_GHZ = 6_000;
+    public static final int FREQUENCY_60_GHZ = 60_000;
     public static final int FREQUENCY_UNKNOWN = -1;
 
     /**
@@ -193,6 +195,16 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
      * Max bound on the 6.0 GHz (802.11ax) WLAN channels.
      */
     public static final int MAX_FREQ_6GHZ = 7125;
+
+    /**
+     * Min bound on the 60 GHz (802.11ad) WLAN channels.
+     */
+    public static final int MIN_FREQ_60GHZ = 58320;
+
+    /**
+     * Max bound on the 60 GHz (802.11ad) WLAN channels.
+     */
+    public static final int MAX_FREQ_60GHZ = 70200;
 
     /**
      * Max ScanResult information displayed of Wi-Fi Verbose Logging.
