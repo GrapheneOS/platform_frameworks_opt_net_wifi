@@ -22,6 +22,7 @@
           <!-- Params from config.xml that can be overlayed -->
           <item type="bool" name="config_wifi5ghzSupport" />
           <item type="bool" name="config_wifi6ghzSupport" />
+          <item type="bool" name="config_wifi60ghzSupport" />
           <item type="bool" name="config_wifi11axSupportOverride" />
           <item type="bool" name="config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideEnable" />
           <item type="integer" name="config_wifiFrameworkMaxNumSpatialStreamDeviceOverrideValue" />

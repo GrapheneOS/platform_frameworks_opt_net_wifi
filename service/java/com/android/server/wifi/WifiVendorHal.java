@@ -1141,6 +1141,16 @@ public class WifiVendorHal {
 
     /**
      * Translation table used by getSupportedFeatureSet for translating IWifiChip caps for
+     * additional capabilities introduced in V1.5
+     */
+    private static final long[][] sChipFeatureCapabilityTranslation15 = {
+            {WifiManager.WIFI_FEATURE_INFRA_60G,
+                    android.hardware.wifi.V1_5.IWifiChip.ChipCapabilityMask.WIGIG
+            }
+    };
+
+    /**
+     * Translation table used by getSupportedFeatureSet for translating IWifiChip caps for
      * additional capabilities introduced in V1.3
      */
     private static final long[][] sChipFeatureCapabilityTranslation13 = {
@@ -1165,6 +1175,26 @@ public class WifiVendorHal {
         for (int i = 0; i < sChipFeatureCapabilityTranslation.length; i++) {
             if ((capabilities & sChipFeatureCapabilityTranslation[i][1]) != 0) {
                 features |= sChipFeatureCapabilityTranslation[i][0];
+            }
+        }
+        return features;
+    }
+
+    /**
+     * Feature bit mask translation for Chip V1.5
+     *
+     * @param capabilities bitmask defined IWifiChip.ChipCapabilityMask
+     * @return bitmask defined by WifiManager.WIFI_FEATURE_*
+     */
+    @VisibleForTesting
+    long wifiFeatureMaskFromChipCapabilities_1_5(int capabilities) {
+        // First collect features from previous versions
+        long features = wifiFeatureMaskFromChipCapabilities(capabilities);
+
+        // Next collect features for V1_5 version
+        for (int i = 0; i < sChipFeatureCapabilityTranslation15.length; i++) {
+            if ((capabilities & sChipFeatureCapabilityTranslation15[i][1]) != 0) {
+                features |= sChipFeatureCapabilityTranslation15[i][0];
             }
         }
         return features;
@@ -1266,7 +1296,13 @@ public class WifiVendorHal {
             final MutableLong feat = new MutableLong(0);
             synchronized (sLock) {
                 android.hardware.wifi.V1_3.IWifiChip iWifiChipV13 = getWifiChipForV1_3Mockable();
-                if (iWifiChipV13 != null) {
+                android.hardware.wifi.V1_5.IWifiChip iWifiChipV15 = getWifiChipForV1_5Mockable();
+                if (iWifiChipV15 != null) {
+                    iWifiChipV15.getCapabilities_1_5((status, capabilities) -> {
+                        if (!ok(status)) return;
+                        feat.value = wifiFeatureMaskFromChipCapabilities_1_5(capabilities);
+                    });
+                } else if (iWifiChipV13 != null) {
                     iWifiChipV13.getCapabilities_1_3((status, capabilities) -> {
                         if (!ok(status)) return;
                         feat.value = wifiFeatureMaskFromChipCapabilities_1_3(capabilities);
@@ -2392,6 +2428,17 @@ public class WifiVendorHal {
     protected android.hardware.wifi.V1_4.IWifiChip getWifiChipForV1_4Mockable() {
         if (mIWifiChip == null) return null;
         return android.hardware.wifi.V1_4.IWifiChip.castFrom(mIWifiChip);
+    }
+
+    /**
+     * Method to mock out the V1_5 IWifiChip retrieval in unit tests.
+     *
+     * @return 1.5 IWifiChip object if the device is running the 1.5 wifi hal service, null
+     * otherwise.
+     */
+    protected android.hardware.wifi.V1_5.IWifiChip getWifiChipForV1_5Mockable() {
+        if (mIWifiChip == null) return null;
+        return android.hardware.wifi.V1_5.IWifiChip.castFrom(mIWifiChip);
     }
 
     /**
