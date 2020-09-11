@@ -741,6 +741,12 @@ public class SupplicantStaNetworkHal {
         }
     }
 
+    private android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork getV1_4StaNetwork() {
+        synchronized (mLock) {
+            return getSupplicantStaNetworkForV1_4Mockable();
+        }
+    }
+
     /**
      * Maps WifiConfiguration Key Management BitSet to Supplicant HIDL bitmask int
      * TODO(b/32571829): Update mapping when fast transition keys are added
@@ -900,7 +906,8 @@ public class SupplicantStaNetworkHal {
                                 .GroupCipherMask.SMS4;
                     break;
                 case WifiConfiguration.GroupCipher.GCMP_128:
-                    // FIXME: this is handled after HAL definition is merged.
+                    mask |= android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                                .GroupCipherMask.GCMP_128;
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -960,7 +967,8 @@ public class SupplicantStaNetworkHal {
                             .PairwiseCipherMask.SMS4;
                     break;
                 case WifiConfiguration.PairwiseCipher.GCMP_128:
-                    // FIXME: this is handled after HAL definition is merged.
+                    mask |= android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                            .PairwiseCipherMask.GCMP_128;
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -1149,6 +1157,9 @@ public class SupplicantStaNetworkHal {
         mask = supplicantMaskValueToWifiConfigurationBitSet(mask,
                 android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork.GroupCipherMask
                         .SMS4, bitset, WifiConfiguration.GroupCipher.SMS4);
+        mask = supplicantMaskValueToWifiConfigurationBitSet(mask,
+                android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork.GroupCipherMask
+                        .GCMP_128, bitset, WifiConfiguration.GroupCipher.GCMP_128);
         if (mask != 0) {
             throw new IllegalArgumentException(
                     "invalid group cipher mask from supplicant: " + mask);
@@ -1196,6 +1207,10 @@ public class SupplicantStaNetworkHal {
                 android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork.PairwiseCipherMask
                         .SMS4, bitset,
                 WifiConfiguration.PairwiseCipher.SMS4);
+        mask = supplicantMaskValueToWifiConfigurationBitSet(mask,
+                android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork.PairwiseCipherMask
+                        .GCMP_128, bitset,
+                WifiConfiguration.PairwiseCipher.GCMP_128);
         if (mask != 0) {
             throw new IllegalArgumentException(
                     "invalid pairwise cipher mask from supplicant: " + mask);
@@ -1438,7 +1453,11 @@ public class SupplicantStaNetworkHal {
                 android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
                         iSupplicantStaNetworkV12;
                 iSupplicantStaNetworkV12 = getV1_2StaNetwork();
-                if (null != getV1_3StaNetwork()) {
+                if (null != getV1_4StaNetwork()) {
+                    /* Support for new key group cipher types for GCMP_128
+                     * Requires HAL v1.4 or higher */
+                    status = getV1_4StaNetwork().setGroupCipher_1_4(groupCipherMask);
+                } else if (null != getV1_3StaNetwork()) {
                     /* Support for new key group cipher types for SMS4
                      * Requires HAL v1.3 or higher */
                     status = getV1_3StaNetwork().setGroupCipher_1_3(groupCipherMask);
@@ -1525,7 +1544,11 @@ public class SupplicantStaNetworkHal {
                 android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
                         iSupplicantStaNetworkV12;
                 iSupplicantStaNetworkV12 = getV1_2StaNetwork();
-                if (null != getV1_3StaNetwork()) {
+                if (null != getV1_4StaNetwork()) {
+                    /* Support for new key pairwise cipher types for GCMP_128
+                     * Requires HAL v1.4 or higher */
+                    status = getV1_4StaNetwork().setPairwiseCipher_1_4(pairwiseCipherMask);
+                } else if (null != getV1_3StaNetwork()) {
                     /* Support for new key pairwise cipher types for SMS4
                      * Requires HAL v1.3 or higher */
                     status = getV1_3StaNetwork().setPairwiseCipher_1_3(pairwiseCipherMask);
@@ -2199,7 +2222,9 @@ public class SupplicantStaNetworkHal {
         synchronized (mLock) {
             final String methodStr = "getGroupCipher";
             if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
-            if (getV1_3StaNetwork() != null) {
+            if (getV1_4StaNetwork() != null) {
+                return getGroupCipher_1_4();
+            } else if (getV1_3StaNetwork() != null) {
                 return getGroupCipher_1_3();
             } else {
                 try {
@@ -2244,12 +2269,36 @@ public class SupplicantStaNetworkHal {
         }
     }
 
+    private boolean getGroupCipher_1_4() {
+        synchronized (mLock) {
+            final String methodStr = "getGroupCipher_1_4";
+            try {
+                MutableBoolean statusOk = new MutableBoolean(false);
+                getV1_4StaNetwork().getGroupCipher_1_4((SupplicantStatus status,
+                        int groupCipherMaskValue) -> {
+                    statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
+                    if (statusOk.value) {
+                        this.mGroupCipherMask = groupCipherMaskValue;
+                    } else {
+                        checkStatusAndLogFailure(status, methodStr);
+                    }
+                });
+                return statusOk.value;
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
     /** See ISupplicantStaNetwork.hal for documentation */
     private boolean getPairwiseCipher() {
         synchronized (mLock) {
             final String methodStr = "getPairwiseCipher";
             if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
-            if (getV1_3StaNetwork() != null) {
+            if (getV1_4StaNetwork() != null) {
+                return getPairwiseCipher_1_4();
+            } else if (getV1_3StaNetwork() != null) {
                 return getPairwiseCipher_1_3();
             } else {
                 try {
@@ -2278,6 +2327,28 @@ public class SupplicantStaNetworkHal {
             try {
                 MutableBoolean statusOk = new MutableBoolean(false);
                 getV1_3StaNetwork().getPairwiseCipher((SupplicantStatus status,
+                        int pairwiseCipherMaskValue) -> {
+                    statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
+                    if (statusOk.value) {
+                        this.mPairwiseCipherMask = pairwiseCipherMaskValue;
+                    } else {
+                        checkStatusAndLogFailure(status, methodStr);
+                    }
+                });
+                return statusOk.value;
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
+    private boolean getPairwiseCipher_1_4() {
+        synchronized (mLock) {
+            final String methodStr = "getPairwiseCipher_1_4";
+            try {
+                MutableBoolean statusOk = new MutableBoolean(false);
+                getV1_4StaNetwork().getPairwiseCipher_1_4((SupplicantStatus status,
                         int pairwiseCipherMaskValue) -> {
                     statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
                     if (statusOk.value) {
@@ -3160,6 +3231,19 @@ public class SupplicantStaNetworkHal {
             getSupplicantStaNetworkForV1_3Mockable() {
         if (mISupplicantStaNetwork == null) return null;
         return android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork.castFrom(
+                mISupplicantStaNetwork);
+    }
+
+    /**
+     * Method to mock out the V1_4 ISupplicantStaNetwork retrieval in unit tests.
+     *
+     * @return 1.4 ISupplicantStaNetwork object if the device is running the 1.4 supplicant hal
+     * service, null otherwise.
+     */
+    protected android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+            getSupplicantStaNetworkForV1_4Mockable() {
+        if (mISupplicantStaNetwork == null) return null;
+        return android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork.castFrom(
                 mISupplicantStaNetwork);
     }
 
