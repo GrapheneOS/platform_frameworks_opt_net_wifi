@@ -60,7 +60,6 @@ public class WifiScoreReport {
     private static final int WIFI_CONNECTED_NETWORK_SCORER_IDENTIFIER = 0;
     private static final int INVALID_SESSION_ID = -1;
     private static final long MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS = 29000;
-    private static final long DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS = 30000;
     private static final long INVALID_WALL_CLOCK_MILLIS = -1;
 
     /**
@@ -751,9 +750,8 @@ public class WifiScoreReport {
         if ((mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS)
                 && ((millis - mLastScoreBreachLowTimeMillis)
                         >= MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS)) {
-            mBssidBlocklistMonitor.blockBssidForDurationMs(mWifiInfo.getBSSID(),
+            mBssidBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
                     mWifiInfo.getSSID(),
-                    DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS,
                     BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE,
                     mWifiInfo.getRssi());
             mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
