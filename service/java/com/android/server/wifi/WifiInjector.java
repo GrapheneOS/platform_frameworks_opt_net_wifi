@@ -124,13 +124,13 @@ public class WifiInjector {
     private final ScoringParams mScoringParams;
     private final ActiveModeWarden mActiveModeWarden;
     private final WifiSettingsStore mSettingsStore;
-    private OpenNetworkNotifier mOpenNetworkNotifier;
+    private final OpenNetworkNotifier mOpenNetworkNotifier;
     private final WifiLockManager mLockManager;
     private final WifiNl80211Manager mWifiCondManager;
     private final Clock mClock = new Clock();
     private final WifiMetrics mWifiMetrics;
     private final WifiP2pMetrics mWifiP2pMetrics;
-    private WifiLastResortWatchdog mWifiLastResortWatchdog;
+    private final WifiLastResortWatchdog mWifiLastResortWatchdog;
     private final PropertyService mPropertyService = new SystemPropertyService();
     private final BuildProperties mBuildProperties = new SystemBuildProperties();
     private final WifiBackupRestore mWifiBackupRestore;
@@ -153,7 +153,7 @@ public class WifiInjector {
     private final PasspointManager mPasspointManager;
     private HandlerThread mWifiAwareHandlerThread;
     private HandlerThread mRttHandlerThread;
-    private HalDeviceManager mHalDeviceManager;
+    private final HalDeviceManager mHalDeviceManager;
     private final WifiStateTracker mWifiStateTracker;
     private final SelfRecovery mSelfRecovery;
     private final WakeupController mWakeupController;
@@ -167,11 +167,11 @@ public class WifiInjector {
     private final LinkProbeManager mLinkProbeManager;
     private IpMemoryStore mIpMemoryStore;
     private final WifiThreadRunner mWifiThreadRunner;
-    private BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private final MacAddressUtil mMacAddressUtil = new MacAddressUtil();
     private final MboOceController mMboOceController;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
-    private WifiChannelUtilization mWifiChannelUtilizationScan;
+    private final WifiChannelUtilization mWifiChannelUtilizationScan;
     private final KeyStore mKeyStore;
     private final ConnectionFailureNotificationBuilder mConnectionFailureNotificationBuilder;
     private final ThroughputPredictor mThroughputPredictor;
