@@ -1553,7 +1553,8 @@ public class WifiNative {
                     InformationElementUtil.parseInformationElements(result.getInformationElements());
             InformationElementUtil.Capabilities capabilities =
                     new InformationElementUtil.Capabilities();
-            capabilities.from(ies, result.getCapabilities(), isEnhancedOpenSupported());
+            capabilities.from(ies, result.getCapabilities(), isEnhancedOpenSupported(),
+                              result.getFrequencyMhz());
             String flags = capabilities.generateCapabilitiesString();
             NetworkDetail networkDetail;
             try {

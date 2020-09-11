@@ -210,6 +210,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs());
         assertEquals(DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS,
                 mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs());
+        assertEquals(DeviceConfigFacade.DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM,
+                mDeviceConfigFacade.getRssiThresholdNotSendLowScoreToCsDbm());
     }
 
     /**
@@ -318,6 +320,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(4000);
         when(DeviceConfig.getInt(anyString(), eq("min_confirmation_duration_send_high_score_ms"),
                 anyInt())).thenReturn(1000);
+        when(DeviceConfig.getInt(anyString(), eq("rssi_threshold_not_send_low_score_to_cs_dbm"),
+                anyInt())).thenReturn(-70);
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
         // Verifying fields are updated to the new values
@@ -377,5 +381,6 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(1000, mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs());
         assertEquals(4000, mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs());
         assertEquals(1000, mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs());
+        assertEquals(-70, mDeviceConfigFacade.getRssiThresholdNotSendLowScoreToCsDbm());
     }
 }
