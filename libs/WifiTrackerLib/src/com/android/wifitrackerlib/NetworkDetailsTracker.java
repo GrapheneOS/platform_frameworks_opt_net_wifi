@@ -136,6 +136,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
         final WifiEntry chosenEntry = getWifiEntry();
         if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             chosenEntry.updateNetworkCapabilities(capabilities);
+            chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
     }
 
@@ -144,7 +145,8 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
     protected void handleDefaultRouteChanged() {
         final WifiEntry chosenEntry = getWifiEntry();
         if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            chosenEntry.setDefaultNetwork(mIsWifiDefaultRoute);
+            chosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
     }
 
