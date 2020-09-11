@@ -281,13 +281,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
         if (mConnectedWifiEntry != null
                 && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mConnectedWifiEntry.updateNetworkCapabilities(capabilities);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
     }
 
     @WorkerThread
     protected void handleDefaultRouteChanged() {
         if (mConnectedWifiEntry != null) {
-            mConnectedWifiEntry.setDefaultNetwork(mIsWifiDefaultRoute);
+            mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
     }
 

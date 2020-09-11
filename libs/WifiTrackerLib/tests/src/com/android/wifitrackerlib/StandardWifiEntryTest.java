@@ -40,7 +40,6 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -642,19 +641,14 @@ public class StandardWifiEntryTest {
 
         entry.updateConnectionInfo(wifiInfo, networkInfo);
         entry.updateNetworkCapabilities(networkCapabilities);
-        entry.setDefaultNetwork(true);
+        entry.setIsDefaultNetwork(true);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
     }
 
     @Test
-    public void testGetSummary_validatedAndNotDefault_showsLowQuality() {
+    public void testShouldShowXLevelIcon_unvalidatedOrNotDefault_returnsTrue() {
         final int networkId = 1;
-        final Resources mockResources = mock(Resources.class);
-        when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(anyInt())).thenReturn("");
-        when(mockResources.getString(R.string.wifi_connected_low_quality))
-                .thenReturn("Low quality");
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mMockConnectivityManager);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
@@ -666,15 +660,33 @@ public class StandardWifiEntryTest {
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.networkId = networkId;
+
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE), config,
                 mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
 
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
-        entry.updateNetworkCapabilities(networkCapabilities);
-        entry.setDefaultNetwork(false);
+        // Disconnected should return false;
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
-        assertThat(entry.getSummary()).isEqualTo("Low quality");
+        // Not validated, Not Default
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
+
+        // Not Validated, Default
+        entry.setIsDefaultNetwork(true);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
+
+        // Validated, Default
+        entry.updateNetworkCapabilities(networkCapabilities);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
+
+        // Validated, Not Default
+        entry.setIsDefaultNetwork(false);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
     }
 
     @Test

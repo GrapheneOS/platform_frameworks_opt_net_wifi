@@ -246,11 +246,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                         : suggestorLabel);
             }
 
-            final boolean isDefaultNetwork = mConnectedInfo != null
-                    && mConnectedInfo.isDefaultNetwork;
+            if (mIsLowQuality) {
+                return mContext.getString(R.string.wifi_connected_low_quality);
+            }
+
             String networkCapabilitiesinformation =
-                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities,
-                            isDefaultNetwork);
+                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
             if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
                 return networkCapabilitiesinformation;
             }

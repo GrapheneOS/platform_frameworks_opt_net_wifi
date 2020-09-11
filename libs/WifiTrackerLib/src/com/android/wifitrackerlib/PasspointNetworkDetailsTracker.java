@@ -120,7 +120,8 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
         handleNetworkCapabilitiesChanged(
                 mConnectivityManager.getNetworkCapabilities(currentNetwork));
         handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
-        mChosenEntry.setDefaultNetwork(mIsWifiDefaultRoute);
+        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
     }
 
     @WorkerThread
