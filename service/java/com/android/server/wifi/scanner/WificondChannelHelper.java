@@ -33,7 +33,7 @@ public class WificondChannelHelper extends KnownBandsChannelHelper {
     public WificondChannelHelper(WifiNative wifiNative) {
         mWifiNative = wifiNative;
         final int[] emptyFreqList = new int[0];
-        setBandChannels(emptyFreqList, emptyFreqList, emptyFreqList, emptyFreqList);
+        setBandChannels(emptyFreqList, emptyFreqList, emptyFreqList, emptyFreqList, emptyFreqList);
         updateChannels();
     }
 
@@ -50,13 +50,16 @@ public class WificondChannelHelper extends KnownBandsChannelHelper {
         int[] channels6G =
                 mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
         if (channels6G == null) Log.e(TAG, "Failed to get channels for 6GHz band");
+        int[] channels60G =
+                mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_60_GHZ);
+        if (channels60G == null) Log.e(TAG, "Failed to get channels for 60GHz band");
 
         if (channels24G == null || channels5G == null || channelsDfs == null
-                || channels6G == null) {
+                || channels6G == null || channels60G == null) {
             Log.e(TAG, "Failed to get all channels for band, not updating band channel lists");
         } else if (channels24G.length > 0 || channels5G.length > 0 || channelsDfs.length > 0
-                || channels6G.length > 0) {
-            setBandChannels(channels24G, channels5G, channelsDfs, channels6G);
+                || channels6G.length > 0 || channels60G.length > 0) {
+            setBandChannels(channels24G, channels5G, channelsDfs, channels6G, channels60G);
         } else {
             Log.e(TAG, "Got zero length for all channel lists");
         }

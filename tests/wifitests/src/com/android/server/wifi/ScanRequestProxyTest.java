@@ -131,7 +131,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         mInOrder = inOrder(mWifiScanner, mWifiConfigManager,
                 mContext, mWifiNetworkSuggestionsManager);
         mTestScanDatas1 =
-                ScanTestUtil.createScanDatas(new int[][]{{ 2417, 2427, 5180, 5170 }},
+                ScanTestUtil.createScanDatas(new int[][]{{ 2417, 2427, 5180, 5170, 58320, 60480 }},
                         new int[]{0},
                         new int[]{WifiScanner.WIFI_BAND_ALL});
         mTestScanDatas2 =
@@ -846,9 +846,9 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                 mScanRequestProxy.getScanResults().stream().toArray(ScanResult[]::new));
 
         // Now send results from an internal partial scan request.
-        mTestScanDatas2 = ScanTestUtil.createScanDatas(new int[][]{{ 2412, 2422, 5200, 5210 }},
+        mTestScanDatas2 = ScanTestUtil.createScanDatas(new int[][]{{ 2412, 2422 }},
                 new int[]{0},
-                new int[]{WifiScanner.WIFI_BAND_BOTH});
+                new int[]{WifiScanner.WIFI_BAND_24_GHZ});
         // Verify the scan failure processing.
         mGlobalScanListenerArgumentCaptor.getValue().onResults(mTestScanDatas2);
         // Validate the scan results from a previous successful scan in the cache.

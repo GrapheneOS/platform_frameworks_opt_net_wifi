@@ -19,12 +19,14 @@ package com.android.server.wifi.scanner;
 import static android.net.wifi.WifiScanner.WIFI_BAND_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY;
+import static android.net.wifi.WifiScanner.WIFI_BAND_60_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_6_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_ALL;
 import static android.net.wifi.WifiScanner.WIFI_BAND_COUNT;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_5_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_5_GHZ_DFS_ONLY;
+import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_60_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_6_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_UNSPECIFIED;
 
@@ -64,7 +66,7 @@ public class KnownBandsChannelHelper extends ChannelHelper {
     private WifiScanner.ChannelSpec[][] mBandsToChannels;
 
     protected void setBandChannels(int[] channels2G, int[] channels5G, int[] channelsDfs,
-            int[] channels6G) {
+            int[] channels6G, int[] channels60G) {
         mBandsToChannels = new WifiScanner.ChannelSpec[WIFI_BAND_COUNT][];
 
         for (int i = 0; i < WIFI_BAND_COUNT; i++) {
@@ -101,6 +103,14 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             copyChannels(mBandsToChannels[WIFI_BAND_INDEX_6_GHZ], channels6G);
         } else {
             mBandsToChannels[WIFI_BAND_INDEX_6_GHZ] = NO_CHANNELS;
+        }
+
+        if (channels60G.length != 0) {
+            mBandsToChannels[WIFI_BAND_INDEX_60_GHZ] =
+                    new WifiScanner.ChannelSpec[channels60G.length];
+            copyChannels(mBandsToChannels[WIFI_BAND_INDEX_60_GHZ], channels60G);
+        } else {
+            mBandsToChannels[WIFI_BAND_INDEX_60_GHZ] = NO_CHANNELS;
         }
     }
 
@@ -185,6 +195,8 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             }
         } else if (ScanResult.is6GHz(frequency)) {
             return WIFI_BAND_6_GHZ;
+        } else if (ScanResult.is60GHz(frequency)) {
+            return WIFI_BAND_60_GHZ;
         } else {
             return WIFI_BAND_UNSPECIFIED;
         }
@@ -200,6 +212,8 @@ public class KnownBandsChannelHelper extends ChannelHelper {
                 return WIFI_BAND_INDEX_5_GHZ_DFS_ONLY;
             case WIFI_BAND_6_GHZ:
                 return WIFI_BAND_INDEX_6_GHZ;
+            case WIFI_BAND_60_GHZ:
+                return WIFI_BAND_INDEX_60_GHZ;
             default:
                 return -1;
         }
