@@ -139,6 +139,9 @@ public class DeviceConfigFacade {
     // depends on the score evaluation period normally controlled by
     // 'com.android.wifi.resources.R' config_wifiPollRssiIntervalMilliseconds.
     static final int DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS = 0;
+    // Default RSSI threshold in dBm above which low score is not sent to connectivity service
+    // when external scorer takes action.
+    static final int DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM = -67;
     // Cached values of fields updated via updateDeviceConfigFlags()
     private boolean mIsAbnormalConnectionBugreportEnabled;
     private int mAbnormalConnectionDurationMs;
@@ -189,6 +192,7 @@ public class DeviceConfigFacade {
     private int mHealthMonitorFwAlertValidTimeMs;
     private int mMinConfirmationDurationSendLowScoreMs;
     private int mMinConfirmationDurationSendHighScoreMs;
+    private int mRssiThresholdNotSendLowScoreToCsDbm;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -342,6 +346,9 @@ public class DeviceConfigFacade {
         mMinConfirmationDurationSendHighScoreMs = DeviceConfig.getInt(NAMESPACE,
                 "min_confirmation_duration_send_high_score_ms",
                 DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS);
+        mRssiThresholdNotSendLowScoreToCsDbm = DeviceConfig.getInt(NAMESPACE,
+                "rssi_threshold_not_send_low_score_to_cs_dbm",
+                DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM);
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -705,5 +712,13 @@ public class DeviceConfigFacade {
      */
     public int getMinConfirmationDurationSendHighScoreMs() {
         return mMinConfirmationDurationSendHighScoreMs;
+    }
+
+    /**
+     * Gets the RSSI threshold above which low score is not sent to connectivity service when
+     * external scorer takes action.
+     */
+    public int getRssiThresholdNotSendLowScoreToCsDbm() {
+        return mRssiThresholdNotSendLowScoreToCsDbm;
     }
 }
