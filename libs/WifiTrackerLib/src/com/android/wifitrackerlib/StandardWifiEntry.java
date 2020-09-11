@@ -682,12 +682,6 @@ public class StandardWifiEntry extends WifiEntry {
             return false;
         }
 
-        // The secured Wi-Fi entry is never connected.
-        if (getSecurity() != SECURITY_NONE && getSecurity() != SECURITY_OWE
-                && !wifiConfig.getNetworkSelectionStatus().hasEverConnected()) {
-            return true;
-        }
-
         // The network is disabled because of one of the authentication problems.
         NetworkSelectionStatus networkSelectionStatus = wifiConfig.getNetworkSelectionStatus();
         if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED) {
