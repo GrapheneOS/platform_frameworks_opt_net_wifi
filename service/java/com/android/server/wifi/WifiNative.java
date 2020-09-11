@@ -1483,6 +1483,7 @@ public class WifiNative {
      * WifiScanner.WIFI_BAND_5_GHZ
      * WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY
      * WifiScanner.WIFI_BAND_6_GHZ
+     * WifiScanner.WIFI_BAND_60_GHZ
      * @return frequencies vector of valid frequencies (MHz), or null for error.
      * @throws IllegalArgumentException if band is not recognized.
      */

@@ -340,6 +340,10 @@ public abstract class ChannelHelper {
         }
         band &= ~WifiScanner.WIFI_BAND_6_GHZ;
 
+        if ((band & WifiScanner.WIFI_BAND_60_GHZ) != 0) {
+            sj.add("60Ghz");
+        }
+        band &= ~WifiScanner.WIFI_BAND_60_GHZ;
         if (band != 0) {
             return "Invalid band";
         }
