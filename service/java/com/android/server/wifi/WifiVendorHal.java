@@ -35,7 +35,6 @@ import android.hardware.wifi.V1_0.StaRoamingState;
 import android.hardware.wifi.V1_0.StaScanData;
 import android.hardware.wifi.V1_0.StaScanDataFlagMask;
 import android.hardware.wifi.V1_0.StaScanResult;
-import android.hardware.wifi.V1_0.WifiBand;
 import android.hardware.wifi.V1_0.WifiDebugHostWakeReasonStats;
 import android.hardware.wifi.V1_0.WifiDebugPacketFateFrameType;
 import android.hardware.wifi.V1_0.WifiDebugRingBufferFlags;
@@ -48,6 +47,7 @@ import android.hardware.wifi.V1_0.WifiInformationElement;
 import android.hardware.wifi.V1_0.WifiStatus;
 import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.hardware.wifi.V1_2.IWifiChipEventCallback.IfaceInfo;
+import android.hardware.wifi.V1_5.WifiBand;
 import android.net.MacAddress;
 import android.net.apf.ApfCapabilities;
 import android.net.wifi.ScanResult;
@@ -778,6 +778,12 @@ public class WifiVendorHal {
                 return WifiBand.BAND_24GHZ_5GHZ;
             case WifiScanner.WIFI_BAND_BOTH_WITH_DFS:
                 return WifiBand.BAND_24GHZ_5GHZ_WITH_DFS;
+            case WifiScanner.WIFI_BAND_60_GHZ:
+                return WifiBand.BAND_60GHZ;
+            case WifiScanner.WIFI_BAND_24_5_6_60_GHZ:
+                return WifiBand.BAND_24GHZ_5GHZ_6GHZ_60GHZ;
+            case WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ:
+                return WifiBand.BAND_24GHZ_5GHZ_WITH_DFS_6GHZ_60GHZ;
             default:
                 throw new IllegalArgumentException("bad band " + frameworkBand);
         }

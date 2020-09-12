@@ -67,7 +67,8 @@ public class BackgroundScanSchedulerTest extends WifiBaseTest {
                 new int[]{2400, 2450},
                 new int[]{5150, 5175},
                 new int[]{5600, 5650, 5660},
-                new int[]{5945, 5985});
+                new int[]{5945, 5985},
+                new int[]{58320, 60480});
         mScheduler = new BackgroundScanScheduler(mChannelHelper);
         mScheduler.setMaxBuckets(DEFAULT_MAX_BUCKETS);
         mScheduler.setMaxChannelsPerBucket(DEFAULT_MAX_CHANNELS_PER_BUCKET);
@@ -566,7 +567,7 @@ public class BackgroundScanSchedulerTest extends WifiBaseTest {
                 WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN));
         requests.add(createRequest(channelsToSpec(2400, 2450, 5175), 30000, 0, 20,
                 WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN));
-        requests.add(createRequest(WifiScanner.WIFI_BAND_BOTH_WITH_DFS, 240000, 0, 20,
+        requests.add(createRequest(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ, 240000, 0, 20,
                 WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN));
 
         mScheduler.setMaxBuckets(3);
@@ -593,7 +594,7 @@ public class BackgroundScanSchedulerTest extends WifiBaseTest {
         assertBucketChannels(schedule.buckets[1], expectedBucketChannelSet);
 
         KnownBandsChannelCollection collection = mChannelHelper.createChannelCollection();
-        collection.addBand(WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+        collection.addBand(WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ);
         expectedBucketChannelSet = collection.getAllChannels();
         expectedBucketChannelSet.remove(5175);
         expectedBucketChannelSet.remove(2400);
@@ -709,7 +710,8 @@ public class BackgroundScanSchedulerTest extends WifiBaseTest {
             } else {
                 assertTrue("Invalid band: " + schedule.buckets[i].band,
                         schedule.buckets[i].band > WifiScanner.WIFI_BAND_UNSPECIFIED
-                        && schedule.buckets[i].band <= WifiScanner.WIFI_BAND_BOTH_WITH_DFS);
+                        && schedule.buckets[i].band
+                                <= WifiScanner.WIFI_BAND_24_5_WITH_DFS_6_60_GHZ);
             }
         }
     }

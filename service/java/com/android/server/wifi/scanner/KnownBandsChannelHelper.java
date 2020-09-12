@@ -19,12 +19,14 @@ package com.android.server.wifi.scanner;
 import static android.net.wifi.WifiScanner.WIFI_BAND_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY;
+import static android.net.wifi.WifiScanner.WIFI_BAND_60_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_6_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_ALL;
 import static android.net.wifi.WifiScanner.WIFI_BAND_COUNT;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_5_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_5_GHZ_DFS_ONLY;
+import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_60_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_INDEX_6_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_UNSPECIFIED;
 
@@ -35,6 +37,7 @@ import android.net.wifi.WifiScanner.WifiBandIndex;
 import android.util.ArraySet;
 
 import com.android.server.wifi.WifiNative;
+import com.android.server.wifi.proto.WifiStatsLog;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,7 +66,7 @@ public class KnownBandsChannelHelper extends ChannelHelper {
     private WifiScanner.ChannelSpec[][] mBandsToChannels;
 
     protected void setBandChannels(int[] channels2G, int[] channels5G, int[] channelsDfs,
-            int[] channels6G) {
+            int[] channels6G, int[] channels60G) {
         mBandsToChannels = new WifiScanner.ChannelSpec[WIFI_BAND_COUNT][];
 
         for (int i = 0; i < WIFI_BAND_COUNT; i++) {
@@ -100,6 +103,14 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             copyChannels(mBandsToChannels[WIFI_BAND_INDEX_6_GHZ], channels6G);
         } else {
             mBandsToChannels[WIFI_BAND_INDEX_6_GHZ] = NO_CHANNELS;
+        }
+
+        if (channels60G.length != 0) {
+            mBandsToChannels[WIFI_BAND_INDEX_60_GHZ] =
+                    new WifiScanner.ChannelSpec[channels60G.length];
+            copyChannels(mBandsToChannels[WIFI_BAND_INDEX_60_GHZ], channels60G);
+        } else {
+            mBandsToChannels[WIFI_BAND_INDEX_60_GHZ] = NO_CHANNELS;
         }
     }
 
@@ -184,6 +195,8 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             }
         } else if (ScanResult.is6GHz(frequency)) {
             return WIFI_BAND_6_GHZ;
+        } else if (ScanResult.is60GHz(frequency)) {
+            return WIFI_BAND_60_GHZ;
         } else {
             return WIFI_BAND_UNSPECIFIED;
         }
@@ -199,6 +212,8 @@ public class KnownBandsChannelHelper extends ChannelHelper {
                 return WIFI_BAND_INDEX_5_GHZ_DFS_ONLY;
             case WIFI_BAND_6_GHZ:
                 return WIFI_BAND_INDEX_6_GHZ;
+            case WIFI_BAND_60_GHZ:
+                return WIFI_BAND_INDEX_60_GHZ;
             default:
                 return -1;
         }
@@ -228,6 +243,38 @@ public class KnownBandsChannelHelper extends ChannelHelper {
             }
         }
         return false;
+    }
+
+    /**
+     * Convert Wifi channel frequency to a bucketed band value.
+     *
+     * @param frequency Frequency (e.g. 2417)
+     * @return WifiBandBucket enum value (e.g. BAND_2G)
+     */
+    public static int getBand(int frequency) {
+        int band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__UNKNOWN;
+
+        if (ScanResult.is24GHz(frequency)) {
+            band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_2G;
+        } else if (ScanResult.is5GHz(frequency)) {
+            if (frequency <= BAND_5_GHZ_LOW_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_LOW;
+            } else if (frequency <= BAND_5_GHZ_MID_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_MIDDLE;
+            } else {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_5G_HIGH;
+            }
+        } else if (ScanResult.is6GHz(frequency)) {
+            if (frequency <= BAND_6_GHZ_LOW_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_LOW;
+            } else if (frequency <= BAND_6_GHZ_MID_END_FREQ) {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_MIDDLE;
+            } else {
+                band = WifiStatsLog.WIFI_HEALTH_STAT_REPORTED__BAND__BAND_6G_HIGH;
+            }
+        }
+
+        return band;
     }
 
     /**

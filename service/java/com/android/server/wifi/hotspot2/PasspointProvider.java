@@ -522,7 +522,11 @@ public class PasspointProvider {
         wifiConfig.creatorUid = mCreatorUid;
         wifiConfig.trusted = mIsTrusted;
         if (mConfig.isMacRandomizationEnabled()) {
-            wifiConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
+            if (mConfig.isEnhancedMacRandomizationEnabled()) {
+                wifiConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_ENHANCED;
+            } else {
+                wifiConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_PERSISTENT;
+            }
         } else {
             wifiConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         }
