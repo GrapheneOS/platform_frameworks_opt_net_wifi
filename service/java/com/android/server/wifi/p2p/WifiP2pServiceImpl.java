@@ -801,8 +801,6 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 });
         private final WifiP2pInfo mWifiP2pInfo = new WifiP2pInfo();
         private WifiP2pGroup mGroup;
-        // Is the HAL (HIDL) interface available for use.
-        private boolean mIsHalInterfaceAvailable = false;
         // Is wifi on or off.
         private boolean mIsWifiEnabled = false;
 
@@ -889,12 +887,6 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         }
                     }
                 }, new IntentFilter(TetheringManager.ACTION_TETHER_STATE_CHANGED));
-                // Register for interface availability from HalDeviceManager
-                mWifiNative.registerInterfaceAvailableListener((boolean isAvailable) -> {
-                    mIsHalInterfaceAvailable = isAvailable;
-                    checkAndSendP2pStateChangedBroadcast();
-                }, getHandler());
-
                 mSettingsConfigStore.registerChangeListener(
                         WIFI_VERBOSE_LOGGING_ENABLED,
                         (key, newValue) -> enableVerboseLogging(newValue),
@@ -1109,7 +1101,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         break;
                     case WifiP2pManager.REQUEST_P2P_STATE:
                         replyToMessage(message, WifiP2pManager.RESPONSE_P2P_STATE,
-                                (mIsWifiEnabled && isHalInterfaceAvailable())
+                                mIsWifiEnabled
                                 ? WifiP2pManager.WIFI_P2P_STATE_ENABLED
                                 : WifiP2pManager.WIFI_P2P_STATE_DISABLED);
                         break;
@@ -1423,7 +1415,6 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         }
                         WorkSource requestorWs = (WorkSource) message.obj;
                         mInterfaceName = mWifiNative.setupInterface((String ifaceName) -> {
-                            mIsHalInterfaceAvailable = false;
                             sendMessage(DISABLE_P2P);
                             checkAndSendP2pStateChangedBroadcast();
                         }, getHandler(), requestorWs);
@@ -3063,15 +3054,11 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         // Check & re-enable P2P if needed.
         // P2P interface will be created if all of the below are true:
         // a) Wifi is enabled.
-        // b) HAL (HIDL) interface is available.
-        // c) There is atleast 1 client app which invoked initialize().
+        // b) There is at least 1 client app which invoked initialize().
         private void checkAndReEnableP2p() {
-            boolean isHalInterfaceAvailable = isHalInterfaceAvailable();
-            Log.d(TAG, "Wifi enabled=" + mIsWifiEnabled + ", P2P Interface availability="
-                    + isHalInterfaceAvailable + ", Number of clients="
+            Log.d(TAG, "Wifi enabled=" + mIsWifiEnabled + ", Number of clients="
                     + mDeathDataByBinder.size());
-            if (mIsWifiEnabled && isHalInterfaceAvailable
-                    && !mDeathDataByBinder.isEmpty()) {
+            if (mIsWifiEnabled && !mDeathDataByBinder.isEmpty()) {
                 // TODO(b/162344695): If there are more than 1 concurrent P2P clients, then we
                 // attribute the iface to one of the apps (picked at random).
 
@@ -3081,16 +3068,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             }
         }
 
-        // Ignore judgement if the device do not support HAL (HIDL) interface
-        private boolean isHalInterfaceAvailable() {
-            return mWifiNative.isHalInterfaceSupported() ? mIsHalInterfaceAvailable : true;
-        }
-
         private void checkAndSendP2pStateChangedBroadcast() {
-            boolean isHalInterfaceAvailable = isHalInterfaceAvailable();
-            Log.d(TAG, "Wifi enabled=" + mIsWifiEnabled + ", P2P Interface availability="
-                    + isHalInterfaceAvailable);
-            sendP2pStateChangedBroadcast(mIsWifiEnabled && isHalInterfaceAvailable);
+            Log.d(TAG, "Wifi enabled=" + mIsWifiEnabled);
+            sendP2pStateChangedBroadcast(mIsWifiEnabled);
         }
 
         private void sendP2pStateChangedBroadcast(boolean enabled) {

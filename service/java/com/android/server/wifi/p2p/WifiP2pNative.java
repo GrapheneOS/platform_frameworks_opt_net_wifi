@@ -19,7 +19,6 @@ package com.android.server.wifi.p2p;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.hardware.wifi.V1_0.IWifiP2pIface;
-import android.hardware.wifi.V1_0.IfaceType;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pGroup;
@@ -51,35 +50,7 @@ public class WifiP2pNative {
     private final PropertyService mPropertyService;
     private final WifiVendorHal mWifiVendorHal;
     private IWifiP2pIface mIWifiP2pIface;
-    private InterfaceAvailableListenerInternal mInterfaceAvailableListener;
     private InterfaceDestroyedListenerInternal mInterfaceDestroyedListener;
-
-    // Internal callback registered to HalDeviceManager.
-    private class InterfaceAvailableListenerInternal implements
-            HalDeviceManager.InterfaceAvailableForRequestListener {
-        private final HalDeviceManager.InterfaceAvailableForRequestListener mExternalListener;
-
-        InterfaceAvailableListenerInternal(
-                HalDeviceManager.InterfaceAvailableForRequestListener externalListener) {
-            mExternalListener = externalListener;
-        }
-
-        @Override
-        public void onAvailabilityChanged(boolean isAvailable) {
-            Log.d(TAG, "P2P InterfaceAvailableListener " + isAvailable);
-            // We need another level of abstraction here. When a P2P interface is created,
-            // we should mask the availability change callback from WifiP2pService.
-            // This is because when the P2P interface is created, we'll get a callback
-            // indicating that we can no longer create a new P2P interface. We don't need to
-            // propagate this internal state to WifiP2pServiceImpl.
-            if (mIWifiP2pIface != null && !isAvailable) {
-                Log.i(TAG, "Masking interface non-availability callback because "
-                        + "we created a P2P iface");
-                return;
-            }
-            mExternalListener.onAvailabilityChanged(isAvailable);
-        }
-    }
 
     // Internal callback registered to HalDeviceManager.
     private class InterfaceDestroyedListenerInternal implements
@@ -202,30 +173,6 @@ public class WifiP2pNative {
         } else {
             Log.i(TAG, "Vendor Hal is not supported, ignoring createP2pIface.");
             return mPropertyService.getString(P2P_INTERFACE_PROPERTY, P2P_IFACE_NAME);
-        }
-    }
-
-    /**
-     * Register for an interface available callbacks from HalDeviceManager.
-     *
-     * @param listener callback to be invoked when the interface is available/not available.
-     */
-    public void registerInterfaceAvailableListener(
-            @NonNull HalDeviceManager.InterfaceAvailableForRequestListener listener,
-            Handler handler) {
-        mInterfaceAvailableListener = new InterfaceAvailableListenerInternal(listener);
-        // The interface available callbacks are cleared on every HAL stop, so need to
-        // re-register these callbacks on every start.
-        mHalDeviceManager.registerStatusListener(() -> {
-            if (mHalDeviceManager.isStarted()) {
-                Log.i(TAG, "Registering for interface available listener");
-                mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                        IfaceType.P2P, mInterfaceAvailableListener, handler);
-            }
-        }, handler);
-        if (mHalDeviceManager.isStarted()) {
-            mHalDeviceManager.registerInterfaceAvailableForRequestListener(
-                    IfaceType.P2P, mInterfaceAvailableListener, handler);
         }
     }
 
