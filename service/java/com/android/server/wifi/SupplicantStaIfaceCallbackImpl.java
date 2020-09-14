@@ -157,9 +157,11 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
         }
     }
 
-    @Override
-    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id,
-                               ArrayList<Byte> ssid) {
+    /**
+     * Added to plumb the new {@code filsHlpSent} param from the V1.3 callback version.
+     */
+    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id, ArrayList<Byte> ssid,
+            boolean filsHlpSent) {
         synchronized (mLock) {
             mStaIfaceHal.logCallback("onStateChanged");
             SupplicantState newSupplicantState =
@@ -174,12 +176,18 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             }
             if (newState == State.COMPLETED) {
                 mWifiMonitor.broadcastNetworkConnectionEvent(
-                        mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), bssidStr);
+                        mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), filsHlpSent,
+                        bssidStr);
             }
             mWifiMonitor.broadcastSupplicantStateChangeEvent(
                     mIfaceName, mStaIfaceHal.getCurrentNetworkId(mIfaceName), wifiSsid,
                     bssidStr, newSupplicantState);
         }
+    }
+
+    @Override
+    public void onStateChanged(int newState, byte[/* 6 */] bssid, int id, ArrayList<Byte> ssid) {
+        onStateChanged(newState, bssid, id, ssid, false);
     }
 
     @Override
