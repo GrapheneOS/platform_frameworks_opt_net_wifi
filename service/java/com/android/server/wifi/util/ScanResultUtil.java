@@ -233,6 +233,10 @@ public class ScanResultUtil {
                 } else {
                     rssiInfo = String.format("%9d         ", r.level);
                 }
+                if ((r.flags & ScanResult.FLAG_PASSPOINT_NETWORK)
+                        == ScanResult.FLAG_PASSPOINT_NETWORK) {
+                    r.capabilities += "[PASSPOINT]";
+                }
                 pw.printf("  %17s  %9d  %18s   %7s    %-32s  %s\n",
                         r.BSSID,
                         r.frequency,
