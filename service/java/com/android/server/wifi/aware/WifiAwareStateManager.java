@@ -727,10 +727,6 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             if (mDbg) Log.d(TAG, "enableUsage(): while Wi-Fi is disabled - ignoring");
             return;
         }
-        if (!mWifiAwareNativeManager.isAwareNativeAvailable()) {
-            if (mDbg) Log.d(TAG, "enableUsage(): while Aware Native isn't Available - ignoring");
-            return;
-        }
         Message msg = mSm.obtainMessage(MESSAGE_TYPE_COMMAND);
         msg.arg1 = COMMAND_TYPE_ENABLE_USAGE;
         mSm.sendMessage(msg);

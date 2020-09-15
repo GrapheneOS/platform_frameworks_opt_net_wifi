@@ -162,7 +162,6 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         when(mMockPowerManager.isDeviceIdleMode()).thenReturn(false);
         when(mMockPowerManager.isInteractive()).thenReturn(true);
         when(mWifiPermissionsUtil.isLocationModeEnabled()).thenReturn(true);
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(true);
 
         ArgumentCaptor<BroadcastReceiver> bcastRxCaptor = ArgumentCaptor.forClass(
                 BroadcastReceiver.class);
@@ -3315,7 +3314,6 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         inOrder.verify(mMockNativeManager).releaseAware();
 
         mDut.enableUsage();
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
         mMockLooper.dispatchAll();
 
         // (1) connect
@@ -3351,16 +3349,9 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         simulateWifiStateChange(true);
         mMockLooper.dispatchAll();
 
-        // when WifiAware Native is not available, DOZE OFF -> no change
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(false);
-        simulatePowerStateChangeDoze(false);
-        mMockLooper.dispatchAll();
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(true);
 
         // (5) power state change: DOZE OFF
         simulatePowerStateChangeDoze(false);
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
         mMockLooper.dispatchAll();
         collector.checkThat("usage enabled", mDut.isUsageEnabled(), equalTo(true));
         validateCorrectAwareStatusChangeBroadcast(inOrder);
@@ -3390,7 +3381,6 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         inOrder.verify(mMockNativeManager).releaseAware();
 
         mDut.enableUsage();
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
         mMockLooper.dispatchAll();
 
         // (1) connect
@@ -3422,16 +3412,8 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         simulateWifiStateChange(true);
         mMockLooper.dispatchAll();
 
-        // when WifiAware Native is not available, enable location -> no change
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(false);
-        simulateLocationModeChange(true);
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
-        mMockLooper.dispatchAll();
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(true);
-
         // (4) location mode change: enable
         simulateLocationModeChange(true);
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
         mMockLooper.dispatchAll();
         collector.checkThat("usage enabled", mDut.isUsageEnabled(), equalTo(true));
         validateCorrectAwareStatusChangeBroadcast(inOrder);
@@ -3462,7 +3444,6 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
 
 
         mDut.enableUsage();
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
         mMockLooper.dispatchAll();
 
         // (1) connect
@@ -3494,16 +3475,8 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         simulateLocationModeChange(true);
         mMockLooper.dispatchAll();
 
-        // when WifiAware Native is not available, enable Wifi -> no change
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(false);
-        simulateWifiStateChange(true);
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
-        mMockLooper.dispatchAll();
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(true);
-
         // (4) wifi state change: enable
         simulateWifiStateChange(true);
-        inOrder.verify(mMockNativeManager).isAwareNativeAvailable();
         mMockLooper.dispatchAll();
         collector.checkThat("usage enabled", mDut.isUsageEnabled(), equalTo(true));
         validateCorrectAwareStatusChangeBroadcast(inOrder);

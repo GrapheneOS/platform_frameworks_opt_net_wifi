@@ -5322,7 +5322,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
     private void startLohsAndTethering(boolean isApConcurrencySupported) throws Exception {
         // initialization
-        when(mActiveModeWarden.canRequestMoreSoftApManagers()).thenReturn(isApConcurrencySupported);
+        when(mActiveModeWarden.canRequestMoreSoftApManagers(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME))))
+                .thenReturn(isApConcurrencySupported);
         // For these tests, always use distinct interface names for LOHS and tethered.
         mLohsInterfaceName = WIFI_IFACE_NAME2;
 
@@ -5331,7 +5333,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.stopAutoDispatchAndIgnoreExceptions();
         reset(mActiveModeWarden);
 
-        when(mActiveModeWarden.canRequestMoreSoftApManagers()).thenReturn(isApConcurrencySupported);
+        when(mActiveModeWarden.canRequestMoreSoftApManagers(
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME))))
+                .thenReturn(isApConcurrencySupported);
 
         // start tethering
         mLooper.startAutoDispatch();

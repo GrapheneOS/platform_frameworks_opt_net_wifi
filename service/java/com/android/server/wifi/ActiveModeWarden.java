@@ -94,8 +94,6 @@ public class ActiveModeWarden {
     private WifiManager.SoftApCallback mSoftApCallback;
     private WifiManager.SoftApCallback mLohsCallback;
 
-    private boolean mCanRequestMoreClientModeManagers = false;
-    private boolean mCanRequestMoreSoftApManagers = false;
     private boolean mIsShuttingdown = false;
     private boolean mVerboseLoggingEnabled = false;
     /** Cache to store the external scorer for primary and secondary (MBB) client mode manager. */
@@ -238,15 +236,6 @@ public class ActiveModeWarden {
                 });
             }
         });
-
-        wifiNative.registerClientInterfaceAvailabilityListener(
-                (isAvailable) -> mHandler.post(() -> {
-                    mCanRequestMoreClientModeManagers = isAvailable;
-                }));
-        wifiNative.registerSoftApInterfaceAvailabilityListener(
-                (isAvailable) -> mHandler.post(() -> {
-                    mCanRequestMoreSoftApManagers = isAvailable;
-                }));
     }
 
     private void invokeOnAddedCallbacks(@NonNull ActiveModeManager activeModeManager) {
@@ -321,15 +310,15 @@ public class ActiveModeWarden {
     /**
      * @return Returns whether we can create more client mode managers or not.
      */
-    public boolean canRequestMoreClientModeManagers() {
-        return mCanRequestMoreClientModeManagers;
+    public boolean canRequestMoreClientModeManagers(@NonNull WorkSource requestorWs) {
+        return mWifiNative.isItPossibleToCreateStaIface(requestorWs);
     }
 
     /**
      * @return Returns whether we can create more SoftAp managers or not.
      */
-    public boolean canRequestMoreSoftApManagers() {
-        return mCanRequestMoreSoftApManagers;
+    public boolean canRequestMoreSoftApManagers(@NonNull WorkSource requestorWs) {
+        return mWifiNative.isItPossibleToCreateApIface(requestorWs);
     }
 
     /**
@@ -1291,7 +1280,7 @@ public class ActiveModeWarden {
                         ExternalClientModeManagerRequestListener externalRequestListener =
                                 externalListenerAndWs.first;
                         WorkSource requestorWs = externalListenerAndWs.second;
-                        if (mCanRequestMoreClientModeManagers) {
+                        if (canRequestMoreClientModeManagers(requestorWs)) {
                             // Can create a concurrent local only client mode manager.
                             startLocalOnlyClientModeManager(externalRequestListener, requestorWs);
                         } else {

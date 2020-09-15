@@ -20,6 +20,7 @@ import static android.net.wifi.WifiManager.WIFI_FEATURE_OWE;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.hardware.wifi.V1_0.IfaceType;
 import android.net.MacAddress;
 import android.net.TrafficStats;
 import android.net.apf.ApfCapabilities;
@@ -986,43 +987,6 @@ public class WifiNative {
      */
     public void registerStatusListener(@NonNull StatusListener listener) {
         mStatusListeners.add(listener);
-    }
-
-    /**
-     * Callback to notify when the availability of an interface has changed.
-     */
-    public interface InterfaceAvailableForRequestListener {
-        /**
-         * @param isAvailable Whether it is possible to create an iface of the specified type or
-         *                    not.
-         */
-        void onAvailabilityChanged(boolean isAvailable);
-    }
-
-    /**
-     * Register a callback to notify when the availability of Client interface has changed.
-     *
-     * It is safe to re-register the same callback object - duplicates are detected and only a
-     * single copy kept.
-     *
-     * @param listener Instance of {@link InterfaceAvailableForRequestListener}.
-     */
-    public void registerClientInterfaceAvailabilityListener(
-            @NonNull InterfaceAvailableForRequestListener listener) {
-        mWifiVendorHal.registerStaIfaceAvailabilityListener(listener);
-    }
-
-    /**
-     * Register a callback to notify when the availability of SoftAp interface has changed.
-     *
-     * It is safe to re-register the same callback object - duplicates are detected and only a
-     * single copy kept.
-     *
-     * @param listener Instance of {@link InterfaceAvailableForRequestListener}.
-     */
-    public void registerSoftApInterfaceAvailabilityListener(
-            @NonNull InterfaceAvailableForRequestListener listener) {
-        mWifiVendorHal.registerApIfaceAvailabilityListener(listener);
     }
 
     /**
@@ -2986,6 +2950,24 @@ public class WifiNative {
     public boolean isStaApConcurrencySupported() {
         synchronized (mLock) {
             return mWifiVendorHal.isStaApConcurrencySupported();
+        }
+    }
+
+    /**
+     * Returns whether a new AP iface can be created or not.
+     */
+    public boolean isItPossibleToCreateApIface(@NonNull WorkSource requestorWs) {
+        synchronized (mLock) {
+            return mWifiVendorHal.isItPossibleToCreateApIface(requestorWs);
+        }
+    }
+
+    /**
+     * Returns whether a new STA iface can be created or not.
+     */
+    public boolean isItPossibleToCreateStaIface(@NonNull WorkSource requestorWs) {
+        synchronized (mLock) {
+            return mWifiVendorHal.isItPossibleToCreateStaIface(requestorWs);
         }
     }
 
