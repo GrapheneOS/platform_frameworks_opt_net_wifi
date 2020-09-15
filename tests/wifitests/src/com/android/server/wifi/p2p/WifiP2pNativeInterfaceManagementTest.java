@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import android.app.test.MockAnswerUtil;
 import android.hardware.wifi.V1_0.IWifiIface;
 import android.hardware.wifi.V1_0.IWifiP2pIface;
-import android.hardware.wifi.V1_0.IfaceType;
 import android.hardware.wifi.V1_0.WifiStatus;
 import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.net.wifi.nl80211.WifiNl80211Manager;
@@ -38,7 +37,6 @@ import android.os.WorkSource;
 import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.HalDeviceManager;
-import com.android.server.wifi.HalDeviceManager.InterfaceAvailableForRequestListener;
 import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
 import com.android.server.wifi.HalDeviceManager.ManagerStatusListener;
 import com.android.server.wifi.PropertyService;
@@ -48,7 +46,6 @@ import com.android.server.wifi.WifiVendorHal;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -66,7 +63,6 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
     @Mock private HalDeviceManager mHalDeviceManager;
     @Mock private PropertyService mPropertyService;
     @Mock private Handler mHandler;
-    @Mock private InterfaceAvailableForRequestListener mInterfaceRequestListener;
     @Mock private InterfaceDestroyedListener mHalDeviceInterfaceDestroyedListener;
     @Mock private IWifiP2pIface mIWifiP2pIface;
     @Mock private IWifiIface mIWifiIface;
@@ -106,26 +102,6 @@ public class WifiP2pNativeInterfaceManagementTest extends WifiBaseTest {
         mWifiP2pNative = new WifiP2pNative(mWifiNl80211Manager, mWifiNative,
                               mWifiVendorHal, mSupplicantP2pIfaceHal, mHalDeviceManager,
                               mPropertyService);
-    }
-
-    /**
-     * Verifies the HAL (HIDL) interface listener.
-     */
-    @Test
-    public void testRegisterInterfaceAvailableListener() throws Exception {
-        when(mHalDeviceManager.isStarted()).thenReturn(false);
-
-        mWifiP2pNative.registerInterfaceAvailableListener(mInterfaceRequestListener, mHandler);
-        when(mHalDeviceManager.isStarted()).thenReturn(true);
-
-        ArgumentCaptor<ManagerStatusListener> hdmCallbackCaptor =
-                ArgumentCaptor.forClass(ManagerStatusListener.class);
-        verify(mHalDeviceManager).registerStatusListener(hdmCallbackCaptor.capture(), eq(mHandler));
-        // Simulate to call status callback from device hal manager
-        hdmCallbackCaptor.getValue().onStatusChanged();
-
-        verify(mHalDeviceManager).registerInterfaceAvailableForRequestListener(eq(IfaceType.P2P),
-                any(InterfaceAvailableForRequestListener.class), eq(mHandler));
     }
 
     /**

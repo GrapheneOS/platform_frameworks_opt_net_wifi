@@ -83,7 +83,6 @@ import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.FakeWifiLog;
 import com.android.server.wifi.FrameworkFacade;
-import com.android.server.wifi.HalDeviceManager;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiSettingsConfigStore;
@@ -125,9 +124,6 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
     private static final String ANONYMIZED_DEVICE_ADDRESS = "02:00:00:00:00:00";
     private static final String TEST_PACKAGE_NAME = "com.p2p.test";
 
-    private ArgumentCaptor<HalDeviceManager.InterfaceAvailableForRequestListener>
-            mAvailListenerCaptor = ArgumentCaptor.forClass(
-            HalDeviceManager.InterfaceAvailableForRequestListener.class);
     private ArgumentCaptor<BroadcastReceiver> mBcastRxCaptor = ArgumentCaptor.forClass(
             BroadcastReceiver.class);
     private Binder mClient1;
@@ -805,9 +801,6 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
             mWifiStateChangedReceiver = mBcastRxCaptor.getAllValues().get(0);
             mLocationModeReceiver = mBcastRxCaptor.getAllValues().get(1);
             mTetherStateReceiver = mBcastRxCaptor.getAllValues().get(2);
-            verify(mWifiNative).registerInterfaceAvailableListener(
-                    mAvailListenerCaptor.capture(), any(Handler.class));
-            mAvailListenerCaptor.getValue().onAvailabilityChanged(true);
         }
 
         mWifiP2pServiceImpl.mNetdWrapper = mNetdWrapper;
