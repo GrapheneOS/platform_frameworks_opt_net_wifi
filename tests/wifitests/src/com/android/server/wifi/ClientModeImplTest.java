@@ -1455,16 +1455,26 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertEquals("L3ProvisioningState", getCurrentState().getName());
-        reset(mWifiNative);
 
         // Connect to a different network
-        startConnectSuccess(TEST_NETWORK_ID);
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        config.networkId = FRAMEWORK_NETWORK_ID + 1;
+        setupAndStartConnectSequence(config);
+        validateSuccessfulConnectSequence(config);
 
+        // Disconnection from previous network.
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(sSSID, sBSSID, 0, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.DISCONNECTED));
         mLooper.dispatchAll();
 
-        verify(mWifiConnectivityManager).prepareForForcedConnection(TEST_NETWORK_ID);
+        // Ensure we don't end the new connection event.
+        verify(mWifiMetrics, never()).endConnectionEvent(
+                eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION),
+                anyInt(), anyInt(), anyInt());
+        verify(mWifiConnectivityManager).prepareForForcedConnection(FRAMEWORK_NETWORK_ID + 1);
     }
 
     /**
