@@ -323,7 +323,6 @@ public class KnownBandsChannelHelper extends ChannelHelper {
         @Override
         public boolean containsBand(int band) {
             WifiScanner.ChannelSpec[][] bandChannels = getAvailableScanChannels(band);
-            if (bandChannels.length == 0) return false;
 
             for (int i = 0; i < bandChannels.length; ++i) {
                 for (int j = 0; j < bandChannels[i].length; ++j) {
