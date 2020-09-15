@@ -43,7 +43,9 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
 import android.net.NetworkRequest;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
 import android.os.WorkSource;
@@ -1220,5 +1222,30 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
         mLooper.dispatchAll();
         verify(mListener).onRoleChanged(); // callback sent.
+    }
+
+    @Test
+    public void propagateVerboseLoggingFlagToClientModeImpl() throws Exception {
+        mClientModeManager.enableVerboseLogging(true);
+        startClientInConnectModeAndVerifyEnabled();
+        verify(mClientModeImpl).enableVerboseLogging(true);
+
+        mClientModeManager.enableVerboseLogging(false);
+        verify(mClientModeImpl).enableVerboseLogging(false);
+    }
+
+    @Test
+    public void propagateConnectedWifiScorerToPrimaryClientModeImpl() throws Exception {
+        IBinder iBinder = mock(IBinder.class);
+        IWifiConnectedNetworkScorer iScorer = mock(IWifiConnectedNetworkScorer.class);
+        mClientModeManager.setWifiConnectedNetworkScorer(iBinder, iScorer);
+        startClientInConnectModeAndVerifyEnabled();
+        verify(mClientModeImpl).setWifiConnectedNetworkScorer(iBinder, iScorer);
+
+        mClientModeManager.clearWifiConnectedNetworkScorer();
+        verify(mClientModeImpl).clearWifiConnectedNetworkScorer();
+
+        mClientModeManager.setWifiConnectedNetworkScorer(iBinder, iScorer);
+        verify(mClientModeImpl, times(2)).setWifiConnectedNetworkScorer(iBinder, iScorer);
     }
 }
