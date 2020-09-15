@@ -61,6 +61,7 @@ import android.telephony.ims.feature.MmTelFeature;
 import android.telephony.ims.stub.ImsRegistrationImplBase;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.internal.util.IState;
 import com.android.internal.util.State;
@@ -124,6 +125,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Nullable
     private ClientRole mTargetRole = null;
     private boolean mVerboseLoggingEnabled = false;
+    /** Cache to store the external scorer for primary and secondary client mode impl. */
+    @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mScorer;
     private int mActiveSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
     /**
      * mClientModeImpl is only non-null when in {@link ClientModeStateMachine.ConnectModeState} -
@@ -808,6 +811,11 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     }
                     mClientModeImpl = mWifiInjector.makeClientModeImpl(
                             mClientInterfaceName, ConcreteClientModeManager.this);
+                    mClientModeImpl.enableVerboseLogging(mVerboseLoggingEnabled);
+                    if (mScorer != null) {
+                        mClientModeImpl.setWifiConnectedNetworkScorer(
+                                mScorer.first, mScorer.second);
+                    }
                 }
                 updateConnectModeState(WifiManager.WIFI_STATE_ENABLED,
                         WifiManager.WIFI_STATE_ENABLING);
@@ -931,11 +939,13 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public boolean setWifiConnectedNetworkScorer(
             IBinder binder, IWifiConnectedNetworkScorer scorer) {
+        mScorer = Pair.create(binder, scorer);
         return getClientMode().setWifiConnectedNetworkScorer(binder, scorer);
     }
 
     @Override
     public void clearWifiConnectedNetworkScorer() {
+        mScorer = null;
         getClientMode().clearWifiConnectedNetworkScorer();
     }
 
