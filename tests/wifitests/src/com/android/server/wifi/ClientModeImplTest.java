@@ -205,6 +205,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     private static final long TEST_BSSID = 0x112233445566L;
     private static final int TEST_DELAY_IN_SECONDS = 300;
 
+    private static final int DEFINED_ERROR_CODE = 32764;
+
     private long mBinderToken;
     private MockitoSession mSession;
     private TestNetworkParams mTestNetworkParams = new TestNetworkParams();
@@ -5558,5 +5560,36 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mPasspointManager).handleDeauthImminentEvent(eq(wnmData),
                 any(WifiConfiguration.class));
+    }
+    /**
+     * Verify that the network selection status will be updated and the function onEapFailure()
+     * in EapFailureNotifier is called when a EAP Authentication failure is detected
+     * with carrier erroe code.
+     */
+    @Test
+    public void testCarrierEapFailure() throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+
+        startConnectSuccess();
+
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = sSSID;
+        config.getNetworkSelectionStatus().setHasEverConnected(true);
+        config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.SIM);
+        when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(config);
+        when(mEapFailureNotifier.onEapFailure(anyInt(), eq(config))).thenReturn(true);
+
+        mCmi.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT,
+                WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE,
+                DEFINED_ERROR_CODE
+        );
+        mLooper.dispatchAll();
+
+        verify(mEapFailureNotifier).onEapFailure(
+                DEFINED_ERROR_CODE, config);
+        verify(mWifiConfigManager).loadCarrierConfigsForDisableReasonInfos();
+        verify(mWifiConfigManager).updateNetworkSelectionStatus(anyInt(),
+                eq(WifiConfiguration.NetworkSelectionStatus
+                        .DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC));
     }
 }

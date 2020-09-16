@@ -3572,4 +3572,17 @@ public class WifiConfigManager {
         }
         return result;
     }
+
+    /** Update DisableReasonInfo with carrier configurations defined in an overlay. **/
+    public void loadCarrierConfigsForDisableReasonInfos() {
+        int duration = mContext.getResources().getInteger(
+                R.integer.config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs);
+        mDisableReasonInfo.put(
+                NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC,
+                new DisableReasonInfo(
+                        "NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC",
+                        mContext.getResources().getInteger(R.integer
+                        .config_wifiDisableReasonAuthenticationFailureCarrierSpecificThreshold),
+                        duration == -1 ? Integer.MAX_VALUE : duration));
+    }
 }

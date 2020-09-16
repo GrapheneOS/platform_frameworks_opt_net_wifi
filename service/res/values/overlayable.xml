@@ -165,6 +165,8 @@
           <item type="bool" name="config_wifiMultiStaRestrictedConcurrencyEnabled" />
           <item type="bool" name="config_wifiDefaultCoexAlgorithmEnabled"/>
           <item type="string" name="config_wifiCoexTableFilepath"/>
+          <item type="integer" name="config_wifiDisableReasonAuthenticationFailureCarrierSpecificThreshold" />
+          <item type="integer" name="config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs" />
           <!-- Params from config.xml that can be overlayed -->
 
           <!-- Params from strings.xml that can be overlayed -->
