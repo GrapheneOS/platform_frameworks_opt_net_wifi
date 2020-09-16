@@ -1173,6 +1173,33 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     }
 
     /**
+     * ClientMode stop properly with IMS deferring time without WifiCalling.
+     */
+    @Test
+    public void clientModeStopWithImsManagerException() throws Exception {
+        setUpVoWifiTest(true,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+        when(mImsMmTelManager.isAvailable(anyInt(), anyInt()))
+                .thenThrow(new RuntimeException("Test Runtime Exception"));
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        mClientModeManager.stop();
+        mLooper.dispatchAll();
+        verify(mListener).onStopped();
+
+        verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
+
+        verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
+
+        // on an explicit stop, we should not trigger the callback
+        verifyNoMoreInteractions(mListener);
+    }
+
+    /**
      * ClientMode starts up in connect mode and then change connectivity roles.
      */
     @Test
