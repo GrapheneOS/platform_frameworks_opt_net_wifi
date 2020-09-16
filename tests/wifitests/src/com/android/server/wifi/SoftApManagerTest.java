@@ -37,6 +37,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
@@ -168,7 +169,7 @@ public class SoftApManagerTest extends WifiBaseTest {
 
         when(mWifiNative.isApSetMacAddressSupported(any())).thenReturn(true);
         when(mWifiNative.setApMacAddress(any(), any())).thenReturn(true);
-        when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(),
+        when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(), anyBoolean(),
                 any(WifiNative.SoftApListener.class))).thenReturn(true);
 
         when(mFrameworkFacade.getIntegerSetting(
@@ -633,7 +634,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void startSoftApApInterfaceFailedToStart() throws Exception {
         when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
-        when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(),
+        when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(), anyBoolean(),
                 any(WifiNative.SoftApListener.class))).thenReturn(false);
 
         SoftApModeConfiguration softApModeConfig =
@@ -1895,7 +1896,9 @@ public class SoftApManagerTest extends WifiBaseTest {
                 ArgumentCaptor.forClass(SoftApConfiguration.class);
         order.verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
         order.verify(mWifiNative).startSoftAp(eq(TEST_INTERFACE_NAME),
-                configCaptor.capture(), mSoftApListenerCaptor.capture());
+                configCaptor.capture(),
+                eq(softApConfig.getTargetMode() ==  WifiManager.IFACE_IP_MODE_TETHERED),
+                mSoftApListenerCaptor.capture());
         assertThat(configCaptor.getValue()).isEqualTo(expectedConfig);
         mWifiNativeInterfaceCallbackCaptor.getValue().onUp(TEST_INTERFACE_NAME);
         mLooper.dispatchAll();
