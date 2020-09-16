@@ -2885,8 +2885,6 @@ public class SupplicantP2pIfaceHalTest extends WifiBaseTest {
         config.wps.setup = wpsProvMethod;
         config.wps.pin = pin;
 
-        config.groupOwnerIntent = WifiP2pServiceImpl.DEFAULT_GROUP_OWNER_INTENT;
-
         return config;
     }
 
