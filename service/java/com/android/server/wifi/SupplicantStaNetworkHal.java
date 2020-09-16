@@ -899,6 +899,9 @@ public class SupplicantStaNetworkHal {
                     mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
                                 .GroupCipherMask.SMS4;
                     break;
+                case WifiConfiguration.GroupCipher.GCMP_128:
+                    // FIXME: this is handled after HAL definition is merged.
+                    break;
                 default:
                     throw new IllegalArgumentException(
                             "Invalid GroupCipherMask bit in wificonfig: " + bit);
@@ -955,6 +958,9 @@ public class SupplicantStaNetworkHal {
                 case WifiConfiguration.PairwiseCipher.SMS4:
                     mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
                             .PairwiseCipherMask.SMS4;
+                    break;
+                case WifiConfiguration.PairwiseCipher.GCMP_128:
+                    // FIXME: this is handled after HAL definition is merged.
                     break;
                 default:
                     throw new IllegalArgumentException(
