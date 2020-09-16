@@ -804,27 +804,6 @@ public class StandardWifiEntryTest {
     }
 
     @Test
-    public void testShouldEditBeforeConnect_securedNetwork_returnTrueIfNeverConnected() {
-        // Test never connected.
-        WifiConfiguration wifiConfig = spy(new WifiConfiguration());
-        wifiConfig.SSID = "\"ssid\"";
-        wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
-        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
-                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_PSK),
-                wifiConfig, mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
-        NetworkSelectionStatus networkSelectionStatus =
-                spy(new NetworkSelectionStatus.Builder().build());
-        doReturn(networkSelectionStatus).when(wifiConfig).getNetworkSelectionStatus();
-
-        assertThat(entry.shouldEditBeforeConnect()).isTrue();
-
-        // Test ever connected.
-        doReturn(true).when(networkSelectionStatus).hasEverConnected();
-
-        assertThat(entry.shouldEditBeforeConnect()).isFalse();
-    }
-
-    @Test
     public void testShouldEditBeforeConnect_authenticationFailure_returnTrue() {
         // Test DISABLED_AUTHENTICATION_FAILURE.
         WifiConfiguration wifiConfig = spy(new WifiConfiguration());
