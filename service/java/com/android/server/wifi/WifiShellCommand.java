@@ -51,7 +51,6 @@ import android.util.Pair;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
-import com.android.server.wifi.util.GeneralUtil;
 import com.android.server.wifi.util.ScanResultUtil;
 
 import java.io.PrintWriter;
@@ -124,6 +123,45 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final ConnectivityManager mConnectivityManager;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiNetworkFactory mWifiNetworkFactory;
+
+    /**
+     * Used for shell command testing of scorer.
+     */
+    public static class WifiScorer extends IWifiConnectedNetworkScorer.Stub {
+        private final WifiServiceImpl mWifiService;
+        private final CountDownLatch mCountDownLatch;
+        private Integer mSessionId;
+        private IScoreUpdateObserver mScoreUpdateObserver;
+
+        public WifiScorer(WifiServiceImpl wifiService, CountDownLatch countDownLatch) {
+            mWifiService = wifiService;
+            mCountDownLatch  = countDownLatch;
+        }
+
+        @Override
+        public void onStart(int sessionId) {
+            mSessionId = sessionId;
+            mCountDownLatch.countDown();
+        }
+        @Override
+        public void onStop(int sessionId) {
+            // clear the external scorer on disconnect.
+            mWifiService.clearWifiConnectedNetworkScorer();
+        }
+        @Override
+        public void onSetScoreUpdateObserver(IScoreUpdateObserver observerImpl) {
+            mScoreUpdateObserver = observerImpl;
+            mCountDownLatch.countDown();
+        }
+
+        public Integer getSessionId() {
+            return mSessionId;
+        }
+
+        public IScoreUpdateObserver getScoreUpdateObserver() {
+            return mScoreUpdateObserver;
+        }
+    }
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context,
             ClientModeManager clientModeManager, WifiGlobals wifiGlobals) {
@@ -597,44 +635,24 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "set-connected-score": {
                     int score = Integer.parseInt(getNextArgRequired());
                     CountDownLatch countDownLatch = new CountDownLatch(2);
-                    GeneralUtil.Mutable<IScoreUpdateObserver> scoreUpdateObserverMutable =
-                            new GeneralUtil.Mutable<>();
-                    GeneralUtil.Mutable<Integer> sessionIdMutable = new GeneralUtil.Mutable<>();
-                    IWifiConnectedNetworkScorer.Stub connectedScorer =
-                            new IWifiConnectedNetworkScorer.Stub() {
-                        @Override
-                        public void onStart(int sessionId) {
-                            sessionIdMutable.value = sessionId;
-                            countDownLatch.countDown();
-                        }
-                        @Override
-                        public void onStop(int sessionId) {
-                            // clear the external scorer on disconnect.
-                            mWifiService.clearWifiConnectedNetworkScorer();
-                        }
-                        @Override
-                        public void onSetScoreUpdateObserver(IScoreUpdateObserver observerImpl) {
-                            scoreUpdateObserverMutable.value = observerImpl;
-                            countDownLatch.countDown();
-                        }
-                    };
                     mWifiService.clearWifiConnectedNetworkScorer(); // clear any previous scorer
+                    WifiScorer connectedScorer = new WifiScorer(mWifiService, countDownLatch);
                     if (mWifiService.setWifiConnectedNetworkScorer(new Binder(), connectedScorer)) {
                         // wait for retrieving the session id & score observer.
                         countDownLatch.await(1000, TimeUnit.MILLISECONDS);
                     }
-                    if (scoreUpdateObserverMutable.value == null
-                            || sessionIdMutable.value == null) {
+                    if (connectedScorer.getSessionId() == null
+                            || connectedScorer.getScoreUpdateObserver() == null) {
                         pw.println("Did not receive session id and/or the score update observer. "
                                 + "Is the device connected to a wifi network?");
                         mWifiService.clearWifiConnectedNetworkScorer();
                         return -1;
                     }
                     pw.println("Updating score: " + score + " for session id: "
-                            + sessionIdMutable.value);
+                            + connectedScorer.getSessionId());
                     try {
-                        scoreUpdateObserverMutable.value.notifyScoreUpdate(
-                                sessionIdMutable.value, score);
+                        connectedScorer.getScoreUpdateObserver().notifyScoreUpdate(
+                                connectedScorer.getSessionId(), score);
                     } catch (RemoteException e) {
                         pw.println("Failed to send the score update");
                         mWifiService.clearWifiConnectedNetworkScorer();
