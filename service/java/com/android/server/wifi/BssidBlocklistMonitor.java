@@ -330,8 +330,7 @@ public class BssidBlocklistMonitor {
             if (shouldWaitForWatchdogToTriggerFirst(bssid, reasonCode)) {
                 return false;
             }
-            int baseBlockDurationMs = mContext.getResources().getInteger(
-                    R.integer.config_wifiBssidBlocklistMonitorBaseBlockDurationMs);
+            int baseBlockDurationMs = getBaseBlockDurationForReason(reasonCode);
             addToBlocklist(entry,
                     getBlocklistDurationWithExponentialBackoff(currentStreak, baseBlockDurationMs),
                     reasonCode, rssi);
@@ -339,6 +338,17 @@ public class BssidBlocklistMonitor {
             return true;
         }
         return false;
+    }
+
+    private int getBaseBlockDurationForReason(int blockReason) {
+        switch (blockReason) {
+            case REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE:
+                return mContext.getResources().getInteger(R.integer
+                        .config_wifiBssidBlocklistMonitorConnectedScoreBaseBlockDurationMs);
+            default:
+                return mContext.getResources().getInteger(
+                        R.integer.config_wifiBssidBlocklistMonitorBaseBlockDurationMs);
+        }
     }
 
     /**
@@ -383,6 +393,8 @@ public class BssidBlocklistMonitor {
                 ssid, bssid, connectionTime);
         if (connectionTime - prevConnectionTime > ABNORMAL_DISCONNECT_RESET_TIME_MS) {
             mWifiScoreCard.resetBssidBlocklistStreak(ssid, bssid, REASON_ABNORMAL_DISCONNECT);
+            mWifiScoreCard.resetBssidBlocklistStreak(ssid, bssid,
+                    REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
         }
 
         BssidStatus status = mBssidStatusMap.get(bssid);

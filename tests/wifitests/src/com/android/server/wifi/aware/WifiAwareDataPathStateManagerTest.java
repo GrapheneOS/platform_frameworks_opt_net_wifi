@@ -162,7 +162,6 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.isTargetSdkLessThan(anyString(), anyInt(), anyInt()))
             .thenReturn(true);
         when(mWifiPermissionsUtil.isLocationModeEnabled()).thenReturn(true);
-        when(mMockNativeManager.isAwareNativeAvailable()).thenReturn(true);
 
         mDut = new WifiAwareStateManager();
         mDut.setNative(mMockNativeManager, mMockNative);

@@ -94,12 +94,10 @@ public class ActiveModeWarden {
     private WifiManager.SoftApCallback mSoftApCallback;
     private WifiManager.SoftApCallback mLohsCallback;
 
-    private boolean mCanRequestMoreClientModeManagers = false;
-    private boolean mCanRequestMoreSoftApManagers = false;
     private boolean mIsShuttingdown = false;
     private boolean mVerboseLoggingEnabled = false;
-    /** Cache to store the external scorer for primary client mode manager. */
-    @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mPrimaryClientModeManagerScorer;
+    /** Cache to store the external scorer for primary and secondary (MBB) client mode manager. */
+    @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mClientModeManagerScorer;
 
     /**
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
@@ -238,15 +236,6 @@ public class ActiveModeWarden {
                 });
             }
         });
-
-        wifiNative.registerClientInterfaceAvailabilityListener(
-                (isAvailable) -> mHandler.post(() -> {
-                    mCanRequestMoreClientModeManagers = isAvailable;
-                }));
-        wifiNative.registerSoftApInterfaceAvailabilityListener(
-                (isAvailable) -> mHandler.post(() -> {
-                    mCanRequestMoreSoftApManagers = isAvailable;
-                }));
     }
 
     private void invokeOnAddedCallbacks(@NonNull ActiveModeManager activeModeManager) {
@@ -283,7 +272,7 @@ public class ActiveModeWarden {
      */
     public boolean setWifiConnectedNetworkScorer(IBinder binder,
             IWifiConnectedNetworkScorer scorer) {
-        mPrimaryClientModeManagerScorer = Pair.create(binder, scorer);
+        mClientModeManagerScorer = Pair.create(binder, scorer);
         return getPrimaryClientModeManager().setWifiConnectedNetworkScorer(binder, scorer);
     }
 
@@ -291,7 +280,7 @@ public class ActiveModeWarden {
      * See {@link WifiManager#clearWifiConnectedNetworkScorer()}
      */
     public void clearWifiConnectedNetworkScorer() {
-        mPrimaryClientModeManagerScorer = null;
+        mClientModeManagerScorer = null;
         getPrimaryClientModeManager().clearWifiConnectedNetworkScorer();
     }
 
@@ -321,15 +310,15 @@ public class ActiveModeWarden {
     /**
      * @return Returns whether we can create more client mode managers or not.
      */
-    public boolean canRequestMoreClientModeManagers() {
-        return mCanRequestMoreClientModeManagers;
+    public boolean canRequestMoreClientModeManagers(@NonNull WorkSource requestorWs) {
+        return mWifiNative.isItPossibleToCreateStaIface(requestorWs);
     }
 
     /**
      * @return Returns whether we can create more SoftAp managers or not.
      */
-    public boolean canRequestMoreSoftApManagers() {
-        return mCanRequestMoreSoftApManagers;
+    public boolean canRequestMoreSoftApManagers(@NonNull WorkSource requestorWs) {
+        return mWifiNative.isItPossibleToCreateApIface(requestorWs);
     }
 
     /**
@@ -664,12 +653,12 @@ public class ActiveModeWarden {
             return false;
         }
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
-        if (mPrimaryClientModeManagerScorer != null) {
+        if (mClientModeManagerScorer != null) {
             // TODO (b/160346062): Clear the connected scorer from this mode manager when
             // we switch it out of primary role for the MBB use-case.
             // Also vice versa, we need to set the scorer on the new primary mode manager.
             manager.setWifiConnectedNetworkScorer(
-                    mPrimaryClientModeManagerScorer.first, mPrimaryClientModeManagerScorer.second);
+                    mClientModeManagerScorer.first, mClientModeManagerScorer.second);
         }
         mClientModeManagers.add(manager);
         return true;
@@ -1291,7 +1280,7 @@ public class ActiveModeWarden {
                         ExternalClientModeManagerRequestListener externalRequestListener =
                                 externalListenerAndWs.first;
                         WorkSource requestorWs = externalListenerAndWs.second;
-                        if (mCanRequestMoreClientModeManagers) {
+                        if (canRequestMoreClientModeManagers(requestorWs)) {
                             // Can create a concurrent local only client mode manager.
                             startLocalOnlyClientModeManager(externalRequestListener, requestorWs);
                         } else {

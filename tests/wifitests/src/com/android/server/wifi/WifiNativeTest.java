@@ -1065,4 +1065,13 @@ public class WifiNativeTest extends WifiBaseTest {
 
         verify(mStaIfaceHal).flushAllHlp(eq(WIFI_IFACE_NAME));
     }
+
+    @Test
+    public void testIsItPossibleToCreateIface() {
+        when(mWifiVendorHal.isItPossibleToCreateApIface(any())).thenReturn(true);
+        assertTrue(mWifiNative.isItPossibleToCreateApIface(new WorkSource()));
+
+        when(mWifiVendorHal.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mWifiNative.isItPossibleToCreateStaIface(new WorkSource()));
+    }
 }

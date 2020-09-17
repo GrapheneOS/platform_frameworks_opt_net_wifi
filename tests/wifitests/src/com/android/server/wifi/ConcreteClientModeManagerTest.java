@@ -43,7 +43,9 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
 import android.net.NetworkRequest;
+import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
 import android.os.WorkSource;
@@ -1171,6 +1173,33 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     }
 
     /**
+     * ClientMode stop properly with IMS deferring time without WifiCalling.
+     */
+    @Test
+    public void clientModeStopWithImsManagerException() throws Exception {
+        setUpVoWifiTest(true,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+        when(mImsMmTelManager.isAvailable(anyInt(), anyInt()))
+                .thenThrow(new RuntimeException("Test Runtime Exception"));
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        mClientModeManager.stop();
+        mLooper.dispatchAll();
+        verify(mListener).onStopped();
+
+        verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
+
+        verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
+
+        // on an explicit stop, we should not trigger the callback
+        verifyNoMoreInteractions(mListener);
+    }
+
+    /**
      * ClientMode starts up in connect mode and then change connectivity roles.
      */
     @Test
@@ -1220,5 +1249,30 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
         mLooper.dispatchAll();
         verify(mListener).onRoleChanged(); // callback sent.
+    }
+
+    @Test
+    public void propagateVerboseLoggingFlagToClientModeImpl() throws Exception {
+        mClientModeManager.enableVerboseLogging(true);
+        startClientInConnectModeAndVerifyEnabled();
+        verify(mClientModeImpl).enableVerboseLogging(true);
+
+        mClientModeManager.enableVerboseLogging(false);
+        verify(mClientModeImpl).enableVerboseLogging(false);
+    }
+
+    @Test
+    public void propagateConnectedWifiScorerToPrimaryClientModeImpl() throws Exception {
+        IBinder iBinder = mock(IBinder.class);
+        IWifiConnectedNetworkScorer iScorer = mock(IWifiConnectedNetworkScorer.class);
+        mClientModeManager.setWifiConnectedNetworkScorer(iBinder, iScorer);
+        startClientInConnectModeAndVerifyEnabled();
+        verify(mClientModeImpl).setWifiConnectedNetworkScorer(iBinder, iScorer);
+
+        mClientModeManager.clearWifiConnectedNetworkScorer();
+        verify(mClientModeImpl).clearWifiConnectedNetworkScorer();
+
+        mClientModeManager.setWifiConnectedNetworkScorer(iBinder, iScorer);
+        verify(mClientModeImpl, times(2)).setWifiConnectedNetworkScorer(iBinder, iScorer);
     }
 }
