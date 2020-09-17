@@ -49,6 +49,7 @@ import android.util.ArraySet;
 import android.util.LocalLog;
 import android.util.Log;
 import android.util.Pair;
+import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.hotspot2.PasspointManager;
@@ -328,6 +329,7 @@ public class WifiConfigManager {
     private final NetworkListSharedStoreData mNetworkListSharedStoreData;
     private final NetworkListUserStoreData mNetworkListUserStoreData;
     private final RandomizedMacStoreData mRandomizedMacStoreData;
+    private final SparseArray<DisableReasonInfo> mDisableReasonInfo;
 
     /**
      * Create new instance of WifiConfigManager.
@@ -381,11 +383,42 @@ public class WifiConfigManager {
 
         mFrameworkFacade = frameworkFacade;
         mDeviceConfigFacade = deviceConfigFacade;
+        mDisableReasonInfo = DISABLE_REASON_INFOS.clone();
+        loadCustomConfigsForDisableReasonInfos();
 
         mLocalLog = new LocalLog(
                 context.getSystemService(ActivityManager.class).isLowRamDevice() ? 128 : 256);
         mMacAddressUtil = macAddressUtil;
         mLruConnectionTracker = lruConnectionTracker;
+    }
+
+    /**
+     * Modify the internal copy of DisableReasonInfo with custom configurations defined in
+     * an overlay.
+     */
+    private void loadCustomConfigsForDisableReasonInfos() {
+        mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION,
+                new DisableReasonInfo(
+                        // Note that there is a space at the end of this string. Cannot fix
+                        // since this string is persisted.
+                        "NETWORK_SELECTION_DISABLED_ASSOCIATION_REJECTION ",
+                        mContext.getResources().getInteger(R.integer
+                                .config_wifiDisableReasonAssociationRejectionThreshold),
+                        5 * 60 * 1000));
+
+        mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE,
+                new DisableReasonInfo(
+                        "NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE",
+                        mContext.getResources().getInteger(R.integer
+                                .config_wifiDisableReasonAuthenticationFailureThreshold),
+                        5 * 60 * 1000));
+
+        mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_DHCP_FAILURE,
+                new DisableReasonInfo(
+                        "config_wifiDisableReasonDhcpFailureThreshold",
+                        mContext.getResources().getInteger(R.integer
+                                .config_wifiDisableReasonDhcpFailureThreshold),
+                        5 * 60 * 1000));
     }
 
     /**
@@ -396,9 +429,8 @@ public class WifiConfigManager {
      * @return the disable threshold, or -1 if not found.
      */
     @VisibleForTesting
-    public static int getNetworkSelectionDisableThreshold(
-            @NetworkSelectionDisableReason int reason) {
-        DisableReasonInfo info = DISABLE_REASON_INFOS.get(reason);
+    public int getNetworkSelectionDisableThreshold(@NetworkSelectionDisableReason int reason) {
+        DisableReasonInfo info = mDisableReasonInfo.get(reason);
         if (info == null) {
             Log.e(TAG, "Unrecognized network disable reason code for disable threshold: " + reason);
             return -1;
@@ -412,9 +444,8 @@ public class WifiConfigManager {
      * enable the network again.
      */
     @VisibleForTesting
-    public static int getNetworkSelectionDisableTimeoutMillis(
-            @NetworkSelectionDisableReason int reason) {
-        DisableReasonInfo info = DISABLE_REASON_INFOS.get(reason);
+    public int getNetworkSelectionDisableTimeoutMillis(@NetworkSelectionDisableReason int reason) {
+        DisableReasonInfo info = mDisableReasonInfo.get(reason);
         if (info == null) {
             Log.e(TAG, "Unrecognized network disable reason code for disable timeout: " + reason);
             return -1;
