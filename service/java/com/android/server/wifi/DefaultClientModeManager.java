@@ -45,6 +45,11 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
     }
 
     @Override
+    public WorkSource getRequestorWs() {
+        return null;
+    }
+
+    @Override
     public int syncGetWifiState() {
         return WifiManager.WIFI_STATE_DISABLED;
     }

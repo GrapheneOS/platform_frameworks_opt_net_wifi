@@ -19,6 +19,10 @@ package com.android.server.wifi;
 import static android.net.wifi.WifiManager.IFACE_IP_MODE_LOCAL_ONLY;
 import static android.net.wifi.WifiManager.IFACE_IP_MODE_TETHERED;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SCAN_ONLY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_TETHERED;
+
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.BroadcastReceiver;
@@ -62,6 +66,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class provides the implementation for different WiFi operating modes.
@@ -471,7 +477,7 @@ public class ActiveModeWarden {
      */
     @NonNull
     public ClientModeManager getPrimaryClientModeManager() {
-        ClientModeManager cm = getClientModeManagerInRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        ClientModeManager cm = getClientModeManagerInRole(ROLE_CLIENT_PRIMARY);
         if (cm != null) return cm;
         // If there is no primary client manager, return the default one.
         return mDefaultClientModeManager;
@@ -505,7 +511,7 @@ public class ActiveModeWarden {
      */
     @Nullable
     public ClientModeManager getScanOnlyClientModeManager() {
-        return getClientModeManagerInRole(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY);
+        return getClientModeManagerInRole(ROLE_CLIENT_SCAN_ONLY);
     }
 
     /**
@@ -514,7 +520,7 @@ public class ActiveModeWarden {
      */
     @Nullable
     public SoftApManager getTetheredSoftApManager() {
-        return getSoftApManagerInRole(ActiveModeManager.ROLE_SOFTAP_TETHERED);
+        return getSoftApManagerInRole(ROLE_SOFTAP_TETHERED);
     }
 
     /**
@@ -553,7 +559,7 @@ public class ActiveModeWarden {
     private boolean areAllClientModeManagersInScanOnlyRole() {
         if (mClientModeManagers.isEmpty()) return false;
         for (ConcreteClientModeManager manager : mClientModeManagers) {
-            if (manager.getRole() != ActiveModeManager.ROLE_CLIENT_SCAN_ONLY) return false;
+            if (manager.getRole() != ROLE_CLIENT_SCAN_ONLY) return false;
         }
         return true;
     }
@@ -576,7 +582,7 @@ public class ActiveModeWarden {
 
     private SoftApRole getRoleForSoftApIpMode(int ipMode) {
         return ipMode == IFACE_IP_MODE_TETHERED
-                ? ActiveModeManager.ROLE_SOFTAP_TETHERED
+                ? ROLE_SOFTAP_TETHERED
                 : ActiveModeManager.ROLE_SOFTAP_LOCAL_ONLY;
     }
 
@@ -681,8 +687,8 @@ public class ActiveModeWarden {
     private boolean switchAllPrimaryOrScanOnlyClientModeManagers() {
         Log.d(TAG, "Switching all client mode managers");
         for (ConcreteClientModeManager clientModeManager : mClientModeManagers) {
-            if (clientModeManager.getRole() != ActiveModeManager.ROLE_CLIENT_PRIMARY
-                    && clientModeManager.getRole() != ActiveModeManager.ROLE_CLIENT_SCAN_ONLY) {
+            if (clientModeManager.getRole() != ROLE_CLIENT_PRIMARY
+                    && clientModeManager.getRole() != ROLE_CLIENT_SCAN_ONLY) {
                 continue;
             }
             if (!switchPrimaryOrScanOnlyClientModeManagerRole(clientModeManager)) {
@@ -700,9 +706,9 @@ public class ActiveModeWarden {
     private boolean switchPrimaryOrScanOnlyClientModeManagerRole(
             @NonNull ConcreteClientModeManager modeManager) {
         if (mSettingsStore.isWifiToggleEnabled()) {
-            modeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+            modeManager.setRole(ROLE_CLIENT_PRIMARY);
         } else if (checkScanOnlyModeAvailable()) {
-            modeManager.setRole(ActiveModeManager.ROLE_CLIENT_SCAN_ONLY);
+            modeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
         } else {
             Log.e(TAG, "Something is wrong, no client mode toggles enabled");
             return false;
@@ -1218,16 +1224,35 @@ public class ActiveModeWarden {
                         // intentional fallthrough
                     case CMD_DEFERRED_RECOVERY_RESTART_WIFI:
                         // wait mRecoveryDelayMillis for letting driver clean reset.
-                        sendMessageDelayed(CMD_RECOVERY_RESTART_WIFI_CONTINUE,
+                        sendMessageDelayed(CMD_RECOVERY_RESTART_WIFI_CONTINUE, msg.obj,
                                 readWifiRecoveryDelay());
                         break;
                     case CMD_RECOVERY_RESTART_WIFI_CONTINUE:
-                        if (shouldEnableSta()) {
-                            startPrimaryOrScanOnlyClientModeManager(
-                                    // Assumes user toggled it on from settings before.
-                                    mFacade.getSettingsWorkSource(mContext));
-                            transitionTo(mEnabledState);
+                        log("Recovery in progress, start wifi");
+                        List<ActiveModeManager> modeManagersBeforeRecovery = (List) msg.obj;
+                        // No user controlled mode managers before recovery, so check if wifi
+                        // was toggled on.
+                        if (modeManagersBeforeRecovery.isEmpty()) {
+                            if (shouldEnableSta()) {
+                                startPrimaryOrScanOnlyClientModeManager(
+                                        // Assumes user toggled it on from settings before.
+                                        mFacade.getSettingsWorkSource(mContext));
+                                transitionTo(mEnabledState);
+                            }
+                            break;
                         }
+                        for (ActiveModeManager activeModeManager : modeManagersBeforeRecovery) {
+                            if (activeModeManager instanceof ConcreteClientModeManager) {
+                                startPrimaryOrScanOnlyClientModeManager(
+                                        activeModeManager.getRequestorWs());
+                            } else if (activeModeManager instanceof SoftApManager) {
+                                SoftApManager softApManager = (SoftApManager) activeModeManager;
+                                startSoftApModeManager(
+                                        softApManager.getSoftApModeConfiguration(),
+                                        softApManager.getRequestorWs());
+                            }
+                        }
+                        transitionTo(mEnabledState);
                         break;
                     default:
                         return NOT_HANDLED;
@@ -1361,12 +1386,21 @@ public class ActiveModeWarden {
                             bugDetail = "";
                             bugTitle = "Wi-Fi BugReport";
                         }
+                        log("Recovery triggered, disable wifi");
                         if (msg.arg1 != SelfRecovery.REASON_LAST_RESORT_WATCHDOG) {
                             mHandler.post(() ->
                                     mWifiDiagnostics.takeBugReport(bugTitle, bugDetail));
                         }
-                        log("Recovery triggered, disable wifi");
-                        deferMessage(obtainMessage(CMD_DEFERRED_RECOVERY_RESTART_WIFI));
+                        // Store all instances of tethered SAP + scan only/primary STA mode managers
+                        List<ActiveModeManager> modeManagersBeforeRecovery = Stream.concat(
+                                mClientModeManagers.stream()
+                                        .filter(m -> ROLE_CLIENT_SCAN_ONLY.equals(m.getRole())
+                                                || ROLE_CLIENT_PRIMARY.equals(m.getRole())),
+                                mSoftApManagers.stream()
+                                        .filter(m -> ROLE_SOFTAP_TETHERED.equals(m.getRole())))
+                                .collect(Collectors.toList());
+                        deferMessage(obtainMessage(CMD_DEFERRED_RECOVERY_RESTART_WIFI,
+                                modeManagersBeforeRecovery));
                         shutdownWifi();
                         // onStopped will move the state machine to "DisabledState".
                         break;
