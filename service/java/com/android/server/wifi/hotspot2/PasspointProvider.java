@@ -27,6 +27,7 @@ import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.Credential.SimCredential;
 import android.net.wifi.hotspot2.pps.Credential.UserCredential;
 import android.net.wifi.hotspot2.pps.HomeSp;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -363,9 +364,12 @@ public class PasspointProvider {
 
     private @Nullable String getMatchingSimImsi() {
         String matchingSIMImsi = null;
-        if (mConfig.getCarrierId() != TelephonyManager.UNKNOWN_CARRIER_ID) {
+        if (mConfig.getSubscriptionId() != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             matchingSIMImsi = mWifiCarrierInfoManager
-                    .getMatchingImsi(mConfig.getCarrierId());
+                    .getMatchingImsiBySubId(mConfig.getSubscriptionId());
+        } else if (mConfig.getCarrierId() != TelephonyManager.UNKNOWN_CARRIER_ID) {
+            matchingSIMImsi = mWifiCarrierInfoManager.getMatchingImsiBySubId(
+                    mWifiCarrierInfoManager.getMatchingSubId(mConfig.getCarrierId()));
         } else {
             // Get the IMSI and carrier ID of SIM card which match with the IMSI prefix from
             // passpoint profile
@@ -481,6 +485,10 @@ public class PasspointProvider {
             carrierId = mBestGuessCarrierId;
         }
         wifiConfig.carrierId = carrierId;
+        wifiConfig.subscriptionId =
+                mConfig.getSubscriptionId() == SubscriptionManager.INVALID_SUBSCRIPTION_ID
+                        ? mWifiCarrierInfoManager.getMatchingSubId(carrierId)
+                        : mConfig.getSubscriptionId();
 
         // Set RSN only to tell wpa_supplicant that this network is for Passpoint.
         wifiConfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);

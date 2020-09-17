@@ -110,6 +110,7 @@ public class PasspointXmlUtils {
     private static final String XML_TAG_USAGE_LIMIT_DATA_LIMIT = "UsageLimitDataLimit";
     private static final String XML_TAG_USAGE_LIMIT_TIME_LIMIT = "UsageLimitTimeLimit";
     private static final String XML_TAG_CARRIER_ID = "CarrierId";
+    private static final String XML_TAG_SUBSCRIPTION_ID = "SubscriptionId";
     private static final String XML_TAG_IS_AUTO_JOIN = "AutoJoinEnabled";
     private static final String XML_TAG_IS_MAC_RANDOMIZATION_ENABLED = "IsMacRandomizationEnabled";
     private static final String XML_TAG_METERED_OVERRIDE = "MeteredOverride";
@@ -150,6 +151,7 @@ public class PasspointXmlUtils {
                     config.getServiceFriendlyNames());
         }
         XmlUtil.writeNextValue(out, XML_TAG_CARRIER_ID, config.getCarrierId());
+        XmlUtil.writeNextValue(out, XML_TAG_SUBSCRIPTION_ID, config.getSubscriptionId());
         XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN, config.isAutojoinEnabled());
         XmlUtil.writeNextValue(out, XML_TAG_IS_MAC_RANDOMIZATION_ENABLED,
                 config.isMacRandomizationEnabled());
@@ -209,6 +211,9 @@ public class PasspointXmlUtils {
                         break;
                     case XML_TAG_CARRIER_ID:
                         config.setCarrierId((int) value);
+                        break;
+                    case XML_TAG_SUBSCRIPTION_ID:
+                        config.setSubscriptionId((int) value);
                         break;
                     case XML_TAG_IS_AUTO_JOIN:
                         config.setAutojoinEnabled((boolean) value);
