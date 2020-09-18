@@ -1128,23 +1128,32 @@ public class HostapdHal {
 
         @Override
         public void onApInstanceInfoChanged(String ifaceName, String apIfaceInstance,
-                int frequency, int bandwidth, int generation) {
-            if (mSoftApEventListener != null) {
-                mSoftApEventListener.onInfoChanged(apIfaceInstance, frequency,
-                        mapHalBandwidthToSoftApInfo(bandwidth),
-                        mapHalGenerationToWifiStandard(generation));
+                int frequency, int bandwidth, int generation, byte[] apIfaceInstanceMacAddress) {
+            try {
+                if (mSoftApEventListener != null) {
+                    mSoftApEventListener.onInfoChanged(apIfaceInstance, frequency,
+                            mapHalBandwidthToSoftApInfo(bandwidth),
+                            mapHalGenerationToWifiStandard(generation),
+                            MacAddress.fromBytes(apIfaceInstanceMacAddress));
+                }
+            } catch (IllegalArgumentException iae) {
+                Log.e(TAG, " Invalid apIfaceInstanceMacAddress, " + iae);
             }
         }
 
         @Override
         public void onConnectedClientsChanged(String ifaceName, String apIfaceInstance,
                     byte[] clientAddress, boolean isConnected) {
-            Log.d(TAG, "onConnectedClientsChanged on " + ifaceName + " / " + apIfaceInstance
-                    + " and Mac is " + MacAddress.fromBytes(clientAddress).toString()
-                    + " isConnected: " + isConnected);
-            if (mSoftApEventListener != null) {
-                mSoftApEventListener.onConnectedClientsChanged(apIfaceInstance,
-                        MacAddress.fromBytes(clientAddress), isConnected);
+            try {
+                Log.d(TAG, "onConnectedClientsChanged on " + ifaceName + " / " + apIfaceInstance
+                        + " and Mac is " + MacAddress.fromBytes(clientAddress).toString()
+                        + " isConnected: " + isConnected);
+                if (mSoftApEventListener != null) {
+                    mSoftApEventListener.onConnectedClientsChanged(apIfaceInstance,
+                            MacAddress.fromBytes(clientAddress), isConnected);
+                }
+            } catch (IllegalArgumentException iae) {
+                Log.e(TAG, " Invalid clientAddress, " + iae);
             }
         }
     }

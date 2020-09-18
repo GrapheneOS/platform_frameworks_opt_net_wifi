@@ -64,6 +64,7 @@ import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
+import android.net.wifi.SoftApInfo;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -488,6 +489,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_SOFT_AP_ASSOCIATED_STATIONS = 3;
     private static final int SOFT_AP_CHANNEL_FREQUENCY = 2437;
     private static final int SOFT_AP_CHANNEL_BANDWIDTH = SoftApConnectedClientsEvent.BANDWIDTH_20;
+    private static final int SOFT_AP_GENERATION = ScanResult.WIFI_STANDARD_11N;
     private static final int SOFT_AP_MAX_CLIENT_SETTING = 10;
     private static final int SOFT_AP_MAX_CLIENT_CAPABILITY = 16;
     private static final long SOFT_AP_SHUTDOWN_TIMEOUT_SETTING = 10_000;
@@ -1052,8 +1054,12 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.addSoftApUpChangedEvent(false, WifiManager.IFACE_IP_MODE_TETHERED,
                 SOFT_AP_SHUTDOWN_TIMEOUT_DEFAULT_SETTING);
         // Channel switch info should be added to the last Soft AP UP event in the list
-        mWifiMetrics.addSoftApChannelSwitchedEvent(SOFT_AP_CHANNEL_FREQUENCY,
-                SOFT_AP_CHANNEL_BANDWIDTH, WifiManager.IFACE_IP_MODE_TETHERED);
+        SoftApInfo testSoftApInfo = new SoftApInfo();
+        testSoftApInfo.setFrequency(SOFT_AP_CHANNEL_FREQUENCY);
+        testSoftApInfo.setBandwidth(SOFT_AP_CHANNEL_BANDWIDTH);
+        testSoftApInfo.setWifiStandard(SOFT_AP_GENERATION);
+        mWifiMetrics.addSoftApChannelSwitchedEvent(testSoftApInfo,
+                WifiManager.IFACE_IP_MODE_TETHERED);
         SoftApConfiguration testSoftApConfig = new SoftApConfiguration.Builder()
                 .setSsid("Test_Metric_SSID")
                 .setMaxNumberOfClients(SOFT_AP_MAX_CLIENT_SETTING)
