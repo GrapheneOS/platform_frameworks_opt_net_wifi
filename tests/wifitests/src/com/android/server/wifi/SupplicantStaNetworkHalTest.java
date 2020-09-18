@@ -82,6 +82,8 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     private android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork mISupplicantStaNetworkV12;
     @Mock
     private android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork mISupplicantStaNetworkV13;
+    @Mock
+    private android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork mISupplicantStaNetworkV14;
     @Mock private Context mContext;
     @Mock private WifiMonitor mWifiMonitor;
 
@@ -93,6 +95,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         V1_0,
         V1_2,
         V1_3,
+        V1_4,
     }
 
     /**
@@ -128,6 +131,24 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         protected android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
                 getSupplicantStaNetworkForV1_3Mockable() {
             return mISupplicantStaNetworkV13;
+        }
+    }
+
+    /**
+     * Spy used to return the V1_4 ISupplicantStaNetwork mock object to simulate the 1.4 HAL running
+     * on the device.
+     */
+    private class SupplicantStaNetworkHalSpyV1_4 extends SupplicantStaNetworkHalSpyV1_3 {
+        SupplicantStaNetworkHalSpyV1_4(ISupplicantStaNetwork iSupplicantStaNetwork,
+                String ifaceName,
+                Context context, WifiMonitor monitor) {
+            super(iSupplicantStaNetwork, ifaceName, context, monitor);
+        }
+
+        @Override
+        protected android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                getSupplicantStaNetworkForV1_4Mockable() {
+            return mISupplicantStaNetworkV14;
         }
     }
 
@@ -980,6 +1001,11 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
             config.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.GCMP_256);
             config.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.GCMP_256);
         }
+        if (mSupplicantNetwork.getSupplicantStaNetworkForV1_4Mockable() == null) {
+            // Clear unsupported settings in HAL v1.0
+            config.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.GCMP_128);
+            config.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.GCMP_128);
+        }
         // Save the configuration using the default supplicant network HAL v1.0
         assertTrue(mSupplicantNetwork.saveWifiConfiguration(config));
         WifiConfiguration loadConfig = new WifiConfiguration();
@@ -1102,6 +1128,47 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
                         | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
                         .GroupCipherMask.GCMP_256);
     }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration to wpa_supplicant with psk passphrase for
+     * HAL v1.2 or higher
+     */
+    @Test
+    public void testSaeNetworkWifiConfigurationSaveLoad1_4OrHigher() throws Exception {
+        createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_4);
+        WifiConfiguration config = WifiConfigurationTestUtil.createSaeNetwork();
+        config.requirePmf = true;
+
+        // Set the new defaults
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_128);
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_128);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        testWifiConfigurationSaveLoad(config);
+        verify(mISupplicantStaNetworkV12).setSaePassword(anyString());
+        verify(mISupplicantStaNetworkV12, never())
+                .getSaePassword(any(android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                        .getSaePasswordCallback.class));
+        verify(mISupplicantStaNetworkMock, never()).setPsk(any(byte[].class));
+        verify(mISupplicantStaNetworkMock, never())
+                .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
+
+        verify(mISupplicantStaNetworkV14)
+                .setPairwiseCipher_1_4(ISupplicantStaNetwork.PairwiseCipherMask.CCMP
+                        | android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                        .PairwiseCipherMask.GCMP_128
+                        | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                        .PairwiseCipherMask.GCMP_256);
+        verify(mISupplicantStaNetworkV14)
+                .setGroupCipher_1_4(ISupplicantStaNetwork.GroupCipherMask.CCMP
+                        | android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                        .GroupCipherMask.GCMP_128
+                        | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                        .GroupCipherMask.GCMP_256);
+    }
+
 
     /**
      * Sets up the HIDL interface mock with all the setters/getter values.
@@ -1385,6 +1452,23 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
                 .getGroupCipher_1_3(any(android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
                         .getGroupCipher_1_3Callback.class));
 
+        /** allowedGroupCiphers v1.4 */
+        doAnswer(new AnswerWithArguments() {
+            public SupplicantStatus answer(int mask) throws RemoteException {
+                mSupplicantVariables.groupCipherMask = mask;
+                return mStatusSuccess;
+            }
+        }).when(mISupplicantStaNetworkV14).setGroupCipher_1_4(any(int.class));
+        doAnswer(new AnswerWithArguments() {
+            public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                    .getGroupCipher_1_4Callback cb)
+                    throws RemoteException {
+                cb.onValues(mStatusSuccess, mSupplicantVariables.groupCipherMask);
+            }
+        }).when(mISupplicantStaNetworkV14)
+                .getGroupCipher_1_4(any(android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                        .getGroupCipher_1_4Callback.class));
+
         /** allowedPairwiseCiphers */
         doAnswer(new AnswerWithArguments() {
             public SupplicantStatus answer(int mask) throws RemoteException {
@@ -1432,6 +1516,23 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         }).when(mISupplicantStaNetworkV13)
                 .getPairwiseCipher_1_3(any(android.hardware.wifi.supplicant.V1_3
                         .ISupplicantStaNetwork.getPairwiseCipher_1_3Callback.class));
+
+        /** allowedPairwiseCiphers v1.4 */
+        doAnswer(new AnswerWithArguments() {
+            public SupplicantStatus answer(int mask) throws RemoteException {
+                mSupplicantVariables.pairwiseCipherMask = mask;
+                return mStatusSuccess;
+            }
+        }).when(mISupplicantStaNetworkV14).setPairwiseCipher_1_4(any(int.class));
+        doAnswer(new AnswerWithArguments() {
+            public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                    .getPairwiseCipher_1_4Callback cb)
+                    throws RemoteException {
+                cb.onValues(mStatusSuccess, mSupplicantVariables.pairwiseCipherMask);
+            }
+        }).when(mISupplicantStaNetworkV14)
+                .getPairwiseCipher_1_4(any(android.hardware.wifi.supplicant.V1_4
+                        .ISupplicantStaNetwork.getPairwiseCipher_1_4Callback.class));
 
         /** metadata: idstr */
         doAnswer(new AnswerWithArguments() {
@@ -1781,6 +1882,10 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
                 break;
             case V1_3:
                 mSupplicantNetwork = new SupplicantStaNetworkHalSpyV1_3(
+                        mISupplicantStaNetworkMock, IFACE_NAME, mContext, mWifiMonitor);
+                break;
+            case V1_4:
+                mSupplicantNetwork = new SupplicantStaNetworkHalSpyV1_4(
                         mISupplicantStaNetworkMock, IFACE_NAME, mContext, mWifiMonitor);
                 break;
         }
