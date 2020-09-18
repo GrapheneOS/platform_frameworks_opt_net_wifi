@@ -206,7 +206,9 @@ public class WifiScoreReport {
         }
         if (mWifiConnectedNetworkScorerHolder != null
                 && mContext.getResources().getBoolean(
-                        R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)) {
+                        R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)
+                /// Turn off hysteresis/dampening for shell commands.
+                && !mWifiConnectedNetworkScorerHolder.isShellCommandScorer()) {
             long millis = mClock.getWallClockMillis();
             if (mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS) {
                 if (mWifiInfo.getRssi()
@@ -312,6 +314,10 @@ public class WifiScoreReport {
                 Log.e(TAG, "Unable to stop Wifi connected network scorer " + this, e);
                 revertToDefaultConnectedScorer();
             }
+        }
+
+        public boolean isShellCommandScorer() {
+            return mScorer instanceof WifiShellCommand.WifiScorer;
         }
     }
 
