@@ -47,6 +47,7 @@ import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.util.GeneralUtil.Mutable;
+import com.android.server.wifi.util.WorkSourceHelper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -73,6 +74,7 @@ public class HalDeviceManager {
     public static final int START_HAL_RETRY_TIMES = 3;
 
     private final Clock mClock;
+    private final WifiInjector mWifiInjector;
     private final Handler mEventHandler;
     private WifiDeathRecipient mIWifiDeathRecipient;
     private ServiceManagerDeathRecipient mServiceManagerDeathRecipient;
@@ -81,8 +83,9 @@ public class HalDeviceManager {
     private boolean mIsVendorHalSupported = false;
 
     // public API
-    public HalDeviceManager(Clock clock, Handler handler) {
+    public HalDeviceManager(Clock clock, WifiInjector wifiInjector, Handler handler) {
         mClock = clock;
+        mWifiInjector = wifiInjector;
         mEventHandler = handler;
         mIWifiDeathRecipient = new WifiDeathRecipient();
         mServiceManagerDeathRecipient = new ServiceManagerDeathRecipient();
@@ -228,7 +231,7 @@ public class HalDeviceManager {
     public IWifiStaIface createStaIface(
             @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler,
             @NonNull WorkSource requestorWs) {
-        return (IWifiStaIface) createIface(IfaceType.STA, destroyedListener, handler);
+        return (IWifiStaIface) createIface(IfaceType.STA, destroyedListener, handler, requestorWs);
     }
 
     /**
@@ -237,7 +240,7 @@ public class HalDeviceManager {
     public IWifiApIface createApIface(
             @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler,
             @NonNull WorkSource requestorWs) {
-        return (IWifiApIface) createIface(IfaceType.AP, destroyedListener, handler);
+        return (IWifiApIface) createIface(IfaceType.AP, destroyedListener, handler, requestorWs);
     }
 
     /**
@@ -245,7 +248,7 @@ public class HalDeviceManager {
      */
     public IWifiP2pIface createP2pIface(@Nullable InterfaceDestroyedListener destroyedListener,
             @Nullable Handler handler, @NonNull WorkSource requestorWs) {
-        return (IWifiP2pIface) createIface(IfaceType.P2P, destroyedListener, handler);
+        return (IWifiP2pIface) createIface(IfaceType.P2P, destroyedListener, handler, requestorWs);
     }
 
     /**
@@ -253,7 +256,7 @@ public class HalDeviceManager {
      */
     public IWifiNanIface createNanIface(@Nullable InterfaceDestroyedListener destroyedListener,
             @Nullable Handler handler, @NonNull WorkSource requestorWs) {
-        return (IWifiNanIface) createIface(IfaceType.NAN, destroyedListener, handler);
+        return (IWifiNanIface) createIface(IfaceType.NAN, destroyedListener, handler, requestorWs);
     }
 
     /**
@@ -510,12 +513,14 @@ public class HalDeviceManager {
         public int type;
         public Set<InterfaceDestroyedListenerProxy> destroyedListeners = new HashSet<>();
         public long creationTime;
+        public WorkSourceHelper mRequestorWsHelper;
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("{name=").append(name).append(", type=").append(type)
                     .append(", destroyedListeners.size()=").append(destroyedListeners.size())
+                    .append(", RequestorWs=").append(mRequestorWsHelper)
                     .append(", creationTime=").append(creationTime).append("}");
             return sb.toString();
         }
@@ -1330,9 +1335,9 @@ public class HalDeviceManager {
     }
 
     private IWifiIface createIface(int ifaceType, InterfaceDestroyedListener destroyedListener,
-            Handler handler) {
+            Handler handler, WorkSource requestorWs) {
         if (mDbg) {
-            Log.d(TAG, "createIface: ifaceType=" + ifaceType);
+            Log.d(TAG, "createIface: ifaceType=" + ifaceType + ", requestorWs=" + requestorWs);
         }
 
         synchronized (mLock) {
@@ -1349,15 +1354,17 @@ public class HalDeviceManager {
                 return null;
             }
 
-            return createIfaceIfPossible(chipInfos, ifaceType, destroyedListener, handler);
+            return createIfaceIfPossible(
+                    chipInfos, ifaceType, destroyedListener, handler, requestorWs);
         }
     }
 
     private IWifiIface createIfaceIfPossible(WifiChipInfo[] chipInfos, int ifaceType,
-            InterfaceDestroyedListener destroyedListener, Handler handler) {
+            InterfaceDestroyedListener destroyedListener, Handler handler,
+            WorkSource requestorWs) {
         if (VDBG) {
             Log.d(TAG, "createIfaceIfPossible: chipInfos=" + Arrays.deepToString(chipInfos)
-                    + ", ifaceType=" + ifaceType);
+                    + ", ifaceType=" + ifaceType + ", requestorWs=" + requestorWs);
         }
         synchronized (mLock) {
             IfaceCreationData bestIfaceCreationProposal = null;
@@ -1393,6 +1400,7 @@ public class HalDeviceManager {
                     cacheEntry.chipId = bestIfaceCreationProposal.chipInfo.chipId;
                     cacheEntry.name = getName(iface);
                     cacheEntry.type = ifaceType;
+                    cacheEntry.mRequestorWsHelper = mWifiInjector.makeWsHelper(requestorWs);
                     if (destroyedListener != null) {
                         cacheEntry.destroyedListeners.add(
                                 new InterfaceDestroyedListenerProxy(

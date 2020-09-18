@@ -62,6 +62,7 @@ import android.util.SparseArray;
 import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
+import com.android.server.wifi.util.WorkSourceHelper;
 
 import org.hamcrest.core.IsNull;
 import org.junit.After;
@@ -96,6 +97,8 @@ public class HalDeviceManagerTest extends WifiBaseTest {
     @Mock IWifiRttController mRttControllerMock;
     @Mock HalDeviceManager.ManagerStatusListener mManagerStatusListenerMock;
     @Mock private Clock mClock;
+    @Mock private WifiInjector mWifiInjector;
+    @Mock private WorkSourceHelper mWorkSourceHelper;
     private TestLooper mTestLooper;
     private Handler mHandler;
     private ArgumentCaptor<IHwBinder.DeathRecipient> mDeathRecipientCaptor =
@@ -111,7 +114,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
 
     private class HalDeviceManagerSpy extends HalDeviceManager {
         HalDeviceManagerSpy() {
-            super(mClock, mHandler);
+            super(mClock, mWifiInjector, mHandler);
         }
 
         @Override
@@ -136,6 +139,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         mStatusOk = getStatus(WifiStatusCode.SUCCESS);
         mStatusFail = getStatus(WifiStatusCode.ERROR_UNKNOWN);
 
+        when(mWifiInjector.makeWsHelper(any())).thenReturn(mWorkSourceHelper);
         when(mServiceManagerMock.linkToDeath(any(IHwBinder.DeathRecipient.class),
                 anyLong())).thenReturn(true);
         when(mServiceManagerMock.registerForNotifications(anyString(), anyString(),
