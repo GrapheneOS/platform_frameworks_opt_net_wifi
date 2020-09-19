@@ -1251,10 +1251,12 @@ public class HostapdHalTest extends WifiBaseTest {
         int testGeneration = Generation.WIFI_STANDARD_11N;
         // Trigger on info changed.
         mIHostapdCallback13.onApInstanceInfoChanged(IFACE_NAME, TEST_AP_INSTANCE,
-                testFreq, testBandwidth, testGeneration);
+                testFreq, testBandwidth, testGeneration,
+                MacAddress.fromString(TEST_CLIENT_MAC).toByteArray());
         verify(mSoftApListener).onInfoChanged(eq(TEST_AP_INSTANCE), eq(testFreq),
                 eq(mHostapdHal.mapHalBandwidthToSoftApInfo(testBandwidth)),
-                eq(mHostapdHal.mapHalGenerationToWifiStandard(testGeneration)));
+                eq(mHostapdHal.mapHalGenerationToWifiStandard(testGeneration)),
+                eq(MacAddress.fromString(TEST_CLIENT_MAC)));
 
         // Trigger on client connected.
         mIHostapdCallback13.onConnectedClientsChanged(IFACE_NAME, TEST_AP_INSTANCE,

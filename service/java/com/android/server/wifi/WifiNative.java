@@ -146,7 +146,7 @@ public class WifiNative {
         @Override
         public void onSoftApChannelSwitched(int frequency, int bandwidth) {
             mSoftApListener.onInfoChanged(mIfaceName, frequency, bandwidth,
-                    ScanResult.WIFI_STANDARD_UNKNOWN);
+                    ScanResult.WIFI_STANDARD_UNKNOWN, null);
         }
 
         @Override
@@ -176,7 +176,7 @@ public class WifiNative {
          * @param generation The new generation of the SoftAp.
          */
         void onInfoChanged(String apIfaceInstance, int frequency, int bandwidth,
-                int generation);
+                int generation, MacAddress apIfaceInstanceMacAddress);
         /**
          * Invoked when there is a change in the associated station (STA).
          *

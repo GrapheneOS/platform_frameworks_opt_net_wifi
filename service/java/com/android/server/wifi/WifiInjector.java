@@ -38,6 +38,7 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.SystemProperties;
 import android.os.UserManager;
+import android.os.WorkSource;
 import android.provider.Settings.Secure;
 import android.security.keystore.AndroidKeyStoreProvider;
 import android.telephony.SubscriptionManager;
@@ -60,6 +61,7 @@ import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.SettingsMigrationDataHolder;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
+import com.android.server.wifi.util.WorkSourceHelper;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -251,7 +253,7 @@ public class WifiInjector {
                 mDppMetrics, mWifiMonitor);
         mDeviceConfigFacade = new DeviceConfigFacade(mContext, wifiHandler, mWifiMetrics);
         // Modules interacting with Native.
-        mHalDeviceManager = new HalDeviceManager(mClock, wifiHandler);
+        mHalDeviceManager = new HalDeviceManager(mClock, this, wifiHandler);
         mWifiVendorHal = new WifiVendorHal(mHalDeviceManager, wifiHandler);
         mSupplicantStaIfaceHal = new SupplicantStaIfaceHal(
                 mContext, mWifiMonitor, mFrameworkFacade, wifiHandler, mClock, mWifiMetrics);
@@ -873,5 +875,13 @@ public class WifiInjector {
 
     public SimRequiredNotifier getSimRequiredNotifier() {
         return mSimRequiredNotifier;
+    }
+
+    /**
+     * Useful for mocking {@link WorkSourceHelper} instance in {@link HalDeviceManager} unit tests.
+     */
+    public WorkSourceHelper makeWsHelper(WorkSource ws) {
+        return new WorkSourceHelper(ws, mWifiPermissionsUtil,
+                mContext.getSystemService(ActivityManager.class), mContext.getPackageManager());
     }
 }

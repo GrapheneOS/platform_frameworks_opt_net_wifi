@@ -1814,6 +1814,20 @@ message SoftApConnectedClientsEvent {
     BANDWIDTH_160 = 6;
   }
 
+  // The operational mode  of the Soft AP.
+  enum Generation {
+
+    WIFI_STANDARD_UNKNOWN = 0;
+
+    WIFI_STANDARD_LEGACY = 1;
+
+    WIFI_STANDARD_11N = 4;
+
+    WIFI_STANDARD_11AC = 5;
+
+    WIFI_STANDARD_11AX = 6;
+  }
+
   // Type of event being recorded
   optional SoftApEventType event_type = 1;
 
@@ -1843,6 +1857,9 @@ message SoftApConnectedClientsEvent {
 
   // Indicates if user enabled the client_control
   optional bool client_control_is_enabled = 10;
+
+  // The operational mode of the AP
+  optional Generation generation = 11;
 }
 
 // Power stats for Wifi

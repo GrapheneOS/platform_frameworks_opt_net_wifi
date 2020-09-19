@@ -56,6 +56,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.MacAddress;
+import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
@@ -140,10 +141,19 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     SoftApManager mSoftApManager;
 
+    /** Old callback event from wificond */
     private void mockChannelSwitchEvent(int frequency, int bandwidth) {
         mSoftApListenerCaptor.getValue().onInfoChanged(
-                TEST_INTERFACE_NAME, frequency, bandwidth, 0);
+                TEST_INTERFACE_NAME, frequency, bandwidth, 0, null);
     }
+
+    /** New callback event from hostapd */
+    private void mockApInfoChangedEvent(SoftApInfo apInfo) {
+        mSoftApListenerCaptor.getValue().onInfoChanged(
+                TEST_INTERFACE_NAME, apInfo.getFrequency(), apInfo.getBandwidth(),
+                apInfo.getWifiStandard(), apInfo.getBssid());
+    }
+
     private void mockClientConnectedEvent(MacAddress mac, boolean isConnected) {
         mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
                 TEST_INTERFACE_NAME, mac, isConnected);
@@ -868,12 +878,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
 
-        final int channelFrequency = 2437;
-        final int channelBandwidth = SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
-        mockChannelSwitchEvent(channelFrequency, channelBandwidth);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
 
-        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(channelFrequency, channelBandwidth,
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
                 apConfig.getTargetMode());
     }
 
@@ -888,13 +896,13 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-
-        final int channelFrequency = 5180;
-        final int channelBandwidth = SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
-        mockChannelSwitchEvent(channelFrequency, channelBandwidth);
+        SoftApInfo testSoftApInfo = new SoftApInfo(mTestSoftApInfo);
+        testSoftApInfo.setFrequency(5220);
+        testSoftApInfo.setBandwidth(SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT);
+        mockApInfoChangedEvent(testSoftApInfo);
         mLooper.dispatchAll();
 
-        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(channelFrequency, channelBandwidth,
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(testSoftApInfo,
                 apConfig.getTargetMode());
         verify(mWifiMetrics).incrementNumSoftApUserBandPreferenceUnsatisfied();
     }
@@ -910,13 +918,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-
-        final int channelFrequency = 2437;
-        final int channelBandwidth = SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
-        mockChannelSwitchEvent(channelFrequency, channelBandwidth);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
 
-        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(channelFrequency, channelBandwidth,
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
                 apConfig.getTargetMode());
         verify(mWifiMetrics).incrementNumSoftApUserBandPreferenceUnsatisfied();
     }
@@ -932,13 +937,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-
-        final int channelFrequency = 5220;
-        final int channelBandwidth = SoftApInfo.CHANNEL_WIDTH_20MHZ_NOHT;
-        mockChannelSwitchEvent(channelFrequency, channelBandwidth);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
 
-        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(channelFrequency, channelBandwidth,
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
                 apConfig.getTargetMode());
         verify(mWifiMetrics, never()).incrementNumSoftApUserBandPreferenceUnsatisfied();
     }
@@ -953,12 +955,12 @@ public class SoftApManagerTest extends WifiBaseTest {
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-        mockChannelSwitchEvent(TEST_AP_FREQUENCY, TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
 
         verify(mCallback).onInfoChanged(mTestSoftApInfo);
-        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(TEST_AP_FREQUENCY,
-                TEST_AP_BANDWIDTH_IN_SOFTAPINFO, apConfig.getTargetMode());
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
+                apConfig.getTargetMode());
     }
 
     /**
@@ -971,16 +973,18 @@ public class SoftApManagerTest extends WifiBaseTest {
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-        mockChannelSwitchEvent(TEST_AP_FREQUENCY, TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
-
-        // now trigger callback again, but we should have each method only called once
-        mockChannelSwitchEvent(TEST_AP_FREQUENCY, TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK);
-        mLooper.dispatchAll();
-
         verify(mCallback).onInfoChanged(mTestSoftApInfo);
-        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(TEST_AP_FREQUENCY,
-                TEST_AP_BANDWIDTH_IN_SOFTAPINFO, apConfig.getTargetMode());
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
+                apConfig.getTargetMode());
+
+        reset(mCallback);
+        // now trigger callback again, but we should have each method only called once
+        mockApInfoChangedEvent(mTestSoftApInfo);
+        mLooper.dispatchAll();
+
+        verify(mCallback, never()).onInfoChanged(any());
     }
 
     /**
@@ -997,7 +1001,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mCallback, never()).onInfoChanged(any());
-        verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(anyInt(), anyInt(),
+        verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(any(),
                 anyInt());
     }
 
@@ -1012,23 +1016,19 @@ public class SoftApManagerTest extends WifiBaseTest {
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-        mockChannelSwitchEvent(TEST_AP_FREQUENCY, TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
 
         order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
-        order.verify(mWifiMetrics).addSoftApChannelSwitchedEvent(TEST_AP_FREQUENCY,
-                TEST_AP_BANDWIDTH_IN_SOFTAPINFO, apConfig.getTargetMode());
+        order.verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
+                apConfig.getTargetMode());
 
         mSoftApManager.stop();
         mLooper.dispatchAll();
 
-        mTestSoftApInfo.setFrequency(0);
-        mTestSoftApInfo.setBandwidth(SoftApInfo.CHANNEL_WIDTH_INVALID);
-        mTestSoftApInfo.setBssid(null);
-
-        order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
-        order.verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(0,
-                SoftApInfo.CHANNEL_WIDTH_INVALID, apConfig.getTargetMode());
+        order.verify(mCallback).onInfoChanged(new SoftApInfo());
+        order.verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(any(),
+                eq(apConfig.getTargetMode()));
     }
 
     @Test
@@ -2222,23 +2222,41 @@ public class SoftApManagerTest extends WifiBaseTest {
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED,
                 customizedBssidConfig, mTestSoftApCapability);
         startSoftApAndVerifyEnabled(apConfig);
-        mockChannelSwitchEvent(TEST_AP_FREQUENCY, TEST_AP_BANDWIDTH_FROM_IFACE_CALLBACK);
+        mockApInfoChangedEvent(mTestSoftApInfo);
         mLooper.dispatchAll();
 
         order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
-        order.verify(mWifiMetrics).addSoftApChannelSwitchedEvent(TEST_AP_FREQUENCY,
-                TEST_AP_BANDWIDTH_IN_SOFTAPINFO, apConfig.getTargetMode());
+        order.verify(mWifiMetrics).addSoftApChannelSwitchedEvent(mTestSoftApInfo,
+                apConfig.getTargetMode());
 
         // Verify stop will set bssid back to null
         mSoftApManager.stop();
         mLooper.dispatchAll();
 
-        mTestSoftApInfo.setFrequency(0);
-        mTestSoftApInfo.setBandwidth(SoftApInfo.CHANNEL_WIDTH_INVALID);
-        mTestSoftApInfo.setBssid(null);
+        order.verify(mCallback).onInfoChanged(new SoftApInfo());
+        order.verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(any(),
+                eq(apConfig.getTargetMode()));
+    }
 
-        order.verify(mCallback).onInfoChanged(mTestSoftApInfo);
-        order.verify(mWifiMetrics, never()).addSoftApChannelSwitchedEvent(0,
-                SoftApInfo.CHANNEL_WIDTH_INVALID, apConfig.getTargetMode());
+    /**
+     * If SoftApManager gets an update for the invalid ap frequency, it will not
+     * trigger callbacks
+     */
+    @Test
+    public void testHandleCallbackFromWificond() throws Exception {
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
+                mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+        mockChannelSwitchEvent(mTestSoftApInfo.getFrequency(), mTestSoftApInfo.getBandwidth());
+        mLooper.dispatchAll();
+
+        SoftApInfo expectedInfo = new SoftApInfo(mTestSoftApInfo);
+        // Old callback should doesn't include the wifiStandard and bssid.
+        expectedInfo.setBssid(null);
+        expectedInfo.setWifiStandard(ScanResult.WIFI_STANDARD_UNKNOWN);
+        verify(mCallback).onInfoChanged(expectedInfo);
+        verify(mWifiMetrics).addSoftApChannelSwitchedEvent(expectedInfo,
+                apConfig.getTargetMode());
     }
 }

@@ -30,6 +30,7 @@ import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
+import android.net.wifi.SoftApInfo;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -2796,7 +2797,7 @@ public class WifiMetrics {
     /**
      * Updates current soft AP events with channel info
      */
-    public void addSoftApChannelSwitchedEvent(int frequency, int bandwidth, int mode) {
+    public void addSoftApChannelSwitchedEvent(SoftApInfo info, int mode) {
         synchronized (mLock) {
             List<SoftApConnectedClientsEvent> softApEventList;
             switch (mode) {
@@ -2814,8 +2815,9 @@ public class WifiMetrics {
                 SoftApConnectedClientsEvent event = softApEventList.get(index);
 
                 if (event != null && event.eventType == SoftApConnectedClientsEvent.SOFT_AP_UP) {
-                    event.channelFrequency = frequency;
-                    event.channelBandwidth = bandwidth;
+                    event.channelFrequency = info.getFrequency();
+                    event.channelBandwidth = info.getBandwidth();
+                    event.generation = info.getWifiStandard();
                     break;
                 }
             }
@@ -3776,6 +3778,7 @@ public class WifiMetrics {
                     eventLine.append(",num_connected_clients=" + event.numConnectedClients);
                     eventLine.append(",channel_frequency=" + event.channelFrequency);
                     eventLine.append(",channel_bandwidth=" + event.channelBandwidth);
+                    eventLine.append(",generation=" + event.generation);
                     eventLine.append(",max_num_clients_setting_in_softap_configuration="
                             + event.maxNumClientsSettingInSoftapConfiguration);
                     eventLine.append(",max_num_clients_setting_in_softap_capability="
@@ -3795,6 +3798,7 @@ public class WifiMetrics {
                     eventLine.append(",num_connected_clients=" + event.numConnectedClients);
                     eventLine.append(",channel_frequency=" + event.channelFrequency);
                     eventLine.append(",channel_bandwidth=" + event.channelBandwidth);
+                    eventLine.append(",generation=" + event.generation);
                     eventLine.append(",max_num_clients_setting_in_softap_configuration="
                             + event.maxNumClientsSettingInSoftapConfiguration);
                     eventLine.append(",max_num_clients_setting_in_softap_capability="
