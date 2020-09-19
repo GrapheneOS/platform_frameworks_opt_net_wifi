@@ -4440,7 +4440,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     break;
                 }
                 case CMD_IP_CONFIGURATION_SUCCESSFUL: {
-                    if (getConnectedWifiConfigurationInternal() == null) {
+                    if (getConnectedWifiConfigurationInternal() == null || mNetworkAgent == null) {
                         // The current config may have been removed while we were connecting,
                         // trigger a disconnect to clear up state.
                         reportConnectionAttemptEnd(
