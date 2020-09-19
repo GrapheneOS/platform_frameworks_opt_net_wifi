@@ -112,9 +112,9 @@ public class ApConfigUtilTest extends WifiBaseTest {
             5845, SoftApConfiguration.BAND_5GHZ, 169,
             5865, SoftApConfiguration.BAND_5GHZ, 173,
             /* Now some 6GHz channels */
-            5945, SoftApConfiguration.BAND_6GHZ, 1,
-            5960, SoftApConfiguration.BAND_6GHZ, 4,
-            6100, SoftApConfiguration.BAND_6GHZ, 32
+            5955, SoftApConfiguration.BAND_6GHZ, 1,
+            5970, SoftApConfiguration.BAND_6GHZ, 4,
+            6110, SoftApConfiguration.BAND_6GHZ, 32
     };
 
     private static final int[] EMPTY_CHANNEL_LIST = {};
