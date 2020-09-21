@@ -1022,7 +1022,7 @@ public class WifiVendorHal {
     private static void setRadioStats(WifiLinkLayerStats stats,
             List<StaLinkLayerRadioStats> radios) {
         if (radios == null) return;
-        // NOTE(b/36176141): Figure out how to coalesce this info for multi radio devices.
+        // Do not coalesce this info for multi radio devices with older HALs.
         if (radios.size() > 0) {
             StaLinkLayerRadioStats radioStats = radios.get(0);
             stats.on_time = radioStats.onTimeInMs;
@@ -1033,39 +1033,45 @@ public class WifiVendorHal {
             }
             stats.rx_time = radioStats.rxTimeInMs;
             stats.on_time_scan = radioStats.onTimeInMsForScan;
+            stats.numRadios = 1;
         }
     }
 
     private static void setRadioStats_1_3(WifiLinkLayerStats stats,
             List<android.hardware.wifi.V1_3.StaLinkLayerRadioStats> radios) {
         if (radios == null) return;
-        // NOTE(b/36176141): Figure out how to coalesce this info for multi radio devices.
-        if (radios.size() > 0) {
-            android.hardware.wifi.V1_3.StaLinkLayerRadioStats radioStats = radios.get(0);
-            stats.on_time = radioStats.V1_0.onTimeInMs;
-            stats.tx_time = radioStats.V1_0.txTimeInMs;
-            stats.tx_time_per_level = new int[radioStats.V1_0.txTimeInMsPerLevel.size()];
-            for (int i = 0; i < stats.tx_time_per_level.length; i++) {
-                stats.tx_time_per_level[i] = radioStats.V1_0.txTimeInMsPerLevel.get(i);
+        // Aggregate the radio stats from all the radios.
+        for (android.hardware.wifi.V1_3.StaLinkLayerRadioStats radioStats : radios) {
+            stats.on_time += radioStats.V1_0.onTimeInMs;
+            stats.tx_time += radioStats.V1_0.txTimeInMs;
+            if (stats.tx_time_per_level == null) {
+                stats.tx_time_per_level = new int[radioStats.V1_0.txTimeInMsPerLevel.size()];
             }
-            stats.rx_time = radioStats.V1_0.rxTimeInMs;
-            stats.on_time_scan = radioStats.V1_0.onTimeInMsForScan;
-            stats.on_time_nan_scan = radioStats.onTimeInMsForNanScan;
-            stats.on_time_background_scan = radioStats.onTimeInMsForBgScan;
-            stats.on_time_roam_scan = radioStats.onTimeInMsForRoamScan;
-            stats.on_time_pno_scan = radioStats.onTimeInMsForPnoScan;
-            stats.on_time_hs20_scan = radioStats.onTimeInMsForHs20Scan;
+            for (int i = 0; i < stats.tx_time_per_level.length; i++) {
+                stats.tx_time_per_level[i] += radioStats.V1_0.txTimeInMsPerLevel.get(i);
+            }
+            stats.rx_time += radioStats.V1_0.rxTimeInMs;
+            stats.on_time_scan += radioStats.V1_0.onTimeInMsForScan;
+            stats.on_time_nan_scan += radioStats.onTimeInMsForNanScan;
+            stats.on_time_background_scan += radioStats.onTimeInMsForBgScan;
+            stats.on_time_roam_scan += radioStats.onTimeInMsForRoamScan;
+            stats.on_time_pno_scan += radioStats.onTimeInMsForPnoScan;
+            stats.on_time_hs20_scan += radioStats.onTimeInMsForHs20Scan;
             /* Copy list of channel stats */
-            for (int i = 0; i < radioStats.channelStats.size(); i++) {
-                android.hardware.wifi.V1_3.WifiChannelStats channelStats =
-                        radioStats.channelStats.get(i);
-                ChannelStats channelStatsEntry = new ChannelStats();
-                channelStatsEntry.frequency = channelStats.channel.centerFreq;
-                channelStatsEntry.radioOnTimeMs = channelStats.onTimeInMs;
-                channelStatsEntry.ccaBusyTimeMs = channelStats.ccaBusyTimeInMs;
-                stats.channelStatsMap.put(channelStats.channel.centerFreq, channelStatsEntry);
+            for (android.hardware.wifi.V1_3.WifiChannelStats channelStats
+                    : radioStats.channelStats) {
+                ChannelStats channelStatsEntry =
+                        stats.channelStatsMap.get(channelStats.channel.centerFreq);
+                if (channelStatsEntry == null) {
+                    channelStatsEntry = new ChannelStats();
+                    channelStatsEntry.frequency = channelStats.channel.centerFreq;
+                    stats.channelStatsMap.put(channelStats.channel.centerFreq, channelStatsEntry);
+                }
+                channelStatsEntry.radioOnTimeMs += channelStats.onTimeInMs;
+                channelStatsEntry.ccaBusyTimeMs += channelStats.ccaBusyTimeInMs;
             }
         }
+        stats.numRadios = radios.size();
     }
 
     private static void setTimeStamp(WifiLinkLayerStats stats, long timeStampInMs) {
