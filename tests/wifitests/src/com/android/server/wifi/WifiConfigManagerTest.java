@@ -2330,6 +2330,34 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that when enhanced MAC randomization is enabled the MAC address changes after 24 hours
+     * of the first connection this MAC address is used.
+     */
+    @Test
+    public void testEnhancedMacRandomizationEvery24Hours() {
+        setUpWifiConfigurationForEnhancedRandomization();
+        WifiConfiguration config = getFirstInternalWifiConfiguration();
+
+        assertEquals(TEST_WALLCLOCK_CREATION_TIME_MILLIS, config.randomizedMacLastModifiedTimeMs);
+        MacAddress firstMac = config.getRandomizedMacAddress();
+        for (int i = 0; i < 24; i++) {
+            when(mClock.getWallClockMillis()).thenReturn(TEST_WALLCLOCK_CREATION_TIME_MILLIS
+                    + i * 60 * 60 * 1000);
+            mWifiConfigManager.updateNetworkAfterDisconnect(config.networkId);
+            assertEquals("Randomized MAC should be the same after " + i + " hours",
+                    firstMac, mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config));
+            config = getFirstInternalWifiConfiguration();
+        }
+
+        // verify that after 24 hours the randomized MAC address changes.
+        long timeAfter24Hours = TEST_WALLCLOCK_CREATION_TIME_MILLIS + 24 * 60 * 60 * 1000;
+        when(mClock.getWallClockMillis()).thenReturn(timeAfter24Hours);
+        assertNotEquals(firstMac, mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config));
+        config = getFirstInternalWifiConfiguration();
+        assertEquals(timeAfter24Hours, config.randomizedMacLastModifiedTimeMs);
+    }
+
+    /**
      * Verifies that getRandomizedMacAndUpdateIfNeeded updates the randomized MAC address and
      * |randomizedMacExpirationTimeMs| correctly.
      *
@@ -2338,25 +2366,25 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     @Test
     public void testRandomizedMacUpdateAndRestore() {
-        setUpWifiConfigurationForAggressiveRandomization();
+        setUpWifiConfigurationForEnhancedRandomization();
         // get the aggressive randomized MAC address.
         WifiConfiguration config = getFirstInternalWifiConfiguration();
-        final MacAddress aggressiveMac = config.getRandomizedMacAddress();
-        assertNotEquals(WifiInfo.DEFAULT_MAC_ADDRESS, aggressiveMac.toString());
+        final MacAddress randMac = config.getRandomizedMacAddress();
+        assertNotEquals(WifiInfo.DEFAULT_MAC_ADDRESS, randMac.toString());
         assertEquals(TEST_WALLCLOCK_CREATION_TIME_MILLIS
-                + WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS,
+                + WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS,
                 config.randomizedMacExpirationTimeMs);
 
         // verify the new randomized mac should be different from the original mac.
         when(mClock.getWallClockMillis()).thenReturn(TEST_WALLCLOCK_CREATION_TIME_MILLIS
-                + WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS + 1);
-        MacAddress aggressiveMac2 = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
+                + WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS + 1);
+        MacAddress randMac2 = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
 
         // verify internal WifiConfiguration has MacAddress updated correctly by comparing the
         // MAC address from internal WifiConfiguration with the value returned by API.
         config = getFirstInternalWifiConfiguration();
-        assertEquals(aggressiveMac2, config.getRandomizedMacAddress());
-        assertNotEquals(aggressiveMac, aggressiveMac2);
+        assertEquals(randMac2, config.getRandomizedMacAddress());
+        assertNotEquals(randMac, randMac2);
 
         // Now disable aggressive randomization and verify the randomized MAC is changed back to
         // the persistent MAC.
@@ -2370,8 +2398,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // MAC address from internal WifiConfiguration with the value returned by API.
         config = getFirstInternalWifiConfiguration();
         assertEquals(persistentMac, config.getRandomizedMacAddress());
-        assertNotEquals(persistentMac, aggressiveMac);
-        assertNotEquals(persistentMac, aggressiveMac2);
+        assertNotEquals(persistentMac, randMac);
+        assertNotEquals(persistentMac, randMac2);
     }
 
     /**
@@ -2380,29 +2408,29 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     @Test
     public void testUpdateRandomizedMacExpireTime() {
-        setUpWifiConfigurationForAggressiveRandomization();
+        setUpWifiConfigurationForEnhancedRandomization();
         WifiConfiguration config = getFirstInternalWifiConfiguration();
         when(mClock.getWallClockMillis()).thenReturn(0L);
 
-        // verify that |AGGRESSIVE_MAC_REFRESH_MS_MIN| is honored as the lower bound.
-        long dhcpLeaseTimeInSeconds = (WifiConfigManager.AGGRESSIVE_MAC_REFRESH_MS_MIN / 1000) - 1;
+        // verify that |ENHANCED_MAC_REFRESH_MS_MIN| is honored as the lower bound.
+        long dhcpLeaseTimeInSeconds = (WifiConfigManager.ENHANCED_MAC_REFRESH_MS_MIN / 1000) - 1;
         mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpLeaseTimeInSeconds);
         config = getFirstInternalWifiConfiguration();
-        assertEquals(WifiConfigManager.AGGRESSIVE_MAC_REFRESH_MS_MIN,
+        assertEquals(WifiConfigManager.ENHANCED_MAC_REFRESH_MS_MIN,
                 config.randomizedMacExpirationTimeMs);
 
-        // verify that |AGGRESSIVE_MAC_REFRESH_MS_MAX| is honored as the upper bound.
-        dhcpLeaseTimeInSeconds = (WifiConfigManager.AGGRESSIVE_MAC_REFRESH_MS_MAX / 1000) + 1;
+        // verify that |ENHANCED_MAC_REFRESH_MS_MAX| is honored as the upper bound.
+        dhcpLeaseTimeInSeconds = (WifiConfigManager.ENHANCED_MAC_REFRESH_MS_MAX / 1000) + 1;
         mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpLeaseTimeInSeconds);
         config = getFirstInternalWifiConfiguration();
-        assertEquals(WifiConfigManager.AGGRESSIVE_MAC_REFRESH_MS_MAX,
+        assertEquals(WifiConfigManager.ENHANCED_MAC_REFRESH_MS_MAX,
                 config.randomizedMacExpirationTimeMs);
 
         // finally verify setting a valid value between the upper and lower bounds.
-        dhcpLeaseTimeInSeconds = (WifiConfigManager.AGGRESSIVE_MAC_REFRESH_MS_MIN / 1000) + 5;
+        dhcpLeaseTimeInSeconds = (WifiConfigManager.ENHANCED_MAC_REFRESH_MS_MIN / 1000) + 5;
         mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpLeaseTimeInSeconds);
         config = getFirstInternalWifiConfiguration();
-        assertEquals(WifiConfigManager.AGGRESSIVE_MAC_REFRESH_MS_MIN + 5000,
+        assertEquals(WifiConfigManager.ENHANCED_MAC_REFRESH_MS_MIN + 5000,
                 config.randomizedMacExpirationTimeMs);
     }
 
@@ -2412,17 +2440,17 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     @Test
     public void testRandomizedMacExpirationTimeUpdatedAtDisconnect() {
-        setUpWifiConfigurationForAggressiveRandomization();
+        setUpWifiConfigurationForEnhancedRandomization();
         WifiConfiguration config = getFirstInternalWifiConfiguration();
         when(mClock.getWallClockMillis()).thenReturn(0L);
 
         // First set the DHCP expiration time to be longer than the predefined time.
-        long dhcpLeaseTimeInSeconds = (WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS
+        long dhcpLeaseTimeInSeconds = (WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS
                 / 1000) + 1;
         mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpLeaseTimeInSeconds);
         config = getFirstInternalWifiConfiguration();
         long expirationTime = config.randomizedMacExpirationTimeMs;
-        assertEquals(WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS + 1000,
+        assertEquals(WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS + 1000,
                 expirationTime);
 
         // Verify that network disconnect does not update the expiration time since the remaining
@@ -2436,7 +2464,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mClock.getWallClockMillis()).thenReturn(5000L);
         mWifiConfigManager.updateNetworkAfterDisconnect(config.networkId);
         config = getFirstInternalWifiConfiguration();
-        assertEquals(WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS + 5000,
+        assertEquals(WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS + 5000,
                 config.randomizedMacExpirationTimeMs);
     }
 
@@ -2446,20 +2474,20 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      */
     @Test
     public void testRandomizedMacIsNotUpdatedDueToTimeConstraint() {
-        setUpWifiConfigurationForAggressiveRandomization();
+        setUpWifiConfigurationForEnhancedRandomization();
         // get the persistent randomized MAC address.
         WifiConfiguration config = getFirstInternalWifiConfiguration();
-        final MacAddress aggressiveMac = config.getRandomizedMacAddress();
-        assertNotEquals(WifiInfo.DEFAULT_MAC_ADDRESS, aggressiveMac.toString());
+        final MacAddress randMac = config.getRandomizedMacAddress();
+        assertNotEquals(WifiInfo.DEFAULT_MAC_ADDRESS, randMac.toString());
         assertEquals(TEST_WALLCLOCK_CREATION_TIME_MILLIS
-                + WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS,
+                + WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS,
                 config.randomizedMacExpirationTimeMs);
 
         // verify that the randomized MAC is unchanged.
         when(mClock.getWallClockMillis()).thenReturn(TEST_WALLCLOCK_CREATION_TIME_MILLIS
-                + WifiConfigManager.AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS);
+                + WifiConfigManager.ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS);
         MacAddress newMac = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
-        assertEquals(aggressiveMac, newMac);
+        assertEquals(randMac, newMac);
     }
 
     /**
@@ -2469,16 +2497,16 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Test
     public void testPerDeviceAggressiveRandomizationSsids() {
         // This will add the SSID to allowlist using DeviceConfig.
-        setUpWifiConfigurationForAggressiveRandomization();
+        setUpWifiConfigurationForEnhancedRandomization();
         WifiConfiguration config = getFirstInternalWifiConfiguration();
-        MacAddress aggressiveMac = config.getRandomizedMacAddress();
+        MacAddress randMac = config.getRandomizedMacAddress();
 
         // add to aggressive randomization blocklist using overlay.
         mResources.setStringArray(R.array.config_wifi_aggressive_randomization_ssid_blocklist,
                 new String[] {config.SSID});
         MacAddress persistentMac = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
         // verify that now the persistent randomized MAC is used.
-        assertNotEquals(aggressiveMac, persistentMac);
+        assertNotEquals(randMac, persistentMac);
     }
 
     private WifiConfiguration getFirstInternalWifiConfiguration() {
@@ -2487,7 +2515,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         return configs.get(0);
     }
 
-    private void setUpWifiConfigurationForAggressiveRandomization() {
+    private void setUpWifiConfigurationForEnhancedRandomization() {
         // sets up a WifiConfiguration for aggressive randomization.
         WifiConfiguration c = WifiConfigurationTestUtil.createOpenNetwork();
         // Adds the WifiConfiguration to aggressive randomization allowlist.
