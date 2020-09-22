@@ -4005,6 +4005,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiMetrics, times(1)).incrementSteeringRequestCountIncludingMboAssocRetryDelay();
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(sBSSID), eq(sSSID),
                 eq(btmFrmData.mBlockListDurationMs), anyInt(), anyInt());
+        verify(mWifiConfigManager).setRecentFailureAssociationStatus(anyInt(),
+                eq(WifiConfiguration.RECENT_FAILURE_MBO_OCE_DISCONNECT));
     }
 
     /**
