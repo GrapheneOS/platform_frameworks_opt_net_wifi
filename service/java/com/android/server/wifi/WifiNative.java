@@ -92,6 +92,7 @@ public class WifiNative {
     private final WifiInjector mWifiInjector;
     private NetdWrapper mNetdWrapper;
     private boolean mVerboseLoggingEnabled = false;
+    private boolean mIsEnhancedOpenSupported = false;
 
     public WifiNative(WifiVendorHal vendorHal,
                       SupplicantStaIfaceHal staIfaceHal, HostapdHal hostapdHal,
@@ -1100,6 +1101,7 @@ public class WifiNative {
             Log.i(TAG, "Successfully setup " + iface);
 
             iface.featureSet = getSupportedFeatureSetInternal(iface.name);
+            mIsEnhancedOpenSupported = (iface.featureSet & WIFI_FEATURE_OWE) != 0;
             return iface.name;
         }
     }
@@ -1287,6 +1289,7 @@ public class WifiNative {
             }
             iface.type = Iface.IFACE_TYPE_STA_FOR_CONNECTIVITY;
             iface.featureSet = getSupportedFeatureSetInternal(iface.name);
+            mIsEnhancedOpenSupported = (iface.featureSet & WIFI_FEATURE_OWE) != 0;
             Log.i(TAG, "Successfully switched to connectivity mode on iface=" + iface);
             return true;
         }
@@ -1518,7 +1521,7 @@ public class WifiNative {
                     InformationElementUtil.parseInformationElements(result.getInformationElements());
             InformationElementUtil.Capabilities capabilities =
                     new InformationElementUtil.Capabilities();
-            capabilities.from(ies, result.getCapabilities(), isEnhancedOpenSupported(),
+            capabilities.from(ies, result.getCapabilities(), mIsEnhancedOpenSupported,
                               result.getFrequencyMhz());
             String flags = capabilities.generateCapabilitiesString();
             NetworkDetail networkDetail;
@@ -1572,30 +1575,6 @@ public class WifiNative {
             default:
                 return ScanResult.WIFI_STANDARD_UNKNOWN;
         }
-    }
-
-    private boolean mIsEnhancedOpenSupportedInitialized = false;
-    private boolean mIsEnhancedOpenSupported;
-
-    /**
-     * Check if OWE (Enhanced Open) is supported on the device
-     *
-     * @return true if OWE is supported
-     */
-    private boolean isEnhancedOpenSupported() {
-        if (mIsEnhancedOpenSupportedInitialized) {
-            return mIsEnhancedOpenSupported;
-        }
-
-        String iface = getClientInterfaceName();
-        if (iface == null) {
-            // Client interface might not be initialized during boot or Wi-Fi off
-            return false;
-        }
-
-        mIsEnhancedOpenSupportedInitialized = true;
-        mIsEnhancedOpenSupported = (getSupportedFeatureSet(iface) & WIFI_FEATURE_OWE) != 0;
-        return mIsEnhancedOpenSupported;
     }
 
     /**
