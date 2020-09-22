@@ -181,11 +181,11 @@ public class WifiConfigManager {
      * 4 hours.
      */
     @VisibleForTesting
-    protected static final long AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS = 4 * 60 * 60 * 1000;
+    protected static final long ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS = 4 * 60 * 60 * 1000;
     @VisibleForTesting
-    protected static final long AGGRESSIVE_MAC_REFRESH_MS_MIN = 30 * 60 * 1000; // 30 minutes
+    protected static final long ENHANCED_MAC_REFRESH_MS_MIN = 30 * 60 * 1000; // 30 minutes
     @VisibleForTesting
-    protected static final long AGGRESSIVE_MAC_REFRESH_MS_MAX = 24 * 60 * 60 * 1000; // 24 hours
+    protected static final long ENHANCED_MAC_REFRESH_MS_MAX = 24 * 60 * 60 * 1000; // 24 hours
 
     private static final MacAddress DEFAULT_MAC_ADDRESS =
             MacAddress.fromString(WifiInfo.DEFAULT_MAC_ADDRESS);
@@ -424,7 +424,7 @@ public class WifiConfigManager {
     }
 
     /**
-     * Determine if the framework should perform "aggressive" MAC randomization when connecting
+     * Determine if the framework should perform enhanced MAC randomization when connecting
      * to the SSID or FQDN in the input WifiConfiguration.
      * @param config
      * @return
@@ -533,10 +533,15 @@ public class WifiConfigManager {
             return;
         }
         long expireDurationMs = (dhcpLeaseSeconds & 0xffffffffL) * 1000;
-        expireDurationMs = Math.max(AGGRESSIVE_MAC_REFRESH_MS_MIN, expireDurationMs);
-        expireDurationMs = Math.min(AGGRESSIVE_MAC_REFRESH_MS_MAX, expireDurationMs);
+        expireDurationMs = Math.max(ENHANCED_MAC_REFRESH_MS_MIN, expireDurationMs);
+        expireDurationMs = Math.min(ENHANCED_MAC_REFRESH_MS_MAX, expireDurationMs);
         internalConfig.randomizedMacExpirationTimeMs = mClock.getWallClockMillis()
                 + expireDurationMs;
+    }
+
+    private void setRandomizedMacAddress(WifiConfiguration config, MacAddress mac) {
+        config.setRandomizedMacAddress(mac);
+        config.randomizedMacLastModifiedTimeMs = mClock.getWallClockMillis();
     }
 
     /**
@@ -552,31 +557,32 @@ public class WifiConfigManager {
             return persistentMac;
         }
         WifiConfiguration internalConfig = getInternalConfiguredNetwork(config.networkId);
-        internalConfig.setRandomizedMacAddress(persistentMac);
+        setRandomizedMacAddress(internalConfig, persistentMac);
         return persistentMac;
     }
 
     /**
-     * This method is called before connecting to a network that has "aggressive randomization"
+     * This method is called before connecting to a network that has "enhanced randomization"
      * enabled, and will re-randomize the MAC address if needed.
      * @param config the WifiConfiguration to make the update
      * @return the updated MacAddress
      */
     private MacAddress updateRandomizedMacIfNeeded(WifiConfiguration config) {
         boolean shouldUpdateMac = config.randomizedMacExpirationTimeMs
-                < mClock.getWallClockMillis();
+                < mClock.getWallClockMillis() || mClock.getWallClockMillis()
+                - config.randomizedMacLastModifiedTimeMs >= ENHANCED_MAC_REFRESH_MS_MAX;
         if (!shouldUpdateMac) {
             return config.getRandomizedMacAddress();
         }
         WifiConfiguration internalConfig = getInternalConfiguredNetwork(config.networkId);
-        internalConfig.setRandomizedMacAddress(MacAddressUtils.createRandomUnicastAddress());
+        setRandomizedMacAddress(internalConfig, MacAddressUtils.createRandomUnicastAddress());
         return internalConfig.getRandomizedMacAddress();
     }
 
     /**
      * Returns the randomized MAC address that should be used for this WifiConfiguration.
      * This API may return a randomized MAC different from the persistent randomized MAC if
-     * the WifiConfiguration is configured for aggressive MAC randomization.
+     * the WifiConfiguration is configured for enhanced MAC randomization.
      * @param config
      * @return MacAddress
      */
@@ -626,7 +632,7 @@ public class WifiConfigManager {
      * @param configuration WifiConfiguration to hide the MAC address
      */
     private void maskRandomizedMacAddressInWifiConfiguration(WifiConfiguration configuration) {
-        configuration.setRandomizedMacAddress(DEFAULT_MAC_ADDRESS);
+        setRandomizedMacAddress(configuration, DEFAULT_MAC_ADDRESS);
     }
 
     /**
@@ -2036,7 +2042,7 @@ public class WifiConfigManager {
         }
         config.lastDisconnected = mClock.getWallClockMillis();
         config.randomizedMacExpirationTimeMs = Math.max(config.randomizedMacExpirationTimeMs,
-                config.lastDisconnected + AGGRESSIVE_MAC_WAIT_AFTER_DISCONNECT_MS);
+                config.lastDisconnected + ENHANCED_MAC_WAIT_AFTER_DISCONNECT_MS);
         // If the network hasn't been disabled, mark it back as
         // enabled after disconnection.
         if (config.status == WifiConfiguration.Status.CURRENT) {
@@ -2970,7 +2976,7 @@ public class WifiConfigManager {
 
     /**
      * Initializes the randomized MAC address for an internal WifiConfiguration depending on
-     * whether it should use aggressive randomization.
+     * whether it should use enhanced randomization.
      * @param config
      */
     private void initRandomizedMacForInternalConfig(WifiConfiguration internalConfig) {
@@ -2978,7 +2984,7 @@ public class WifiConfigManager {
                 ? MacAddressUtils.createRandomUnicastAddress()
                 : getPersistentMacAddress(internalConfig);
         if (randomizedMac != null) {
-            internalConfig.setRandomizedMacAddress(randomizedMac);
+            setRandomizedMacAddress(internalConfig, randomizedMac);
         }
     }
 
