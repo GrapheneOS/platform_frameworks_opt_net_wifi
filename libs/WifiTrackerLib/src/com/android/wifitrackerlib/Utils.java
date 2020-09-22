@@ -427,7 +427,9 @@ class Utils {
             // Do nothing because users know it by signal icon.
         } else { // In range, not disabled.
             if (wifiConfiguration.getRecentFailureReason()
-                    == WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA) {
+                    == WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA
+                    || wifiConfiguration.getRecentFailureReason()
+                    == WifiConfiguration.RECENT_FAILURE_MBO_OCE_DISCONNECT) {
                 return context.getString(R.string.wifitrackerlib_wifi_ap_unable_to_handle_new_sta);
             }
         }
