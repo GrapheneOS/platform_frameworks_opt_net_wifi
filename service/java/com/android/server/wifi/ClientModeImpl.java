@@ -4107,7 +4107,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             WifiConfiguration.NetworkSelectionStatus
                                     .DISABLED_ASSOCIATION_REJECTION);
                     mWifiConfigManager.setRecentFailureAssociationStatus(mTargetNetworkId,
-                            statusCode);
+                            WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA);
 
                     int level2FailureReason =
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN;
@@ -5481,6 +5481,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             // Blocklist the current BSS
             mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration,
                     BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 0);
+            mWifiConfigManager.setRecentFailureAssociationStatus(mWifiInfo.getNetworkId(),
+                    WifiConfiguration.RECENT_FAILURE_MBO_OCE_DISCONNECT);
         }
 
         if (frameData.mStatus != MboOceConstants.BTM_RESPONSE_STATUS_ACCEPT) {
