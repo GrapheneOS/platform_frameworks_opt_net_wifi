@@ -235,6 +235,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private static final String TEST_BSSID = "01:02:03:04:05:06";
     private static final String TEST_PACKAGE = "package";
     private static final int TEST_NETWORK_ID = 567;
+    private static final WorkSource TEST_SETTINGS_WORKSOURCE = new WorkSource();
 
     private SoftApInfo mTestSoftApInfo;
     private WifiServiceImpl mWifiServiceImpl;
@@ -364,6 +365,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiApConfigStore()).thenReturn(mWifiApConfigStore);
         doNothing().when(mFrameworkFacade).registerContentObserver(eq(mContext), any(),
                 anyBoolean(), any());
+        when(mFrameworkFacade.getSettingsWorkSource(any())).thenReturn(TEST_SETTINGS_WORKSOURCE);
         when(mContext.getSystemService(Context.ACTIVITY_SERVICE)).thenReturn(mActivityManager);
         when(mContext.getSystemService(Context.APP_OPS_SERVICE)).thenReturn(mAppOpsManager);
         IPowerManager powerManagerService = mock(IPowerManager.class);
@@ -2132,6 +2134,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testStartLocalOnlyHotspotSingleRegistrationReturnsRequestRegistered() {
         registerLOHSRequestFull();
+        // Use settings worksouce.
+        verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
+                eq(TEST_SETTINGS_WORKSOURCE));
     }
 
     /**
@@ -2402,7 +2407,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
     private void verifyLohsBand(int expectedBand) {
         verify(mActiveModeWarden).startSoftAp(mSoftApModeConfigCaptor.capture(),
-                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
+                eq(TEST_SETTINGS_WORKSOURCE));
         final SoftApConfiguration configuration =
                 mSoftApModeConfigCaptor.getValue().getSoftApConfiguration();
         assertNotNull(configuration);
@@ -2515,6 +2520,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                         config)).isEqualTo(REQUEST_REGISTERED);
         mLooper.dispatchAll();
 
+        // Use app's worksouce.
+        verify(mActiveModeWarden).startSoftAp(any(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
+
         assertThat(callback.mIsStarted).isTrue();
         assertThat(callback.mSoftApConfig.getSsid()).isEqualTo("customSsid");
         assertThat(callback.mSoftApConfig.getSecurityType())
@@ -2534,6 +2543,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 mWifiServiceImpl.startLocalOnlyHotspot(callback, TEST_PACKAGE_NAME, TEST_FEATURE_ID,
                         config)).isEqualTo(REQUEST_REGISTERED);
         mLooper.dispatchAll();
+
+        // Use app's worksouce.
+        verify(mActiveModeWarden).startSoftAp(any(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
 
         assertThat(callback.mIsStarted).isTrue();
         assertThat(callback.mSoftApConfig.getSsid()).isEqualTo("customSsid");
@@ -2555,6 +2568,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                         config)).isEqualTo(REQUEST_REGISTERED);
         mLooper.dispatchAll();
 
+        // Use app's worksouce.
+        verify(mActiveModeWarden).startSoftAp(any(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
+
         assertThat(callback.mIsStarted).isTrue();
         assertThat(callback.mSoftApConfig.getSsid()).isNotEmpty();
     }
@@ -2571,6 +2588,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 mWifiServiceImpl.startLocalOnlyHotspot(callback, TEST_PACKAGE_NAME, TEST_FEATURE_ID,
                         config)).isEqualTo(REQUEST_REGISTERED);
         mLooper.dispatchAll();
+
+        // Use app's worksouce.
+        verify(mActiveModeWarden).startSoftAp(any(),
+                eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
 
         assertThat(callback.mIsStarted).isTrue();
         assertThat(callback.mSoftApConfig.getBssid().toString())
