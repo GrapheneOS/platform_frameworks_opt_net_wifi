@@ -1755,11 +1755,13 @@ public class WifiNative {
      *
      * @param ifaceName Name of the interface.
      * @param config Configuration to use for the soft ap created.
+     * @param isMetered Indicates the network is metered or not.
      * @param listener Callback for AP events.
      * @return true on success, false otherwise.
      */
     public boolean startSoftAp(
-            @NonNull String ifaceName, SoftApConfiguration config, SoftApListener listener) {
+            @NonNull String ifaceName, SoftApConfiguration config, boolean isMetered,
+            SoftApListener listener) {
         if (!mHostapdHal.registerApCallback(ifaceName, listener)) {
             SoftApListenerFromWificond softApListenerFromWificond =
                     new SoftApListenerFromWificond(ifaceName, listener);
@@ -1771,7 +1773,7 @@ public class WifiNative {
             }
         }
 
-        if (!mHostapdHal.addAccessPoint(ifaceName, config, listener::onFailure)) {
+        if (!mHostapdHal.addAccessPoint(ifaceName, config, isMetered, listener::onFailure)) {
             Log.e(TAG, "Failed to add acccess point");
             mWifiMetrics.incrementNumSetupSoftApInterfaceFailureDueToHostapd();
             return false;
