@@ -82,10 +82,14 @@ public class WifiThreadRunner {
         if (runWithScissorsSuccess) {
             return result.value;
         } else {
+            Throwable callerThreadThrowable = new Throwable("Caller thread Stack trace:");
+            Throwable wifiThreadThrowable = new Throwable("Wifi thread Stack trace:");
+            wifiThreadThrowable.setStackTrace(mHandler.getLooper().getThread().getStackTrace());
+            Log.e(TAG, "WifiThreadRunner.call() timed out!", callerThreadThrowable);
+            Log.e(TAG, "WifiThreadRunner.call() timed out!", wifiThreadThrowable);
             if (mTimeoutsAreErrors) {
                 throw new RuntimeException("WifiThreadRunner.call() timed out!");
             }
-            Log.e(TAG, "WifiThreadRunner.call() timed out!", new Throwable("Stack trace:"));
             return valueToReturnOnTimeout;
         }
     }
@@ -104,10 +108,14 @@ public class WifiThreadRunner {
         if (runWithScissorsSuccess) {
             return true;
         } else {
+            Throwable callerThreadThrowable = new Throwable("Caller thread Stack trace:");
+            Throwable wifiThreadThrowable = new Throwable("Wifi thread Stack trace:");
+            wifiThreadThrowable.setStackTrace(mHandler.getLooper().getThread().getStackTrace());
+            Log.e(TAG, "WifiThreadRunner.run() timed out!", callerThreadThrowable);
+            Log.e(TAG, "WifiThreadRunner.run() timed out!", wifiThreadThrowable);
             if (mTimeoutsAreErrors) {
                 throw new RuntimeException("WifiThreadRunner.run() timed out!");
             }
-            Log.e(TAG, "WifiThreadRunner.run() timed out!", new Throwable("Stack trace:"));
             return false;
         }
     }
