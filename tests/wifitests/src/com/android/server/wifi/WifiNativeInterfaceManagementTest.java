@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -152,7 +153,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         when(mHostapdHal.isInitializationStarted()).thenReturn(false);
         when(mHostapdHal.isInitializationComplete()).thenReturn(true);
         when(mHostapdHal.startDaemon()).thenReturn(true);
-        when(mHostapdHal.addAccessPoint(any(), any(), any())).thenReturn(true);
+        when(mHostapdHal.addAccessPoint(any(), any(), anyBoolean(), any())).thenReturn(true);
         when(mHostapdHal.removeAccessPoint(any())).thenReturn(true);
         when(mHostapdHal.registerApCallback(any(), any())).thenReturn(true);
 
@@ -797,10 +798,10 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
 
         // Start softap
         assertTrue(mWifiNative.startSoftAp(IFACE_NAME_0, new SoftApConfiguration.Builder().build(),
-                mock(WifiNative.SoftApListener.class)));
+                true, mock(WifiNative.SoftApListener.class)));
 
         mInOrder.verify(mHostapdHal).registerApCallback(any(), any());
-        mInOrder.verify(mHostapdHal).addAccessPoint(any(), any(), any());
+        mInOrder.verify(mHostapdHal).addAccessPoint(any(), any(), anyBoolean(), any());
 
         // Trigger vendor HAL death
         mHostapdDeathHandlerCaptor.getValue().onDeath();
@@ -824,11 +825,11 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
 
         // Start softap
         assertTrue(mWifiNative.startSoftAp(IFACE_NAME_0, new SoftApConfiguration.Builder().build(),
-                mock(WifiNative.SoftApListener.class)));
+                true, mock(WifiNative.SoftApListener.class)));
 
         mInOrder.verify(mHostapdHal).registerApCallback(any(), any());
         mInOrder.verify(mWificondControl).registerApCallback(any(), any(), any());
-        mInOrder.verify(mHostapdHal).addAccessPoint(any(), any(), any());
+        mInOrder.verify(mHostapdHal).addAccessPoint(any(), any(), anyBoolean(), any());
 
         // Trigger vendor HAL death
         mHostapdDeathHandlerCaptor.getValue().onDeath();
