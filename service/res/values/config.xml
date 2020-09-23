@@ -341,6 +341,12 @@
     <integer-array translatable="false" name="config_wifiSingleSavedNetworkConnectedScanIntervalScheduleSec">
     </integer-array>
 
+    <!-- List of constants to indicate how many failures are needed to temporarily disable a network
+    from auto-connect -->
+    <integer translatable="false" name="config_wifiDisableReasonAssociationRejectionThreshold"> 5 </integer>
+    <integer translatable="false" name="config_wifiDisableReasonAuthenticationFailureThreshold"> 5 </integer>
+    <integer translatable="false" name="config_wifiDisableReasonDhcpFailureThreshold"> 5 </integer>
+
     <!-- List of constants that indicate the number of consecutive failures per type needed to block a BSSID.
     A blocked BSSID will not be considered in network selection and firmware roaming.-->
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorApUnableToHandleNewStaThreshold"> 1 </integer>

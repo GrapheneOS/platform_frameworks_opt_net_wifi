@@ -179,6 +179,20 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 TEST_MAX_NUM_ACTIVE_CHANNELS_FOR_PARTIAL_SCAN);
         mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, true);
         mResources.setInteger(R.integer.config_wifiMaxPnoSsidCount, 16);
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonAssociationRejectionThreshold,
+                NetworkSelectionStatus.DISABLE_REASON_INFOS
+                        .get(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION)
+                        .mDisableThreshold);
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonAuthenticationFailureThreshold,
+                NetworkSelectionStatus.DISABLE_REASON_INFOS
+                        .get(NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE)
+                        .mDisableThreshold);
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonDhcpFailureThreshold,
+                NetworkSelectionStatus.DISABLE_REASON_INFOS
+                        .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
         when(mContext.getResources()).thenReturn(mResources);
 
         // Setup UserManager profiles for the default user.
@@ -1214,6 +1228,40 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the parameters in DISABLE_REASON_INFOS are overlayable.
+     */
+    @Test
+    public void testNetworkSelectionDisableReasonCustomConfigOverride() {
+        int oldThreshold = NetworkSelectionStatus.DISABLE_REASON_INFOS
+                .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold;
+
+        // Modify the overlay value and create WifiConfigManager again.
+        int newThreshold = oldThreshold + 1;
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonDhcpFailureThreshold, newThreshold);
+        createWifiConfigManager();
+
+        // Verify that the threshold is updated in the copied version
+        assertEquals(newThreshold, mWifiConfigManager.getNetworkSelectionDisableThreshold(
+                NetworkSelectionStatus.DISABLED_DHCP_FAILURE));
+        // Verify the original DISABLE_REASON_INFOS is unchanged
+        assertEquals(oldThreshold, NetworkSelectionStatus.DISABLE_REASON_INFOS
+                .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
+    }
+
+    /**
+     * Verify the correctness of the copied DISABLE_REASON_INFOS.
+     */
+    @Test
+    public void testNetworkSelectionDisableReasonClone() {
+        for (int i = 1; i < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX; i++) {
+            assertEquals("Disable threshold for reason=" + i + " should be equal",
+                    NetworkSelectionStatus.DISABLE_REASON_INFOS.get(i).mDisableThreshold,
+                    mWifiConfigManager.getNetworkSelectionDisableThreshold(i));
+        }
+    }
+
+    /**
      * Verifies the update of network status using
      * {@link WifiConfigManager#updateNetworkSelectionStatus(int, int)}.
      */
@@ -1234,7 +1282,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // disable it 5 times to actually mark it temporarily disabled.
         int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
         int assocRejectThreshold =
-                WifiConfigManager.getNetworkSelectionDisableThreshold(assocRejectReason);
+                mWifiConfigManager.getNetworkSelectionDisableThreshold(assocRejectReason);
         for (int i = 1; i <= assocRejectThreshold; i++) {
             verifyUpdateNetworkSelectionStatus(result.getNetworkId(), assocRejectReason, i);
         }
@@ -1330,7 +1378,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
 
         int disableThreshold =
-                WifiConfigManager.getNetworkSelectionDisableThreshold(reason);
+                mWifiConfigManager.getNetworkSelectionDisableThreshold(reason);
         for (int i = 1; i <= disableThreshold; i++) {
             verifyUpdateNetworkSelectionStatus(result.getNetworkId(), reason, i);
         }
@@ -1373,7 +1421,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             int numBssidsInBlocklist = i;
             when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString()))
                     .thenReturn(numBssidsInBlocklist);
-            timeout = WifiConfigManager.getNetworkSelectionDisableTimeoutMillis(disableReason)
+            timeout = mWifiConfigManager.getNetworkSelectionDisableTimeoutMillis(disableReason)
                     * multiplier;
             multiplier *= 2;
             verifyNetworkIsEnabledAfter(result.getNetworkId(),
@@ -5352,7 +5400,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         long retrievedDisableTime = retrievedStatus.getDisableTime();
         int retrievedDisableReasonCounter = retrievedStatus.getDisableReasonCounter(reason);
         int disableReasonThreshold =
-                WifiConfigManager.getNetworkSelectionDisableThreshold(reason);
+                mWifiConfigManager.getNetworkSelectionDisableThreshold(reason);
 
         if (reason == NetworkSelectionStatus.DISABLED_NONE) {
             assertEquals(reason, retrievedDisableReason);
@@ -5527,7 +5575,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
         int assocRejectThreshold =
-                WifiConfigManager.getNetworkSelectionDisableThreshold(assocRejectReason);
+                mWifiConfigManager.getNetworkSelectionDisableThreshold(assocRejectReason);
         for (int i = 1; i <= assocRejectThreshold; i++) {
             assertFalse(mWifiConfigManager.updateNetworkSelectionStatus(
                         networkId, assocRejectReason));
