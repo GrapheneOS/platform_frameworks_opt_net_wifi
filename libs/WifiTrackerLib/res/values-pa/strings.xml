@@ -37,7 +37,7 @@
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ਸੀਮਤ ਕਨੈਕਸ਼ਨ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ਨਿੱਜੀ DNS ਸਰਵਰ \'ਤੇ ਪਹੁੰਚ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕਦੀ"</string>
     <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"ਇੰਟਰਨੈੱਟ ਨਹੀਂ"</string>
-    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ਠੀਕ-ਠਾਕ ਕੁਆਲਿਟੀ"</string>
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ਠੀਕ-ਠਾਕ ਕਨੈਕਸ਼ਨ"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"ਕੋਈ ਨਹੀਂ"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"ਮਿਆਦ ਮੁੱਕ ਗਈ"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"ਸਾਈਨ-ਅੱਪ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ"</string>
