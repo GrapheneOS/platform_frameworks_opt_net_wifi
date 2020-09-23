@@ -3319,6 +3319,9 @@ message ConnectionDurationStats {
   optional int32 total_time_insufficient_throughput_ms = 2;
   // Total time with cellular data off
   optional int32 total_time_cellular_data_off_ms = 3;
+  // Total time with insufficient Wifi throughput and with cellular data on
+  // while wifi is the default network
+  optional int32 total_time_insufficient_throughput_default_wifi_ms = 4;
 }
 
 // Wi-Fi off metrics
