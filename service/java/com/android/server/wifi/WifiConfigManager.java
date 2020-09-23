@@ -1132,7 +1132,6 @@ public class WifiConfigManager {
         newInternalConfig.noInternetAccessExpected = externalConfig.noInternetAccessExpected;
         newInternalConfig.ephemeral = externalConfig.ephemeral;
         newInternalConfig.osu = externalConfig.osu;
-        newInternalConfig.trusted = externalConfig.trusted;
         newInternalConfig.fromWifiNetworkSuggestion = externalConfig.fromWifiNetworkSuggestion;
         newInternalConfig.fromWifiNetworkSpecifier = externalConfig.fromWifiNetworkSpecifier;
         newInternalConfig.useExternalScores = externalConfig.useExternalScores;

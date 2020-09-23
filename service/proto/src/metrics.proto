@@ -1471,6 +1471,9 @@ message StaEvent {
 
   // Whether cellular data network is available
   optional bool is_cellular_data_available = 25;
+
+  //Whether Adaptive Connectivity is enabled
+  optional bool is_adaptive_connectivity_enabled = 26;
 }
 
 // Wi-Fi Aware metrics
@@ -3158,6 +3161,10 @@ message UserActionEvent {
     EVENT_CONFIGURE_METERED_STATUS_AUTO = 12;
     // User adds a new network or updates configurations for an existing network.
     EVENT_ADD_OR_UPDATE_NETWORK = 13;
+    // User sets the adaptive connectivity to on
+    EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_ON = 14;
+    // User sets the adaptive connectivity to off
+    EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_OFF = 15;
   }
 
   // The type of user action

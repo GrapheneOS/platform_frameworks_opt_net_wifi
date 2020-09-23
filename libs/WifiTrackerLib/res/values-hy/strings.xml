@@ -50,7 +50,7 @@
     <string name="imsi_protection_warning" msgid="5231726821588271569">"Այս ցանցը ստանում է եզակի ID, որի օգնությամբ հնարավոր է հետագծել սարքի տեղադրությունը։ "<annotation id="url">"Իմանալ ավելին"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Շատ դանդաղ"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Դանդաղ"</string>
-    <string name="speed_label_okay" msgid="3741857805086997968">"Հաստատել"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Լավ"</string>
     <string name="speed_label_medium" msgid="3175703848952862009">"Միջին"</string>
     <string name="speed_label_fast" msgid="8344116097613544322">"Արագ"</string>
     <string name="speed_label_very_fast" msgid="1595806641512447877">"Շատ արագ"</string>

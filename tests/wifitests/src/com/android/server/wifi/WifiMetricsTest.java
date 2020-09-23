@@ -2302,6 +2302,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         mTestLooper.dispatchAll();
         wifiMetrics.setScreenState(true);
         when(mWifiDataStall.isCellularDataAvailable()).thenReturn(true);
+        wifiMetrics.setAdaptiveConnectivityState(true);
         for (int i = 0; i < mTestStaLogInts.length; i++) {
             int[] lia = mTestStaLogInts[i];
             wifiMetrics.logStaEvent(lia[0], lia[1], lia[2] == 1 ? mTestWifiConfig : null);
@@ -2342,6 +2343,7 @@ public class WifiMetricsTest extends WifiBaseTest {
                     evs[7] == 1 ? mTestWifiConfig : null, event.configInfo);
             assertEquals(true, event.screenOn);
             assertEquals(true, event.isCellularDataAvailable);
+            assertEquals(true, event.isAdaptiveConnectivityEnabled);
             j++;
         }
         assertEquals(mExpectedValues.length, j);
@@ -2551,6 +2553,35 @@ public class WifiMetricsTest extends WifiBaseTest {
                 userActionEvents[0].eventType);
         assertEquals(testStartTimeMillis, userActionEvents[0].startTimeMillis);
         assertNull(userActionEvents[0].targetNetworkInfo);
+    }
+
+    /**
+     * Test the logging of UserActionEvent for Adaptive Connectivity toggle
+     */
+    @Test
+    public void testLogUserActionEventForAdaptiveConnectivity() throws Exception {
+        long testStartTimeMillis = 123123L;
+        boolean adaptiveConnectivityEnabled = true;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartTimeMillis);
+        mWifiMetrics.logUserActionEvent(
+                mWifiMetrics.convertAdaptiveConnectivityStateToUserActionEventType(
+                        adaptiveConnectivityEnabled));
+        long testStartTimeMillis2 = 200000L;
+        boolean adaptiveConnectivityEnabled2 = false;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartTimeMillis2);
+        mWifiMetrics.logUserActionEvent(
+                mWifiMetrics.convertAdaptiveConnectivityStateToUserActionEventType(
+                        adaptiveConnectivityEnabled2));
+        dumpProtoAndDeserialize();
+
+        WifiMetricsProto.UserActionEvent[] userActionEvents = mDecodedProto.userActionEvents;
+        assertEquals(2, userActionEvents.length);
+        assertEquals(WifiMetricsProto.UserActionEvent.EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_ON,
+                userActionEvents[0].eventType);
+        assertEquals(testStartTimeMillis, userActionEvents[0].startTimeMillis);
+        assertEquals(WifiMetricsProto.UserActionEvent.EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_OFF,
+                userActionEvents[1].eventType);
+        assertEquals(testStartTimeMillis2, userActionEvents[1].startTimeMillis);
     }
 
     /**

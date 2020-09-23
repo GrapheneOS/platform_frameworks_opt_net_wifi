@@ -60,7 +60,6 @@ public class WifiScoreReport {
     private static final int WIFI_CONNECTED_NETWORK_SCORER_IDENTIFIER = 0;
     private static final int INVALID_SESSION_ID = -1;
     private static final long MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS = 29000;
-    private static final long DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS = 30000;
     private static final long INVALID_WALL_CLOCK_MILLIS = -1;
 
     /**
@@ -206,14 +205,25 @@ public class WifiScoreReport {
                 && mContext.getResources().getBoolean(
                         R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)) {
             long millis = mClock.getWallClockMillis();
-            if (mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS
-                    && (millis - mLastScoreBreachLowTimeMillis)
-                            < mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()) {
-                return;
+            if (mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS) {
+                if (mWifiInfo.getRssi()
+                        >= mDeviceConfigFacade.getRssiThresholdNotSendLowScoreToCsDbm()) {
+                    Log.d(TAG, "Not reporting low score because RSSI is high "
+                            + mWifiInfo.getRssi());
+                    return;
+                }
+                if ((millis - mLastScoreBreachLowTimeMillis)
+                        < mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()) {
+                    Log.d(TAG, "Not reporting low score because elapsed time is shorter than "
+                            + "the minimum confirmation duration");
+                    return;
+                }
             }
             if (mLastScoreBreachHighTimeMillis != INVALID_WALL_CLOCK_MILLIS
                     && (millis - mLastScoreBreachHighTimeMillis)
                             < mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()) {
+                Log.d(TAG, "Not reporting high score because elapsed time is shorter than "
+                        + "the minimum confirmation duration");
                 return;
             }
         }
@@ -322,6 +332,10 @@ public class WifiScoreReport {
             super.onChange(selfChange);
             mAdaptiveConnectivityEnabled = getValue();
             Log.d(TAG, "Adaptive connectivity status changed: " + mAdaptiveConnectivityEnabled);
+            mWifiMetrics.setAdaptiveConnectivityState(mAdaptiveConnectivityEnabled);
+            mWifiMetrics.logUserActionEvent(
+                    mWifiMetrics.convertAdaptiveConnectivityStateToUserActionEventType(
+                            mAdaptiveConnectivityEnabled));
         }
 
         /**
@@ -335,6 +349,7 @@ public class WifiScoreReport {
             }
             mFrameworkFacade.registerContentObserver(mContext, uri, true, this);
             mAdaptiveConnectivityEnabled = mAdaptiveConnectivityEnabledSettingObserver.getValue();
+            mWifiMetrics.setAdaptiveConnectivityState(mAdaptiveConnectivityEnabled);
         }
 
         public boolean getValue() {
@@ -735,9 +750,8 @@ public class WifiScoreReport {
         if ((mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS)
                 && ((millis - mLastScoreBreachLowTimeMillis)
                         >= MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS)) {
-            mBssidBlocklistMonitor.blockBssidForDurationMs(mWifiInfo.getBSSID(),
+            mBssidBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
                     mWifiInfo.getSSID(),
-                    DURATION_TO_BLOCKLIST_BSSID_AFTER_FIRST_EXITING_MILLIS,
                     BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE,
                     mWifiInfo.getRssi());
             mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;

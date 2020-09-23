@@ -1010,7 +1010,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 NativeUtil.decodeSsid(SUPPLICANT_SSID));
 
         wifiMonitorInOrder.verify(mWifiMonitor).broadcastNetworkConnectionEvent(
-                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(BSSID));
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(false), eq(BSSID));
         wifiMonitorInOrder.verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
                 eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId),
                 any(WifiSsid.class), eq(BSSID), eq(SupplicantState.COMPLETED));
@@ -2824,7 +2824,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 NativeUtil.decodeSsid(SUPPLICANT_SSID), false);
 
         wifiMonitorInOrder.verify(mWifiMonitor).broadcastNetworkConnectionEvent(
-                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(BSSID));
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(false), eq(BSSID));
         wifiMonitorInOrder.verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
                 eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId),
                 any(WifiSsid.class), eq(BSSID), eq(SupplicantState.COMPLETED));
@@ -2904,8 +2904,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 NativeUtil.macAddressToByteArray(BSSID), SUPPLICANT_NETWORK_ID,
                 NativeUtil.decodeSsid(SUPPLICANT_SSID), true);
 
-        wifiMonitorInOrder.verify(mWifiMonitor).broadcastFilsNetworkConnectionEvent(
-                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(BSSID));
+        wifiMonitorInOrder.verify(mWifiMonitor).broadcastNetworkConnectionEvent(
+                eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId), eq(true), eq(BSSID));
         wifiMonitorInOrder.verify(mWifiMonitor).broadcastSupplicantStateChangeEvent(
                 eq(WLAN0_IFACE_NAME), eq(frameworkNetworkId),
                 any(WifiSsid.class), eq(BSSID), eq(SupplicantState.COMPLETED));

@@ -44,6 +44,9 @@ import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
 import android.net.shared.ProvisioningConfiguration;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.IWifiP2pManager;
@@ -130,6 +133,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     private static final String TAG = "WifiP2pService";
     private boolean mVerboseLoggingEnabled = false;
     private static final String NETWORKTYPE = "WIFI_P2P";
+    @VisibleForTesting
+    static final int DEFAULT_GROUP_OWNER_INTENT = 6;
 
     private Context mContext;
 
@@ -2240,6 +2245,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         break;
                     case PEER_CONNECTION_USER_CONFIRM:
                         mSavedPeerConfig.wps.setup = WpsInfo.DISPLAY;
+                        mSavedPeerConfig.groupOwnerIntent =
+                                selectGroupOwnerIntentIfNecessary(mSavedPeerConfig);
                         mWifiNative.p2pConnect(mSavedPeerConfig, FORM_GROUP);
                         transitionTo(mGroupNegotiationState);
                         break;
@@ -3537,6 +3544,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 Log.e(TAG, "Invalid device");
                 return;
             }
+            config.groupOwnerIntent = selectGroupOwnerIntentIfNecessary(config);
             String pin = mWifiNative.p2pConnect(config, dev.isGroupOwner());
             try {
                 Integer.parseInt(pin);
@@ -4313,6 +4321,38 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 clearServiceRequests(c.mMessenger);
             }
         }
+
+        private int selectGroupOwnerIntentIfNecessary(WifiP2pConfig config) {
+            int intent = config.groupOwnerIntent;
+            // return the legacy default value for invalid values.
+            if (intent != WifiP2pConfig.GROUP_OWNER_INTENT_AUTO) {
+                if (intent < WifiP2pConfig.GROUP_OWNER_INTENT_MIN
+                        || intent > WifiP2pConfig.GROUP_OWNER_INTENT_MAX) {
+                    intent = DEFAULT_GROUP_OWNER_INTENT;
+                }
+                return intent;
+            }
+
+            WifiManager wifiManager = mContext.getSystemService(WifiManager.class);
+
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            Log.d(TAG, "WifiInfo: " + wifiInfo);
+            int freq = wifiInfo.getFrequency();
+            if (wifiInfo.getNetworkId() == WifiConfiguration.INVALID_NETWORK_ID) {
+                intent = DEFAULT_GROUP_OWNER_INTENT + 1;
+            } else if (ScanResult.is24GHz(freq)) {
+                intent = WifiP2pConfig.GROUP_OWNER_INTENT_MIN;
+            } else if (ScanResult.is5GHz(freq)) {
+                // If both sides use the maximum, the negotiation would fail.
+                intent = WifiP2pConfig.GROUP_OWNER_INTENT_MAX - 1;
+            } else {
+                intent = DEFAULT_GROUP_OWNER_INTENT;
+            }
+            Log.i(TAG, "change GO intent value from "
+                    + config.groupOwnerIntent + " to " + intent);
+            return intent;
+        }
+
     }
 
     /**
