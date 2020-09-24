@@ -438,7 +438,9 @@ public class SoftApManager implements ActiveModeManager {
         }
 
         if (!mWifiNative.startSoftAp(mApInterfaceName,
-                  localConfigBuilder.build(), mSoftApListener)) {
+                  localConfigBuilder.build(),
+                  mApConfig.getTargetMode() ==  WifiManager.IFACE_IP_MODE_TETHERED,
+                  mSoftApListener)) {
             Log.e(getTag(), "Soft AP start failed");
             return ERROR_GENERIC;
         }

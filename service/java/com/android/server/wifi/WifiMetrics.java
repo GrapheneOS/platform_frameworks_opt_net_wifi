@@ -747,12 +747,15 @@ public class WifiMetrics {
         private int mConnectionDurationCellularDataOffMs;
         private int mConnectionDurationSufficientThroughputMs;
         private int mConnectionDurationInSufficientThroughputMs;
+        private int mConnectionDurationInSufficientThroughputDefaultWifiMs;
 
         public WifiMetricsProto.ConnectionDurationStats toProto() {
             WifiMetricsProto.ConnectionDurationStats proto =
                     new WifiMetricsProto.ConnectionDurationStats();
             proto.totalTimeSufficientThroughputMs = mConnectionDurationSufficientThroughputMs;
             proto.totalTimeInsufficientThroughputMs = mConnectionDurationInSufficientThroughputMs;
+            proto.totalTimeInsufficientThroughputDefaultWifiMs =
+                    mConnectionDurationInSufficientThroughputDefaultWifiMs;
             proto.totalTimeCellularDataOffMs = mConnectionDurationCellularDataOffMs;
             return proto;
         }
@@ -760,9 +763,11 @@ public class WifiMetrics {
             mConnectionDurationCellularDataOffMs = 0;
             mConnectionDurationSufficientThroughputMs = 0;
             mConnectionDurationInSufficientThroughputMs = 0;
+            mConnectionDurationInSufficientThroughputDefaultWifiMs = 0;
         }
         public void incrementDurationCount(int timeDeltaLastTwoPollsMs,
-                boolean isThroughputSufficient, boolean isCellularDataAvailable) {
+                boolean isThroughputSufficient, boolean isCellularDataAvailable,
+                boolean isDefaultOnWifi) {
             if (!isCellularDataAvailable) {
                 mConnectionDurationCellularDataOffMs += timeDeltaLastTwoPollsMs;
             } else {
@@ -770,6 +775,10 @@ public class WifiMetrics {
                     mConnectionDurationSufficientThroughputMs += timeDeltaLastTwoPollsMs;
                 } else {
                     mConnectionDurationInSufficientThroughputMs += timeDeltaLastTwoPollsMs;
+                    if (isDefaultOnWifi) {
+                        mConnectionDurationInSufficientThroughputDefaultWifiMs +=
+                                timeDeltaLastTwoPollsMs;
+                    }
                 }
             }
         }
@@ -780,6 +789,8 @@ public class WifiMetrics {
                     .append(mConnectionDurationSufficientThroughputMs)
                     .append(", connectionDurationInSufficientThroughputMs=")
                     .append(mConnectionDurationInSufficientThroughputMs)
+                    .append(", connectionDurationInSufficientThroughputDefaultWifiMs=")
+                    .append(mConnectionDurationInSufficientThroughputDefaultWifiMs)
                     .append(", connectionDurationCellularDataOffMs=")
                     .append(mConnectionDurationCellularDataOffMs);
             return sb.toString();
@@ -6730,7 +6741,7 @@ public class WifiMetrics {
             boolean isThroughputSufficient, boolean isCellularDataAvailable) {
         synchronized (mLock) {
             mConnectionDurationStats.incrementDurationCount(timeDeltaLastTwoPollsMs,
-                    isThroughputSufficient, isCellularDataAvailable);
+                    isThroughputSufficient, isCellularDataAvailable, mWifiWins);
         }
     }
 

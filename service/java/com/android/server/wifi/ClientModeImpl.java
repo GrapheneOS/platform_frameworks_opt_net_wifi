@@ -2175,7 +2175,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private void sendLinkConfigurationChangedBroadcast() {
         Intent intent = new Intent(WifiManager.ACTION_LINK_CONFIGURATION_CHANGED);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        intent.putExtra(WifiManager.EXTRA_LINK_PROPERTIES, new LinkProperties(mLinkProperties));
         mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
     }
 
