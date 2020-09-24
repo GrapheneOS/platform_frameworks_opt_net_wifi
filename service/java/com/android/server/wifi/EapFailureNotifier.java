@@ -81,16 +81,8 @@ public class EapFailureNotifier {
         Resources res = getResourcesForSubId(mContext,
                 mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
         if (res == null) return;
-        int resourceId = res.getIdentifier(
-                ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
-                "string",
-                // getIdentifier seems to use the Java package name rather than the Android
-                // application package name. i.e. what you would have used if the resource name was
-                // statically known:
-                // import com.android.wifi.resources.R;
-                // ...
-                // R.string.wifi_eap_error_message_code_###
-                mContext.getWifiOverlayJavaPkgName());
+        int resourceId = res.getIdentifier(ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
+                "string", mContext.getWifiOverlayApkPkgName());
 
         if (resourceId == 0) return;
         String errorMessage = res.getString(resourceId, config.SSID);
