@@ -112,6 +112,8 @@ else
     LIB_WIFI_HAL := libwifi-hal-rtk
   else ifeq ($(BOARD_WLAN_DEVICE), emulator)
     LIB_WIFI_HAL := libwifi-hal-emu
+  else ifeq ($(BOARD_WLAN_DEVICE), slsi)
+    LIB_WIFI_HAL := libwifi-hal-slsi
   endif
 endif
 
