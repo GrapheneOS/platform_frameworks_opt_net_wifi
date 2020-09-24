@@ -249,6 +249,7 @@ public class ClientModeImpl extends StateMachine {
     private String mInterfaceName;
 
     private int mLastSignalLevel = -1;
+    private int mLastScanRssi = WifiInfo.INVALID_RSSI;
     private String mLastBssid;
     private int mLastNetworkId; // The network Id we successfully joined
     // The subId used by WifiConfiguration with SIM credential which was connected successfully
@@ -2961,12 +2962,11 @@ public class ClientModeImpl extends StateMachine {
             if (blocklistReason != -1) {
                 int networkId = (configuration == null) ? WifiConfiguration.INVALID_NETWORK_ID
                         : configuration.networkId;
-                int scanRssi = mWifiConfigManager.findScanRssi(networkId,
-                        mWifiHealthMonitor.getScanRssiValidTimeMs());
-                mWifiScoreCard.noteConnectionFailure(mWifiInfo, scanRssi, ssid, blocklistReason);
+                mWifiScoreCard.noteConnectionFailure(mWifiInfo, mLastScanRssi, ssid,
+                        blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
                 mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, blocklistReason,
-                        scanRssi);
+                        mLastScanRssi);
             }
         }
 
@@ -4093,9 +4093,9 @@ public class ClientModeImpl extends StateMachine {
                     }
                     mTargetNetworkId = netId;
                     // Update scorecard while there is still state from existing connection
-                    int scanRssi = mWifiConfigManager.findScanRssi(netId,
+                    mLastScanRssi = mWifiConfigManager.findScanRssi(netId,
                             mWifiHealthMonitor.getScanRssiValidTimeMs());
-                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, scanRssi, config.SSID);
+                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, mLastScanRssi, config.SSID);
                     mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(config.SSID);
 
                     updateWifiConfigOnStartConnection(config, bssid);
@@ -5505,9 +5505,9 @@ public class ClientModeImpl extends StateMachine {
                         loge("CMD_START_ROAM and no config, bail out...");
                         break;
                     }
-                    int scanRssi = mWifiConfigManager.findScanRssi(netId,
+                    mLastScanRssi = mWifiConfigManager.findScanRssi(netId,
                             mWifiHealthMonitor.getScanRssiValidTimeMs());
-                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, scanRssi, config.SSID);
+                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, mLastScanRssi, config.SSID);
                     setTargetBssid(config, bssid);
                     mTargetNetworkId = netId;
 
