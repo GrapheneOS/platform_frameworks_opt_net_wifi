@@ -122,6 +122,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         doNothing().when(mWifiVendorHal).registerRadioModeChangeHandler(
                 mWifiVendorHalRadioModeChangeHandlerCaptor.capture());
         when(mWifiVendorHal.isVendorHalSupported()).thenReturn(true);
+        when(mWifiVendorHal.isVendorHalReady()).thenReturn(true);
         when(mWifiVendorHal.startVendorHal()).thenReturn(true);
         when(mWifiVendorHal.createStaIface(any(), any())).thenReturn(IFACE_NAME_0);
         when(mWifiVendorHal.createApIface(any(), any())).thenReturn(IFACE_NAME_0);
@@ -404,6 +405,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         verify(mWifiVendorHal).stopVendorHal();
         verify(mIfaceCallback0).onDestroyed(IFACE_NAME_0);
 
+        verify(mWifiVendorHal, atLeastOnce()).isVendorHalReady();
         verify(mWifiVendorHal, atLeastOnce()).isVendorHalSupported();
 
         // Assert that the client & softap interface is no more there.
@@ -1198,6 +1200,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         mInOrder.verify(mWificondControl).tearDownClientInterface(IFACE_NAME_0);
         mInOrder.verify(mSupplicantStaIfaceHal).deregisterDeathHandler();
         mInOrder.verify(mSupplicantStaIfaceHal).terminate();
+        mInOrder.verify(mWifiVendorHal).isVendorHalReady();
         mInOrder.verify(mIfaceCallback0).onDestroyed(IFACE_NAME_0);
         // Now continue with rest of AP interface setup.
         mInOrder.verify(mWificondControl).setupInterfaceForSoftApMode(IFACE_NAME_0);
@@ -1255,6 +1258,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         mInOrder.verify(mWificondControl).tearDownSoftApInterface(IFACE_NAME_0);
         mInOrder.verify(mHostapdHal).deregisterDeathHandler();
         mInOrder.verify(mHostapdHal).terminate();
+        mInOrder.verify(mWifiVendorHal).isVendorHalReady();
         mInOrder.verify(mIfaceCallback0).onDestroyed(IFACE_NAME_0);
         // Now continue with rest of STA interface setup.
         mInOrder.verify(mWificondControl).setupInterfaceForClientMode(eq(IFACE_NAME_0), any(),
@@ -1456,6 +1460,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
             mInOrder.verify(mWifiVendorHal).isVendorHalSupported();
             mInOrder.verify(mWifiVendorHal).stopVendorHal();
         }
+        mInOrder.verify(mWifiVendorHal).isVendorHalReady();
         mInOrder.verify(callback).onDestroyed(ifaceName);
     }
 
@@ -1526,6 +1531,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
             mInOrder.verify(mWifiVendorHal).isVendorHalSupported();
             mInOrder.verify(mWifiVendorHal).stopVendorHal();
         }
+        mInOrder.verify(mWifiVendorHal).isVendorHalReady();
         mInOrder.verify(callback).onDestroyed(ifaceName);
     }
 
@@ -1605,6 +1611,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
             mInOrder.verify(mWifiVendorHal).isVendorHalSupported();
             mInOrder.verify(mWifiVendorHal).stopVendorHal();
         }
+        mInOrder.verify(mWifiVendorHal).isVendorHalReady();
         mInOrder.verify(callback).onDestroyed(ifaceName);
     }
 
