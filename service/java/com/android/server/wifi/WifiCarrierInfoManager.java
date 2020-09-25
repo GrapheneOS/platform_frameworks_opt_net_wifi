@@ -1429,6 +1429,10 @@ public class WifiCarrierInfoManager {
 
     private void sendImsiPrivacyNotification(int carrierId) {
         String carrierName = getCarrierNameforSubId(getMatchingSubId(carrierId));
+        if (carrierName == null) {
+            // If carrier name could not be retrieved, do not send notification.
+            return;
+        }
         Notification.Action userAllowAppNotificationAction =
                 new Notification.Action.Builder(null,
                         mResources.getText(R.string
