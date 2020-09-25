@@ -5919,4 +5919,14 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 networks, retrievedNetworks);
     }
+
+    /**
+     * Check persist random Mac Address is generated from stable Mac Random key.
+     */
+    @Test
+    public void testGetPersistRandomMacAddress() {
+        WifiConfiguration network = WifiConfigurationTestUtil.createPskNetwork();
+        mWifiConfigManager.getPersistentMacAddress(network);
+        verify(mMacAddressUtil).calculatePersistentMac(eq(network.getMacRandomKey()), any());
+    }
 }
