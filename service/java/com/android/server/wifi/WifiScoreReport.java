@@ -235,6 +235,10 @@ public class WifiScoreReport {
         // Stay a notch above the transition score if adaptive connectivity is disabled.
         if (!mAdaptiveConnectivityEnabled) {
             score = ConnectedScore.WIFI_TRANSITION_SCORE + 1;
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG,
+                        "Adaptive connectivity disabled - Stay a notch above the transition score");
+            }
         }
         mNetworkAgent.sendNetworkScore(score);
     }
@@ -357,7 +361,7 @@ public class WifiScoreReport {
         }
 
         public boolean getValue() {
-            return mFrameworkFacade.getIntegerSetting(
+            return mFrameworkFacade.getSecureIntegerSetting(
                     mContext, SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED, 1) == 1;
         }
     }
@@ -553,6 +557,9 @@ public class WifiScoreReport {
     public boolean shouldCheckIpLayer() {
         // Don't recommend if adaptive connectivity is disabled.
         if (!mAdaptiveConnectivityEnabled) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Adaptive connectivity disabled - Don't check IP layer");
+            }
             return false;
         }
         int nud = mScoringParams.getNudKnob();
