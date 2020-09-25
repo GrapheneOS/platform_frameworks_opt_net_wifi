@@ -238,7 +238,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiInfo.setRssi(-77);
         mWifiScoreReport.calculateAndReportScore();
         verify(mNetworkAgent).sendNetworkScore(anyInt());
-        verify(mWifiMetrics).incrementWifiScoreCount(anyInt());
+        verify(mWifiMetrics).incrementWifiScoreCount(eq(TEST_IFACE_NAME), anyInt());
     }
 
     /**
@@ -252,7 +252,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiInfo.setRssi(WifiInfo.INVALID_RSSI);
         mWifiScoreReport.calculateAndReportScore();
         verify(mNetworkAgent, never()).sendNetworkScore(anyInt());
-        verify(mWifiMetrics, never()).incrementWifiScoreCount(anyInt());
+        verify(mWifiMetrics, never()).incrementWifiScoreCount(any(), anyInt());
     }
 
     /**
@@ -266,7 +266,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiScoreReport.enableVerboseLogging(true);
         mWifiScoreReport.setNetworkAgent(null);
         mWifiScoreReport.calculateAndReportScore();
-        verify(mWifiMetrics).incrementWifiScoreCount(anyInt());
+        verify(mWifiMetrics).incrementWifiScoreCount(eq(TEST_IFACE_NAME), anyInt());
     }
 
     /**

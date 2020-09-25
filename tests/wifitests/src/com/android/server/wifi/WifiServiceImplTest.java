@@ -398,6 +398,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
         when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
         when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
+        when(mClientModeManager.getInterfaceName()).thenReturn(WIFI_IFACE_NAME);
         when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
         when(mWifiInjector.getWifiHealthMonitor()).thenReturn(mWifiHealthMonitor);
         when(mWifiInjector.getWifiNetworkScoreCache())
@@ -5341,7 +5342,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testWifiUsabilityScoreUpdateAfterScoreEvent() {
         mWifiServiceImpl.updateWifiUsabilityScore(5, 10, 15);
         mLooper.dispatchAll();
-        verify(mWifiMetrics).incrementWifiUsabilityScoreCount(5, 10, 15);
+        verify(mWifiMetrics).incrementWifiUsabilityScoreCount(WIFI_IFACE_NAME, 5, 10, 15);
     }
 
     private void startLohsAndTethering(boolean isApConcurrencySupported) throws Exception {

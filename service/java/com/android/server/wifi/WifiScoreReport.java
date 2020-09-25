@@ -487,7 +487,7 @@ public class WifiScoreReport {
             }
             mWifiInfo.setScore(score);
         }
-        mWifiMetrics.incrementWifiScoreCount(score);
+        mWifiMetrics.incrementWifiScoreCount(mInterfaceName, score);
     }
 
     private static final double TIME_CONSTANT_MILLIS = 30.0e+3;

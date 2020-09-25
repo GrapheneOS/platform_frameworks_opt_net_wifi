@@ -1472,8 +1472,12 @@ message StaEvent {
   // Whether cellular data network is available
   optional bool is_cellular_data_available = 25;
 
-  //Whether Adaptive Connectivity is enabled
+  // Whether Adaptive Connectivity is enabled
   optional bool is_adaptive_connectivity_enabled = 26;
+
+  // The wireless interface name e.g. "wlan0", "wlan1". Used to distinguish which event stream this
+  // StaEvent belongs to when multiple interfaces are active concurrently.
+  optional string interface_name = 27;
 }
 
 // Wi-Fi Aware metrics
