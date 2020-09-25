@@ -168,6 +168,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         when(mWifiNative.getFactoryMacAddress(any())).thenReturn(TEST_MAC_ADDRESS);
         when(mWifiApConfigStore.randomizeBssidIfUnset(any(), any())).thenAnswer(
                 (invocation) -> invocation.getArgument(1));
+        when(mWifiNative.forceClientDisconnect(any(), any(), anyInt())).thenReturn(true);
         mTestSoftApInfo = new SoftApInfo();
         mTestSoftApInfo.setFrequency(TEST_AP_FREQUENCY);
         mTestSoftApInfo.setBandwidth(TEST_AP_BANDWIDTH_IN_SOFTAPINFO);
@@ -2278,4 +2279,101 @@ public class SoftApManagerTest extends WifiBaseTest {
         // Verify just update metrics one time
         verify(mWifiMetrics, times(2)).noteSoftApClientBlocked(1);
     }
+
+    @Test
+    public void testForceClientFailureWillTriggerForceDisconnectAgain() throws Exception {
+        when(mWifiNative.forceClientDisconnect(any(), any(), anyInt())).thenReturn(false);
+
+        mTestSoftApCapability.setMaxSupportedClients(1);
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
+                mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+
+        verify(mCallback).onConnectedClientsChanged(new ArrayList<>());
+
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT, true);
+        mLooper.dispatchAll();
+
+        verify(mCallback, times(2)).onConnectedClientsChanged(
+                Mockito.argThat((List<WifiClient> clients) ->
+                        clients.contains(TEST_CONNECTED_CLIENT))
+        );
+
+        verify(mWifiMetrics).addSoftApNumAssociatedStationsChangedEvent(
+                1, apConfig.getTargetMode());
+        // Verify timer is canceled at this point
+        verify(mAlarmManager.getAlarmManager()).cancel(any(WakeupMessage.class));
+
+        // Second client connect and max client set is 1.
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT_2, true);
+        mLooper.dispatchAll();
+        verify(mWifiNative).forceClientDisconnect(
+                        TEST_INTERFACE_NAME, TEST_MAC_ADDRESS_2,
+                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_NO_MORE_STAS);
+        assertEquals(1, mSoftApManager.mPendingDisconnectClients.size());
+        verify(mWifiMetrics, never()).addSoftApNumAssociatedStationsChangedEvent(
+                2, apConfig.getTargetMode());
+
+        // Let force disconnect succeed on next time.
+        when(mWifiNative.forceClientDisconnect(any(), any(), anyInt())).thenReturn(true);
+
+        mLooper.moveTimeForward(mSoftApManager.SOFT_AP_PENDING_DISCONNECTION_CHECK_DELAY_MS);
+        mLooper.dispatchAll();
+        verify(mWifiNative, times(2)).forceClientDisconnect(
+                        TEST_INTERFACE_NAME, TEST_MAC_ADDRESS_2,
+                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_NO_MORE_STAS);
+
+        // The pending list doesn't clean, it needs to wait client connection update event.
+        assertEquals(1, mSoftApManager.mPendingDisconnectClients.size());
+    }
+
+    @Test
+    public void testForceClientFailureButClientDisconnectSelf() throws Exception {
+        when(mWifiNative.forceClientDisconnect(any(), any(), anyInt())).thenReturn(false);
+
+        mTestSoftApCapability.setMaxSupportedClients(1);
+        SoftApModeConfiguration apConfig =
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
+                mTestSoftApCapability);
+        startSoftApAndVerifyEnabled(apConfig);
+
+        verify(mCallback).onConnectedClientsChanged(new ArrayList<>());
+
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT, true);
+        mLooper.dispatchAll();
+
+        verify(mCallback, times(2)).onConnectedClientsChanged(
+                Mockito.argThat((List<WifiClient> clients) ->
+                        clients.contains(TEST_CONNECTED_CLIENT))
+        );
+
+        verify(mWifiMetrics).addSoftApNumAssociatedStationsChangedEvent(
+                1, apConfig.getTargetMode());
+        // Verify timer is canceled at this point
+        verify(mAlarmManager.getAlarmManager()).cancel(any(WakeupMessage.class));
+
+        // Second client connect and max client set is 1.
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT_2, true);
+        mLooper.dispatchAll();
+        verify(mWifiNative).forceClientDisconnect(
+                        TEST_INTERFACE_NAME, TEST_MAC_ADDRESS_2,
+                        WifiManager.SAP_CLIENT_BLOCK_REASON_CODE_NO_MORE_STAS);
+        verify(mWifiMetrics, never()).addSoftApNumAssociatedStationsChangedEvent(
+                2, apConfig.getTargetMode());
+        // Receive second client disconnection.
+        mSoftApListenerCaptor.getValue().onConnectedClientsChanged(
+                TEST_NATIVE_CLIENT_2, false);
+        mLooper.dispatchAll();
+        // Sleep to wait execute pending list check
+        reset(mWifiNative);
+        mLooper.moveTimeForward(mSoftApManager.SOFT_AP_PENDING_DISCONNECTION_CHECK_DELAY_MS);
+        mLooper.dispatchAll();
+        verify(mWifiNative, never()).forceClientDisconnect(any(), any(), anyInt());
+    }
+
 }
