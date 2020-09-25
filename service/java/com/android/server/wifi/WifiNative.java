@@ -637,8 +637,12 @@ public class WifiNative {
             } else if (iface.type == Iface.IFACE_TYPE_AP) {
                 onSoftApInterfaceDestroyed(iface);
             }
-            // Invoke the external callback.
-            iface.externalListener.onDestroyed(iface.name);
+            // Invoke the external callback only if the iface was not destroyed because of vendor
+            // HAL crash. In case of vendor HAL crash, let the crash recovery destroy the mode
+            // managers.
+            if (mWifiVendorHal.isVendorHalReady()) {
+                iface.externalListener.onDestroyed(iface.name);
+            }
         }
     }
 
