@@ -326,6 +326,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiP2pConnection mWifiP2pConnection;
     @Mock SimRequiredNotifier mSimRequiredNotifier;
     @Mock WifiGlobals mWifiGlobals;
+    @Mock AdaptiveConnectivityEnabledSettingObserver mAdaptiveConnectivityEnabledSettingObserver;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -416,6 +417,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiP2pConnection()).thenReturn(mWifiP2pConnection);
         when(mWifiInjector.getSimRequiredNotifier()).thenReturn(mSimRequiredNotifier);
         when(mWifiInjector.getWifiGlobals()).thenReturn(mWifiGlobals);
+        when(mWifiInjector.getAdaptiveConnectivityEnabledSettingObserver())
+                .thenReturn(mAdaptiveConnectivityEnabledSettingObserver);
         when(mClientModeManager.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP

@@ -38,7 +38,6 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
@@ -62,7 +61,6 @@ import com.android.wifi.resources.R;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -108,6 +106,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
     @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Mock Looper mWifiLooper;
     @Mock FrameworkFacade mFrameworkFacade;
+    @Mock AdaptiveConnectivityEnabledSettingObserver mAdaptiveConnectivityEnabledSettingObserver;
     private TestLooper mLooper;
 
     public class WifiConnectedNetworkScorerImpl extends IWifiConnectedNetworkScorer.Stub {
@@ -206,12 +205,11 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock = new FakeClock();
         mScoringParams = new ScoringParams();
         mWifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
-        when(mFrameworkFacade.getSecureIntegerSetting(any(Context.class),
-                eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
-                .thenReturn(1);
+        when(mAdaptiveConnectivityEnabledSettingObserver.get()).thenReturn(true);
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                 mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
-                mDeviceConfigFacade, mContext, mWifiLooper, mFrameworkFacade);
+                mDeviceConfigFacade, mContext, mWifiLooper, mFrameworkFacade,
+                mAdaptiveConnectivityEnabledSettingObserver);
         mWifiScoreReport.setNetworkAgent(mNetworkAgent);
         when(mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()).thenReturn(
                 DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS);
@@ -1025,13 +1023,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
     public void verifyNudCheckAndScoreIfToggleOffForAospScorer() throws Exception {
         mWifiInfo.setFrequency(5220);
         mWifiInfo.setRssi(-85);
-        ArgumentCaptor<ContentObserver> observer = ArgumentCaptor.forClass(ContentObserver.class);
-        verify(mFrameworkFacade).registerContentObserver(
-                any(), any(), eq(true), observer.capture());
-        when(mFrameworkFacade.getSecureIntegerSetting(any(Context.class),
-                eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
-                .thenReturn(0);
-        observer.getValue().onChange(true);
+        when(mAdaptiveConnectivityEnabledSettingObserver.get()).thenReturn(false);
         mWifiScoreReport.calculateAndReportScore();
         assertFalse(mWifiScoreReport.shouldCheckIpLayer());
         verify(mNetworkAgent).sendNetworkScore(51);
@@ -1053,13 +1045,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
                 R.bool.config_wifiMinConfirmationDurationSendNetworkScoreEnabled)).thenReturn(true);
         when(mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs()).thenReturn(4000);
 
-        ArgumentCaptor<ContentObserver> observer = ArgumentCaptor.forClass(ContentObserver.class);
-        verify(mFrameworkFacade).registerContentObserver(
-                any(), any(), eq(true), observer.capture());
-        when(mFrameworkFacade.getSecureIntegerSetting(any(Context.class),
-                eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
-                .thenReturn(0);
-        observer.getValue().onChange(true);
+        when(mAdaptiveConnectivityEnabledSettingObserver.get()).thenReturn(false);
 
         mClock.mWallClockMillis = 10;
         scorerImpl.mScoreUpdateObserver.notifyScoreUpdate(scorerImpl.mSessionId, 49);

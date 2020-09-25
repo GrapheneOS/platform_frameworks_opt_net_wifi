@@ -19,10 +19,8 @@ package com.android.server.wifi;
 import static com.android.server.wifi.WifiDataStall.INVALID_THROUGHPUT;
 
 import android.content.Context;
-import android.database.ContentObserver;
 import android.net.Network;
 import android.net.NetworkAgent;
-import android.net.Uri;
 import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiInfo;
@@ -31,10 +29,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
-import android.provider.Settings;
 import android.util.Log;
 
-import com.android.internal.annotations.VisibleForTesting;
 import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
@@ -63,15 +59,6 @@ public class WifiScoreReport {
     private static final int INVALID_SESSION_ID = -1;
     private static final long MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS = 29000;
     private static final long INVALID_WALL_CLOCK_MILLIS = -1;
-
-    /**
-     * Copy of the settings string. Can't directly use the constant because it is @hide.
-     * See {@link android.provider.Settings.Secure.ADAPTIVE_CONNECTIVITY_ENABLED}.
-     * TODO(b/167709538) remove this hardcoded string and create new API in Wifi mainline.
-     */
-    @VisibleForTesting
-    public static final String SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED =
-            "adaptive_connectivity_enabled";
 
     // Cache of the last score
     private int mScore = ConnectedScore.WIFI_MAX_SCORE;
@@ -233,7 +220,7 @@ public class WifiScoreReport {
             }
         }
         // Stay a notch above the transition score if adaptive connectivity is disabled.
-        if (!mAdaptiveConnectivityEnabled) {
+        if (!mAdaptiveConnectivityEnabledSettingObserver.get()) {
             score = ConnectedScore.WIFI_TRANSITION_SCORE + 1;
             if (mVerboseLoggingEnabled) {
                 Log.d(TAG,
@@ -330,59 +317,19 @@ public class WifiScoreReport {
 
     private WifiConnectedNetworkScorerHolder mWifiConnectedNetworkScorerHolder;
 
-    /**
-     * Observer for adaptive connectivity enable settings changes.
-     * This is enabled by default. Will be toggled off via adb command or a settings
-     * toggle by the user to disable adaptive connectivity.
-     */
-    private class AdaptiveConnectivityEnabledSettingObserver extends ContentObserver {
-        AdaptiveConnectivityEnabledSettingObserver(Handler handler) {
-            super(handler);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-            mAdaptiveConnectivityEnabled = getValue();
-            Log.d(TAG, "Adaptive connectivity status changed: " + mAdaptiveConnectivityEnabled);
-            mWifiMetrics.setAdaptiveConnectivityState(mAdaptiveConnectivityEnabled);
-            mWifiMetrics.logUserActionEvent(
-                    mWifiMetrics.convertAdaptiveConnectivityStateToUserActionEventType(
-                            mAdaptiveConnectivityEnabled));
-        }
-
-        /**
-         * Register settings change observer.
-         */
-        public void initialize() {
-            Uri uri = Settings.Secure.getUriFor(SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED);
-            if (uri == null) {
-                Log.e(TAG, "Adaptive connectivity user toggle does not exist in Settings");
-                return;
-            }
-            mFrameworkFacade.registerContentObserver(mContext, uri, true, this);
-            mAdaptiveConnectivityEnabled = mAdaptiveConnectivityEnabledSettingObserver.getValue();
-            mWifiMetrics.setAdaptiveConnectivityState(mAdaptiveConnectivityEnabled);
-        }
-
-        public boolean getValue() {
-            return mFrameworkFacade.getSecureIntegerSetting(
-                    mContext, SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED, 1) == 1;
-        }
-    }
-
     private final AdaptiveConnectivityEnabledSettingObserver
             mAdaptiveConnectivityEnabledSettingObserver;
-    private boolean mAdaptiveConnectivityEnabled = true;
 
     WifiScoreReport(ScoringParams scoringParams, Clock clock, WifiMetrics wifiMetrics,
-                    WifiInfo wifiInfo, WifiNative wifiNative,
-                    BssidBlocklistMonitor bssidBlocklistMonitor,
-                    WifiThreadRunner wifiThreadRunner, WifiDataStall wifiDataStall,
-                    DeviceConfigFacade deviceConfigFacade, Context context, Looper looper,
-                    FrameworkFacade frameworkFacade) {
+            WifiInfo wifiInfo, WifiNative wifiNative,
+            BssidBlocklistMonitor bssidBlocklistMonitor,
+            WifiThreadRunner wifiThreadRunner, WifiDataStall wifiDataStall,
+            DeviceConfigFacade deviceConfigFacade, Context context, Looper looper,
+            FrameworkFacade frameworkFacade,
+            AdaptiveConnectivityEnabledSettingObserver adaptiveConnectivityEnabledSettingObserver) {
         mScoringParams = scoringParams;
         mClock = clock;
+        mAdaptiveConnectivityEnabledSettingObserver = adaptiveConnectivityEnabledSettingObserver;
         mAggressiveConnectedScore = new AggressiveConnectedScore(scoringParams, clock);
         mVelocityBasedConnectedScore = new VelocityBasedConnectedScore(scoringParams, clock);
         mWifiMetrics = wifiMetrics;
@@ -395,9 +342,6 @@ public class WifiScoreReport {
         mContext = context;
         mFrameworkFacade = frameworkFacade;
         mHandler = new Handler(looper);
-        mAdaptiveConnectivityEnabledSettingObserver =
-                new AdaptiveConnectivityEnabledSettingObserver(mHandler);
-        mAdaptiveConnectivityEnabledSettingObserver.initialize();
     }
 
     /**
@@ -561,7 +505,7 @@ public class WifiScoreReport {
      */
     public boolean shouldCheckIpLayer() {
         // Don't recommend if adaptive connectivity is disabled.
-        if (!mAdaptiveConnectivityEnabled) {
+        if (!mAdaptiveConnectivityEnabledSettingObserver.get()) {
             if (mVerboseLoggingEnabled) {
                 Log.d(TAG, "Adaptive connectivity disabled - Don't check IP layer");
             }
