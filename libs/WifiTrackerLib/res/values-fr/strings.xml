@@ -37,7 +37,7 @@
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Connexion limitée"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Impossible d\'accéder au serveur DNS privé"</string>
     <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"Aucun accès à Internet"</string>
-    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Mauvaise qualité"</string>
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Faible qualité"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucun"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expiré"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Appuyez ici pour vous connecter"</string>

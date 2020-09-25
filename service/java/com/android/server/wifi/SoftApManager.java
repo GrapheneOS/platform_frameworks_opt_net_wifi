@@ -122,6 +122,8 @@ public class SoftApManager implements ActiveModeManager {
 
     @Nullable
     private SoftApRole mRole = null;
+    @Nullable
+    private WorkSource mRequestorWs = null;
 
     private boolean mEverReportMetricsForMaxClient = false;
 
@@ -250,6 +252,11 @@ public class SoftApManager implements ActiveModeManager {
         return mApInterfaceName;
     }
 
+    @Override
+    public WorkSource getRequestorWs() {
+        return mRequestorWs;
+    }
+
     /**
      * Update AP capability. Called when carrier config or device resouce config changed.
      *
@@ -267,6 +274,13 @@ public class SoftApManager implements ActiveModeManager {
      */
     public void updateConfiguration(@NonNull SoftApConfiguration config) {
         mStateMachine.sendMessage(SoftApStateMachine.CMD_UPDATE_CONFIG, config);
+    }
+
+    /**
+     * Retrieve the {@link SoftApModeConfiguration} instance associated with this mode manager.
+     */
+    public SoftApModeConfiguration getSoftApModeConfiguration() {
+        return mApConfig;
     }
 
     /**
@@ -583,9 +597,9 @@ public class SoftApManager implements ActiveModeManager {
                         mStateMachine.quitNow();
                         break;
                     case CMD_START:
-                        WorkSource requestorWs = (WorkSource) message.obj;
+                        mRequestorWs = (WorkSource) message.obj;
                         mApInterfaceName = mWifiNative.setupInterfaceForSoftApMode(
-                                mWifiNativeInterfaceCallback, requestorWs);
+                                mWifiNativeInterfaceCallback, mRequestorWs);
                         if (TextUtils.isEmpty(mApInterfaceName)) {
                             Log.e(getTag(), "setup failure when creating ap interface.");
                             updateApState(WifiManager.WIFI_AP_STATE_FAILED,

@@ -273,6 +273,9 @@ public class BaseWifiTracker implements LifecycleObserver {
         if (defaultNetworkCapabilities != null) {
             mIsWifiDefaultRoute = defaultNetworkCapabilities.hasTransport(TRANSPORT_WIFI);
             mIsCellDefaultRoute = defaultNetworkCapabilities.hasTransport(TRANSPORT_CELLULAR);
+        } else {
+            mIsWifiDefaultRoute = false;
+            mIsCellDefaultRoute = false;
         }
         if (isVerboseLoggingEnabled()) {
             Log.v(mTag, "Wifi is the default route: " + mIsWifiDefaultRoute);

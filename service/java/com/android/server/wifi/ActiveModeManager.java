@@ -144,6 +144,11 @@ public interface ActiveModeManager {
     String getInterfaceName();
 
     /**
+     * Method to retrieve the original requestorWs
+     */
+    WorkSource getRequestorWs();
+
+    /**
      * Method to dump for logging state.
      */
     void dump(FileDescriptor fd, PrintWriter pw, String[] args);

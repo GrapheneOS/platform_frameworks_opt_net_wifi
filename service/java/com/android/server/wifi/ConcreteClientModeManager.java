@@ -124,6 +124,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private ClientRole mRole = null;
     @Nullable
     private ClientRole mTargetRole = null;
+    @Nullable
+    private WorkSource mRequestorWs = null;
     private boolean mVerboseLoggingEnabled = false;
     /** Cache to store the external scorer for primary and secondary client mode impl. */
     @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mScorer;
@@ -425,6 +427,11 @@ public class ConcreteClientModeManager implements ClientModeManager {
         return mClientInterfaceName;
     }
 
+    @Override
+    public WorkSource getRequestorWs() {
+        return mRequestorWs;
+    }
+
     /**
      * Keep stopped {@link ClientModeImpl} instances so that they can be dumped to aid debugging.
      *
@@ -668,9 +675,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 switch (message.what) {
                     case CMD_START:
                         // Always start in scan mode first.
-                        WorkSource requestorWs = (WorkSource) message.obj;
+                        mRequestorWs = (WorkSource) message.obj;
                         mClientInterfaceName = mWifiNative.setupInterfaceForClientInScanMode(
-                                mWifiNativeInterfaceCallback, requestorWs);
+                                mWifiNativeInterfaceCallback, mRequestorWs);
                         if (TextUtils.isEmpty(mClientInterfaceName)) {
                             Log.e(getTag(), "Failed to create ClientInterface. Sit in Idle");
                             mModeListener.onStartFailure();
