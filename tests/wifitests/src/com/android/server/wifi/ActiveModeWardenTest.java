@@ -2284,6 +2284,15 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     @Test
+    public void isStaStaConcurrencySupported() throws Exception {
+        when(mWifiNative.isStaStaConcurrencySupported()).thenReturn(false);
+        assertFalse(mActiveModeWarden.isStaStaConcurrencySupported());
+
+        when(mWifiNative.isStaStaConcurrencySupported()).thenReturn(true);
+        assertTrue(mActiveModeWarden.isStaStaConcurrencySupported());
+    }
+
+    @Test
     public void requestRemoveLocalOnlyClientModeManager() throws Exception {
         enterClientModeActiveState();
 
