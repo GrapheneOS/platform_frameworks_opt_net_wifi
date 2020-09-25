@@ -314,6 +314,15 @@ public class WifiVendorHal {
     }
 
     /**
+     * Returns whether the vendor HAL is ready or not.
+     */
+    public boolean isVendorHalReady() {
+        synchronized (sLock) {
+            return mHalDeviceManager.isReady();
+        }
+    }
+
+    /**
      * Bring up the HIDL Vendor HAL and configure for AP (Access Point) mode
      *
      * @return true for success

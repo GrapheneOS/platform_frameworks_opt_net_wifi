@@ -344,6 +344,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         SoftApRole softApRole = softApConfig.getTargetMode() == WifiManager.IFACE_IP_MODE_TETHERED
                 ? ROLE_SOFTAP_TETHERED : ROLE_SOFTAP_LOCAL_ONLY;
         when(mSoftApManager.getRole()).thenReturn(softApRole);
+        when(mSoftApManager.getSoftApModeConfiguration()).thenReturn(softApConfig);
         mActiveModeWarden.startSoftAp(softApConfig, TEST_WORKSOURCE);
         mLooper.dispatchAll();
         mSoftApListener.onStarted();
@@ -1994,7 +1995,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
      * ActiveModeWarden should enter SCAN_ONLY mode and the wifi driver should be started.
      */
     @Test
-    public void testRestartWifiStackInDisabledStateWithScanState() throws Exception {
+    public void testRestartWifiStackInStaScanEnabledState() throws Exception {
         assertInDisabledState();
 
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
@@ -2033,7 +2034,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
      * ActiveModeWarden should enter CONNECT_MODE and the wifi driver should be started.
      */
     @Test
-    public void testRestartWifiStackInEnabledState() throws Exception {
+    public void testRestartWifiStackInStaConnectEnabledState() throws Exception {
         enableWifi();
         assertInEnabledState();
         verify(mClientModeManager).start(TEST_WORKSOURCE);
@@ -2097,23 +2098,70 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     /**
-     * The command to trigger a WiFi reset should trigger a reset when in AP mode.
-     * Enter AP mode, send command to restart wifi.
-     * <p>
-     * Expected: The command to trigger a wifi reset should trigger wifi shutdown.
+     * The command to trigger a WiFi reset should trigger a wifi reset in SoftApManager through
+     * the ActiveModeWarden.shutdownWifi() call when in SAP enabled mode.
      */
     @Test
-    public void testRestartWifiStackFullyStopsWifi() throws Exception {
-        mActiveModeWarden.startSoftAp(new SoftApModeConfiguration(
-                WifiManager.IFACE_IP_MODE_LOCAL_ONLY, null, mSoftApCapability), TEST_WORKSOURCE);
-        mLooper.dispatchAll();
+    public void testRestartWifiStackInTetheredSoftApEnabledState() throws Exception {
+        enterSoftApActiveMode();
         verify(mSoftApManager).start(TEST_WORKSOURCE);
-        verify(mSoftApManager).setRole(ROLE_SOFTAP_LOCAL_ONLY);
 
         assertWifiShutDown(() -> {
-            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_STA_IFACE_DOWN);
+            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+            mLooper.dispatchAll();
+            // Complete the stop
+            mSoftApListener.onStopped();
             mLooper.dispatchAll();
         });
+
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
+
+        // still only started once
+        verify(mSoftApManager).start(TEST_WORKSOURCE);
+
+        mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS);
+        mLooper.dispatchAll();
+
+        // started again
+        verify(mSoftApManager, times(2)).start(any());
+        assertInEnabledState();
+    }
+
+    /**
+     * The command to trigger a WiFi reset should trigger a wifi reset in SoftApManager &
+     * ClientModeManager through the ActiveModeWarden.shutdownWifi() call when in STA + SAP
+     * enabled mode.
+     */
+    @Test
+    public void testRestartWifiStackInTetheredSoftApAndStaConnectEnabledState() throws Exception {
+        enableWifi();
+        enterSoftApActiveMode();
+        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE);
+
+        assertWifiShutDown(() -> {
+            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+            mLooper.dispatchAll();
+            // Complete the stop
+            mClientListener.onStopped();
+            mSoftApListener.onStopped();
+            mLooper.dispatchAll();
+        });
+
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mClientModeManager);
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
+
+        // still only started once
+        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE);
+
+        mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS);
+        mLooper.dispatchAll();
+
+        // started again
+        verify(mClientModeManager, times(2)).start(any());
+        verify(mSoftApManager, times(2)).start(any());
+        assertInEnabledState();
     }
 
     /**
