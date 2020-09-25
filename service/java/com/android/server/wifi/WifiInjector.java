@@ -645,7 +645,8 @@ public class WifiInjector {
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                         mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
                         mDeviceConfigFacade, mContext, mWifiHandlerThread.getLooper(),
-                        mFrameworkFacade, mAdaptiveConnectivityEnabledSettingObserver),
+                        mFrameworkFacade, mAdaptiveConnectivityEnabledSettingObserver,
+                        ifaceName),
                 mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager);
     }
 

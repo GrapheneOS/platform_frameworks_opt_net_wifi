@@ -46,7 +46,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.os.Handler;
 import android.os.IBinder;
@@ -84,11 +83,10 @@ public class WifiScoreReportTest extends WifiBaseTest {
 
     private static final int TEST_NETWORK_ID = 860370;
     private static final int TEST_SESSION_ID = 8603703; // last digit is a check digit
+    private static final String TEST_IFACE_NAME = "wlan0";
 
     FakeClock mClock;
-    WifiConfiguration mWifiConfiguration;
     WifiScoreReport mWifiScoreReport;
-    ScanDetailCache mScanDetailCache;
     WifiInfo mWifiInfo;
     ScoringParams mScoringParams;
     NetworkAgent mNetworkAgent;
@@ -209,7 +207,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                 mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
                 mDeviceConfigFacade, mContext, mWifiLooper, mFrameworkFacade,
-                mAdaptiveConnectivityEnabledSettingObserver);
+                mAdaptiveConnectivityEnabledSettingObserver, TEST_IFACE_NAME);
         mWifiScoreReport.setNetworkAgent(mNetworkAgent);
         when(mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()).thenReturn(
                 DeviceConfigFacade.DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS);
@@ -739,14 +737,13 @@ public class WifiScoreReportTest extends WifiBaseTest {
         WifiConnectedNetworkScorerImpl scorerImpl = new WifiConnectedNetworkScorerImpl();
         // Register Client for verification.
         mWifiScoreReport.setWifiConnectedNetworkScorer(mAppBinder, scorerImpl);
-        mWifiScoreReport.setInterfaceName("wlan0");
         when(mNetwork.getNetId()).thenReturn(TEST_NETWORK_ID);
         mWifiScoreReport.startConnectedNetworkScorer(TEST_NETWORK_ID);
 
         scorerImpl.mScoreUpdateObserver.triggerUpdateOfWifiUsabilityStats(scorerImpl.mSessionId);
         mLooper.dispatchAll();
-        verify(mWifiNative).getWifiLinkLayerStats("wlan0");
-        verify(mWifiNative).signalPoll("wlan0");
+        verify(mWifiNative).getWifiLinkLayerStats(TEST_IFACE_NAME);
+        verify(mWifiNative).signalPoll(TEST_IFACE_NAME);
     }
 
     /**

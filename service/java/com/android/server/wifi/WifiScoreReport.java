@@ -66,7 +66,7 @@ public class WifiScoreReport {
     private final ScoringParams mScoringParams;
     private final Clock mClock;
     private int mSessionNumber = 0; // not to be confused with sessionid, this just counts resets
-    private String mInterfaceName;
+    private final String mInterfaceName;
     private final BssidBlocklistMonitor mBssidBlocklistMonitor;
     private final WifiDataStall mWifiDataStall;
     private final Context mContext;
@@ -326,7 +326,8 @@ public class WifiScoreReport {
             WifiThreadRunner wifiThreadRunner, WifiDataStall wifiDataStall,
             DeviceConfigFacade deviceConfigFacade, Context context, Looper looper,
             FrameworkFacade frameworkFacade,
-            AdaptiveConnectivityEnabledSettingObserver adaptiveConnectivityEnabledSettingObserver) {
+            AdaptiveConnectivityEnabledSettingObserver adaptiveConnectivityEnabledSettingObserver,
+            String interfaceName) {
         mScoringParams = scoringParams;
         mClock = clock;
         mAdaptiveConnectivityEnabledSettingObserver = adaptiveConnectivityEnabledSettingObserver;
@@ -341,6 +342,7 @@ public class WifiScoreReport {
         mDeviceConfigFacade = deviceConfigFacade;
         mContext = context;
         mFrameworkFacade = frameworkFacade;
+        mInterfaceName = interfaceName;
         mHandler = new Handler(looper);
     }
 
@@ -743,14 +745,6 @@ public class WifiScoreReport {
      */
     public int getScore() {
         return mScore;
-    }
-
-    /**
-     * Set interface name
-     * @param ifaceName
-     */
-    public void setInterfaceName(String ifaceName) {
-        mInterfaceName = ifaceName;
     }
 
     private void revertToDefaultConnectedScorer() {

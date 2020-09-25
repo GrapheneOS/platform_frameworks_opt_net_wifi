@@ -215,11 +215,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private boolean mScreenOn = false;
 
-    // TODO(b/160335531): These should be final. Right now they are set to null when exiting
-    //  ConnectableState (i.e. when stop() is called), which ensures that any processing will be
-    //  a no-op if we get a late-coming callback.
-    private String mInterfaceName;
-    private ConcreteClientModeManager mClientModeManager;
+    private final String mInterfaceName;
+    private final ConcreteClientModeManager mClientModeManager;
 
     private int mLastSignalLevel = -1;
     private String mLastBssid;
@@ -693,8 +690,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mInterfaceName = ifaceName;
         mClientModeManager = clientModeManager;
         updateInterfaceCapabilities(ifaceName);
-        // TODO(b/160335531): ifaceName should be a constructor arg in WifiScoreReport
-        mWifiScoreReport.setInterfaceName(ifaceName);
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -3041,9 +3036,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
         mCountryCode.setReadyForChange(false);
         deregisterForWifiMonitorEvents(); // uses mInterfaceName, must call before nulling out
-        mInterfaceName = null;
-        mClientModeManager = null;
-        mWifiScoreReport.setInterfaceName(null);
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(false);
 
