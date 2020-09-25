@@ -4568,6 +4568,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         mConnectedNetwork.ephemeral = true;
         mConnectedNetwork.trusted = true;
+        mConnectedNetwork.oemPaid = true;
         mConnectedNetwork.osu = true;
 
         triggerConnect();
@@ -4591,6 +4592,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(FRAMEWORK_NETWORK_ID, mWifiInfo.getNetworkId());
         assertEquals(mConnectedNetwork.ephemeral, mWifiInfo.isEphemeral());
         assertEquals(mConnectedNetwork.trusted, mWifiInfo.isTrusted());
+        assertEquals(mConnectedNetwork.oemPaid, mWifiInfo.isOemPaid());
         assertEquals(mConnectedNetwork.osu, mWifiInfo.isOsuAp());
     }
 
@@ -5090,4 +5092,25 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Ensure we reset WifiInfo fields.
         assertFalse(SupplicantState.isConnecting(mWifiInfo.getSupplicantState()));
     }
+
+    @Test
+    public void testOemPaidNetworkCapability() throws Exception {
+        mConnectedNetwork.oemPaid = true;
+        connect();
+        expectRegisterNetworkAgent((agentConfig) -> { },
+                (cap) -> {
+                    assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID));
+                });
+    }
+
+    @Test
+    public void testNotOemPaidNetworkCapability() throws Exception {
+        mConnectedNetwork.oemPaid = false;
+        connect();
+        expectRegisterNetworkAgent((agentConfig) -> { },
+                (cap) -> {
+                    assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID));
+                });
+    }
 }
+

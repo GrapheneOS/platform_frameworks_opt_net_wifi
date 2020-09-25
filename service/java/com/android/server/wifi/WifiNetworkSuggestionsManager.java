@@ -45,6 +45,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
@@ -1003,6 +1004,12 @@ public class WifiNetworkSuggestionsManager {
 
             } else {
                 if (!wns.passpointConfiguration.validate()) {
+                    return false;
+                }
+            }
+            if (!SdkLevelUtil.isAtLeastS()) {
+                if (wns.wifiConfiguration.oemPaid) {
+                    Log.e(TAG, "OEM paid suggestions are only allowed from Android S.");
                     return false;
                 }
             }
