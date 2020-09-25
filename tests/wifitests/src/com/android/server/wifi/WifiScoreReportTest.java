@@ -206,7 +206,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mClock = new FakeClock();
         mScoringParams = new ScoringParams();
         mWifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
-        when(mFrameworkFacade.getIntegerSetting(any(Context.class),
+        when(mFrameworkFacade.getSecureIntegerSetting(any(Context.class),
                 eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
                 .thenReturn(1);
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
@@ -1028,7 +1028,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         ArgumentCaptor<ContentObserver> observer = ArgumentCaptor.forClass(ContentObserver.class);
         verify(mFrameworkFacade).registerContentObserver(
                 any(), any(), eq(true), observer.capture());
-        when(mFrameworkFacade.getIntegerSetting(any(Context.class),
+        when(mFrameworkFacade.getSecureIntegerSetting(any(Context.class),
                 eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
                 .thenReturn(0);
         observer.getValue().onChange(true);
@@ -1056,7 +1056,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         ArgumentCaptor<ContentObserver> observer = ArgumentCaptor.forClass(ContentObserver.class);
         verify(mFrameworkFacade).registerContentObserver(
                 any(), any(), eq(true), observer.capture());
-        when(mFrameworkFacade.getIntegerSetting(any(Context.class),
+        when(mFrameworkFacade.getSecureIntegerSetting(any(Context.class),
                 eq(WifiScoreReport.SETTINGS_SECURE_ADAPTIVE_CONNECTIVITY_ENABLED), eq(1)))
                 .thenReturn(0);
         observer.getValue().onChange(true);
