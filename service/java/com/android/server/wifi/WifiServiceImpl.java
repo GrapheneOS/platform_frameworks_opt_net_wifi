@@ -1806,6 +1806,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
         mLog.info("start uid=% pid=%").c(uid).c(pid).flush();
 
+        WorkSource requestorWs;
         // Permission requirements are different with/without custom config.
         if (customConfig == null) {
             if (enforceChangePermission(packageName) != MODE_ALLOWED) {
@@ -1821,10 +1822,23 @@ public class WifiServiceImpl extends BaseWifiService {
             } finally {
                 Binder.restoreCallingIdentity(ident);
             }
+            // TODO(b/162344695): Exception added for LOHS. This exception is need to avoid breaking
+            // existing LOHS behavior: LOHS AP iface is allowed to delete STA iface (even if LOHS
+            // app has lower priority than user toggled on STA iface). This does not
+            // fit in with the new context based concurrency priority in HalDeviceManager, but we
+            // cannot break existing API's. So, we artificially boost the priority of the
+            // request by "faking" the requestor context as settings app.
+            // We probably need some UI dialog to allow the user to grant the app's LOHS request.
+            // Once that UI dialog is added, we can get rid of this hack and use the UI to elevate
+            // the priority of LOHS request only if user approves the request to toggle wifi off for
+            // LOHS.
+            requestorWs = mFrameworkFacade.getSettingsWorkSource(mContext);
         } else {
             if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
                 throw new SecurityException(TAG + ": Permission denied");
             }
+            // Already privileged, no need to fake.
+            requestorWs = new WorkSource(uid, packageName);
         }
 
         // verify that tethering is not disabled
@@ -1844,7 +1858,6 @@ public class WifiServiceImpl extends BaseWifiService {
             Binder.restoreCallingIdentity(ident);
         }
 
-        WorkSource requestorWs = new WorkSource(uid, packageName);
         // check if we are currently tethering
         if (!mActiveModeWarden.canRequestMoreSoftApManagers(requestorWs)
                 && mTetheredSoftApTracker.getState() == WIFI_AP_STATE_ENABLED) {

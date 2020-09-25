@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.hardware.wifi.V1_0.IWifi;
@@ -39,7 +40,6 @@ import android.os.IHwBinder.DeathRecipient;
 import android.os.RemoteException;
 import android.os.WorkSource;
 import android.util.Log;
-import android.util.LongSparseArray;
 import android.util.MutableBoolean;
 import android.util.MutableInt;
 import android.util.Pair;
@@ -51,6 +51,8 @@ import com.android.server.wifi.util.WorkSourceHelper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -438,7 +440,7 @@ public class HalDeviceManager {
      * Returns whether the provided Iface combo can be supported by the device.
      * Note: This only returns an answer based on the iface combination exposed by the HAL.
      * The actual iface creation/deletion rules depend on the iface priorities set in
-     * {@link #allowedToDeleteIfaceTypeForRequestedType(int, int, WifiIfaceInfo[][], int)}
+     * {@link #allowedToDeleteIfaceTypeForRequestedType(int, WorkSource, int, WifiIfaceInfo[][])}
      *
      * @param ifaceCombo SparseArray keyed in by the iface type to number of ifaces needed.
      * @return true if the device supports the provided combo, false otherwise.
@@ -472,7 +474,12 @@ public class HalDeviceManager {
             if (mWifi == null) return false;
             WifiChipInfo[] chipInfos = getAllChipInfo();
             if (chipInfos == null) return false;
-            return isItPossibleToCreateIface(chipInfos, ifaceType);
+            if (!validateInterfaceCacheAndRetrieveRequestorWs(chipInfos)) {
+                Log.e(TAG, "isItPossibleToCreateIface: local cache is invalid!");
+                stopWifi(); // major error: shutting down
+                return false;
+            }
+            return isItPossibleToCreateIface(chipInfos, ifaceType, requestorWs);
         }
     }
 
@@ -513,14 +520,14 @@ public class HalDeviceManager {
         public int type;
         public Set<InterfaceDestroyedListenerProxy> destroyedListeners = new HashSet<>();
         public long creationTime;
-        public WorkSourceHelper mRequestorWsHelper;
+        public WorkSourceHelper requestorWsHelper;
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("{name=").append(name).append(", type=").append(type)
                     .append(", destroyedListeners.size()=").append(destroyedListeners.size())
-                    .append(", RequestorWs=").append(mRequestorWsHelper)
+                    .append(", RequestorWs=").append(requestorWsHelper)
                     .append(", creationTime=").append(creationTime).append("}");
             return sb.toString();
         }
@@ -529,10 +536,12 @@ public class HalDeviceManager {
     private class WifiIfaceInfo {
         public String name;
         public IWifiIface iface;
+        public WorkSourceHelper requestorWsHelper;
 
         @Override
         public String toString() {
-            return "{name=" + name + ", iface=" + iface + "}";
+            return "{name=" + name + ", iface=" + iface + ", requestorWs=" + requestorWsHelper
+                    + " }";
         }
     }
 
@@ -1105,8 +1114,10 @@ public class HalDeviceManager {
      *
      * A discrepancy is if any local state contains references to a chip or interface which are not
      * found on the information read from the chip.
+     *
+     * Also, fills in the |requestorWs| corresponding to each active iface in |WifiChipInfo|.
      */
-    private boolean validateInterfaceCache(WifiChipInfo[] chipInfos) {
+    private boolean validateInterfaceCacheAndRetrieveRequestorWs(WifiChipInfo[] chipInfos) {
         if (VDBG) Log.d(TAG, "validateInterfaceCache");
 
         synchronized (mLock) {
@@ -1134,6 +1145,7 @@ public class HalDeviceManager {
                 boolean matchFound = false;
                 for (WifiIfaceInfo ifaceInfo: ifaceInfoList) {
                     if (ifaceInfo.name.equals(entry.name)) {
+                        ifaceInfo.requestorWsHelper = entry.requestorWsHelper;
                         matchFound = true;
                         break;
                     }
@@ -1348,7 +1360,7 @@ public class HalDeviceManager {
                 return null;
             }
 
-            if (!validateInterfaceCache(chipInfos)) {
+            if (!validateInterfaceCacheAndRetrieveRequestorWs(chipInfos)) {
                 Log.e(TAG, "createIface: local cache is invalid!");
                 stopWifi(); // major error: shutting down
                 return null;
@@ -1380,7 +1392,7 @@ public class HalDeviceManager {
 
                         for (int[] expandedIfaceCombo: expandedIfaceCombos) {
                             IfaceCreationData currentProposal = canIfaceComboSupportRequest(
-                                    chipInfo, chipMode, expandedIfaceCombo, ifaceType);
+                                    chipInfo, chipMode, expandedIfaceCombo, ifaceType, requestorWs);
                             if (compareIfaceCreationData(currentProposal,
                                     bestIfaceCreationProposal)) {
                                 if (VDBG) Log.d(TAG, "new proposal accepted");
@@ -1400,7 +1412,7 @@ public class HalDeviceManager {
                     cacheEntry.chipId = bestIfaceCreationProposal.chipInfo.chipId;
                     cacheEntry.name = getName(iface);
                     cacheEntry.type = ifaceType;
-                    cacheEntry.mRequestorWsHelper = mWifiInjector.makeWsHelper(requestorWs);
+                    cacheEntry.requestorWsHelper = mWifiInjector.makeWsHelper(requestorWs);
                     if (destroyedListener != null) {
                         cacheEntry.destroyedListeners.add(
                                 new InterfaceDestroyedListenerProxy(
@@ -1421,7 +1433,8 @@ public class HalDeviceManager {
 
     // similar to createIfaceIfPossible - but simpler code: not looking for best option just
     // for any option (so terminates on first one).
-    private boolean isItPossibleToCreateIface(WifiChipInfo[] chipInfos, int ifaceType) {
+    private boolean isItPossibleToCreateIface(WifiChipInfo[] chipInfos, int ifaceType,
+            WorkSource requestorWs) {
         if (VDBG) {
             Log.d(TAG, "isItPossibleToCreateIface: chipInfos=" + Arrays.deepToString(chipInfos)
                     + ", ifaceType=" + ifaceType);
@@ -1439,7 +1452,7 @@ public class HalDeviceManager {
 
                     for (int[] expandedIfaceCombo: expandedIfaceCombos) {
                         if (canIfaceComboSupportRequest(chipInfo, chipMode, expandedIfaceCombo,
-                                ifaceType) != null) {
+                                ifaceType, requestorWs) != null) {
                             return true;
                         }
                     }
@@ -1510,11 +1523,12 @@ public class HalDeviceManager {
      * - Mode configuration: i.e. could the mode support the interface type in principle
      */
     private IfaceCreationData canIfaceComboSupportRequest(WifiChipInfo chipInfo,
-            IWifiChip.ChipMode chipMode, int[] chipIfaceCombo, int ifaceType) {
+            IWifiChip.ChipMode chipMode, int[] chipIfaceCombo, int ifaceType,
+            WorkSource requestorWs) {
         if (VDBG) {
             Log.d(TAG, "canIfaceComboSupportRequest: chipInfo=" + chipInfo + ", chipMode="
                     + chipMode + ", chipIfaceCombo=" + Arrays.toString(chipIfaceCombo)
-                    + ", ifaceType=" + ifaceType);
+                    + ", ifaceType=" + ifaceType + ", requestorWs=" + requestorWs);
         }
 
         // short-circuit: does the chipIfaceCombo even support the requested type?
@@ -1531,8 +1545,8 @@ public class HalDeviceManager {
         if (isChipModeChangeProposed) {
             for (int type: IFACE_TYPES_BY_PRIORITY) {
                 if (chipInfo.ifaces[type].length != 0) {
-                    if (!allowedToDeleteIfaceTypeForRequestedType(type, ifaceType,
-                            chipInfo.ifaces, chipInfo.ifaces[type].length)) {
+                    if (!allowedToDeleteIfaceTypeForRequestedType(
+                            ifaceType, requestorWs, type, chipInfo.ifaces)) {
                         if (VDBG) {
                             Log.d(TAG, "Couldn't delete existing type " + type
                                     + " interfaces for requested type");
@@ -1562,8 +1576,8 @@ public class HalDeviceManager {
             }
 
             if (tooManyInterfaces > 0) { // may need to delete some
-                if (!allowedToDeleteIfaceTypeForRequestedType(type, ifaceType, chipInfo.ifaces,
-                        tooManyInterfaces)) {
+                if (!allowedToDeleteIfaceTypeForRequestedType(
+                        ifaceType, requestorWs, type, chipInfo.ifaces)) {
                     if (VDBG) {
                         Log.d(TAG, "Would need to delete some higher priority interfaces");
                     }
@@ -1572,7 +1586,7 @@ public class HalDeviceManager {
 
                 // delete the most recently created interfaces
                 interfacesToBeRemovedFirst.addAll(selectInterfacesToDelete(tooManyInterfaces,
-                        chipInfo.ifaces[type]));
+                        ifaceType, requestorWs, type, chipInfo.ifaces[type]));
             }
         }
 
@@ -1635,75 +1649,155 @@ public class HalDeviceManager {
         return false;
     }
 
+    private static final int PRIORITY_PRIVILEGED = 0;
+    private static final int PRIORITY_SYSTEM = 1;
+    private static final int PRIORITY_FG_APP = 2;
+    private static final int PRIORITY_FG_SERVICE = 3;
+    private static final int PRIORITY_BG = 4;
+    @IntDef(prefix = { "PRIORITY_" }, value = {
+            PRIORITY_PRIVILEGED,
+            PRIORITY_SYSTEM,
+            PRIORITY_FG_APP,
+            PRIORITY_FG_SERVICE,
+            PRIORITY_BG
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface RequestorWsPriority {}
+
+    /**
+     * Returns integer priority level for the provided |ws| based on rules mentioned in
+     * {@link #allowedToDeleteIfaceTypeForRequestedType(int, WorkSource, WifiIfaceInfo[][])}
+     */
+    private static @RequestorWsPriority int getRequestorWsPriority(WorkSourceHelper ws) {
+        if (ws.hasAnyPrivilegedAppRequest()) return PRIORITY_PRIVILEGED;
+        if (ws.hasAnySystemAppRequest()) return PRIORITY_SYSTEM;
+        if (ws.hasAnyForegroundAppRequest()) return PRIORITY_FG_APP;
+        if (ws.hasAnyForegroundServiceRequest()) return PRIORITY_FG_SERVICE;
+        return PRIORITY_BG;
+    }
+
+    /**
+     * Returns whether interface request from |newRequestorWsPriority| is allowed to delete an
+     * interface request from |existingRequestorWsPriority|.
+     *
+     * Rule:
+     *  - If |newRequestorWsPriority| < |existingRequestorWsPriority|, then YES.
+     *  - If they are at the same priority level, then
+     *      - If both are privileged and not for the same interface type, then YES.
+     *      - Else, NO.
+     */
+    private static boolean allowedToDelete(
+            int requestedIfaceType, @RequestorWsPriority int newRequestorWsPriority,
+            int existingIfaceType, @RequestorWsPriority int existingRequestorWsPriority) {
+        // If the new request is higher priority than existing priority, then the new requestor
+        // wins. This is because at all other priority levels (except privileged), existing caller
+        // wins if both the requests are at the same priority level.
+        if (newRequestorWsPriority < existingRequestorWsPriority) {
+            return true;
+        }
+        if (newRequestorWsPriority == existingRequestorWsPriority) {
+            // If both the requests are same priority for the same iface type, the existing
+            // requestor wins.
+            if (requestedIfaceType == existingIfaceType) {
+                return false;
+            }
+            // If both the requests are privileged, the new requestor wins.
+            if (newRequestorWsPriority == PRIORITY_PRIVILEGED) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns true if we're allowed to delete the existing interface type for the requested
      * interface type.
      *
-     * Rules - applies in order:
-     *
      * General rules:
-     * 1. No interface will be destroyed for a requested interface of the same type
-     * 2. No interface will be destroyed if one of the requested interfaces already exists
-     * 3. If there are >1 interface of an existing type, then it is ok to destroy that type
-     *    interface
-     *
-     * Type-specific rules (but note that the general rules are appied first):
-     * 4. Request for AP or STA will destroy any other interface
-     * 5. Request for P2P will destroy NAN-only (but will destroy a second STA per #3)
-     * 6. Request for NAN will destroy P2P-only (but will destroy a second STA per #3)
-     *
-     * Note: the 'numNecessaryInterfaces' is used to specify how many interfaces would be needed to
-     * be deleted. This is used to determine whether there are that many low priority interfaces
-     * of the requested type to delete.
+     * 1. Requests for interfaces have the following priority which are based on corresponding
+     * requesting  app's context. Priorities in decreasing order (i.e (i) has the highest priority,
+     * (v) has the lowest priority).
+     *  - (i) Requests from privileged apps (i.e settings, setup wizard, connectivity stack, etc)
+     *  - (ii) Requests from system apps.
+     *  - (iii) Requests from foreground apps.
+     *  - (iv) Requests from foreground services.
+     *  - (v) Requests from everything else (lumped together as "background").
+     * Note: If there are more than 1 app requesting for a particular interface, then we consider
+     * the priority of the highest priority app among them.
+     * For ex: If there is a system app and a foreground requesting for NAN iface, then we use the
+     * system app to determine the priority of the interface request.
+     * 2. If there are 2 conflicting interface requests from apps with the same priority, then
+     *    - (i) If both the apps are privileged and not for the same interface type, the new request
+     *          wins (last caller wins).
+     *    - (ii) Else, the existing request wins (first caller wins).
+     * Note: Privileged apps are the ones that the user is directly interacting with, hence we use
+     * last caller wins to decide among those, for all other apps we try to minimize disruption to
+     * existing requests.
+     * For ex: User turns on wifi, then hotspot on legacy devices which do not support STA + AP, we
+     * want the last request from the user (i.e hotspot) to be honored.
      */
-    private boolean allowedToDeleteIfaceTypeForRequestedType(int existingIfaceType,
-            int requestedIfaceType, WifiIfaceInfo[][] currentIfaces, int numNecessaryInterfaces) {
-        // rule 1
-        if (existingIfaceType == requestedIfaceType) {
+    private boolean allowedToDeleteIfaceTypeForRequestedType(
+            int requestedIfaceType, WorkSource requestorWs, int existingIfaceType,
+            WifiIfaceInfo[][] existingIfaces) {
+        WorkSourceHelper newRequestorWsHelper = mWifiInjector.makeWsHelper(requestorWs);
+        WifiIfaceInfo[] ifaceInfosForExistingIfaceType = existingIfaces[existingIfaceType];
+        // No ifaces of the existing type, error!
+        if (ifaceInfosForExistingIfaceType.length == 0) {
+            Log.wtf(TAG, "allowedToDeleteIfaceTypeForRequestedType: Num existings ifaces is 0!");
             return false;
         }
-
-        // rule 2
-        if (currentIfaces[requestedIfaceType].length != 0) {
-            return false;
+        for (WifiIfaceInfo ifaceInfo : ifaceInfosForExistingIfaceType) {
+            int newRequestorWsPriority = getRequestorWsPriority(newRequestorWsHelper);
+            int existingRequestorWsPriority = getRequestorWsPriority(ifaceInfo.requestorWsHelper);
+            if (allowedToDelete(
+                    requestedIfaceType, newRequestorWsPriority, existingIfaceType,
+                    existingRequestorWsPriority)) {
+                if (mDbg) {
+                    Log.d(TAG, "allowedToDeleteIfaceTypeForRequestedType: Allowed to delete "
+                            + "requestedIfaceType=" + requestedIfaceType
+                            + "existingIfaceType=" + existingIfaceType
+                            + ", newRequestorWsPriority=" + newRequestorWsHelper
+                            + ", existingRequestorWsPriority" + existingRequestorWsPriority);
+                }
+                return true;
+            }
         }
-
-        // rule 3
-        if (currentIfaces[existingIfaceType].length > 1) {
-            return true;
-        }
-
-        // rule 5
-        if (requestedIfaceType == IfaceType.P2P) {
-            return existingIfaceType == IfaceType.NAN;
-        }
-
-        // rule 6
-        if (requestedIfaceType == IfaceType.NAN) {
-            return existingIfaceType == IfaceType.P2P;
-        }
-
-        // rule 4, the requestIfaceType is either AP or STA
-        return true;
+        return false;
     }
 
     /**
      * Selects the interfaces to delete.
      *
-     * Rule: select low priority interfaces and then other interfaces in order of creation time.
+     * Rule:
+     *  - Select interfaces that are lower priority than the request priority.
+     *  - If they are at the same priority level, then
+     *      - If both are privileged and different iface type, then delete existing interfaces.
+     *      - Else, not allowed to delete.
+     *  - Delete ifaces based on the descending requestor priority
+     *    (i.e bg app requests are deleted first, privileged app requests are deleted last)
+     *  - If there are > 1 ifaces within the same priority group to delete, select them randomly.
      *
      * @param excessInterfaces Number of interfaces which need to be selected.
+     * @param requestedIfaceType Requested iface type.
+     * @param requestorWs Requestor worksource.
+     * @param existingIfaceType Existing iface type.
      * @param interfaces Array of interfaces.
      */
     private List<WifiIfaceInfo> selectInterfacesToDelete(int excessInterfaces,
+            int requestedIfaceType, WorkSource requestorWs, int existingIfaceType,
             WifiIfaceInfo[] interfaces) {
         if (VDBG) {
             Log.d(TAG, "selectInterfacesToDelete: excessInterfaces=" + excessInterfaces
+                    + ", requestedIfaceType=" + requestedIfaceType
+                    + ", requestorWs=" + requestorWs
+                    + ", existingIfaceType=" + existingIfaceType
                     + ", interfaces=" + Arrays.toString(interfaces));
         }
+        WorkSourceHelper newRequestorWsHelper = mWifiInjector.makeWsHelper(requestorWs);
 
         boolean lookupError = false;
-        LongSparseArray<WifiIfaceInfo> orderedList = new LongSparseArray<>();
+        // Map of priority levels to ifaces to delete.
+        Map<Integer, List<WifiIfaceInfo>> ifacesToDeleteMap = new HashMap<>();
         for (WifiIfaceInfo info : interfaces) {
             InterfaceCacheEntry cacheEntry;
             synchronized (mLock) {
@@ -1715,18 +1809,37 @@ public class HalDeviceManager {
                 lookupError = true;
                 break;
             }
-            orderedList.append(cacheEntry.creationTime, info);
+            int newRequestorWsPriority = getRequestorWsPriority(newRequestorWsHelper);
+            int existingRequestorWsPriority = getRequestorWsPriority(cacheEntry.requestorWsHelper);
+            if (allowedToDelete(requestedIfaceType, newRequestorWsPriority, existingIfaceType,
+                    existingRequestorWsPriority)) {
+                ifacesToDeleteMap.computeIfAbsent(
+                        existingRequestorWsPriority, v -> new ArrayList<>()).add(info);
+            }
         }
 
         if (lookupError) {
             Log.e(TAG, "selectInterfacesToDelete: falling back to arbitrary selection");
             return Arrays.asList(Arrays.copyOf(interfaces, excessInterfaces));
         } else {
-            List<WifiIfaceInfo> result = new ArrayList<>(excessInterfaces);
-            for (int i = 0; i < excessInterfaces; ++i) {
-                result.add(orderedList.valueAt(orderedList.size() - i - 1));
+            int numIfacesToDelete = 0;
+            List<WifiIfaceInfo> ifacesToDelete = new ArrayList<>(excessInterfaces);
+            // Iterate from lowest priority to highest priority ifaces.
+            for (int i = PRIORITY_BG; i >= PRIORITY_PRIVILEGED; i--) {
+                List<WifiIfaceInfo> ifacesToDeleteListWithinPriority =
+                        ifacesToDeleteMap.getOrDefault(i, new ArrayList<>());
+                int numIfacesToDeleteWithinPriority =
+                        Math.min(excessInterfaces - numIfacesToDelete,
+                                ifacesToDeleteListWithinPriority.size());
+                ifacesToDelete.addAll(
+                        ifacesToDeleteListWithinPriority.subList(
+                                0, numIfacesToDeleteWithinPriority));
+                numIfacesToDelete += numIfacesToDeleteWithinPriority;
+                if (numIfacesToDelete == excessInterfaces) {
+                    break;
+                }
             }
-            return result;
+            return ifacesToDelete;
         }
     }
 
