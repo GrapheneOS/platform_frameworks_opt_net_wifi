@@ -111,8 +111,7 @@ public class EapFailureNotifierTest extends WifiBaseTest {
         when(mResources.getString(eq(0), anyString())).thenReturn(null);
         when(mResources.getString(eq(1), anyString())).thenReturn("Error Message");
         when(mContext.createPackageContext(anyString(), eq(0))).thenReturn(mContext);
-        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.oem.android.wifi.resources");
-        when(mContext.getWifiOverlayJavaPkgName()).thenReturn("test.com.android.wifi.resources");
+        when(mContext.getWifiOverlayApkPkgName()).thenReturn("test.com.android.wifi.resources");
         mEapFailureNotifier =
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager);
     }
