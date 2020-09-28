@@ -307,7 +307,7 @@ public class WifiConnectivityManager {
      */
     private boolean handleScanResults(List<ScanDetail> scanDetails, String listenerName,
             boolean isFullScan) {
-        ClientModeManager clientModeManager = getClientModeManager();
+        ClientModeManager clientModeManager = getPrimaryClientModeManager();
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
                 clientModeManager.getWifiLinkLayerStats(),
                 WifiChannelUtilization.UNKNOWN_FREQ);
@@ -884,10 +884,12 @@ public class WifiConnectivityManager {
         mActiveModeWarden.registerModeChangeCallback(new ModeChangeCallback());
     }
 
-    private ClientModeManager getClientModeManager() {
-        // TODO(b/159052883): Handle multiple primary client mode impl instances.
-        // Needs a better handle on these multiple primary end to end use cases.
-        return mClientModeManagers.valueAt(0);
+    private ClientModeManager getPrimaryClientModeManager() {
+        // There should only be 1 primary client mode manager at any point of time.
+        return mClientModeManagers.stream()
+                .filter(cm -> cm.getRole() == ActiveModeManager.ROLE_CLIENT_PRIMARY)
+                .findFirst()
+                .get();
     }
 
     /** Initialize single scanning schedules, and validate them */
@@ -985,11 +987,11 @@ public class WifiConnectivityManager {
 
         // Check if we are already connected or in the process of connecting to the target.
         final WifiConfiguration connectedOrConnectingWifiConfiguration  =
-                coalesce(getClientModeManager().getConnectingWifiConfiguration(),
-                        getClientModeManager().getConnectedWifiConfiguration());
+                coalesce(getPrimaryClientModeManager().getConnectingWifiConfiguration(),
+                        getPrimaryClientModeManager().getConnectedWifiConfiguration());
         final String connectedOrConnectingBssid =
-                coalesce(getClientModeManager().getConnectingBssid(),
-                        getClientModeManager().getConnectedBssid());
+                coalesce(getPrimaryClientModeManager().getConnectingBssid(),
+                        getPrimaryClientModeManager().getConnectedBssid());
         boolean connectingOrConnectedToTarget =
                 connectedOrConnectingWifiConfiguration != null
                         && targetNetworkId == connectedOrConnectingWifiConfiguration.networkId;
@@ -1023,12 +1025,13 @@ public class WifiConnectivityManager {
         noteConnectionAttempt(elapsedTimeMillis);
 
         WifiConfiguration currentConnectedNetwork =
-                getClientModeManager().getConnectedWifiConfiguration();
+                getPrimaryClientModeManager().getConnectedWifiConfiguration();
         String currentAssociationId = (currentConnectedNetwork == null) ? "Disconnected" :
-                (currentConnectedNetwork.SSID + " : " + getClientModeManager().getConnectedBssid());
+                (currentConnectedNetwork.SSID + " : "
+                        + getPrimaryClientModeManager().getConnectedBssid());
 
         localLog("Current Network: " + currentConnectedNetwork + ", Target Network: " + candidate);
-        ClientModeManager clientModeManager = getClientModeManager();
+        ClientModeManager clientModeManager = getPrimaryClientModeManager();
         if (currentConnectedNetwork != null
                 && (currentConnectedNetwork.networkId == targetNetworkId
                 //TODO(b/36788683): re-enable linked configuration check
@@ -1079,7 +1082,7 @@ public class WifiConnectivityManager {
     private boolean setScanChannels(ScanSettings settings) {
         Set<Integer> freqs;
 
-        WifiConfiguration config = getClientModeManager().getConnectedWifiConfiguration();
+        WifiConfiguration config = getPrimaryClientModeManager().getConnectedWifiConfiguration();
         if (config == null) {
             long ageInMillis = 1000 * 60 * mContext.getResources().getInteger(
                     R.integer.config_wifiInitialPartialScanChannelCacheAgeMins);
@@ -1726,7 +1729,8 @@ public class WifiConnectivityManager {
      * 2. The device is connected to that network.
      */
     private boolean useSingleSavedNetworkSchedule() {
-        WifiConfiguration currentNetwork = getClientModeManager().getConnectedWifiConfiguration();
+        WifiConfiguration currentNetwork =
+                getPrimaryClientModeManager().getConnectedWifiConfiguration();
         if (currentNetwork == null) {
             localLog("Current network is missing, may caused by remove network and disconnecting ");
             return false;
@@ -2006,7 +2010,7 @@ public class WifiConnectivityManager {
         retrieveWifiScanner();
         mConnectivityHelper.getFirmwareRoamingInfo();
         mBssidBlocklistMonitor.clearBssidBlocklist();
-        mWifiChannelUtilization.init(getClientModeManager().getWifiLinkLayerStats());
+        mWifiChannelUtilization.init(getPrimaryClientModeManager().getWifiLinkLayerStats());
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiEnablePartialInitialScan)) {
             setInitialScanState(INITIAL_SCAN_STATE_START);
