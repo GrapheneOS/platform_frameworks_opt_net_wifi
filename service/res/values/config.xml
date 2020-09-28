@@ -197,6 +197,9 @@
     <!-- Boolean indicating that wifi only link configuratios that have exact same credentials (i.e PSK) -->
     <bool translatable="false" name="config_wifi_only_link_same_credential_configurations">true</bool>
 
+    <!-- Boolean indicating that softap passphrase need to enable ASCII encodable check -->
+    <bool translatable="false" name="config_wifiSoftapPassphraseAsciiEncodableCheck">true</bool>
+
     <!-- Wifi Hal supports force client disconnect for softap -->
     <bool translatable="false" name="config_wifiSofapClientForceDisconnectSupported">true</bool>
 
