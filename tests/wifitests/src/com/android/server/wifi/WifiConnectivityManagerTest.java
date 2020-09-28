@@ -378,7 +378,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mCandidateList = new ArrayList<WifiCandidates.Candidate>();
         mCandidateList.add(mCandidate1);
         when(ns.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean())).thenReturn(mCandidateList);
+                anyBoolean(), anyBoolean())).thenReturn(mCandidateList);
         when(ns.selectNetwork(any()))
                 .then(new AnswerWithArguments() {
                     public WifiConfiguration answer(List<WifiCandidates.Candidate> candidateList) {
@@ -928,7 +928,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidateList.add(mCandidate1);
         candidateList.add(otherCandidate);
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean())).thenReturn(candidateList);
+                anyBoolean(), anyBoolean())).thenReturn(candidateList);
 
         // Set WiFi to disconnected state to trigger scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -994,7 +994,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidateList.add(mCandidate1);
         candidateList.add(otherCandidate);
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean())).thenReturn(candidateList);
+                anyBoolean(), anyBoolean())).thenReturn(candidateList);
 
         // Set WiFi to disconnected state to trigger scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -2700,12 +2700,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         doAnswer(new AnswerWithArguments() {
             public List<WifiCandidates.Candidate> answer(
                     List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
-                    boolean connected, boolean disconnected, boolean untrustedNetworkAllowed)
-                    throws Exception {
+                    boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
+                    boolean oemPaidNetworkAllowed) throws Exception {
                 capturedScanDetails.addAll(scanDetails);
                 return null;
             }}).when(mWifiNS).getCandidatesFromScan(
-                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
         // Set WiFi to disconnected state with screen on which triggers a scan immediately.
@@ -2756,12 +2756,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         doAnswer(new AnswerWithArguments() {
             public List<WifiCandidates.Candidate> answer(
                     List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
-                    boolean connected, boolean disconnected, boolean untrustedNetworkAllowed)
-                    throws Exception {
+                    boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
+                    boolean oemPaidNetworkAllowed) throws Exception {
                 capturedScanDetails.addAll(scanDetails);
                 return null;
             }}).when(mWifiNS).getCandidatesFromScan(
-                any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+                any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
         // Set WiFi to disconnected state with screen on which triggers a scan immediately.

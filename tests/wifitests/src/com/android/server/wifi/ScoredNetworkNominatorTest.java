@@ -224,7 +224,7 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
 
         mContentObserver.onChange(false /* unused */);
 
-        mScoredNetworkNominator.nominateNetworks(null, null, null, false, false,
+        mScoredNetworkNominator.nominateNetworks(null, null, null, false, false, true,
                 mOnConnectableListener);
 
         verifyZeroInteractions(mWifiConfigManager, mNetworkScoreManager);
@@ -304,7 +304,7 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
                 .thenReturn(new NetworkUpdateResult(1));
         // Untrusted networks allowed.
         mScoredNetworkNominator.nominateNetworks(scanDetails,
-                null, null, false, true, mOnConnectableListener);
+                null, null, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, atLeastOnce())
                 .onConnectable(any(), mWifiConfigCaptor.capture());
         assertTrue(mWifiConfigCaptor.getAllValues().stream()
@@ -339,7 +339,7 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
 
         // Untrusted networks not allowed.
         mScoredNetworkNominator.nominateNetworks(scanDetails,
-                null, null, false, false, mOnConnectableListener);
+                null, null, false, false, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -369,7 +369,7 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
                 scanDetails, scores, meteredHints);
 
         mScoredNetworkNominator.nominateNetworks(scanDetails,
-                null, null, false, true, mOnConnectableListener);
+                null, null, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener).onConnectable(any(), mWifiConfigCaptor.capture());
         assertEquals(mWifiConfigCaptor.getValue().networkId, savedConfigs[0].networkId);
@@ -401,7 +401,7 @@ public class ScoredNetworkNominatorTest extends WifiBaseTest {
                 scanDetails, scores, meteredHints);
 
         mScoredNetworkNominator.nominateNetworks(scanDetails,
-                null, null, false, true, mOnConnectableListener);
+                null, null, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener).onConnectable(any(), mWifiConfigCaptor.capture());
         assertEquals(mWifiConfigCaptor.getValue().networkId, savedConfigs[0].networkId);
