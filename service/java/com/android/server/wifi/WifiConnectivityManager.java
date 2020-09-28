@@ -341,14 +341,21 @@ public class WifiConnectivityManager {
             candidates = filterCandidatesHighMovement(candidates, listenerName, isFullScan);
         }
 
-        WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
         mLastNetworkSelectionTimeStamp = mClock.getElapsedSinceBootMillis();
         mWifiLastResortWatchdog.updateAvailableNetworks(
                 mNetworkSelector.getConnectableScanDetails());
         mWifiMetrics.countScanResults(scanDetails);
+        return handleCandidatesFromScanResults(
+                getPrimaryClientModeManager(), listenerName, candidates);
+    }
+
+    private boolean handleCandidatesFromScanResults(
+            ClientModeManager clientModeManager,
+            String listenerName, List<WifiCandidates.Candidate> candidates) {
+        WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
         if (candidate != null) {
             localLog(listenerName + ":  WNS candidate-" + candidate.SSID);
-            connectToNetwork(candidate);
+            connectToNetwork(clientModeManager, candidate);
             return true;
         } else {
             if (mWifiState == WIFI_STATE_DISCONNECTED) {
@@ -973,7 +980,8 @@ public class WifiConnectivityManager {
      * Based on the currently connected network, this menthod determines whether we should
      * connect or roam to the network candidate recommended by WifiNetworkSelector.
      */
-    private void connectToNetwork(WifiConfiguration candidate) {
+    private void connectToNetwork(@NonNull ClientModeManager clientModeManager,
+            WifiConfiguration candidate) {
         ScanResult scanResultCandidate = candidate.getNetworkSelectionStatus().getCandidate();
         if (scanResultCandidate == null) {
             localLog("connectToNetwork: bad candidate - "  + candidate
@@ -987,11 +995,11 @@ public class WifiConnectivityManager {
 
         // Check if we are already connected or in the process of connecting to the target.
         final WifiConfiguration connectedOrConnectingWifiConfiguration  =
-                coalesce(getPrimaryClientModeManager().getConnectingWifiConfiguration(),
-                        getPrimaryClientModeManager().getConnectedWifiConfiguration());
+                coalesce(clientModeManager.getConnectingWifiConfiguration(),
+                        clientModeManager.getConnectedWifiConfiguration());
         final String connectedOrConnectingBssid =
-                coalesce(getPrimaryClientModeManager().getConnectingBssid(),
-                        getPrimaryClientModeManager().getConnectedBssid());
+                coalesce(clientModeManager.getConnectingBssid(),
+                        clientModeManager.getConnectedBssid());
         boolean connectingOrConnectedToTarget =
                 connectedOrConnectingWifiConfiguration != null
                         && targetNetworkId == connectedOrConnectingWifiConfiguration.networkId;
@@ -1025,13 +1033,11 @@ public class WifiConnectivityManager {
         noteConnectionAttempt(elapsedTimeMillis);
 
         WifiConfiguration currentConnectedNetwork =
-                getPrimaryClientModeManager().getConnectedWifiConfiguration();
+                clientModeManager.getConnectedWifiConfiguration();
         String currentAssociationId = (currentConnectedNetwork == null) ? "Disconnected" :
-                (currentConnectedNetwork.SSID + " : "
-                        + getPrimaryClientModeManager().getConnectedBssid());
+                (currentConnectedNetwork.SSID + " : " + clientModeManager.getConnectedBssid());
 
         localLog("Current Network: " + currentConnectedNetwork + ", Target Network: " + candidate);
-        ClientModeManager clientModeManager = getPrimaryClientModeManager();
         if (currentConnectedNetwork != null
                 && (currentConnectedNetwork.networkId == targetNetworkId
                 //TODO(b/36788683): re-enable linked configuration check
@@ -1893,7 +1899,7 @@ public class WifiConnectivityManager {
                 mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
                         TEMP_BSSID_BLOCK_DURATION,
                         BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 0);
-                connectToNetwork(candidate);
+                connectToNetwork(getPrimaryClientModeManager(), candidate);
             }
         } catch (IllegalArgumentException e) {
             localLog("retryConnectionOnLatestCandidates: failed to create MacAddress from bssid="
