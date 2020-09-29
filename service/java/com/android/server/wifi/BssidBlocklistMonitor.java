@@ -23,7 +23,6 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.util.ArrayMap;
-import android.util.ArraySet;
 import android.util.LocalLog;
 import android.util.Log;
 
@@ -35,7 +34,6 @@ import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -99,30 +97,6 @@ public class BssidBlocklistMonitor {
     // To be filled with values from the overlay.
     private static final int[] FAILURE_COUNT_DISABLE_THRESHOLD = new int[NUMBER_REASON_CODES];
     private boolean mFailureCountDisableThresholdArrayInitialized = false;
-    private static final String[] FAILURE_REASON_STRINGS = {
-            "REASON_AP_UNABLE_TO_HANDLE_NEW_STA",
-            "REASON_NETWORK_VALIDATION_FAILURE",
-            "REASON_WRONG_PASSWORD",
-            "REASON_EAP_FAILURE",
-            "REASON_ASSOCIATION_REJECTION",
-            "REASON_ASSOCIATION_TIMEOUT",
-            "REASON_AUTHENTICATION_FAILURE",
-            "REASON_DHCP_FAILURE",
-            "REASON_ABNORMAL_DISCONNECT",
-            "REASON_FRAMEWORK_DISCONNECT_MBO_OCE",
-            "REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT",
-            "REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE"
-    };
-    private static final Set<Integer> LOW_RSSI_SENSITIVE_FAILURES = new ArraySet<>(Arrays.asList(
-            REASON_NETWORK_VALIDATION_FAILURE,
-            REASON_EAP_FAILURE,
-            REASON_ASSOCIATION_REJECTION,
-            REASON_ASSOCIATION_TIMEOUT,
-            REASON_AUTHENTICATION_FAILURE,
-            REASON_DHCP_FAILURE,
-            REASON_ABNORMAL_DISCONNECT,
-            REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE
-    ));
     private static final long ABNORMAL_DISCONNECT_RESET_TIME_MS = TimeUnit.HOURS.toMillis(3);
     private static final int MIN_RSSI_DIFF_TO_UNBLOCK_BSSID = 5;
     private static final String TAG = "BssidBlocklistMonitor";
@@ -135,12 +109,56 @@ public class BssidBlocklistMonitor {
     private final Calendar mCalendar;
     private final WifiScoreCard mWifiScoreCard;
     private final ScoringParams mScoringParams;
+    private final Map<Integer, BssidDisableReason> mBssidDisableReasons =
+            buildBssidDisableReasons();
 
     // Map of bssid to BssidStatus
     private Map<String, BssidStatus> mBssidStatusMap = new ArrayMap<>();
 
     // Keeps history of 30 blocked BSSIDs that were most recently removed.
     private BssidStatusHistoryLogger mBssidStatusHistoryLogger = new BssidStatusHistoryLogger(30);
+
+    private Map<Integer, BssidDisableReason> buildBssidDisableReasons() {
+        Map<Integer, BssidDisableReason> result = new ArrayMap<>();
+        result.put(REASON_AP_UNABLE_TO_HANDLE_NEW_STA, new BssidDisableReason(
+                "REASON_AP_UNABLE_TO_HANDLE_NEW_STA", false, false));
+        result.put(REASON_NETWORK_VALIDATION_FAILURE, new BssidDisableReason(
+                "REASON_NETWORK_VALIDATION_FAILURE", true, false));
+        result.put(REASON_WRONG_PASSWORD, new BssidDisableReason(
+                "REASON_WRONG_PASSWORD", false, true));
+        result.put(REASON_EAP_FAILURE, new BssidDisableReason(
+                "REASON_EAP_FAILURE", true, true));
+        result.put(REASON_ASSOCIATION_REJECTION, new BssidDisableReason(
+                "REASON_ASSOCIATION_REJECTION", true, true));
+        result.put(REASON_ASSOCIATION_TIMEOUT, new BssidDisableReason(
+                "REASON_ASSOCIATION_TIMEOUT", true, true));
+        result.put(REASON_AUTHENTICATION_FAILURE, new BssidDisableReason(
+                "REASON_AUTHENTICATION_FAILURE", true, true));
+        result.put(REASON_DHCP_FAILURE, new BssidDisableReason(
+                "REASON_DHCP_FAILURE", true, false));
+        result.put(REASON_ABNORMAL_DISCONNECT, new BssidDisableReason(
+                "REASON_ABNORMAL_DISCONNECT", true, false));
+        result.put(REASON_FRAMEWORK_DISCONNECT_MBO_OCE, new BssidDisableReason(
+                "REASON_FRAMEWORK_DISCONNECT_MBO_OCE", false, false));
+        result.put(REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, new BssidDisableReason(
+                "REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT", false, false));
+        result.put(REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE, new BssidDisableReason(
+                "REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE", true, false));
+        return result;
+    }
+
+    class BssidDisableReason {
+        public final String reasonString;
+        public final boolean isLowRssiSensitive;
+        public final boolean ignoreIfOnlyBssid;
+
+        BssidDisableReason(String reasonString, boolean isLowRssiSensitive,
+                boolean ignoreIfOnlyBssid) {
+            this.reasonString = reasonString;
+            this.isLowRssiSensitive = isLowRssiSensitive;
+            this.ignoreIfOnlyBssid = ignoreIfOnlyBssid;
+        }
+    }
 
     /**
      * Create a new instance of BssidBlocklistMonitor
@@ -278,10 +296,12 @@ public class BssidBlocklistMonitor {
     private String getFailureReasonString(@FailureReason int reasonCode) {
         if (reasonCode == INVALID_REASON) {
             return "INVALID_REASON";
-        } else if (reasonCode < 0 || reasonCode >= FAILURE_REASON_STRINGS.length) {
+        }
+        BssidDisableReason disableReason = mBssidDisableReasons.get(reasonCode);
+        if (disableReason == null) {
             return "REASON_UNKNOWN";
         }
-        return FAILURE_REASON_STRINGS[reasonCode];
+        return disableReason.reasonString;
     }
 
     private int getFailureThresholdForReason(@FailureReason int reasonCode) {
@@ -358,6 +378,16 @@ public class BssidBlocklistMonitor {
     public boolean handleBssidConnectionFailure(String bssid, String ssid,
             @FailureReason int reasonCode, int rssi) {
         if (!isValidNetworkAndFailureReason(bssid, ssid, reasonCode)) {
+            return false;
+        }
+        BssidDisableReason bssidDisableReason = mBssidDisableReasons.get(reasonCode);
+        if (bssidDisableReason == null) {
+            Log.e(TAG, "Bssid disable reason not found. ReasonCode=" + reasonCode);
+            return false;
+        }
+        if (bssidDisableReason.ignoreIfOnlyBssid
+                && mWifiLastResortWatchdog.isBssidOnlyApOfSsid(bssid)) {
+            localLog("Ignoring BSSID failure due to no other APs available. BSSID=" + bssid);
             return false;
         }
         if (reasonCode == REASON_ABNORMAL_DISCONNECT) {
@@ -569,7 +599,7 @@ public class BssidBlocklistMonitor {
             }
             BssidStatus status = mBssidStatusMap.get(scanResult.BSSID);
             if (status == null || !status.isInBlocklist
-                    || !LOW_RSSI_SENSITIVE_FAILURES.contains(status.blockReason)) {
+                    || !isLowRssiSensitiveFailure(status.blockReason)) {
                 continue;
             }
             int sufficientRssi = mScoringParams.getSufficientRssi(scanResult.frequency);
@@ -579,6 +609,11 @@ public class BssidBlocklistMonitor {
                 mBssidStatusMap.remove(status.bssid);
             }
         }
+    }
+
+    private boolean isLowRssiSensitiveFailure(int blockReason) {
+        return mBssidDisableReasons.get(blockReason) == null ? false
+                : mBssidDisableReasons.get(blockReason).isLowRssiSensitive;
     }
 
     /**

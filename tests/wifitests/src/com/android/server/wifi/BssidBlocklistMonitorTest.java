@@ -248,6 +248,49 @@ public class BssidBlocklistMonitorTest {
     }
 
     /**
+     * Verify that if REASON_AUTHENTICATION_FAILURE happens on the only BSSID of a SSID, the BSSID
+     * will not get blocked.
+     */
+    @Test
+    public void testIgnoreIfOnlyBssid() {
+        // setup TEST_BSSID_1 to be the only BSSID for its SSID
+        when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_1)).thenReturn(true);
+        when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_2)).thenReturn(false);
+
+        // Simulate both BSSIDs failing
+        int failureReason = BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
+        int threshold = BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(failureReason);
+        handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1,
+                failureReason, threshold);
+        handleBssidConnectionFailureMultipleTimes(TEST_BSSID_2, TEST_SSID_2,
+                failureReason, threshold);
+
+        // Verify verify that only TEST_BSSID_2 is added to the blocklist.
+        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
+    }
+
+    /**
+     * Verify that for REASON_AP_UNABLE_TO_HANDLE_NEW_STA, the BSSID will get blocked even if it's
+     * the only BSSID for its SSID.
+     */
+    @Test
+    public void testIgnoreIfOnlyBssidNotApplicableForSomeFailures() {
+        // setup TEST_BSSID_1 to be the only BSSID for its SSID
+        when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_1)).thenReturn(true);
+
+        // Simulate TEST_BSSID_1 failing
+        int failureReason = BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA;
+        int threshold = BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(failureReason);
+        handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1,
+                failureReason, threshold);
+
+        // Verify verify that TEST_BSSID_1 is in the blocklist
+        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+    }
+
+    /**
      * Verify that when adding a AP that had already been failing (therefore has a blocklist
      * streak), we are setting the blocklist duration using an exponential backoff technique.
      */
