@@ -503,7 +503,7 @@ public class WifiLastResortWatchdog {
      * @param bssid BSSID of the access point
      * @return true if only BSSID for its corresponding SSID be observed
      */
-    private boolean isBssidOnlyApOfSsid(String bssid) {
+    public boolean isBssidOnlyApOfSsid(String bssid) {
         AvailableNetworkFailureCount availableNetworkFailureCount =
                 mRecentAvailableNetworks.get(bssid);
         if (availableNetworkFailureCount == null) {
