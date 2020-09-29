@@ -37,6 +37,7 @@ import com.android.server.wifi.util.NativeUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
@@ -63,6 +64,8 @@ public class WifiConfigurationUtil {
     private static final int SAE_ASCII_MIN_LEN = 1 + ENCLOSING_QUOTES_LEN;
     private static final int PSK_SAE_ASCII_MAX_LEN = 63 + ENCLOSING_QUOTES_LEN;
     private static final int PSK_SAE_HEX_LEN = 64;
+    private static final int WEP104_KEY_BYTES_LEN = 13;
+    private static final int WEP40_KEY_BYTES_LEN = 5;
 
     @VisibleForTesting
     public static final String PASSWORD_MASK = "*";
@@ -472,6 +475,55 @@ public class WifiConfigurationUtil {
         return true;
     }
 
+    private static boolean validateWepKeys(String[] wepKeys, int wepTxKeyIndex, boolean isAdd) {
+        if (isAdd) {
+            if (wepKeys == null) {
+                Log.e(TAG, "validateWepKeys: null string");
+                return false;
+            }
+        } else {
+            if (wepKeys == null) {
+                // This is an update, so the psk can be null if that is not being changed.
+                return true;
+            } else {
+                boolean allMaskedKeys = true;
+                for (int i = 0; i < wepKeys.length; i++) {
+                    if (wepKeys[i] != null && !TextUtils.equals(wepKeys[i], PASSWORD_MASK)) {
+                        allMaskedKeys = false;
+                    }
+                }
+                if (allMaskedKeys) {
+                    // This is an update, so the app might have returned back the masked password,
+                    // let it thru. WifiConfigManager will handle it.
+                    return true;
+                }
+            }
+        }
+        for (int i = 0; i < wepKeys.length; i++) {
+            if (wepKeys[i] != null) {
+                try {
+                    ArrayList<Byte> wepKeyBytes =
+                            NativeUtil.hexOrQuotedStringToBytes(wepKeys[i]);
+                    if (wepKeyBytes.size() != WEP40_KEY_BYTES_LEN
+                            && wepKeyBytes.size() != WEP104_KEY_BYTES_LEN) {
+                        Log.e(TAG, "validateWepKeys: invalid wep key length "
+                                + wepKeys[i].length() + " at index " + i);
+                        return false;
+                    }
+                } catch (IllegalArgumentException e) {
+                    Log.e(TAG, "validateWepKeys: invalid wep key at index " + i, e);
+                    return false;
+                }
+            }
+        }
+        if (wepTxKeyIndex >= wepKeys.length) {
+            Log.e(TAG, "validateWepKeys: invalid wep tx key index " + wepTxKeyIndex
+                    + " wepKeys len: " + wepKeys.length);
+            return false;
+        }
+        return true;
+    }
+
     private static boolean validateBitSet(BitSet bitSet, int validValuesLength) {
         if (bitSet == null) return false;
         BitSet clonedBitset = (BitSet) bitSet.clone();
@@ -599,6 +651,11 @@ public class WifiConfigurationUtil {
             return false;
         }
         if (!validateKeyMgmt(config.allowedKeyManagement)) {
+            return false;
+        }
+        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)
+                && config.wepKeys != null
+                && !validateWepKeys(config.wepKeys, config.wepTxKeyIndex, isAdd)) {
             return false;
         }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)
