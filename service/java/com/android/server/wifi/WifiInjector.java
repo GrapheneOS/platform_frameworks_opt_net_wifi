@@ -194,6 +194,8 @@ public class WifiInjector {
     private final WifiGlobals mWifiGlobals;
     private final SimRequiredNotifier mSimRequiredNotifier;
     private final ScanOnlyModeImpl mScanOnlyModeImpl;
+    private final AdaptiveConnectivityEnabledSettingObserver
+            mAdaptiveConnectivityEnabledSettingObserver;
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -252,6 +254,9 @@ public class WifiInjector {
                 awareMetrics, rttMetrics, new WifiPowerMetrics(mBatteryStats), mWifiP2pMetrics,
                 mDppMetrics, mWifiMonitor);
         mDeviceConfigFacade = new DeviceConfigFacade(mContext, wifiHandler, mWifiMetrics);
+        mAdaptiveConnectivityEnabledSettingObserver =
+                new AdaptiveConnectivityEnabledSettingObserver(wifiHandler, mWifiMetrics,
+                        mFrameworkFacade, mContext);
         // Modules interacting with Native.
         mHalDeviceManager = new HalDeviceManager(mClock, this, wifiHandler);
         mWifiVendorHal = new WifiVendorHal(mHalDeviceManager, wifiHandler);
@@ -640,7 +645,8 @@ public class WifiInjector {
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                         mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
                         mDeviceConfigFacade, mContext, mWifiHandlerThread.getLooper(),
-                        mFrameworkFacade),
+                        mFrameworkFacade, mAdaptiveConnectivityEnabledSettingObserver,
+                        ifaceName),
                 mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager);
     }
 
@@ -883,5 +889,10 @@ public class WifiInjector {
     public WorkSourceHelper makeWsHelper(WorkSource ws) {
         return new WorkSourceHelper(ws, mWifiPermissionsUtil,
                 mContext.getSystemService(ActivityManager.class), mContext.getPackageManager());
+    }
+
+    public AdaptiveConnectivityEnabledSettingObserver
+            getAdaptiveConnectivityEnabledSettingObserver() {
+        return mAdaptiveConnectivityEnabledSettingObserver;
     }
 }

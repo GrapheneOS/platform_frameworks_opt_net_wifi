@@ -380,6 +380,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
             mActiveModeWarden.start();
             registerForCarrierConfigChange();
+            mWifiInjector.getAdaptiveConnectivityEnabledSettingObserver().initialize();
         });
     }
 
@@ -4207,8 +4208,11 @@ public class WifiServiceImpl extends BaseWifiService {
                     .flush();
         }
         // Post operation to handler thread
-        mWifiThreadRunner.post(() ->
-                mWifiMetrics.incrementWifiUsabilityScoreCount(seqNum, score, predictionHorizonSec));
+        mWifiThreadRunner.post(() -> {
+            String ifaceName = mActiveModeWarden.getPrimaryClientModeManager().getInterfaceName();
+            mWifiMetrics.incrementWifiUsabilityScoreCount(
+                    ifaceName, seqNum, score, predictionHorizonSec);
+        });
     }
 
     /**
