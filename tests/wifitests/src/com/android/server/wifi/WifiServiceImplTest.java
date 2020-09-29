@@ -326,6 +326,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiP2pConnection mWifiP2pConnection;
     @Mock SimRequiredNotifier mSimRequiredNotifier;
     @Mock WifiGlobals mWifiGlobals;
+    @Mock AdaptiveConnectivityEnabledSettingObserver mAdaptiveConnectivityEnabledSettingObserver;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -397,6 +398,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
         when(mWifiInjector.getPasspointManager()).thenReturn(mPasspointManager);
         when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
+        when(mClientModeManager.getInterfaceName()).thenReturn(WIFI_IFACE_NAME);
         when(mWifiInjector.getWifiScoreCard()).thenReturn(mWifiScoreCard);
         when(mWifiInjector.getWifiHealthMonitor()).thenReturn(mWifiHealthMonitor);
         when(mWifiInjector.getWifiNetworkScoreCache())
@@ -416,6 +418,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiP2pConnection()).thenReturn(mWifiP2pConnection);
         when(mWifiInjector.getSimRequiredNotifier()).thenReturn(mSimRequiredNotifier);
         when(mWifiInjector.getWifiGlobals()).thenReturn(mWifiGlobals);
+        when(mWifiInjector.getAdaptiveConnectivityEnabledSettingObserver())
+                .thenReturn(mAdaptiveConnectivityEnabledSettingObserver);
         when(mClientModeManager.syncStartSubscriptionProvisioning(anyInt(),
                 any(OsuProvider.class), any(IProvisioningCallback.class))).thenReturn(true);
         // Create an OSU provider that can be provisioned via an open OSU AP
@@ -5338,7 +5342,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testWifiUsabilityScoreUpdateAfterScoreEvent() {
         mWifiServiceImpl.updateWifiUsabilityScore(5, 10, 15);
         mLooper.dispatchAll();
-        verify(mWifiMetrics).incrementWifiUsabilityScoreCount(5, 10, 15);
+        verify(mWifiMetrics).incrementWifiUsabilityScoreCount(WIFI_IFACE_NAME, 5, 10, 15);
     }
 
     private void startLohsAndTethering(boolean isApConcurrencySupported) throws Exception {

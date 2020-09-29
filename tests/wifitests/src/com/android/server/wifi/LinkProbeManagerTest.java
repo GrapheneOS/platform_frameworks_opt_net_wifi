@@ -135,7 +135,8 @@ public class LinkProbeManagerTest extends WifiBaseTest {
         assertEquals(numExperimentIds, new HashSet<>(experimentIdCaptor.getAllValues()).size());
 
         callbackCaptor.getValue().onAck(TEST_ELAPSED_TIME_MS);
-        verify(mWifiMetrics).logLinkProbeSuccess(timeDelta, rssi, linkSpeed, TEST_ELAPSED_TIME_MS);
+        verify(mWifiMetrics).logLinkProbeSuccess(
+                TEST_IFACE_NAME, timeDelta, rssi, linkSpeed, TEST_ELAPSED_TIME_MS);
     }
 
     /**
@@ -171,7 +172,7 @@ public class LinkProbeManagerTest extends WifiBaseTest {
                 anyInt());
 
         callbackCaptor.getValue().onFailure(WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK);
-        verify(mWifiMetrics).logLinkProbeFailure(timeDelta, rssi, linkSpeed,
+        verify(mWifiMetrics).logLinkProbeFailure(TEST_IFACE_NAME, timeDelta, rssi, linkSpeed,
                 WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK);
     }
 
