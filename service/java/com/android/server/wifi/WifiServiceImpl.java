@@ -3425,8 +3425,9 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiHealthMonitor.dump(fd, pw, args);
             mWifiInjector.getWakeupController().dump(fd, pw, args);
             mWifiInjector.getWifiLastResortWatchdog().dump(fd, pw, args);
+            mWifiInjector.getAdaptiveConnectivityEnabledSettingObserver().dump(fd, pw, args);
+            mWifiInjector.getWifiGlobals().dump(fd, pw, args);
             pw.println();
-
         }
     }
 
