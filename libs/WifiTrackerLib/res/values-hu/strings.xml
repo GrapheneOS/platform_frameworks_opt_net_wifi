@@ -37,7 +37,7 @@
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Korlátozott kapcsolat"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"A privát DNS-kiszolgálóhoz nem lehet hozzáférni"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Nincs internet"</string>
-    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Alacsony minőségű"</string>
+    <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Gyenge minőségű"</string>
     <string name="wifi_security_none" msgid="6680263031386719053">"Nincs"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Lejárt"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"Koppintson a regisztrációhoz"</string>
