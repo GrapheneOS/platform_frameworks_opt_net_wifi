@@ -1961,6 +1961,11 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             mActiveModeWarden.recoveryDisableWifi();
             mLooper.dispatchAll();
         });
+        mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS + 10);
+        mLooper.dispatchAll();
+
+        // Ensure we did not restart wifi.
+        assertInDisabledState();
     }
 
     /**
