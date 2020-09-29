@@ -59,8 +59,6 @@ import android.net.ip.IpClientManager;
 import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
-import android.net.util.MacAddressUtils;
-import android.net.util.NetUtils;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -98,6 +96,8 @@ import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.net.module.util.Inet4AddressUtils;
+import com.android.net.module.util.MacAddressUtils;
+import com.android.net.module.util.NetUtils;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
@@ -222,6 +222,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private ConcreteClientModeManager mClientModeManager;
 
     private int mLastSignalLevel = -1;
+    private int mLastScanRssi = WifiInfo.INVALID_RSSI;
     private String mLastBssid;
     // TODO (b/162942761): Ensure this is reset when mTargetNetworkId is set.
     private int mLastNetworkId; // The network Id we successfully joined
@@ -2584,12 +2585,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             if (blocklistReason != -1) {
                 int networkId = (configuration == null) ? WifiConfiguration.INVALID_NETWORK_ID
                         : configuration.networkId;
-                int scanRssi = mWifiConfigManager.findScanRssi(networkId,
-                        mWifiHealthMonitor.getScanRssiValidTimeMs());
-                mWifiScoreCard.noteConnectionFailure(mWifiInfo, scanRssi, ssid, blocklistReason);
+                mWifiScoreCard.noteConnectionFailure(mWifiInfo, mLastScanRssi, ssid,
+                        blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
                 mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, blocklistReason,
-                        scanRssi);
+                        mLastScanRssi);
             }
         }
 
@@ -3305,9 +3305,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     }
                     mTargetNetworkId = netId;
                     // Update scorecard while there is still state from existing connection
-                    int scanRssi = mWifiConfigManager.findScanRssi(netId,
+                    mLastScanRssi = mWifiConfigManager.findScanRssi(netId,
                             mWifiHealthMonitor.getScanRssiValidTimeMs());
-                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, scanRssi, config.SSID);
+                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, mLastScanRssi, config.SSID);
                     mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(config.SSID);
 
                     updateWifiConfigOnStartConnection(config, bssid);
@@ -5102,9 +5102,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         loge("CMD_START_ROAM and no config, bail out...");
                         break;
                     }
-                    int scanRssi = mWifiConfigManager.findScanRssi(netId,
+                    mLastScanRssi = mWifiConfigManager.findScanRssi(netId,
                             mWifiHealthMonitor.getScanRssiValidTimeMs());
-                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, scanRssi, config.SSID);
+                    mWifiScoreCard.noteConnectionAttempt(mWifiInfo, mLastScanRssi, config.SSID);
                     setTargetBssid(config, bssid);
                     mTargetNetworkId = netId;
 
