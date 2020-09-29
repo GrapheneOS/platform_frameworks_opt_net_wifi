@@ -158,12 +158,6 @@ android_app {
         "com.android.wifi",
         "test_com.android.wifi",
     ],
-    certificate: ":com.android.wifi.resources.certificate",
-}
-
-android_app_certificate {
-    name: "com.android.wifi.resources.certificate",
-    certificate: "resources-certs/com.android.wifi.resources"
 }
 
 // Prebuilt for the wifi.rc file.
