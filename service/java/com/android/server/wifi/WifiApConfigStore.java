@@ -32,6 +32,7 @@ import com.android.net.module.util.MacAddressUtils;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.wifi.resources.R;
 
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -413,7 +414,7 @@ public class WifiApConfigStore {
      * otherwise.
      */
     static boolean validateApWifiConfiguration(@NonNull SoftApConfiguration apConfig,
-            boolean isPrivileged) {
+            boolean isPrivileged, Context context) {
         // first check the SSID
         if (!validateApConfigSsid(apConfig.getSsid())) {
             // failed SSID verificiation checks
@@ -451,6 +452,16 @@ public class WifiApConfigStore {
                 Log.d(TAG, "softap network password must be set");
                 return false;
             }
+
+            if (context.getResources().getBoolean(
+                    R.bool.config_wifiSoftapPassphraseAsciiEncodableCheck)) {
+                final CharsetEncoder asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
+                if (!asciiEncoder.canEncode(preSharedKey)) {
+                    Log.d(TAG, "passphrase not ASCII encodable");
+                    return false;
+                }
+            }
+
             if (authType != SoftApConfiguration.SECURITY_TYPE_WPA3_SAE
                     && !validateApConfigPreSharedKey(preSharedKey)) {
                 // failed preSharedKey checks for WPA2 and WPA3 SAE Transition mode.

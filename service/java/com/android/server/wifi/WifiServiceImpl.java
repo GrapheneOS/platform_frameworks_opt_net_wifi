@@ -999,7 +999,8 @@ public class WifiServiceImpl extends BaseWifiService {
         // AP config.
         SoftApConfiguration softApConfig = apConfig.getSoftApConfiguration();
         if (softApConfig != null
-                && (!WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged)
+                && (!WifiApConfigStore.validateApWifiConfiguration(
+                    softApConfig, privileged, mContext)
                     || !validateSoftApBand(softApConfig.getBand()))) {
             Log.e(TAG, "Invalid SoftApConfiguration");
             return false;
@@ -2003,7 +2004,7 @@ public class WifiServiceImpl extends BaseWifiService {
         SoftApConfiguration softApConfig = ApConfigUtil.fromWifiConfiguration(wifiConfig);
         if (softApConfig == null) return false;
         if (WifiApConfigStore.validateApWifiConfiguration(
-                softApConfig, false)) {
+                softApConfig, false, mContext)) {
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
         } else {
@@ -2031,7 +2032,7 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         mLog.info("setSoftApConfiguration uid=%").c(uid).flush();
         if (softApConfig == null) return false;
-        if (WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged)) {
+        if (WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged, mContext)) {
             mActiveModeWarden.updateSoftApConfiguration(softApConfig);
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
