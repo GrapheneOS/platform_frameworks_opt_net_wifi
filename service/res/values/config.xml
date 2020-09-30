@@ -201,6 +201,9 @@
          power limit for meeting SAR requirements -->
     <bool translatable="false" name="config_wifi_framework_enable_soft_ap_sar_tx_power_limit">false</bool>
 
+    <!-- Boolean indicating that softap passphrase need to enable ASCII encodable check -->
+    <bool translatable="false" name="config_wifiSoftapPassphraseAsciiEncodableCheck">true</bool>
+
     <!-- Wifi Hal supports force client disconnect for softap -->
     <bool translatable="false" name="config_wifiSofapClientForceDisconnectSupported">true</bool>
 
