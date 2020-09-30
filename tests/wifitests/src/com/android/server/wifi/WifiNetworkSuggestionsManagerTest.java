@@ -3698,23 +3698,30 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_1, TEST_FEATURE));
 
         verifyNoMoreInteractions(mNotificationManger);
-        Set<ExtendedWifiNetworkSuggestion> matchedSuggestion = mWifiNetworkSuggestionsManager
+        Set<ExtendedWifiNetworkSuggestion> matchedSuggestions = mWifiNetworkSuggestionsManager
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
         verify(mWifiCarrierInfoManager)
                 .sendImsiProtectionExemptionNotificationIfRequired(TEST_CARRIER_ID);
-        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
+        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
             assertFalse(ewns.isAutojoinEnabled);
         }
 
         // Simulate user approved carrier
+        eapSimConfig.fromWifiNetworkSuggestion = true;
+        eapSimConfig.creatorUid = TEST_UID_1;
+        eapSimConfig.creatorName = TEST_PACKAGE_1;
+        when(mWifiConfigManager.getConfiguredNetwork(anyString())).thenReturn(eapSimConfig);
+        when(mWifiConfigManager.addOrUpdateNetwork(any(), anyInt(), anyString()))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
         mUserApproveCarrierListenerArgumentCaptor.getValue().onUserAllowed(TEST_CARRIER_ID);
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(true);
         verify(mPasspointManager).enableAutojoin(anyString(), any(), anyBoolean());
-        matchedSuggestion = mWifiNetworkSuggestionsManager
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt(), anyString());
+        matchedSuggestions = mWifiNetworkSuggestionsManager
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
 
-        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
+        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
             assertTrue(ewns.isAutojoinEnabled);
         }
     }
