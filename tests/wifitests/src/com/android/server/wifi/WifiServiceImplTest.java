@@ -48,6 +48,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -127,6 +128,7 @@ import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -6302,6 +6304,34 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .thenReturn(true);
         mLooper.startAutoDispatch();
         assertEquals(supportedFeaturesFromClientModeManager | WifiManager.WIFI_FEATURE_AP_STA,
+                mWifiServiceImpl.getSupportedFeatures());
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+    }
+
+    /**
+     * Verifies that syncGetSupportedFeatures() adds capabilities based on interface
+     * combination.
+     */
+    @Test
+    public void syncGetSupportedFeaturesForStaStaConcurrency() {
+        assumeTrue(SdkLevelUtil.isAtLeastS());
+
+        long supportedFeaturesFromClientModeManager = WifiManager.WIFI_FEATURE_OWE;
+        when(mClientModeManager.syncGetSupportedFeatures())
+                .thenReturn(supportedFeaturesFromClientModeManager);
+
+        when(mActiveModeWarden.isStaStaConcurrencySupported())
+                .thenReturn(false);
+        mLooper.startAutoDispatch();
+        assertEquals(supportedFeaturesFromClientModeManager,
+                mWifiServiceImpl.getSupportedFeatures());
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+
+        when(mActiveModeWarden.isStaStaConcurrencySupported())
+                .thenReturn(true);
+        mLooper.startAutoDispatch();
+        assertEquals(supportedFeaturesFromClientModeManager
+                        | WifiManager.WIFI_FEATURE_ADDITIONAL_STA,
                 mWifiServiceImpl.getSupportedFeatures());
         mLooper.stopAutoDispatchAndIgnoreExceptions();
     }

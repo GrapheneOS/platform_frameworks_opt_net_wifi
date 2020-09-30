@@ -336,6 +336,13 @@ public class ActiveModeWarden {
         return mWifiNative.isStaApConcurrencySupported();
     }
 
+    /**
+     * @return Returns whether the device can support at least two concurrent client mode managers.
+     */
+    public boolean isStaStaConcurrencySupported() {
+        return mWifiNative.isStaStaConcurrencySupported();
+    }
+
     /** Begin listening to broadcasts and start the internal state machine. */
     public void start() {
         mContext.registerReceiver(new BroadcastReceiver() {

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyByte;
@@ -2834,6 +2835,21 @@ public class WifiVendorHalTest extends WifiBaseTest {
         when(mHalDeviceManager.isItPossibleToCreateIface(eq(IfaceType.STA), any()))
                 .thenReturn(true);
         assertTrue(mWifiVendorHal.isItPossibleToCreateStaIface(new WorkSource()));
+    }
+
+    @Test
+    public void testIsStaApConcurrencySupported() {
+        when(mHalDeviceManager.canSupportIfaceCombo(
+                argThat(ifaceCombo -> ifaceCombo.get(IfaceType.STA) == 1
+                        && ifaceCombo.get(IfaceType.AP) == 1))).thenReturn(true);
+        assertTrue(mWifiVendorHal.isStaApConcurrencySupported());
+    }
+
+    @Test
+    public void testIsStaStaConcurrencySupported() {
+        when(mHalDeviceManager.canSupportIfaceCombo(
+                argThat(ifaceCombo -> ifaceCombo.get(IfaceType.STA) == 2))).thenReturn(true);
+        assertTrue(mWifiVendorHal.isStaStaConcurrencySupported());
     }
 
     private void startHalInStaModeAndRegisterRadioModeChangeCallback() {

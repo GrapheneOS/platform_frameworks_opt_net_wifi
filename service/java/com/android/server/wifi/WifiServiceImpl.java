@@ -83,6 +83,7 @@ import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
@@ -3857,11 +3858,19 @@ public class WifiServiceImpl extends BaseWifiService {
             // no corresponding flags in vendor HAL, set if overlay enables it.
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_RAND_MAC;
         }
-        if (mWifiThreadRunner.call(
-                () -> mActiveModeWarden.isStaApConcurrencySupported(),
-                false)) {
-            supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_STA;
-        }
+        supportedFeatureSet |= mWifiThreadRunner.call(
+                () -> {
+                    long concurrencyFeatureSet = 0L;
+                    if (mActiveModeWarden.isStaApConcurrencySupported()) {
+                        concurrencyFeatureSet |= WifiManager.WIFI_FEATURE_AP_STA;
+                    }
+                    // New feature flag in S.
+                    if (SdkLevelUtil.isAtLeastS()
+                            && mActiveModeWarden.isStaStaConcurrencySupported()) {
+                        concurrencyFeatureSet |= WifiManager.WIFI_FEATURE_ADDITIONAL_STA;
+                    }
+                    return concurrencyFeatureSet;
+                }, 0L);
         return supportedFeatureSet;
     }
 
