@@ -231,6 +231,7 @@ public class XmlUtilTest extends WifiBaseTest {
         configuration.meteredHint = true;
         configuration.useExternalScores = true;
         configuration.numAssociation = 5;
+        configuration.oemPaid = true;
         configuration.lastUpdateUid = configuration.lastConnectUid = configuration.creatorUid;
         configuration.creatorName = configuration.lastUpdateName = TEST_PACKAGE_NAME;
         configuration.setRandomizedMacAddress(MacAddressUtils.createRandomUnicastAddress());

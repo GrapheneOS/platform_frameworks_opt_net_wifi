@@ -356,6 +356,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private WifiNetworkFactory mNetworkFactory;
     private UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
+    private OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
     private WifiNetworkAgent mNetworkAgent;
 
     private byte[] mRssiRanges;
@@ -597,6 +598,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             NetworkCapabilities networkCapabilitiesFilter,
             WifiNetworkFactory networkFactory,
             UntrustedWifiNetworkFactory untrustedWifiNetworkFactory,
+            OemPaidWifiNetworkFactory oemPaidWifiNetworkFactory,
             WifiLastResortWatchdog wifiLastResortWatchdog,
             WakeupController wakeupController,
             WifiLockManager wifiLockManager,
@@ -673,11 +675,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mNetworkCapabilitiesFilter = networkCapabilitiesFilter;
         mNetworkFactory = networkFactory;
 
-        // We can't filter untrusted network in the capabilities filter because a trusted
-        // network would still satisfy a request that accepts untrusted ones.
-        // We need a second network factory for untrusted network requests because we need a
-        // different score filter for these requests.
         mUntrustedNetworkFactory = untrustedWifiNetworkFactory;
+        mOemPaidWifiNetworkFactory = oemPaidWifiNetworkFactory;
 
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWakeupController = wakeupController;
@@ -2267,6 +2266,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (config != null && config.networkId == mWifiInfo.getNetworkId()) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
+            mWifiInfo.setOemPaid(config.oemPaid);
             mWifiInfo.setOsuAp(config.osu);
             if (config.fromWifiNetworkSpecifier || config.fromWifiNetworkSuggestion) {
                 mWifiInfo.setRequestingPackageName(config.creatorName);
@@ -2724,6 +2724,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (config != null) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
+            mWifiInfo.setOemPaid(config.oemPaid);
             mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpResults.leaseDuration);
             mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(mLastBssid, mWifiInfo.getSSID());
         }
@@ -3596,6 +3597,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             builder.addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
         } else {
             builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
+        }
+        if (mWifiInfo.isOemPaid()) {
+            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
+        } else {
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
         }
 
         builder.setOwnerUid(currentWifiConfiguration.creatorUid);
@@ -5375,7 +5381,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      */
     private boolean hasConnectionRequests() {
         return mNetworkFactory.hasConnectionRequests()
-                || mUntrustedNetworkFactory.hasConnectionRequests();
+                || mUntrustedNetworkFactory.hasConnectionRequests()
+                || mOemPaidWifiNetworkFactory.hasConnectionRequests();
     }
 
     /**
