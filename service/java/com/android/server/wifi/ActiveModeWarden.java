@@ -185,18 +185,12 @@ public class ActiveModeWarden {
         void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
             pw.println("Dump of ActiveModeWarden.Graveyard");
             pw.println("Stopped ClientModeManagers: " + mClientModeManagers.size() + " total");
-            int i = 0;
             for (ConcreteClientModeManager clientModeManager : mClientModeManagers) {
-                pw.println("Dump of stopped ClientModeManager " + i);
                 clientModeManager.dump(fd, pw, args);
-                i++;
             }
             pw.println("Stopped SoftApManagers: " + mSoftApManagers.size() + " total");
-            i = 0;
             for (SoftApManager softApManager : mSoftApManagers) {
-                pw.println("Dump of stopped SoftApManager " + i);
                 softApManager.dump(fd, pw, args);
-                i++;
             }
             pw.println();
         }

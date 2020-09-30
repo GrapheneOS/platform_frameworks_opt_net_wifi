@@ -238,7 +238,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private ConcreteClientModeManager createClientModeManager() {
         return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
                 mListener, mWifiMetrics, mWakeupController, mWifiInjector, mSelfRecovery,
-                mWifiGlobals, mScanOnlyModeImpl);
+                mWifiGlobals, mScanOnlyModeImpl, 0);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {

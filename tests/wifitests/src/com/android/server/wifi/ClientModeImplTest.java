@@ -579,7 +579,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mWifiLockManager, mFrameworkFacade, mLooper.getLooper(),
                 mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
-                mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
+                1, mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
                 mWifiScoreReport, mWifiP2pConnection, mWifiGlobals,
                 WIFI_IFACE_NAME, mClientModeManager);

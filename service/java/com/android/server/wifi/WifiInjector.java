@@ -628,7 +628,8 @@ public class WifiInjector {
             @NonNull SoftApModeConfiguration config) {
         return new SoftApManager(mContext, mWifiHandlerThread.getLooper(),
                 mFrameworkFacade, mWifiNative, mCountryCode.getCountryCode(), listener, callback,
-                mWifiApConfigStore, config, mWifiMetrics, mWifiDiagnostics);
+                mWifiApConfigStore, config, mWifiMetrics, mWifiDiagnostics,
+                mClock.getElapsedSinceBootMillis());
     }
 
     /**
@@ -650,8 +651,8 @@ public class WifiInjector {
                 mWifiLastResortWatchdog, mWakeupController, mLockManager,
                 mFrameworkFacade, mWifiHandlerThread.getLooper(), mCountryCode, mWifiNative,
                 new WrongPasswordNotifier(mContext, mFrameworkFacade), mWifiTrafficPoller,
-                mLinkProbeManager, mBatteryStats, mSupplicantStateTracker, mMboOceController,
-                mWifiCarrierInfoManager,
+                mLinkProbeManager, mClock.getElapsedSinceBootMillis(), mBatteryStats,
+                mSupplicantStateTracker, mMboOceController, mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 mSimRequiredNotifier,
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
@@ -669,9 +670,11 @@ public class WifiInjector {
      * @return a new instance of ClientModeManager
      */
     public ConcreteClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
-        return new ConcreteClientModeManager(mContext, mWifiHandlerThread.getLooper(), mClock,
+        return new ConcreteClientModeManager(
+                mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
-                this, mSelfRecovery, mWifiGlobals, mScanOnlyModeImpl);
+                this, mSelfRecovery, mWifiGlobals, mScanOnlyModeImpl,
+                mClock.getElapsedSinceBootMillis());
     }
 
     /**
