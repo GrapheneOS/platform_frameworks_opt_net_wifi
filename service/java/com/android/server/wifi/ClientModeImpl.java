@@ -2267,6 +2267,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (config != null && config.networkId == mWifiInfo.getNetworkId()) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
+            mWifiInfo.setOemPaid(config.oemPaid);
             mWifiInfo.setOsuAp(config.osu);
             if (config.fromWifiNetworkSpecifier || config.fromWifiNetworkSuggestion) {
                 mWifiInfo.setRequestingPackageName(config.creatorName);
@@ -2724,6 +2725,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (config != null) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
+            mWifiInfo.setOemPaid(config.oemPaid);
             mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpResults.leaseDuration);
             mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(mLastBssid, mWifiInfo.getSSID());
         }
@@ -3596,6 +3598,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             builder.addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
         } else {
             builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
+        }
+        if (mWifiInfo.isOemPaid()) {
+            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
+        } else {
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
         }
 
         builder.setOwnerUid(currentWifiConfiguration.creatorUid);
