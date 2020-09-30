@@ -1293,6 +1293,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped.
      */
     public void stop() {
+        mWifiScoreCard.noteWifiDisabled(mWifiInfo);
         // capture StateMachine LogRecs since we will lose them after we call quitNow()
         // This is used for debugging.
         mObituary = new StateMachineObituary(this);
@@ -3223,8 +3224,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
             mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_WIFI_DISABLED);
-            // Inform scorecard that wifi is being disabled
-            mWifiScoreCard.noteWifiDisabled(mWifiInfo);
 
             if (!mWifiNative.removeAllNetworks(mInterfaceName)) {
                 loge("Failed to remove networks on exiting connect mode");
@@ -3235,6 +3234,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mContext.unregisterReceiver(mScreenStateChangeReceiver);
 
             stopClientMode();
+            mWifiScoreCard.doWrites();
         }
 
         @Override
