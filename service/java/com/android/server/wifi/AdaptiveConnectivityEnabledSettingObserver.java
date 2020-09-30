@@ -25,6 +25,9 @@ import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+
 /**
  * Observer for adaptive connectivity enable settings changes.
  * This is enabled by default. Will be toggled off via adb command or a settings
@@ -95,5 +98,11 @@ public class AdaptiveConnectivityEnabledSettingObserver {
     /** True if adaptive connectivity is enabled, false otherwise. */
     public boolean get() {
         return mAdaptiveConnectivityEnabled;
+    }
+
+    /** Dump method for debugging */
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println("Dump of AdaptiveConnectivityEnabledSettingObserver");
+        pw.println("mAdaptiveConnectivityEnabled=" + mAdaptiveConnectivityEnabled);
     }
 }
