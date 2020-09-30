@@ -215,11 +215,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private boolean mScreenOn = false;
 
-    // TODO(b/160335531): These should be final. Right now they are set to null when exiting
-    //  ConnectableState (i.e. when stop() is called), which ensures that any processing will be
-    //  a no-op if we get a late-coming callback.
-    private String mInterfaceName;
-    private ConcreteClientModeManager mClientModeManager;
+    private final String mInterfaceName;
+    private final ConcreteClientModeManager mClientModeManager;
 
     private int mLastSignalLevel = -1;
     private int mLastScanRssi = WifiInfo.INVALID_RSSI;
@@ -694,8 +691,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mInterfaceName = ifaceName;
         mClientModeManager = clientModeManager;
         updateInterfaceCapabilities(ifaceName);
-        // TODO(b/160335531): ifaceName should be a constructor arg in WifiScoreReport
-        mWifiScoreReport.setInterfaceName(ifaceName);
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -829,14 +824,14 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void onProvisioningSuccess(LinkProperties newLp) {
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_IP_CONFIGURATION_SUCCESSFUL);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CMD_IP_CONFIGURATION_SUCCESSFUL);
             sendMessage(CMD_UPDATE_LINKPROPERTIES, newLp);
             sendMessage(CMD_IP_CONFIGURATION_SUCCESSFUL);
         }
 
         @Override
         public void onProvisioningFailure(LinkProperties newLp) {
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_IP_CONFIGURATION_LOST);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CMD_IP_CONFIGURATION_LOST);
             sendMessage(CMD_IP_CONFIGURATION_LOST);
         }
 
@@ -847,7 +842,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void onReachabilityLost(String logMsg) {
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_IP_REACHABILITY_LOST);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CMD_IP_REACHABILITY_LOST);
             sendMessage(CMD_IP_REACHABILITY_LOST, logMsg);
         }
 
@@ -2897,7 +2892,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         } else if (newMac.equals(currentMac)) {
             Log.d(getTag(), "No changes in MAC address");
         } else {
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_MAC_CHANGE, config);
             boolean setMacSuccess =
                     mWifiNative.setStaMacAddress(mInterfaceName, newMac);
             if (setMacSuccess) {
@@ -2922,7 +2917,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (!TextUtils.equals(currentMacStr, factoryMac.toString())) {
             if (mWifiNative.setStaMacAddress(mInterfaceName, factoryMac)) {
                 mWifiNative.removeNetworkCachedDataIfNeeded(config.networkId, factoryMac);
-                mWifiMetrics.logStaEvent(StaEvent.TYPE_MAC_CHANGE, config);
+                mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_MAC_CHANGE, config);
             } else {
                 Log.e(getTag(), "Failed to set MAC address to " + "'"
                         + factoryMac.toString() + "'");
@@ -3041,9 +3036,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
         mCountryCode.setReadyForChange(false);
         deregisterForWifiMonitorEvents(); // uses mInterfaceName, must call before nulling out
-        mInterfaceName = null;
-        mClientModeManager = null;
-        mWifiScoreReport.setInterfaceName(null);
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(false);
 
@@ -3164,7 +3156,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     void connectToNetwork(WifiConfiguration config) {
         if ((config != null) && mWifiNative.connectToNetwork(mInterfaceName, config)) {
             mWifiLastResortWatchdog.noteStartConnectTime();
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_START_CONNECT, config);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CMD_START_CONNECT, config);
             mIsAutoRoaming = false;
             transitionTo(mL2ConnectingState);
         } else {
@@ -3220,7 +3212,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
             // Inform metrics that Wifi is Enabled (but not yet connected)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_ENABLED);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_WIFI_ENABLED);
             mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
             mWifiHealthMonitor.setWifiEnabled(true);
             mWifiDataStall.init();
@@ -3230,7 +3222,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         public void exit() {
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
-            mWifiMetrics.logStaEvent(StaEvent.TYPE_WIFI_DISABLED);
+            mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_WIFI_DISABLED);
             // Inform scorecard that wifi is being disabled
             mWifiScoreCard.noteWifiDisabled(mWifiInfo);
 
@@ -3258,7 +3250,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
                     if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
-                        mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                        mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_P2P_DISCONNECT_WIFI_REQUEST);
                         mWifiNative.disconnect(mInterfaceName);
                     } else {
@@ -3351,8 +3343,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     int netId = result.getNetworkId();
                     connectToUserSelectNetwork(
                             netId, message.sendingUid, result.hasCredentialChanged());
-                    mWifiMetrics.logStaEvent(
-                            StaEvent.TYPE_CONNECT_NETWORK,
+                    mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CONNECT_NETWORK,
                             mWifiConfigManager.getConfiguredNetwork(netId));
                     cnm.listener.sendSuccess();
                     break;
@@ -3754,7 +3745,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     logd("WifiNetworkAgent -> Wifi networkStatus valid, score= "
                             + Integer.toString(mWifiInfo.getScore()));
                 }
-                mWifiMetrics.logStaEvent(StaEvent.TYPE_NETWORK_AGENT_VALID_NETWORK);
+                mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_NETWORK_AGENT_VALID_NETWORK);
                 doNetworkStatus(status);
             }
         }
@@ -4027,7 +4018,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     break;
                 }
                 case CMD_DISCONNECT: {
-                    mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                    mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                             StaEvent.DISCONNECT_GENERIC);
                     mWifiNative.disconnect(mInterfaceName);
                     break;
@@ -4265,7 +4256,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                     WifiConfiguration.NetworkSelectionStatus
                                             .DISABLED_AUTHENTICATION_NO_CREDENTIALS);
                         }
-                        mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                        mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_GENERIC);
                         mWifiNative.disconnect(mInterfaceName);
                     }
@@ -4485,7 +4476,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 }
                 case WifiP2pServiceImpl.DISCONNECT_WIFI_REQUEST: {
                     if (mWifiP2pConnection.shouldTemporarilyDisconnectWifi()) {
-                        mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                        mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_P2P_DISCONNECT_WIFI_REQUEST);
                         mWifiNative.disconnect(mInterfaceName);
                     }
@@ -4584,7 +4575,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 || (config.enterpriseConfig != null
                                 && config.enterpriseConfig.isAuthenticationSimBased()
                                 && !mWifiCarrierInfoManager.isSimPresent(mLastSubId)))) {
-                            mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                            mWifiMetrics.logStaEvent(mInterfaceName,
+                                    StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                     StaEvent.DISCONNECT_RESET_SIM_NETWORKS);
                             // remove local PMKSA cache in framework
                             mWifiNative.removeNetworkCachedData(mLastNetworkId);
@@ -4865,7 +4857,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         mRoamFailCount++;
                         handleNetworkDisconnect(false,
                                 WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__ROAM_WATCHDOG_TIMER);
-                        mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                        mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_ROAM_WATCHDOG_TIMER);
                         mWifiNative.disconnect(mInterfaceName);
                         transitionTo(mDisconnectedState);
@@ -4984,7 +4976,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             switch (message.what) {
                 case CMD_UNWANTED_NETWORK: {
                     if (message.arg1 == NETWORK_STATUS_UNWANTED_DISCONNECT) {
-                        mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
+                        mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                 StaEvent.DISCONNECT_UNWANTED);
                         mWifiNative.disconnect(mInterfaceName);
                     } else if (message.arg1 == NETWORK_STATUS_UNWANTED_DISABLE_AUTOJOIN
@@ -5119,7 +5111,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     if (mWifiNative.roamToNetwork(mInterfaceName, config)) {
                         mTargetWifiConfiguration = config;
                         mIsAutoRoaming = true;
-                        mWifiMetrics.logStaEvent(StaEvent.TYPE_CMD_START_ROAM, config);
+                        mWifiMetrics.logStaEvent(
+                                mInterfaceName, StaEvent.TYPE_CMD_START_ROAM, config);
                         transitionTo(mRoamingState);
                     } else {
                         loge("CMD_START_ROAM Failed to start roaming to network " + config);

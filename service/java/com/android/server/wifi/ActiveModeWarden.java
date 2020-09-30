@@ -63,6 +63,7 @@ import java.io.PrintWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -1224,7 +1225,10 @@ public class ActiveModeWarden {
                         // intentional fallthrough
                     case CMD_DEFERRED_RECOVERY_RESTART_WIFI:
                         // wait mRecoveryDelayMillis for letting driver clean reset.
-                        sendMessageDelayed(CMD_RECOVERY_RESTART_WIFI_CONTINUE, msg.obj,
+                        sendMessageDelayed(CMD_RECOVERY_RESTART_WIFI_CONTINUE,
+                                // msg.obj == null if recovery is triggered in disabled state
+                                // (i.e intentional fallthrough from above case statement).
+                                msg.obj == null ? Collections.emptyList() : msg.obj,
                                 readWifiRecoveryDelay());
                         break;
                     case CMD_RECOVERY_RESTART_WIFI_CONTINUE:
