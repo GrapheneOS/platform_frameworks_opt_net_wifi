@@ -22,6 +22,7 @@ import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_LOCAL_ONLY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_TETHERED;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -397,8 +398,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 .map(manager -> manager.getClass().getCanonicalName())
                 .collect(Collectors.joining(", ", "[", "]"));
 
-        assertThat(actualStopInvocationCounts)
-                .named(managerNames)
+        assertWithMessage(managerNames).that(actualStopInvocationCounts)
                 .isEqualTo(expectedStopInvocationCounts);
     }
 
@@ -446,8 +446,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 .map(manager -> manager.getClass().getCanonicalName())
                 .collect(Collectors.joining(", ", "[", "]"));
 
-        assertThat(actualStopInvocationCounts)
-                .named(managerNames)
+        assertWithMessage(managerNames).that(actualStopInvocationCounts)
                 .isEqualTo(expectedStopInvocationCounts);
     }
 
