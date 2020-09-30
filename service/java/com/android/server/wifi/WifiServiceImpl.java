@@ -2547,7 +2547,7 @@ public class WifiServiceImpl extends BaseWifiService {
         enforceNetworkSettingsPermission();
 
         int callingUid = Binder.getCallingUid();
-        mLog.info("allowAutojoin=% uid=%").c(choice).c(callingUid).flush();
+        mLog.info("allowAutojoinGlobal=% uid=%").c(choice).c(callingUid).flush();
 
         mWifiThreadRunner.post(() -> mClientModeImpl.allowAutoJoinGlobal(choice));
     }
