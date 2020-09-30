@@ -394,6 +394,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiDataStall mWifiDataStall;
     @Mock WifiNetworkFactory mWifiNetworkFactory;
     @Mock UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
+    @Mock OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
     @Mock WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock LinkProbeManager mLinkProbeManager;
     @Mock PackageManager mPackageManager;
@@ -468,6 +469,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
+        when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
 
         mFrameworkFacade = getFrameworkFacade();
         mContext = getContext();
@@ -572,7 +574,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
                 mBssidBlocklistMonitor, mConnectionFailureNotifier,
                 WifiInjector.NETWORK_CAPABILITIES_FILTER, mWifiNetworkFactory,
-                mUntrustedWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
+                mUntrustedWifiNetworkFactory, mOemPaidWifiNetworkFactory,
+                mWifiLastResortWatchdog, mWakeupController,
                 mWifiLockManager, mFrameworkFacade, mLooper.getLooper(),
                 mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
@@ -757,6 +760,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Remove the network requests.
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
+        when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
 
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.networkId = FRAMEWORK_NETWORK_ID;
@@ -1231,6 +1235,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Remove the network requests.
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
+        when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
 
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.networkId = FRAMEWORK_NETWORK_ID + 1;
@@ -1256,6 +1261,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         // Remove the network requests.
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
+        when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
 
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
 

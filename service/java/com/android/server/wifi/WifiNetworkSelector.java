@@ -162,13 +162,13 @@ public class WifiNetworkSelector {
          *                                disconnected
          * @param connected               a flag to indicate if ClientModeImpl is in connected
          *                                state
-         * @param untrustedNetworkAllowed a flag to indicate if untrusted networks like
-         *                                ephemeral networks are allowed
+         * @param untrustedNetworkAllowed a flag to indicate if untrusted networks are allowed
+         * @param oemPaidNetworkAllowed   a flag to indicate if oem paid networks are allowed
          * @param onConnectableListener   callback to record all of the connectable networks
          */
         void nominateNetworks(List<ScanDetail> scanDetails,
                 WifiConfiguration currentNetwork, String currentBssid,
-                boolean connected, boolean untrustedNetworkAllowed,
+                boolean connected, boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
                 OnConnectableListener onConnectableListener);
 
         /**
@@ -684,11 +684,13 @@ public class WifiNetworkSelector {
      * @param connected               True if the device is connected
      * @param disconnected            True if the device is disconnected
      * @param untrustedNetworkAllowed True if untrusted networks are allowed for connection
+     * @param oemPaidNetworkAllowed   True if oem paid networks are allowed for connection
      * @return list of valid Candidate(s)
      */
     public List<WifiCandidates.Candidate> getCandidatesFromScan(
             List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
-            boolean connected, boolean disconnected, boolean untrustedNetworkAllowed) {
+            boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
+            boolean oemPaidNetworkAllowed) {
         mFilteredNetworks.clear();
         mConnectableNetworks.clear();
         if (scanDetails.size() == 0) {
@@ -751,7 +753,7 @@ public class WifiNetworkSelector {
             localLog("About to run " + registeredNominator.getName() + " :");
             registeredNominator.nominateNetworks(
                     new ArrayList<>(mFilteredNetworks), currentNetwork, currentBssid, connected,
-                    untrustedNetworkAllowed,
+                    untrustedNetworkAllowed, oemPaidNetworkAllowed,
                     (scanDetail, config) -> {
                         WifiCandidates.Key key = wifiCandidates.keyFromScanDetailAndConfig(
                                 scanDetail, config);

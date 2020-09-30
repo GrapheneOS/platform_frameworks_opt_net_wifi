@@ -98,6 +98,10 @@ public class WifiInjector {
                     .setLinkDownstreamBandwidthKbps(1024 * 1024)
                     .setNetworkSpecifier(new MatchAllNetworkSpecifier())
                     .build();
+    private static final NetworkCapabilities OEM_PAID_NETWORK_CAPABILITIES_FILTER =
+            new NetworkCapabilities.Builder(NETWORK_CAPABILITIES_FILTER)
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID)
+                    .build();
 
     static WifiInjector sWifiInjector = null;
 
@@ -189,6 +193,7 @@ public class WifiInjector {
     private final ConnectionFailureNotifier mConnectionFailureNotifier;
     private final WifiNetworkFactory mWifiNetworkFactory;
     private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
+    private final OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
     private final SupplicantStateTracker mSupplicantStateTracker;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
@@ -412,8 +417,15 @@ public class WifiInjector {
                 mClock, this, mWifiConnectivityManager, mWifiConfigManager,
                 mWifiConfigStore, mWifiPermissionsUtil, mWifiMetrics, mActiveModeWarden,
                 mConnectHelper);
+        // We can't filter untrusted network in the capabilities filter because a trusted
+        // network would still satisfy a request that accepts untrusted ones.
+        // We need a second network factory for untrusted network requests because we need a
+        // different score filter for these requests.
         mUntrustedWifiNetworkFactory = new UntrustedWifiNetworkFactory(
                 wifiLooper, mContext, NETWORK_CAPABILITIES_FILTER, mWifiConnectivityManager);
+        mOemPaidWifiNetworkFactory = new OemPaidWifiNetworkFactory(
+                wifiLooper, mContext, OEM_PAID_NETWORK_CAPABILITIES_FILTER,
+                mWifiConnectivityManager);
         mWifiScanAlwaysAvailableSettingsCompatibility =
                 new WifiScanAlwaysAvailableSettingsCompatibility(mContext, wifiHandler,
                         mSettingsStore, mActiveModeWarden, mFrameworkFacade);
@@ -634,8 +646,8 @@ public class WifiInjector {
                 mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
                 mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
                 mBssidBlocklistMonitor, mConnectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
-                mWifiNetworkFactory, mUntrustedWifiNetworkFactory, mWifiLastResortWatchdog,
-                mWakeupController, mLockManager,
+                mWifiNetworkFactory, mUntrustedWifiNetworkFactory, mOemPaidWifiNetworkFactory,
+                mWifiLastResortWatchdog, mWakeupController, mLockManager,
                 mFrameworkFacade, mWifiHandlerThread.getLooper(), mCountryCode, mWifiNative,
                 new WrongPasswordNotifier(mContext, mFrameworkFacade), mWifiTrafficPoller,
                 mLinkProbeManager, mBatteryStats, mSupplicantStateTracker, mMboOceController,
@@ -865,6 +877,10 @@ public class WifiInjector {
 
     public UntrustedWifiNetworkFactory getUntrustedWifiNetworkFactory() {
         return mUntrustedWifiNetworkFactory;
+    }
+
+    public OemPaidWifiNetworkFactory getOemPaidWifiNetworkFactory() {
+        return mOemPaidWifiNetworkFactory;
     }
 
     public WifiDiagnostics getWifiDiagnostics() {
