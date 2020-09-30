@@ -1242,6 +1242,10 @@ public class WifiNetworkSuggestionsManager {
                     mWifiInjector.getPasspointManager()
                             .enableAutojoin(ewns.wns.passpointConfiguration.getUniqueId(),
                                     null, ewns.isAutojoinEnabled);
+                } else {
+                    // Update WifiConfigManager to sync auto-join.
+                    updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(),
+                            ewns.perAppInfo.uid, ewns.perAppInfo.packageName);
                 }
             }
         }
