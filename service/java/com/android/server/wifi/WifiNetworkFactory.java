@@ -343,7 +343,7 @@ public class WifiNetworkFactory extends NetworkFactory {
                         && mConnectedSpecificNetworkRequest == null) {
                     Log.w(TAG, "Client mode manager request answer received with no active"
                             + " requests");
-                    mActiveModeWarden.removeLocalOnlyClientModeManager(modeManager);
+                    mActiveModeWarden.removeClientModeManager(modeManager);
                     return;
                 }
                 mClientModeManager = modeManager;
@@ -1085,7 +1085,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         if (mConnectedSpecificNetworkRequest == null) {
             mWifiConnectivityManager.setSpecificNetworkRequestInProgress(false);
             if (mClientModeManager != null) {
-                mActiveModeWarden.removeLocalOnlyClientModeManager(mClientModeManager);
+                mActiveModeWarden.removeClientModeManager(mClientModeManager);
                 // For every connection attempt, get the appropriate client mode impl to use.
                 mClientModeManager = null;
             }
@@ -1114,7 +1114,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         if (mActiveSpecificNetworkRequest == null) {
             mWifiConnectivityManager.setSpecificNetworkRequestInProgress(false);
             if (mClientModeManager != null) {
-                mActiveModeWarden.removeLocalOnlyClientModeManager(mClientModeManager);
+                mActiveModeWarden.removeClientModeManager(mClientModeManager);
                 // For every connection attempt, get the appropriate client mode impl to use.
                 mClientModeManager = null;
             }

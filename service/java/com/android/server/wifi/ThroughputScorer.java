@@ -55,6 +55,8 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
     public static final int TRUSTED_AWARD = 1000;
     public static final int HALF_TRUSTED_AWARD = 1000 / 2;
 
+    public static final int NOT_OEM_PAID_AWARD = 500;
+
     private static final boolean USE_USER_CONNECT_CHOICE = true;
 
     ThroughputScorer(ScoringParams scoringParams) {
@@ -97,7 +99,6 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
         int savedNetworkAward = candidate.isEphemeral() ? 0 : mScoringParams.getSavedNetworkBonus();
 
         int trustedAward = TRUSTED_AWARD;
-
         if (!candidate.isTrusted()) {
             savedNetworkAward = 0; // Saved networks are not untrusted, but clear anyway
             unmeteredAward = 0; // Ignore metered for untrusted networks
@@ -111,9 +112,17 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
             }
         }
 
+        int notOemPaidAward = NOT_OEM_PAID_AWARD;
+        if (candidate.isOemPaid()) {
+            savedNetworkAward = 0; // Saved networks are not oem paid, but clear anyway
+            unmeteredAward = 0; // Ignore metered for oem paid networks
+            trustedAward = 0; // Ignore untrusted for oem paid networks.
+            notOemPaidAward = 0;
+        }
+
         int score = rssiBaseScore + throughputBonusScore
                 + currentNetworkBoost + securityAward + unmeteredAward + savedNetworkAward
-                + trustedAward;
+                + trustedAward + notOemPaidAward;
 
         if (candidate.getLastSelectionWeight() > 0.0) {
             // Put a recently-selected network in a tier above everything else,
@@ -129,6 +138,7 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
                     + " unmeteredAward: " + unmeteredAward
                     + " savedNetworkAward: " + savedNetworkAward
                     + " trustedAward: " + trustedAward
+                    + " notOemPaidAward: " + notOemPaidAward
                     + " final score: " + score);
         }
 

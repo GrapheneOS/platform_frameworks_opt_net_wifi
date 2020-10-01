@@ -310,6 +310,41 @@ public class CandidateScorerTest extends WifiBaseTest {
     }
 
     /**
+     * Prefer not oem paid suggestion over privileged oem paid suggestion even though the OEM paid
+     * network has better t'put & RSSI.
+     */
+    @Test
+    public void testPreferNotOemPaidOverOemPaid() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-71)
+                        .setPredictedThroughputMbps(100)
+                        .setEphemeral(true)
+                        .setOemPaid(false)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                        .setEphemeral(true)
+                        .setPredictedThroughputMbps(1000)
+                        .setOemPaid(true))));
+    }
+
+    /**
+     * Prefer not oem paid metered suggestion over privileged oem paid suggestion even though the
+     * OEM paid network has better t'put & RSSI.
+     */
+    @Test
+    public void testPreferNotOemPaidMeteredOverOemPaid() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-71)
+                        .setPredictedThroughputMbps(100)
+                        .setEphemeral(true)
+                        .setMetered(true)
+                        .setOemPaid(false)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                        .setEphemeral(true)
+                        .setPredictedThroughputMbps(1000)
+                        .setOemPaid(true))));
+    }
+
+    /**
      * Prefer carrier untrusted over other untrusted.
      */
     @Test
