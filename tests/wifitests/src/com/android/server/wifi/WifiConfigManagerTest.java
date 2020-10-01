@@ -1689,25 +1689,11 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfigurationTestUtil.assertConfigurationEqualForConfigManagerAddOrUpdate(
                 network, mWifiConfigManager.getConfiguredNetworkWithPassword(network.networkId));
 
-        // Now empty out 3 of the |wepKeys[]| and ensure that those keys have been reset correctly.
-        for (int i = 1; i < network.wepKeys.length; i++) {
-            wepKeys[i] = "";
-        }
+        // Now shuffle the keys around
+        String[] wepKeysNew = Arrays.copyOf(wepKeys, wepKeys.length);
+        Collections.rotate(Arrays.asList(wepKeysNew), 2);
         wepTxKeyIdx = 0;
-        assertAndSetNetworkWepKeysAndTxIndex(network, wepKeys, wepTxKeyIdx);
-
-        verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(network);
-        WifiConfigurationTestUtil.assertConfigurationEqualForConfigManagerAddOrUpdate(
-                network, mWifiConfigManager.getConfiguredNetworkWithPassword(network.networkId));
-
-        // Now change the config to a PSK network config by resetting the remaining |wepKey[0]|
-        // field and setting the |preSharedKey| and |allowedKeyManagement| fields.
-        wepKeys[0] = "";
-        wepTxKeyIdx = -1;
-        assertAndSetNetworkWepKeysAndTxIndex(network, wepKeys, wepTxKeyIdx);
-        network.allowedKeyManagement.clear();
-        network.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-        assertAndSetNetworkPreSharedKey(network, WifiConfigurationTestUtil.TEST_PSK);
+        assertAndSetNetworkWepKeysAndTxIndex(network, wepKeysNew, wepTxKeyIdx);
 
         verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(network);
         WifiConfigurationTestUtil.assertConfigurationEqualForConfigManagerAddOrUpdate(
@@ -2082,9 +2068,10 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkHasEverConnectedFalse(wepNetwork);
         verifyUpdateNetworkAfterConnectHasEverConnectedTrue(wepNetwork.networkId);
 
-        // Now update the same network with a different wep.
-        assertFalse(wepNetwork.wepKeys[0].equals("newpassword"));
-        wepNetwork.wepKeys[0] = "newpassword";
+        // Now update the same network with a different wep key.
+        assertFalse(wepNetwork.wepKeys[0].equals("\"pswrd\""));
+        wepNetwork.wepKeys = new String[] {"\"pswrd\"", null, null, null};
+        wepNetwork.wepTxKeyIndex = 0;
         verifyUpdateNetworkWithCredentialChangeHasEverConnectedFalse(wepNetwork);
     }
 
