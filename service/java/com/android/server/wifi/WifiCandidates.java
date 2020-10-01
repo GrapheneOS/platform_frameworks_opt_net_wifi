@@ -91,6 +91,10 @@ public class WifiCandidates {
          */
         boolean isTrusted();
         /**
+         * Returns true for a oem paid network.
+         */
+        boolean isOemPaid();
+        /**
          * Returns true if suggestion came from a carrier or privileged app.
          */
         boolean isCarrierOrPrivileged();
@@ -173,6 +177,7 @@ public class WifiCandidates {
         private final boolean mPasspoint;
         private final boolean mEphemeral;
         private final boolean mTrusted;
+        private final boolean mOemPaid;
         private final boolean mCarrierOrPrivileged;
         private final int mPredictedThroughputMbps;
         private final int mEstimatedPercentInternetAvailability;
@@ -203,6 +208,7 @@ public class WifiCandidates {
             this.mPasspoint = config.isPasspoint();
             this.mEphemeral = config.isEphemeral();
             this.mTrusted = config.trusted;
+            this.mOemPaid = config.oemPaid;
             this.mCarrierOrPrivileged = isCarrierOrPrivileged;
             this.mPredictedThroughputMbps = predictedThroughputMbps;
             this.mEstimatedPercentInternetAvailability = perBssid == null ? 50 :
@@ -237,6 +243,11 @@ public class WifiCandidates {
         @Override
         public boolean isTrusted() {
             return mTrusted;
+        }
+
+        @Override
+        public boolean isOemPaid() {
+            return mOemPaid;
         }
 
         @Override
@@ -333,6 +344,7 @@ public class WifiCandidates {
                     + (isCurrentNetwork() ? "current, " : "")
                     + (isEphemeral() ? "ephemeral" : "saved") + ", "
                     + (isTrusted() ? "trusted, " : "")
+                    + (isOemPaid() ? "oemPaid, " : "")
                     + (isCarrierOrPrivileged() ? "priv, " : "")
                     + (isMetered() ? "metered, " : "")
                     + (hasNoInternetAccess() ? "noInternet, " : "")

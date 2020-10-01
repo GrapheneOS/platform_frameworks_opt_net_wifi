@@ -347,7 +347,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
 
     ClientModeManager mockClientModeManager() {
         ClientModeManager stateMachine = mock(ClientModeManager.class);
-
+        when(stateMachine.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
         when(stateMachine.isConnected()).thenReturn(false);
         when(stateMachine.isDisconnected()).thenReturn(true);
         when(stateMachine.isSupplicantTransientState()).thenReturn(false);

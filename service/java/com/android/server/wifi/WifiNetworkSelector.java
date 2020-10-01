@@ -272,6 +272,12 @@ public class WifiNetworkSelector {
             return true;
         }
 
+        // OEM paid networks are only available to system apps, so this is never sufficient.
+        if (network.oemPaid) {
+            localLog("Current network is oem paid");
+            return false;
+        }
+
         // Network without internet access is not sufficient, unless expected
         if (!hasInternetOrExpectNoInternet(wifiInfo)) {
             localLog("Current network has [" + network.numNoInternetAccessReports

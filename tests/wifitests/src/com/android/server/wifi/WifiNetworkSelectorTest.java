@@ -917,6 +917,34 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     /**
+     * Wifi network selector does network selection when current network is oem paid and has low
+     * RSSI
+     *
+     * Expected behavior: network selection is performed
+     */
+    @Test
+    public void testOemPaidIsNotSufficient() {
+        // Rssi after connected.
+        when(mWifiInfo.getRssi()).thenReturn(mThresholdQualifiedRssi5G - 1);
+        when(mWifiInfo.getSuccessfulTxPacketsPerSecond()).thenReturn(0.0);
+        when(mWifiInfo.getSuccessfulRxPacketsPerSecond()).thenReturn(0.0);
+
+        testStayOrTryToSwitch(
+                // Parameters for network1:
+                mThresholdQualifiedRssi5G - 1 /* rssi before connected */,
+                false /* not a 5G network */,
+                false /* not open network */,
+                false /* osu */,
+                true /* oem paid*/,
+                // Parameters for network2:
+                mThresholdQualifiedRssi5G + 1 /* rssi */,
+                true /* a 5G network */,
+                false /* not open network */,
+                // Should not try to switch.
+                true);
+    }
+
+    /**
      * Wifi network selector will not perform network selection when current network has high
      * quality and active stream
      *
@@ -1000,7 +1028,23 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
      */
     private void testStayOrTryToSwitch(
             int rssiNetwork1, boolean is5GHzNetwork1, boolean isOpenNetwork1,
-            boolean isFirstNetworkOsu,
+            boolean isFirstNetworkOemPaid,
+            int rssiNetwork2, boolean is5GHzNetwork2, boolean isOpenNetwork2,
+            boolean shouldSelect) {
+        testStayOrTryToSwitch(rssiNetwork1, is5GHzNetwork1, isOpenNetwork1, isFirstNetworkOemPaid,
+                false, rssiNetwork2, is5GHzNetwork2, isOpenNetwork2, shouldSelect);
+    }
+
+    /**
+     * This is a meta-test that given two scan results of various types, will
+     * determine whether or not network selection should be performed.
+     *
+     * It sets up two networks, connects to the first, and then ensures that
+     * both are available in the scan results for the NetworkSelector.
+     */
+    private void testStayOrTryToSwitch(
+            int rssiNetwork1, boolean is5GHzNetwork1, boolean isOpenNetwork1,
+            boolean isFirstNetworkOsu, boolean isFirstNetworkOemPaid,
             int rssiNetwork2, boolean is5GHzNetwork2, boolean isOpenNetwork2,
             boolean shouldSelect) {
         String[] ssids = {"\"test1\"", "\"test2\""};
@@ -1012,7 +1056,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         int[] securities = {isOpenNetwork1 ? SECURITY_NONE : SECURITY_PSK,
                             isOpenNetwork2 ? SECURITY_NONE : SECURITY_PSK};
         testStayOrTryToSwitchImpl(ssids, bssids, freqs, caps, levels, securities, isFirstNetworkOsu,
-                shouldSelect);
+                isFirstNetworkOemPaid, shouldSelect);
     }
 
     /**
@@ -1031,13 +1075,13 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         String[] caps = {isOpenNetwork ? "[ESS]" : "[WPA2-PSK][ESS]"};
         int[] levels = {rssi};
         int[] securities = {isOpenNetwork ? SECURITY_NONE : SECURITY_PSK};
-        testStayOrTryToSwitchImpl(ssids, bssids, freqs, caps, levels, securities, false,
+        testStayOrTryToSwitchImpl(ssids, bssids, freqs, caps, levels, securities, false, false,
                 shouldSelect);
     }
 
     private void testStayOrTryToSwitchImpl(String[] ssids, String[] bssids, int[] freqs,
             String[] caps, int[] levels, int[] securities, boolean isFirstNetworkOsu,
-            boolean shouldSelect) {
+            boolean isFirstNetworkOemPaid, boolean shouldSelect) {
         // Make a network selection to connect to test1.
         ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
                 WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
@@ -1059,10 +1103,19 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         when(mWifiInfo.is24GHz()).thenReturn(!ScanResult.is5GHz(freqs[0]));
         when(mWifiInfo.is5GHz()).thenReturn(ScanResult.is5GHz(freqs[0]));
         when(mWifiInfo.getFrequency()).thenReturn(freqs[0]);
+
+        // Both of these should not be set.
+        assertFalse(isFirstNetworkOsu && isFirstNetworkOemPaid);
         if (isFirstNetworkOsu) {
             WifiConfiguration[] configs = scanDetailsAndConfigs.getWifiConfigs();
             // Force 1st network to OSU
             configs[0].osu = true;
+            when(mWifiConfigManager.getConfiguredNetwork(mWifiInfo.getNetworkId()))
+                    .thenReturn(configs[0]);
+        } else if (isFirstNetworkOemPaid) {
+            WifiConfiguration[] configs = scanDetailsAndConfigs.getWifiConfigs();
+            // Force 1st network to OEM paid
+            configs[0].oemPaid = true;
             when(mWifiConfigManager.getConfiguredNetwork(mWifiInfo.getNetworkId()))
                     .thenReturn(configs[0]);
         }
