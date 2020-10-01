@@ -1009,7 +1009,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         randomizePacketStats(r, stats.iface.wmeBkPktStats);
         randomizePacketStats(r, stats.iface.wmeViPktStats);
         randomizePacketStats(r, stats.iface.wmeVoPktStats);
-        randomizeRadioStats_1_3(r, stats.radios);
+        randomizeRadioStats_1_3(1, r, stats.radios);
         stats.timeStampInMs = r.nextLong() & 0xFFFFFFFFFFL;
 
         WifiLinkLayerStats converted = WifiVendorHal.frameworkFromHalLinkLayerStats_1_3(stats);
@@ -1018,6 +1018,26 @@ public class WifiVendorHalTest extends WifiBaseTest {
         verifyRadioStats_1_3(stats.radios, converted);
         assertEquals(stats.timeStampInMs, converted.timeStampInMs);
         assertEquals(WifiLinkLayerStats.V1_3, converted.version);
+        assertEquals(1, converted.numRadios);
+    }
+
+    /**
+     * Test that the link layer stats V1_3 fields are aggregated correctly for two radios.
+     *
+     * This is done by filling multiple Hal LinkLayerStats (V1_3) with random values,
+     * converting it to WifiLinkLayerStats and then asserting the sum of values from HAL structure
+     * are equal to the values in the converted structure.
+     */
+    @Test
+    public void testTwoRadioStatsAggregation() throws Exception {
+        Random r = new Random(245786856);
+        android.hardware.wifi.V1_3.StaLinkLayerStats stats =
+                new android.hardware.wifi.V1_3.StaLinkLayerStats();
+        randomizeRadioStats_1_3(2, r, stats.radios);
+
+        WifiLinkLayerStats converted = WifiVendorHal.frameworkFromHalLinkLayerStats_1_3(stats);
+        verifyTwoRadioStatsAggregation(stats.radios, converted);
+        assertEquals(2, converted.numRadios);
     }
 
     private void verifyIFaceStats(StaLinkLayerIfaceStats iface,
@@ -1093,6 +1113,56 @@ public class WifiVendorHalTest extends WifiBaseTest {
         }
     }
 
+    private void verifyTwoRadioStatsAggregation(
+            List<android.hardware.wifi.V1_3.StaLinkLayerRadioStats> radios,
+            WifiLinkLayerStats wifiLinkLayerStats) {
+        assertEquals(2, radios.size());
+        android.hardware.wifi.V1_3.StaLinkLayerRadioStats radio0 = radios.get(0);
+        android.hardware.wifi.V1_3.StaLinkLayerRadioStats radio1 = radios.get(1);
+        assertEquals(radio0.V1_0.onTimeInMs + radio1.V1_0.onTimeInMs,
+                wifiLinkLayerStats.on_time);
+        assertEquals(radio0.V1_0.txTimeInMs + radio1.V1_0.txTimeInMs,
+                wifiLinkLayerStats.tx_time);
+        assertEquals(radio0.V1_0.rxTimeInMs + radio1.V1_0.rxTimeInMs,
+                wifiLinkLayerStats.rx_time);
+        assertEquals(radio0.V1_0.onTimeInMsForScan + radio1.V1_0.onTimeInMsForScan,
+                wifiLinkLayerStats.on_time_scan);
+        assertEquals(radio0.V1_0.txTimeInMsPerLevel.size(),
+                radio1.V1_0.txTimeInMsPerLevel.size());
+        assertEquals(radio0.V1_0.txTimeInMsPerLevel.size(),
+                wifiLinkLayerStats.tx_time_per_level.length);
+        for (int i = 0; i < radio0.V1_0.txTimeInMsPerLevel.size(); i++) {
+            assertEquals((int) radio0.V1_0.txTimeInMsPerLevel.get(i)
+                    + (int) radio1.V1_0.txTimeInMsPerLevel.get(i),
+                    wifiLinkLayerStats.tx_time_per_level[i]);
+        }
+        assertEquals(radio0.onTimeInMsForNanScan + radio1.onTimeInMsForNanScan,
+                wifiLinkLayerStats.on_time_nan_scan);
+        assertEquals(radio0.onTimeInMsForBgScan + radio1.onTimeInMsForBgScan,
+                wifiLinkLayerStats.on_time_background_scan);
+        assertEquals(radio0.onTimeInMsForRoamScan + radio1.onTimeInMsForRoamScan,
+                wifiLinkLayerStats.on_time_roam_scan);
+        assertEquals(radio0.onTimeInMsForPnoScan + radio1.onTimeInMsForPnoScan,
+                wifiLinkLayerStats.on_time_pno_scan);
+        assertEquals(radio0.onTimeInMsForHs20Scan + radio1.onTimeInMsForHs20Scan,
+                wifiLinkLayerStats.on_time_hs20_scan);
+        assertEquals(radio0.channelStats.size(), radio1.channelStats.size());
+        assertEquals(radio0.channelStats.size(),
+                wifiLinkLayerStats.channelStatsMap.size());
+        for (int j = 0; j < radio0.channelStats.size(); j++) {
+            WifiChannelStats radio0ChannelStats = radio0.channelStats.get(j);
+            WifiChannelStats radio1ChannelStats = radio1.channelStats.get(j);
+            ChannelStats retrievedChannelStats =
+                    wifiLinkLayerStats.channelStatsMap.get(radio0ChannelStats.channel.centerFreq);
+            assertNotNull(retrievedChannelStats);
+            assertEquals(radio0ChannelStats.channel.centerFreq, retrievedChannelStats.frequency);
+            assertEquals(radio1ChannelStats.channel.centerFreq, retrievedChannelStats.frequency);
+            assertEquals(radio0ChannelStats.onTimeInMs + radio1ChannelStats.onTimeInMs,
+                    retrievedChannelStats.radioOnTimeMs);
+            assertEquals(radio0ChannelStats.ccaBusyTimeInMs
+                    + radio1ChannelStats.ccaBusyTimeInMs, retrievedChannelStats.ccaBusyTimeMs);
+        }
+    }
 
     /**
      * Populate packet stats with non-negative random values
@@ -1123,31 +1193,33 @@ public class WifiVendorHalTest extends WifiBaseTest {
     /**
      * Populate radio stats with non-negative random values
      */
-    private static void randomizeRadioStats_1_3(Random r,
+    private static void randomizeRadioStats_1_3(int numRadios, Random r,
             ArrayList<android.hardware.wifi.V1_3.StaLinkLayerRadioStats> rstats) {
-        android.hardware.wifi.V1_3.StaLinkLayerRadioStats rstat =
-                new android.hardware.wifi.V1_3.StaLinkLayerRadioStats();
-        rstat.V1_0.onTimeInMs = r.nextInt() & 0xFFFFFF;
-        rstat.V1_0.txTimeInMs = r.nextInt() & 0xFFFFFF;
-        for (int i = 0; i < 4; i++) {
-            Integer v = r.nextInt() & 0xFFFFFF;
-            rstat.V1_0.txTimeInMsPerLevel.add(v);
+        for (int i = 0; i < numRadios; i++) {
+            android.hardware.wifi.V1_3.StaLinkLayerRadioStats rstat =
+                    new android.hardware.wifi.V1_3.StaLinkLayerRadioStats();
+            rstat.V1_0.onTimeInMs = r.nextInt() & 0xFFFFFF;
+            rstat.V1_0.txTimeInMs = r.nextInt() & 0xFFFFFF;
+            for (int j = 0; j < 4; j++) {
+                Integer v = r.nextInt() & 0xFFFFFF;
+                rstat.V1_0.txTimeInMsPerLevel.add(v);
+            }
+            rstat.V1_0.rxTimeInMs = r.nextInt() & 0xFFFFFF;
+            rstat.V1_0.onTimeInMsForScan = r.nextInt() & 0xFFFFFF;
+            rstat.onTimeInMsForNanScan = r.nextInt() & 0xFFFFFF;
+            rstat.onTimeInMsForBgScan = r.nextInt() & 0xFFFFFF;
+            rstat.onTimeInMsForRoamScan = r.nextInt() & 0xFFFFFF;
+            rstat.onTimeInMsForPnoScan = r.nextInt() & 0xFFFFFF;
+            rstat.onTimeInMsForHs20Scan = r.nextInt() & 0xFFFFFF;
+            for (int k = 0; k < TEST_FREQUENCIES.length; k++) {
+                WifiChannelStats channelStats = new WifiChannelStats();
+                channelStats.channel.centerFreq = TEST_FREQUENCIES[k];
+                channelStats.onTimeInMs = r.nextInt() & 0xFFFFFF;
+                channelStats.ccaBusyTimeInMs = r.nextInt() & 0xFFFFFF;
+                rstat.channelStats.add(channelStats);
+            }
+            rstats.add(rstat);
         }
-        rstat.V1_0.rxTimeInMs = r.nextInt() & 0xFFFFFF;
-        rstat.V1_0.onTimeInMsForScan = r.nextInt() & 0xFFFFFF;
-        rstat.onTimeInMsForNanScan = r.nextInt() & 0xFFFFFF;
-        rstat.onTimeInMsForBgScan = r.nextInt() & 0xFFFFFF;
-        rstat.onTimeInMsForRoamScan = r.nextInt() & 0xFFFFFF;
-        rstat.onTimeInMsForPnoScan = r.nextInt() & 0xFFFFFF;
-        rstat.onTimeInMsForHs20Scan = r.nextInt() & 0xFFFFFF;
-        for (int j = 0; j < TEST_FREQUENCIES.length; j++) {
-            WifiChannelStats channelStats = new WifiChannelStats();
-            channelStats.channel.centerFreq = TEST_FREQUENCIES[j];
-            channelStats.onTimeInMs = r.nextInt() & 0xFFFFFF;
-            channelStats.ccaBusyTimeInMs = r.nextInt() & 0xFFFFFF;
-            rstat.channelStats.add(channelStats);
-        }
-        rstats.add(rstat);
     }
 
     /**

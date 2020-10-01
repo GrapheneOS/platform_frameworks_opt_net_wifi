@@ -2206,24 +2206,11 @@ public class WifiServiceImpl extends BaseWifiService {
         }
 
         final long rxIdleTimeMillis = stats.on_time - stats.tx_time - stats.rx_time;
-        final long[] txTimePerLevelMillis;
-        if (stats.tx_time_per_level == null) {
-            // This will happen if the HAL get link layer API returned null.
-            txTimePerLevelMillis = new long[0];
-        } else {
-            // need to manually copy since we are converting an int[] to a long[]
-            txTimePerLevelMillis = new long[stats.tx_time_per_level.length];
-            for (int i = 0; i < txTimePerLevelMillis.length; i++) {
-                txTimePerLevelMillis[i] = stats.tx_time_per_level[i];
-                // TODO(b/27227497): Need to read the power consumed per level from config
-            }
-        }
         if (VDBG || rxIdleTimeMillis < 0 || stats.on_time < 0 || stats.tx_time < 0
                 || stats.rx_time < 0 || stats.on_time_scan < 0) {
             Log.d(TAG, " getWifiActivityEnergyInfo: "
                     + " on_time_millis=" + stats.on_time
                     + " tx_time_millis=" + stats.tx_time
-                    + " tx_time_per_level_millis=" + Arrays.toString(txTimePerLevelMillis)
                     + " rx_time_millis=" + stats.rx_time
                     + " rxIdleTimeMillis=" + rxIdleTimeMillis
                     + " scan_time_millis=" + stats.on_time_scan);

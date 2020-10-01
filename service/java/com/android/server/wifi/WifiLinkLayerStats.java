@@ -101,23 +101,23 @@ public class WifiLinkLayerStats {
     /**
      * Cumulative milliseconds when radio is awake due to nan scan
      */
-    public int on_time_nan_scan = -1;
+    public int on_time_nan_scan;
     /**
      * Cumulative milliseconds when radio is awake due to background scan
      */
-    public int on_time_background_scan = -1;
+    public int on_time_background_scan;
     /**
      * Cumulative milliseconds when radio is awake due to roam scan
      */
-    public int on_time_roam_scan = -1;
+    public int on_time_roam_scan;
     /**
      * Cumulative milliseconds when radio is awake due to pno scan
      */
-    public int on_time_pno_scan = -1;
+    public int on_time_pno_scan;
     /**
      * Cumulative milliseconds when radio is awake due to hotspot 2.0 scan amd GAS exchange
      */
-    public int on_time_hs20_scan = -1;
+    public int on_time_hs20_scan;
     /**
      * channel stats
      */
@@ -144,6 +144,11 @@ public class WifiLinkLayerStats {
      * TimeStamp - absolute milliseconds from boot when these stats were sampled.
      */
     public long timeStampInMs;
+
+    /**
+     * numRadios - Number of radios.
+     */
+    public int numRadios;
 
     @Override
     public String toString() {
@@ -193,6 +198,7 @@ public class WifiLinkLayerStats {
                     .append(" ccaBusyTimeMs=").append(channelStatsEntry.ccaBusyTimeMs).append('\n');
         }
         sbuf.append(" ts=" + timeStampInMs);
+        sbuf.append(" numRadios=" + numRadios);
         return sbuf.toString();
     }
 
