@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import static com.android.server.wifi.ActiveModeManager.ClientInternetConnectivityRole;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
 
 import android.annotation.NonNull;
@@ -42,7 +41,6 @@ import android.os.PowerManager;
 import android.os.Process;
 import android.os.WorkSource;
 import android.util.ArrayMap;
-import android.util.ArraySet;
 import android.util.LocalLog;
 import android.util.Log;
 
@@ -209,10 +207,6 @@ public class WifiConnectivityManager {
     private CachedWifiCandidates mCachedWifiCandidates = null;
     private @DeviceMobilityState int mDeviceMobilityState =
             WifiManager.DEVICE_MOBILITY_STATE_UNKNOWN;
-
-    // Set of active client mode managers. This would be more than 1 only in case of
-    // STA + STA use-cases.
-    private final ArraySet<ClientModeManager> mClientModeManagers = new ArraySet<>();
 
     // A helper to log debugging information in the local log buffer, which can
     // be retrieved in bugreport.
@@ -780,39 +774,23 @@ public class WifiConnectivityManager {
     private class ModeChangeCallback implements ActiveModeWarden.ModeChangeCallback {
         @Override
         public void onActiveModeManagerAdded(@NonNull ActiveModeManager activeModeManager) {
-            if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "ModeManager added " + activeModeManager);
-            }
-            if (activeModeManager.getRole() instanceof ClientInternetConnectivityRole) {
-                mClientModeManagers.add((ClientModeManager) activeModeManager);
-            }
-            setWifiEnabled(!mClientModeManagers.isEmpty());
+            update();
         }
 
         @Override
         public void onActiveModeManagerRemoved(@NonNull ActiveModeManager activeModeManager) {
-            if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "ModeManager removed " + activeModeManager);
-            }
-            // No need to check for role when mode manager is removed.
-            mClientModeManagers.remove(activeModeManager);
-            setWifiEnabled(!mClientModeManagers.isEmpty());
+            update();
         }
 
         @Override
         public void onActiveModeManagerRoleChanged(@NonNull ActiveModeManager activeModeManager) {
-            if (!(activeModeManager instanceof ClientModeManager)) return;
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "ModeManager role changed " + activeModeManager);
-            }
-            if (activeModeManager.getRole() instanceof ClientInternetConnectivityRole) {
-                mClientModeManagers.add((ClientModeManager) activeModeManager);
-            } else {
-                mClientModeManagers.remove(activeModeManager);
-            }
-            setWifiEnabled(!mClientModeManagers.isEmpty());
+            update();
+        }
+
+        private void update() {
+            List<ClientModeManager> primaryManagers =
+                    mActiveModeWarden.getInternetConnectivityClientModeManagers();
+            setWifiEnabled(!primaryManagers.isEmpty());
         }
     }
 
@@ -893,10 +871,7 @@ public class WifiConnectivityManager {
 
     private ClientModeManager getPrimaryClientModeManager() {
         // There should only be 1 primary client mode manager at any point of time.
-        return mClientModeManagers.stream()
-                .filter(cm -> cm.getRole() == ActiveModeManager.ROLE_CLIENT_PRIMARY)
-                .findFirst()
-                .get();
+        return mActiveModeWarden.getPrimaryClientModeManager();
     }
 
     /** Initialize single scanning schedules, and validate them */
@@ -1803,9 +1778,11 @@ public class WifiConnectivityManager {
      * Handler for WiFi state (connected/disconnected) changes
      */
     public void handleConnectionStateChanged(ActiveModeManager activeModeManager, int state) {
-        if (!mClientModeManagers.contains(activeModeManager)) {
-            Log.w(TAG, "Ignoring call from non primary Mode Manager "
-                    + activeModeManager.getRole(), new Throwable());
+        List<ClientModeManager> primaryManagers =
+                mActiveModeWarden.getInternetConnectivityClientModeManagers();
+        if (!(primaryManagers.contains(activeModeManager))) {
+            Log.w(TAG, "Ignoring call from non primary Mode Manager " + activeModeManager,
+                    new Throwable());
             return;
         }
         localLog("handleConnectionStateChanged: state=" + stateToString(state));
@@ -1859,9 +1836,11 @@ public class WifiConnectivityManager {
      */
     public void handleConnectionAttemptEnded(@NonNull ActiveModeManager activeModeManager,
             int failureCode, @NonNull String bssid, @NonNull String ssid) {
-        if (!mClientModeManagers.contains(activeModeManager)) {
-            Log.w(TAG, "Ignoring call from non primary Mode Manager"
-                    + activeModeManager.getRole(), new Throwable());
+        List<ClientModeManager> primaryManagers =
+                mActiveModeWarden.getInternetConnectivityClientModeManagers();
+        if (!(primaryManagers.contains(activeModeManager))) {
+            Log.w(TAG, "Ignoring call from non primary Mode Manager " + activeModeManager,
+                    new Throwable());
             return;
         }
         if (failureCode == WifiMetrics.ConnectionEvent.FAILURE_NONE) {
@@ -2114,9 +2093,5 @@ public class WifiConnectivityManager {
         pw.println("WifiConnectivityManager - Log End ----");
         mOpenNetworkNotifier.dump(fd, pw, args);
         mBssidBlocklistMonitor.dump(fd, pw, args);
-        pw.println("mClientModeManager IDs: "
-                + mClientModeManagers.stream()
-                        .map(m -> String.valueOf(m.getId()))
-                        .collect(Collectors.joining(", ")));
     }
 }
