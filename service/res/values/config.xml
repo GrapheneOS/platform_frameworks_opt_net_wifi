@@ -348,7 +348,7 @@
     from auto-connect -->
     <integer translatable="false" name="config_wifiDisableReasonAssociationRejectionThreshold"> 5 </integer>
     <integer translatable="false" name="config_wifiDisableReasonAuthenticationFailureThreshold"> 5 </integer>
-    <integer translatable="false" name="config_wifiDisableReasonDhcpFailureThreshold"> 5 </integer>
+    <integer translatable="false" name="config_wifiDisableReasonDhcpFailureThreshold"> 2 </integer>
 
     <!-- List of constants that indicate the number of consecutive failures per type needed to block a BSSID.
     A blocked BSSID will not be considered in network selection and firmware roaming.-->
@@ -359,7 +359,7 @@
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorAssociationRejectionThreshold"> 3 </integer>
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorAssociationTimeoutThreshold"> 3 </integer>
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorAuthenticationFailureThreshold"> 3 </integer>
-    <integer translatable="false" name="config_wifiBssidBlocklistMonitorDhcpFailureThreshold"> 3 </integer>
+    <integer translatable="false" name="config_wifiBssidBlocklistMonitorDhcpFailureThreshold"> 2 </integer>
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorAbnormalDisconnectThreshold"> 3 </integer>
 
     <!-- Base duration to block a BSSID after consecutive failures happen. (default = 5 mins)
