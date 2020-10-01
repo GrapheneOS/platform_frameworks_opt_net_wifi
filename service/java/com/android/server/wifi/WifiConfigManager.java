@@ -1110,6 +1110,7 @@ public class WifiConfigManager {
 
         // Copy trusted bit
         internalConfig.trusted = externalConfig.trusted;
+        internalConfig.oemPaid = externalConfig.oemPaid;
 
         // Copy over macRandomizationSetting
         internalConfig.macRandomizationSetting = externalConfig.macRandomizationSetting;

@@ -83,6 +83,7 @@ import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
@@ -452,6 +453,7 @@ public class WifiServiceImpl extends BaseWifiService {
                     mWifiInjector.getPasspointProvisionerHandlerThread().getLooper());
             mWifiInjector.getWifiNetworkFactory().register();
             mWifiInjector.getUntrustedWifiNetworkFactory().register();
+            mWifiInjector.getOemPaidWifiNetworkFactory().register();
             mWifiInjector.getWifiP2pConnection().handleBootCompleted();
             mTetheredSoftApTracker.handleBootCompleted();
         });
@@ -999,7 +1001,8 @@ public class WifiServiceImpl extends BaseWifiService {
         // AP config.
         SoftApConfiguration softApConfig = apConfig.getSoftApConfiguration();
         if (softApConfig != null
-                && (!WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged)
+                && (!WifiApConfigStore.validateApWifiConfiguration(
+                    softApConfig, privileged, mContext)
                     || !validateSoftApBand(softApConfig.getBand()))) {
             Log.e(TAG, "Invalid SoftApConfiguration");
             return false;
@@ -2003,7 +2006,7 @@ public class WifiServiceImpl extends BaseWifiService {
         SoftApConfiguration softApConfig = ApConfigUtil.fromWifiConfiguration(wifiConfig);
         if (softApConfig == null) return false;
         if (WifiApConfigStore.validateApWifiConfiguration(
-                softApConfig, false)) {
+                softApConfig, false, mContext)) {
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
         } else {
@@ -2031,7 +2034,7 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         mLog.info("setSoftApConfiguration uid=%").c(uid).flush();
         if (softApConfig == null) return false;
-        if (WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged)) {
+        if (WifiApConfigStore.validateApWifiConfiguration(softApConfig, privileged, mContext)) {
             mActiveModeWarden.updateSoftApConfiguration(softApConfig);
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(softApConfig));
             return true;
@@ -2668,7 +2671,7 @@ public class WifiServiceImpl extends BaseWifiService {
         enforceNetworkSettingsPermission();
 
         int callingUid = Binder.getCallingUid();
-        mLog.info("allowAutojoin=% uid=%").c(choice).c(callingUid).flush();
+        mLog.info("allowAutojoinGlobal=% uid=%").c(choice).c(callingUid).flush();
 
         mWifiThreadRunner.post(() -> mWifiConnectivityManager.setAutoJoinEnabledExternal(choice));
     }
@@ -3412,6 +3415,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mCountryCode.dump(fd, pw, args);
             mWifiInjector.getWifiNetworkFactory().dump(fd, pw, args);
             mWifiInjector.getUntrustedWifiNetworkFactory().dump(fd, pw, args);
+            mWifiInjector.getOemPaidWifiNetworkFactory().dump(fd, pw, args);
             pw.println("Wlan Wake Reasons:" + mWifiNative.getWlanWakeReasonCount());
             pw.println();
             mWifiConfigManager.dump(fd, pw, args);
@@ -3425,8 +3429,9 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiHealthMonitor.dump(fd, pw, args);
             mWifiInjector.getWakeupController().dump(fd, pw, args);
             mWifiInjector.getWifiLastResortWatchdog().dump(fd, pw, args);
+            mWifiInjector.getAdaptiveConnectivityEnabledSettingObserver().dump(fd, pw, args);
+            mWifiInjector.getWifiGlobals().dump(fd, pw, args);
             pw.println();
-
         }
     }
 
@@ -3855,11 +3860,19 @@ public class WifiServiceImpl extends BaseWifiService {
             // no corresponding flags in vendor HAL, set if overlay enables it.
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_RAND_MAC;
         }
-        if (mWifiThreadRunner.call(
-                () -> mActiveModeWarden.isStaApConcurrencySupported(),
-                false)) {
-            supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_STA;
-        }
+        supportedFeatureSet |= mWifiThreadRunner.call(
+                () -> {
+                    long concurrencyFeatureSet = 0L;
+                    if (mActiveModeWarden.isStaApConcurrencySupported()) {
+                        concurrencyFeatureSet |= WifiManager.WIFI_FEATURE_AP_STA;
+                    }
+                    // New feature flag in S.
+                    if (SdkLevelUtil.isAtLeastS()
+                            && mActiveModeWarden.isStaStaConcurrencySupported()) {
+                        concurrencyFeatureSet |= WifiManager.WIFI_FEATURE_ADDITIONAL_STA;
+                    }
+                    return concurrencyFeatureSet;
+                }, 0L);
         return supportedFeatureSet;
     }
 

@@ -581,6 +581,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertAndSetNetworkBSSID(openNetwork, TEST_BSSID);
         // Change the trusted bit.
         openNetwork.trusted = false;
+        // change the oem paid bit.
+        openNetwork.oemPaid = true;
         verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(openNetwork);
 
         // Now verify that the modification has been effective.
@@ -594,9 +596,11 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration oldConfig = wifiConfigCaptor.getAllValues().get(0);
         assertEquals(openNetwork.networkId, newConfig.networkId);
         assertFalse(newConfig.trusted);
+        assertTrue(newConfig.oemPaid);
         assertEquals(TEST_BSSID, newConfig.BSSID);
         assertEquals(openNetwork.networkId, oldConfig.networkId);
         assertTrue(oldConfig.trusted);
+        assertFalse(oldConfig.oemPaid);
         assertNull(oldConfig.BSSID);
     }
 
@@ -640,6 +644,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertAndSetNetworkBSSID(openNetwork, TEST_BSSID);
         // Change the trusted bit.
         openNetwork.trusted = false;
+        // change the oem paid bit.
+        openNetwork.oemPaid = true;
         verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(openNetwork);
 
         // Now verify that the modification has been effective.
@@ -653,9 +659,11 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration oldConfig = wifiConfigCaptor.getAllValues().get(0);
         assertEquals(openNetwork.networkId, newConfig.networkId);
         assertFalse(newConfig.trusted);
+        assertTrue(newConfig.oemPaid);
         assertEquals(TEST_BSSID, newConfig.BSSID);
         assertEquals(openNetwork.networkId, oldConfig.networkId);
         assertTrue(oldConfig.trusted);
+        assertFalse(oldConfig.oemPaid);
         assertNull(oldConfig.BSSID);
 
         assertEquals(0, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(

@@ -75,6 +75,7 @@
           <item type="integer" name="config_wifiInitialPartialScanChannelCacheAgeMins" />
           <item type="bool" name="config_wifi_framework_use_single_radio_chain_scan_results_network_selection" />
           <item type="bool" name="config_wifi_only_link_same_credential_configurations" />
+          <item type="bool" name="config_wifiSoftapPassphraseAsciiEncodableCheck" />
           <item type="bool" name="config_wifiSofapClientForceDisconnectSupported" />
           <item type="bool" name="config_wifi_softap_acs_supported" />
           <item type="bool" name="config_wifi_softap_sae_supported" />

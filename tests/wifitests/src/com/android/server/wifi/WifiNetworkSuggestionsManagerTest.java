@@ -34,6 +34,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.Mockito.*;
 
 import android.app.ActivityManager;
@@ -62,6 +63,7 @@ import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.UserHandle;
@@ -455,6 +457,20 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 DEFAULT_PRIORITY_GROUP);
         networkSuggestion.wifiConfiguration.enterpriseConfig.setDomainSuffixMatch("");
         networkSuggestionList = Arrays.asList(networkSuggestion);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+    }
+
+    @Test
+    public void testAddOemPaidNetworkSuggestionOnPreSDevices() {
+        assumeFalse(SdkLevelUtil.isAtLeastS());
+
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
+        networkSuggestion.wifiConfiguration.oemPaid = true;
+        List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
@@ -3682,23 +3698,30 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_1, TEST_FEATURE));
 
         verifyNoMoreInteractions(mNotificationManger);
-        Set<ExtendedWifiNetworkSuggestion> matchedSuggestion = mWifiNetworkSuggestionsManager
+        Set<ExtendedWifiNetworkSuggestion> matchedSuggestions = mWifiNetworkSuggestionsManager
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
         verify(mWifiCarrierInfoManager)
                 .sendImsiProtectionExemptionNotificationIfRequired(TEST_CARRIER_ID);
-        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
+        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
             assertFalse(ewns.isAutojoinEnabled);
         }
 
         // Simulate user approved carrier
+        eapSimConfig.fromWifiNetworkSuggestion = true;
+        eapSimConfig.creatorUid = TEST_UID_1;
+        eapSimConfig.creatorName = TEST_PACKAGE_1;
+        when(mWifiConfigManager.getConfiguredNetwork(anyString())).thenReturn(eapSimConfig);
+        when(mWifiConfigManager.addOrUpdateNetwork(any(), anyInt(), anyString()))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
         mUserApproveCarrierListenerArgumentCaptor.getValue().onUserAllowed(TEST_CARRIER_ID);
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(true);
         verify(mPasspointManager).enableAutojoin(anyString(), any(), anyBoolean());
-        matchedSuggestion = mWifiNetworkSuggestionsManager
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt(), anyString());
+        matchedSuggestions = mWifiNetworkSuggestionsManager
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
 
-        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestion) {
+        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
             assertTrue(ewns.isAutojoinEnabled);
         }
     }

@@ -74,7 +74,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     @Override
     public void nominateNetworks(List<ScanDetail> scanDetails,
             WifiConfiguration currentNetwork, String currentBssid, boolean connected,
-            boolean untrustedNetworkAllowed,
+            boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
             @NonNull OnConnectableListener onConnectableListener) {
         if (scanDetails.isEmpty()) {
             return;
@@ -82,9 +82,10 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         MatchMetaInfo matchMetaInfo = new MatchMetaInfo();
         Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions = new HashSet<>();
 
-        findMatchedPasspointSuggestionNetworks(scanDetails, matchMetaInfo, untrustedNetworkAllowed);
+        findMatchedPasspointSuggestionNetworks(
+                scanDetails, matchMetaInfo, untrustedNetworkAllowed, oemPaidNetworkAllowed);
         findMatchedSuggestionNetworks(scanDetails, matchMetaInfo,
-                autoJoinDisabledSuggestions, untrustedNetworkAllowed);
+                autoJoinDisabledSuggestions, untrustedNetworkAllowed, oemPaidNetworkAllowed);
 
         if (matchMetaInfo.isEmpty()) {
             mLocalLog.log("did not see any matching auto-join enabled network suggestions.");
@@ -96,7 +97,8 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     }
 
     private void findMatchedPasspointSuggestionNetworks(List<ScanDetail> scanDetails,
-            MatchMetaInfo matchMetaInfo, boolean untrustedNetworkAllowed) {
+            MatchMetaInfo matchMetaInfo, boolean untrustedNetworkAllowed,
+            boolean oemPaidNetworkAllowed) {
         List<Pair<ScanDetail, WifiConfiguration>> candidates =
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, true);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
@@ -121,6 +123,10 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             if (!untrustedNetworkAllowed && !config.trusted) {
                 continue;
             }
+            // If oem paid network is not allowed, ignore oem paid suggestion.
+            if (!oemPaidNetworkAllowed && config.oemPaid) {
+                continue;
+            }
             Set<ExtendedWifiNetworkSuggestion> autoJoinEnabledExtSuggestions =
                     matchingPasspointExtSuggestions.stream()
                             .filter(ewns -> ewns.isAutojoinEnabled)
@@ -137,7 +143,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     private void findMatchedSuggestionNetworks(List<ScanDetail> scanDetails,
             MatchMetaInfo matchMetaInfo,
             Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions,
-            boolean untrustedNetworkAllowed) {
+            boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed) {
         for (ScanDetail scanDetail : scanDetails) {
             Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestions =
                     mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(scanDetail);
@@ -151,9 +157,13 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                         && ewns.wns.wifiConfiguration.enterpriseConfig.isInsecure()) {
                     continue;
                 }
-                // If untrusted network is not allowed, ignore untrusted suggestion.
                 WifiConfiguration config = ewns.wns.wifiConfiguration;
+                // If untrusted network is not allowed, ignore untrusted suggestion.
                 if (!untrustedNetworkAllowed && !config.trusted) {
+                    continue;
+                }
+                // If oem paid network is not allowed, ignore oem paid suggestion.
+                if (!oemPaidNetworkAllowed && config.oemPaid) {
                     continue;
                 }
                 if (WifiConfiguration.isMetered(config, null)

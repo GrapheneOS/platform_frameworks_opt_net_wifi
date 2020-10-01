@@ -356,6 +356,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private WifiNetworkFactory mNetworkFactory;
     private UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
+    private OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
     private WifiNetworkAgent mNetworkAgent;
 
     private byte[] mRssiRanges;
@@ -597,6 +598,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             NetworkCapabilities networkCapabilitiesFilter,
             WifiNetworkFactory networkFactory,
             UntrustedWifiNetworkFactory untrustedWifiNetworkFactory,
+            OemPaidWifiNetworkFactory oemPaidWifiNetworkFactory,
             WifiLastResortWatchdog wifiLastResortWatchdog,
             WakeupController wakeupController,
             WifiLockManager wifiLockManager,
@@ -673,11 +675,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mNetworkCapabilitiesFilter = networkCapabilitiesFilter;
         mNetworkFactory = networkFactory;
 
-        // We can't filter untrusted network in the capabilities filter because a trusted
-        // network would still satisfy a request that accepts untrusted ones.
-        // We need a second network factory for untrusted network requests because we need a
-        // different score filter for these requests.
         mUntrustedNetworkFactory = untrustedWifiNetworkFactory;
+        mOemPaidWifiNetworkFactory = oemPaidWifiNetworkFactory;
 
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWakeupController = wakeupController;
@@ -1293,6 +1292,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped.
      */
     public void stop() {
+        mWifiScoreCard.noteWifiDisabled(mWifiInfo);
         // capture StateMachine LogRecs since we will lose them after we call quitNow()
         // This is used for debugging.
         mObituary = new StateMachineObituary(this);
@@ -2267,6 +2267,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (config != null && config.networkId == mWifiInfo.getNetworkId()) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
+            mWifiInfo.setOemPaid(config.oemPaid);
             mWifiInfo.setOsuAp(config.osu);
             if (config.fromWifiNetworkSpecifier || config.fromWifiNetworkSuggestion) {
                 mWifiInfo.setRequestingPackageName(config.creatorName);
@@ -2724,6 +2725,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (config != null) {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
+            mWifiInfo.setOemPaid(config.oemPaid);
             mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpResults.leaseDuration);
             mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(mLastBssid, mWifiInfo.getSSID());
         }
@@ -3223,8 +3225,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             // Inform metrics that Wifi is being disabled (Toggled, airplane enabled, etc)
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISABLED);
             mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_WIFI_DISABLED);
-            // Inform scorecard that wifi is being disabled
-            mWifiScoreCard.noteWifiDisabled(mWifiInfo);
 
             if (!mWifiNative.removeAllNetworks(mInterfaceName)) {
                 loge("Failed to remove networks on exiting connect mode");
@@ -3235,6 +3235,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mContext.unregisterReceiver(mScreenStateChangeReceiver);
 
             stopClientMode();
+            mWifiScoreCard.doWrites();
         }
 
         @Override
@@ -3596,6 +3597,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             builder.addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
         } else {
             builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
+        }
+        if (mWifiInfo.isOemPaid()) {
+            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
+        } else {
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
         }
 
         builder.setOwnerUid(currentWifiConfiguration.creatorUid);
@@ -5375,7 +5381,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      */
     private boolean hasConnectionRequests() {
         return mNetworkFactory.hasConnectionRequests()
-                || mUntrustedNetworkFactory.hasConnectionRequests();
+                || mUntrustedNetworkFactory.hasConnectionRequests()
+                || mOemPaidWifiNetworkFactory.hasConnectionRequests();
     }
 
     /**

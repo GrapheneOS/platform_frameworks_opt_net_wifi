@@ -2485,13 +2485,24 @@ public class WifiVendorHal {
     }
 
     /**
-     * Returns whether STA/AP concurrency is supported or not.
+     * Returns whether STA + AP concurrency is supported or not.
      */
     public boolean isStaApConcurrencySupported() {
         synchronized (sLock) {
             return mHalDeviceManager.canSupportIfaceCombo(new SparseArray<Integer>() {{
                     put(IfaceType.STA, 1);
                     put(IfaceType.AP, 1);
+                }});
+        }
+    }
+
+    /**
+     * Returns whether STA + STA concurrency is supported or not.
+     */
+    public boolean isStaStaConcurrencySupported() {
+        synchronized (sLock) {
+            return mHalDeviceManager.canSupportIfaceCombo(new SparseArray<Integer>() {{
+                    put(IfaceType.STA, 2);
                 }});
         }
     }

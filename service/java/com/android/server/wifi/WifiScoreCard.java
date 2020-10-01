@@ -514,14 +514,12 @@ public class WifiScoreCard {
     }
 
     /**
-     * Updates the score card after wifi is disabled
+     * Updates the score card when wifi is disabled
      *
      * @param wifiInfo object holding relevant values
      */
     public void noteWifiDisabled(@NonNull ExtendedWifiInfo wifiInfo) {
         updatePerBssid(Event.WIFI_DISABLED, wifiInfo);
-        resetConnectionStateInternal(false);
-        doWrites();
     }
 
     /**

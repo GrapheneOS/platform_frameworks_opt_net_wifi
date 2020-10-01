@@ -2930,11 +2930,20 @@ public class WifiNative {
     }
 
     /**
-     * Returns whether STA/AP concurrency is supported or not.
+     * Returns whether STA + AP concurrency is supported or not.
      */
     public boolean isStaApConcurrencySupported() {
         synchronized (mLock) {
             return mWifiVendorHal.isStaApConcurrencySupported();
+        }
+    }
+
+    /**
+     * Returns whether STA + STA concurrency is supported or not.
+     */
+    public boolean isStaStaConcurrencySupported() {
+        synchronized (mLock) {
+            return mWifiVendorHal.isStaStaConcurrencySupported();
         }
     }
 

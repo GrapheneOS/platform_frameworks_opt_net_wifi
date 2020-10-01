@@ -20,6 +20,8 @@ import android.content.Context;
 
 import com.android.wifi.resources.R;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -104,5 +106,13 @@ public class WifiGlobals {
     public boolean isConnectedMacRandomizationEnabled() {
         return mContext.getResources().getBoolean(
                 R.bool.config_wifi_connected_mac_randomization_supported);
+    }
+
+    /** Dump method for debugging */
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println("Dump of WifiGlobals");
+        pw.println("mPollRssiIntervalMillis=" + mPollRssiIntervalMillis.get());
+        pw.println("mIpReachabilityDisconnectEnabled=" + mIpReachabilityDisconnectEnabled.get());
+        pw.println("mIsBluetoothConnected=" + mIsBluetoothConnected.get());
     }
 }
