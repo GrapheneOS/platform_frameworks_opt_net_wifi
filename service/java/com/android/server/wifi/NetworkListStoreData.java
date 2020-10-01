@@ -299,7 +299,7 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
 
         String configKeyCalculated = configuration.getKey();
         if (!configKeyParsed.equals(configKeyCalculated)) {
-            throw new XmlPullParserException(
+            throw new IllegalStateException(
                     "Configuration key does not match. Retrieved: " + configKeyParsed
                             + ", Calculated: " + configKeyCalculated);
         }

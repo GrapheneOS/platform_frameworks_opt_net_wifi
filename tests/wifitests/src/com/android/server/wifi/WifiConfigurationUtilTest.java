@@ -423,6 +423,53 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the validate method validates WifiConfiguration with masked wep key only for
+     * an update.
+     */
+    @Test
+    public void testValidatePositiveCases_MaskedWepKeysString() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createWepNetwork();
+        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+
+        config.wepKeys = new String[]{ WifiConfigurationUtil.PASSWORD_MASK,
+                WifiConfigurationUtil.PASSWORD_MASK,
+                WifiConfigurationUtil.PASSWORD_MASK,
+                WifiConfigurationUtil.PASSWORD_MASK};
+        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+        assertTrue(WifiConfigurationUtil.validate(
+                config, WifiConfigurationUtil.VALIDATE_FOR_UPDATE));
+    }
+
+    /**
+     * Verify that the validate method fails to validate WifiConfiguration with bad wep length.
+     */
+    @Test
+    public void testValidateNegativeCases_BadWepKeysLength() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createWepNetwork();
+        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+
+        config.wepKeys = new String[] {"\"abcd\""};
+        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+        config.wepKeys = new String[] {"456"};
+        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+        // Error scenario in b/169638868.
+        config.wepKeys = new String[] {""};
+        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+    }
+
+    /**
+     * Verify that the validate method fails to validate WifiConfiguration with bad wep tx key idx.
+     */
+    @Test
+    public void testValidateNegativeCases_BadWepTxKeysIndex() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createWepNetwork();
+        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+        // Should be < wepKeys.length
+        config.wepTxKeyIndex = config.wepKeys.length;
+        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
+    }
+
+    /**
      * Verify that the validate method fails to validate WifiConfiguration with bad key mgmt values.
      */
     @Test
