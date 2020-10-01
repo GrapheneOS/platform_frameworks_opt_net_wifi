@@ -117,6 +117,15 @@ public class PasspointNetworkNominateHelper {
         if (wm == null) {
             return false;
         }
+
+        // Check if the WAN Metrics ANQP element is initialized with values other than 0's
+        if (wm.getStatus() == HSWanMetricsElement.LINK_STATUS_RESERVED
+                && !wm.isCapped() && !wm.isSymmetric() && wm.getDownlinkLoad() == 0
+                && wm.getDownlinkSpeed() == 0 && wm.getUplinkLoad() == 0 && wm.getUplinkSpeed() == 0
+                && wm.getLMD() == 0) {
+            // WAN Metrics ANQP element is not initialized in this network. Ignore it.
+            return false;
+        }
         return wm.getStatus() != HSWanMetricsElement.LINK_STATUS_UP || wm.isCapped();
     }
 
