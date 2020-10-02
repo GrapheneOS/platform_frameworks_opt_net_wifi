@@ -115,6 +115,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
     private final ScanOnlyModeImpl mScanOnlyModeImpl;
+    private final long mId;
     private final Graveyard mGraveyard = new Graveyard();
 
     private String mClientInterfaceName;
@@ -150,7 +151,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            ScanOnlyModeImpl scanOnlyModeImpl) {
+            ScanOnlyModeImpl scanOnlyModeImpl, long id) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -163,6 +164,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mSelfRecovery = selfRecovery;
         mWifiGlobals = wifiGlobals;
         mScanOnlyModeImpl = scanOnlyModeImpl;
+        mId = id;
     }
 
     private String getTag() {
@@ -457,11 +459,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
         void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
             pw.println("Dump of ConcreteClientModeManager.Graveyard");
             pw.println("Stopped ClientModeImpls: " + mClientModeImpls.size() + " total");
-            int i = 0;
             for (ClientModeImpl clientModeImpl : mClientModeImpls) {
-                pw.println("Dump of stopped ClientModeImpl " + i);
                 clientModeImpl.dump(fd, pw, args);
-                i++;
             }
             pw.println();
         }
@@ -472,8 +471,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
      */
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        pw.println("--Dump of ClientModeManager--");
-
+        pw.println("Dump of ClientModeManager id=" + mId);
         pw.println("current StateMachine mode: " + getCurrentStateName());
         pw.println("mRole: " + mRole);
         pw.println("mTargetRole: " + mTargetRole);
@@ -1112,5 +1110,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void sendMessageToClientModeImpl(Message msg) {
         getClientMode().sendMessageToClientModeImpl(msg);
+    }
+
+    @Override
+    public long getId() {
+        return mId;
     }
 }

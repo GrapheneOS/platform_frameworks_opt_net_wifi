@@ -24,6 +24,9 @@ import android.os.WorkSource;
  * This is used for creating a public {@link ClientModeManager} instance when wifi is off.
  */
 public class DefaultClientModeManager extends ScanOnlyModeImpl implements ClientModeManager {
+
+    private static final long ID = -1;
+
     @Override
     public void start(@NonNull WorkSource requestorWs) {
         throw new IllegalStateException();
@@ -52,5 +55,10 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
     @Override
     public int syncGetWifiState() {
         return WifiManager.WIFI_STATE_DISABLED;
+    }
+
+    @Override
+    public long getId() {
+        return ID;
     }
 }

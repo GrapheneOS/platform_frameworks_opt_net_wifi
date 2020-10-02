@@ -102,6 +102,7 @@ public class SoftApManager implements ActiveModeManager {
     private final WifiApConfigStore mWifiApConfigStore;
 
     private final WifiMetrics mWifiMetrics;
+    private final long mId;
 
     private boolean mIsUnsetBssid;
 
@@ -187,7 +188,8 @@ public class SoftApManager implements ActiveModeManager {
                          @NonNull WifiApConfigStore wifiApConfigStore,
                          @NonNull SoftApModeConfiguration apConfig,
                          @NonNull WifiMetrics wifiMetrics,
-                         @NonNull WifiDiagnostics wifiDiagnostics) {
+                         @NonNull WifiDiagnostics wifiDiagnostics,
+                         long id) {
         mContext = context;
         mFrameworkFacade = framework;
         mSoftApNotifier = new SoftApNotifier(mContext, mFrameworkFacade);
@@ -219,6 +221,12 @@ public class SoftApManager implements ActiveModeManager {
         }
         mDefaultShutDownTimeoutMills = mContext.getResources().getInteger(
                 R.integer.config_wifiFrameworkSoftApShutDownTimeoutMilliseconds);
+        mId = id;
+    }
+
+    @Override
+    public long getId() {
+        return mId;
     }
 
     private String getTag() {
@@ -295,7 +303,7 @@ public class SoftApManager implements ActiveModeManager {
      */
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        pw.println("--Dump of SoftApManager--");
+        pw.println("Dump of SoftApManager id=" + mId);
 
         pw.println("current StateMachine mode: " + getCurrentStateName());
         pw.println("mRole: " + mRole);
