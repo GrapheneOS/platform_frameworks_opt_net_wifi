@@ -59,6 +59,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -640,5 +641,37 @@ public class PasspointNetworkNominateHelperTest {
                 .getPasspointNetworkCandidates(scanDetails, false);
         assertEquals(1, candidates.size());
         assertTrue(WifiConfiguration.isMetered(candidates.get(0).second, null));
+    }
+
+    /**
+     * Verify that when the WAN Metrics ANQP element is not initialized (all 0's), then the logic
+     * ignores this element.
+     */
+    @Test
+    public void evaluateScansWithNetworkMatchingHomeProviderWithUninitializedWanMetricsAnqpElement()
+            throws Exception {
+        List<ScanDetail> scanDetails = Arrays.asList(generateScanDetail(TEST_SSID1, TEST_BSSID1));
+        // Setup matching providers for ScanDetail with TEST_SSID1.
+        List<Pair<PasspointProvider, PasspointMatch>> homeProvider = new ArrayList<>();
+        homeProvider.add(Pair.create(sTestProvider1, PasspointMatch.HomeProvider));
+
+        when(mPasspointManager.matchProvider(any(ScanResult.class))).thenReturn(homeProvider);
+        when(mWifiConfigManager.addOrUpdateNetwork(any(WifiConfiguration.class), anyInt(),
+                any())).thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
+        when(mWifiConfigManager.getConfiguredNetwork(TEST_NETWORK_ID)).thenReturn(TEST_CONFIG1);
+
+        // Setup an uninitialized WAN Metrics element (or initialized with 0's)
+        ByteBuffer buffer = ByteBuffer.allocate(HSWanMetricsElement.EXPECTED_BUFFER_SIZE);
+        buffer.put(new byte[HSWanMetricsElement.EXPECTED_BUFFER_SIZE]);
+        buffer.position(0);
+        HSWanMetricsElement wanMetricsElement = HSWanMetricsElement.parse(buffer);
+        Map<ANQPElementType, ANQPElement> anqpElements = new HashMap<>();
+        anqpElements.put(ANQPElementType.HSWANMetrics, wanMetricsElement);
+        when(mPasspointManager.getANQPElements(any(ScanResult.class)))
+                .thenReturn(anqpElements);
+
+        List<Pair<ScanDetail, WifiConfiguration>> candidates = mNominateHelper
+                .getPasspointNetworkCandidates(scanDetails, false);
+        assertEquals(1, candidates.size());
     }
 }
