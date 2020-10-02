@@ -237,7 +237,9 @@ public class SoftApManager implements ActiveModeManager {
      * Start soft AP, as configured in the constructor.
      */
     @Override
-    public void start(@NonNull WorkSource requestorWs) {
+    public void start(@NonNull WorkSource requestorWs, @NonNull Role role) {
+        Preconditions.checkArgument(role instanceof SoftApRole);
+        mRole = (SoftApRole) role;
         mStateMachine.sendMessage(SoftApStateMachine.CMD_START, requestorWs);
     }
 
@@ -324,6 +326,11 @@ public class SoftApManager implements ActiveModeManager {
 
     @Override
     public void enableVerboseLogging(boolean verbose) { /* unused */ }
+
+    @Override
+    public String toString() {
+        return "SoftApManager[" + mApInterfaceName + "](" + mRole + ":" + mId + ")";
+    }
 
     private String getCurrentStateName() {
         IState currentState = mStateMachine.getCurrentState();
