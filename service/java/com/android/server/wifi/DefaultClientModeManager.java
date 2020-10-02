@@ -28,7 +28,7 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
     private static final long ID = -1;
 
     @Override
-    public void start(@NonNull WorkSource requestorWs) {
+    public void start(@NonNull WorkSource requestorWs, @NonNull Role role) {
         throw new IllegalStateException();
     }
 
@@ -60,5 +60,10 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
     @Override
     public long getId() {
         return ID;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientModeManager(Default)";
     }
 }
