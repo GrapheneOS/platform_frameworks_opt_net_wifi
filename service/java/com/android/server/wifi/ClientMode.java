@@ -142,4 +142,7 @@ public interface ClientMode {
 
     /** Send a {@link Message} to ClientModeImpl's StateMachine. */
     void sendMessageToClientModeImpl(Message msg);
+
+    /** Unique ID for this ClientMode instance, used for debugging. */
+    long getId();
 }

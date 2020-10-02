@@ -157,4 +157,7 @@ public interface ActiveModeManager {
      * Method to enable verbose logging.
      */
     void enableVerboseLogging(boolean verbose);
+
+    /** Unique ID for this ActiveModeManager instance, used for debugging. */
+    long getId();
 }
