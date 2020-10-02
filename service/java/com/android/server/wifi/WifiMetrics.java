@@ -6908,4 +6908,15 @@ public class WifiMetrics {
             mAdaptiveConnectivityEnabled = adaptiveConnectivityEnabled;
         }
     }
+
+    /**
+     * Get total beacon receive count
+     */
+    public long getTotalBeaconRxCount() {
+        if (mWifiUsabilityStatsEntriesList.isEmpty()) {
+            return -1;
+        } else {
+            return mWifiUsabilityStatsEntriesList.getLast().totalBeaconRx;
+        }
+    }
 }
