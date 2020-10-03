@@ -59,6 +59,8 @@ import android.net.ip.IpClientManager;
 import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
+import android.net.util.MacAddressUtils;
+import android.net.util.NetUtils;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -96,8 +98,6 @@ import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.net.module.util.Inet4AddressUtils;
-import com.android.net.module.util.MacAddressUtils;
-import com.android.net.module.util.NetUtils;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
@@ -212,6 +212,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private final WifiLockManager mWifiLockManager;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
+    private final long mId;
 
     private boolean mScreenOn = false;
 
@@ -609,6 +610,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             WrongPasswordNotifier wrongPasswordNotifier,
             WifiTrafficPoller wifiTrafficPoller,
             LinkProbeManager linkProbeManager,
+            long id,
             BatteryStatsManager batteryStatsManager,
             SupplicantStateTracker supplicantStateTracker,
             MboOceController mboOceController,
@@ -628,6 +630,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mFacade = facade;
         mWifiNative = wifiNative;
         mWrongPasswordNotifier = wrongPasswordNotifier;
+        mId = id;
         mEapFailureNotifier = eapFailureNotifier;
         mSimRequiredNotifier = simRequiredNotifier;
         mWifiTrafficPoller = wifiTrafficPoller;
@@ -1472,6 +1475,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println("Dump of ClientModeImpl id=" + mId);
         if (mObituary == null) {
             // StateMachine hasn't quit yet, dump `this` via StateMachineObituary's dump()
             // method for consistency with `else` branch.
@@ -5796,6 +5800,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     @Override
     public void sendMessageToClientModeImpl(Message msg) {
         sendMessage(msg);
+    }
+
+    @Override
+    public long getId() {
+        return mId;
     }
 
     @Override

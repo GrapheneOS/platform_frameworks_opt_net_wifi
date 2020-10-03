@@ -587,14 +587,15 @@ public class WifiScoreReport {
         double txRetriesRate = mWifiInfo.getRetriedTxPacketsPerSecond();
         double txBadRate = mWifiInfo.getLostTxPacketsPerSecond();
         double rxSuccessRate = mWifiInfo.getSuccessfulRxPacketsPerSecond();
+        long totalBeaconRx = mWifiMetrics.getTotalBeaconRxCount();
         String s;
         try {
             String timestamp = new SimpleDateFormat("MM-dd HH:mm:ss.SSS").format(new Date(now));
             s = String.format(Locale.US, // Use US to avoid comma/decimal confusion
-                    "%s,%d,%d,%.1f,%.1f,%.1f,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%d,%d,%d",
+                    "%s,%d,%d,%.1f,%.1f,%.1f,%d,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%d,%d,%d",
                     timestamp, mSessionNumber, netId,
                     rssi, filteredRssi, rssiThreshold, freq, txLinkSpeed, rxLinkSpeed,
-                    txThroughputMbps, rxThroughputMbps,
+                    txThroughputMbps, rxThroughputMbps, totalBeaconRx,
                     txSuccessRate, txRetriesRate, txBadRate, rxSuccessRate,
                     mNudYes, mNudCount,
                     s1, s2, score);
@@ -632,7 +633,7 @@ public class WifiScoreReport {
             history = new LinkedList<>(mLinkMetricsHistory);
         }
         pw.println("time,session,netid,rssi,filtered_rssi,rssi_threshold,freq,txLinkSpeed,"
-                + "rxLinkSpeed,txTput,rxTput,tx_good,tx_retry,tx_bad,rx_pps,nudrq,nuds,"
+                + "rxLinkSpeed,txTput,rxTput,bcnCnt,tx_good,tx_retry,tx_bad,rx_pps,nudrq,nuds,"
                 + "s1,s2,score");
         for (String line : history) {
             pw.println(line);

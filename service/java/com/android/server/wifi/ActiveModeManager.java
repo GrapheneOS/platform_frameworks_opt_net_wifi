@@ -53,7 +53,7 @@ public interface ActiveModeManager {
     /**
      * Method used to start the Manager for a given Wifi operational mode.
      */
-    void start(@NonNull WorkSource requestorWs);
+    void start(@NonNull WorkSource requestorWs, Role role);
 
     /**
      * Method used to stop the Manager for a given Wifi operational mode.
@@ -157,4 +157,7 @@ public interface ActiveModeManager {
      * Method to enable verbose logging.
      */
     void enableVerboseLogging(boolean verbose);
+
+    /** Unique ID for this ActiveModeManager instance, used for debugging. */
+    long getId();
 }

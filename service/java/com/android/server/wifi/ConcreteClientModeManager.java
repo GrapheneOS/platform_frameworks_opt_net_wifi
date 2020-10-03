@@ -64,6 +64,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.util.IState;
+import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
@@ -115,6 +116,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
     private final ScanOnlyModeImpl mScanOnlyModeImpl;
+    private final long mId;
     private final Graveyard mGraveyard = new Graveyard();
 
     private String mClientInterfaceName;
@@ -150,7 +152,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            ScanOnlyModeImpl scanOnlyModeImpl) {
+            ScanOnlyModeImpl scanOnlyModeImpl, long id) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -163,6 +165,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mSelfRecovery = selfRecovery;
         mWifiGlobals = wifiGlobals;
         mScanOnlyModeImpl = scanOnlyModeImpl;
+        mId = id;
     }
 
     private String getTag() {
@@ -173,9 +176,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
      * Start client mode.
      */
     @Override
-    public void start(@NonNull WorkSource requestorWs) {
-        mTargetRole = ROLE_CLIENT_SCAN_ONLY;
-        mStateMachine.sendMessage(ClientModeStateMachine.CMD_START, requestorWs);
+    public void start(@NonNull WorkSource requestorWs, @NonNull Role role) {
+        Preconditions.checkArgument(role instanceof ClientRole);
+        mTargetRole = (ClientRole) role;
+        mStateMachine.sendMessage(ClientModeStateMachine.CMD_START, Pair.create(role, requestorWs));
     }
 
     /**
@@ -457,11 +461,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
         void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
             pw.println("Dump of ConcreteClientModeManager.Graveyard");
             pw.println("Stopped ClientModeImpls: " + mClientModeImpls.size() + " total");
-            int i = 0;
             for (ClientModeImpl clientModeImpl : mClientModeImpls) {
-                pw.println("Dump of stopped ClientModeImpl " + i);
                 clientModeImpl.dump(fd, pw, args);
-                i++;
             }
             pw.println();
         }
@@ -472,8 +473,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
      */
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        pw.println("--Dump of ClientModeManager--");
-
+        pw.println("Dump of ClientModeManager id=" + mId);
         pw.println("current StateMachine mode: " + getCurrentStateName());
         pw.println("mRole: " + mRole);
         pw.println("mTargetRole: " + mTargetRole);
@@ -675,7 +675,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 switch (message.what) {
                     case CMD_START:
                         // Always start in scan mode first.
-                        mRequestorWs = (WorkSource) message.obj;
+                        Pair<ClientRole, WorkSource> roleAndRequestorWs = (Pair) message.obj;
+                        ClientRole role = roleAndRequestorWs.first;
+                        mRequestorWs = roleAndRequestorWs.second;
                         mClientInterfaceName = mWifiNative.setupInterfaceForClientInScanMode(
                                 mWifiNativeInterfaceCallback, mRequestorWs);
                         if (TextUtils.isEmpty(mClientInterfaceName)) {
@@ -683,7 +685,12 @@ public class ConcreteClientModeManager implements ClientModeManager {
                             mModeListener.onStartFailure();
                             break;
                         }
-                        transitionTo(mScanOnlyModeState);
+                        if (role instanceof ClientConnectivityRole) {
+                            sendMessage(CMD_SWITCH_TO_CONNECT_MODE, role);
+                            transitionTo(mStartedState);
+                        } else {
+                            transitionTo(mScanOnlyModeState);
+                        }
                         break;
                     default:
                         Log.d(getTag(), "received an invalid message: " + message);
@@ -1112,5 +1119,15 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public void sendMessageToClientModeImpl(Message msg) {
         getClientMode().sendMessageToClientModeImpl(msg);
+    }
+
+    @Override
+    public long getId() {
+        return mId;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientModeManager[" + mClientInterfaceName + "](" + mRole + ":" + mId + ")";
     }
 }

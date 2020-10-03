@@ -30,6 +30,8 @@ import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLED;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLING;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_FAILED;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_LOCAL_ONLY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_SOFTAP_TETHERED;
 import static com.android.server.wifi.LocalOnlyHotspotRequestInfo.HOTSPOT_NO_ERROR;
 import static com.android.server.wifi.util.ApConfigUtil.DEFAULT_AP_CHANNEL;
 
@@ -94,6 +96,7 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     private static final String TAG = "SoftApManagerTest";
 
+    private static final int TEST_MANAGER_ID = 1000;
     private static final String DEFAULT_SSID = "DefaultTestSSID";
     private static final String TEST_SSID = "TestSSID";
     private static final String TEST_PASSWORD = "TestPassword";
@@ -223,7 +226,8 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            config,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
 
         return newSoftApManager;
@@ -302,9 +306,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            nullApConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
                 WifiManager.SAP_START_FAILURE_GENERAL);
@@ -349,9 +354,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            nullApConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
                 WifiManager.SAP_START_FAILURE_GENERAL);
@@ -395,9 +401,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            nullApConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
                 WifiManager.SAP_START_FAILURE_GENERAL);
@@ -439,9 +446,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                 mWifiApConfigStore,
                 softApConfig,
                 mWifiMetrics,
-                mWifiDiagnostics);
+                mWifiDiagnostics,
+                TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
 
         verify(mWifiNative, never()).setCountryCodeHal(eq(TEST_INTERFACE_NAME), any());
@@ -487,9 +495,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            softApConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
 
         verify(mWifiNative).setCountryCodeHal(
@@ -611,9 +620,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            softApConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
 
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
@@ -652,10 +662,11 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            softApModeConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
 
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
                 WifiManager.SAP_START_FAILURE_GENERAL);
@@ -1668,7 +1679,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
 
         mSoftApManager = createSoftApManager(apConfig, TEST_COUNTRY_CODE);
-        mSoftApManager.start(TEST_WORKSOURCE);
+        mSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_LOCAL_ONLY);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
@@ -1689,7 +1700,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         when(mWifiNative.setApMacAddress(eq(TEST_INTERFACE_NAME), mac.capture())).thenReturn(false);
 
         mSoftApManager = createSoftApManager(apConfig, TEST_COUNTRY_CODE);
-        mSoftApManager.start(TEST_WORKSOURCE);
+        mSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_LOCAL_ONLY);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
@@ -1711,7 +1722,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
         when(mWifiNative.setApMacAddress(eq(TEST_INTERFACE_NAME), mac.capture())).thenReturn(false);
         mSoftApManager = createSoftApManager(apConfig, TEST_COUNTRY_CODE);
-        mSoftApManager.start(TEST_WORKSOURCE);
+        mSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_LOCAL_ONLY);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
@@ -1888,7 +1899,9 @@ public class SoftApManagerTest extends WifiBaseTest {
                 .thenReturn(TEST_INTERFACE_NAME);
 
 
-        mSoftApManager.start(TEST_WORKSOURCE);
+        mSoftApManager.start(TEST_WORKSOURCE,
+                softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
+                        ? ROLE_SOFTAP_LOCAL_ONLY : ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mFakeSoftApNotifier).dismissSoftApShutDownTimeoutExpiredNotification();
         order.verify(mWifiNative).setupInterfaceForSoftApMode(
@@ -1998,9 +2011,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            apConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
@@ -2034,9 +2048,10 @@ public class SoftApManagerTest extends WifiBaseTest {
                                                            mWifiApConfigStore,
                                                            apConfig,
                                                            mWifiMetrics,
-                                                           mWifiDiagnostics);
+                                                           mWifiDiagnostics,
+                                                           TEST_MANAGER_ID);
         mLooper.dispatchAll();
-        newSoftApManager.start(TEST_WORKSOURCE);
+        newSoftApManager.start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         mLooper.dispatchAll();
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
         verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,

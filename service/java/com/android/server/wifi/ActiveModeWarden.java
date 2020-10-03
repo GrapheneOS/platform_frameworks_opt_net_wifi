@@ -188,18 +188,12 @@ public class ActiveModeWarden {
         void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
             pw.println("Dump of ActiveModeWarden.Graveyard");
             pw.println("Stopped ClientModeManagers: " + mClientModeManagers.size() + " total");
-            int i = 0;
             for (ConcreteClientModeManager clientModeManager : mClientModeManagers) {
-                pw.println("Dump of stopped ClientModeManager " + i);
                 clientModeManager.dump(fd, pw, args);
-                i++;
             }
             pw.println("Stopped SoftApManagers: " + mSoftApManagers.size() + " total");
-            i = 0;
             for (SoftApManager softApManager : mSoftApManagers) {
-                pw.println("Dump of stopped SoftApManager " + i);
                 softApManager.dump(fd, pw, args);
-                i++;
             }
             pw.println();
         }
@@ -661,8 +655,7 @@ public class ActiveModeWarden {
         SoftApListener listener = new SoftApListener();
         SoftApManager manager = mWifiInjector.makeSoftApManager(listener, callback, softApConfig);
         listener.softApManager = manager;
-        manager.start(requestorWs);
-        manager.setRole(getRoleForSoftApIpMode(softApConfig.getTargetMode()));
+        manager.start(requestorWs, getRoleForSoftApIpMode(softApConfig.getTargetMode()));
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mSoftApManagers.add(manager);
     }
@@ -707,10 +700,9 @@ public class ActiveModeWarden {
         ClientListener listener = new ClientListener();
         ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(listener);
         listener.clientModeManager = manager;
-        manager.start(requestorWs);
-        if (!switchPrimaryOrScanOnlyClientModeManagerRole(manager)) {
-            return false;
-        }
+        ActiveModeManager.ClientRole role = getRoleForPrimaryOrScanOnlyClientModeManager();
+        if (role == null) return false;
+        manager.start(requestorWs, role);
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
         if (mClientModeManagerScorer != null) {
             // TODO (b/160346062): Clear the connected scorer from this mode manager when
@@ -748,8 +740,18 @@ public class ActiveModeWarden {
                 return false;
             }
         }
-        updateBatteryStats();
         return true;
+    }
+
+    private ActiveModeManager.ClientRole getRoleForPrimaryOrScanOnlyClientModeManager() {
+        if (mSettingsStore.isWifiToggleEnabled()) {
+            return ROLE_CLIENT_PRIMARY;
+        } else if (checkScanOnlyModeAvailable()) {
+            return ROLE_CLIENT_SCAN_ONLY;
+        } else {
+            Log.e(TAG, "Something is wrong, no client mode toggles enabled");
+            return null;
+        }
     }
 
     /**
@@ -758,14 +760,9 @@ public class ActiveModeWarden {
      */
     private boolean switchPrimaryOrScanOnlyClientModeManagerRole(
             @NonNull ConcreteClientModeManager modeManager) {
-        if (mSettingsStore.isWifiToggleEnabled()) {
-            modeManager.setRole(ROLE_CLIENT_PRIMARY);
-        } else if (checkScanOnlyModeAvailable()) {
-            modeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
-        } else {
-            Log.e(TAG, "Something is wrong, no client mode toggles enabled");
-            return false;
-        }
+        ActiveModeManager.ClientRole role = getRoleForPrimaryOrScanOnlyClientModeManager();
+        if (role == null) return false;
+        modeManager.setRole(role);
         return true;
     }
 
@@ -780,8 +777,7 @@ public class ActiveModeWarden {
         ClientListener listener = new ClientListener(externalRequestListener);
         ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(listener);
         listener.clientModeManager = manager;
-        manager.start(requestorWs);
-        manager.setRole(role);
+        manager.start(requestorWs, role);
         manager.enableVerboseLogging(mVerboseLoggingEnabled);
         mClientModeManagers.add(manager);
         return true;

@@ -258,10 +258,14 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mEmergencyCallStateChangedBr.onReceive(mContext, intent);
     }
 
+    private void enterClientModeActiveState() throws Exception {
+        enterClientModeActiveState(false);
+    }
+
     /**
      * Helper method to enter the EnabledState and set ClientModeManager in ConnectMode.
      */
-    private void enterClientModeActiveState() throws Exception {
+    private void enterClientModeActiveState(boolean isClientModeSwitch) throws Exception {
         String fromState = mActiveModeWarden.getCurrentMode();
         when(mClientModeManager.getRole()).thenReturn(ROLE_CLIENT_PRIMARY);
         when(mSettingsStore.isWifiToggleEnabled()).thenReturn(true);
@@ -271,8 +275,11 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
+        if (!isClientModeSwitch) {
+            verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
+        } else {
+            verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
+        }
         verify(mScanRequestProxy).enableScanning(true, true);
         if (fromState.equals(DISABLED_STATE_STRING)) {
             verify(mBatteryStats).reportWifiOn();
@@ -281,10 +288,14 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mModeChangeCallback).onActiveModeManagerRoleChanged(mClientModeManager);
     }
 
+    private void enterScanOnlyModeActiveState() throws Exception {
+        enterScanOnlyModeActiveState(false);
+    }
+
     /**
      * Helper method to enter the EnabledState and set ClientModeManager in ScanOnlyMode.
      */
-    private void enterScanOnlyModeActiveState() throws Exception {
+    private void enterScanOnlyModeActiveState(boolean isClientModeSwitch) throws Exception {
         String fromState = mActiveModeWarden.getCurrentMode();
         when(mClientModeManager.getRole()).thenReturn(ROLE_CLIENT_SCAN_ONLY);
         when(mWifiPermissionsUtil.isLocationModeEnabled()).thenReturn(true);
@@ -297,8 +308,11 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+        if (!isClientModeSwitch) {
+            verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_SCAN_ONLY);
+        } else {
+            verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+        }
         verify(mScanRequestProxy).enableScanning(true, false);
         if (fromState.equals(DISABLED_STATE_STRING)) {
             verify(mBatteryStats).reportWifiOn();
@@ -321,8 +335,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         verify(mScanRequestProxy).enableScanning(true, true);
         if (fromState.equals(DISABLED_STATE_STRING)) {
             verify(mBatteryStats).reportWifiOn();
@@ -355,8 +368,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         assertInEnabledState();
         assertThat(softApConfig).isEqualTo(mSoftApConfig);
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
-        verify(mSoftApManager).setRole(softApRole);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, softApRole);
         if (fromState.equals(DISABLED_STATE_STRING)) {
             verify(mBatteryStats).reportWifiOn();
         }
@@ -559,8 +571,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_SCAN_ONLY);
         verify(mScanRequestProxy).enableScanning(true, true);
     }
 
@@ -624,10 +635,20 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enterScanOnlyModeActiveState();
 
         reset(mBatteryStats, mScanRequestProxy);
-        enterClientModeActiveState();
+        enterClientModeActiveState(true);
         mLooper.dispatchAll();
-        verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
-        assertInEnabledState();
+    }
+
+    /**
+     * Test that we can switch from the EnabledState (in ConnectMode) to another mode.
+     */
+    @Test
+    public void testSwitchModeWhenConnectModeActiveState() throws Exception {
+        enterClientModeActiveState();
+
+        reset(mBatteryStats, mScanRequestProxy);
+        enterScanOnlyModeActiveState(true);
+        mLooper.dispatchAll();
     }
 
     /**
@@ -636,13 +657,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testReenterClientModeActiveStateIsNop() throws Exception {
         enterClientModeActiveState();
-        verify(mClientModeManager, times(1)).start(TEST_WORKSOURCE);
+        verify(mClientModeManager, times(1)).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         when(mSettingsStore.isWifiToggleEnabled()).thenReturn(true);
         mActiveModeWarden.wifiToggled(TEST_WORKSOURCE);
         mLooper.dispatchAll();
         // Should not start again.
-        verify(mClientModeManager, times(1)).start(TEST_WORKSOURCE);
+        verify(mClientModeManager, times(1)).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
     }
 
     /**
@@ -877,8 +898,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
         softApListener.value.onStarted();
 
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
-        verify(softapManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
+        verify(softapManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
         verify(mBatteryStats).reportWifiOn();
     }
 
@@ -1066,8 +1087,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.startSoftAp(lohsConfig, TEST_WORKSOURCE);
         mLooper.dispatchAll();
         lohsSoftApListener.value.onStarted();
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
-        verify(lohsSoftapManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
+        verify(lohsSoftapManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_LOCAL_ONLY);
         verify(mBatteryStats).reportWifiOn();
 
         // disable tethering
@@ -1105,8 +1126,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
         mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
         mLooper.dispatchAll();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_SCAN_ONLY);
         assertInEnabledState();
         verify(mClientModeManager, never()).stop();
     }
@@ -1138,8 +1158,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         assertInEnabledState();
 
-        verify(mClientModeManager).start(any());
-        verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mClientModeManager).start(any(), eq(ROLE_CLIENT_PRIMARY));
     }
 
     /**
@@ -1416,7 +1435,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enterSoftApActiveMode();
 
         // verify Soft AP Manager started
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
 
         // Test with WifiDisableInECBM turned on:
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
@@ -1438,7 +1457,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInDisabledState();
 
         // verify no additional calls to enable softap
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
     }
 
     /**
@@ -1447,8 +1466,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testEcmOnFromDisabledMode() throws Exception {
         assertInDisabledState();
-        verify(mSoftApManager, never()).start(TEST_WORKSOURCE);
-        verify(mClientModeManager, never()).start(TEST_WORKSOURCE);
+        verify(mSoftApManager, never()).start(any(), any());
+        verify(mClientModeManager, never()).start(any(), any());
 
         // Test with WifiDisableInECBM turned on:
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
@@ -1514,7 +1533,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         }, 0); // does not cause another shutdown
 
         // client mode only started once so far
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         emergencyCallStateChanged(false);
         mLooper.dispatchAll();
@@ -1525,13 +1544,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInDisabledState();
 
         // client mode still only started once
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         emergencyCallbackModeChanged(false);
         mLooper.dispatchAll();
 
         // now we can re-enable wifi
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
         assertInEnabledState();
     }
 
@@ -1545,7 +1564,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enableWifi();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         // Test with WifiDisableInECBM turned on:
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
@@ -1572,13 +1591,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInDisabledState();
 
         // client mode still only started once
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         emergencyCallbackModeChanged(false);
         mLooper.dispatchAll();
 
         // now we can re-enable wifi
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
         assertInEnabledState();
     }
 
@@ -1593,7 +1612,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enableWifi();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         // Test with WifiDisableInECBM turned on:
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
@@ -1620,13 +1639,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInDisabledState();
 
         // client mode still only started once
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         emergencyCallStateChanged(false);
         mLooper.dispatchAll();
 
         // now we can re-enable wifi
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
         assertInEnabledState();
     }
 
@@ -1643,7 +1662,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         enableWifi();
 
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         assertInEnabledState();
 
         // Test with WifiDisableInECBM turned on:
@@ -1673,7 +1692,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         }, 0);
 
         // didn't enter client mode again
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         assertInDisabledState();
 
         // now we will exit ECM
@@ -1681,7 +1700,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // now we can re-enable wifi
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
         assertInEnabledState();
     }
 
@@ -1705,7 +1724,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.wifiToggled(TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
-        verify(mClientModeManager, never()).start(TEST_WORKSOURCE);
+        verify(mClientModeManager, never()).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         assertInDisabledState();
     }
 
@@ -1736,7 +1755,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
-        verify(mClientModeManager, never()).start(TEST_WORKSOURCE);
+        verify(mClientModeManager, never()).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         assertInDisabledState();
     }
 
@@ -1761,7 +1780,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 mSoftApCapability), TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
-        verify(mSoftApManager, never()).start(TEST_WORKSOURCE);
+        verify(mSoftApManager, never()).start(eq(TEST_WORKSOURCE), any());
         assertInDisabledState();
     }
 
@@ -1800,7 +1819,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mSoftApCapability), TEST_WORKSOURCE);
         mLooper.dispatchAll();
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(eq(TEST_WORKSOURCE), any());
 
         // Turn off SoftAp.
         mActiveModeWarden.stopSoftAp(WifiManager.IFACE_IP_MODE_UNSPECIFIED);
@@ -1870,7 +1889,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void testReturnToEnabledStateAfterAPModeShutdown() throws Exception {
         enableWifi();
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         mActiveModeWarden.startSoftAp(
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
@@ -1886,7 +1905,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
 
         // We should re-enable client mode
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
         assertInEnabledState();
     }
 
@@ -1904,7 +1923,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void testReturnToEnabledStateAfterWifiEnabledShutdown() throws Exception {
         enableWifi();
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         mActiveModeWarden.startSoftAp(
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
@@ -1917,7 +1936,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // wasn't called again
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         assertInEnabledState();
     }
 
@@ -2009,8 +2028,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_SCAN_ONLY);
 
         mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
         mLooper.dispatchAll();
@@ -2024,8 +2042,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS);
         mLooper.dispatchAll();
 
-        verify(mClientModeManager, times(2)).start(any());
-        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_SCAN_ONLY);
+        verify(mClientModeManager, times(2)).start(any(), any());
         assertInEnabledState();
     }
 
@@ -2043,7 +2060,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void testRestartWifiStackInStaConnectEnabledState() throws Exception {
         enableWifi();
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         assertWifiShutDown(() -> {
             mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
@@ -2056,13 +2073,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mModeChangeCallback).onActiveModeManagerRemoved(mClientModeManager);
 
         // still only started once
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS);
         mLooper.dispatchAll();
 
         // started again
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), any());
         assertInEnabledState();
     }
 
@@ -2077,9 +2094,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void testRestartWifiStackDoesNotExitECMMode() throws Exception {
         enableWifi();
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         verify(mClientModeManager).enableVerboseLogging(false);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
 
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
         assertEnteredEcmMode(() -> {
@@ -2097,7 +2113,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
         mLooper.dispatchAll();
 
-        verify(mClientModeManager).start(TEST_WORKSOURCE); // wasn't called again
+        // wasn't called again
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
         assertInEmergencyMode();
         assertInDisabledState();
         verifyNoMoreInteractions(mClientModeManager, mSoftApManager);
@@ -2110,7 +2127,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testRestartWifiStackInTetheredSoftApEnabledState() throws Exception {
         enterSoftApActiveMode();
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
 
         assertWifiShutDown(() -> {
             mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
@@ -2123,13 +2140,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
 
         // still only started once
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
 
         mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS);
         mLooper.dispatchAll();
 
         // started again
-        verify(mSoftApManager, times(2)).start(any());
+        verify(mSoftApManager, times(2)).start(any(), any());
         assertInEnabledState();
     }
 
@@ -2142,8 +2159,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void testRestartWifiStackInTetheredSoftApAndStaConnectEnabledState() throws Exception {
         enableWifi();
         enterSoftApActiveMode();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
 
         assertWifiShutDown(() -> {
             mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
@@ -2158,15 +2175,15 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
 
         // still only started once
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mSoftApManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
+        verify(mSoftApManager).start(TEST_WORKSOURCE, ROLE_SOFTAP_TETHERED);
 
         mLooper.moveTimeForward(TEST_WIFI_RECOVERY_DELAY_MS);
         mLooper.dispatchAll();
 
         // started again
-        verify(mClientModeManager, times(2)).start(any());
-        verify(mSoftApManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), any());
+        verify(mSoftApManager, times(2)).start(any(), any());
         assertInEnabledState();
     }
 
@@ -2189,7 +2206,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInDisabledState();
-        verify(mClientModeManager, never()).start(TEST_WORKSOURCE);
+        verify(mClientModeManager, never()).start(eq(TEST_WORKSOURCE), any());
     }
 
     /**
@@ -2211,8 +2228,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertInEnabledState();
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
-        verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_SCAN_ONLY);
     }
 
     /**
@@ -2223,7 +2239,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void ecmDisablesWifi_exitEcm_restartWifi() throws Exception {
         enterClientModeActiveState();
 
-        verify(mClientModeManager).start(TEST_WORKSOURCE);
+        verify(mClientModeManager).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(true);
         assertEnteredEcmMode(() -> {
@@ -2238,7 +2254,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         assertThat(mActiveModeWarden.isInEmergencyMode()).isFalse();
         // client mode restarted
-        verify(mClientModeManager, times(2)).start(any());
+        verify(mClientModeManager, times(2)).start(any(), any());
         assertInEnabledState();
     }
 
@@ -2331,8 +2347,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                     externalRequestListener, TEST_WORKSOURCE);
         }
         mLooper.dispatchAll();
-        verify(additionalClientModeManager).start(TEST_WORKSOURCE);
-        verify(additionalClientModeManager).setRole(role);
+        verify(additionalClientModeManager).start(TEST_WORKSOURCE, role);
         additionalClientListener.value.onStarted();
         mLooper.dispatchAll();
         // Returns the new local only client mode manager.
@@ -2513,8 +2528,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mClientListener.onStopped();
         mLooper.dispatchAll();
 
-        verify(mClientModeManager, times(2)).start(any());
-        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mClientModeManager, times(2)).start(
+                any(), eq(ROLE_CLIENT_PRIMARY));
 
         mClientListener.onStarted();
         mLooper.dispatchAll();
@@ -2549,8 +2564,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mClientListener.onStopped();
         mLooper.dispatchAll();
 
-        verify(mClientModeManager, times(2)).start(any());
-        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
 
         mClientListener.onStarted();
         mLooper.dispatchAll();
@@ -2583,14 +2597,12 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         // AP stopped, should not process APM toggle.
         mSoftApListener.onStopped();
         mLooper.dispatchAll();
-        verify(mClientModeManager, times(1)).start(TEST_WORKSOURCE);
-        verify(mClientModeManager, times(1)).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mClientModeManager, times(1)).start(TEST_WORKSOURCE, ROLE_CLIENT_PRIMARY);
 
         // STA also stopped, should process APM toggle.
         mClientListener.onStopped();
         mLooper.dispatchAll();
-        verify(mClientModeManager, times(2)).start(any());
-        verify(mClientModeManager, times(2)).setRole(ROLE_CLIENT_PRIMARY);
+        verify(mClientModeManager, times(2)).start(any(), eq(ROLE_CLIENT_PRIMARY));
 
         mClientListener.onStarted();
         mLooper.dispatchAll();

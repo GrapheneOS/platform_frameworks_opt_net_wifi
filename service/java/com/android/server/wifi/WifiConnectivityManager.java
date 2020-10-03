@@ -782,7 +782,7 @@ public class WifiConnectivityManager {
         public void onActiveModeManagerAdded(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
             if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "ModeManager added " + activeModeManager.getInterfaceName());
+                Log.v(TAG, "ModeManager added " + activeModeManager);
             }
             if (activeModeManager.getRole() instanceof ClientInternetConnectivityRole) {
                 mClientModeManagers.add((ClientModeManager) activeModeManager);
@@ -794,7 +794,7 @@ public class WifiConnectivityManager {
         public void onActiveModeManagerRemoved(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
             if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "ModeManager removed " + activeModeManager.getInterfaceName());
+                Log.v(TAG, "ModeManager removed " + activeModeManager);
             }
             // No need to check for role when mode manager is removed.
             mClientModeManagers.remove(activeModeManager);
@@ -805,7 +805,7 @@ public class WifiConnectivityManager {
         public void onActiveModeManagerRoleChanged(@NonNull ActiveModeManager activeModeManager) {
             if (!(activeModeManager instanceof ClientModeManager)) return;
             if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "ModeManager role changed " + activeModeManager.getInterfaceName());
+                Log.v(TAG, "ModeManager role changed " + activeModeManager);
             }
             if (activeModeManager.getRole() instanceof ClientInternetConnectivityRole) {
                 mClientModeManagers.add((ClientModeManager) activeModeManager);
@@ -1804,7 +1804,7 @@ public class WifiConnectivityManager {
      */
     public void handleConnectionStateChanged(ActiveModeManager activeModeManager, int state) {
         if (!mClientModeManagers.contains(activeModeManager)) {
-            Log.w(TAG, "Ignoring call from non primary Mode Manager"
+            Log.w(TAG, "Ignoring call from non primary Mode Manager "
                     + activeModeManager.getRole(), new Throwable());
             return;
         }
@@ -2114,5 +2114,9 @@ public class WifiConnectivityManager {
         pw.println("WifiConnectivityManager - Log End ----");
         mOpenNetworkNotifier.dump(fd, pw, args);
         mBssidBlocklistMonitor.dump(fd, pw, args);
+        pw.println("mClientModeManager IDs: "
+                + mClientModeManagers.stream()
+                        .map(m -> String.valueOf(m.getId()))
+                        .collect(Collectors.joining(", ")));
     }
 }

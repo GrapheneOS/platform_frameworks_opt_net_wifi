@@ -46,6 +46,8 @@ import java.io.PrintWriter;
  */
 public class ScanOnlyModeImpl implements ClientMode {
 
+    private static final long ID = -2;
+
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) { }
 
@@ -227,4 +229,9 @@ public class ScanOnlyModeImpl implements ClientMode {
 
     @Override
     public void sendMessageToClientModeImpl(Message msg) { }
+
+    @Override
+    public long getId() {
+        return ID;
+    }
 }
