@@ -22,7 +22,7 @@ import android.content.IntentFilter;
 import android.net.MacAddress;
 import android.net.util.MacAddressUtils;
 import android.net.wifi.SoftApConfiguration;
-import android.os.Build;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.Handler;
 import android.os.Process;
 import android.text.TextUtils;
@@ -339,7 +339,7 @@ public class WifiApConfigStore {
         SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder(config);
         if (config.getBssid() == null && context.getResources().getBoolean(
                 R.bool.config_wifi_ap_mac_randomization_supported)) {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R && config.getMacRandomizationSetting()
+            if (SdkLevelUtil.isAtLeastS() && config.getMacRandomizationSetting()
                     == SoftApConfiguration.RANDOMIZATION_NONE) {
                 return configBuilder.build();
             }

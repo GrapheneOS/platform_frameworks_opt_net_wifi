@@ -26,6 +26,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -38,6 +39,7 @@ import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.util.SdkLevelUtil;
 import android.os.Build;
 import android.os.Handler;
 import android.os.test.TestLooper;
@@ -538,9 +540,8 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
 
     @Test
     public void randomizeBssid__usesFactoryMacWhenRandomizationOffInConfig() throws Exception {
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-            return;
-        }
+        assumeTrue(SdkLevelUtil.isAtLeastS());
+
         mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, true);
         SoftApConfiguration baseConfig = new SoftApConfiguration.Builder()
                 .setMacRandomizationSetting(SoftApConfiguration.RANDOMIZATION_NONE).build();
