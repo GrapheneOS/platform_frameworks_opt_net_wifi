@@ -5780,8 +5780,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(config.getNetworkSelectionStatus().isNetworkEnabled());
         // lastConnectUid updated
         assertEquals(TEST_CREATOR_UID, config.lastConnectUid);
-        // connect choice was cleared
-        assertNull(config.getNetworkSelectionStatus().getConnectChoice());
+        // connect choice should still be "bogusKey". This should only get cleared after the
+        // connection has actually completed.
+        assertEquals("bogusKey", config.getNetworkSelectionStatus().getConnectChoice());
     }
 
     /**
