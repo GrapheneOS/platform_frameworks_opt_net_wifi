@@ -127,6 +127,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(PowerManager.class)).thenReturn(powerManager);
         when(powerManager.isInteractive()).thenReturn(false);
         when(mPrimaryClientModeManager.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mPrimaryClientModeManager);
 
         mWifiConnectivityManager = createConnectivityManager();
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
@@ -3397,8 +3398,12 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mModeChangeCallbackCaptor.getValue();
         assertNotNull(modeChangeCallback);
         if (enable) {
+            when(mActiveModeWarden.getInternetConnectivityClientModeManagers())
+                    .thenReturn(Arrays.asList(mPrimaryClientModeManager));
             modeChangeCallback.onActiveModeManagerAdded(mPrimaryClientModeManager);
         } else {
+            when(mActiveModeWarden.getInternetConnectivityClientModeManagers())
+                    .thenReturn(Arrays.asList());
             modeChangeCallback.onActiveModeManagerRemoved(mPrimaryClientModeManager);
         }
     }

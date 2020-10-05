@@ -64,6 +64,9 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
 
     @Override
     public String toString() {
-        return "ClientModeManager(Default)";
+        return "DefaultClientModeManager{id=" + getId()
+                + " iface=" + getInterfaceName()
+                + " role=" + getRole()
+                + "}";
     }
 }
