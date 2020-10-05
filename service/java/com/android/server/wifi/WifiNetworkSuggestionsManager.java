@@ -823,11 +823,12 @@ public class WifiNetworkSuggestionsManager {
                 newConfig, uid, packageName);
         if (!result.isSuccess()) {
             Log.e(TAG, "Failed to update config in WifiConfigManager");
-        } else {
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "Updated config in WifiConfigManager");
-            }
+            return;
         }
+        if (mVerboseLoggingEnabled) {
+            Log.v(TAG, "Updated config in WifiConfigManager");
+        }
+        mWifiConfigManager.allowAutojoin(result.getNetworkId(), newConfig.allowAutojoin);
     }
 
     /**
