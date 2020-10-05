@@ -243,18 +243,27 @@ public class ActiveModeWarden {
     }
 
     private void invokeOnAddedCallbacks(@NonNull ActiveModeManager activeModeManager) {
+        if (mVerboseLoggingEnabled) {
+            Log.v(TAG, "ModeManager added " + activeModeManager);
+        }
         for (ModeChangeCallback callback : mCallbacks) {
             callback.onActiveModeManagerAdded(activeModeManager);
         }
     }
 
     private void invokeOnRemovedCallbacks(@NonNull ActiveModeManager activeModeManager) {
+        if (mVerboseLoggingEnabled) {
+            Log.v(TAG, "ModeManager removed " + activeModeManager);
+        }
         for (ModeChangeCallback callback : mCallbacks) {
             callback.onActiveModeManagerRemoved(activeModeManager);
         }
     }
 
     private void invokeOnRoleChangedCallbacks(@NonNull ActiveModeManager activeModeManager) {
+        if (mVerboseLoggingEnabled) {
+            Log.v(TAG, "ModeManager role changed " + activeModeManager);
+        }
         for (ModeChangeCallback callback : mCallbacks) {
             callback.onActiveModeManagerRoleChanged(activeModeManager);
         }
@@ -880,6 +889,10 @@ public class ActiveModeWarden {
             mGraveyard.inter(softApManager);
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_AP_START_FAILURE);
+            // onStartFailure can be called when switching between roles. So, remove
+            // update listeners.
+            Log.e(TAG, "SoftApManager start failed!" + softApManager);
+            invokeOnRemovedCallbacks(softApManager);
         }
     }
 
@@ -930,6 +943,10 @@ public class ActiveModeWarden {
             updateClientScanMode();
             updateBatteryStats();
             mWifiController.sendMessage(WifiController.CMD_STA_START_FAILURE);
+            // onStartFailure can be called when switching between roles. So, remove
+            // update listeners.
+            Log.e(TAG, "ClientModeManager start failed!" + clientModeManager);
+            invokeOnRemovedCallbacks(clientModeManager);
         }
     }
 

@@ -1141,6 +1141,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public String toString() {
-        return "ClientModeManager[" + mClientInterfaceName + "](" + mRole + ":" + mId + ")";
+        return "ConcreteClientModeManager{id=" + getId()
+                + " iface=" + getInterfaceName()
+                + " role=" + getRole()
+                + "}";
     }
 }
