@@ -3716,8 +3716,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mUserApproveCarrierListenerArgumentCaptor.getValue().onUserAllowed(TEST_CARRIER_ID);
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(true);
-        verify(mPasspointManager).enableAutojoin(anyString(), any(), anyBoolean());
+        verify(mPasspointManager).enableAutojoin(anyString(), any(), eq(true));
         verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt(), anyString());
+        verify(mWifiConfigManager).allowAutojoin(anyInt(), eq(true));
         matchedSuggestions = mWifiNetworkSuggestionsManager
                 .getNetworkSuggestionsForScanDetail(createScanDetailForNetwork(eapSimConfig));
 
