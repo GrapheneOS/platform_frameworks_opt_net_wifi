@@ -179,6 +179,6 @@ public class ConnectToNetworkNotificationBuilder {
             requestCode = getNotifierRequestCode(extraData);
         }
         return mFrameworkFacade.getBroadcast(mContext, requestCode, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 }
