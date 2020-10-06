@@ -166,20 +166,22 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
 
     @Override
     public String getSummary(boolean concise) {
-        StringJoiner sj = new StringJoiner(mContext.getString(
+        StringJoiner sj = new StringJoiner(mContext.getResources().getString(
                 R.string.wifitrackerlib_summary_separator));
 
         if (isExpired()) {
             if (mOsuWifiEntry != null) {
                 sj.add(mOsuWifiEntry.getSummary(concise));
             } else {
-                sj.add(mContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired));
+                sj.add(mContext.getResources()
+                        .getString(R.string.wifitrackerlib_wifi_passpoint_expired));
             }
         } else if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
             String disconnectDescription = getDisconnectedStateDescription(mContext, this);
             if (TextUtils.isEmpty(disconnectDescription)) {
                 if (concise) {
-                    sj.add(mContext.getString(R.string.wifitrackerlib_wifi_disconnected));
+                    sj.add(mContext.getResources()
+                            .getString(R.string.wifitrackerlib_wifi_disconnected));
                 } else if (!mForSavedNetworksPage) {
                     if (mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion) {
                         String carrierName = getCarrierNameForSubId(mContext,
@@ -189,10 +191,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                             // Fall-back to the package name in case the app label is missing
                             suggestorLabel = mWifiConfig.creatorName;
                         }
-                        sj.add(mContext.getString(R.string.wifitrackerlib_available_via_app,
-                                carrierName != null ? carrierName : suggestorLabel));
+                        sj.add(mContext.getResources()
+                                .getString(R.string.wifitrackerlib_available_via_app,
+                                        carrierName != null ? carrierName : suggestorLabel));
                     } else {
-                        sj.add(mContext.getString(R.string.wifitrackerlib_wifi_remembered));
+                        sj.add(mContext.getResources()
+                                .getString(R.string.wifitrackerlib_wifi_remembered));
                     }
                 }
             } else {
@@ -244,12 +248,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                     // Fall-back to the package name in case the app label is missing
                     suggestorLabel = suggestionOrSpecifierPackageName;
                 }
-                return mContext.getString(R.string.wifitrackerlib_connected_via_app,
+                return mContext.getResources().getString(R.string.wifitrackerlib_connected_via_app,
                         carrierName != null ? carrierName : suggestorLabel);
             }
 
             if (mIsLowQuality) {
-                return mContext.getString(R.string.wifi_connected_low_quality);
+                return mContext.getResources().getString(R.string.wifi_connected_low_quality);
             }
 
             String networkCapabilitiesinformation =
@@ -481,8 +485,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
 
     @Override
     public String getSecurityString(boolean concise) {
-        return concise ? mContext.getString(R.string.wifitrackerlib_wifi_security_short_eap) :
-                mContext.getString(R.string.wifitrackerlib_wifi_security_eap);
+        return concise ? mContext.getResources()
+                .getString(R.string.wifitrackerlib_wifi_security_short_eap) :
+                mContext.getResources().getString(R.string.wifitrackerlib_wifi_security_eap);
     }
 
     @Override
