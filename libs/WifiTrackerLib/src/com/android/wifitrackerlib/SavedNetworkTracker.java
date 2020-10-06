@@ -154,15 +154,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     @Override
     protected void handleConfiguredNetworksChangedAction(@Nullable Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-
-        final WifiConfiguration config =
-                (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (config != null && !config.isPasspoint()) {
-            updateStandardWifiEntryConfig(
-                    config, (Integer) intent.getExtra(WifiManager.EXTRA_CHANGE_REASON));
-        } else {
-            updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
-        }
+        updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
         updateSavedWifiEntries();
         updateSubscriptionWifiEntries();
@@ -279,40 +271,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         }
         updateStandardWifiEntryScans(mScanResultUpdater.getScanResults(scanAgeWindow));
         updatePasspointWifiEntryScans(mScanResultUpdater.getScanResults(scanAgeWindow));
-    }
-
-    /**
-     * Updates or removes a WifiConfiguration for the corresponding StandardWifiEntry if it exists.
-     *
-     * If an entry does not exist and the changeReason is ADDED or UPDATED, then a new entry will
-     * be created for the new config.
-     *
-     * @param config WifiConfiguration to update
-     * @param changeReason WifiManager.CHANGE_REASON_ADDED, WifiManager.CHANGE_REASON_REMOVED, or
-     *                     WifiManager.CHANGE_REASON_CONFIG_CHANGE
-     */
-    @WorkerThread
-    private void updateStandardWifiEntryConfig(@NonNull WifiConfiguration config,
-            int changeReason) {
-        checkNotNull(config, "Config should not be null!");
-
-        final String key = wifiConfigToStandardWifiEntryKey(config);
-        final StandardWifiEntry entry = mStandardWifiEntryCache.get(key);
-
-        if (entry != null) {
-            if (changeReason == WifiManager.CHANGE_REASON_REMOVED) {
-                entry.updateConfig(null);
-                mStandardWifiEntryCache.remove(key);
-            } else { // CHANGE_REASON_ADDED || CHANGE_REASON_CONFIG_CHANGE
-                entry.updateConfig(config);
-            }
-        } else {
-            if (changeReason != WifiManager.CHANGE_REASON_REMOVED) {
-                mStandardWifiEntryCache.put(key,
-                        new StandardWifiEntry(mContext, mMainHandler, key, config, mWifiManager,
-                                mWifiNetworkScoreCache, true /* forSavedNetworksPage */));
-            }
-        }
     }
 
     private void updateStandardWifiEntryConfigs(@NonNull List<WifiConfiguration> configs) {

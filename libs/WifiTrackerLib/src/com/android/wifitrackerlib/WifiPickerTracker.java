@@ -226,15 +226,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @Override
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-
-        final WifiConfiguration config =
-                (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (config != null && !config.isPasspoint()) {
-            updateWifiConfiguration(
-                    config, (Integer) intent.getExtra(WifiManager.EXTRA_CHANGE_REASON));
-        } else {
-            updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
-        }
+        updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
         final List<ScanResult> scanResults = mScanResultUpdater.getScanResults();
@@ -602,57 +594,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updatePasspointWifiEntryScans(scanResults);
         updateOsuWifiEntryScans(scanResults);
         updateNetworkRequestEntryScans(scanResults);
-    }
-
-    /**
-     * Updates the WifiConfiguration caches for a single saved/ephemeral/suggested network and
-     * updates the corresponding WifiEntry with the new config.
-     *
-     * @param config WifiConfiguration to update
-     * @param changeReason WifiManager.CHANGE_REASON_ADDED, WifiManager.CHANGE_REASON_REMOVED, or
-     *                     WifiManager.CHANGE_REASON_CONFIG_CHANGE
-     */
-    @WorkerThread
-    private void updateWifiConfiguration(@NonNull WifiConfiguration config,
-            int changeReason) {
-        checkNotNull(config, "Config should not be null!");
-
-        if (config.fromWifiNetworkSpecifier) {
-            if (changeReason == WifiManager.CHANGE_REASON_REMOVED) {
-                updateNetworkRequestConfig(null);
-            } else { // CHANGE_REASON_ADDED || CHANGE_REASON_CONFIG_CHANGE
-                updateNetworkRequestConfig(config);
-            }
-            return;
-        }
-
-        final String key = wifiConfigToStandardWifiEntryKey(config);
-        StandardWifiEntry updatedEntry;
-        WifiConfiguration updatedConfig;
-        if (config.fromWifiNetworkSuggestion) {
-            if (changeReason == WifiManager.CHANGE_REASON_REMOVED) {
-                mSuggestedConfigCache.remove(key);
-            } else { // CHANGE_REASON_ADDED || CHANGE_REASON_CONFIG_CHANGE
-                mSuggestedConfigCache.put(key, config);
-            }
-            updatedConfig = mSuggestedConfigCache.get(key);
-            updatedEntry = mSuggestedWifiEntryCache.get(key);
-        } else {
-            if (changeReason == WifiManager.CHANGE_REASON_REMOVED) {
-                mWifiConfigCache.remove(key);
-            } else { // CHANGE_REASON_ADDED || CHANGE_REASON_CONFIG_CHANGE
-                mWifiConfigCache.put(key, config);
-            }
-            updatedConfig = mWifiConfigCache.get(key);
-            updatedEntry = mStandardWifiEntryCache.get(key);
-            mNumSavedNetworks = (int) mWifiConfigCache.values().stream()
-                    .filter(cachedConfig ->
-                            !cachedConfig.isEphemeral() && !cachedConfig.isPasspoint()).count();
-        }
-
-        if (updatedEntry != null) {
-            updatedEntry.updateConfig(updatedConfig);
-        }
     }
 
     /**
