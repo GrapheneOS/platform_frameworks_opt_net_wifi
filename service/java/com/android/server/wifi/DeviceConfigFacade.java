@@ -54,13 +54,13 @@ public class DeviceConfigFacade {
     // Default threshold of CCA level above which to trigger a data stall
     public static final int DEFAULT_DATA_STALL_CCA_LEVEL_THR = CHANNEL_UTILIZATION_SCALE;
     // Default low threshold of L2 sufficient Tx throughput in Kbps
-    public static final int DEFAULT_TX_TPUT_SUFFICIENT_THR_LOW_KBPS = 1000;
+    public static final int DEFAULT_TX_TPUT_SUFFICIENT_THR_LOW_KBPS = 2000;
     // Default high threshold of L2 sufficient Tx throughput in Kbps
-    public static final int DEFAULT_TX_TPUT_SUFFICIENT_THR_HIGH_KBPS = 4000;
+    public static final int DEFAULT_TX_TPUT_SUFFICIENT_THR_HIGH_KBPS = 8000;
     // Default low threshold of L2 sufficient Rx throughput in Kbps
-    public static final int DEFAULT_RX_TPUT_SUFFICIENT_THR_LOW_KBPS = 1000;
+    public static final int DEFAULT_RX_TPUT_SUFFICIENT_THR_LOW_KBPS = 2000;
     // Default high threshold of L2 sufficient Rx throughput in Kbps
-    public static final int DEFAULT_RX_TPUT_SUFFICIENT_THR_HIGH_KBPS = 4000;
+    public static final int DEFAULT_RX_TPUT_SUFFICIENT_THR_HIGH_KBPS = 8000;
     // Numerator part of default threshold of L2 throughput over L3 throughput ratio
     public static final int DEFAULT_TPUT_SUFFICIENT_RATIO_THR_NUM = 2;
     // Denominator part of default threshold of L2 throughput over L3 throughput ratio
@@ -68,7 +68,7 @@ public class DeviceConfigFacade {
     // Default threshold of Tx packet per second
     public static final int DEFAULT_TX_PACKET_PER_SECOND_THR = 2;
     // Default threshold of Rx packet per second
-    public static final int DEFAULT_RX_PACKET_PER_SECOND_THR = 1;
+    public static final int DEFAULT_RX_PACKET_PER_SECOND_THR = 2;
     // Default high threshold values for various connection/disconnection cases
     // All of them are in percent with respect to connection attempts
     static final int DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT = 40;
