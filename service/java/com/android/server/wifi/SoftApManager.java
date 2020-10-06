@@ -329,7 +329,10 @@ public class SoftApManager implements ActiveModeManager {
 
     @Override
     public String toString() {
-        return "SoftApManager[" + mApInterfaceName + "](" + mRole + ":" + mId + ")";
+        return "SoftApManager{id=" + getId()
+                + " iface=" + getInterfaceName()
+                + " role=" + getRole()
+                + "}";
     }
 
     private String getCurrentStateName() {

@@ -692,6 +692,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         // now inject failure through the SoftApManager.Listener
         mSoftApListener.onStartFailure();
         mLooper.dispatchAll();
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
         assertInDisabledState();
         // clear the first call to start SoftApManager
         reset(mSoftApManager, mBatteryStats, mModeChangeCallback);
@@ -709,6 +710,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         // now inject a failure through the ScanOnlyModeManager.Listener
         mClientListener.onStartFailure();
         mLooper.dispatchAll();
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mClientModeManager);
         assertInDisabledState();
         verify(mBatteryStats).reportWifiOff();
     }
@@ -723,6 +725,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         // now inject failure through the SoftApManager.Listener
         mSoftApListener.onStartFailure();
         mLooper.dispatchAll();
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
         verify(mBatteryStats).reportWifiOff();
     }
 
@@ -752,6 +755,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         // now inject failure through the SoftApManager.Listener
         mSoftApListener.onStartFailure();
         mLooper.dispatchAll();
+        verify(mModeChangeCallback).onActiveModeManagerRemoved(mSoftApManager);
         verify(mBatteryStats).reportWifiOff();
         verifyNoMoreInteractions(mWifiNative);
     }
