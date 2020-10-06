@@ -57,11 +57,11 @@
     <string name="wifi_p2p_from_message" msgid="3857436922001981191">"Ուղարկող`"</string>
     <string name="wifi_p2p_to_message" msgid="6664932426704362946">"Ում`"</string>
     <string name="wifi_p2p_enter_pin_message" msgid="5661843905965463456">"Մուտքագրեք պահանջվող PIN-ը:"</string>
-    <string name="wifi_p2p_show_pin_message" msgid="4332876077723766909">"PIN-ը`"</string>
+    <string name="wifi_p2p_show_pin_message" msgid="4332876077723766909">"PIN-ը՝"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="tablet" msgid="3372859876274663802">"Գրասալիկը ժամանակավորապես կանջատվի Wi-Fi-ից, քանի դեռ այն կապակցված է <xliff:g id="DEVICE_NAME">%1$s</xliff:g>-ին"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="tv" msgid="406603193215934517">"Ձեր Android TV սարքը ժամանակավորապես կանջատվի Wi-Fi-ից, քանի դեռ այն միացված է <xliff:g id="DEVICE_NAME">%1$s</xliff:g>-ին"</string>
     <string name="wifi_p2p_frequency_conflict_message" product="default" msgid="2723785832319900478">"Հեռախոսը ժամանակավորապես կանջատվի Wi-Fi-ից, քանի դեռ այն միացված է <xliff:g id="DEVICE_NAME">%1$s</xliff:g>-ին"</string>
-    <string name="dlg_ok" msgid="3250085870426030310">"Հաստատել"</string>
+    <string name="dlg_ok" msgid="3250085870426030310">"Եղավ"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Չհաջողվեց միանալ <xliff:g id="SSID">%1$s</xliff:g> սարքին"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Հպեք՝ գաղտնիության կարգավորումները փոփոխելու և նորից փորձելու համար։"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Փոխե՞լ գաղտնիության կարգավորումը"</string>
