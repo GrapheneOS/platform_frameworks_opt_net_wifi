@@ -120,20 +120,7 @@ class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     @Override
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-        final WifiConfiguration updatedConfig =
-                (WifiConfiguration) intent.getExtra(WifiManager.EXTRA_WIFI_CONFIGURATION);
-        if (updatedConfig != null && configMatches(updatedConfig)) {
-            final int changeReason = intent.getIntExtra(WifiManager.EXTRA_CHANGE_REASON,
-                    -1 /* defaultValue*/);
-            if (changeReason == WifiManager.CHANGE_REASON_ADDED
-                    || changeReason == WifiManager.CHANGE_REASON_CONFIG_CHANGE) {
-                mChosenEntry.updateConfig(updatedConfig);
-            } else if (changeReason == WifiManager.CHANGE_REASON_REMOVED) {
-                mChosenEntry.updateConfig(null);
-            }
-        } else {
-            conditionallyUpdateConfig();
-        }
+        conditionallyUpdateConfig();
     }
 
     @WorkerThread

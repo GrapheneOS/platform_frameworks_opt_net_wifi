@@ -391,11 +391,10 @@ public class WifiPickerTrackerTest {
 
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_WIFI_CONFIGURATION, config)
-                        .putExtra(WifiManager.EXTRA_CHANGE_REASON,
-                                WifiManager.CHANGE_REASON_ADDED));
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
 
         assertThat(entry.isSaved()).isTrue();
     }
@@ -424,11 +423,10 @@ public class WifiPickerTrackerTest {
 
         assertThat(entry.isSaved()).isTrue();
 
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.emptyList());
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_WIFI_CONFIGURATION, config)
-                        .putExtra(WifiManager.EXTRA_CHANGE_REASON,
-                                WifiManager.CHANGE_REASON_REMOVED));
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
 
         assertThat(entry.isSaved()).isFalse();
     }
