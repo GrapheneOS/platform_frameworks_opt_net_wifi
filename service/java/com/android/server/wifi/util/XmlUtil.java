@@ -352,6 +352,7 @@ public class XmlUtil {
         public static final String XML_TAG_RANDOMIZED_MAC_ADDRESS = "RandomizedMacAddress";
         public static final String XML_TAG_MAC_RANDOMIZATION_SETTING = "MacRandomizationSetting";
         public static final String XML_TAG_CARRIER_ID = "CarrierId";
+        public static final String XML_TAG_SUBSCRIPTION_ID = "SubscriptionId";
         public static final String XML_TAG_IS_AUTO_JOIN = "AutoJoinEnabled";
         public static final String XML_TAG_IS_TRUSTED = "Trusted";
         public static final String XML_TAG_IS_OEM_PAID = "OemPaid";
@@ -522,6 +523,7 @@ public class XmlUtil {
             XmlUtil.writeNextValue(out, XML_TAG_CARRIER_ID, configuration.carrierId);
             XmlUtil.writeNextValue(out, XML_TAG_IS_MOST_RECENTLY_CONNECTED,
                     configuration.isMostRecentlyConnected);
+            XmlUtil.writeNextValue(out, XML_TAG_SUBSCRIPTION_ID, configuration.subscriptionId);
         }
 
         /**
@@ -706,6 +708,9 @@ public class XmlUtil {
                             break;
                         case XML_TAG_CARRIER_ID:
                             configuration.carrierId = (int) value;
+                            break;
+                        case XML_TAG_SUBSCRIPTION_ID:
+                            configuration.subscriptionId = (int) value;
                             break;
                         case XML_TAG_IS_AUTO_JOIN:
                             configuration.allowAutojoin = (boolean) value;

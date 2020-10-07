@@ -71,6 +71,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     private static final String TEST_CREATOR_NAME = "CreatorName";
     private static final MacAddress TEST_RANDOMIZED_MAC =
             MacAddress.fromString("da:a1:19:c4:26:fa");
+    private static final int TEST_SUB_ID = 2;
 
     private static final String TEST_DATA_XML_STRING_FORMAT =
             "<?xml version='1.0' encoding='utf-8' standalone='yes' ?>\n"
@@ -119,6 +120,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<int name=\"MacRandomizationSetting\" value=\"3\" />\n"
                     + "<int name=\"CarrierId\" value=\"-1\" />\n"
                     + "<boolean name=\"IsMostRecentlyConnected\" value=\"false\" />\n"
+                    + "<int name=\"SubscriptionId\" value=\"%d\" />\n"
                     + "</WifiConfiguration>\n"
                     + "<NetworkStatus>\n"
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
@@ -538,6 +540,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                 WifiConfigurationTestUtil.createDHCPIpConfigurationWithNoProxy());
         openNetwork.setRandomizedMacAddress(TEST_RANDOMIZED_MAC);
         List<WifiConfiguration> userConfigs = new ArrayList<>();
+        openNetwork.subscriptionId = TEST_SUB_ID;
         userConfigs.add(openNetwork);
 
         // Setup user store XML bytes.
@@ -545,7 +548,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                 openNetwork.getKey().replaceAll("\"", "&quot;"),
                 openNetwork.SSID.replaceAll("\"", "&quot;"),
                 openNetwork.shared, openNetwork.creatorUid, openNetwork.creatorName,
-                openNetwork.getRandomizedMacAddress());
+                openNetwork.getRandomizedMacAddress(), openNetwork.subscriptionId);
         byte[] xmlBytes = xmlString.getBytes(StandardCharsets.UTF_8);
         mUserStore.storeRawDataToWrite(xmlBytes);
 
@@ -573,6 +576,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         openNetwork.setIpConfiguration(
                 WifiConfigurationTestUtil.createDHCPIpConfigurationWithNoProxy());
         openNetwork.setRandomizedMacAddress(TEST_RANDOMIZED_MAC);
+        openNetwork.subscriptionId = TEST_SUB_ID;
         List<WifiConfiguration> userConfigs = new ArrayList<>();
         userConfigs.add(openNetwork);
         networkList.setConfigurations(userConfigs);
@@ -582,7 +586,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                 openNetwork.getKey().replaceAll("\"", "&quot;"),
                 openNetwork.SSID.replaceAll("\"", "&quot;"),
                 openNetwork.shared, openNetwork.creatorUid, openNetwork.creatorName,
-                openNetwork.getRandomizedMacAddress());
+                openNetwork.getRandomizedMacAddress(), openNetwork.subscriptionId);
 
         mWifiConfigStore.write(true);
         // Verify the user store content.

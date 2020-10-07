@@ -110,6 +110,7 @@ public class PasspointProviderTest extends WifiBaseTest {
     private static final int TEST_SIM_CREDENTIAL_TYPE = EAPConstants.EAP_SIM;
     private static final String TEST_IMSI = "1234567890";
     private static final int VALID_CARRIER_ID = 1;
+    private static final int VALID_SUBSCRIPTION_ID = 2;
 
     private enum CredentialType {
         USER,
@@ -1007,7 +1008,9 @@ public class PasspointProviderTest extends WifiBaseTest {
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.SIM, false);
         config.setCarrierId(VALID_CARRIER_ID);
-        when(mWifiCarrierInfoManager.getMatchingImsi(eq(VALID_CARRIER_ID)))
+        when(mWifiCarrierInfoManager.getMatchingSubId(eq(VALID_CARRIER_ID)))
+                .thenReturn(VALID_SUBSCRIPTION_ID);
+        when(mWifiCarrierInfoManager.getMatchingImsiBySubId(eq(VALID_SUBSCRIPTION_ID)))
                 .thenReturn(null);
         mProvider = createProvider(config);
 
