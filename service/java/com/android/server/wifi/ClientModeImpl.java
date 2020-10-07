@@ -4342,6 +4342,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 // already confirmed and selected "Don't ask again".
                 explicitlySelected =
                         mWifiPermissionsUtil.checkNetworkSettingsPermission(config.lastConnectUid);
+                if (explicitlySelected) {
+                    // Note user connect choice here, so that it will be considered in the
+                    // next network selection.
+                    mWifiConfigManager.setUserConnectChoice(config.networkId);
+                }
                 if (mVerboseLoggingEnabled) {
                     log("Network selected by UID " + config.lastConnectUid + " explicitlySelected="
                             + explicitlySelected);
