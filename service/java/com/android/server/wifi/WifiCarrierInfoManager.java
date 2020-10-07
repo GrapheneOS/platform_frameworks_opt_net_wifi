@@ -417,6 +417,9 @@ public class WifiCarrierInfoManager {
      * @return the best match SubscriptionId
      */
     public int getBestMatchSubscriptionId(@NonNull WifiConfiguration config) {
+        if (config.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            return config.subscriptionId;
+        }
         if (config.isPasspoint()) {
             return getMatchingSubId(config.carrierId);
         } else {
@@ -1222,14 +1225,13 @@ public class WifiCarrierInfoManager {
     }
 
     /**
-     * Get the IMSI and carrier ID of the SIM card which is matched with the given carrier ID.
+     * Get the IMSI and carrier ID of the SIM card which is matched with the given subscription ID.
      *
-     * @param carrierId The carrier ID see {@link TelephonyManager.getSimCarrierId}
+     * @param subId The subscription ID see {@link SubscriptionInfo#getSubscriptionId()}
      * @return null if there is no matching SIM card, otherwise the IMSI and carrier ID of the
      * matching SIM card
      */
-    public @Nullable String getMatchingImsi(int carrierId) {
-        int subId = getMatchingSubId(carrierId);
+    public @Nullable String getMatchingImsiBySubId(int subId) {
         if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             if (requiresImsiEncryption(subId) && !isImsiEncryptionInfoAvailable(subId)) {
                 vlogd("required IMSI encryption information is not available.");
@@ -1535,6 +1537,30 @@ public class WifiCarrierInfoManager {
         }
         Log.i(TAG, "Sending IMSI protection notification for " + carrierId);
         sendImsiPrivacyNotification(carrierId);
+    }
+
+    /**
+     * Check if the target subscription has a matched carrier Id.
+     * @param subId Subscription Id for which this carrier network is valid.
+     * @param carrierId Carrier Id for this carrier network.
+     * @return true if matches, false otherwise.
+     */
+    public boolean isSubIdMatchingCarrierId(int subId, int carrierId) {
+        if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            // If Subscription Id is not set, consider it matches. Best matching one will be used to
+            // connect.
+            return true;
+        }
+        List<SubscriptionInfo> subInfoList = mSubscriptionManager.getActiveSubscriptionInfoList();
+        if (subInfoList == null || subInfoList.isEmpty()) {
+            return false;
+        }
+        for (SubscriptionInfo info : subInfoList) {
+            if (info.getSubscriptionId() == subId) {
+                return info.getCarrierId() == carrierId;
+            }
+        }
+        return false;
     }
 
     private PendingIntent getPrivateBroadcast(@NonNull String action,

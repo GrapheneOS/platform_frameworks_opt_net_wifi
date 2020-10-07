@@ -5896,4 +5896,28 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         assertFalse(result.isSuccess());
     }
+
+    /**
+     * Verifies all ephemeral carrier networks are removed
+     */
+    @Test
+    public void testRemoveEphemeralCarrierNetwork() throws Exception {
+        WifiConfiguration savedPskNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        WifiConfiguration ephemeralCarrierNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        ephemeralCarrierNetwork.ephemeral = true;
+        ephemeralCarrierNetwork.subscriptionId = DATA_SUBID;
+        WifiConfiguration ephemeralNonCarrierNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        ephemeralNonCarrierNetwork.ephemeral = true;
+        verifyAddNetworkToWifiConfigManager(savedPskNetwork);
+        verifyAddEphemeralNetworkToWifiConfigManager(ephemeralCarrierNetwork);
+        verifyAddEphemeralNetworkToWifiConfigManager(ephemeralNonCarrierNetwork);
+
+        List<WifiConfiguration> networks = Arrays.asList(savedPskNetwork,
+                ephemeralNonCarrierNetwork);
+        mWifiConfigManager.removeEphemeralCarrierNetworks();
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
+    }
 }
