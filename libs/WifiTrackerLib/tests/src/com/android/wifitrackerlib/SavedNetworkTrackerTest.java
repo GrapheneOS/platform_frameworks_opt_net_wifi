@@ -214,7 +214,7 @@ public class SavedNetworkTrackerTest {
     }
 
     /**
-     * Tests that a CONFIGURED_NETWORKS_CHANGED broadcast with CHANGE_REASON_ADDED
+     * Tests that a CONFIGURED_NETWORKS_CHANGED broadcast after adding a config
      * adds the corresponding WifiEntry from getSavedWifiEntries().
      */
     @Test
@@ -227,12 +227,11 @@ public class SavedNetworkTrackerTest {
 
         assertThat(savedNetworkTracker.getSavedWifiEntries()).isEmpty();
 
+        final WifiConfiguration config = buildWifiConfiguration("ssid");
+        when(mMockWifiManager.getConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_WIFI_CONFIGURATION,
-                                buildWifiConfiguration("ssid"))
-                        .putExtra(WifiManager.EXTRA_CHANGE_REASON,
-                                WifiManager.CHANGE_REASON_ADDED));
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
 
         assertThat(savedNetworkTracker.getSavedWifiEntries().stream()
                 .filter(entry -> entry.mForSavedNetworksPage)
@@ -241,7 +240,7 @@ public class SavedNetworkTrackerTest {
     }
 
     /**
-     * Tests that a CONFIGURED_NETWORKS_CHANGED broadcast with CHANGE_REASON_REMOVED
+     * Tests that a CONFIGURED_NETWORKS_CHANGED broadcast after removing a config
      * removes the corresponding WifiEntry from getSavedWifiEntries().
      */
     @Test
@@ -257,11 +256,10 @@ public class SavedNetworkTrackerTest {
 
         assertThat(savedNetworkTracker.getSavedWifiEntries()).hasSize(1);
 
+        when(mMockWifiManager.getConfiguredNetworks())
+                .thenReturn(Collections.emptyList());
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_WIFI_CONFIGURATION, config)
-                        .putExtra(WifiManager.EXTRA_CHANGE_REASON,
-                                WifiManager.CHANGE_REASON_REMOVED));
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
 
         assertThat(savedNetworkTracker.getSavedWifiEntries()).isEmpty();
     }

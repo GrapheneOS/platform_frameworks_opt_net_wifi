@@ -145,7 +145,7 @@ public class WifiDataStallTest extends WifiBaseTest {
         mNewLlStats.txmpdu_be = 2 * mOldLlStats.txmpdu_be;
         mNewLlStats.retries_be = 10 * mOldLlStats.retries_be;
         mNewLlStats.lostmpdu_be = mOldLlStats.lostmpdu_be;
-        mNewLlStats.rxmpdu_be = mOldLlStats.rxmpdu_be + 100;
+        mNewLlStats.rxmpdu_be = mOldLlStats.rxmpdu_be + 130;
         mNewLlStats.timeStampInMs = mOldLlStats.timeStampInMs
                 + WifiDataStall.MAX_MS_DELTA_FOR_DATA_STALL - 1;
         when(mWifiChannelUtilization.getUtilizationRatio(anyInt())).thenReturn(10);
