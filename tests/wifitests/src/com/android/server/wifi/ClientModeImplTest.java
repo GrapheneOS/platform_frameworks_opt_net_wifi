@@ -3356,6 +3356,29 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that we do not set the user connect choice after a successful connection if the
+     * connection is not made by the user.
+     */
+    @Test
+    public void testNonSettingsConnectionNotSetUserConnectChoice() throws Exception {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
+        connect();
+        verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
+        verify(mWifiConfigManager, never()).setUserConnectChoice(anyInt());
+    }
+
+    /**
+     * Verify that we set the user connect choice after a successful connection.
+     */
+    @Test
+    public void testSettingsConnectionSetUserConnectChoice() throws Exception {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
+        connect();
+        verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
+        verify(mWifiConfigManager).setUserConnectChoice(anyInt());
+    }
+
+    /**
      * Verify that we enable the network when we detect validated internet access.
      */
     @Test

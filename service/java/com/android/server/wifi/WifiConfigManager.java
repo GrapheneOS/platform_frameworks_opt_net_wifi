@@ -3416,10 +3416,6 @@ public class WifiConfigManager {
                 || !updateLastConnectUid(networkId, callingUid)) {
             Log.i(TAG, "connect Allowing uid " + callingUid
                     + " with insufficient permissions to connect=" + networkId);
-        } else if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
-            // Note user connect choice here, so that it will be considered in the
-            // next network selection.
-            setUserConnectChoice(networkId);
         }
     }
 
