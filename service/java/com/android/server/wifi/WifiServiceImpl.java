@@ -3051,7 +3051,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
     @Override
     public boolean is60GHzBandSupported() {
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+        if (!SdkLevelUtil.isAtLeastS()) {
             throw new UnsupportedOperationException();
         }
 
