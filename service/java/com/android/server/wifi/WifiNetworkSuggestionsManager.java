@@ -1291,6 +1291,7 @@ public class WifiNetworkSuggestionsManager {
                 }
             }
         }
+        saveToStore();
     }
 
     /**

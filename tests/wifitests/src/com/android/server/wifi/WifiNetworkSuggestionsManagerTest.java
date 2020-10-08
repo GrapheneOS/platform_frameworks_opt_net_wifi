@@ -3770,6 +3770,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestions) {
             assertTrue(ewns.isAutojoinEnabled);
         }
+        verify(mWifiConfigManager, atLeastOnce()).saveToStore(true);
     }
 
     /**
