@@ -4510,6 +4510,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).resetSimNetworks();
         verify(mSimRequiredNotifier, never()).dismissSimRequiredNotification();
         verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
+        verify(mWifiConfigManager, never()).removeAllEphemeralOrPasspointConfiguredNetworks();
     }
 
     /**
@@ -4532,6 +4533,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mWifiConfigManager, never()).resetSimNetworks();
         verify(mSimRequiredNotifier).dismissSimRequiredNotification();
         verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
+        verify(mWifiConfigManager, never()).removeAllEphemeralOrPasspointConfiguredNetworks();
     }
 
     @Test
@@ -4550,7 +4552,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         verify(mWifiConfigManager).resetSimNetworks();
         verify(mSimRequiredNotifier, never()).dismissSimRequiredNotification();
-        verify(mWifiNetworkSuggestionsManager, never()).resetCarrierPrivilegedApps();
+        verify(mWifiNetworkSuggestionsManager).resetCarrierPrivilegedApps();
+        verify(mWifiConfigManager).removeEphemeralCarrierNetworks();
     }
 
     /**

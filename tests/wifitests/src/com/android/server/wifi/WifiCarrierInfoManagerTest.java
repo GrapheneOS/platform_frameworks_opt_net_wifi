@@ -1089,7 +1089,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
 
-        assertNull(mWifiCarrierInfoManager.getMatchingImsi(DEACTIVE_CARRIER_ID));
+        assertNull(mWifiCarrierInfoManager.getMatchingImsiBySubId(INVALID_SUBID));
     }
 
     /**
@@ -1102,7 +1102,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         doReturn(true).when(spyTu).requiresImsiEncryption(DATA_SUBID);
         doReturn(false).when(spyTu).isImsiEncryptionInfoAvailable(DATA_SUBID);
 
-        assertNull(spyTu.getMatchingImsi(DATA_CARRIER_ID));
+        assertNull(spyTu.getMatchingImsiBySubId(DATA_SUBID));
     }
 
     /**
@@ -1112,7 +1112,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
     @Test
     public void getMatchingImsiCarrierIdWithValidCarrierId() {
         assertEquals(DATA_FULL_IMSI,
-                mWifiCarrierInfoManager.getMatchingImsi(DATA_CARRIER_ID));
+                mWifiCarrierInfoManager.getMatchingImsiBySubId(DATA_SUBID));
     }
 
     /**
@@ -1783,6 +1783,19 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
                 eq(SystemMessage.NOTE_NETWORK_SUGGESTION_AVAILABLE),
                 eq(mNotification));
 
+    }
+
+    @Test
+    public void verifySubIdAndCarrierIdMatching() {
+        assertTrue(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(
+                SubscriptionManager.INVALID_SUBSCRIPTION_ID, DATA_CARRIER_ID));
+        assertFalse(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(
+                DATA_SUBID, TelephonyManager.UNKNOWN_CARRIER_ID));
+
+        assertTrue(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(
+                DATA_SUBID, DATA_CARRIER_ID));
+        assertFalse(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(
+                NON_DATA_SUBID, DATA_CARRIER_ID));
     }
 
     private void validateImsiProtectionNotification(String carrierName) {

@@ -324,7 +324,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_ABSENT == state) {
                                 Log.d(TAG, "resetting networks because SIM was removed");
-                                resetSimAuthNetworks(RESET_SIM_REASON_SIM_REMOVED);
+                                resetCarrierNetworks(RESET_SIM_REASON_SIM_REMOVED);
                             }
                         }
                     },
@@ -338,7 +338,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                     TelephonyManager.SIM_STATE_UNKNOWN);
                             if (TelephonyManager.SIM_STATE_LOADED == state) {
                                 Log.d(TAG, "resetting networks because SIM was loaded");
-                                resetSimAuthNetworks(RESET_SIM_REASON_SIM_INSERTED);
+                                resetCarrierNetworks(RESET_SIM_REASON_SIM_INSERTED);
                             }
                         }
                     },
@@ -353,7 +353,7 @@ public class WifiServiceImpl extends BaseWifiService {
                                     SubscriptionManager.INVALID_SUBSCRIPTION_ID);
                             if (subId != mLastSubId) {
                                 Log.d(TAG, "resetting networks as default data SIM is changed");
-                                resetSimAuthNetworks(RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
+                                resetCarrierNetworks(RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED);
                                 mLastSubId = subId;
                             }
                         }
@@ -385,20 +385,23 @@ public class WifiServiceImpl extends BaseWifiService {
         });
     }
 
-    private void resetSimAuthNetworks(@ClientModeImpl.ResetSimReason int resetReason) {
+    private void resetCarrierNetworks(@ClientModeImpl.ResetSimReason int resetReason) {
         mWifiThreadRunner.post(() -> {
-            Log.d(TAG, "resetting EAP-SIM/AKA/AKA' networks since SIM was changed");
+            Log.d(TAG, "resetting carrier networks since SIM was changed");
             if (resetReason == RESET_SIM_REASON_SIM_INSERTED) {
                 // whenever a SIM is inserted clear all SIM related notifications
                 mSimRequiredNotifier.dismissSimRequiredNotification();
             } else {
                 mWifiConfigManager.resetSimNetworks();
             }
-            if (resetReason != RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED) {
-                mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
-            }
+
             // do additional handling if we are current connected to a sim auth network
             mActiveModeWarden.getPrimaryClientModeManager().resetSimAuthNetworks(resetReason);
+            mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
+            if (resetReason != RESET_SIM_REASON_SIM_INSERTED) {
+                // Remove all ephemeral carrier networks keep subscriptionId update with SIM changes
+                mWifiConfigManager.removeEphemeralCarrierNetworks();
+            }
         });
     }
 
@@ -3051,7 +3054,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
     @Override
     public boolean is60GHzBandSupported() {
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+        if (!SdkLevelUtil.isAtLeastS()) {
             throw new UnsupportedOperationException();
         }
 

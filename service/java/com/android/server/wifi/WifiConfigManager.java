@@ -44,6 +44,7 @@ import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.Settings;
+import android.telephony.SubscriptionManager;
 import android.text.TextUtils;
 import android.util.ArraySet;
 import android.util.LocalLog;
@@ -1116,6 +1117,7 @@ public class WifiConfigManager {
         internalConfig.macRandomizationSetting = externalConfig.macRandomizationSetting;
         internalConfig.carrierId = externalConfig.carrierId;
         internalConfig.isHomeProviderNetwork = externalConfig.isHomeProviderNetwork;
+        internalConfig.subscriptionId = externalConfig.subscriptionId;
     }
 
     /**
@@ -2790,6 +2792,23 @@ public class WifiConfigManager {
     }
 
     /**
+     * Clear all ephemeral carrier networks, make the subscriptionId update during the next network
+     * selection.
+     */
+    public void removeEphemeralCarrierNetworks() {
+        if (mVerboseLoggingEnabled) localLog("removeEphemeralCarrierNetwork");
+        WifiConfiguration[] copiedConfigs =
+                mConfiguredNetworks.valuesForAllUsers().toArray(new WifiConfiguration[0]);
+        for (WifiConfiguration config : copiedConfigs) {
+            if (!config.ephemeral
+                    || config.subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                continue;
+            }
+            removeNetwork(config.networkId, config.creatorUid, config.creatorName);
+        }
+    }
+
+    /**
      * Helper method to perform the following operations during user switch/unlock:
      * - Remove private networks of the old user.
      * - Load from the new user store file.
@@ -3416,10 +3435,6 @@ public class WifiConfigManager {
                 || !updateLastConnectUid(networkId, callingUid)) {
             Log.i(TAG, "connect Allowing uid " + callingUid
                     + " with insufficient permissions to connect=" + networkId);
-        } else if (mWifiPermissionsUtil.checkNetworkSettingsPermission(callingUid)) {
-            // Note user connect choice here, so that it will be considered in the
-            // next network selection.
-            setUserConnectChoice(networkId);
         }
     }
 

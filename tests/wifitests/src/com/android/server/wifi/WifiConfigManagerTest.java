@@ -5775,8 +5775,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(config.getNetworkSelectionStatus().isNetworkEnabled());
         // lastConnectUid updated
         assertEquals(TEST_CREATOR_UID, config.lastConnectUid);
-        // connect choice was cleared
-        assertNull(config.getNetworkSelectionStatus().getConnectChoice());
+        // connect choice should still be "bogusKey". This should only get cleared after the
+        // connection has actually completed.
+        assertEquals("bogusKey", config.getNetworkSelectionStatus().getConnectChoice());
     }
 
     /**
@@ -5894,5 +5895,29 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 mWifiConfigManager.updateBeforeSaveNetwork(null, TEST_OTHER_USER_UID);
 
         assertFalse(result.isSuccess());
+    }
+
+    /**
+     * Verifies all ephemeral carrier networks are removed
+     */
+    @Test
+    public void testRemoveEphemeralCarrierNetwork() throws Exception {
+        WifiConfiguration savedPskNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        WifiConfiguration ephemeralCarrierNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        ephemeralCarrierNetwork.ephemeral = true;
+        ephemeralCarrierNetwork.subscriptionId = DATA_SUBID;
+        WifiConfiguration ephemeralNonCarrierNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        ephemeralNonCarrierNetwork.ephemeral = true;
+        verifyAddNetworkToWifiConfigManager(savedPskNetwork);
+        verifyAddEphemeralNetworkToWifiConfigManager(ephemeralCarrierNetwork);
+        verifyAddEphemeralNetworkToWifiConfigManager(ephemeralNonCarrierNetwork);
+
+        List<WifiConfiguration> networks = Arrays.asList(savedPskNetwork,
+                ephemeralNonCarrierNetwork);
+        mWifiConfigManager.removeEphemeralCarrierNetworks();
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                networks, retrievedNetworks);
     }
 }

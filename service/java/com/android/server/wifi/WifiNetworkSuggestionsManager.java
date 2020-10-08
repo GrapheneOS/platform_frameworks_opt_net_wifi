@@ -51,6 +51,7 @@ import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -1013,6 +1014,15 @@ public class WifiNetworkSuggestionsManager {
                     Log.e(TAG, "OEM paid suggestions are only allowed from Android S.");
                     return false;
                 }
+                if (wns.wifiConfiguration.subscriptionId
+                        != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                    Log.e(TAG, "Setting Subscription Id is only allowed from Android S.");
+                    return false;
+                }
+                if (wns.priorityGroup != 0) {
+                    Log.e(TAG, "Setting Priority group is only allowed from Android S.");
+                    return false;
+                }
             }
         }
         return true;
@@ -1020,30 +1030,52 @@ public class WifiNetworkSuggestionsManager {
 
     private boolean validateCarrierNetworkSuggestions(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName) {
-        if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)
-                || mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(packageName)
-                != TelephonyManager.UNKNOWN_CARRIER_ID) {
-            return true;
-        }
-        // If an app doesn't have carrier privileges or carrier provisioning permission, suggests
-        // SIM-based network and sets CarrierId are illegal.
+        boolean isCrossCarrierProvisioner = mWifiPermissionsUtil
+                .checkNetworkCarrierProvisioningPermission(uid);
+        int provisionerCarrierId = mWifiCarrierInfoManager
+                .getCarrierIdForPackageWithCarrierPrivileges(packageName);
+
         for (WifiNetworkSuggestion suggestion : networkSuggestions) {
             WifiConfiguration wifiConfiguration = suggestion.wifiConfiguration;
             PasspointConfiguration passpointConfiguration = suggestion.passpointConfiguration;
-            if (passpointConfiguration == null) {
-                if (wifiConfiguration.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
-                    return false;
-                }
-                if (wifiConfiguration.enterpriseConfig != null
-                        && wifiConfiguration.enterpriseConfig.isAuthenticationSimBased()) {
-                    return false;
+            if (!isCrossCarrierProvisioner && provisionerCarrierId
+                    ==  TelephonyManager.UNKNOWN_CARRIER_ID) {
+                // If an app doesn't have carrier privileges or carrier provisioning permission,
+                // suggests SIM-based network, sets CarrierId and sets SubscriptionId are illegal.
+                if (passpointConfiguration == null) {
+                    if (wifiConfiguration.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+                        return false;
+                    }
+                    if (wifiConfiguration.subscriptionId
+                            != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                        return false;
+                    }
+                    if (wifiConfiguration.enterpriseConfig != null
+                            && wifiConfiguration.enterpriseConfig.isAuthenticationSimBased()) {
+                        return false;
+                    }
+                } else {
+                    if (passpointConfiguration.getCarrierId()
+                            != TelephonyManager.UNKNOWN_CARRIER_ID) {
+                        return false;
+                    }
+                    if (passpointConfiguration.getSubscriptionId()
+                            != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                        return false;
+                    }
+                    if (passpointConfiguration.getCredential() != null
+                            && passpointConfiguration.getCredential().getSimCredential() != null) {
+                        return false;
+                    }
                 }
             } else {
-                if (passpointConfiguration.getCarrierId() != TelephonyManager.UNKNOWN_CARRIER_ID) {
-                    return false;
-                }
-                if (passpointConfiguration.getCredential() != null
-                        && passpointConfiguration.getCredential().getSimCredential() != null) {
+                int carrierId = isCrossCarrierProvisioner ? wifiConfiguration.carrierId
+                        : provisionerCarrierId;
+                int subId = passpointConfiguration == null ? wifiConfiguration.subscriptionId
+                        : passpointConfiguration.getSubscriptionId();
+                if (!mWifiCarrierInfoManager
+                        .isSubIdMatchingCarrierId(subId, carrierId)) {
+                    Log.e(TAG, "Subscription ID doesn't match the carrier.");
                     return false;
                 }
             }
