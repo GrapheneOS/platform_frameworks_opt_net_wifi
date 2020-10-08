@@ -1244,6 +1244,8 @@ public class PasspointManagerTest extends WifiBaseTest {
         WifiConfiguration config = mManager.getWifiConfigsForPasspointProfiles(
                 Collections.singletonList(provider.getConfig().getUniqueId())).get(0);
         assertEquals(config.getRandomizedMacAddress(), randomizedMacAddress);
+        verify(mMacAddressUtil).calculatePersistentMac(
+                eq(provider.getConfig().getUniqueId()), any());
     }
 
     /**
