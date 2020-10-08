@@ -30,30 +30,26 @@ import java.io.PrintWriter;
 public interface ActiveModeManager {
     /**
      * Listener for ActiveModeManager state changes.
+     * @param <T> type of ActiveModeManager that is being listened
      */
-    interface Listener {
+    interface Listener<T extends ActiveModeManager> {
         /**
          * Invoked when mode manager completes start.
          */
-        void onStarted();
+        void onStarted(@NonNull T activeModeManager);
         /**
          * Invoked when mode manager completes stop.
          */
-        void onStopped();
+        void onStopped(@NonNull T activeModeManager);
         /**
          * Invoked when mode manager completes a role switch.
          */
-        void onRoleChanged();
+        void onRoleChanged(@NonNull T activeModeManager);
         /**
          * Invoked when mode manager encountered a failure on start or on mode switch.
          */
-        void onStartFailure();
+        void onStartFailure(@NonNull T activeModeManager);
     }
-
-    /**
-     * Method used to start the Manager for a given Wifi operational mode.
-     */
-    void start(@NonNull WorkSource requestorWs, Role role);
 
     /**
      * Method used to stop the Manager for a given Wifi operational mode.

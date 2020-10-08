@@ -82,8 +82,7 @@ public class SoftApManager implements ActiveModeManager {
     private final FrameworkFacade mFrameworkFacade;
     private final WifiNative mWifiNative;
 
-    @VisibleForTesting
-    SoftApNotifier mSoftApNotifier;
+    private final SoftApNotifier mSoftApNotifier;
 
     @VisibleForTesting
     static final long SOFT_AP_PENDING_DISCONNECTION_CHECK_DELAY_MS = 1000;
@@ -92,7 +91,7 @@ public class SoftApManager implements ActiveModeManager {
 
     private final SoftApStateMachine mStateMachine;
 
-    private final Listener mModeListener;
+    private final Listener<SoftApManager> mModeListener;
     private final WifiManager.SoftApCallback mSoftApCallback;
 
     private String mApInterfaceName;
@@ -105,6 +104,8 @@ public class SoftApManager implements ActiveModeManager {
     private final long mId;
 
     private boolean mIsUnsetBssid;
+
+    private boolean mVerboseLoggingEnabled = false;
 
     @NonNull
     private SoftApModeConfiguration mApConfig;
@@ -178,21 +179,26 @@ public class SoftApManager implements ActiveModeManager {
         }
     };
 
-    public SoftApManager(@NonNull WifiContext context,
-                         @NonNull Looper looper,
-                         @NonNull FrameworkFacade framework,
-                         @NonNull WifiNative wifiNative,
-                         String countryCode,
-                         @NonNull Listener listener,
-                         @NonNull WifiManager.SoftApCallback callback,
-                         @NonNull WifiApConfigStore wifiApConfigStore,
-                         @NonNull SoftApModeConfiguration apConfig,
-                         @NonNull WifiMetrics wifiMetrics,
-                         @NonNull WifiDiagnostics wifiDiagnostics,
-                         long id) {
+    public SoftApManager(
+            @NonNull WifiContext context,
+            @NonNull Looper looper,
+            @NonNull FrameworkFacade framework,
+            @NonNull WifiNative wifiNative,
+            String countryCode,
+            @NonNull Listener<SoftApManager> listener,
+            @NonNull WifiManager.SoftApCallback callback,
+            @NonNull WifiApConfigStore wifiApConfigStore,
+            @NonNull SoftApModeConfiguration apConfig,
+            @NonNull WifiMetrics wifiMetrics,
+            @NonNull WifiDiagnostics wifiDiagnostics,
+            @NonNull SoftApNotifier softApNotifier,
+            long id,
+            @NonNull WorkSource requestorWs,
+            @NonNull SoftApRole role,
+            boolean verboseLoggingEnabled) {
         mContext = context;
         mFrameworkFacade = framework;
-        mSoftApNotifier = new SoftApNotifier(mContext, mFrameworkFacade);
+        mSoftApNotifier = softApNotifier;
         mWifiNative = wifiNative;
         mCountryCode = countryCode;
         mModeListener = listener;
@@ -222,6 +228,9 @@ public class SoftApManager implements ActiveModeManager {
         mDefaultShutDownTimeoutMills = mContext.getResources().getInteger(
                 R.integer.config_wifiFrameworkSoftApShutDownTimeoutMilliseconds);
         mId = id;
+        mRole = role;
+        enableVerboseLogging(verboseLoggingEnabled);
+        mStateMachine.sendMessage(SoftApStateMachine.CMD_START, requestorWs);
     }
 
     @Override
@@ -231,16 +240,6 @@ public class SoftApManager implements ActiveModeManager {
 
     private String getTag() {
         return TAG + "[" + (mApInterfaceName == null ? "unknown" : mApInterfaceName) + "]";
-    }
-
-    /**
-     * Start soft AP, as configured in the constructor.
-     */
-    @Override
-    public void start(@NonNull WorkSource requestorWs, @NonNull Role role) {
-        Preconditions.checkArgument(role instanceof SoftApRole);
-        mRole = (SoftApRole) role;
-        mStateMachine.sendMessage(SoftApStateMachine.CMD_START, requestorWs);
     }
 
     /**
@@ -325,7 +324,9 @@ public class SoftApManager implements ActiveModeManager {
     }
 
     @Override
-    public void enableVerboseLogging(boolean verbose) { /* unused */ }
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
+    }
 
     @Override
     public String toString() {
@@ -653,7 +654,7 @@ public class SoftApManager implements ActiveModeManager {
                                     WifiManager.SAP_START_FAILURE_GENERAL);
                             mWifiMetrics.incrementSoftApStartResult(
                                     false, WifiManager.SAP_START_FAILURE_GENERAL);
-                            mModeListener.onStartFailure();
+                            mModeListener.onStartFailure(SoftApManager.this);
                             break;
                         }
                         mSoftApNotifier.dismissSoftApShutDownTimeoutExpiredNotification();
@@ -673,7 +674,7 @@ public class SoftApManager implements ActiveModeManager {
                                     failureReason);
                             stopSoftAp();
                             mWifiMetrics.incrementSoftApStartResult(false, failureReason);
-                            mModeListener.onStartFailure();
+                            mModeListener.onStartFailure(SoftApManager.this);
                             break;
                         }
                         transitionTo(mStartedState);
@@ -863,7 +864,7 @@ public class SoftApManager implements ActiveModeManager {
                     Log.d(getTag(), "SoftAp is ready for use");
                     updateApState(WifiManager.WIFI_AP_STATE_ENABLED,
                             WifiManager.WIFI_AP_STATE_ENABLING, 0);
-                    mModeListener.onStarted();
+                    mModeListener.onStarted(SoftApManager.this);
                     mWifiMetrics.incrementSoftApStartResult(true, 0);
                     if (mSoftApCallback != null) {
                         mSoftApCallback.onConnectedClientsChanged(mConnectedClients);
@@ -930,7 +931,7 @@ public class SoftApManager implements ActiveModeManager {
                 mIfaceIsDestroyed = false;
                 mRole = null;
                 mStateMachine.quitNow();
-                mModeListener.onStopped();
+                mModeListener.onStopped(SoftApManager.this);
                 updateSoftApInfo(new SoftApInfo());
             }
 

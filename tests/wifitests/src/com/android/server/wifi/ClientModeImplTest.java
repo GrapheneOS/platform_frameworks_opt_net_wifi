@@ -582,7 +582,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 1, mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
                 mWifiScoreReport, mWifiP2pConnection, mWifiGlobals,
-                WIFI_IFACE_NAME, mClientModeManager);
+                WIFI_IFACE_NAME, mClientModeManager, false);
 
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
