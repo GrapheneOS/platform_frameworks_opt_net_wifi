@@ -1250,6 +1250,7 @@ public class WifiNetworkSuggestionsManager {
                 }
             }
         }
+        saveToStore();
     }
 
     /**
