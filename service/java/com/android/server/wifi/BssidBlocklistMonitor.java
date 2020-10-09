@@ -106,7 +106,6 @@ public class BssidBlocklistMonitor {
     private final WifiConnectivityHelper mConnectivityHelper;
     private final Clock mClock;
     private final LocalLog mLocalLog;
-    private final Calendar mCalendar;
     private final WifiScoreCard mWifiScoreCard;
     private final ScoringParams mScoringParams;
     private final Map<Integer, BssidDisableReason> mBssidDisableReasons =
@@ -171,7 +170,6 @@ public class BssidBlocklistMonitor {
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mClock = clock;
         mLocalLog = localLog;
-        mCalendar = Calendar.getInstance();
         mWifiScoreCard = wifiScoreCard;
         mScoringParams = scoringParams;
     }
@@ -688,10 +686,11 @@ public class BssidBlocklistMonitor {
                 return;
             }
             StringBuilder sb = new StringBuilder();
-            mCalendar.setTimeInMillis(mClock.getWallClockMillis());
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(mClock.getWallClockMillis());
             sb.append(", logTimeMs="
-                    + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,
-                    mCalendar, mCalendar, mCalendar, mCalendar));
+                    + String.format("%tm-%td %tH:%tM:%tS.%tL", calendar, calendar,
+                    calendar, calendar, calendar, calendar));
             sb.append(", trigger=" + trigger);
             mLogHistory.add(bssidStatus.toString() + sb.toString());
             if (mLogHistory.size() > mBufferSize) {
@@ -765,14 +764,15 @@ public class BssidBlocklistMonitor {
             if (isInBlocklist) {
                 sb.append(", blockReason=" + getFailureReasonString(blockReason));
                 sb.append(", lastRssi=" + lastRssi);
-                mCalendar.setTimeInMillis(blocklistStartTimeMs);
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(blocklistStartTimeMs);
                 sb.append(", blocklistStartTimeMs="
-                        + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,
-                        mCalendar, mCalendar, mCalendar, mCalendar));
-                mCalendar.setTimeInMillis(blocklistEndTimeMs);
+                        + String.format("%tm-%td %tH:%tM:%tS.%tL", calendar, calendar,
+                        calendar, calendar, calendar, calendar));
+                calendar.setTimeInMillis(blocklistEndTimeMs);
                 sb.append(", blocklistEndTimeMs="
-                        + String.format("%tm-%td %tH:%tM:%tS.%tL", mCalendar, mCalendar,
-                        mCalendar, mCalendar, mCalendar, mCalendar));
+                        + String.format("%tm-%td %tH:%tM:%tS.%tL", calendar, calendar,
+                        calendar, calendar, calendar, calendar));
             }
             return sb.toString();
         }
