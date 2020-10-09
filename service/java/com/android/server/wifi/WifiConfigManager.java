@@ -524,7 +524,8 @@ public class WifiConfigManager {
      * @param config the WifiConfiguration to obtain MAC address for.
      * @return persistent MAC address for this WifiConfiguration
      */
-    private MacAddress getPersistentMacAddress(WifiConfiguration config) {
+    @VisibleForTesting
+    public MacAddress getPersistentMacAddress(WifiConfiguration config) {
         // mRandomizedMacAddressMapping had been the location to save randomized MAC addresses.
         String persistentMacString = mRandomizedMacAddressMapping.get(
                 config.getKey());
@@ -538,10 +539,10 @@ public class WifiConfigManager {
                 mRandomizedMacAddressMapping.remove(config.getKey());
             }
         }
-        MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getKey(),
+        MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getMacRandomKey(),
                 mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
         if (result == null) {
-            result = mMacAddressUtil.calculatePersistentMac(config.getKey(),
+            result = mMacAddressUtil.calculatePersistentMac(config.getMacRandomKey(),
                     mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
         }
         if (result == null) {
@@ -1311,7 +1312,8 @@ public class WifiConfigManager {
         if (WifiConfigurationUtil.hasMacRandomizationSettingsChanged(existingInternalConfig,
                 newInternalConfig) && !mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
                 && !mWifiPermissionsUtil.checkNetworkSetupWizardPermission(uid)
-                && !(newInternalConfig.isPasspoint() && uid == newInternalConfig.creatorUid)) {
+                && !(newInternalConfig.isPasspoint() && uid == newInternalConfig.creatorUid)
+                && !config.fromWifiNetworkSuggestion) {
             Log.e(TAG, "UID " + uid + " does not have permission to modify MAC randomization "
                     + "Settings " + config.getKey() + ". Must have "
                     + "NETWORK_SETTINGS or NETWORK_SETUP_WIZARD or be the creator adding or "

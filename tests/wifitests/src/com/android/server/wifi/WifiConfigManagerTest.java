@@ -798,6 +798,36 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 networks, retrievedNetworks);
     }
 
+    /**
+     * Verify that the mac randomization setting could be modified when added by wifi suggestions.
+     */
+    @Test
+    public void testCanUpdateMacRandomizationSettingForSuggestions() throws Exception {
+        ArgumentCaptor<WifiConfiguration> wifiConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
+        when(mWifiPermissionsUtil.checkNetworkSetupWizardPermission(anyInt())).thenReturn(false);
+        when(mWifiPermissionsUtil.isDeviceOwner(anyInt(), any())).thenReturn(false);
+
+        // Create 2 open networks. One is from suggestion and the other is not.
+        WifiConfiguration openNetworkSuggestion = WifiConfigurationTestUtil.createOpenNetwork();
+        openNetworkSuggestion.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_ENHANCED;
+        openNetworkSuggestion.fromWifiNetworkSuggestion = true;
+
+        WifiConfiguration openNetworkSaved = WifiConfigurationTestUtil.createOpenNetwork();
+        openNetworkSaved.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_ENHANCED;
+        openNetworkSaved.fromWifiNetworkSuggestion = false;
+
+        // Add both networks into WifiConfigManager, and verify only is network from suggestions is
+        // successfully added.
+        addNetworkToWifiConfigManager(openNetworkSuggestion);
+        addNetworkToWifiConfigManager(openNetworkSaved);
+
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        assertEquals(1, retrievedNetworks.size());
+        assertEquals(openNetworkSuggestion.getKey(), retrievedNetworks.get(0).getKey());
+    }
 
     /**
      * Verifies the addition of a single ephemeral network using
@@ -5919,5 +5949,15 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 networks, retrievedNetworks);
+    }
+
+    /**
+     * Check persist random Mac Address is generated from stable Mac Random key.
+     */
+    @Test
+    public void testGetPersistRandomMacAddress() {
+        WifiConfiguration network = WifiConfigurationTestUtil.createPskNetwork();
+        mWifiConfigManager.getPersistentMacAddress(network);
+        verify(mMacAddressUtil).calculatePersistentMac(eq(network.getMacRandomKey()), any());
     }
 }

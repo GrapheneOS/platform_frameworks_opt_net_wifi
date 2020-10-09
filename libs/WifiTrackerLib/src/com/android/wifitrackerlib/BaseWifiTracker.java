@@ -286,11 +286,6 @@ public class BaseWifiTracker implements LifecycleObserver {
                 NetworkKey.TYPE_WIFI,
                 mWifiNetworkScoreCache,
                 NetworkScoreManager.SCORE_FILTER_SCAN_RESULTS);
-        if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
-            mWorkerHandler.post(mScanner::start);
-        } else {
-            mWorkerHandler.post(mScanner::stop);
-        }
         mWorkerHandler.post(this::handleOnStart);
     }
 
@@ -413,19 +408,24 @@ public class BaseWifiTracker implements LifecycleObserver {
         private static final int SCAN_RETRY_TIMES = 3;
 
         private int mRetry = 0;
+        private boolean mIsActive;
 
         private Scanner(Looper looper) {
             super(looper);
         }
 
         private void start() {
-            if (isVerboseLoggingEnabled()) {
-                Log.v(mTag, "Scanner start");
+            if (!mIsActive) {
+                mIsActive = true;
+                if (isVerboseLoggingEnabled()) {
+                    Log.v(mTag, "Scanner start");
+                }
+                postScan();
             }
-            postScan();
         }
 
         private void stop() {
+            mIsActive = false;
             if (isVerboseLoggingEnabled()) {
                 Log.v(mTag, "Scanner stop");
             }
