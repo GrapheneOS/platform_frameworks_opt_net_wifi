@@ -156,8 +156,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class WifiServiceImpl extends BaseWifiService {
     private static final String TAG = "WifiService";
-    private static final int APP_INFO_FLAGS_SYSTEM_APP =
-            ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
     private static final boolean VDBG = false;
 
     /** Max wait time for posting blocking runnables */
@@ -638,23 +636,6 @@ public class WifiServiceImpl extends BaseWifiService {
                 || checkNetworkSetupWizardPermission(pid, uid);
     }
 
-    /** Helper method to check if the entity initiating the binder call is a system app. */
-    private boolean isSystem(String packageName, int uid) {
-        long ident = Binder.clearCallingIdentity();
-        try {
-            ApplicationInfo info = mContext.getPackageManager().getApplicationInfoAsUser(
-                    packageName, 0, UserHandle.getUserHandleForUid(uid));
-            return (info.flags & APP_INFO_FLAGS_SYSTEM_APP) != 0;
-        } catch (PackageManager.NameNotFoundException e) {
-            // In case of exception, assume unknown app (more strict checking)
-            // Note: This case will never happen since checkPackage is
-            // called to verify validity before checking App's version.
-        } finally {
-            Binder.restoreCallingIdentity(ident);
-        }
-        return false;
-    }
-
     /** Helper method to check if the entity initiating the binder call is a DO/PO app. */
     private boolean isDeviceOrProfileOwner(int uid, String packageName) {
         return mWifiPermissionsUtil.isDeviceOwner(uid, packageName)
@@ -756,7 +737,7 @@ public class WifiServiceImpl extends BaseWifiService {
         return mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.Q, uid)
                 || isPrivileged(pid, uid)
                 || isDeviceOrProfileOwner(uid, packageName)
-                || isSystem(packageName, uid)
+                || mWifiPermissionsUtil.isSystem(packageName, uid)
                 // TODO(b/140540984): Remove this bypass.
                 || mWifiPermissionsUtil.checkSystemAlertWindowPermission(uid, packageName);
     }
@@ -770,7 +751,7 @@ public class WifiServiceImpl extends BaseWifiService {
         return mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.R, uid)
                 || isPrivileged(pid, uid)
                 || isDeviceOrProfileOwner(uid, packageName)
-                || isSystem(packageName, uid);
+                || mWifiPermissionsUtil.isSystem(packageName, uid);
     }
 
     /**
@@ -788,7 +769,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!isPrivileged && !isDeviceOrProfileOwner(Binder.getCallingUid(), packageName)
                 && !mWifiPermissionsUtil.isTargetSdkLessThan(packageName, Build.VERSION_CODES.Q,
                   Binder.getCallingUid())
-                && !isSystem(packageName, Binder.getCallingUid())) {
+                && !mWifiPermissionsUtil.isSystem(packageName, Binder.getCallingUid())) {
             mLog.info("setWifiEnabled not allowed for uid=%")
                     .c(Binder.getCallingUid()).flush();
             return false;

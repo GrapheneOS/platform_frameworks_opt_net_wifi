@@ -49,7 +49,7 @@ public class TestUtils {
 
         public boolean enableAndConfigure(short transactionId, ConfigRequest configRequest,
                 boolean notifyIdentityChange, boolean initialConfiguration, boolean isInteractive,
-                boolean isIdle, boolean rangingEnabled) {
+                boolean isIdle, boolean rangingEnabled, boolean isInstantCommunicationEnabled) {
             addTransactionId(transactionId);
             return true;
         }
