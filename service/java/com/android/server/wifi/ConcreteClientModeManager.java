@@ -64,7 +64,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.internal.util.IState;
-import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
@@ -111,7 +110,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WifiNative mWifiNative;
     private final WifiMetrics mWifiMetrics;
     private final WakeupController mWakeupController;
-    private final Listener mModeListener;
+    private final Listener<ConcreteClientModeManager> mModeListener;
     private final WifiInjector mWifiInjector;
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
@@ -148,11 +147,15 @@ public class ConcreteClientModeManager implements ClientModeManager {
      */
     private final AtomicInteger mWifiState = new AtomicInteger(WIFI_STATE_DISABLED);
 
-    ConcreteClientModeManager(Context context, @NonNull Looper looper, Clock clock,
-            WifiNative wifiNative, Listener listener, WifiMetrics wifiMetrics,
+    ConcreteClientModeManager(
+            Context context, @NonNull Looper looper, Clock clock,
+            WifiNative wifiNative, Listener<ConcreteClientModeManager> listener,
+            WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            ScanOnlyModeImpl scanOnlyModeImpl, long id) {
+            ScanOnlyModeImpl scanOnlyModeImpl, long id,
+            @NonNull WorkSource requestorWs, @NonNull ClientRole role,
+            boolean verboseLoggingEnabled) {
         mContext = context;
         mClock = clock;
         mWifiNative = wifiNative;
@@ -166,20 +169,13 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mWifiGlobals = wifiGlobals;
         mScanOnlyModeImpl = scanOnlyModeImpl;
         mId = id;
+        mTargetRole = role;
+        enableVerboseLogging(verboseLoggingEnabled);
+        mStateMachine.sendMessage(ClientModeStateMachine.CMD_START, Pair.create(role, requestorWs));
     }
 
     private String getTag() {
         return TAG + "[" + (mClientInterfaceName == null ? "unknown" : mClientInterfaceName) + "]";
-    }
-
-    /**
-     * Start client mode.
-     */
-    @Override
-    public void start(@NonNull WorkSource requestorWs, @NonNull Role role) {
-        Preconditions.checkArgument(role instanceof ClientRole);
-        mTargetRole = (ClientRole) role;
-        mStateMachine.sendMessage(ClientModeStateMachine.CMD_START, Pair.create(role, requestorWs));
     }
 
     /**
@@ -320,7 +316,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 mWifiMetrics.noteWifiOff(mIsDeferring, isTimedOut, deferringDurationMillis);
             } else if (mTargetRole == ROLE_CLIENT_SCAN_ONLY) {
                 if (!mWifiNative.switchClientInterfaceToScanMode(mClientInterfaceName)) {
-                    mModeListener.onStartFailure();
+                    mModeListener.onStartFailure(ConcreteClientModeManager.this);
                 } else {
                     mStateMachine.sendMessage(
                             ClientModeStateMachine.CMD_SWITCH_TO_SCAN_ONLY_MODE_CONTINUE);
@@ -657,11 +653,11 @@ public class ConcreteClientModeManager implements ClientModeManager {
             if (mRole == null) {
                 Log.v(getTag(), "ClientModeManager started in role: " + newRole);
                 mRole = newRole;
-                mModeListener.onStarted();
+                mModeListener.onStarted(ConcreteClientModeManager.this);
             } else {
                 Log.v(getTag(), "ClientModeManager role changed: " + newRole);
                 mRole = newRole;
-                mModeListener.onRoleChanged();
+                mModeListener.onRoleChanged(ConcreteClientModeManager.this);
             }
         }
 
@@ -685,7 +681,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                                 mWifiNativeInterfaceCallback, mRequestorWs);
                         if (TextUtils.isEmpty(mClientInterfaceName)) {
                             Log.e(getTag(), "Failed to create ClientInterface. Sit in Idle");
-                            mModeListener.onStartFailure();
+                            mModeListener.onStartFailure(ConcreteClientModeManager.this);
                             break;
                         }
                         if (role instanceof ClientConnectivityRole) {
@@ -740,7 +736,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                                     WifiManager.WIFI_STATE_ENABLING);
                             updateConnectModeState(role, WifiManager.WIFI_STATE_DISABLED,
                                     WifiManager.WIFI_STATE_UNKNOWN);
-                            mModeListener.onStartFailure();
+                            mModeListener.onStartFailure(ConcreteClientModeManager.this);
                             break;
                         }
                         // Role set in the enter of ConnectModeState.
@@ -790,7 +786,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 // once we leave started, nothing else to do...  stop the state machine
                 mRole = null;
                 mStateMachine.captureObituaryAndQuitNow();
-                mModeListener.onStopped();
+                mModeListener.onStopped(ConcreteClientModeManager.this);
             }
         }
 
@@ -833,8 +829,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
                                 + "instantiated?!");
                     }
                     mClientModeImpl = mWifiInjector.makeClientModeImpl(
-                            mClientInterfaceName, ConcreteClientModeManager.this);
-                    mClientModeImpl.enableVerboseLogging(mVerboseLoggingEnabled);
+                            mClientInterfaceName, ConcreteClientModeManager.this,
+                            mVerboseLoggingEnabled);
                     if (mScorer != null) {
                         mClientModeImpl.setWifiConnectedNetworkScorer(
                                 mScorer.first, mScorer.second);

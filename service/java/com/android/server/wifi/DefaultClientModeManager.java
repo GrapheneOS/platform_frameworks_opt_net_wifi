@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import android.annotation.NonNull;
 import android.net.wifi.WifiManager;
 import android.os.WorkSource;
 
@@ -26,11 +25,6 @@ import android.os.WorkSource;
 public class DefaultClientModeManager extends ScanOnlyModeImpl implements ClientModeManager {
 
     private static final long ID = -1;
-
-    @Override
-    public void start(@NonNull WorkSource requestorWs, @NonNull Role role) {
-        throw new IllegalStateException();
-    }
 
     @Override
     public void stop() {
