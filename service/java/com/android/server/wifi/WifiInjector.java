@@ -623,13 +623,18 @@ public class WifiInjector {
      * @param config SoftApModeConfiguration object holding the config and mode
      * @return an instance of SoftApManager
      */
-    public SoftApManager makeSoftApManager(@NonNull ActiveModeManager.Listener listener,
+    public SoftApManager makeSoftApManager(
+            @NonNull ActiveModeManager.Listener<SoftApManager> listener,
             @NonNull WifiManager.SoftApCallback callback,
-            @NonNull SoftApModeConfiguration config) {
+            @NonNull SoftApModeConfiguration config,
+            @NonNull WorkSource requestorWs,
+            @NonNull ActiveModeManager.SoftApRole role,
+            boolean verboseLoggingEnabled) {
         return new SoftApManager(mContext, mWifiHandlerThread.getLooper(),
                 mFrameworkFacade, mWifiNative, mCountryCode.getCountryCode(), listener, callback,
                 mWifiApConfigStore, config, mWifiMetrics, mWifiDiagnostics,
-                mClock.getElapsedSinceBootMillis());
+                new SoftApNotifier(mContext, mFrameworkFacade),
+                mClock.getElapsedSinceBootMillis(), requestorWs, role, verboseLoggingEnabled);
     }
 
     /**
@@ -639,7 +644,8 @@ public class WifiInjector {
      */
     public ClientModeImpl makeClientModeImpl(
             @NonNull String ifaceName,
-            @NonNull ConcreteClientModeManager clientModeManager) {
+            @NonNull ConcreteClientModeManager clientModeManager,
+            boolean verboseLoggingEnabled) {
         return new ClientModeImpl(mContext, mWifiMetrics, mClock,
                 mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
                 mPasspointManager, mWifiMonitor, mWifiDiagnostics,
@@ -660,7 +666,8 @@ public class WifiInjector {
                         mDeviceConfigFacade, mContext, mWifiHandlerThread.getLooper(),
                         mFrameworkFacade, mAdaptiveConnectivityEnabledSettingObserver,
                         ifaceName),
-                mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager);
+                mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager,
+                verboseLoggingEnabled);
     }
 
     /**
@@ -669,12 +676,16 @@ public class WifiInjector {
      * @param listener listener for ClientModeManager state changes
      * @return a new instance of ClientModeManager
      */
-    public ConcreteClientModeManager makeClientModeManager(ClientModeManager.Listener listener) {
+    public ConcreteClientModeManager makeClientModeManager(
+            @NonNull ClientModeManager.Listener<ConcreteClientModeManager> listener,
+            @NonNull WorkSource requestorWs,
+            @NonNull ActiveModeManager.ClientRole role,
+            boolean verboseLoggingEnabled) {
         return new ConcreteClientModeManager(
                 mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
                 this, mSelfRecovery, mWifiGlobals, mScanOnlyModeImpl,
-                mClock.getElapsedSinceBootMillis());
+                mClock.getElapsedSinceBootMillis(), requestorWs, role, verboseLoggingEnabled);
     }
 
     /**

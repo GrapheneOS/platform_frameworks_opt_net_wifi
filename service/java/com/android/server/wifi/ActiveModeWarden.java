@@ -653,19 +653,16 @@ public class ActiveModeWarden {
      */
     private void startSoftApModeManager(
             @NonNull SoftApModeConfiguration softApConfig, @NonNull WorkSource requestorWs) {
-        Log.d(TAG, "Starting SoftApModeManager config = "
-                + softApConfig.getSoftApConfiguration());
+        Log.d(TAG, "Starting SoftApModeManager config = " + softApConfig.getSoftApConfiguration());
         Preconditions.checkState(softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
                 || softApConfig.getTargetMode() == IFACE_IP_MODE_TETHERED);
 
         WifiManager.SoftApCallback callback =
                 softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
                         ? mLohsCallback : mSoftApCallback;
-        SoftApListener listener = new SoftApListener();
-        SoftApManager manager = mWifiInjector.makeSoftApManager(listener, callback, softApConfig);
-        listener.softApManager = manager;
-        manager.start(requestorWs, getRoleForSoftApIpMode(softApConfig.getTargetMode()));
-        manager.enableVerboseLogging(mVerboseLoggingEnabled);
+        SoftApManager manager = mWifiInjector.makeSoftApManager(
+                new SoftApListener(), callback, softApConfig, requestorWs,
+                getRoleForSoftApIpMode(softApConfig.getTargetMode()), mVerboseLoggingEnabled);
         mSoftApManagers.add(manager);
     }
 
@@ -706,13 +703,12 @@ public class ActiveModeWarden {
      */
     private boolean startPrimaryOrScanOnlyClientModeManager(WorkSource requestorWs) {
         Log.d(TAG, "Starting primary ClientModeManager");
-        ClientListener listener = new ClientListener();
-        ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(listener);
-        listener.clientModeManager = manager;
         ActiveModeManager.ClientRole role = getRoleForPrimaryOrScanOnlyClientModeManager();
         if (role == null) return false;
-        manager.start(requestorWs, role);
-        manager.enableVerboseLogging(mVerboseLoggingEnabled);
+
+        ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(
+                new ClientListener(), requestorWs, role, mVerboseLoggingEnabled);
+
         if (mClientModeManagerScorer != null) {
             // TODO (b/160346062): Clear the connected scorer from this mode manager when
             // we switch it out of primary role for the MBB use-case.
@@ -784,10 +780,8 @@ public class ActiveModeWarden {
             @NonNull WorkSource requestorWs) {
         Log.d(TAG, "Starting additional ClientModeManager in role: " + role);
         ClientListener listener = new ClientListener(externalRequestListener);
-        ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(listener);
-        listener.clientModeManager = manager;
-        manager.start(requestorWs, role);
-        manager.enableVerboseLogging(mVerboseLoggingEnabled);
+        ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(
+                listener, requestorWs, role, mVerboseLoggingEnabled);
         mClientModeManagers.add(manager);
         return true;
     }
@@ -860,22 +854,20 @@ public class ActiveModeWarden {
         }
     }
 
-    private class SoftApListener implements ActiveModeManager.Listener {
-        public SoftApManager softApManager;
-
+    private class SoftApListener implements ActiveModeManager.Listener<SoftApManager> {
         @Override
-        public void onStarted() {
+        public void onStarted(SoftApManager softApManager) {
             updateBatteryStats();
             invokeOnAddedCallbacks(softApManager);
         }
 
         @Override
-        public void onRoleChanged() {
+        public void onRoleChanged(SoftApManager softApManager) {
             Log.w(TAG, "Role switched received on SoftApManager unexpectedly");
         }
 
         @Override
-        public void onStopped() {
+        public void onStopped(SoftApManager softApManager) {
             mSoftApManagers.remove(softApManager);
             mGraveyard.inter(softApManager);
             updateBatteryStats();
@@ -884,7 +876,7 @@ public class ActiveModeWarden {
         }
 
         @Override
-        public void onStartFailure() {
+        public void onStartFailure(SoftApManager softApManager) {
             mSoftApManagers.remove(softApManager);
             mGraveyard.inter(softApManager);
             updateBatteryStats();
@@ -896,9 +888,8 @@ public class ActiveModeWarden {
         }
     }
 
-    private class ClientListener implements ActiveModeManager.Listener {
+    private class ClientListener implements ActiveModeManager.Listener<ConcreteClientModeManager> {
         private final ExternalClientModeManagerRequestListener mExternalRequestListener;
-        public ConcreteClientModeManager clientModeManager;
 
         ClientListener() {
             this(null);
@@ -910,7 +901,7 @@ public class ActiveModeWarden {
         }
 
         @Override
-        public void onStarted() {
+        public void onStarted(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
             if (mExternalRequestListener != null) {
@@ -920,14 +911,14 @@ public class ActiveModeWarden {
         }
 
         @Override
-        public void onRoleChanged() {
+        public void onRoleChanged(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
             invokeOnRoleChangedCallbacks(clientModeManager);
         }
 
         @Override
-        public void onStopped() {
+        public void onStopped(ConcreteClientModeManager clientModeManager) {
             mClientModeManagers.remove(clientModeManager);
             mGraveyard.inter(clientModeManager);
             updateClientScanMode();
@@ -937,7 +928,7 @@ public class ActiveModeWarden {
         }
 
         @Override
-        public void onStartFailure() {
+        public void onStartFailure(ConcreteClientModeManager clientModeManager) {
             mClientModeManagers.remove(clientModeManager);
             mGraveyard.inter(clientModeManager);
             updateClientScanMode();
