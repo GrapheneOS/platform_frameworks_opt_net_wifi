@@ -621,7 +621,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             WifiP2pConnection wifiP2pConnection,
             WifiGlobals wifiGlobals,
             String ifaceName,
-            ConcreteClientModeManager clientModeManager) {
+            ConcreteClientModeManager clientModeManager,
+            boolean verboseLoggingEnabled) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
         mClock = clock;
@@ -701,6 +702,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mOnNetworkUpdateListener = new OnNetworkUpdateListener();
         mWifiConfigManager.addOnNetworkUpdateListener(mOnNetworkUpdateListener);
+
+        enableVerboseLogging(verboseLoggingEnabled);
 
         addState(mConnectableState); {
             addState(mConnectingOrConnectedState, mConnectableState); {
