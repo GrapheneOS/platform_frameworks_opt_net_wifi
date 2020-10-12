@@ -42,6 +42,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Process;
 import android.os.WorkSource;
 import android.telephony.TelephonyManager;
 import android.util.ArraySet;
@@ -79,6 +80,7 @@ import java.util.stream.Stream;
 public class ActiveModeWarden {
     private static final String TAG = "WifiActiveModeWarden";
     private static final String STATE_MACHINE_EXITED_STATE_NAME = "STATE_MACHINE_EXITED";
+    private static final WorkSource INTERNAL_REQUESTOR_WS = new WorkSource(Process.WIFI_UID);
 
     // Holder for active mode managers
     private final ArraySet<ConcreteClientModeManager> mClientModeManagers = new ArraySet<>();
@@ -356,7 +358,7 @@ public class ActiveModeWarden {
             public void onReceive(Context context, Intent intent) {
                 // Location mode has been toggled...  trigger with the scan change
                 // update to make sure we are in the correct mode
-                scanAlwaysModeChanged(mFacade.getSettingsWorkSource(mContext));
+                scanAlwaysModeChanged();
             }
         }, new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
         mContext.registerReceiver(new BroadcastReceiver() {
@@ -448,8 +450,14 @@ public class ActiveModeWarden {
     }
 
     /** Scan always mode has changed. */
-    public void scanAlwaysModeChanged(WorkSource requestorWs) {
-        mWifiController.sendMessage(WifiController.CMD_SCAN_ALWAYS_MODE_CHANGED, requestorWs);
+    public void scanAlwaysModeChanged() {
+        mWifiController.sendMessage(
+                WifiController.CMD_SCAN_ALWAYS_MODE_CHANGED,
+                // Scan only mode change is not considered a direct user interaction since user
+                // is not explicitly turning on wifi scanning (side-effect of location toggle).
+                // So, use the lowest priority internal requestor worksource to ensure that this
+                // is treated with the lowest priority.
+                INTERNAL_REQUESTOR_WS);
     }
 
     /**
@@ -734,14 +742,14 @@ public class ActiveModeWarden {
      * Method to switch all client mode manager mode of operation (from ScanOnly To Connect &
      * vice-versa) based on the toggle state.
      */
-    private boolean switchAllPrimaryOrScanOnlyClientModeManagers() {
+    private boolean switchAllPrimaryOrScanOnlyClientModeManagers(@NonNull WorkSource requestorWs) {
         Log.d(TAG, "Switching all client mode managers");
         for (ConcreteClientModeManager clientModeManager : mClientModeManagers) {
             if (clientModeManager.getRole() != ROLE_CLIENT_PRIMARY
                     && clientModeManager.getRole() != ROLE_CLIENT_SCAN_ONLY) {
                 continue;
             }
-            if (!switchPrimaryOrScanOnlyClientModeManagerRole(clientModeManager)) {
+            if (!switchPrimaryOrScanOnlyClientModeManagerRole(clientModeManager, requestorWs)) {
                 return false;
             }
         }
@@ -764,10 +772,10 @@ public class ActiveModeWarden {
      * vice-versa) based on the toggle state.
      */
     private boolean switchPrimaryOrScanOnlyClientModeManagerRole(
-            @NonNull ConcreteClientModeManager modeManager) {
+            @NonNull ConcreteClientModeManager modeManager, @NonNull WorkSource requestorWs) {
         ActiveModeManager.ClientRole role = getRoleForPrimaryOrScanOnlyClientModeManager();
         if (role == null) return false;
-        modeManager.setRole(role);
+        modeManager.setRole(role, requestorWs);
         return true;
     }
 
@@ -1349,11 +1357,12 @@ public class ActiveModeWarden {
                 switch (msg.what) {
                     case CMD_WIFI_TOGGLED:
                     case CMD_SCAN_ALWAYS_MODE_CHANGED:
+                        WorkSource requestorWs = (WorkSource) msg.obj;
                         if (shouldEnableSta()) {
                             if (hasAnyClientModeManager()) {
-                                switchAllPrimaryOrScanOnlyClientModeManagers();
+                                switchAllPrimaryOrScanOnlyClientModeManagers(requestorWs);
                             } else {
-                                startPrimaryOrScanOnlyClientModeManager((WorkSource) msg.obj);
+                                startPrimaryOrScanOnlyClientModeManager(requestorWs);
                             }
                         } else {
                             stopAllClientModeManagers();

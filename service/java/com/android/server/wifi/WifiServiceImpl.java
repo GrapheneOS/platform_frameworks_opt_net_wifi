@@ -2062,8 +2062,7 @@ public class WifiServiceImpl extends BaseWifiService {
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
-        mActiveModeWarden.scanAlwaysModeChanged(
-                new WorkSource(Binder.getCallingUid(), packageName));
+        mActiveModeWarden.scanAlwaysModeChanged();
     }
 
     /**

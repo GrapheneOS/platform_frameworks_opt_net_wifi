@@ -23,6 +23,7 @@ import android.annotation.NonNull;
 import android.app.ActivityManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Process;
 import android.os.UserHandle;
 import android.os.WorkSource;
 import android.util.Log;
@@ -57,7 +58,8 @@ public class WorkSourceHelper {
     private boolean isPrivileged(int uid) {
         return mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)
                 || mWifiPermissionsUtil.checkNetworkSetupWizardPermission(uid)
-                || mWifiPermissionsUtil.checkNetworkStackPermission(uid);
+                || mWifiPermissionsUtil.checkNetworkStackPermission(uid)
+                || mWifiPermissionsUtil.checkMainlineNetworkStackPermission(uid);
     }
 
     /**
@@ -144,6 +146,17 @@ public class WorkSourceHelper {
     public boolean hasAnyForegroundServiceRequest() {
         for (int i = 0; i < mWorkSource.size(); i++) {
             if (isForegroundService(mWorkSource.getPackageName(i))) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether any of the one or more worksource objects contains an internal
+     * (i.e uid = Process.WIFI_UID) request.
+     */
+    public boolean hasAnyInternalRequest() {
+        for (int i = 0; i < mWorkSource.size(); i++) {
+            if (mWorkSource.getUid(i) == Process.WIFI_UID) return true;
         }
         return false;
     }

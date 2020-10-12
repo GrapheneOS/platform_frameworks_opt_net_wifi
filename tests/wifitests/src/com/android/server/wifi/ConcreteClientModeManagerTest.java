@@ -264,14 +264,15 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private void startClientInConnectModeAndVerifyEnabled() throws Exception {
         when(mWifiNative.setupInterfaceForClientInScanMode(any(), any()))
                 .thenReturn(TEST_INTERFACE_NAME);
-        when(mWifiNative.switchClientInterfaceToConnectivityMode(any()))
+        when(mWifiNative.switchClientInterfaceToConnectivityMode(any(), any()))
                 .thenReturn(true);
         mClientModeManager = createClientModeManager(ROLE_CLIENT_PRIMARY);
         mLooper.dispatchAll();
 
         verify(mWifiNative).setupInterfaceForClientInScanMode(
                 mInterfaceCallbackCaptor.capture(), eq(TEST_WORKSOURCE));
-        verify(mWifiNative).switchClientInterfaceToConnectivityMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToConnectivityMode(
+                TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mWifiInjector)
                 .makeClientModeImpl(eq(TEST_INTERFACE_NAME), eq(mClientModeManager), anyBoolean());
 
@@ -356,9 +357,9 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     public void switchFromScanOnlyModeToConnectMode() throws Exception {
         startClientInScanOnlyModeAndVerifyEnabled();
 
-        when(mWifiNative.switchClientInterfaceToConnectivityMode(any()))
+        when(mWifiNative.switchClientInterfaceToConnectivityMode(any(), any()))
                 .thenReturn(true);
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
         verify(mWifiInjector)
@@ -388,16 +389,16 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     public void switchFromConnectModeToScanOnlyMode() throws Exception {
         startClientInConnectModeAndVerifyEnabled();
 
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
         verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
 
         verify(mWifiNative).setupInterfaceForClientInScanMode(
                 mInterfaceCallbackCaptor.capture(), eq(TEST_WORKSOURCE));
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mClientModeImpl).stop();
 
         verify(mContext).getSystemService(anyString());
@@ -418,7 +419,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
             throws Exception {
         when(mWifiNative.setupInterfaceForClientInScanMode(any(), any()))
                 .thenReturn(TEST_INTERFACE_NAME);
-        when(mWifiNative.switchClientInterfaceToConnectivityMode(any())).thenReturn(false);
+        when(mWifiNative.switchClientInterfaceToConnectivityMode(any(), any())).thenReturn(false);
 
         mClientModeManager = createClientModeManager(ROLE_CLIENT_PRIMARY);
         mLooper.dispatchAll();
@@ -833,13 +834,13 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mImsMmTelManager, never()).registerImsRegistrationCallback(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mWifiMetrics).noteWifiOff(eq(false), eq(false), anyInt());
@@ -857,13 +858,13 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
 
         verify(mImsMmTelManager).registerImsRegistrationCallback(
                 any(Executor.class),
@@ -888,14 +889,14 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
         // Not yet finish IMS deregistration.
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
         verify(mImsMmTelManager).registerImsRegistrationCallback(
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
@@ -910,7 +911,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // Now Wifi could be switched to scan mode actually.
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
@@ -932,14 +933,14 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
         // Not yet finish IMS deregistration.
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
         verify(mImsMmTelManager).registerImsRegistrationCallback(
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
@@ -952,7 +953,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         // Now Wifi could be switched to scan mode actually.
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
@@ -973,13 +974,13 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
         verify(mImsMmTelManager).registerImsRegistrationCallback(
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
@@ -988,14 +989,14 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         // 1/2 deferring time passed, should be still waiting for the callback.
         moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2);
         mLooper.dispatchAll();
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
         verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
 
         // Exceeding the timeout, wifi should be stopped.
         moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS / 2 + 1000);
         mLooper.dispatchAll();
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
@@ -1017,10 +1018,10 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
         verify(mImsMmTelManager).registerImsRegistrationCallback(
@@ -1028,10 +1029,10 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
                 any(RegistrationManager.RegistrationCallback.class));
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
         // should not register another listener.
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
         verify(mImsMmTelManager, times(1)).registerImsRegistrationCallback(
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
@@ -1041,7 +1042,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         // Exceeding the timeout, wifi should be stopped.
         moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
-        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
@@ -1065,16 +1066,16 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         startClientInConnectModeAndVerifyEnabled();
         reset(mContext, mListener);
         setUpSystemServiceForContext();
-        when(mWifiNative.switchClientInterfaceToScanMode(any()))
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
                 .thenReturn(true);
 
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
-        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY);
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
 
         verify(mImsMmTelManager).registerImsRegistrationCallback(
@@ -1083,7 +1084,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
 
         // should not register another listener.
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any());
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
         verify(mImsMmTelManager, times(1)).registerImsRegistrationCallback(
                 any(Executor.class),
                 any(RegistrationManager.RegistrationCallback.class));
@@ -1093,7 +1094,8 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         // Exceeding the timeout, wifi should NOT be stopped.
         moveTimeForward(TEST_WIFI_OFF_DEFERRING_TIME_MS + 1000);
         mLooper.dispatchAll();
-        verify(mWifiNative, never()).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME);
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(
+                TEST_INTERFACE_NAME, TEST_WORKSOURCE);
         verify(mImsMmTelManager).unregisterImsRegistrationCallback(
                 any(RegistrationManager.RegistrationCallback.class));
         assertNull(mImsMmTelManagerRegistrationCallback);
@@ -1137,12 +1139,13 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
 
         // Set the same role again, no-op.
         assertEquals(ActiveModeManager.ROLE_CLIENT_PRIMARY, mClientModeManager.getRole());
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
         verify(mListener, never()).onStarted(any()); // no callback sent.
 
         // Change the connectivity role.
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT);
+        mClientModeManager.setRole(
+                ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT, TEST_WORKSOURCE);
         mLooper.dispatchAll();
         verify(mListener).onRoleChanged(mClientModeManager); // callback sent.
     }
@@ -1151,7 +1154,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     public void setRoleBeforeInvokingListener() throws Exception {
         when(mWifiNative.setupInterfaceForClientInScanMode(any(), any()))
                 .thenReturn(TEST_INTERFACE_NAME);
-        when(mWifiNative.switchClientInterfaceToConnectivityMode(any()))
+        when(mWifiNative.switchClientInterfaceToConnectivityMode(any(), any()))
                 .thenReturn(true);
 
         doAnswer(new AnswerWithArguments() {
@@ -1174,7 +1177,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
                 assertEquals(ActiveModeManager.ROLE_CLIENT_PRIMARY, clientModeManager.getRole());
             }
         }).when(mListener).onRoleChanged(mClientModeManager);
-        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
         verify(mListener).onRoleChanged(mClientModeManager); // callback sent.
     }
