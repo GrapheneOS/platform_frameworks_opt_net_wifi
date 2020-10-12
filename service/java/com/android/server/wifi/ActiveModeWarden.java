@@ -872,11 +872,22 @@ public class ActiveModeWarden {
                 super.exit();
             }
 
+            // TODO(b/170076208): Temporary fix in R for battery saver mode toggling AP off on every
+            // screen off/on.
+            private boolean isApEnabledOnNonStaApConcurrencySupportedDevice() {
+                return hasAnySoftApManager() && !isStaApConcurrencySupported();
+            }
+
             @Override
             public boolean processMessageFiltered(Message msg) {
                 switch (msg.what) {
-                    case CMD_WIFI_TOGGLED:
                     case CMD_SCAN_ALWAYS_MODE_CHANGED:
+                        if (isApEnabledOnNonStaApConcurrencySupportedDevice()) {
+                            Log.i(TAG, "Ignoring scan always mode changed since AP is enabled");
+                            break;
+                        }
+                        // intentional fallthrough
+                    case CMD_WIFI_TOGGLED:
                         if (shouldEnableSta()) {
                             if (hasAnyClientModeManager()) {
                                 switchAllClientModeManagers();
