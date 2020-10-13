@@ -341,8 +341,10 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                 }
                 if (TextUtils.equals("true", flag)) {
                     mDataPathMgr.mAllowNdpResponderFromAnyOverride = true;
+                    return 0;
                 } else  if (TextUtils.equals("false", flag)) {
                     mDataPathMgr.mAllowNdpResponderFromAnyOverride = false;
+                    return 0;
                 } else {
                     pw_err.println(
                             "Unknown configuration flag for 'allow_ndp_any' - true|false expected"
