@@ -40,7 +40,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
-import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.IBinder;
@@ -1121,7 +1120,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
+    public void probeLink(LinkProbeCallback callback, int mcs) {
         getClientMode().probeLink(callback, mcs);
     }
 

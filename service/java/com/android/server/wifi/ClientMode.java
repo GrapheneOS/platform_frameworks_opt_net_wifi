@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.IntDef;
 import android.annotation.Nullable;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
@@ -35,6 +36,8 @@ import com.android.server.wifi.util.ActionListenerWrapper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * This interface is used to respond to calls independent of a STA's current mode.
@@ -138,7 +141,49 @@ public interface ClientMode {
 
     boolean isSupplicantTransientState();
 
-    void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs);
+    /** Result callback for {@link #probeLink(LinkProbeCallback, int)} */
+    interface LinkProbeCallback extends WifiNl80211Manager.SendMgmtFrameCallback {
+
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(prefix = {"LINK_PROBE_ERROR_"},
+                value = {LINK_PROBE_ERROR_NOT_CONNECTED})
+        @interface LinkProbeFailure {}
+
+        /** Attempted to send a link probe when not connected to Wifi. */
+        // Note: this is a restriction in the Wifi framework since link probing is defined to be
+        // targeted at the currently connected AP. Driver/firmware has no problems with sending
+        // management frames to arbitrary APs whether connected or disconnected.
+        int LINK_PROBE_ERROR_NOT_CONNECTED = 1000;
+
+        /**
+         * Called when the link probe failed.
+         * @param reason The error code for the failure. One of
+         * {@link WifiNl80211Manager.SendMgmtFrameError} or {@link LinkProbeFailure}.
+         */
+        void onFailure(int reason);
+
+        static String failureReasonToString(int reason) {
+            switch (reason) {
+                case WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_UNKNOWN:
+                    return "SEND_MGMT_FRAME_ERROR_UNKNOWN";
+                case WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_MCS_UNSUPPORTED:
+                    return "SEND_MGMT_FRAME_ERROR_MCS_UNSUPPORTED";
+                case WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_NO_ACK:
+                    return "SEND_MGMT_FRAME_ERROR_NO_ACK";
+                case WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_TIMEOUT:
+                    return "SEND_MGMT_FRAME_ERROR_TIMEOUT";
+                case WifiNl80211Manager.SEND_MGMT_FRAME_ERROR_ALREADY_STARTED:
+                    return "SEND_MGMT_FRAME_ERROR_ALREADY_STARTED";
+                case LINK_PROBE_ERROR_NOT_CONNECTED:
+                    return "LINK_PROBE_ERROR_NOT_CONNECTED";
+                default:
+                    return "Unrecognized error";
+            }
+        }
+    }
+
+    /** Send a link probe */
+    void probeLink(LinkProbeCallback callback, int mcs);
 
     /** Send a {@link Message} to ClientModeImpl's StateMachine. */
     void sendMessageToClientModeImpl(Message msg);
