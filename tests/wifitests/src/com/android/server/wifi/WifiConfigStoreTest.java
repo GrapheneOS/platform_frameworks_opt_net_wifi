@@ -127,6 +127,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                     + "<null name=\"ConnectChoice\" />\n"
                     + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
+                    + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                     + "</NetworkStatus>\n"
                     + "<IpConfiguration>\n"
                     + "<string name=\"IpAssignment\">DHCP</string>\n"

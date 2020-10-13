@@ -3420,6 +3420,23 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that hasNeverDetectedCaptivePortal is set to false after noteCaptivePortalDetected
+     * gets called.
+     */
+    @Test
+    public void testNoteCaptivePortalDetected() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
+
+        assertTrue(mWifiConfigManager.getConfiguredNetworks().get(0).getNetworkSelectionStatus()
+                .hasNeverDetectedCaptivePortal());
+
+        mWifiConfigManager.noteCaptivePortalDetected(openNetwork.networkId);
+        assertFalse(mWifiConfigManager.getConfiguredNetworks().get(0).getNetworkSelectionStatus()
+                .hasNeverDetectedCaptivePortal());
+    }
+
+    /**
      * Verifies the foreground user unlock via {@link WifiConfigManager#handleUserUnlock(int)}
      * results in a store read after bootup.
      */
