@@ -118,6 +118,7 @@ import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.IState;
 import com.android.internal.util.StateMachine;
+import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.hotspot2.NetworkDetail;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvisioningTestUtil;
@@ -416,6 +417,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock PowerManager mPowerManager;
     @Mock WifiP2pConnection mWifiP2pConnection;
     @Mock WifiGlobals mWifiGlobals;
+    @Mock LinkProbeCallback mLinkProbeCallback;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -5143,6 +5145,26 @@ public class ClientModeImplTest extends WifiBaseTest {
                 (cap) -> {
                     assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID));
                 });
+    }
+
+    @Test
+    public void testSendLinkProbeFailure() throws Exception {
+        mCmi.probeLink(mLinkProbeCallback, -1);
+
+        verify(mLinkProbeCallback).onFailure(LinkProbeCallback.LINK_PROBE_ERROR_NOT_CONNECTED);
+        verify(mLinkProbeCallback, never()).onAck(anyInt());
+        verify(mWifiNative, never()).probeLink(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    public void testSendLinkProbeSuccess() throws Exception {
+        connect();
+
+        mCmi.probeLink(mLinkProbeCallback, -1);
+
+        verify(mWifiNative).probeLink(any(), any(), eq(mLinkProbeCallback), eq(-1));
+        verify(mLinkProbeCallback, never()).onFailure(anyInt());
+        verify(mLinkProbeCallback, never()).onAck(anyInt());
     }
 }
 

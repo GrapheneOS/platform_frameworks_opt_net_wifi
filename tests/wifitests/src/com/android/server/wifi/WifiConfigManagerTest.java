@@ -1475,8 +1475,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verifies that when no BSSIDs for a network is inside the BSSID blocklist then we
-     * re-enable a network.
+     * Verifies that a network is disabled for the base duration even when there are no BSSIDs
+     * blocked.
      */
     @Test
     public void testTryEnableNetworkNoBssidsInBlocklist() {
@@ -1487,13 +1487,10 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Verify that with 0 BSSIDs in blocklist we enable the network immediately
         verifyDisableNetwork(result, disableReason);
         when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString())).thenReturn(0);
-        when(mClock.getElapsedSinceBootMillis())
-                .thenReturn(TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
-        assertTrue(mWifiConfigManager.tryEnableNetwork(result.getNetworkId()));
-        NetworkSelectionStatus retrievedStatus =
-                mWifiConfigManager.getConfiguredNetwork(result.getNetworkId())
-                        .getNetworkSelectionStatus();
-        assertTrue(retrievedStatus.isNetworkEnabled());
+
+        verifyNetworkIsEnabledAfter(result.getNetworkId(),
+                mWifiConfigManager.getNetworkSelectionDisableTimeoutMillis(disableReason)
+                        + TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
     }
 
     /**

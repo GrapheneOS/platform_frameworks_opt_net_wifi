@@ -1858,12 +1858,12 @@ public class WifiConfigManager {
             int disableReason = networkStatus.getNetworkSelectionDisableReason();
             int blockedBssids = Math.min(MAX_BLOCKED_BSSID_PER_NETWORK,
                     mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID));
-            // if no BSSIDs are blocked then we should keep trying to connect to something
-            long disableTimeoutMs = 0;
-            if (blockedBssids > 0) {
-                double multiplier = Math.pow(2.0, blockedBssids - 1.0);
-                disableTimeoutMs = (long) (getNetworkSelectionDisableTimeoutMillis(disableReason)
-                        * multiplier);
+            long disableTimeoutMs = (long) getNetworkSelectionDisableTimeoutMillis(disableReason);
+            // TODO b/169272385: Now that we no longer immediately re-enable a WifiConfiguration
+            // when 0 BSSIDs are blocked, need to add code to re-enable temporarily disabled
+            // WifiConfigurations when the user toggles wifi.
+            if (blockedBssids > 1) {
+                disableTimeoutMs *= Math.pow(2.0, blockedBssids - 1.0);
             }
             if (timeDifferenceMs >= disableTimeoutMs) {
                 return updateNetworkSelectionStatus(

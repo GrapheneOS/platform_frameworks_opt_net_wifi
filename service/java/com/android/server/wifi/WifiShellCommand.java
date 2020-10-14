@@ -41,7 +41,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
-import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BasicShellCommandHandler;
 import android.os.Binder;
 import android.os.Process;
@@ -51,6 +50,7 @@ import android.text.TextUtils;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -906,7 +906,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         final int sendMgmtFrameTimeoutMs = 1000;
 
         ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
-        mClientModeManager.probeLink(new WifiNl80211Manager.SendMgmtFrameCallback() {
+        mClientModeManager.probeLink(new LinkProbeCallback() {
             @Override
             public void onAck(int elapsedTimeMs) {
                 queue.offer("Link probe succeeded after " + elapsedTimeMs + " ms");
@@ -914,7 +914,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
 
             @Override
             public void onFailure(int reason) {
-                queue.offer("Link probe failed with reason " + reason);
+                queue.offer("Link probe failed with reason "
+                        + LinkProbeCallback.failureReasonToString(reason));
             }
         }, -1);
 

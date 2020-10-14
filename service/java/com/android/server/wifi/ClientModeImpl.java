@@ -5412,13 +5412,15 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return null;
     }
 
-    /**
-     * Sends a link probe.
-     */
-    @VisibleForTesting
-    public void probeLink(WifiNl80211Manager.SendMgmtFrameCallback callback, int mcs) {
-        mWifiNative.probeLink(mInterfaceName, MacAddress.fromString(mWifiInfo.getBSSID()),
-                callback, mcs);
+    /** Sends a link probe. */
+    public void probeLink(LinkProbeCallback callback, int mcs) {
+        String bssid = mWifiInfo.getBSSID();
+        if (bssid == null) {
+            Log.w(getTag(), "Attempted to send link probe when not connected!");
+            callback.onFailure(LinkProbeCallback.LINK_PROBE_ERROR_NOT_CONNECTED);
+            return;
+        }
+        mWifiNative.probeLink(mInterfaceName, MacAddress.fromString(bssid), callback, mcs);
     }
 
     private static class ConnectNetworkMessage {
