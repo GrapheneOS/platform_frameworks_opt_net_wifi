@@ -150,6 +150,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2604,7 +2605,10 @@ public class ClientModeImpl extends StateMachine {
         }
         if (hidden || state == mNetworkAgentState) return;
         mNetworkAgentState = state;
+        sendNetworkChangeBroadcastWithCurrentState();
+    }
 
+    private void sendNetworkChangeBroadcastWithCurrentState() {
         Intent intent = new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         NetworkInfo networkInfo = makeNetworkInfo();
@@ -4826,6 +4830,7 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_IPV4_PROVISIONING_SUCCESS: {
                     handleIPv4Success((DhcpResultsParcelable) message.obj);
+                    sendNetworkChangeBroadcastWithCurrentState();
                     break;
                 }
                 case CMD_IPV4_PROVISIONING_FAILURE: {
@@ -4903,7 +4908,10 @@ public class ClientModeImpl extends StateMachine {
                     mLastNetworkId = message.arg1;
                     mWifiInfo.setNetworkId(mLastNetworkId);
                     mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
-                    mLastBssid = (String) message.obj;
+                    if (!Objects.equals(mLastBssid, message.obj)) {
+                        mLastBssid = (String) message.obj;
+                        sendNetworkChangeBroadcastWithCurrentState();
+                    }
                     break;
                 case CMD_ONESHOT_RSSI_POLL:
                     if (!mEnableRssiPolling) {
@@ -4986,6 +4994,7 @@ public class ClientModeImpl extends StateMachine {
                                 }
                             }
                         }
+                        sendNetworkChangeBroadcastWithCurrentState();
                     }
                     break;
                 case CMD_START_RSSI_MONITORING_OFFLOAD:
@@ -5272,6 +5281,7 @@ public class ClientModeImpl extends StateMachine {
                         mLastBssid = (String) message.obj;
                         mWifiInfo.setBSSID(mLastBssid);
                         mWifiInfo.setNetworkId(mLastNetworkId);
+                        sendNetworkChangeBroadcastWithCurrentState();
 
                         // Successful framework roam! (probably)
                         mBssidBlocklistMonitor.handleBssidConnectionSuccess(mLastBssid,
