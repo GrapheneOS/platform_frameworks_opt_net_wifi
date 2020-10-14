@@ -82,6 +82,8 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
             MacAddress.fromString("aa:bb:cc:11:22:33");
 
     private final int mBand25G = SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ;
+    private final int mBand256G = SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ
+            | SoftApConfiguration.BAND_6GHZ;
 
     @Mock private Context mContext;
     @Mock private WifiInjector mWifiInjector;
@@ -339,7 +341,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
                 "ConfiguredAP",                 /* SSID */
                 "randomKey",                    /* preshared key */
                 SECURITY_TYPE_WPA2_PSK,         /* security type */
-                SoftApConfiguration.BAND_ANY,   /* AP band */
+                mBand256G,                      /* AP band */
                 0,                              /* AP channel */
                 false                           /* Hidden SSID */);
         store.setApConfiguration(expectedConfig);
@@ -426,7 +428,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
                 "ConfiguredAP",                 /* SSID */
                 "randomKey",                    /* preshared key */
                 SECURITY_TYPE_WPA2_PSK,         /* security type */
-                SoftApConfiguration.BAND_ANY,   /* AP band */
+                mBand256G,                      /* AP band */
                 0,                              /* AP channel */
                 false                           /* Hidden SSID */);
 
