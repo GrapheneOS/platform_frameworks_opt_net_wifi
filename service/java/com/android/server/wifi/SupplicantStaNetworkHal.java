@@ -877,7 +877,7 @@ public class SupplicantStaNetworkHal {
         return mask;
     }
 
-    private static int wifiConfigurationToSupplicantGroupCipherMask(BitSet groupCipherMask) {
+    private int wifiConfigurationToSupplicantGroupCipherMask(BitSet groupCipherMask) {
         int mask = 0;
         for (int bit = groupCipherMask.nextSetBit(0); bit != -1; bit =
                 groupCipherMask.nextSetBit(bit + 1)) {
@@ -898,16 +898,28 @@ public class SupplicantStaNetworkHal {
                     mask |= ISupplicantStaNetwork.GroupCipherMask.GTK_NOT_USED;
                     break;
                 case WifiConfiguration.GroupCipher.GCMP_256:
-                    mask |= android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                            .GroupCipherMask.GCMP_256;
+                    if (null != getV1_2StaNetwork()) {
+                        mask |= android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                                .GroupCipherMask.GCMP_256;
+                    } else {
+                        Log.d(TAG, "Ignore GCMP_256 cipher for the HAL older than 1.2.");
+                    }
                     break;
                 case WifiConfiguration.GroupCipher.SMS4:
-                    mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
+                    if (null != getV1_3StaNetwork()) {
+                        mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
                                 .GroupCipherMask.SMS4;
+                    } else {
+                        Log.d(TAG, "Ignore SMS4 cipher for the HAL older than 1.3.");
+                    }
                     break;
                 case WifiConfiguration.GroupCipher.GCMP_128:
-                    mask |= android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                    if (null != getV1_4StaNetwork()) {
+                        mask |= android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
                                 .GroupCipherMask.GCMP_128;
+                    } else {
+                        Log.d(TAG, "Ignore GCMP_128 cipher for the HAL older than 1.4.");
+                    }
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -944,7 +956,7 @@ public class SupplicantStaNetworkHal {
         return mask;
     }
 
-    private static int wifiConfigurationToSupplicantPairwiseCipherMask(BitSet pairwiseCipherMask) {
+    private int wifiConfigurationToSupplicantPairwiseCipherMask(BitSet pairwiseCipherMask) {
         int mask = 0;
         for (int bit = pairwiseCipherMask.nextSetBit(0); bit != -1;
                 bit = pairwiseCipherMask.nextSetBit(bit + 1)) {
@@ -959,16 +971,28 @@ public class SupplicantStaNetworkHal {
                     mask |= ISupplicantStaNetwork.PairwiseCipherMask.CCMP;
                     break;
                 case WifiConfiguration.PairwiseCipher.GCMP_256:
-                    mask |= android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                            .PairwiseCipherMask.GCMP_256;
+                    if (null != getV1_2StaNetwork()) {
+                        mask |= android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
+                                .PairwiseCipherMask.GCMP_256;
+                    } else {
+                        Log.d(TAG, "Ignore GCMP_256 cipher for the HAL older than 1.2.");
+                    }
                     break;
                 case WifiConfiguration.PairwiseCipher.SMS4:
-                    mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
-                            .PairwiseCipherMask.SMS4;
+                    if (null != getV1_3StaNetwork()) {
+                        mask |= android.hardware.wifi.supplicant.V1_3.ISupplicantStaNetwork
+                                .PairwiseCipherMask.SMS4;
+                    } else {
+                        Log.d(TAG, "Ignore SMS4 cipher for the HAL older than 1.3.");
+                    }
                     break;
                 case WifiConfiguration.PairwiseCipher.GCMP_128:
-                    mask |= android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
-                            .PairwiseCipherMask.GCMP_128;
+                    if (null != getV1_4StaNetwork()) {
+                        mask |= android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                                .PairwiseCipherMask.GCMP_128;
+                    } else {
+                        Log.d(TAG, "Ignore GCMP_128 cipher for the HAL older than 1.4.");
+                    }
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -1466,9 +1490,6 @@ public class SupplicantStaNetworkHal {
                      * Requires HAL v1.2 or higher */
                     status = iSupplicantStaNetworkV12.setGroupCipher_1_2(groupCipherMask);
                 } else {
-                    // Clear GCMP_256 group cipher which is not supported before v1.2
-                    groupCipherMask &= ~android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                            .GroupCipherMask.GCMP_256;
                     status = mISupplicantStaNetwork.setGroupCipher(
                             groupCipherMask);
                 }
@@ -1557,9 +1578,6 @@ public class SupplicantStaNetworkHal {
                      * Requires HAL v1.2 or higher */
                     status = iSupplicantStaNetworkV12.setPairwiseCipher_1_2(pairwiseCipherMask);
                 } else {
-                    // Clear GCMP_256 pairwise cipher which is not supported before v1.2
-                    pairwiseCipherMask &= ~android.hardware.wifi.supplicant.V1_2
-                            .ISupplicantStaNetwork.PairwiseCipherMask.GCMP_256;
                     status =
                             mISupplicantStaNetwork.setPairwiseCipher(pairwiseCipherMask);
                 }
