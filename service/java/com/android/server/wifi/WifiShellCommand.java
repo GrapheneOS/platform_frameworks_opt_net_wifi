@@ -21,9 +21,13 @@ import static android.net.NetworkCapabilities.NET_CAPABILITY_OEM_PAID;
 import static android.net.NetworkCapabilities.NET_CAPABILITY_TRUSTED;
 import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
+import static android.net.wifi.WifiManager.WIFI_STATE_DISABLED;
 import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ParceledListSlice;
 import android.net.ConnectivityManager;
 import android.net.MacAddress;
@@ -32,12 +36,17 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.IActionListener;
 import android.net.wifi.IScoreUpdateObserver;
+import android.net.wifi.ISoftApCallback;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
+import android.net.wifi.SoftApInfo;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiClient;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
@@ -125,6 +134,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private final ConnectivityManager mConnectivityManager;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiNetworkFactory mWifiNetworkFactory;
+    private int mSapState = WifiManager.WIFI_STATE_UNKNOWN;
 
     /**
      * Used for shell command testing of scorer.
@@ -332,21 +342,32 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         }
                         int apChannel = ScanResult.convertFrequencyMhzToChannel(apChannelMHz);
                         int band = ApConfigUtil.convertFrequencyToBand(apChannelMHz);
-                        if (apChannel == -1 || band == -1 || !isApChannelMHzValid(apChannelMHz)) {
+                        pw.println("channel: " + apChannel + " band: " + band);
+                        if (apChannel == -1 || band == -1) {
                             pw.println("Invalid argument to 'force-softap-channel enabled' "
                                     + "- must be a valid WLAN channel");
                             return -1;
                         }
-
-                        if ((band == SoftApConfiguration.BAND_5GHZ
+                        boolean isTemporarilyEnablingWifiNeeded = mWifiService.getWifiEnabledState()
+                                != WIFI_STATE_ENABLED;
+                        if (isTemporarilyEnablingWifiNeeded) {
+                            waitForWifiEnabled(true);
+                        }
+                        // Following calls will fail if wifi is not enabled
+                        boolean isValidChannel = isApChannelMHzValid(pw, apChannelMHz);
+                        if (isTemporarilyEnablingWifiNeeded) {
+                            waitForWifiEnabled(false);
+                        }
+                        if (!isValidChannel
+                                || (band == SoftApConfiguration.BAND_5GHZ
                                 && !mWifiService.is5GHzBandSupported())
                                 || (band == SoftApConfiguration.BAND_6GHZ
                                 && !mWifiService.is6GHzBandSupported())) {
                             pw.println("Invalid argument to 'force-softap-channel enabled' "
-                                    + "- channel band is not supported by the device");
+                                    + "- must be a valid WLAN channel"
+                                    + " in a band supported by the device");
                             return -1;
                         }
-
                         mHostapdHal.enableForceSoftApChannel(apChannel, band);
                         return 0;
                     } else {
@@ -355,12 +376,52 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     }
                 }
                 case "start-softap": {
+                    CountDownLatch countDownLatch = new CountDownLatch(1);
+                    ISoftApCallback.Stub softApCallback = new ISoftApCallback.Stub() {
+                        @Override
+                        public void onStateChanged(int state, int failureReason) {
+                            pw.println("onStateChanged with state: " + state
+                                    + " failure reason: " + failureReason);
+                            mSapState = state;
+                            if (state == WifiManager.WIFI_AP_STATE_ENABLED) {
+                                pw.println(" SAP is enabled successfully");
+                                // Skip countDown() and wait for onInfoChanged() which has
+                                // the confirmed softAp channel information
+                            } else if (state == WifiManager.WIFI_AP_STATE_DISABLED) {
+                                pw.println(" SAP is disabled");
+                            } else if (state == WifiManager.WIFI_AP_STATE_FAILED) {
+                                pw.println(" SAP failed to start");
+                                countDownLatch.countDown();
+                            }
+                        }
+                        @Override
+                        public void onConnectedClientsChanged(List<WifiClient> clients) {
+                        }
+                        @Override
+                        public void onInfoChanged(SoftApInfo softApInfo) {
+                            pw.println("onInfoChanged: " + softApInfo);
+                            if (mSapState == WifiManager.WIFI_AP_STATE_ENABLED) {
+                                countDownLatch.countDown();
+                            }
+                        }
+                        @Override
+                        public void onCapabilityChanged(SoftApCapability capability) {
+                            pw.println("onCapabilityChanged " + capability);
+                        }
+                        @Override
+                        public void onBlockedClientConnecting(WifiClient client, int reason) {
+                        }
+
+                    };
+                    int callbackId = softApCallback.hashCode();
+                    mWifiService.registerSoftApCallback(new Binder(), softApCallback, callbackId);
                     SoftApConfiguration config = buildSoftApConfiguration(pw);
-                    if (mWifiService.startTetheredHotspot(config, SHELL_PACKAGE_NAME)) {
-                        pw.println("Soft AP started successfully");
-                    } else {
+                    if (!mWifiService.startTetheredHotspot(config, SHELL_PACKAGE_NAME)) {
                         pw.println("Soft AP failed to start. Please check config parameters");
                     }
+                    // Wait for softap to start and complete callback
+                    countDownLatch.await(3000, TimeUnit.MILLISECONDS);
+                    mWifiService.unregisterSoftApCallback(callbackId);
                     return 0;
                 }
                 case "stop-softap": {
@@ -760,10 +821,16 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         String ssid = getNextArgRequired();
         String type = getNextArgRequired();
         SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder();
-        configBuilder.setSsid("\"" + ssid + "\"");
+        configBuilder.setSsid(ssid);
         if (TextUtils.equals(type, "wpa2")) {
             configBuilder.setPassphrase(getNextArgRequired(),
                     SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
+        } else if (TextUtils.equals(type, "wpa3")) {
+            configBuilder.setPassphrase(getNextArgRequired(),
+                    SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
+        } else if (TextUtils.equals(type, "wpa3_transition")) {
+            configBuilder.setPassphrase(getNextArgRequired(),
+                    SoftApConfiguration.SECURITY_TYPE_WPA3_SAE_TRANSITION);
         } else if (TextUtils.equals(type, "open")) {
             configBuilder.setPassphrase(null, SoftApConfiguration.SECURITY_TYPE_OPEN);
         } else {
@@ -840,6 +907,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 new WifiNetworkSpecifier.Builder();
         specifierBuilder.setSsid(ssid);
         if (TextUtils.equals(type, "wpa3")) {
+            specifierBuilder.setWpa3Passphrase(getNextArgRequired());
+        } else if (TextUtils.equals(type, "wpa3_transition")) {
             specifierBuilder.setWpa3Passphrase(getNextArgRequired());
         } else if (TextUtils.equals(type, "wpa2")) {
             specifierBuilder.setWpa2Passphrase(getNextArgRequired());
@@ -929,7 +998,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         return 0;
     }
 
-    private boolean isApChannelMHzValid(int apChannelMHz) {
+    private boolean isApChannelMHzValid(PrintWriter pw, int apChannelMHz) {
         int[] allowed2gFreq = mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_24_GHZ);
         int[] allowed5gFreq = mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ);
         int[] allowed5gDfsFreq =
@@ -947,11 +1016,37 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         if (allowed6gFreq == null) {
             allowed6gFreq = new int[0];
         }
-
+        pw.println("2G freq: " + Arrays.toString(allowed2gFreq));
+        pw.println("5G freq: " + Arrays.toString(allowed5gFreq));
+        pw.println("5G DFS: " + Arrays.toString(allowed5gDfsFreq));
+        pw.println("6G freq: " + Arrays.toString(allowed6gFreq));
         return (Arrays.binarySearch(allowed2gFreq, apChannelMHz) >= 0
                 || Arrays.binarySearch(allowed5gFreq, apChannelMHz) >= 0
                 || Arrays.binarySearch(allowed5gDfsFreq, apChannelMHz) >= 0)
                 || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0;
+    }
+
+    private void waitForWifiEnabled(boolean enabled) throws InterruptedException {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+                    int state = mWifiService.getWifiEnabledState();
+                    if ((enabled && state == WIFI_STATE_ENABLED)
+                            || (!enabled && state == WIFI_STATE_DISABLED)) {
+                        countDownLatch.countDown();
+                    }
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        mContext.registerReceiver(broadcastReceiver, filter);
+        mWifiService.setWifiEnabled(SHELL_PACKAGE_NAME, enabled);
+        countDownLatch.await(5000, TimeUnit.MILLISECONDS);
+        mContext.unregisterReceiver(broadcastReceiver);
     }
 
     private void printStatus(PrintWriter pw) {
@@ -1076,15 +1171,16 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  reset-connected-score");
         pw.println("    Turns on the default connected scorer.");
         pw.println("    Note: Will clear any external scorer set.");
-        pw.println("  start-softap <ssid> (open|wpa2) <passphrase> [-b 2|5|6|any]");
+        pw.println("  start-softap <ssid> (open|wpa2|wpa3|wpa3_transition) <passphrase> "
+                + "[-b 2|5|6|any]");
         pw.println("    Start softap with provided params");
         pw.println("    Note that the shell command doesn't activate internet tethering. In some "
                 + "devices, internet sharing is possible when Wi-Fi STA is also enabled and is"
                 + "associated to another AP with internet access.");
         pw.println("    <ssid> - SSID of the network");
-        pw.println("    open|wpa2 - Security type of the network.");
+        pw.println("    open|wpa2|wpa3|wpa3_transition - Security type of the network.");
         pw.println("        - Use 'open' for networks with no passphrase");
-        pw.println("        - Use 'wpa2' for networks with passphrase");
+        pw.println("        - Use 'wpa2', 'wpa3', 'wpa3_transition' for networks with passphrase");
         pw.println("    -b 2|5|6|any - select the preferred band.");
         pw.println("        - Use '2' to select 2.4GHz band as the preferred band");
         pw.println("        - Use '5' to select 5GHz band as the preferred band");
