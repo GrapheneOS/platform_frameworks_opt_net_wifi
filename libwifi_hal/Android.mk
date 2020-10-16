@@ -105,6 +105,8 @@ else ifeq ($(BOARD_WLAN_DEVICE), realtek)
   LIB_WIFI_HAL := libwifi-hal-rtk
 else ifeq ($(BOARD_WLAN_DEVICE), emulator)
   LIB_WIFI_HAL := libwifi-hal-emu
+else ifeq ($(BOARD_WLAN_DEVICE), slsi)
+  LIB_WIFI_HAL := libwifi-hal-slsi
 endif
 
 # The WiFi HAL that you should be linking.
