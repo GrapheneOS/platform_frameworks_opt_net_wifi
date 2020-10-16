@@ -656,6 +656,64 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         verifyNoMoreInteractions(cb);
     }
 
+    /**
+     * Validate a flow sequence for test chip 1:
+     * - create STA (privileged app)
+     * - create AP (system app): will get refused
+     * - replace STA requestorWs with fg app
+     * - create AP (system app)
+     */
+    @Test
+    public void testReplaceRequestorWs() throws Exception {
+        // initialize a test chip & create a STA (which will configure the chip).
+        ChipMockBase chipMock = new TestChipV1();
+        chipMock.initialize();
+        mInOrder = inOrder(mServiceManagerMock, mWifiMock, chipMock.chip,
+                mManagerStatusListenerMock);
+        executeAndValidateInitializationSequence();
+        executeAndValidateStartupSequence();
+
+        // create STA interface from privileged app: should succeed.
+        IWifiIface staIface = validateInterfaceSequence(chipMock,
+                false, // chipModeValid
+                -1000, // chipModeId (only used if chipModeValid is true)
+                IfaceType.STA,
+                "wlan0",
+                TestChipV1.STA_CHIP_MODE_ID,
+                null, // tearDownList
+                null, // destroyedListener
+                TEST_WORKSOURCE_0 // requestorWs
+        );
+        collector.checkThat("STA created", staIface, IsNull.notNullValue());
+
+        // get AP interface from a system app: should fail
+        when(mWorkSourceHelper1.hasAnyPrivilegedAppRequest()).thenReturn(false);
+        when(mWorkSourceHelper1.hasAnySystemAppRequest()).thenReturn(true);
+        IWifiApIface apIface = mDut.createApIface(null, null, TEST_WORKSOURCE_1);
+        collector.checkThat("not allocated interface", apIface, IsNull.nullValue());
+
+        // Now replace the requestorWs (fg app now) for the STA iface.
+        when(mWorkSourceHelper2.hasAnyPrivilegedAppRequest()).thenReturn(false);
+        when(mWorkSourceHelper2.hasAnyForegroundAppRequest()).thenReturn(true);
+        assertTrue(mDut.replaceRequestorWs(staIface, TEST_WORKSOURCE_2));
+
+        // get AP interface again from a system app: should succeed now
+        when(mWorkSourceHelper1.hasAnyPrivilegedAppRequest()).thenReturn(false);
+        when(mWorkSourceHelper1.hasAnySystemAppRequest()).thenReturn(true);
+        apIface = (IWifiApIface) validateInterfaceSequence(chipMock,
+                true, // chipModeValid
+                TestChipV1.STA_CHIP_MODE_ID, // chipModeId (only used if chipModeValid is true)
+                IfaceType.AP,
+                "wlan0",
+                TestChipV1.AP_CHIP_MODE_ID,
+                null, // tearDownList
+                null, // destroyedListener
+                TEST_WORKSOURCE_1 // requestorWs
+        );
+        collector.checkThat("not allocated interface", apIface, IsNull.notNullValue());
+    }
+
+
     //////////////////////////////////////////////////////////////////////////////////////
     // Chip Specific Tests - but should work on all chips!
     // (i.e. add copies for each test chip)
@@ -1656,7 +1714,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         collector.checkThat("AP interface wasn't created", apIface, IsNull.notNullValue());
         verify(chipMock.chip).removeP2pIface("p2p0");
 
-        // request STA2 (system app): s/hould fail
+        // request STA2 (system app): should fail
         IWifiIface staIface2 = mDut.createStaIface(null, null, TEST_WORKSOURCE_0);
         collector.checkThat("STA2 should not be created", staIface2, IsNull.nullValue());
 

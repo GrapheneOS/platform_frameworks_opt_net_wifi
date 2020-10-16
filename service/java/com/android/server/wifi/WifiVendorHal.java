@@ -436,6 +436,27 @@ public class WifiVendorHal {
     }
 
     /**
+     * Replace the requestor worksource info for a STA iface using {@link HalDeviceManager}.
+     *
+     * @param ifaceName Name of the interface being removed.
+     * @param requestorWs Requestor worksource.
+     * @return true on success, false otherwise.
+     */
+    public boolean replaceStaIfaceRequestorWs(@NonNull String ifaceName,
+            @NonNull WorkSource requestorWs) {
+        synchronized (sLock) {
+            IWifiStaIface iface = getStaIface(ifaceName);
+            if (iface == null) return boolResult(false);
+
+            if (!mHalDeviceManager.replaceRequestorWs(iface, requestorWs)) {
+                mLog.err("Failed to replace requestor worksource for STA iface").flush();
+                return boolResult(false);
+            }
+            return true;
+        }
+    }
+
+    /**
      * Remove a STA iface using {@link HalDeviceManager}.
      *
      * @param ifaceName Name of the interface being removed.
@@ -508,6 +529,27 @@ public class WifiVendorHal {
             }
             mIWifiApIfaces.put(ifaceName, iface);
             return ifaceName;
+        }
+    }
+
+    /**
+     * Replace the requestor worksource info for a AP iface using {@link HalDeviceManager}.
+     *
+     * @param ifaceName Name of the interface being removed.
+     * @param requestorWs Requestor worksource.
+     * @return true on success, false otherwise.
+     */
+    public boolean replaceApIfaceRequestorWs(@NonNull String ifaceName,
+            @NonNull WorkSource requestorWs) {
+        synchronized (sLock) {
+            IWifiApIface iface = getApIface(ifaceName);
+            if (iface == null) return boolResult(false);
+
+            if (!mHalDeviceManager.replaceRequestorWs((IWifiIface) iface, requestorWs)) {
+                mLog.err("Failed to replace requestor worksource for AP iface").flush();
+                return boolResult(false);
+            }
+            return true;
         }
     }
 
