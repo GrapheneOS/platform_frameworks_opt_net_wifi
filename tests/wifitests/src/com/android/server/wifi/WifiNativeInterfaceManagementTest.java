@@ -128,6 +128,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         when(mWifiVendorHal.createApIface(any(), any())).thenReturn(IFACE_NAME_0);
         when(mWifiVendorHal.removeStaIface(any())).thenReturn(true);
         when(mWifiVendorHal.removeApIface(any())).thenReturn(true);
+        when(mWifiVendorHal.replaceStaIfaceRequestorWs(any(), any())).thenReturn(true);
 
         when(mWificondControl.setupInterfaceForClientMode(any(), any(), any(), any())).thenReturn(
                 true);
@@ -1304,8 +1305,10 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         executeAndValidateSetupClientInterface(
                 false, false, IFACE_NAME_0, mIfaceCallback0, mIfaceDestroyedListenerCaptor0,
                 mNetworkObserverCaptor0);
-        assertTrue(mWifiNative.switchClientInterfaceToScanMode(IFACE_NAME_0));
+        assertTrue(mWifiNative.switchClientInterfaceToScanMode(IFACE_NAME_0, TEST_WORKSOURCE));
 
+        mInOrder.verify(mWifiVendorHal).isVendorHalSupported();
+        mInOrder.verify(mWifiVendorHal).replaceStaIfaceRequestorWs(IFACE_NAME_0, TEST_WORKSOURCE);
         mInOrder.verify(mSupplicantStaIfaceHal).teardownIface(IFACE_NAME_0);
         mInOrder.verify(mSupplicantStaIfaceHal).deregisterDeathHandler();
         mInOrder.verify(mSupplicantStaIfaceHal).terminate();
@@ -1322,7 +1325,7 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         executeAndValidateSetupClientInterfaceForScan(
                 false, false, IFACE_NAME_0, mIfaceCallback0, mIfaceDestroyedListenerCaptor0,
                 mNetworkObserverCaptor0);
-        assertTrue(mWifiNative.switchClientInterfaceToScanMode(IFACE_NAME_0));
+        assertTrue(mWifiNative.switchClientInterfaceToScanMode(IFACE_NAME_0, TEST_WORKSOURCE));
     }
 
     /**
@@ -1333,8 +1336,11 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         executeAndValidateSetupClientInterfaceForScan(
                 false, false, IFACE_NAME_0, mIfaceCallback0, mIfaceDestroyedListenerCaptor0,
                 mNetworkObserverCaptor0);
-        assertTrue(mWifiNative.switchClientInterfaceToConnectivityMode(IFACE_NAME_0));
+        assertTrue(mWifiNative.switchClientInterfaceToConnectivityMode(
+                IFACE_NAME_0, TEST_WORKSOURCE));
 
+        mInOrder.verify(mWifiVendorHal).isVendorHalSupported();
+        mInOrder.verify(mWifiVendorHal).replaceStaIfaceRequestorWs(IFACE_NAME_0, TEST_WORKSOURCE);
         mInOrder.verify(mSupplicantStaIfaceHal).isInitializationStarted();
         mInOrder.verify(mSupplicantStaIfaceHal).initialize();
         mInOrder.verify(mSupplicantStaIfaceHal).startDaemon();
@@ -1355,7 +1361,8 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         executeAndValidateSetupClientInterface(
                 false, false, IFACE_NAME_0, mIfaceCallback0, mIfaceDestroyedListenerCaptor0,
                 mNetworkObserverCaptor0);
-        assertTrue(mWifiNative.switchClientInterfaceToConnectivityMode(IFACE_NAME_0));
+        assertTrue(mWifiNative.switchClientInterfaceToConnectivityMode(
+                IFACE_NAME_0, TEST_WORKSOURCE));
     }
 
     /**
@@ -1375,7 +1382,6 @@ public class WifiNativeInterfaceManagementTest extends WifiBaseTest {
         assertEquals(new HashSet<>(Arrays.asList(IFACE_NAME_0, IFACE_NAME_1)),
                 mWifiNative.getClientInterfaceNames());
     }
-
 
     private void executeAndValidateSetupClientInterface(
             boolean existingStaIface, boolean existingApIface,

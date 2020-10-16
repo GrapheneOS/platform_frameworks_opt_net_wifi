@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import android.app.ActivityManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Process;
 import android.os.WorkSource;
 
 import androidx.test.filters.SmallTest;
@@ -118,5 +119,20 @@ public class WorkSourceHelperTest extends WifiBaseTest {
         when(mActivityManager.getPackageImportance(TEST_PACKAGE_2))
                 .thenReturn(IMPORTANCE_BACKGROUND);
         assertTrue(mWorkSourceHelper.hasAnyForegroundServiceRequest());
+    }
+
+
+    @Test
+    public void testHasAnyInternalRequest() throws Exception {
+        // 2 from bg app.
+        when(mActivityManager.getPackageImportance(TEST_PACKAGE_1))
+                .thenReturn(IMPORTANCE_BACKGROUND);
+        when(mActivityManager.getPackageImportance(TEST_PACKAGE_2))
+                .thenReturn(IMPORTANCE_BACKGROUND);
+        assertFalse(mWorkSourceHelper.hasAnyInternalRequest());
+
+        // add a new internal request.
+        mWorkSource.add(new WorkSource(Process.WIFI_UID, "com.android.wifi"));
+        assertTrue(mWorkSourceHelper.hasAnyInternalRequest());
     }
 }
