@@ -428,7 +428,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
                 softApConfigurationCaptor.getValue().getBand());
         assertEquals(SoftApConfiguration.SECURITY_TYPE_WPA2_PSK,
                 softApConfigurationCaptor.getValue().getSecurityType());
-        assertEquals("\"ap1\"", softApConfigurationCaptor.getValue().getSsid());
+        assertEquals("ap1", softApConfigurationCaptor.getValue().getSsid());
         assertEquals("xyzabc321", softApConfigurationCaptor.getValue().getPassphrase());
     }
 
