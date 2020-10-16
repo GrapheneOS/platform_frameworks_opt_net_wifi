@@ -531,6 +531,12 @@ public class BaseWifiService extends IWifiManager.Stub {
     }
 
     @Override
+    public void startDppAsEnrolleeResponder(IBinder binder, String deviceInfo,
+            int curve, IDppCallback callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void stopDppSession() throws RemoteException {
         throw new UnsupportedOperationException();
     }
