@@ -485,11 +485,24 @@ public class WifiConfigManager {
         if (config.getIpConfiguration().getIpAssignment() == IpConfiguration.IpAssignment.STATIC) {
             return false;
         }
+        if (config.isOpenNetwork() && shouldEnableEnhancedRandomizationOnOpenNetwork(config)) {
+            return true;
+        }
         if (config.isPasspoint()) {
             return isNetworkOptInForEnhancedRandomization(config.FQDN);
         } else {
             return isNetworkOptInForEnhancedRandomization(config.SSID);
         }
+    }
+
+    private boolean shouldEnableEnhancedRandomizationOnOpenNetwork(WifiConfiguration config) {
+        if (!mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids()
+                && !mContext.getResources().getBoolean(
+                        R.bool.config_wifiAllowEnhancedMacRandomizationOnOpenSsids)) {
+            return false;
+        }
+        return config.getNetworkSelectionStatus().hasEverConnected()
+                && config.getNetworkSelectionStatus().hasNeverDetectedCaptivePortal();
     }
 
     private boolean isNetworkOptInForEnhancedRandomization(String ssidOrFqdn) {

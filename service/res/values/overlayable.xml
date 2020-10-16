@@ -89,6 +89,7 @@
           <item type="bool" name="config_wifiLocalOnlyHotspot6ghz" />
           <item type="bool" name="config_wifi_local_only_hotspot_5ghz" />
           <item type="bool" name="config_wifi_connected_mac_randomization_supported" />
+          <item type="bool" name="config_wifiAllowEnhancedMacRandomizationOnOpenSsids" />
           <item type="bool" name="config_wifi_p2p_mac_randomization_supported" />
           <item type="bool" name="config_wifi_ap_mac_randomization_supported" />
           <item type="array" name="config_wifi_aggressive_randomization_ssid_allowlist" />
