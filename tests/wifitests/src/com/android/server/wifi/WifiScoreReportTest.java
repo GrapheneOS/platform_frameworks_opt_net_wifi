@@ -42,14 +42,16 @@ import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkAgent;
+import android.net.NetworkAgentConfig;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
+import android.net.NetworkProvider;
 import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.os.test.TestLooper;
 
@@ -123,8 +125,13 @@ public class WifiScoreReportTest extends WifiBaseTest {
     // NetworkAgent is abstract, so a subclass is necessary
     private static class TestNetworkAgent extends NetworkAgent {
         TestNetworkAgent(Context context) {
-            super(new TestLooper().getLooper(), context, "TestNetworkAgent",
-                    mock(NetworkInfo.class), new NetworkCapabilities(), new LinkProperties(), 0);
+            this(context, new TestLooper().getLooper());
+        }
+        private TestNetworkAgent(Context context, Looper looper) {
+            super(context, looper, "TestNetworkAgent", new NetworkCapabilities(),
+                    new LinkProperties(), 0, new NetworkAgentConfig.Builder().build(),
+                    new NetworkProvider(context, looper, "ScoreReportTest agent"));
+            register();
         }
         @Override protected void unwanted() { }
     }
