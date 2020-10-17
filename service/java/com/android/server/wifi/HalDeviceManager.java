@@ -294,6 +294,39 @@ public class HalDeviceManager {
     }
 
     /**
+     * Replace the requestorWs info for the associated info.
+     *
+     * When a new iface is requested via
+     * {@link #createIface(int, InterfaceDestroyedListener, Handler, WorkSource)}, the clients
+     * pass in a worksource which includes all the apps that triggered the iface creation. However,
+     * this list of apps can change during the lifetime of the iface (as new apps request the same
+     * iface or existing apps release their request for the iface). This API can be invoked multiple
+     * times to replace the entire requestor info for the provided iface.
+     *
+     * Note: This is is wholesale replace of the requestor info. The corresponding client is
+     * responsible for individual add/remove of apps in the WorkSource passed in.
+     */
+    public boolean replaceRequestorWs(@NonNull IWifiIface iface,
+            @NonNull WorkSource newRequestorWs) {
+        String name = getName(iface);
+        int type = getType(iface);
+        if (VDBG) {
+            Log.d(TAG, "replaceRequestorWs: iface(name)=" + name + ", newRequestorWs="
+                    + newRequestorWs);
+        }
+
+        synchronized (mLock) {
+            InterfaceCacheEntry cacheEntry = mInterfaceInfoCache.get(Pair.create(name, type));
+            if (cacheEntry == null) {
+                Log.e(TAG, "replaceRequestorWs: no entry for iface(name)=" + name);
+                return false;
+            }
+            cacheEntry.requestorWsHelper = mWifiInjector.makeWsHelper(newRequestorWs);
+            return true;
+        }
+    }
+
+    /**
      * Register an InterfaceDestroyedListener to the specified iface - returns true on success
      * and false on failure. This listener is in addition to the one registered when the interface
      * was created - allowing non-creators to monitor interface status.
@@ -1428,6 +1461,8 @@ public class HalDeviceManager {
             }
         }
 
+        Log.d(TAG, "createIfaceIfPossible: Failed to create iface for ifaceType=" + ifaceType
+                + ", requestorWs=" + requestorWs);
         return null;
     }
 
@@ -1654,25 +1689,28 @@ public class HalDeviceManager {
     private static final int PRIORITY_FG_APP = 2;
     private static final int PRIORITY_FG_SERVICE = 3;
     private static final int PRIORITY_BG = 4;
+    private static final int PRIORITY_INTERNAL = 5;
     @IntDef(prefix = { "PRIORITY_" }, value = {
             PRIORITY_PRIVILEGED,
             PRIORITY_SYSTEM,
             PRIORITY_FG_APP,
             PRIORITY_FG_SERVICE,
-            PRIORITY_BG
+            PRIORITY_BG,
+            PRIORITY_INTERNAL,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface RequestorWsPriority {}
 
     /**
      * Returns integer priority level for the provided |ws| based on rules mentioned in
-     * {@link #allowedToDeleteIfaceTypeForRequestedType(int, WorkSource, WifiIfaceInfo[][])}
+     * {@link #allowedToDeleteIfaceTypeForRequestedType(int, WorkSource, int, WifiIfaceInfo[][])}.
      */
     private static @RequestorWsPriority int getRequestorWsPriority(WorkSourceHelper ws) {
         if (ws.hasAnyPrivilegedAppRequest()) return PRIORITY_PRIVILEGED;
         if (ws.hasAnySystemAppRequest()) return PRIORITY_SYSTEM;
         if (ws.hasAnyForegroundAppRequest()) return PRIORITY_FG_APP;
         if (ws.hasAnyForegroundServiceRequest()) return PRIORITY_FG_SERVICE;
+        if (ws.hasAnyInternalRequest()) return PRIORITY_INTERNAL;
         return PRIORITY_BG;
     }
 

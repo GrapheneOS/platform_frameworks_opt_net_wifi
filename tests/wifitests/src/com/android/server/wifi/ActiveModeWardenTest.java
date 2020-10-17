@@ -63,6 +63,7 @@ import android.net.wifi.WifiClient;
 import android.net.wifi.WifiManager;
 import android.os.BatteryStatsManager;
 import android.os.IBinder;
+import android.os.Process;
 import android.os.WorkSource;
 import android.os.test.TestLooper;
 import android.telephony.TelephonyManager;
@@ -282,7 +283,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             verify(mWifiInjector).makeClientModeManager(
                     any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
         } else {
-            verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY);
+            verify(mClientModeManager).setRole(ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         }
         verify(mScanRequestProxy).enableScanning(true, true);
         if (fromState.equals(DISABLED_STATE_STRING)) {
@@ -316,7 +317,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             verify(mWifiInjector).makeClientModeManager(
                     any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_SCAN_ONLY), anyBoolean());
         } else {
-            verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+            verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
         }
         verify(mScanRequestProxy).enableScanning(true, false);
         if (fromState.equals(DISABLED_STATE_STRING)) {
@@ -615,7 +616,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         enterScanOnlyModeActiveState();
 
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(false);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
         mClientListener.onStopped(mClientModeManager);
         mLooper.dispatchAll();
@@ -1149,10 +1150,11 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void enableScanMode() throws Exception {
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
         verify(mWifiInjector).makeClientModeManager(
-                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_SCAN_ONLY), anyBoolean());
+                any(), eq(new WorkSource(Process.WIFI_UID)), eq(ROLE_CLIENT_SCAN_ONLY),
+                anyBoolean());
         assertInEnabledState();
         verify(mClientModeManager, never()).stop();
     }
@@ -1206,7 +1208,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         // toggling scan always available is not sufficient for scan mode
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
 
         assertInDisabledState();
@@ -1348,7 +1350,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testEcmOnFromScanMode() throws Exception {
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
 
         mClientListener.onStarted(mClientModeManager);
@@ -1373,7 +1375,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testEcmOffInScanMode() throws Exception {
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
 
         assertInEnabledState();
@@ -1394,7 +1396,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testEcmDisabledReturnsToScanMode() throws Exception {
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
 
         assertInEnabledState();
@@ -1796,7 +1798,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         // now enable scanning and verify we do not start wifi
         when(mSettingsStore.isWifiToggleEnabled()).thenReturn(true);
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
 
         verify(mWifiInjector, never()).makeClientModeManager(
@@ -2075,12 +2077,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInDisabledState();
 
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
-        mActiveModeWarden.scanAlwaysModeChanged(TEST_WORKSOURCE);
+        mActiveModeWarden.scanAlwaysModeChanged();
         mLooper.dispatchAll();
 
         assertInEnabledState();
         verify(mWifiInjector).makeClientModeManager(
-                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_SCAN_ONLY), anyBoolean());
+                any(), eq(new WorkSource(Process.WIFI_UID)), eq(ROLE_CLIENT_SCAN_ONLY),
+                anyBoolean());
 
         mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
         mLooper.dispatchAll();

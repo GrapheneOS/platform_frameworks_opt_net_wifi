@@ -6417,11 +6417,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
                         eq("WifiService"));
         mWifiServiceImpl.setScanAlwaysAvailable(true, TEST_PACKAGE_NAME);
         verify(mSettingsStore).handleWifiScanAlwaysAvailableToggled(true);
-        verify(mActiveModeWarden).scanAlwaysModeChanged(any());
+        verify(mActiveModeWarden).scanAlwaysModeChanged();
 
         mWifiServiceImpl.setScanAlwaysAvailable(false, TEST_PACKAGE_NAME);
         verify(mSettingsStore).handleWifiScanAlwaysAvailableToggled(false);
-        verify(mActiveModeWarden, times(2)).scanAlwaysModeChanged(any());
+        verify(mActiveModeWarden, times(2)).scanAlwaysModeChanged();
     }
 
     @Test(expected = SecurityException.class)
@@ -6432,7 +6432,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         mWifiServiceImpl.setScanAlwaysAvailable(true, TEST_PACKAGE_NAME);
         verify(mSettingsStore, never()).handleWifiScanAlwaysAvailableToggled(anyBoolean());
-        verify(mActiveModeWarden, never()).scanAlwaysModeChanged(any());
+        verify(mActiveModeWarden, never()).scanAlwaysModeChanged();
     }
 
     private List<ScanResult> createScanResultList() {
