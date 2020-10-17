@@ -666,6 +666,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     printWifiNetworkSuggestions(pw, suggestions);
                     return 0;
                 }
+                case "list-suggestions-from-app": {
+                    String packageName = getNextArgRequired();
+                    List<WifiNetworkSuggestion> suggestions =
+                            mWifiService.getNetworkSuggestions(packageName);
+                    printWifiNetworkSuggestions(pw, suggestions);
+                    return 0;
+                }
                 case "add-request": {
                     NetworkRequest networkRequest = buildNetworkRequest(pw);
                     ConnectivityManager.NetworkCallback networkCallback =
@@ -1158,8 +1165,6 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Removes all suggestions added via shell");
         pw.println("  list-suggestions");
         pw.println("    Lists the suggested networks added via shell");
-        pw.println("  list-all-suggestions");
-        pw.println("    Lists the all suggested networks on this device");
         pw.println("  set-connected-score <score>");
         pw.println("    Set connected wifi network score (to choose between LTE & Wifi for "
                 + "default route).");
@@ -1262,6 +1267,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Queries whether network requests from the app is approved or not.");
         pw.println("    Note: This only returns whether the app was set via the " +
                 "'network-requests-set-user-approved' shell command");
+        pw.println("  list-all-suggestions");
+        pw.println("    Lists all suggested networks on this device");
+        pw.println("  list-suggestions-from-app <package name>");
+        pw.println("    Lists the suggested networks from the app");
     }
 
     @Override
