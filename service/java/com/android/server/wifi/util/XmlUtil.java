@@ -1021,6 +1021,8 @@ public class XmlUtil {
         public static final String XML_TAG_DISABLE_REASON = "DisableReason";
         public static final String XML_TAG_CONNECT_CHOICE = "ConnectChoice";
         public static final String XML_TAG_HAS_EVER_CONNECTED = "HasEverConnected";
+        public static final String XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED =
+                "CaptivePortalNeverDetected";
 
         /**
          * Write the NetworkSelectionStatus data elements from the provided status to the XML
@@ -1039,6 +1041,8 @@ public class XmlUtil {
             XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE, selectionStatus.getConnectChoice());
             XmlUtil.writeNextValue(
                     out, XML_TAG_HAS_EVER_CONNECTED, selectionStatus.hasEverConnected());
+            XmlUtil.writeNextValue(out, XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED,
+                    selectionStatus.hasNeverDetectedCaptivePortal());
         }
 
         /**
@@ -1054,6 +1058,9 @@ public class XmlUtil {
             NetworkSelectionStatus selectionStatus = new NetworkSelectionStatus();
             String statusString = "";
             String disableReasonString = "";
+            // Initialize hasNeverDetectedCaptivePortal to "false" for upgrading legacy configs
+            // which do not have the XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED tag.
+            selectionStatus.setHasNeverDetectedCaptivePortal(false);
 
             // Loop through and parse out all the elements from the stream within this section.
             while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
@@ -1075,6 +1082,8 @@ public class XmlUtil {
                     case XML_TAG_HAS_EVER_CONNECTED:
                         selectionStatus.setHasEverConnected((boolean) value);
                         break;
+                    case XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED:
+                        selectionStatus.setHasNeverDetectedCaptivePortal((boolean) value);
                     default:
                         Log.w(TAG, "Ignoring unknown value name found: " + valueName[0]);
                         break;
