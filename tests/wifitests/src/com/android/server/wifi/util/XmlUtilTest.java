@@ -502,6 +502,30 @@ public class XmlUtilTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that when XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED is not found in the XML file, the
+     * corresponding field defaults to false.
+     * @throws IOException
+     * @throws XmlPullParserException
+     */
+    @Test
+    public void testCaptivePortalNeverDetected_DefaultToFalse()
+            throws IOException, XmlPullParserException {
+        // First generate XML data that only has the header filled in
+        final XmlSerializer out = new FastXmlSerializer();
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        out.setOutput(outputStream, StandardCharsets.UTF_8.name());
+        XmlUtil.writeDocumentStart(out, mXmlDocHeader);
+        XmlUtil.writeDocumentEnd(out, mXmlDocHeader);
+
+        // Deserialize the data
+        NetworkSelectionStatus retrieved =
+                deserializeNetworkSelectionStatus(outputStream.toByteArray());
+
+        // Verify that hasNeverDetectedCaptivePortal returns false.
+        assertFalse(retrieved.hasNeverDetectedCaptivePortal());
+    }
+
+    /**
      * Verify that when the macRandomizationSetting field is not found in the XML file,
      * macRandomizationSetting is defaulted to RANDOMIZATION_NONE.
      * @throws IOException

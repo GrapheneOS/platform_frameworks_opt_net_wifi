@@ -2067,6 +2067,17 @@ public class WifiConfigManager {
     }
 
     /**
+     * Set captive portal to be detected for this network.
+     * @param networkId
+     */
+    public void noteCaptivePortalDetected(int networkId) {
+        WifiConfiguration config = getInternalConfiguredNetwork(networkId);
+        if (config != null) {
+            config.getNetworkSelectionStatus().setHasNeverDetectedCaptivePortal(false);
+        }
+    }
+
+    /**
      * Updates a network configuration after disconnection from it.
      *
      * This method updates the following WifiConfiguration elements:
