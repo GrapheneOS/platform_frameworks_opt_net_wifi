@@ -1995,6 +1995,7 @@ public class WifiConnectivityManager {
         retrieveWifiScanner();
         mConnectivityHelper.getFirmwareRoamingInfo();
         mBssidBlocklistMonitor.clearBssidBlocklist();
+        mConfigManager.enableTemporaryDisabledNetworks();
         mWifiChannelUtilization.init(getPrimaryClientModeManager().getWifiLinkLayerStats());
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiEnablePartialInitialScan)) {
@@ -2048,6 +2049,7 @@ public class WifiConnectivityManager {
         if (mWifiEnabled && !enable) {
             mNetworkSelector.resetOnDisable();
             mBssidBlocklistMonitor.clearBssidBlocklist();
+            mConfigManager.enableTemporaryDisabledNetworks();
         }
         mWifiEnabled = enable;
         updateRunningState();
