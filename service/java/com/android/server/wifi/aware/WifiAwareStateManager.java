@@ -231,6 +231,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
     private ConfigRequest mCurrentAwareConfiguration = null;
     private boolean mCurrentIdentityNotification = false;
     private boolean mCurrentRangingEnabled = false;
+    private boolean mIsInstantCommunicationModeEnabled = false;
 
     private static final byte[] ALL_ZERO_MAC = new byte[] {0, 0, 0, 0, 0, 0};
     private byte[] mCurrentDiscoveryInterfaceMac = ALL_ZERO_MAC;
@@ -326,6 +327,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                         j.put("maxSubscribeInterfaceAddresses",
                                 mCapabilities.maxSubscribeInterfaceAddresses);
                         j.put("supportedCipherSuites", mCapabilities.supportedCipherSuites);
+                        j.put("isInstantCommunicationModeSupported",
+                                mCapabilities.isInstantCommunicationModeSupported);
                     } catch (JSONException e) {
                         Log.e(TAG, "onCommand: get_capabilities e=" + e);
                     }
@@ -584,6 +587,40 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         Message msg = mSm.obtainMessage(MESSAGE_TYPE_COMMAND);
         msg.arg1 = COMMAND_TYPE_RELEASE_AWARE;
         mSm.sendMessage(msg);
+    }
+
+    /**
+     * Enable instant communication mode if supported.
+     * @param enabled true for enable, false for disable.
+     */
+    public void enableInstantCommunicationMode(boolean enabled) {
+        if (mCapabilities == null) {
+            if (mDbg) {
+                Log.v(TAG, "Aware capability is not loaded.");
+            }
+            return;
+        }
+
+        if (!mCapabilities.isInstantCommunicationModeSupported) {
+            if (mDbg) {
+                Log.v(TAG, "Device does not support instant communication mode.");
+            }
+            return;
+        }
+        boolean changed = mIsInstantCommunicationModeEnabled != enabled;
+        mIsInstantCommunicationModeEnabled = enabled;
+        if (!changed) {
+            return;
+        }
+        reconfigure();
+    }
+
+    /**
+     * Get if instant communication mode is currently enabled.
+     * @return true if enabled, false otherwise.
+     */
+    public boolean isInstantCommunicationModeEnabled() {
+        return mIsInstantCommunicationModeEnabled;
     }
 
     /**
@@ -2286,7 +2323,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
         boolean success = mWifiAwareNativeApi.enableAndConfigure(transactionId, merged,
                 notificationRequired, mCurrentAwareConfiguration == null,
                 mPowerManager.isInteractive(), mPowerManager.isDeviceIdleMode(),
-                mCurrentRangingEnabled);
+                mCurrentRangingEnabled, mIsInstantCommunicationModeEnabled);
         if (!success) {
             try {
                 callback.onConnectFail(NanStatusType.INTERNAL_FAILURE);
@@ -2340,7 +2377,7 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
 
         return mWifiAwareNativeApi.enableAndConfigure(transactionId, merged, notificationReqs,
                 false, mPowerManager.isInteractive(), mPowerManager.isDeviceIdleMode(),
-                rangingEnabled);
+                rangingEnabled, mIsInstantCommunicationModeEnabled);
     }
 
     private boolean reconfigureLocal(short transactionId) {
@@ -2356,7 +2393,8 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
 
         return mWifiAwareNativeApi.enableAndConfigure(transactionId, mCurrentAwareConfiguration,
                 notificationReqs, false, mPowerManager.isInteractive(),
-                mPowerManager.isDeviceIdleMode(), rangingEnabled);
+                mPowerManager.isDeviceIdleMode(), rangingEnabled,
+                mIsInstantCommunicationModeEnabled);
     }
 
     private void terminateSessionLocal(int clientId, int sessionId) {

@@ -22,6 +22,7 @@ import android.app.AppOpsManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.net.NetworkStack;
@@ -43,6 +44,8 @@ import com.android.server.wifi.WifiLog;
  */
 public class WifiPermissionsUtil {
     private static final String TAG = "WifiPermissionsUtil";
+    private static final int APP_INFO_FLAGS_SYSTEM_APP =
+            ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
     private final WifiPermissionsWrapper mWifiPermissionsWrapper;
     private final Context mContext;
     private final FrameworkFacade mFrameworkFacade;
@@ -588,5 +591,22 @@ public class WifiPermissionsUtil {
                 retrieveDevicePolicyManagerFromUserContext(uid);
         if (devicePolicyManager == null) return false;
         return devicePolicyManager.isProfileOwnerApp(packageName);
+    }
+
+    /** Helper method to check if the entity initiating the binder call is a system app. */
+    public boolean isSystem(String packageName, int uid) {
+        long ident = Binder.clearCallingIdentity();
+        try {
+            ApplicationInfo info = mContext.getPackageManager().getApplicationInfoAsUser(
+                    packageName, 0, UserHandle.getUserHandleForUid(uid));
+            return (info.flags & APP_INFO_FLAGS_SYSTEM_APP) != 0;
+        } catch (PackageManager.NameNotFoundException e) {
+            // In case of exception, assume unknown app (more strict checking)
+            // Note: This case will never happen since checkPackage is
+            // called to verify validity before checking App's version.
+        } finally {
+            Binder.restoreCallingIdentity(ident);
+        }
+        return false;
     }
 }

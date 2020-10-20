@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -169,6 +170,25 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         mDut.isUsageEnabled();
 
         verify(mAwareStateManagerMock).isUsageEnabled();
+    }
+
+    /**
+     * Validate enableInstantCommunicationMode() and isInstantCommunicationModeEnabled() function
+     */
+    @Test
+    public void testInstantCommunicationMode() {
+        mDut.isInstantCommunicationModeEnabled();
+        verify(mAwareStateManagerMock).isInstantCommunicationModeEnabled();
+
+        // Non-system package could not enable this mode.
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(false);
+        mDut.enableInstantCommunicationMode(mPackageName, true);
+        verify(mAwareStateManagerMock, never()).enableInstantCommunicationMode(eq(true));
+
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(true);
+        mDut.enableInstantCommunicationMode(mPackageName, true);
+        verify(mAwareStateManagerMock).enableInstantCommunicationMode(eq(true));
+
     }
 
 
@@ -641,6 +661,7 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         cap.maxAppInfoLen = 255;
         cap.maxQueuedTransmitMessages = 6;
         cap.supportedCipherSuites = NanCipherSuiteType.SHARED_KEY_256_MASK;
+        cap.isInstantCommunicationModeSupported = true;
 
         Characteristics characteristics = cap.toPublicCharacteristics();
         assertEquals(characteristics.getMaxServiceNameLength(), maxServiceName);
@@ -648,6 +669,7 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         assertEquals(characteristics.getMaxMatchFilterLength(), maxMatchFilter);
         assertEquals(characteristics.getSupportedCipherSuites(),
                 Characteristics.WIFI_AWARE_CIPHER_SUITE_NCS_SK_256);
+        assertEquals(characteristics.isInstantCommunicationModeSupported(), true);
     }
 
     /*
@@ -729,6 +751,7 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         cap.maxAppInfoLen = 255;
         cap.maxQueuedTransmitMessages = 6;
         cap.supportedCipherSuites = NanCipherSuiteType.SHARED_KEY_256_MASK;
+        cap.isInstantCommunicationModeSupported = false;
         return cap.toPublicCharacteristics();
     }
 
