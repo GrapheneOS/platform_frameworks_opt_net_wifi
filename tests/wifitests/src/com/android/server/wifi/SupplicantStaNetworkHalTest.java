@@ -93,6 +93,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
 
     enum SupplicantStaNetworkVersion {
         V1_0,
+        V1_1,
         V1_2,
         V1_3,
         V1_4,
@@ -218,8 +219,12 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         config.requirePmf = true;
 
         // Set the new defaults
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.SMS4);
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_128);
         config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
         config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.SMS4);
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_128);
         config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
         config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
         config.allowedGroupManagementCiphers
@@ -1001,6 +1006,11 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
             config.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.GCMP_256);
             config.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.GCMP_256);
         }
+        if (mSupplicantNetwork.getSupplicantStaNetworkForV1_3Mockable() == null) {
+            // Clear unsupported settings in HAL v1.0
+            config.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.SMS4);
+            config.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.SMS4);
+        }
         if (mSupplicantNetwork.getSupplicantStaNetworkForV1_4Mockable() == null) {
             // Clear unsupported settings in HAL v1.0
             config.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.GCMP_128);
@@ -1169,6 +1179,160 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
                         .GroupCipherMask.GCMP_256);
     }
 
+    private int putAllSupportingPairwiseCiphersAndReturnExpectedHalCiphersValue(
+            WifiConfiguration config,
+            SupplicantStaNetworkVersion version) {
+        int halMaskValue = 0;
+
+        // These are supported from v1.4
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_128);
+        if (version.ordinal() >= SupplicantStaNetworkVersion.V1_4.ordinal()) {
+            halMaskValue |= android.hardware.wifi.supplicant
+                    .V1_4.ISupplicantStaNetwork
+                    .PairwiseCipherMask.GCMP_128;
+        }
+
+        // These are supported from v1.3
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.SMS4);
+        if (version.ordinal() >= SupplicantStaNetworkVersion.V1_3.ordinal()) {
+            halMaskValue |= android.hardware.wifi.supplicant
+                    .V1_3.ISupplicantStaNetwork
+                    .PairwiseCipherMask.SMS4;
+        }
+
+        // These are supported from v1.2
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
+        if (version.ordinal() >= SupplicantStaNetworkVersion.V1_2.ordinal()) {
+            halMaskValue |= android.hardware.wifi.supplicant
+                    .V1_2.ISupplicantStaNetwork
+                    .PairwiseCipherMask.GCMP_256;
+        }
+
+        // There are supported from v1.0
+        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        halMaskValue |= ISupplicantStaNetwork.PairwiseCipherMask.CCMP;
+
+        return halMaskValue;
+    }
+
+    private int putAllSupportingGroupCiphersAndReturnExpectedHalCiphersValue(
+            WifiConfiguration config,
+            SupplicantStaNetworkVersion version) {
+        int halMaskValue = 0;
+
+        // These are supported from v1.4
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_128);
+        if (version.ordinal() >= SupplicantStaNetworkVersion.V1_4.ordinal()) {
+            halMaskValue |= android.hardware.wifi.supplicant
+                    .V1_4.ISupplicantStaNetwork
+                    .GroupCipherMask.GCMP_128;
+        }
+
+        // These are supported from v1.3
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.SMS4);
+        if (version.ordinal() >= SupplicantStaNetworkVersion.V1_3.ordinal()) {
+            halMaskValue |= android.hardware.wifi.supplicant
+                    .V1_3.ISupplicantStaNetwork
+                    .GroupCipherMask.SMS4;
+        }
+
+        // These are supported from v1.2
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
+        if (version.ordinal() >= SupplicantStaNetworkVersion.V1_2.ordinal()) {
+            halMaskValue |= android.hardware.wifi.supplicant
+                    .V1_2.ISupplicantStaNetwork
+                    .GroupCipherMask.GCMP_256;
+        }
+
+        // There are supported from v1.0
+        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        halMaskValue |= ISupplicantStaNetwork.GroupCipherMask.CCMP;
+
+        return halMaskValue;
+    }
+
+    private void testUnsupportingCiphers(SupplicantStaNetworkVersion version) throws Exception {
+        createSupplicantStaNetwork(version);
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        int expectedHalPairwiseCiphers =
+                putAllSupportingPairwiseCiphersAndReturnExpectedHalCiphersValue(config, version);
+        int expectedHalGroupCiphers =
+                putAllSupportingGroupCiphersAndReturnExpectedHalCiphersValue(config, version);
+
+        assertTrue(mSupplicantNetwork.saveWifiConfiguration(config));
+        WifiConfiguration loadConfig = new WifiConfiguration();
+        Map<String, String> networkExtras = new HashMap<>();
+        assertTrue(mSupplicantNetwork.loadWifiConfiguration(loadConfig, networkExtras));
+
+        switch (version) {
+            case V1_0:
+            // No new cipher added in V1.1
+            case V1_1:
+                verify(mISupplicantStaNetworkMock)
+                        .setPairwiseCipher(expectedHalPairwiseCiphers);
+                verify(mISupplicantStaNetworkMock)
+                        .setGroupCipher(expectedHalGroupCiphers);
+                break;
+            case V1_2:
+                verify(mISupplicantStaNetworkV12)
+                        .setPairwiseCipher_1_2(expectedHalPairwiseCiphers);
+                verify(mISupplicantStaNetworkV12)
+                        .setGroupCipher_1_2(expectedHalGroupCiphers);
+                break;
+            case V1_3:
+                verify(mISupplicantStaNetworkV13)
+                        .setPairwiseCipher_1_3(expectedHalPairwiseCiphers);
+                verify(mISupplicantStaNetworkV13)
+                        .setGroupCipher_1_3(expectedHalGroupCiphers);
+                break;
+            case V1_4:
+                verify(mISupplicantStaNetworkV14)
+                        .setPairwiseCipher_1_4(expectedHalPairwiseCiphers);
+                verify(mISupplicantStaNetworkV14)
+                        .setGroupCipher_1_4(expectedHalGroupCiphers);
+                break;
+        }
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration with unsupporting ciphers for V1.0 HAL.
+     */
+    @Test
+    public void testUnsupportingCiphers1_0() throws Exception {
+        testUnsupportingCiphers(SupplicantStaNetworkVersion.V1_0);
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration with unsupporting ciphers for V1.1 HAL.
+     */
+    @Test
+    public void testUnsupportingCiphers1_1() throws Exception {
+        testUnsupportingCiphers(SupplicantStaNetworkVersion.V1_1);
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration with unsupporting ciphers for V1.2 HAL.
+     */
+    @Test
+    public void testUnsupportingCiphers1_2() throws Exception {
+        testUnsupportingCiphers(SupplicantStaNetworkVersion.V1_2);
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration with unsupporting ciphers for V1.3 HAL.
+     */
+    @Test
+    public void testUnsupportingCiphers1_3() throws Exception {
+        testUnsupportingCiphers(SupplicantStaNetworkVersion.V1_3);
+    }
+
+    /**
+     * Tests the saving/loading of WifiConfiguration with unsupporting ciphers for V1.4 HAL.
+     */
+    @Test
+    public void testUnsupportingCiphers1_4() throws Exception {
+        testUnsupportingCiphers(SupplicantStaNetworkVersion.V1_4);
+    }
 
     /**
      * Sets up the HIDL interface mock with all the setters/getter values.
