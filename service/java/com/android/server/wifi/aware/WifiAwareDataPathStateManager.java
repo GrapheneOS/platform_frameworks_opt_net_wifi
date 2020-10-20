@@ -173,6 +173,19 @@ public class WifiAwareDataPathStateManager {
         mDbg = verbose | VDBG;
     }
 
+    /**
+     * Get the number of the NDPs is already set up.
+     */
+    public int getNumOfNdps() {
+        int numOfNdps = 0;
+        for (AwareNetworkRequestInformation requestInformation : mNetworkRequestsCache.values()) {
+            if (requestInformation.ndpId != 0) {
+                numOfNdps++;
+            }
+        }
+        return numOfNdps;
+    }
+
     private Map.Entry<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation>
                 getNetworkRequestByNdpId(int ndpId) {
         for (Map.Entry<WifiAwareNetworkSpecifier, AwareNetworkRequestInformation> entry :

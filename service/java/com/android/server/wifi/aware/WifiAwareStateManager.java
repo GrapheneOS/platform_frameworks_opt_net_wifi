@@ -26,6 +26,7 @@ import android.hardware.wifi.V1_0.NanStatusType;
 import android.hardware.wifi.V1_2.NanDataPathChannelInfo;
 import android.location.LocationManager;
 import android.net.wifi.WifiManager;
+import android.net.wifi.aware.AwareResources;
 import android.net.wifi.aware.Characteristics;
 import android.net.wifi.aware.ConfigRequest;
 import android.net.wifi.aware.IWifiAwareDiscoverySessionCallback;
@@ -336,6 +337,23 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
                 pw_out.println(j.toString());
                 return 0;
             }
+            case "get_aware_resources": {
+                JSONObject j = new JSONObject();
+                AwareResources resources = getAvailableAwareResources();
+                if (resources != null) {
+                    try {
+                        j.put("numOfAvailableNdps", resources.getNumOfAvailableDataPaths());
+                        j.put("numOfAvailablePublishSessions",
+                                resources.getNumOfAvailablePublishSessions());
+                        j.put("numOfAvailableSubscribeSessions",
+                                resources.getNumOfAvailableSubscribeSessions());
+                    } catch (JSONException e) {
+                        Log.e(TAG, "onCommand: get_aware_resources e=" + e);
+                    }
+                }
+                pw_out.println(j.toString());
+                return 0;
+            }
             case "allow_ndp_any": {
                 String flag = parentShell.getNextArgRequired();
                 if (mDataPathMgr == null) {
@@ -500,6 +518,61 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
      */
     public Capabilities getCapabilities() {
         return mCapabilities;
+    }
+
+    /**
+     * Get the available aware resources.
+     */
+    public AwareResources getAvailableAwareResources() {
+        if (mCapabilities == null) {
+            if (mDbg) {
+                Log.v(TAG, "Aware capability hasn't loaded, resources is unknown.");
+            }
+            return null;
+        }
+        AwareResources awareResources = new AwareResources();
+        Pair<Integer, Integer> numOfDiscoverySessions = getNumOfDiscoverySessions();
+        int numOfAvailableNdps = mCapabilities.maxNdpSessions - mDataPathMgr.getNumOfNdps();
+        int numOfAvailablePublishSessions =
+                mCapabilities.maxPublishes - numOfDiscoverySessions.first;
+        int numOfAvailableSubscribeSessions =
+                mCapabilities.maxSubscribes - numOfDiscoverySessions.second;
+        if (numOfAvailableNdps >= 0) {
+            awareResources.setNumOfAvailableDataPaths(
+                    mCapabilities.maxNdpSessions - mDataPathMgr.getNumOfNdps());
+        } else {
+            Log.w(TAG, "Available NDPs number is negative, wrong capability?");
+        }
+        if (numOfAvailablePublishSessions >= 0) {
+            awareResources.setNumOfAvailablePublishSessions(
+                    mCapabilities.maxPublishes - numOfDiscoverySessions.first);
+        } else {
+            Log.w(TAG, "Available publish session number is negative, wrong capability?");
+        }
+        if (numOfAvailableSubscribeSessions >= 0) {
+            awareResources.setNumOfAvailableSubscribeSessions(
+                    mCapabilities.maxSubscribes - numOfDiscoverySessions.second);
+        } else {
+            Log.w(TAG, "Available subscribe session number is negative, wrong capability?");
+        }
+        return awareResources;
+    }
+
+    private Pair<Integer, Integer> getNumOfDiscoverySessions() {
+        int numOfPub = 0;
+        int numOfSub = 0;
+        for (int i = 0; i < mClients.size(); i++) {
+            WifiAwareClientState clientState = mClients.valueAt(i);
+            for (int j = 0; j < clientState.getSessions().size(); j++) {
+                WifiAwareDiscoverySessionState session = clientState.getSessions().valueAt(j);
+                if (session.isPublishSession()) {
+                    numOfPub++;
+                } else {
+                    numOfSub++;
+                }
+            }
+        }
+        return Pair.create(numOfPub, numOfSub);
     }
 
     /**
