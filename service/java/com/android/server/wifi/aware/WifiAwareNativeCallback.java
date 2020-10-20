@@ -16,7 +16,6 @@
 
 package com.android.server.wifi.aware;
 
-import android.hardware.wifi.V1_0.NanCapabilities;
 import android.hardware.wifi.V1_0.NanClusterEventInd;
 import android.hardware.wifi.V1_0.NanClusterEventType;
 import android.hardware.wifi.V1_0.NanDataPathConfirmInd;
@@ -25,12 +24,13 @@ import android.hardware.wifi.V1_0.NanFollowupReceivedInd;
 import android.hardware.wifi.V1_0.NanMatchInd;
 import android.hardware.wifi.V1_0.NanStatusType;
 import android.hardware.wifi.V1_0.WifiNanStatus;
-import android.hardware.wifi.V1_2.IWifiNanIfaceEventCallback;
 import android.hardware.wifi.V1_2.NanDataPathChannelInfo;
 import android.hardware.wifi.V1_2.NanDataPathScheduleUpdateInd;
+import android.hardware.wifi.V1_5.IWifiNanIfaceEventCallback;
 import android.net.MacAddress;
 import android.net.wifi.util.HexEncoding;
 import android.os.BasicShellCommandHandler;
+import android.os.RemoteException;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
@@ -53,6 +53,7 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
     private boolean mDbg = false;
 
     /* package */ boolean mIsHal12OrLater = false;
+    /* package */ boolean mIsHal15OrLater = false;
 
     private final WifiAwareStateManager mWifiAwareStateManager;
 
@@ -164,38 +165,75 @@ public class WifiAwareNativeCallback extends IWifiNanIfaceEventCallback.Stub imp
 
     @Override
     public void notifyCapabilitiesResponse(short id, WifiNanStatus status,
-            NanCapabilities capabilities) {
+            android.hardware.wifi.V1_0.NanCapabilities capabilities) {
         if (mDbg) {
             Log.v(TAG, "notifyCapabilitiesResponse: id=" + id + ", status=" + statusString(status)
                     + ", capabilities=" + capabilities);
         }
 
+        if (mIsHal15OrLater) {
+            Log.wtf(TAG, "notifyCapabilitiesResponse should not be called by a >=1.5 HAL!");
+        }
+
         if (status.status == NanStatusType.SUCCESS) {
-            Capabilities frameworkCapabilities = new Capabilities();
-            frameworkCapabilities.maxConcurrentAwareClusters = capabilities.maxConcurrentClusters;
-            frameworkCapabilities.maxPublishes = capabilities.maxPublishes;
-            frameworkCapabilities.maxSubscribes = capabilities.maxSubscribes;
-            frameworkCapabilities.maxServiceNameLen = capabilities.maxServiceNameLen;
-            frameworkCapabilities.maxMatchFilterLen = capabilities.maxMatchFilterLen;
-            frameworkCapabilities.maxTotalMatchFilterLen = capabilities.maxTotalMatchFilterLen;
-            frameworkCapabilities.maxServiceSpecificInfoLen =
-                    capabilities.maxServiceSpecificInfoLen;
-            frameworkCapabilities.maxExtendedServiceSpecificInfoLen =
-                    capabilities.maxExtendedServiceSpecificInfoLen;
-            frameworkCapabilities.maxNdiInterfaces = capabilities.maxNdiInterfaces;
-            frameworkCapabilities.maxNdpSessions = capabilities.maxNdpSessions;
-            frameworkCapabilities.maxAppInfoLen = capabilities.maxAppInfoLen;
-            frameworkCapabilities.maxQueuedTransmitMessages =
-                    capabilities.maxQueuedTransmitFollowupMsgs;
-            frameworkCapabilities.maxSubscribeInterfaceAddresses =
-                    capabilities.maxSubscribeInterfaceAddresses;
-            frameworkCapabilities.supportedCipherSuites = capabilities.supportedCipherSuites;
+            Capabilities frameworkCapabilities = toFrameworkCapability10(capabilities);
 
             mWifiAwareStateManager.onCapabilitiesUpdateResponse(id, frameworkCapabilities);
         } else {
             Log.e(TAG, "notifyCapabilitiesResponse: error code=" + status.status + " ("
                     + status.description + ")");
         }
+    }
+
+    @Override
+    public void notifyCapabilitiesResponse_1_5(short id, WifiNanStatus status,
+            android.hardware.wifi.V1_5.NanCapabilities capabilities) throws RemoteException {
+        if (mDbg) {
+            Log.v(TAG, "notifyCapabilitiesResponse_1_5: id=" + id + ", status="
+                    + statusString(status) + ", capabilities=" + capabilities);
+        }
+
+        if (!mIsHal15OrLater) {
+            Log.wtf(TAG, "notifyCapabilitiesResponse_1_5 should not be called by a <1.5 HAL!");
+            return;
+        }
+
+        if (status.status == NanStatusType.SUCCESS) {
+            Capabilities frameworkCapabilities = toFrameworkCapability10(capabilities.V1_0);
+            frameworkCapabilities.isInstantCommunicationModeSupported =
+                    capabilities.instantCommunicationModeSupportFlag;
+
+            mWifiAwareStateManager.onCapabilitiesUpdateResponse(id, frameworkCapabilities);
+        } else {
+            Log.e(TAG, "notifyCapabilitiesResponse_1_5: error code=" + status.status + " ("
+                    + status.description + ")");
+        }
+
+    }
+
+    private Capabilities toFrameworkCapability10(
+            android.hardware.wifi.V1_0.NanCapabilities capabilities) {
+        Capabilities frameworkCapabilities = new Capabilities();
+        frameworkCapabilities.maxConcurrentAwareClusters = capabilities.maxConcurrentClusters;
+        frameworkCapabilities.maxPublishes = capabilities.maxPublishes;
+        frameworkCapabilities.maxSubscribes = capabilities.maxSubscribes;
+        frameworkCapabilities.maxServiceNameLen = capabilities.maxServiceNameLen;
+        frameworkCapabilities.maxMatchFilterLen = capabilities.maxMatchFilterLen;
+        frameworkCapabilities.maxTotalMatchFilterLen = capabilities.maxTotalMatchFilterLen;
+        frameworkCapabilities.maxServiceSpecificInfoLen =
+                capabilities.maxServiceSpecificInfoLen;
+        frameworkCapabilities.maxExtendedServiceSpecificInfoLen =
+                capabilities.maxExtendedServiceSpecificInfoLen;
+        frameworkCapabilities.maxNdiInterfaces = capabilities.maxNdiInterfaces;
+        frameworkCapabilities.maxNdpSessions = capabilities.maxNdpSessions;
+        frameworkCapabilities.maxAppInfoLen = capabilities.maxAppInfoLen;
+        frameworkCapabilities.maxQueuedTransmitMessages =
+                capabilities.maxQueuedTransmitFollowupMsgs;
+        frameworkCapabilities.maxSubscribeInterfaceAddresses =
+                capabilities.maxSubscribeInterfaceAddresses;
+        frameworkCapabilities.supportedCipherSuites = capabilities.supportedCipherSuites;
+        frameworkCapabilities.isInstantCommunicationModeSupported = false;
+        return frameworkCapabilities;
     }
 
     @Override
