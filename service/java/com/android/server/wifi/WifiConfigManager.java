@@ -416,7 +416,7 @@ public class WifiConfigManager {
 
         mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_DHCP_FAILURE,
                 new DisableReasonInfo(
-                        "config_wifiDisableReasonDhcpFailureThreshold",
+                        "NETWORK_SELECTION_DISABLED_DHCP_FAILURE",
                         mContext.getResources().getInteger(R.integer
                                 .config_wifiDisableReasonDhcpFailureThreshold),
                         5 * 60 * 1000));
@@ -1840,6 +1840,17 @@ public class WifiConfigManager {
     }
 
     /**
+     * Re-enable all temporary disabled configured networks.
+     */
+    public void enableTemporaryDisabledNetworks() {
+        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
+            if (config.getNetworkSelectionStatus().isNetworkTemporaryDisabled()) {
+                setNetworkSelectionStatus(config, NetworkSelectionStatus.DISABLED_NONE);
+            }
+        }
+    }
+
+    /**
      * Attempt to re-enable a network for network selection, if this network was either:
      * a) Previously temporarily disabled, but its disable timeout has expired, or
      * b) Previously disabled because of a user switch, but is now visible to the current
@@ -1859,9 +1870,6 @@ public class WifiConfigManager {
             int blockedBssids = Math.min(MAX_BLOCKED_BSSID_PER_NETWORK,
                     mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID));
             long disableTimeoutMs = (long) getNetworkSelectionDisableTimeoutMillis(disableReason);
-            // TODO b/169272385: Now that we no longer immediately re-enable a WifiConfiguration
-            // when 0 BSSIDs are blocked, need to add code to re-enable temporarily disabled
-            // WifiConfigurations when the user toggles wifi.
             if (blockedBssids > 1) {
                 disableTimeoutMs *= Math.pow(2.0, blockedBssids - 1.0);
             }
@@ -2056,6 +2064,17 @@ public class WifiConfigManager {
         setNetworkStatus(config, WifiConfiguration.Status.CURRENT);
         saveToStore(false);
         return true;
+    }
+
+    /**
+     * Set captive portal to be detected for this network.
+     * @param networkId
+     */
+    public void noteCaptivePortalDetected(int networkId) {
+        WifiConfiguration config = getInternalConfiguredNetwork(networkId);
+        if (config != null) {
+            config.getNetworkSelectionStatus().setHasNeverDetectedCaptivePortal(false);
+        }
     }
 
     /**

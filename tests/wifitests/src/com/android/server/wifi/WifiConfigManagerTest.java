@@ -1494,6 +1494,41 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify enableTemporaryDisabledNetworks successfully enable temporarily disabled networks.
+     */
+    @Test
+    public void testEnableTemporaryDisabledNetworks() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
+        int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
+        verifyDisableNetwork(result, disableReason);
+        assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
+                .getNetworkSelectionStatus().isNetworkTemporaryDisabled());
+
+        mWifiConfigManager.enableTemporaryDisabledNetworks();
+        assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
+                .getNetworkSelectionStatus().isNetworkEnabled());
+    }
+
+    /**
+     * Verify that permanently disabled network do not get affected by
+     * enableTemporaryDisabledNetworks
+     */
+    @Test
+    public void testEnableTemporaryDisabledNetworks_PermanentDisableNetworksStillDisabled() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
+        int disableReason = NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
+        verifyDisableNetwork(result, disableReason);
+        assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
+                .getNetworkSelectionStatus().isNetworkPermanentlyDisabled());
+
+        mWifiConfigManager.enableTemporaryDisabledNetworks();
+        assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
+                .getNetworkSelectionStatus().isNetworkPermanentlyDisabled());
+    }
+
+    /**
      * Verifies the enabling of network using
      * {@link WifiConfigManager#enableNetwork(int, boolean, int)} and
      * {@link WifiConfigManager#disableNetwork(int, int)}.
@@ -3414,6 +3449,23 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Ensure that we only have 1 shared network in the database after the stop.
         assertEquals(1, mWifiConfigManager.getConfiguredNetworks().size());
         assertEquals(sharedNetwork.SSID, mWifiConfigManager.getConfiguredNetworks().get(0).SSID);
+    }
+
+    /**
+     * Verify that hasNeverDetectedCaptivePortal is set to false after noteCaptivePortalDetected
+     * gets called.
+     */
+    @Test
+    public void testNoteCaptivePortalDetected() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
+
+        assertTrue(mWifiConfigManager.getConfiguredNetworks().get(0).getNetworkSelectionStatus()
+                .hasNeverDetectedCaptivePortal());
+
+        mWifiConfigManager.noteCaptivePortalDetected(openNetwork.networkId);
+        assertFalse(mWifiConfigManager.getConfiguredNetworks().get(0).getNetworkSelectionStatus()
+                .hasNeverDetectedCaptivePortal());
     }
 
     /**

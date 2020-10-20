@@ -3761,6 +3761,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_NETWORK_AGENT_VALID_NETWORK);
                 doNetworkStatus(status);
             }
+            if (redirectUri != null && redirectUri.toString() != null
+                    && redirectUri.toString().length() > 0) {
+                mWifiThreadRunner.post(() ->
+                        mWifiConfigManager.noteCaptivePortalDetected(mWifiInfo.getNetworkId()));
+            }
         }
 
         @Override
