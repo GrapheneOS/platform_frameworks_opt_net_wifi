@@ -186,6 +186,7 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         mMockLooper.dispatchAll();
         verify(mMockNative).getCapabilities(transactionId.capture());
         mDut.onCapabilitiesUpdateResponse(transactionId.getValue(), getCapabilities());
+        when(mMockAwareDataPathStatemanager.getNumOfNdps()).thenReturn(1);
     }
 
     /**
@@ -850,6 +851,9 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         inOrder.verify(mockSessionCallback).onSessionStarted(sessionId.capture());
         inOrderM.verify(mAwareMetricsMock).recordDiscoverySession(eq(uid), any());
         inOrderM.verify(mAwareMetricsMock).recordDiscoveryStatus(uid, NanStatusType.SUCCESS, true);
+        assertEquals(1, mDut.getAvailableAwareResources().getNumOfAvailablePublishSessions());
+        assertEquals(2, mDut.getAvailableAwareResources().getNumOfAvailableSubscribeSessions());
+        assertEquals(0, mDut.getAvailableAwareResources().getNumOfAvailableDataPaths());
 
         // (3) publish termination (from firmware - not app!)
         mDut.onSessionTerminatedNotification(publishId, reasonTerminate, true);
@@ -1200,6 +1204,9 @@ public class WifiAwareStateManagerTest extends WifiBaseTest {
         inOrder.verify(mockSessionCallback).onSessionStarted(sessionId.capture());
         inOrderM.verify(mAwareMetricsMock).recordDiscoverySession(eq(uid), any());
         inOrderM.verify(mAwareMetricsMock).recordDiscoveryStatus(uid, NanStatusType.SUCCESS, false);
+        assertEquals(2, mDut.getAvailableAwareResources().getNumOfAvailablePublishSessions());
+        assertEquals(1, mDut.getAvailableAwareResources().getNumOfAvailableSubscribeSessions());
+        assertEquals(0, mDut.getAvailableAwareResources().getNumOfAvailableDataPaths());
 
         // (3) subscribe termination (from firmware - not app!)
         mDut.onSessionTerminatedNotification(subscribeId, reasonTerminate, false);
