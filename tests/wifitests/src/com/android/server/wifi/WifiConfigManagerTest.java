@@ -5497,6 +5497,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 assertTrue(retrievedStatus.isNetworkTemporaryDisabled());
                 assertEquals(
                         TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS, retrievedDisableTime);
+                verifyNetworkUpdateBroadcast();
             }
         } else if (reason < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX) {
             assertEquals(reason, retrievedDisableReason);
