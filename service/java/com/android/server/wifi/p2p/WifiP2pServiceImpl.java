@@ -644,7 +644,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 Log.e(TAG, "Error on linkToDeath: e=" + e);
                 // fall-through here - won't clean up
             }
-            mP2pStateMachine.sendMessage(ENABLE_P2P, ws);
+            mP2pStateMachine.sendMessage(ENABLE_P2P);
 
             return messenger;
         }
@@ -955,6 +955,14 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                     WifiP2pMonitor.SUP_DISCONNECTION_EVENT, getHandler());
 
             mWifiMonitor.startMonitoring(mInterfaceName);
+        }
+
+        private WorkSource createMergedRequestorWs() {
+            WorkSource requestorWs = new WorkSource();
+            for (DeathHandlerData deathHandlerData : mDeathDataByBinder.values()) {
+                requestorWs.add(deathHandlerData.mWorkSource);
+            }
+            return requestorWs;
         }
 
         class DefaultState extends State {
@@ -1418,7 +1426,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                             Log.e(TAG, "Ignore P2P enable since wifi is " + mIsWifiEnabled);
                             break;
                         }
-                        WorkSource requestorWs = (WorkSource) message.obj;
+                        WorkSource requestorWs = createMergedRequestorWs();
                         mInterfaceName = mWifiNative.setupInterface((String ifaceName) -> {
                             sendMessage(DISABLE_P2P);
                             checkAndSendP2pStateChangedBroadcast();
@@ -1479,7 +1487,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         transitionTo(mP2pDisabledState);
                         break;
                     case ENABLE_P2P:
-                        // Nothing to do
+                        if (!mWifiNative.replaceRequestorWs(createMergedRequestorWs())) {
+                            Log.e(TAG, "Failed to replace requestorWs");
+                        }
                         break;
                     case DISABLE_P2P:
                         if (mPeers.clear()) {
@@ -1500,6 +1510,9 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         // clear client info and remove it from list
                         clearClientInfo(mClientChannelList.get(b));
                         mClientChannelList.remove(b);
+                        if (!mWifiNative.replaceRequestorWs(createMergedRequestorWs())) {
+                            Log.e(TAG, "Failed to replace requestorWs");
+                        }
                         break;
                     case WifiP2pManager.SET_DEVICE_NAME:
                     {
@@ -3066,12 +3079,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             Log.d(TAG, "Wifi enabled=" + mIsWifiEnabled + ", Number of clients="
                     + mDeathDataByBinder.size());
             if (mIsWifiEnabled && !mDeathDataByBinder.isEmpty()) {
-                // TODO(b/162344695): If there are more than 1 concurrent P2P clients, then we
-                // attribute the iface to one of the apps (picked at random).
-
-                DeathHandlerData deathHandlerData =
-                        (DeathHandlerData) mDeathDataByBinder.values().toArray()[0];
-                sendMessage(ENABLE_P2P, deathHandlerData.mWorkSource);
+                sendMessage(ENABLE_P2P);
             }
         }
 
