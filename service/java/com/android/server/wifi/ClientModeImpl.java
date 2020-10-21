@@ -4109,8 +4109,22 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mWifiConfigManager.updateNetworkSelectionStatus(mTargetNetworkId,
                             WifiConfiguration.NetworkSelectionStatus
                                     .DISABLED_ASSOCIATION_REJECTION);
-                    mWifiConfigManager.setRecentFailureAssociationStatus(mTargetNetworkId,
-                            WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA);
+                    switch (statusCode) {
+                        case StatusCode.AP_UNABLE_TO_HANDLE_NEW_STA:
+                            mWifiConfigManager.setRecentFailureAssociationStatus(mTargetNetworkId,
+                                    WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA);
+                            break;
+                        case StatusCode.ASSOC_REJECTED_TEMPORARILY:
+                            mWifiConfigManager.setRecentFailureAssociationStatus(mTargetNetworkId,
+                                    WifiConfiguration.RECENT_FAILURE_REFUSED_TEMPORARILY);
+                            break;
+                        case StatusCode.DENIED_POOR_CHANNEL_CONDITIONS:
+                            mWifiConfigManager.setRecentFailureAssociationStatus(mTargetNetworkId,
+                                    WifiConfiguration.RECENT_FAILURE_POOR_CHANNEL_CONDITIONS);
+                            break;
+                        default:
+                            // do nothing
+                    }
 
                     int level2FailureReason =
                             WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN;
@@ -5075,6 +5089,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 WifiDiagnostics.REPORT_REASON_UNEXPECTED_DISCONNECT);
                     }
 
+                    if (eventInfo.reasonCode == ReasonCode.DISASSOC_AP_BUSY) {
+                        mWifiConfigManager.setRecentFailureAssociationStatus(
+                                mWifiInfo.getNetworkId(),
+                                WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY);
+                    }
                     if (!eventInfo.locallyGenerated) {
                         // ignore disconnects initiated by wpa_supplicant.
                         mWifiScoreCard.noteNonlocalDisconnect(eventInfo.reasonCode);

@@ -2305,6 +2305,16 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that after receiving scan results, we attempt to clear expired recent failure reasons.
+     */
+    @Test
+    public void verifyClearExpiredRecentFailureStatusAfterScan() {
+        // mWifiScanner is mocked to directly return scan results when a scan is triggered.
+        mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
+        verify(mWifiConfigManager).cleanupExpiredRecentFailureReasons();
+    }
+
+    /**
      *  Verify that a blocklisted BSSID becomes available only after
      *  BSSID_BLOCKLIST_EXPIRE_TIME_MS.
      */
