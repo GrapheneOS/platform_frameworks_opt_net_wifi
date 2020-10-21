@@ -166,6 +166,23 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
     }
 
     @Override
+    public void enableInstantCommunicationMode(String callingPackage, boolean enable) {
+        if (!mWifiPermissionsUtil.isSystem(callingPackage, Binder.getCallingUid())) {
+            Log.i(TAG, "enableInstantCommunicationMode not allowed for uid="
+                    + Binder.getCallingUid());
+            return;
+        }
+        enforceChangePermission();
+        mStateManager.enableInstantCommunicationMode(enable);
+    }
+
+    @Override
+    public boolean isInstantCommunicationModeEnabled() {
+        enforceAccessPermission();
+        return mStateManager.isInstantCommunicationModeEnabled();
+    }
+
+    @Override
     public void connect(final IBinder binder, String callingPackage, String callingFeatureId,
             IWifiAwareEventCallback callback, ConfigRequest configRequest,
             boolean notifyOnIdentityChanged) {

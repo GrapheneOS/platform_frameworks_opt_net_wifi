@@ -365,8 +365,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mContext.getResources()).thenReturn(mResources);
         when(mContext.getContentResolver()).thenReturn(mContentResolver);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
-        when(mPackageManager.getApplicationInfoAsUser(any(), anyInt(), any()))
-                .thenReturn(mApplicationInfo);
         when(mPackageManager.getPackageInfo(anyString(), anyInt())).thenReturn(mPackageInfo);
         when(mWifiInjector.getWifiApConfigStore()).thenReturn(mWifiApConfigStore);
         doNothing().when(mFrameworkFacade).registerContentObserver(eq(mContext), any(),
@@ -442,6 +440,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mScanRequestProxy.startScan(anyInt(), anyString())).thenReturn(true);
         when(mLohsCallback.asBinder()).thenReturn(mock(IBinder.class));
         when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(false);
 
         mClientModeManagers = Arrays.asList(mClientModeManager, mock(ClientModeManager.class));
         when(mActiveModeWarden.getClientModeManagers()).thenReturn(mClientModeManagers);
@@ -694,7 +693,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
         when(mWifiPermissionsUtil.isTargetSdkLessThan(anyString(),
                 eq(Build.VERSION_CODES.Q), anyInt())).thenReturn(false);
-        mApplicationInfo.flags = ApplicationInfo.FLAG_SYSTEM;
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(true);
 
         when(mSettingsStore.handleWifiToggled(eq(true))).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
@@ -962,7 +961,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
         when(mWifiPermissionsUtil.isTargetSdkLessThan(anyString(),
                 eq(Build.VERSION_CODES.Q), anyInt())).thenReturn(false);
-        mApplicationInfo.flags = ApplicationInfo.FLAG_SYSTEM;
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(true);
 
         when(mSettingsStore.handleWifiToggled(eq(false))).thenReturn(true);
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
@@ -4839,7 +4838,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     public void testAddOrUpdateNetworkIsAllowedForSystemApp() throws Exception {
         doReturn(AppOpsManager.MODE_ALLOWED).when(mAppOpsManager)
                 .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
-        mApplicationInfo.flags = ApplicationInfo.FLAG_SYSTEM;
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(true);
         when(mWifiConfigManager.addOrUpdateNetwork(any(),  anyInt(), any())).thenReturn(
                 new NetworkUpdateResult(0));
 
@@ -5543,7 +5542,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 .noteOp(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, Process.myUid(), TEST_PACKAGE_NAME);
         when(mWifiPermissionsUtil.isTargetSdkLessThan(anyString(),
                 eq(Build.VERSION_CODES.R), anyInt())).thenReturn(false);
-        mApplicationInfo.flags = ApplicationInfo.FLAG_SYSTEM;
+        when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(true);
         PasspointConfiguration config = new PasspointConfiguration();
         HomeSp homeSp = new HomeSp();
         homeSp.setFqdn("test.com");
