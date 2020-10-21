@@ -2307,7 +2307,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mWifiInfo.setWifiStandard(capabilities.wifiStandard);
         mWifiInfo.setMaxSupportedTxLinkSpeedMbps(maxTxLinkSpeedMbps);
         mWifiInfo.setMaxSupportedRxLinkSpeedMbps(maxRxLinkSpeedMbps);
-        mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(
+        mWifiMetrics.setConnectionMaxSupportedLinkSpeedMbps(mInterfaceName,
                 maxTxLinkSpeedMbps, maxRxLinkSpeedMbps);
         mWifiDataStall.setConnectionCapabilities(capabilities);
         if (mVerboseLoggingEnabled) {
@@ -2536,7 +2536,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private void reportConnectionAttemptStart(
             WifiConfiguration config, String targetBSSID, int roamType) {
         int overlapWithLastConnectionMs =
-                mWifiMetrics.startConnectionEvent(config, targetBSSID, roamType);
+                mWifiMetrics.startConnectionEvent(mInterfaceName, config, targetBSSID, roamType);
         if (mDeviceConfigFacade.isOverlappingConnectionBugreportEnabled()
                 && overlapWithLastConnectionMs
                 > mDeviceConfigFacade.getOverlappingConnectionDurationThresholdMs()) {
@@ -2621,8 +2621,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     .showFailedToConnectDueToNoRandomizedMacSupportNotification(mTargetNetworkId);
         }
 
-        mWifiMetrics.endConnectionEvent(level2FailureCode, connectivityFailureCode,
-                level2FailureReason, mWifiInfo.getFrequency());
+        mWifiMetrics.endConnectionEvent(mInterfaceName, level2FailureCode,
+                connectivityFailureCode, level2FailureReason, mWifiInfo.getFrequency());
         mWifiConnectivityManager.handleConnectionAttemptEnded(
                 mClientModeManager, level2FailureCode, bssid, ssid);
         if (configuration != null) {
@@ -3926,8 +3926,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         ScanDetailCache scanDetailCache =
                                 mWifiConfigManager.getScanDetailCacheForNetwork(mTargetNetworkId);
                         if (scanDetailCache != null) {
-                            mWifiMetrics.setConnectionScanDetail(scanDetailCache.getScanDetail(
-                                    someBssid));
+                            mWifiMetrics.setConnectionScanDetail(mInterfaceName,
+                                    scanDetailCache.getScanDetail(someBssid));
                         }
                         // Update last associated BSSID
                         mLastBssid = someBssid;
@@ -4873,6 +4873,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     if (mRoamWatchdogCount == message.arg1) {
                         if (mVerboseLoggingEnabled) log("roaming watchdog! -> disconnect");
                         mWifiMetrics.endConnectionEvent(
+                                mInterfaceName,
                                 WifiMetrics.ConnectionEvent.FAILURE_ROAM_TIMEOUT,
                                 WifiMetricsProto.ConnectionEvent.HLF_NONE,
                                 WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN,
