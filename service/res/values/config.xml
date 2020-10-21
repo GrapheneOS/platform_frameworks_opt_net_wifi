@@ -477,4 +477,8 @@
 
     <!-- Enable adding minimum confirmation duration when sending network score to connectivity service. -->
     <bool translatable="false" name="config_wifiMinConfirmationDurationSendNetworkScoreEnabled">false</bool>
+
+    <!-- Enable Make-Before-Break Wifi network switching.
+         Note: this is conditional on the device supporting dual concurrent STAs. -->
+    <bool translatable="false" name="config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled">false</bool>
 </resources>
