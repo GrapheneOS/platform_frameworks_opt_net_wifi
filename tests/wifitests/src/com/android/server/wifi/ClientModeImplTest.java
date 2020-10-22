@@ -844,7 +844,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiLockManager).updateWifiClientConnected(true);
         verify(mWifiNative).getConnectionCapabilities(any());
         verify(mThroughputPredictor).predictMaxTxThroughput(any());
-        verify(mWifiMetrics).setConnectionMaxSupportedLinkSpeedMbps(90, 80);
+        verify(mWifiMetrics).setConnectionMaxSupportedLinkSpeedMbps(WIFI_IFACE_NAME, 90, 80);
         verify(mWifiDataStall).setConnectionCapabilities(any());
         assertEquals(90, wifiInfo.getMaxSupportedTxLinkSpeedMbps());
     }
@@ -1480,7 +1480,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // Ensure we don't end the new connection event.
         verify(mWifiMetrics, never()).endConnectionEvent(
-                eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION),
+                any(), eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION),
                 anyInt(), anyInt(), anyInt());
         verify(mWifiConnectivityManager).prepareForForcedConnection(FRAMEWORK_NETWORK_ID + 1);
     }
@@ -1663,7 +1663,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiMetrics).endConnectionEvent(
-                eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION),
+                any(), eq(WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION),
                 anyInt(), anyInt(), anyInt());
         verify(mWifiConnectivityManager).handleConnectionAttemptEnded(
                 any(), anyInt(), any(), any());
@@ -1709,7 +1709,8 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testEapSimErrorVendorSpecific() throws Exception {
-        when(mWifiMetrics.startConnectionEvent(any(), anyString(), anyInt())).thenReturn(80000);
+        when(mWifiMetrics.startConnectionEvent(any(), any(), anyString(), anyInt()))
+                .thenReturn(80000);
         initializeAndAddNetworkAndVerifySuccess();
 
         startConnectSuccess();

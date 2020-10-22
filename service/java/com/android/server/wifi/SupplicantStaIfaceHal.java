@@ -1014,7 +1014,7 @@ public class SupplicantStaIfaceHal {
                     && pmkData.expirationTimeInSec > mClock.getElapsedSinceBootMillis() / 1000) {
                 logi("Set PMK cache for config id " + config.networkId);
                 if (networkHandle.setPmkCache(pmkData.data)) {
-                    mWifiMetrics.setConnectionPmkCache(true);
+                    mWifiMetrics.setConnectionPmkCache(ifaceName, true);
                 }
             }
 

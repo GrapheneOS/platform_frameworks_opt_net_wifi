@@ -952,7 +952,7 @@ public class WifiConnectivityManager {
     /**
      * Attempt to connect to a network candidate.
      *
-     * Based on the currently connected network, this menthod determines whether we should
+     * Based on the currently connected network, this method determines whether we should
      * connect or roam to the network candidate recommended by WifiNetworkSelector.
      */
     private void connectToNetwork(@NonNull ClientModeManager clientModeManager,
@@ -972,9 +972,6 @@ public class WifiConnectivityManager {
         final WifiConfiguration connectedOrConnectingWifiConfiguration  =
                 coalesce(clientModeManager.getConnectingWifiConfiguration(),
                         clientModeManager.getConnectedWifiConfiguration());
-        final String connectedOrConnectingBssid =
-                coalesce(clientModeManager.getConnectingBssid(),
-                        clientModeManager.getConnectedBssid());
         boolean connectingOrConnectedToTarget =
                 connectedOrConnectingWifiConfiguration != null
                         && targetNetworkId == connectedOrConnectingWifiConfiguration.networkId;
@@ -982,12 +979,15 @@ public class WifiConnectivityManager {
             // just check for networkID.
         } else {
             // check for networkID and BSSID.
+            String connectedOrConnectingBssid = coalesce(
+                    clientModeManager.getConnectingBssid(),
+                    clientModeManager.getConnectedBssid());
             connectingOrConnectedToTarget &=
-                            Objects.equals(targetBssid, connectedOrConnectingBssid);
+                    Objects.equals(targetBssid, connectedOrConnectingBssid);
         }
         if (connectingOrConnectedToTarget) {
-            localLog("connectToNetwork: Either already connected "
-                    + "or is connecting to " + targetAssociationId);
+            localLog("connectToNetwork: Either already connected or is connecting to "
+                    + targetAssociationId);
             return;
         }
 
@@ -1713,7 +1713,7 @@ public class WifiConnectivityManager {
         WifiConfiguration currentNetwork =
                 getPrimaryClientModeManager().getConnectedWifiConfiguration();
         if (currentNetwork == null) {
-            localLog("Current network is missing, may caused by remove network and disconnecting ");
+            localLog("Current network is missing, may caused by remove network and disconnecting");
             return false;
         }
         List<WifiConfiguration> savedNetworks =
@@ -1884,7 +1884,6 @@ public class WifiConnectivityManager {
             localLog("retryConnectionOnLatestCandidates: failed to create MacAddress from bssid="
                     + bssid);
             mLatestCandidates = null;
-            return;
         }
     }
 
@@ -1911,7 +1910,6 @@ public class WifiConnectivityManager {
             checkAllStatesAndEnableAutoJoin();
         }
     }
-
 
     /**
      * Triggered when {@link UntrustedWifiNetworkFactory} has a pending ephemeral network request.
@@ -2083,6 +2081,11 @@ public class WifiConnectivityManager {
     @VisibleForTesting
     long getLastPeriodicSingleScanTimeStamp() {
         return mLastPeriodicSingleScanTimeStamp;
+    }
+
+    private boolean isMakeBeforeBreakEnabled() {
+        return mContext.getResources()
+                .getBoolean(R.bool.config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled);
     }
 
     /**

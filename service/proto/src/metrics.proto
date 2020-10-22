@@ -1112,6 +1112,10 @@ message ConnectionEvent {
 
   // Indicates if the profile used for the connection was provisioned by Passpoint OSU server
   optional bool is_osu_provisioned = 20;
+
+  // The wireless interface name e.g. "wlan0", "wlan1". Used to distinguish which event stream this
+  // ConnectionEvent belongs to when multiple interfaces are active concurrently.
+  optional string interface_name = 27;
 }
 
 // Number of occurrences of a specific RSSI poll rssi value
