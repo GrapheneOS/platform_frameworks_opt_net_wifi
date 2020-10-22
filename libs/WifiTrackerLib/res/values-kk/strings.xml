@@ -29,7 +29,7 @@
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Ажыратылды"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Сақталған"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Өлшеулі"</string>
-    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Шектелмеген"</string>
+    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Трафик саналмайды"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> арқылы жалғанған"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> арқылы қолжетімді"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"<xliff:g id="NAME">%1$s</xliff:g> арқылы автоматты байланыстырылды."</string>
