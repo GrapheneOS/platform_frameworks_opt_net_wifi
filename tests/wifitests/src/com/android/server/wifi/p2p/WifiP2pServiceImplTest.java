@@ -655,7 +655,8 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
     private void forceP2pEnabled(Binder clientBinder) throws Exception {
         simulateWifiStateChange(true);
         simulateLocationModeChange(true);
-        checkIsP2pInitWhenClientConnected(true, clientBinder);
+        checkIsP2pInitWhenClientConnected(true, false, clientBinder,
+                new WorkSource(clientBinder.getCallingUid(), TEST_PACKAGE_NAME));
     }
 
     /**
@@ -663,17 +664,22 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
      *
      * @param expectInit set true if p2p init should succeed as expected, set false when
      *        expected init should not happen
+     * @param expectReplace set true if p2p worksource replace should succeed as expected, set false
+     *        when replace should not happen
      * @param clientBinder client binder to use for p2p channel init
+     * @param expectedRequestorWs Expected merged requestorWs
      */
-    private void checkIsP2pInitWhenClientConnected(boolean expectInit, Binder clientBinder)
+    private void checkIsP2pInitWhenClientConnected(boolean expectInit, boolean expectReplace,
+            Binder clientBinder, WorkSource expectedRequestorWs)
             throws Exception {
         mWifiP2pServiceImpl.getMessenger(clientBinder, TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
         if (expectInit) {
-            verify(mWifiNative).setupInterface(any(), any(),
-                    eq(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME)));
+            verify(mWifiNative).setupInterface(any(), any(), eq(expectedRequestorWs));
             verify(mNetdWrapper).setInterfaceUp(anyString());
             verify(mWifiMonitor, atLeastOnce()).registerHandler(anyString(), anyInt(), any());
+        } else if (expectReplace) {
+            verify(mWifiNative).replaceRequestorWs(expectedRequestorWs);
         } else {
             verify(mWifiNative, never()).setupInterface(any(), any(), any());
             verify(mNetdWrapper, never()).setInterfaceUp(anyString());
@@ -686,15 +692,21 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
      *
      * @param expectTearDown set true if p2p teardown should succeed as expected,
      *        set false when expected teardown should not happen
+     * @param expectReplace set true if p2p worksource replace should succeed as expected, set false
+     *        when replace should not happen
      * @param clientBinder client binder to use for p2p channel init
+     * @param expectedRequestorWs Expected merged requestorWs
      */
     private void checkIsP2pTearDownWhenClientDisconnected(
-            boolean expectTearDown, Binder clientBinder) throws Exception {
+            boolean expectTearDown, boolean expectReplace,
+            Binder clientBinder, WorkSource expectedRequestorWs) throws Exception {
         mWifiP2pServiceImpl.close(clientBinder);
         mLooper.dispatchAll();
         if (expectTearDown) {
             verify(mWifiNative).teardownInterface();
             verify(mWifiMonitor).stopMonitoring(anyString());
+        } else if (expectReplace) {
+            verify(mWifiNative).replaceRequestorWs(expectedRequestorWs);
         } else {
             verify(mWifiNative, never()).teardownInterface();
             verify(mWifiMonitor, never()).stopMonitoring(anyString());
@@ -903,8 +915,9 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
     @Test
     public void testP2pInitWhenClientConnectWithWifiEnabled() throws Exception {
         simulateWifiStateChange(true);
-        checkIsP2pInitWhenClientConnected(true, mClient1);
-        checkIsP2pTearDownWhenClientDisconnected(true, mClient1);
+        checkIsP2pInitWhenClientConnected(true, false, mClient1,
+                new WorkSource(mClient1.getCallingUid(), TEST_PACKAGE_NAME));
+        checkIsP2pTearDownWhenClientDisconnected(true, false, mClient1, null);
     }
 
     /**
@@ -915,8 +928,9 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
     public void testP2pDoesntInitWhenClientConnectWithWifiDisabledEnabled()
             throws Exception {
         simulateWifiStateChange(false);
-        checkIsP2pInitWhenClientConnected(false, mClient1);
-        checkIsP2pTearDownWhenClientDisconnected(false, mClient1);
+        checkIsP2pInitWhenClientConnected(false, false, mClient1,
+                new WorkSource(mClient1.getCallingUid(), TEST_PACKAGE_NAME));
+        checkIsP2pTearDownWhenClientDisconnected(false, false, mClient1, null);
     }
 
     /**
@@ -947,10 +961,15 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
     @Test
     public void checkIsP2pInitForTwoClientsConnection() throws Exception {
         forceP2pEnabled(mClient1);
+        WorkSource expectedRequestorWs =
+                new WorkSource(mClient1.getCallingUid(), TEST_PACKAGE_NAME);
+        expectedRequestorWs.add(mClient2.getCallingUid(), TEST_PACKAGE_NAME);
         // P2pInit check count should keep in once, same as one client connected case.
-        checkIsP2pInitWhenClientConnected(true, mClient2);
-        checkIsP2pTearDownWhenClientDisconnected(false, mClient2);
-        checkIsP2pTearDownWhenClientDisconnected(true, mClient1);
+        checkIsP2pInitWhenClientConnected(false, true, mClient2, expectedRequestorWs);
+        reset(mWifiNative);
+        checkIsP2pTearDownWhenClientDisconnected(false, true, mClient2,
+                new WorkSource(mClient1.getCallingUid(), TEST_PACKAGE_NAME));
+        checkIsP2pTearDownWhenClientDisconnected(true, false, mClient1, null);
     }
 
     /**

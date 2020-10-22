@@ -211,6 +211,29 @@ public class WifiAwareNativeManager {
         }
     }
 
+    /**
+     * Replace requestorWs in-place when iface is already enabled.
+     */
+    public boolean replaceRequestorWs(@NonNull WorkSource requestorWs) {
+        synchronized (mLock) {
+            if (mDbg) {
+                Log.d(TAG, "replaceRequestorWs: mWifiNanIface=" + mWifiNanIface
+                        + ", mReferenceCount=" + mReferenceCount + ", requestorWs=" + requestorWs);
+            }
+
+            if (mWifiNanIface == null) {
+                return false;
+            }
+            if (mHalDeviceManager == null) {
+                Log.e(TAG, "tryToGetAware: mHalDeviceManager is null!?");
+                awareIsDown();
+                return false;
+            }
+
+            return mHalDeviceManager.replaceRequestorWs(mWifiNanIface, requestorWs);
+        }
+    }
+
     private void awareIsDown() {
         synchronized (mLock) {
             if (mDbg) {
