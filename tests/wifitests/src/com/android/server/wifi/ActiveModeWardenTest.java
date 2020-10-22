@@ -2492,6 +2492,69 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(externalRequestListener).onAnswer(null);
     }
 
+    public void requestAdditionalClientModeManagerWhenAlreadyPresent(
+            ActiveModeManager.ClientConnectivityRole role) throws Exception {
+        enterClientModeActiveState();
+
+        ConcreteClientModeManager additionalClientModeManager =
+                mock(ConcreteClientModeManager.class);
+        Mutable<ActiveModeManager.Listener<ConcreteClientModeManager>> additionalClientListener =
+                new Mutable<>();
+        doAnswer((invocation) -> {
+            Object[] args = invocation.getArguments();
+            additionalClientListener.value =
+                    (ActiveModeManager.Listener<ConcreteClientModeManager>) args[0];
+            return additionalClientModeManager;
+        }).when(mWifiInjector).makeClientModeManager(
+                any(ActiveModeManager.Listener.class), any(), eq(role),
+                anyBoolean());
+        when(additionalClientModeManager.getRole()).thenReturn(role);
+
+        ActiveModeWarden.ExternalClientModeManagerRequestListener externalRequestListener = mock(
+                ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
+        if (role == ROLE_CLIENT_LOCAL_ONLY) {
+            mActiveModeWarden.requestLocalOnlyClientModeManager(
+                    externalRequestListener, TEST_WORKSOURCE);
+        } else if (role == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+            mActiveModeWarden.requestSecondaryLongLivedClientModeManager(
+                    externalRequestListener, TEST_WORKSOURCE);
+        } else if (role == ROLE_CLIENT_SECONDARY_TRANSIENT) {
+            mActiveModeWarden.requestSecondaryTransientClientModeManager(
+                    externalRequestListener, TEST_WORKSOURCE);
+        }
+        mLooper.dispatchAll();
+        verify(mWifiInjector).makeClientModeManager(
+                any(), eq(TEST_WORKSOURCE), eq(role), anyBoolean());
+        additionalClientListener.value.onStarted(additionalClientModeManager);
+        mLooper.dispatchAll();
+        // Returns the new client mode manager.
+        ArgumentCaptor<ClientModeManager> requestedClientModeManager =
+                ArgumentCaptor.forClass(ClientModeManager.class);
+        verify(externalRequestListener).onAnswer(requestedClientModeManager.capture());
+        assertEquals(additionalClientModeManager, requestedClientModeManager.getValue());
+
+        // request for one more CMM (returns the existing one).
+        if (role == ROLE_CLIENT_LOCAL_ONLY) {
+            mActiveModeWarden.requestLocalOnlyClientModeManager(
+                    externalRequestListener, TEST_WORKSOURCE);
+        } else if (role == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+            mActiveModeWarden.requestSecondaryLongLivedClientModeManager(
+                    externalRequestListener, TEST_WORKSOURCE);
+        } else if (role == ROLE_CLIENT_SECONDARY_TRANSIENT) {
+            mActiveModeWarden.requestSecondaryTransientClientModeManager(
+                    externalRequestListener, TEST_WORKSOURCE);
+        }
+        mLooper.dispatchAll();
+
+        // Don't make another client mode manager.
+        verify(mWifiInjector, times(1))
+                .makeClientModeManager(any(), any(), eq(role), anyBoolean());
+        // Returns the existing client mode manager.
+        verify(externalRequestListener, times(2)).onAnswer(requestedClientModeManager.capture());
+        assertEquals(additionalClientModeManager, requestedClientModeManager.getValue());
+
+    }
+
     @Test
     public void requestRemoveLocalOnlyClientModeManager() throws Exception {
         // Ensure that we can create more client ifaces.
@@ -2531,6 +2594,17 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     @Test
+    public void requestLocalOnlyClientModeManagerWhenAlreadyPresent() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+        when(mResources.getBoolean(R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled))
+                .thenReturn(true);
+
+        requestAdditionalClientModeManagerWhenAlreadyPresent(ROLE_CLIENT_LOCAL_ONLY);
+    }
+
+    @Test
     public void requestRemoveSecondaryLongLivedClientModeManager() throws Exception {
         // Ensure that we can create more client ifaces.
         when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
@@ -2558,6 +2632,17 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     @Test
+    public void requestSecondaryLongLivedClientModeManagerWhenAlreadyPresent() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+        when(mResources.getBoolean(R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled))
+                .thenReturn(true);
+
+        requestAdditionalClientModeManagerWhenAlreadyPresent(ROLE_CLIENT_SECONDARY_LONG_LIVED);
+    }
+
+    @Test
     public void requestRemoveSecondaryTransientClientModeManager() throws Exception {
         // Ensure that we can create more client ifaces.
         when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
@@ -2582,6 +2667,17 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
 
         requestAdditionalClientModeManagerWhenWifiIsOff(ROLE_CLIENT_SECONDARY_TRANSIENT);
+    }
+
+    @Test
+    public void requestSecondaryTransientClientModeManagerWhenAlreadyPresent() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+        when(mResources.getBoolean(R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled))
+                .thenReturn(true);
+
+        requestAdditionalClientModeManagerWhenAlreadyPresent(ROLE_CLIENT_SECONDARY_TRANSIENT);
     }
 
     @Test

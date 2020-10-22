@@ -1774,44 +1774,6 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
      * Verify handling of request release after starting connection to the network.
      */
     @Test
-    public void testHandleNetworkReleaseWithSpecifierWhenAwaitingCmRetrieval() throws Exception {
-        doNothing().when(mActiveModeWarden).requestLocalOnlyClientModeManager(any(), any());
-
-        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
-
-        sendNetworkRequestAndSetupForUserSelection();
-
-        INetworkRequestUserSelectionCallback networkRequestUserSelectionCallback =
-                mNetworkRequestUserSelectionCallback.getValue();
-        assertNotNull(networkRequestUserSelectionCallback);
-
-        // Now trigger user selection to one of the network.
-        mSelectedNetwork = WifiConfigurationTestUtil.createPskNetwork();
-        mSelectedNetwork.SSID = "\"" + TEST_SSID_1 + "\"";
-        sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
-        mLooper.dispatchAll();
-
-        ArgumentCaptor<ActiveModeWarden.ExternalClientModeManagerRequestListener> cmListenerCaptor =
-                ArgumentCaptor.forClass(
-                        ActiveModeWarden.ExternalClientModeManagerRequestListener.class);
-        verify(mActiveModeWarden).requestLocalOnlyClientModeManager(
-                cmListenerCaptor.capture(), eq(new WorkSource(TEST_UID_1, TEST_PACKAGE_NAME_1)));
-        assertNotNull(cmListenerCaptor.getValue());
-
-        // Release the request before the CM instance is delivered.
-        mWifiNetworkFactory.releaseNetworkFor(mNetworkRequest);
-
-        // Now return the CM instance for the previous request.
-        cmListenerCaptor.getValue().onAnswer(mClientModeManager);
-
-        // Ensure we removed the CM instance since we no longer have any active request.
-        verify(mActiveModeWarden).removeClientModeManager(mClientModeManager);
-    }
-
-    /**
-     * Verify handling of request release after starting connection to the network.
-     */
-    @Test
     public void testHandleNetworkReleaseWithSpecifierAfterConnectionStart() throws Exception {
         sendNetworkRequestAndSetupForConnectionStatus();
 
@@ -1959,8 +1921,8 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
-        // Ensure we don't request a new ClientModeManager.
-        verify(mActiveModeWarden, times(1)).requestLocalOnlyClientModeManager(any(), any());
+        // Ensure we request a new ClientModeManager.
+        verify(mActiveModeWarden, times(2)).requestLocalOnlyClientModeManager(any(), any());
 
         // Now return the CM instance for the previous request.
         cmListenerCaptor.getValue().onAnswer(mClientModeManager);
@@ -2873,7 +2835,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         sendUserSelectionSelect(networkRequestUserSelectionCallback, mSelectedNetwork);
         mLooper.dispatchAll();
 
-        verify(mActiveModeWarden).requestLocalOnlyClientModeManager(any(), any());
+        verify(mActiveModeWarden, atLeastOnce()).requestLocalOnlyClientModeManager(any(), any());
 
         // Cancel the periodic scan timer.
         mInOrder.verify(mAlarmManager).cancel(mPeriodicScanListenerArgumentCaptor.getValue());

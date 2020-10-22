@@ -1373,6 +1373,22 @@ public class ActiveModeWarden {
                 return true;
             }
 
+            private void handleAdditionalClientModeManagerRequest(
+                    @NonNull AdditionalClientModeManagerRequestInfo requestInfo) {
+                ClientModeManager cmm = getClientModeManagerInRole(requestInfo.clientRole);
+                if (cmm != null) {
+                    // Already have a client mode manager in the requested role.
+                    requestInfo.listener.onAnswer(cmm);
+                } else if (shouldRequestAdditionalClientModeManager(requestInfo)) {
+                    // Can create an additional client mode manager.
+                    startAdditionalClientModeManager(
+                            requestInfo.clientRole,
+                            requestInfo.listener, requestInfo.requestorWs);
+                } else {
+                    requestInfo.listener.onAnswer(getPrimaryClientModeManager());
+                }
+            }
+
 
             @Override
             public boolean processMessageFiltered(Message msg) {
@@ -1391,16 +1407,8 @@ public class ActiveModeWarden {
                         }
                         break;
                     case CMD_REQUEST_ADDITIONAL_CLIENT_MODE_MANAGER:
-                        AdditionalClientModeManagerRequestInfo requestInfo =
-                                (AdditionalClientModeManagerRequestInfo) msg.obj;
-                        if (shouldRequestAdditionalClientModeManager(requestInfo)) {
-                            // Can create an additional client mode manager.
-                            startAdditionalClientModeManager(
-                                    requestInfo.clientRole,
-                                    requestInfo.listener, requestInfo.requestorWs);
-                        } else {
-                            requestInfo.listener.onAnswer(getPrimaryClientModeManager());
-                        }
+                        handleAdditionalClientModeManagerRequest(
+                                (AdditionalClientModeManagerRequestInfo) msg.obj);
                         break;
                     case CMD_REMOVE_ADDITIONAL_CLIENT_MODE_MANAGER:
                         stopAdditionalClientModeManager((ClientModeManager) msg.obj);

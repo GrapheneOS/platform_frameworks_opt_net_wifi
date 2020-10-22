@@ -161,7 +161,6 @@ public class WifiNetworkFactory extends NetworkFactory {
     private boolean mIsPeriodicScanPaused = false;
     // We sent a new connection request and are waiting for connection success.
     private boolean mPendingConnectionSuccess = false;
-    private boolean mAwaitingClientModeManagerRetrieval = false;
     /**
      * Indicates that we have new data to serialize.
      */
@@ -335,7 +334,6 @@ public class WifiNetworkFactory extends NetworkFactory {
             ActiveModeWarden.ExternalClientModeManagerRequestListener {
         @Override
         public void onAnswer(@Nullable ClientModeManager modeManager) {
-            mAwaitingClientModeManagerRetrieval = false;
             if (modeManager != null) {
                 // Remove the mode manager if the associated request is no longer active.
                 if (mActiveSpecificNetworkRequest == null
@@ -656,32 +654,6 @@ public class WifiNetworkFactory extends NetworkFactory {
         return true;
     }
 
-    private void requestClientModeManagerIfNecessary() {
-        // If we already have a ClientModeManager instance retrieved or requested for the
-        // previously active request, use that to handle the new request. Creating a new one for
-        // overlapping requests would result in unnecessary delay in turning down the old one &
-        // creating a new one.
-        if (mClientModeManager != null) {
-            if (mVerboseLoggingEnabled) Log.v(TAG, "Using cached ClientModeManager instance");
-            handleClientModeManagerRetrieval();
-        } else if (mAwaitingClientModeManagerRetrieval) {
-            // Note: If we have a pending request, then we will wait for the answer to that
-            // request to perform the next steps.
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "Waiting for previously requested ClientModeManager instance");
-            }
-        } else {
-            // No ClientModeManager instance retrieved or requested, request a new instance and
-            // then perform the next steps.
-            if (mVerboseLoggingEnabled) Log.v(TAG, "Requesting new ClientModeManager instance");
-            mAwaitingClientModeManagerRetrieval = true;
-            mActiveModeWarden.requestLocalOnlyClientModeManager(
-                    new ClientModeManagerRequestListener(),
-                    new WorkSource(mActiveSpecificNetworkRequest.getRequestorUid(),
-                            mActiveSpecificNetworkRequest.getRequestorPackageName()));
-        }
-    }
-
     /**
      * Handle new network connection requests.
      *
@@ -930,7 +902,11 @@ public class WifiNetworkFactory extends NetworkFactory {
         mUserSelectedNetwork = networkToConnect;
 
         // Request a new CMM for the connection processing.
-        requestClientModeManagerIfNecessary();
+        if (mVerboseLoggingEnabled) Log.v(TAG, "Requesting new ClientModeManager instance");
+        mActiveModeWarden.requestLocalOnlyClientModeManager(
+                new ClientModeManagerRequestListener(),
+                new WorkSource(mActiveSpecificNetworkRequest.getRequestorUid(),
+                        mActiveSpecificNetworkRequest.getRequestorPackageName()));
     }
 
     private void handleConnectToNetworkUserSelection(WifiConfiguration network) {
