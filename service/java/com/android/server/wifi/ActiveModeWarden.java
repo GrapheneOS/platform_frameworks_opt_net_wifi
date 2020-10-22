@@ -1359,6 +1359,21 @@ public class ActiveModeWarden {
                 super.exit();
             }
 
+            private boolean shouldRequestAdditionalClientModeManager(
+                    AdditionalClientModeManagerRequestInfo requestInfo) {
+                if (!canRequestMoreClientModeManagers(requestInfo.requestorWs)) {
+                    return false;
+                }
+                if (requestInfo.clientRole == ROLE_CLIENT_LOCAL_ONLY) {
+                    if (!mContext.getResources().getBoolean(
+                            R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+
             @Override
             public boolean processMessageFiltered(Message msg) {
                 switch (msg.what) {
@@ -1378,7 +1393,7 @@ public class ActiveModeWarden {
                     case CMD_REQUEST_ADDITIONAL_CLIENT_MODE_MANAGER:
                         AdditionalClientModeManagerRequestInfo requestInfo =
                                 (AdditionalClientModeManagerRequestInfo) msg.obj;
-                        if (canRequestMoreClientModeManagers(requestInfo.requestorWs)) {
+                        if (shouldRequestAdditionalClientModeManager(requestInfo)) {
                             // Can create an additional client mode manager.
                             startAdditionalClientModeManager(
                                     requestInfo.clientRole,

@@ -2387,11 +2387,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             ActiveModeManager.ClientConnectivityRole role) throws Exception {
         enterClientModeActiveState();
 
-        // Ensure that we can create more client ifaces.
-        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
-        mLooper.dispatchAll();
-        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
-
         ConcreteClientModeManager additionalClientModeManager =
                 mock(ConcreteClientModeManager.class);
         Mutable<ActiveModeManager.Listener<ConcreteClientModeManager>> additionalClientListener =
@@ -2439,11 +2434,6 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     private void requestRemoveAdditionalClientModeManagerWhenNotAllowed(
             ActiveModeManager.ClientConnectivityRole role) throws Exception {
         enterClientModeActiveState();
-
-        // Ensure that we cannot create more client ifaces.
-        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(false);
-        mLooper.dispatchAll();
-        assertFalse(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
 
         ConcreteClientModeManager additionalClientModeManager =
                 mock(ConcreteClientModeManager.class);
@@ -2504,46 +2494,93 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
     @Test
     public void requestRemoveLocalOnlyClientModeManager() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+        when(mResources.getBoolean(R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled))
+                .thenReturn(true);
+
         requestRemoveAdditionalClientModeManager(ROLE_CLIENT_LOCAL_ONLY);
     }
 
     @Test
-    public void requestRemoveLocalOnlyClientModeManagerWhenNotAllowed() throws Exception {
+    public void requestRemoveLocalOnlyClientModeManagerWhenStaStaNotSupported() throws Exception {
+        // Ensure that we cannot create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(false);
+        assertFalse(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+        requestRemoveAdditionalClientModeManagerWhenNotAllowed(ROLE_CLIENT_LOCAL_ONLY);
+    }
+
+    @Test
+    public void requestRemoveLocalOnlyClientModeManagerWhenFeatureDisabled() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+        when(mResources.getBoolean(R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled))
+                .thenReturn(false);
         requestRemoveAdditionalClientModeManagerWhenNotAllowed(ROLE_CLIENT_LOCAL_ONLY);
     }
 
     @Test
     public void requestLocalOnlyClientModeManagerWhenWifiIsOff() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+
         requestAdditionalClientModeManagerWhenWifiIsOff(ROLE_CLIENT_LOCAL_ONLY);
     }
 
     @Test
     public void requestRemoveSecondaryLongLivedClientModeManager() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+
         requestRemoveAdditionalClientModeManager(ROLE_CLIENT_SECONDARY_LONG_LIVED);
     }
 
     @Test
-    public void requestRemoveSecondaryLongLivedClientModeManagerWhenNotAllowed() throws Exception {
+    public void requestRemoveSecondaryLongLivedClientModeManagerWhenStaStaNotSupported()
+            throws Exception {
+        // Ensure that we cannot create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(false);
+        assertFalse(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
         requestRemoveAdditionalClientModeManagerWhenNotAllowed(ROLE_CLIENT_SECONDARY_LONG_LIVED);
     }
 
     @Test
     public void requestSecondaryLongLivedClientModeManagerWhenWifiIsOff() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+
         requestAdditionalClientModeManagerWhenWifiIsOff(ROLE_CLIENT_SECONDARY_LONG_LIVED);
     }
 
     @Test
     public void requestRemoveSecondaryTransientClientModeManager() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+
         requestRemoveAdditionalClientModeManager(ROLE_CLIENT_SECONDARY_TRANSIENT);
     }
 
     @Test
-    public void requestRemoveSecondaryTransientClientModeManagerWhenNotAllowed() throws Exception {
+    public void requestRemoveSecondaryTransientClientModeManagerWhenStaStaNotSupported()
+            throws Exception {
+        // Ensure that we cannot create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(false);
+        assertFalse(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
         requestRemoveAdditionalClientModeManagerWhenNotAllowed(ROLE_CLIENT_SECONDARY_TRANSIENT);
     }
 
     @Test
     public void requestSecondaryTransientClientModeManagerWhenWifiIsOff() throws Exception {
+        // Ensure that we can create more client ifaces.
+        when(mWifiNative.isItPossibleToCreateStaIface(any())).thenReturn(true);
+        assertTrue(mActiveModeWarden.canRequestMoreClientModeManagers(any()));
+
         requestAdditionalClientModeManagerWhenWifiIsOff(ROLE_CLIENT_SECONDARY_TRANSIENT);
     }
 
