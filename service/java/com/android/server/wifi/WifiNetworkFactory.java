@@ -906,7 +906,8 @@ public class WifiNetworkFactory extends NetworkFactory {
         mActiveModeWarden.requestLocalOnlyClientModeManager(
                 new ClientModeManagerRequestListener(),
                 new WorkSource(mActiveSpecificNetworkRequest.getRequestorUid(),
-                        mActiveSpecificNetworkRequest.getRequestorPackageName()));
+                        mActiveSpecificNetworkRequest.getRequestorPackageName()),
+                networkToConnect.SSID, networkToConnect.BSSID);
     }
 
     private void handleConnectToNetworkUserSelection(WifiConfiguration network) {
