@@ -67,6 +67,9 @@ public class HostapdHalTest extends WifiBaseTest {
     private static final String TEST_CLIENT_MAC = "11:22:33:44:55:66";
     private static final String TEST_AP_INSTANCE = "instance-wlan0";
 
+    private final int mBand256G = SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ
+            | SoftApConfiguration.BAND_6GHZ;
+
     private @Mock Context mContext;
     private @Mock IServiceManager mServiceManagerMock;
     private @Mock IHostapd mIHostapdMock;
@@ -455,7 +458,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
                 configurationBuilder.build(), true,
@@ -492,7 +495,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
                 configurationBuilder.build(), true,
@@ -561,7 +564,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
                 configurationBuilder.build(), true,
@@ -1068,7 +1071,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
                 mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
@@ -1115,7 +1118,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA3_SAE_TRANSITION);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
                 mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
@@ -1164,7 +1167,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         assertFalse(mHostapdHal.addAccessPoint(IFACE_NAME,
                 configurationBuilder.build(), true,
@@ -1188,7 +1191,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
                 configurationBuilder.build(), true,
@@ -1289,7 +1292,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
                 mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
@@ -1337,7 +1340,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setHiddenSsid(false);
         configurationBuilder.setPassphrase(NETWORK_PSK,
                 SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
-        configurationBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
                 mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
