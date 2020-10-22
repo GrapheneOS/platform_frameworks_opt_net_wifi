@@ -854,7 +854,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 } else if (preferredBand.equals("6")) {
                     configBuilder.setBand(SoftApConfiguration.BAND_6GHZ);
                 } else if (preferredBand.equals("any")) {
-                    configBuilder.setBand(SoftApConfiguration.BAND_ANY);
+                    configBuilder.setBand(SoftApConfiguration.BAND_2GHZ
+                            | SoftApConfiguration.BAND_5GHZ | SoftApConfiguration.BAND_6GHZ);
                 } else {
                     throw new IllegalArgumentException("Invalid band option " + preferredBand);
                 }
