@@ -533,6 +533,13 @@ public class ActiveModeWarden {
     }
 
     /**
+     * Check whether we have a primary client mode manager (indicates wifi toggle on).
+     */
+    public boolean hasPrimaryClientModeManager() {
+        return getClientModeManagerInRole(ROLE_CLIENT_PRIMARY) != null;
+    }
+
+    /**
      * Returns primary client mode manager if any, else returns an instance of
      * {@link ClientModeManager}.
      * This mode manager can be the default route on the device & will handle all external API
