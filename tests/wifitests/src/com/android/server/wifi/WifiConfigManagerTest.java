@@ -2419,6 +2419,46 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that shouldUseEnhancedRandomization returns true for an open network that has been
+     * connected before and never had captive portal detected.
+     */
+    @Test
+    public void testShouldUseEnhancedRandomization_openNetworkNoCaptivePortal() {
+        when(mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids()).thenReturn(true);
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+
+        // verify enhanced randomization is not enabled because the config has never been connected.
+        assertTrue(config.getNetworkSelectionStatus().hasNeverDetectedCaptivePortal());
+        assertFalse(mWifiConfigManager.shouldUseEnhancedRandomization(config));
+
+        config.getNetworkSelectionStatus().setHasEverConnected(true);
+        assertTrue(mWifiConfigManager.shouldUseEnhancedRandomization(config));
+    }
+
+    /**
+     * Verify that enhanced randomization on open networks could be turned on/off by 2 feature
+     * flags.
+     */
+    @Test
+    public void testShouldUseEnhancedRandomization_openNetworkFeatureFlag() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        config.getNetworkSelectionStatus().setHasEverConnected(true);
+
+        // Test with both feature flags off, and expected no enhanced randomization.
+        when(mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids()).thenReturn(false);
+        mResources.setBoolean(R.bool.config_wifiAllowEnhancedMacRandomizationOnOpenSsids, false);
+        assertFalse(mWifiConfigManager.shouldUseEnhancedRandomization(config));
+
+        // Verify either feature flag turned on will enable enhanced randomization.
+        when(mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids()).thenReturn(true);
+        assertTrue(mWifiConfigManager.shouldUseEnhancedRandomization(config));
+
+        when(mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids()).thenReturn(false);
+        mResources.setBoolean(R.bool.config_wifiAllowEnhancedMacRandomizationOnOpenSsids, true);
+        assertTrue(mWifiConfigManager.shouldUseEnhancedRandomization(config));
+    }
+
+    /**
      * Verify that when DeviceConfigFacade#isEnhancedMacRandomizationEnabled returns true, any
      * networks that already use randomized MAC use enhanced MAC randomization instead.
      */

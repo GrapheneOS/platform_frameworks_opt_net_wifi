@@ -194,6 +194,7 @@ public class DeviceConfigFacade {
     private int mMinConfirmationDurationSendLowScoreMs;
     private int mMinConfirmationDurationSendHighScoreMs;
     private int mRssiThresholdNotSendLowScoreToCsDbm;
+    private boolean mAllowEnhancedMacRandomizationOnOpenSsids;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -352,6 +353,8 @@ public class DeviceConfigFacade {
         mRssiThresholdNotSendLowScoreToCsDbm = DeviceConfig.getInt(NAMESPACE,
                 "rssi_threshold_not_send_low_score_to_cs_dbm",
                 DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM);
+        mAllowEnhancedMacRandomizationOnOpenSsids = DeviceConfig.getBoolean(NAMESPACE,
+                "allow_enhanced_mac_randomization_on_open_ssids", false);
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -730,5 +733,12 @@ public class DeviceConfigFacade {
      */
     public int getRssiThresholdNotSendLowScoreToCsDbm() {
         return mRssiThresholdNotSendLowScoreToCsDbm;
+    }
+
+    /**
+     * Gets whether enhanced MAC randomization should be allowed on open networks.
+     */
+    public boolean allowEnhancedMacRandomizationOnOpenSsids() {
+        return mAllowEnhancedMacRandomizationOnOpenSsids;
     }
 }
