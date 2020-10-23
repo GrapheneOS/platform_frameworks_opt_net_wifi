@@ -22,6 +22,7 @@ import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
@@ -88,6 +89,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * NOTE: This class should always be invoked from the main wifi service thread.
  */
 @NotThreadSafe
+@SuppressLint("LongLogTag")
 public class WifiNetworkSuggestionsManager {
     private static final String TAG = "WifiNetworkSuggestionsManager";
 
@@ -718,7 +720,7 @@ public class WifiNetworkSuggestionsManager {
 
     private void removeNetworkFromScoreCard(WifiConfiguration wifiConfiguration) {
         WifiConfiguration existing =
-                mWifiConfigManager.getConfiguredNetwork(wifiConfiguration.getKey());
+                mWifiConfigManager.getConfiguredNetwork(wifiConfiguration.getProfileKey());
         // If there is a saved network, do not remove from the score card.
         if (existing != null && !existing.fromWifiNetworkSuggestion) {
             return;
@@ -1693,6 +1695,9 @@ public class WifiNetworkSuggestionsManager {
             if (sharedNetworkSuggestions.isEmpty()) {
                 continue;
             }
+            /**
+             * TODO: add all
+             */
             ExtendedWifiNetworkSuggestion ewns =
                     sharedNetworkSuggestions.stream().findFirst().get();
             if (mVerboseLoggingEnabled) {
@@ -1705,6 +1710,9 @@ public class WifiNetworkSuggestionsManager {
             if (existingConfig == null || !existingConfig.fromWifiNetworkSuggestion) {
                 continue;
             }
+            /**
+             * TODO: maybe not needed
+             */
             if (networkKeys.add(existingConfig.getKey())) {
                 sharedWifiConfigs.add(existingConfig);
             }
