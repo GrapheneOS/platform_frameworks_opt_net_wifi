@@ -235,6 +235,19 @@ public class WifiP2pNative {
     }
 
     /**
+     * Replace requestorWs in-place when iface is already enabled.
+     */
+    public boolean replaceRequestorWs(WorkSource requestorWs) {
+        if (mHalDeviceManager.isSupported()) {
+            if (mIWifiP2pIface == null) return false;
+            return mHalDeviceManager.replaceRequestorWs(mIWifiP2pIface, requestorWs);
+        } else {
+            Log.i(TAG, "HAL (HIDL) is not supported. Ignore replace requestorWs");
+            return true;
+        }
+    }
+
+    /**
      * Set WPS device name.
      *
      * @param name String to be set.

@@ -2309,14 +2309,15 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             client.onInterfaceAddressChange(mCurrentDiscoveryInterfaceMac);
             mClients.append(clientId, client);
             mAwareMetrics.recordAttachSession(uid, notifyIdentityChange, mClients);
+            if (!mWifiAwareNativeManager.replaceRequestorWs(createMergedRequestorWs())) {
+                Log.w(TAG, "Failed to replace requestorWs");
+            }
             return false;
         }
         boolean notificationRequired =
                 doesAnyClientNeedIdentityChangeNotifications() || notifyIdentityChange;
 
         if (mCurrentAwareConfiguration == null) {
-            // TODO(b/162344695): If there are more than 1 concurrent aware clients, then we
-            // attribute the iface to one of the apps (first one is picked).
             mWifiAwareNativeManager.tryToGetAware(new WorkSource(uid, callingPackage));
         }
 
@@ -2360,6 +2361,10 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             mCurrentAwareConfiguration = null;
             deleteAllDataPathInterfaces();
             return mWifiAwareNativeApi.disable(transactionId);
+        }
+
+        if (!mWifiAwareNativeManager.replaceRequestorWs(createMergedRequestorWs())) {
+            Log.w(TAG, "Failed to replace requestorWs");
         }
 
         ConfigRequest merged = mergeConfigRequests(null);
@@ -3325,6 +3330,18 @@ public class WifiAwareStateManager implements WifiAwareShellCommand.DelegatedShe
             }
         }
         return builder.build();
+    }
+
+    private WorkSource createMergedRequestorWs() {
+        if (mDbg) {
+            Log.v(TAG, "createMergedRequestorWs(): mClients=[" + mClients + "]");
+        }
+        WorkSource requestorWs = new WorkSource();
+        for (int i = 0; i < mClients.size(); ++i) {
+            WifiAwareClientState clientState = mClients.valueAt(i);
+            requestorWs.add(new WorkSource(clientState.getUid(), clientState.getCallingPackage()));
+        }
+        return requestorWs;
     }
 
     private boolean doesAnyClientNeedIdentityChangeNotifications() {

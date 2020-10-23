@@ -118,6 +118,9 @@ public class SoftApManagerTest extends WifiBaseTest {
     private static final int[] EMPTY_CHANNEL_ARRAY = {};
     private static final WorkSource TEST_WORKSOURCE = new WorkSource();
     private SoftApConfiguration mDefaultApConfig = createDefaultApConfig();
+    private final int mBand256G = SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ
+            | SoftApConfiguration.BAND_6GHZ;
+
 
     private TestLooper mLooper;
     private TestAlarmManager mAlarmManager;
@@ -465,7 +468,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void startSoftApOnAnyGhzNoFailForNoCountryCode() throws Exception {
         Builder configBuilder = new SoftApConfiguration.Builder();
-        configBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configBuilder.setBand(mBand256G);
         configBuilder.setSsid(TEST_SSID);
         SoftApModeConfiguration softApConfig = new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
@@ -502,7 +505,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void startSoftApOnAnyNoFailForCountryCodeSetFailure() throws Exception {
         Builder configBuilder = new SoftApConfiguration.Builder();
-        configBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configBuilder.setBand(mBand256G);
         configBuilder.setSsid(TEST_SSID);
         SoftApModeConfiguration softApConfig = new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
@@ -822,7 +825,7 @@ public class SoftApManagerTest extends WifiBaseTest {
             throws Exception {
         SoftApConfiguration config = createDefaultApConfig();
         Builder configBuilder = new SoftApConfiguration.Builder(config);
-        configBuilder.setBand(SoftApConfiguration.BAND_ANY);
+        configBuilder.setBand(mBand256G);
 
         SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
