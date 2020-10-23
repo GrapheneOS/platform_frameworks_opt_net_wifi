@@ -1373,11 +1373,20 @@ public class ActiveModeWarden {
                 if (!canRequestMoreClientModeManagers(requestInfo.requestorWs)) {
                     return false;
                 }
-                if (requestInfo.clientRole == ROLE_CLIENT_LOCAL_ONLY) {
-                    if (!mContext.getResources().getBoolean(
-                            R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled)) {
-                        return false;
-                    }
+                if (requestInfo.clientRole == ROLE_CLIENT_LOCAL_ONLY
+                        && !mContext.getResources().getBoolean(
+                        R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled)) {
+                    return false;
+                }
+                if (requestInfo.clientRole == ROLE_CLIENT_SECONDARY_TRANSIENT
+                        && !mContext.getResources().getBoolean(
+                        R.bool.config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled)) {
+                    return false;
+                }
+                if (requestInfo.clientRole == ROLE_CLIENT_SECONDARY_LONG_LIVED
+                        && !mContext.getResources().getBoolean(
+                        R.bool.config_wifiMultiStaRestrictedConcurrencyEnabled)) {
+                    return false;
                 }
                 return true;
             }
