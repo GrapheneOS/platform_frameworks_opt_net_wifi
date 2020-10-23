@@ -212,6 +212,7 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs());
         assertEquals(DeviceConfigFacade.DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM,
                 mDeviceConfigFacade.getRssiThresholdNotSendLowScoreToCsDbm());
+        assertEquals(false, mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids());
     }
 
     /**
@@ -322,6 +323,9 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(1000);
         when(DeviceConfig.getInt(anyString(), eq("rssi_threshold_not_send_low_score_to_cs_dbm"),
                 anyInt())).thenReturn(-70);
+        when(DeviceConfig.getBoolean(anyString(),
+                eq("allow_enhanced_mac_randomization_on_open_ssids"),
+                anyBoolean())).thenReturn(true);
         mOnPropertiesChangedListenerCaptor.getValue().onPropertiesChanged(null);
 
         // Verifying fields are updated to the new values
@@ -382,5 +386,6 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(4000, mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs());
         assertEquals(1000, mDeviceConfigFacade.getMinConfirmationDurationSendHighScoreMs());
         assertEquals(-70, mDeviceConfigFacade.getRssiThresholdNotSendLowScoreToCsDbm());
+        assertEquals(true, mDeviceConfigFacade.allowEnhancedMacRandomizationOnOpenSsids());
     }
 }
