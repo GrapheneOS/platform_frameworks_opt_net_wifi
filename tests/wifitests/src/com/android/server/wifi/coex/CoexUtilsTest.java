@@ -22,6 +22,7 @@ import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 import static com.android.server.wifi.coex.CoexUtils.INVALID_FREQ;
 import static com.android.server.wifi.coex.CoexUtils.get2gHarmonicCoexUnsafeChannels;
 import static com.android.server.wifi.coex.CoexUtils.get5gHarmonicCoexUnsafeChannels;
+import static com.android.server.wifi.coex.CoexUtils.getIntermodCoexUnsafeChannels;
 import static com.android.server.wifi.coex.CoexUtils.getLowerFreqKhz;
 import static com.android.server.wifi.coex.CoexUtils.getNeighboringCoexUnsafeChannels;
 import static com.android.server.wifi.coex.CoexUtils.getUpperFreqKhz;
@@ -35,6 +36,7 @@ import androidx.test.filters.SmallTest;
 import org.junit.Test;
 
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Unit tests for {@link com.android.server.wifi.coex.CoexUtils}.
@@ -295,5 +297,25 @@ public class CoexUtilsTest {
                 getHarmonicUlBandwidthKhz(unsafeLowerKhz, unsafeUpperKhz, harmonicDeg),
                 harmonicDeg, maxOverlap))
                 .containsExactlyElementsIn(middleCoexUnsafeChannels);
+    }
+
+    /**
+     * Verifies that getIntermodCoexUnsafeChannels returns the correct subset of 2.4GHz channels
+     * for the example channel 3350 of LTE Band 7.
+     */
+    @Test
+    public void testGet2gIntermodUnsafeChannels_channel3350Example_returnsCorrectWifiChannels() {
+        int dlFreqKhz = 2680_000;
+        int ulFreqKhz = 2560_000;
+        int bandwidthKhz = 10_000;
+        int maxOverlap = 100;
+
+        Set<CoexUnsafeChannel> coexUnsafeChannels = new HashSet<>();
+        for (int channel = 4; channel <= 9; channel += 1) {
+            coexUnsafeChannels.add(new CoexUnsafeChannel(WIFI_BAND_24_GHZ, channel));
+        }
+        // Includes channel 6 but not channel 11
+        assertThat(getIntermodCoexUnsafeChannels(ulFreqKhz, bandwidthKhz, dlFreqKhz, bandwidthKhz,
+                2, -1, maxOverlap, WIFI_BAND_24_GHZ)).containsExactlyElementsIn(coexUnsafeChannels);
     }
 }

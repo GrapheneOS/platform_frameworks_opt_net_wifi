@@ -465,4 +465,49 @@ public class CoexUtils {
         }
         return coexUnsafeChannels;
     }
+
+    /**
+     * Returns CoexUnsafeChannels of a given band affected by the intermod interference from a given
+     * uplink and downlink cell channel.
+     */
+    public static Set<CoexUnsafeChannel> getIntermodCoexUnsafeChannels(
+            int ulFreqKhz, int ulBandwidthKhz, int dlFreqKhz, int dlBandwidthKhz,
+            int n, int m, int overlapPercentThreshold, @WifiAnnotations.WifiBandBasic int band) {
+        Set<CoexUnsafeChannel> coexUnsafeChannels = new HashSet<>();
+        final int ulLowerKhz = (ulFreqKhz - (ulBandwidthKhz / 2));
+        final int ulUpperKhz = (ulFreqKhz + (ulBandwidthKhz / 2));
+        final int dlLowerKhz = (dlFreqKhz - (dlBandwidthKhz / 2));
+        final int dlUpperKhz = (dlFreqKhz + (dlBandwidthKhz / 2));
+
+        Set<Integer> channelSet = new HashSet<>();
+        if (band == WIFI_BAND_24_GHZ) {
+            for (int channel = 1; channel <= 14; channel++) {
+                channelSet.add(channel);
+            }
+        } else if (band == WIFI_BAND_5_GHZ) {
+            channelSet.addAll(CHANNEL_SET_5_GHZ_20_MHZ);
+            channelSet.addAll(CHANNEL_SET_5_GHZ_40_MHZ);
+            channelSet.addAll(CHANNEL_SET_5_GHZ_80_MHZ);
+            channelSet.addAll(CHANNEL_SET_5_GHZ_160_MHZ);
+        }
+
+        for (int channel : channelSet) {
+            int intermodLowerKhz =
+                    Math.abs(n * ulLowerKhz + m * getUpperFreqKhz(channel, band));
+            int intermodUpperKhz =
+                    Math.abs(n * ulUpperKhz + m * getLowerFreqKhz(channel, band));
+            // Swap the bounds if lower becomes upper from taking the absolute value
+            if (intermodLowerKhz > intermodUpperKhz) {
+                int temp = intermodLowerKhz;
+                intermodLowerKhz = intermodUpperKhz;
+                intermodUpperKhz = temp;
+            }
+            if (getOverlapPercent(intermodLowerKhz, intermodUpperKhz, dlLowerKhz, dlUpperKhz)
+                    >= overlapPercentThreshold) {
+                coexUnsafeChannels.add(new CoexUnsafeChannel(band, channel));
+            }
+        }
+
+        return coexUnsafeChannels;
+    }
 }
