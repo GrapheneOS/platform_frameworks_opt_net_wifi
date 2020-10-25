@@ -449,14 +449,36 @@ public class SupplicantStaNetworkHal {
             }
 
             // Now that the network is configured fully, start listening for callback events.
-            mISupplicantStaNetworkCallback =
-                    new SupplicantStaNetworkHalCallback(config.networkId, config.SSID);
-            if (!registerCallback(mISupplicantStaNetworkCallback)) {
-                Log.e(TAG, "Failed to register callback");
-                return false;
-            }
-            return true;
+            return tryRegisterCallback(config.networkId, config.SSID);
         }
+    }
+
+    private boolean tryRegisterCallback_1_4(int networkId, String ssid) {
+        if (getV1_4StaNetwork() == null) return false;
+
+        SupplicantStaNetworkHalCallbackV1_4 callback =
+                new SupplicantStaNetworkHalCallbackV1_4(networkId, ssid);
+        if (!registerCallback_1_4(callback)) {
+            Log.e(TAG, "Failed to register V1.4 callback");
+            return false;
+        }
+        mISupplicantStaNetworkCallback = callback;
+        return true;
+    }
+
+    private boolean tryRegisterCallback(int networkId, String ssid) {
+        /* try newer version fist. */
+        if (getV1_4StaNetwork() != null) {
+            return tryRegisterCallback_1_4(networkId, ssid);
+        }
+
+        mISupplicantStaNetworkCallback =
+        new SupplicantStaNetworkHalCallback(networkId, ssid);
+        if (!registerCallback(mISupplicantStaNetworkCallback)) {
+            Log.e(TAG, "Failed to register callback");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -1321,6 +1343,25 @@ public class SupplicantStaNetworkHal {
             if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
             try {
                 SupplicantStatus status = mISupplicantStaNetwork.registerCallback(callback);
+                return checkStatusAndLogFailure(status, methodStr);
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
+    /** See ISupplicantStaNetwork.hal for documentation */
+    private boolean registerCallback_1_4(
+            android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetworkCallback callback) {
+        synchronized (mLock) {
+            final String methodStr = "registerCallback_1_4";
+            android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
+                    iSupplicantStaNetworkV14 = getV1_4StaNetwork();
+            if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
+            if (iSupplicantStaNetworkV14 == null) return false;
+            try {
+                SupplicantStatus status = iSupplicantStaNetworkV14.registerCallback_1_4(callback);
                 return checkStatusAndLogFailure(status, methodStr);
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
@@ -3493,7 +3534,7 @@ public class SupplicantStaNetworkHal {
     /**
      * Helper function to log callbacks.
      */
-    private void logCallback(final String methodStr) {
+    protected void logCallback(final String methodStr) {
         synchronized (mLock) {
             if (mVerboseLoggingEnabled) {
                 Log.d(TAG, "ISupplicantStaNetworkCallback." + methodStr + " received");
@@ -3640,56 +3681,20 @@ public class SupplicantStaNetworkHal {
         }
     }
 
-    private class SupplicantStaNetworkHalCallback extends ISupplicantStaNetworkCallback.Stub {
-        /**
-         * Current configured network's framework network id.
-         */
-        private final int mFramewokNetworkId;
-        /**
-         * Current configured network's ssid.
-         */
-        private final String mSsid;
-
-        SupplicantStaNetworkHalCallback(int framewokNetworkId, String ssid) {
-            mFramewokNetworkId = framewokNetworkId;
-            mSsid = ssid;
+    protected class SupplicantStaNetworkHalCallbackV1_4
+            extends SupplicantStaNetworkCallbackV1_4Impl {
+        SupplicantStaNetworkHalCallbackV1_4(int frameworkNetworkId, String ssid) {
+            super(SupplicantStaNetworkHal.this,
+                    frameworkNetworkId, ssid,
+                    mIfaceName, mLock, mWifiMonitor);
         }
+    }
 
-        @Override
-        public void onNetworkEapSimGsmAuthRequest(
-                ISupplicantStaNetworkCallback.NetworkRequestEapSimGsmAuthParams params) {
-            synchronized (mLock) {
-                logCallback("onNetworkEapSimGsmAuthRequest");
-                String[] data = new String[params.rands.size()];
-                int i = 0;
-                for (byte[] rand : params.rands) {
-                    data[i++] = NativeUtil.hexStringFromByteArray(rand);
-                }
-                mWifiMonitor.broadcastNetworkGsmAuthRequestEvent(
-                        mIfaceName, mFramewokNetworkId, mSsid, data);
-            }
-        }
-
-        @Override
-        public void onNetworkEapSimUmtsAuthRequest(
-                ISupplicantStaNetworkCallback.NetworkRequestEapSimUmtsAuthParams params) {
-            synchronized (mLock) {
-                logCallback("onNetworkEapSimUmtsAuthRequest");
-                String randHex = NativeUtil.hexStringFromByteArray(params.rand);
-                String autnHex = NativeUtil.hexStringFromByteArray(params.autn);
-                String[] data = {randHex, autnHex};
-                mWifiMonitor.broadcastNetworkUmtsAuthRequestEvent(
-                        mIfaceName, mFramewokNetworkId, mSsid, data);
-            }
-        }
-
-        @Override
-        public void onNetworkEapIdentityRequest() {
-            synchronized (mLock) {
-                logCallback("onNetworkEapIdentityRequest");
-                mWifiMonitor.broadcastNetworkIdentityRequestEvent(
-                        mIfaceName, mFramewokNetworkId, mSsid);
-            }
+    protected class SupplicantStaNetworkHalCallback extends SupplicantStaNetworkCallbackImpl {
+        SupplicantStaNetworkHalCallback(int frameworkNetworkId, String ssid) {
+            super(SupplicantStaNetworkHal.this,
+                    frameworkNetworkId, ssid,
+                    mIfaceName, mLock, mWifiMonitor);
         }
     }
 }
