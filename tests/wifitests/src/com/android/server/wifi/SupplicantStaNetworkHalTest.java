@@ -90,6 +90,8 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     private SupplicantNetworkVariables mSupplicantVariables;
     private MockResources mResources;
     private ISupplicantStaNetworkCallback mISupplicantStaNetworkCallback;
+    private android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetworkCallback
+            mISupplicantStaNetworkCallbackV14;
 
     enum SupplicantStaNetworkVersion {
         V1_0,
@@ -922,6 +924,20 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     @Test
     public void testSaveFailureDueToCallbackReg() throws Exception {
         when(mISupplicantStaNetworkMock.registerCallback(any(ISupplicantStaNetworkCallback.class)))
+                .thenReturn(mStatusFailure);
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        assertFalse(mSupplicantNetwork.saveWifiConfiguration(config));
+    }
+
+    /**
+     * Tests that callback registration failure triggers a failure in saving network config.
+     */
+    @Test
+    public void testSaveFailureDueToCallbackRegV1_4() throws Exception {
+        createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_4);
+        when(mISupplicantStaNetworkV14.registerCallback_1_4(any(
+                        android.hardware.wifi.supplicant.V1_4
+                        .ISupplicantStaNetworkCallback.class)))
                 .thenReturn(mStatusFailure);
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
         assertFalse(mSupplicantNetwork.saveWifiConfiguration(config));
@@ -1960,6 +1976,20 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
             }
         }).when(mISupplicantStaNetworkMock)
                 .registerCallback(any(ISupplicantStaNetworkCallback.class));
+
+        /** Callback registration */
+        doAnswer(new AnswerWithArguments() {
+            public SupplicantStatus answer(
+                    android.hardware.wifi.supplicant.V1_4
+                    .ISupplicantStaNetworkCallback cb)
+                    throws RemoteException {
+                mISupplicantStaNetworkCallbackV14 = cb;
+                return mStatusSuccess;
+            }
+        }).when(mISupplicantStaNetworkV14)
+                .registerCallback_1_4(any(
+                            android.hardware.wifi.supplicant.V1_4
+                            .ISupplicantStaNetworkCallback.class));
 
         /** Suite-B*/
         doAnswer(new AnswerWithArguments() {
