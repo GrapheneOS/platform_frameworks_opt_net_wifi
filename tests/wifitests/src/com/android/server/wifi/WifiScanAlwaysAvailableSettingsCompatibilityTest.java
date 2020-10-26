@@ -92,7 +92,7 @@ public class WifiScanAlwaysAvailableSettingsCompatibilityTest extends WifiBaseTe
         ContentObserver contentObserver = mContentObserverArgumentCaptor.getValue();
         assertNotNull(contentObserver);
 
-        when(mWifiSettingsStore.isScanAlwaysAvailable()).thenReturn(false);
+        when(mWifiSettingsStore.isScanAlwaysAvailableToggleEnabled()).thenReturn(false);
         when(mFrameworkFacade.getIntegerSetting(
                 any(ContentResolver.class),
                 eq(SETTINGS_GLOBAL_WIFI_SCAN_ALWAYS_AVAILABLE),
@@ -103,7 +103,7 @@ public class WifiScanAlwaysAvailableSettingsCompatibilityTest extends WifiBaseTe
         verify(mWifiSettingsStore).handleWifiScanAlwaysAvailableToggled(true);
         verify(mActiveModeWarden).scanAlwaysModeChanged();
 
-        when(mWifiSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
+        when(mWifiSettingsStore.isScanAlwaysAvailableToggleEnabled()).thenReturn(true);
         when(mFrameworkFacade.getIntegerSetting(
                 any(ContentResolver.class),
                 eq(SETTINGS_GLOBAL_WIFI_SCAN_ALWAYS_AVAILABLE),

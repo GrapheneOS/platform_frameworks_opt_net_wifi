@@ -65,6 +65,10 @@ public class WifiSettingsStore {
         return mAirplaneModeOn;
     }
 
+    public synchronized boolean isScanAlwaysAvailableToggleEnabled() {
+        return getPersistedScanAlwaysAvailable();
+    }
+
     public synchronized boolean isScanAlwaysAvailable() {
         return !mAirplaneModeOn && getPersistedScanAlwaysAvailable();
     }
