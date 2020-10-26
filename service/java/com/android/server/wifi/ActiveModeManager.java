@@ -109,7 +109,13 @@ public interface ActiveModeManager {
 
     /** Long running Client roles that could initiate a wifi connection for internet connectivity */
     interface ClientInternetConnectivityRole extends ClientConnectivityRole {}
-    /** ClientModeManager, primary STA, will respond to public WifiManager APIs */
+    /**
+     * ClientModeManager, primary STA, will respond to public WifiManager APIs
+     * Note: Primary STA can be used to satisfy any of the other client roles whenever it is not
+     * possible to create a concurrent ClientModeManager for the specified role. This is only true
+     * for primary role. ClientModeManager in any of the other roles are dedicated to the
+     * corresponding role.
+     */
     ClientInternetConnectivityRole ROLE_CLIENT_PRIMARY =
             new ClientInternetConnectivityRole() {
                 @Override
