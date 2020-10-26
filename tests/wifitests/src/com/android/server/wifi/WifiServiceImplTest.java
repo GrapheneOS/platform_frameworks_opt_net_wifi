@@ -6434,6 +6434,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mActiveModeWarden, never()).scanAlwaysModeChanged();
     }
 
+    @Test
+    public void testIsScanAlwaysAvailable() {
+        when(mSettingsStore.isScanAlwaysAvailableToggleEnabled()).thenReturn(true);
+        assertTrue(mWifiServiceImpl.isScanAlwaysAvailable());
+        verify(mSettingsStore).isScanAlwaysAvailableToggleEnabled();
+    }
+
     private List<ScanResult> createScanResultList() {
         return Collections.singletonList(new ScanResult(WifiSsid.createFromAsciiEncoded(TEST_SSID),
                 TEST_SSID, TEST_BSSID, 1245, 0, TEST_CAP, -78, 2450, 1025, 22, 33, 20, 0, 0, true));
