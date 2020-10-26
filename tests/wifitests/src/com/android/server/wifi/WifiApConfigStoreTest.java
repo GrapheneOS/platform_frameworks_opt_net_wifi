@@ -39,13 +39,13 @@ import android.net.MacAddress;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
 import android.net.wifi.WifiInfo;
-import android.net.wifi.util.SdkLevelUtil;
 import android.os.Build;
 import android.os.Handler;
 import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.modules.utils.build.SdkLevel;
 import com.android.wifi.resources.R;
 
 import org.junit.Before;
@@ -542,7 +542,7 @@ public class WifiApConfigStoreTest extends WifiBaseTest {
 
     @Test
     public void randomizeBssid__usesFactoryMacWhenRandomizationOffInConfig() throws Exception {
-        assumeTrue(SdkLevelUtil.isAtLeastS());
+        assumeTrue(SdkLevel.isAtLeastS());
 
         mResources.setBoolean(R.bool.config_wifi_ap_mac_randomization_supported, true);
         SoftApConfiguration baseConfig = new SoftApConfiguration.Builder()
