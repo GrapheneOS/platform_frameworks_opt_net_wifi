@@ -209,6 +209,9 @@
     <!-- Wifi driver supports WPA3 Simultaneous Authentication of Equals (WPA3-SAE) for softap -->
     <bool translatable="false" name="config_wifi_softap_sae_supported">false</bool>
 
+    <!-- Wifi driver supports Mac address customization for softap -->
+    <bool translatable="false" name="config_wifiSoftapMacAddressCustomizationSupported">true</bool>
+
     <!-- Wifi driver supports IEEE80211AC for softap -->
     <bool translatable="false" name="config_wifi_softap_ieee80211ac_supported">false</bool>
 
