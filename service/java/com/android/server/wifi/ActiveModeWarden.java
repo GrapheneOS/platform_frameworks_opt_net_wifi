@@ -1404,7 +1404,10 @@ public class ActiveModeWarden {
                 String connectedOrConnectingBssid = coalesce(
                         clientModeManager.getConnectingBssid(),
                         clientModeManager.getConnectedBssid());
-                return Objects.equals(ssid, connectedOrConnectingWifiConfiguration.SSID)
+                String connectedOrConnectingSsid =
+                        connectedOrConnectingWifiConfiguration == null
+                                ? null : connectedOrConnectingWifiConfiguration.SSID;
+                return Objects.equals(ssid, connectedOrConnectingSsid)
                         && Objects.equals(bssid, connectedOrConnectingBssid);
             }
 
