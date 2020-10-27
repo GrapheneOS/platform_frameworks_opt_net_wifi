@@ -20,11 +20,15 @@ import static android.net.wifi.WifiConfiguration.MeteredOverride;
 
 import static java.lang.StrictMath.toIntExact;
 
+import android.annotation.IntDef;
 import android.annotation.Nullable;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
 import android.net.wifi.EAPConstants;
 import android.net.wifi.IOnWifiUsabilityStatsListener;
@@ -50,6 +54,8 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemProperties;
+import android.os.WorkSource;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.ArrayMap;
@@ -147,6 +153,7 @@ import java.util.Set;
 public class WifiMetrics {
     private static final String TAG = "WifiMetrics";
     private static final boolean DBG = false;
+
     /**
      * Clamp the RSSI poll counts to values between [MIN,MAX]_RSSI_POLL
      */
@@ -257,6 +264,7 @@ public class WifiMetrics {
     private int mLastPollFreq = -1;
     private int mLastScore = -1;
     private boolean mAdaptiveConnectivityEnabled = true;
+    private ScanMetrics mScanMetrics;
 
     /**
      * Metrics are stored within an instance of the WifiLog proto during runtime,
@@ -1440,6 +1448,8 @@ public class WifiMetrics {
                     }
                 }, filter, null, mHandler);
         setScreenState(context.getSystemService(PowerManager.class).isInteractive());
+
+        mScanMetrics = new ScanMetrics(context, clock);
     }
 
     /** Sets internal ScoringParams member */
@@ -7038,5 +7048,288 @@ public class WifiMetrics {
                 + ",firstL2Connection" + attemptToString(stats.firstL2Connection)
                 + ",firstL3Connection" + attemptToString(stats.firstL3Connection)
                 + "}";
+    }
+
+    public ScanMetrics getScanMetrics() {
+        return mScanMetrics;
+    }
+
+    public enum ScanType { SINGLE, BACKGROUND }
+
+    public enum PnoScanState { STARTED, FAILED_TO_START, COMPLETED_NETWORK_FOUND, FAILED }
+
+    /**
+     * This class reports Scan metrics to Westworld and holds intermediate scan request state.
+     */
+    public static class ScanMetrics {
+        private static final String TAG_SCANS = "ScanMetrics";
+        private static final String GMS_PACKAGE = "com.google.android.gms";
+
+        // Scan types.
+        public static final int SCAN_TYPE_SINGLE = 0;
+        public static final int SCAN_TYPE_BACKGROUND = 1;
+        public static final int SCAN_TYPE_MAX_VALUE = SCAN_TYPE_BACKGROUND;
+        @IntDef(prefix = { "SCAN_TYPE_" }, value = {
+                SCAN_TYPE_SINGLE,
+                SCAN_TYPE_BACKGROUND,
+        })
+        public @interface ScanType {}
+
+        // PNO scan states.
+        public static final int PNO_SCAN_STATE_STARTED = 1;
+        public static final int PNO_SCAN_STATE_FAILED_TO_START = 2;
+        public static final int PNO_SCAN_STATE_COMPLETED_NETWORK_FOUND = 3;
+        public static final int PNO_SCAN_STATE_FAILED = 4;
+        @IntDef(prefix = { "PNO_SCAN_STATE_" }, value = {
+                PNO_SCAN_STATE_STARTED,
+                PNO_SCAN_STATE_FAILED_TO_START,
+                PNO_SCAN_STATE_COMPLETED_NETWORK_FOUND,
+                PNO_SCAN_STATE_FAILED
+        })
+        public @interface PnoScanState {}
+
+        private final Object mLock = new Object();
+        private Clock mClock;
+
+        private List<String> mSettingsPackages = new ArrayList<>();
+        private int mGmsUid = -1;
+
+        // mNextScanState collects metadata about the next scan that's about to happen.
+        // It is mutated by external callers via setX methods before the call to logScanStarted.
+        private State mNextScanState = new State();
+        // mActiveScanState is an immutable copy of mNextScanState during the scan process,
+        // i.e. between logScanStarted and logScanSucceeded/Failed. Since the state is pushed to
+        // Westworld only when a scan ends, it's important to keep the immutable copy
+        // for the duration of the scan.
+        private State[] mActiveScanStates = new State[SCAN_TYPE_MAX_VALUE + 1];
+
+        ScanMetrics(Context context, Clock clock) {
+            mClock = clock;
+
+            PackageManager pm = context.getPackageManager();
+            if (pm != null) {
+                Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
+                List<ResolveInfo> packages = pm.queryIntentActivities(settingsIntent, 0);
+                for (ResolveInfo res : packages) {
+                    String packageName = res.activityInfo.packageName;
+                    Log.d(TAG_SCANS, "Settings package: " + packageName);
+                    mSettingsPackages.add(packageName);
+                }
+            }
+
+            try {
+                mGmsUid = context.getPackageManager().getApplicationInfo(GMS_PACKAGE, 0).uid;
+                Log.d(TAG_SCANS, "GMS uid: " + mGmsUid);
+            } catch (Exception e) {
+                Log.e(TAG_SCANS, "Can't get GMS uid");
+            }
+        }
+
+        /**
+         * Set WorkSource for the upcoming scan request.
+         *
+         * @param workSource
+         */
+        public void setWorkSource(WorkSource workSource) {
+            synchronized (mLock) {
+                if (mNextScanState.mWorkSource == null) {
+                    mNextScanState.mWorkSource = workSource;
+                    if (DBG) Log.d(TAG_SCANS, "setWorkSource: workSource = " + workSource);
+                }
+            }
+        }
+
+        /**
+         * Set ClientUid for the upcoming scan request.
+         *
+         * @param uid
+         */
+        public void setClientUid(int uid) {
+            synchronized (mLock) {
+                mNextScanState.mClientUid = uid;
+
+                if (DBG) Log.d(TAG_SCANS, "setClientUid: uid = " + uid);
+            }
+        }
+
+        /**
+         * Set Importance for the upcoming scan request.
+         *
+         * @param packageImportance See {@link ActivityManager.RunningAppProcessInfo.Importance}
+         */
+        public void setImportance(int packageImportance) {
+            synchronized (mLock) {
+                mNextScanState.mPackageImportance = packageImportance;
+
+                if (DBG) {
+                    Log.d(TAG_SCANS,
+                            "setRequestFromBackground: packageImportance = " + packageImportance);
+                }
+            }
+        }
+
+        /**
+         * Indicate that a scan started.
+         * @param scanType See {@link ScanMetrics.ScanType}
+         */
+        public void logScanStarted(@ScanType int scanType) {
+            synchronized (mLock) {
+                if (DBG) Log.d(TAG_SCANS, "logScanStarted");
+
+                mNextScanState.mTimeStartMillis = mClock.getElapsedSinceBootMillis();
+                mActiveScanStates[scanType] = mNextScanState;
+                mNextScanState = new State();
+            }
+        }
+
+        /**
+         * Indicate that a scan failed to start.
+         * @param scanType See {@link ScanMetrics.ScanType}
+         */
+        public void logScanFailedToStart(@ScanType int scanType) {
+            synchronized (mLock) {
+                Log.d(TAG_SCANS, "logScanFailedToStart");
+
+                mNextScanState.mTimeStartMillis = mClock.getElapsedSinceBootMillis();
+                mActiveScanStates[scanType] = mNextScanState;
+                mNextScanState = new State();
+
+                log(scanType, WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_FAILED_TO_START, 0);
+                mActiveScanStates[scanType] = null;
+            }
+        }
+
+        /**
+         * Indicate that a scan finished successfully.
+         * @param scanType See {@link ScanMetrics.ScanType}
+         * @param countOfNetworksFound How many networks were found.
+         */
+        public void logScanSucceeded(@ScanType int scanType, int countOfNetworksFound) {
+            synchronized (mLock) {
+                if (DBG) Log.d(TAG_SCANS, "logScanSucceeded: found = " + countOfNetworksFound);
+
+                log(scanType, WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_SUCCESS,
+                        countOfNetworksFound);
+                mActiveScanStates[scanType] = null;
+            }
+        }
+
+        /**
+         * Log a PNO scan event: start/finish/fail.
+         * @param pnoScanState See {@link PnoScanState}
+         */
+        public void logPnoScanEvent(@PnoScanState int pnoScanState) {
+            synchronized (mLock) {
+                int state = 0;
+
+                switch (pnoScanState) {
+                    case PNO_SCAN_STATE_STARTED:
+                        state = WifiStatsLog.WIFI_PNO_SCAN_REPORTED__STATE__STARTED;
+                        break;
+                    case PNO_SCAN_STATE_FAILED_TO_START:
+                        state = WifiStatsLog.WIFI_PNO_SCAN_REPORTED__STATE__FAILED_TO_START;
+                        break;
+                    case PNO_SCAN_STATE_COMPLETED_NETWORK_FOUND:
+                        state = WifiStatsLog.WIFI_PNO_SCAN_REPORTED__STATE__FINISHED_NETWORKS_FOUND;
+                        break;
+                    case PNO_SCAN_STATE_FAILED:
+                        state = WifiStatsLog.WIFI_PNO_SCAN_REPORTED__STATE__FAILED;
+                        break;
+                }
+
+                WifiStatsLog.write(WifiStatsLog.WIFI_PNO_SCAN_REPORTED, state);
+
+                if (DBG) Log.d(TAG_SCANS, "logPnoScanEvent: pnoScanState = " + pnoScanState);
+            }
+        }
+
+        /**
+         * Indicate that a scan failed.
+         */
+        public void logScanFailed(@ScanType int scanType) {
+            synchronized (mLock) {
+                if (DBG) Log.d(TAG_SCANS, "logScanFailed");
+
+                log(scanType, WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_FAILED_TO_SCAN, 0);
+                mActiveScanStates[scanType] = null;
+            }
+        }
+
+        private void log(@ScanType int scanType, int result, int countNetworks) {
+            State state = mActiveScanStates[scanType];
+
+            if (state == null) {
+                if (DBG) Log.e(TAG_SCANS, "Wifi scan result log called with no prior start calls!");
+                return;
+            }
+
+            int type = WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_UNKNOWN;
+            if (scanType == SCAN_TYPE_SINGLE) {
+                type = WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE;
+            } else if (scanType == SCAN_TYPE_BACKGROUND) {
+                type = WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_BACKGROUND;
+            }
+
+            long duration = mClock.getElapsedSinceBootMillis() - state.mTimeStartMillis;
+
+            int source = WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE;
+            if (state.mClientUid != -1 && state.mClientUid == mGmsUid) {
+                source = WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_GMS;
+            } else if (state.mWorkSource != null) {
+                if (state.mWorkSource.equals(ClientModeImpl.WIFI_WORK_SOURCE)) {
+                    source = WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_WIFI_STACK;
+                } else {
+                    source = WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_OTHER_APP;
+
+                    for (int i = 0; i < state.mWorkSource.size(); i++) {
+                        if (mSettingsPackages.contains(
+                                state.mWorkSource.getPackageName(i))) {
+                            source = WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_SETTINGS_APP;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            int importance = WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_UNKNOWN;
+            if (state.mPackageImportance != -1) {
+                if (state.mPackageImportance
+                        <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                    importance = WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_FOREGROUND;
+                } else if (state.mPackageImportance
+                        <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE) {
+                    importance =
+                            WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_FOREGROUND_SERVICE;
+                } else {
+                    importance = WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_BACKGROUND;
+                }
+            }
+
+            WifiStatsLog.write(WifiStatsLog.WIFI_SCAN_REPORTED,
+                    type,
+                    result,
+                    source,
+                    importance,
+                    (int) duration,
+                    countNetworks);
+
+            if (DBG) {
+                Log.d(TAG_SCANS,
+                        "WifiScanReported: type = " + type
+                                + ", result = " + result
+                                + ", source = " + source
+                                + ", importance = " + importance
+                                + ", networks = " + countNetworks);
+            }
+        }
+
+        static class State {
+            WorkSource mWorkSource = null;
+            int mClientUid = -1;
+            // see @ActivityManager.RunningAppProcessInfo.Importance
+            int mPackageImportance = -1;
+
+            long mTimeStartMillis;
+        }
     }
 }

@@ -56,6 +56,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -124,6 +125,7 @@ import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.InformationElementUtil;
 import com.android.wifi.resources.R;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -219,6 +221,16 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.registerForWifiMonitorEvents("wlan0");
         verify(mWifiMonitor, atLeastOnce())
                 .registerHandler(eq("wlan0"), anyInt(), mHandlerCaptor.capture());
+
+        mSession = ExtendedMockito.mockitoSession()
+                .strictness(Strictness.LENIENT)
+                .mockStatic(WifiStatsLog.class)
+                .startMocking();
+    }
+
+    @After
+    public void tearDown() {
+        mSession.finishMocking();
     }
 
     /**
@@ -2162,12 +2174,6 @@ public class WifiMetricsTest extends WifiBaseTest {
      */
     @Test
     public void testLogWifiConnectionResultStatsd() throws Exception {
-        // static mocking for WifiStatsLog
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         // Start and end Connection event
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
@@ -2185,8 +2191,6 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED__TRIGGER__AUTOCONNECT_BOOT,
                 true,
                 0));
-
-        mSession.finishMocking();
     }
 
     /**
@@ -5463,11 +5467,6 @@ public class WifiMetricsTest extends WifiBaseTest {
 
     @Test
     public void testWifiConnectionResultAtomNotEmittedWithNoConnectionEndEvent() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
 
@@ -5475,17 +5474,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 anyInt(), anyBoolean(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(),
                 anyBoolean(), anyInt()),
                 times(0));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiConnectionResultAtomNotEmittedWithNoConnectionStartEvent() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.endConnectionEvent(TEST_IFACE_NAME,
                 WifiMetrics.ConnectionEvent.FAILURE_AUTHENTICATION_FAILURE,
                 WifiMetricsProto.ConnectionEvent.HLF_DHCP,
@@ -5495,17 +5487,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 anyInt(), anyBoolean(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(),
                 anyBoolean(), anyInt()),
                 times(0));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiConnectionResultAtomEmittedOnlyOnceWithMultipleConnectionEndEvents() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
 
@@ -5526,16 +5511,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 true,
                 0),
                 times(1));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiConnectionResultAtomNewSessionOverwritesPreviousSession() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
 
         WifiConfiguration config1 = createComplexWifiConfig();
         config1.getNetworkSelectionStatus().getCandidate().level = -50;
@@ -5564,17 +5543,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 true,
                 0),
                 times(1));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiConnectionResultAtomHasCorrectTriggers() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
 
@@ -5647,8 +5619,6 @@ public class WifiMetricsTest extends WifiBaseTest {
                 anyInt(), anyInt(), anyInt(), anyInt(), anyInt(),
                 eq(WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED__TRIGGER__MANUAL),
                 anyBoolean(), anyInt()));
-
-        mSession.finishMocking();
     }
 
     @Test
@@ -5660,11 +5630,6 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiMetrics.ConnectionEvent.FAILURE_NONE,
                 WifiMetricsProto.ConnectionEvent.HLF_NONE,
                 WifiMetricsProto.ConnectionEvent.AUTH_FAILURE_NONE, TEST_CANDIDATE_FREQ);
-
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
 
         int linkSpeed = 100;
         int reason = 42;
@@ -5678,8 +5643,6 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED__AUTH_TYPE__AUTH_TYPE_WPA2_PSK,
                 TEST_CANDIDATE_LEVEL,
                 linkSpeed));
-
-        mSession.finishMocking();
     }
 
     @Test
@@ -5692,10 +5655,6 @@ public class WifiMetricsTest extends WifiBaseTest {
                 WifiMetricsProto.ConnectionEvent.HLF_DHCP,
                 WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN, TEST_CANDIDATE_FREQ);
 
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
 
         int linkSpeed = 100;
         int reason = 42;
@@ -5705,34 +5664,20 @@ public class WifiMetricsTest extends WifiBaseTest {
                 eq(WifiStatsLog.WIFI_DISCONNECT_REPORTED),
                 anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()),
                 times(0));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiDisconnectAtomNotEmittedWithNoSession() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.reportNetworkDisconnect(0, TEST_CANDIDATE_LEVEL, 0);
 
         ExtendedMockito.verify(() -> WifiStatsLog.write(
                 eq(WifiStatsLog.WIFI_DISCONNECT_REPORTED),
                 anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()),
                 times(0));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiStateChangedAtomEmittedOnSuccessfulConnectAndDisconnect() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
 
@@ -5758,17 +5703,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 false,
                 WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED__BAND__BAND_2G,
                 WifiStatsLog.WIFI_CONNECTION_RESULT_REPORTED__AUTH_TYPE__AUTH_TYPE_WPA2_PSK));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiStateChangedAtomNotEmittedOnNotSuccessfulConnectAndDisconnect() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_ENTERPRISE);
 
@@ -5793,17 +5731,10 @@ public class WifiMetricsTest extends WifiBaseTest {
                 false,
                 0,
                 0));
-
-        mSession.finishMocking();
     }
 
     @Test
     public void testWifiConnectionResultTimeSinceLastConnectionCorrect() {
-        mSession = ExtendedMockito.mockitoSession()
-                .strictness(Strictness.LENIENT)
-                .mockStatic(WifiStatsLog.class)
-                .startMocking();
-
         when(mClock.getElapsedSinceBootMillis()).thenReturn((long) 10 * 1000);
 
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, createComplexWifiConfig(),
@@ -5839,8 +5770,149 @@ public class WifiMetricsTest extends WifiBaseTest {
                 anyBoolean(), eq(20)));
 
         mWifiMetrics.reportNetworkDisconnect(0, 0, 0);
+    }
 
-        mSession.finishMocking();
+    @Test
+    public void testWifiScanEmittedOnSuccess() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 4);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_SUCCESS,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_FOREGROUND,
+                0, 4));
+    }
+
+    @Test
+    public void testWifiScanEmittedOnFailedToStart() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.logScanFailedToStart(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_FAILED_TO_START,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_UNKNOWN,
+                0, 0));
+    }
+
+    @Test
+    public void testWifiScanEmittedOnFailure() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+        scanMetrics.logScanFailed(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_FAILED_TO_SCAN,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_UNKNOWN,
+                0, 0));
+    }
+
+    @Test
+    public void testWifiScanNotEmittedWithNoStart() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 4);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                eq(WifiStatsLog.WIFI_SCAN_REPORTED),
+                anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()), times(0));
+    }
+
+    @Test
+    public void testWifiScanEmittedOnlyOnce() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 4);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 5);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 6);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                eq(WifiStatsLog.WIFI_SCAN_REPORTED),
+                anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), eq(4)), times(1));
+    }
+
+    @Test
+    public void testWifiScanStatePreservedAfterStart() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 4);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_SUCCESS,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_FOREGROUND,
+                0, 4));
+    }
+
+    @Test
+    public void testWifiScanOverlappingRequestsOverwriteStateForSameType() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 42);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 21);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_SUCCESS,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_BACKGROUND,
+                0, 42));
+    }
+
+    @Test
+    public void testWifiScanOverlappingRequestsSeparateStatesForDifferentTypes() {
+        WifiMetrics.ScanMetrics scanMetrics = mWifiMetrics.getScanMetrics();
+
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
+        scanMetrics.setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        scanMetrics.logScanStarted(WifiMetrics.ScanMetrics.SCAN_TYPE_BACKGROUND);
+
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE, 42);
+        scanMetrics.logScanSucceeded(WifiMetrics.ScanMetrics.SCAN_TYPE_BACKGROUND, 21);
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_SINGLE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_SUCCESS,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_FOREGROUND,
+                0, 42));
+
+        ExtendedMockito.verify(() -> WifiStatsLog.write(
+                WifiStatsLog.WIFI_SCAN_REPORTED,
+                WifiStatsLog.WIFI_SCAN_REPORTED__TYPE__TYPE_BACKGROUND,
+                WifiStatsLog.WIFI_SCAN_REPORTED__RESULT__RESULT_SUCCESS,
+                WifiStatsLog.WIFI_SCAN_REPORTED__SOURCE__SOURCE_NO_WORK_SOURCE,
+                WifiStatsLog.WIFI_SCAN_REPORTED__IMPORTANCE__IMPORTANCE_BACKGROUND,
+                0, 21));
     }
 
     private void setScreenState(boolean screenOn) {
