@@ -607,7 +607,10 @@ public class WifiNetworkSelector {
             if (tempConfig != null) {
                 WifiConfiguration.NetworkSelectionStatus tempStatus =
                         tempConfig.getNetworkSelectionStatus();
-                if (tempStatus.getCandidate() != null && tempStatus.isNetworkEnabled()) {
+                boolean noInternetButInternetIsExpected = !tempConfig.isNoInternetAccessExpected()
+                        && tempConfig.hasNoInternetAccess();
+                if (tempStatus.getCandidate() != null && tempStatus.isNetworkEnabled()
+                        && !noInternetButInternetIsExpected) {
                     scanResultCandidate = tempStatus.getCandidate();
                     candidate = tempConfig;
                 }
