@@ -120,7 +120,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     private static final Map<String, Pair<NetworkRequest, ConnectivityManager.NetworkCallback>>
             sActiveRequests = new ConcurrentHashMap<>();
 
-    private final ClientModeManager mClientModeManager;
+    private final ActiveModeWarden mActiveModeWarden;
+    private final ClientModeManager mPrimaryClientModeManager;
     private final WifiGlobals mWifiGlobals;
     private final WifiLockManager mWifiLockManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
@@ -176,9 +177,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
     }
 
     WifiShellCommand(WifiInjector wifiInjector, WifiServiceImpl wifiService, Context context,
-            ClientModeManager clientModeManager, WifiGlobals wifiGlobals) {
-        mClientModeManager = clientModeManager;
+            WifiGlobals wifiGlobals) {
         mWifiGlobals = wifiGlobals;
+        mActiveModeWarden = wifiInjector.getActiveModeWarden();
+        mPrimaryClientModeManager = mActiveModeWarden.getPrimaryClientModeManager();
         mWifiLockManager = wifiInjector.getWifiLockManager();
         mWifiNetworkSuggestionsManager = wifiInjector.getWifiNetworkSuggestionsManager();
         mWifiConfigManager = wifiInjector.getWifiConfigManager();
@@ -983,7 +985,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         final int sendMgmtFrameTimeoutMs = 1000;
 
         ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
-        mClientModeManager.probeLink(new LinkProbeCallback() {
+        mPrimaryClientModeManager.probeLink(new LinkProbeCallback() {
             @Override
             public void onAck(int elapsedTimeMs) {
                 queue.offer("Link probe succeeded after " + elapsedTimeMs + " ms");
@@ -1057,16 +1059,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         mContext.unregisterReceiver(broadcastReceiver);
     }
 
-    private void printStatus(PrintWriter pw) {
-        boolean wifiEnabled = mWifiService.getWifiEnabledState() == WIFI_STATE_ENABLED;
-        pw.println("Wifi is " + (wifiEnabled ? "enabled" : "disabled"));
-        pw.println("Wifi scanning is "
-                + (mWifiService.isScanAlwaysAvailable()
-                ? "always available" : "only available when wifi is enabled"));
-        if (!wifiEnabled) {
-            return;
-        }
-        WifiInfo info = mWifiService.getConnectionInfo(SHELL_PACKAGE_NAME, null);
+    private void printWifiInfo(PrintWriter pw, WifiInfo info) {
         if (info.getSupplicantState() != SupplicantState.COMPLETED) {
             pw.println("Wifi is not connected");
             return;
@@ -1082,13 +1075,36 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("lostTxPacketsPerSecond: " + info.getLostTxPacketsPerSecond());
         pw.println("successfulRxPackets: " + info.rxSuccess);
         pw.println("successfulRxPacketsPerSecond: " + info.getSuccessfulRxPacketsPerSecond());
+    }
 
-        Network network = mWifiService.getCurrentNetwork();
-        try {
-            NetworkCapabilities capabilities = mConnectivityManager.getNetworkCapabilities(network);
-            pw.println("NetworkCapabilities: " + capabilities);
-        } catch (SecurityException e) {
-            // ignore on unrooted shell.
+    private void printStatus(PrintWriter pw) {
+        boolean wifiEnabled = mWifiService.getWifiEnabledState() == WIFI_STATE_ENABLED;
+        pw.println("Wifi is " + (wifiEnabled ? "enabled" : "disabled"));
+        pw.println("Wifi scanning is "
+                + (mWifiService.isScanAlwaysAvailable()
+                ? "always available" : "only available when wifi is enabled"));
+        if (!wifiEnabled) {
+            return;
+        }
+        if (Binder.getCallingUid() != Process.ROOT_UID) {
+            // not privileged, just dump the primary client mode manager manager status
+            // (public API contents).
+            pw.println("==== Primary ClientModeManager instance ====");
+            printWifiInfo(pw, mWifiService.getConnectionInfo(SHELL_PACKAGE_NAME, null));
+        } else {
+            // privileged, dump out all the client mode manager manager statuses
+            for (ClientModeManager cm : mActiveModeWarden.getClientModeManagers()) {
+                pw.println("==== ClientModeManager instance: " + cm + " ====");
+                WifiInfo info = cm.syncRequestConnectionInfo();
+                printWifiInfo(pw, info);
+                if (info.getSupplicantState() != SupplicantState.COMPLETED) {
+                    continue;
+                }
+                Network network = cm.syncGetCurrentNetwork();
+                NetworkCapabilities capabilities =
+                        mConnectivityManager.getNetworkCapabilities(network);
+                pw.println("NetworkCapabilities: " + capabilities);
+            }
         }
     }
 
