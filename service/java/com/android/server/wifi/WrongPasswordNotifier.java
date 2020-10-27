@@ -96,7 +96,8 @@ public class WrongPasswordNotifier {
                         com.android.wifi.resources.R.string.wifi_available_title_failed_to_connect))
                 .setContentText(ssid)
                 .setContentIntent(mFrameworkFacade.getActivity(
-                        mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT))
+                        mContext, 0, intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE))
                 .setColor(mContext.getResources().getColor(
                         android.R.color.system_notification_accent_color));
         mNotificationManager.notify(NOTIFICATION_ID, builder.build());
