@@ -3863,6 +3863,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         @Override
         public void enter() {
             if (mVerboseLoggingEnabled) Log.v(getTag(), "Entering ConnectingOrConnectedState");
+            // Don't allow country code updates while connecting/connected.
+            mCountryCode.setReadyForChange(false);
         }
 
         @Override
@@ -3880,6 +3882,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     Log.e(getTag(), "Failed to set random MAC address on disconnect");
                 }
             }
+            mCountryCode.setReadyForChange(true);
             mWifiInfo.reset();
             mWifiInfo.setSupplicantState(SupplicantState.DISCONNECTED);
             mWifiScoreCard.noteSupplicantStateChanged(mWifiInfo);
@@ -4389,7 +4392,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             // from this point on and having the BSSID specified in the network block would
             // cause the roam to faile and the device to disconnect
             clearTargetBssid("L2ConnectedState");
-            mCountryCode.setReadyForChange(false);
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_ASSOCIATED);
             mWifiScoreCard.noteNetworkAgentCreated(mWifiInfo,
                     mNetworkAgent.getNetwork().getNetId());
@@ -4410,7 +4412,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     sb.append(" ").append(mLastBssid);
                 }
             }
-            mCountryCode.setReadyForChange(true);
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
             mWifiStateTracker.updateState(WifiStateTracker.DISCONNECTED);
             // Inform WifiLockManager
