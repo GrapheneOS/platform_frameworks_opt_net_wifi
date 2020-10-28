@@ -64,7 +64,6 @@ import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
-import android.net.wifi.util.SdkLevelUtil;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.UserHandle;
@@ -76,6 +75,7 @@ import android.view.Window;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiNetworkSuggestionsManager.ExtendedWifiNetworkSuggestion;
 import com.android.server.wifi.WifiNetworkSuggestionsManager.PerAppInfo;
 import com.android.server.wifi.hotspot2.PasspointManager;
@@ -465,7 +465,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
 
     @Test
     public void testAddOemPaidNetworkSuggestionOnPreSDevices() {
-        assumeFalse(SdkLevelUtil.isAtLeastS());
+        assumeFalse(SdkLevel.isAtLeastS());
 
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
@@ -479,7 +479,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
 
     @Test
     public void testSetSubscriptionIdOnPreSDevices() {
-        assumeFalse(SdkLevelUtil.isAtLeastS());
+        assumeFalse(SdkLevel.isAtLeastS());
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
                 DEFAULT_PRIORITY_GROUP);
@@ -492,7 +492,7 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
 
     @Test
     public void testSetPriorityGroupOnPreSDevices() {
-        assumeFalse(SdkLevelUtil.isAtLeastS());
+        assumeFalse(SdkLevel.isAtLeastS());
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
                 TEST_PRIORITY_GROUP);
