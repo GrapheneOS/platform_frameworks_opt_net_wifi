@@ -3129,15 +3129,15 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
         verify(mWifiScanner).startScan(any(), any(), any(), any());
 
-        // Auto-join disabled
+        // Auto-join disabled, no new scans
         mWifiConnectivityManager.setAutoJoinEnabledExternal(false);
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
-        verify(mWifiScanner, times(2)).startScan(any(), any(), any(), any());
+        verify(mWifiScanner, times(1)).startScan(any(), any(), any(), any());
 
         // Wifi disabled, no new scans
         setWifiEnabled(false);
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
-        verify(mWifiScanner, times(2)).startScan(any(), any(), any(), any());
+        verify(mWifiScanner, times(1)).startScan(any(), any(), any(), any());
     }
 
     /**
