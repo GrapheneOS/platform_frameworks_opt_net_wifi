@@ -238,6 +238,8 @@ public class PasspointWifiEntryTest {
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
         when(mMockWifiInfo.getRssi()).thenReturn(BAD_RSSI);
+        when(mMockWifiInfo.getSSID()).thenReturn("\"ssid\"");
+        when(mMockWifiInfo.getBSSID()).thenReturn("01:23:45:67:89:ab");
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
                 false /* forSavedNetworksPage */);
