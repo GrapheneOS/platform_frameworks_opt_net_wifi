@@ -3297,8 +3297,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             mWifiConfigManager.getConfiguredNetworkWithoutMasking(netId);
                     logd("CMD_START_CONNECT "
                             + " my state " + getCurrentState().getName()
-                            + " nid=" + Integer.toString(netId)
-                            + " roam=" + Boolean.toString(mIsAutoRoaming));
+                            + " nid=" + netId
+                            + " roam=" + mIsAutoRoaming);
                     if (config == null) {
                         loge("CMD_START_CONNECT and no config, bail out...");
                         break;

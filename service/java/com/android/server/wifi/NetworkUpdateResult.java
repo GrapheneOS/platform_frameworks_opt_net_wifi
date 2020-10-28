@@ -89,4 +89,15 @@ public class NetworkUpdateResult {
     public int hashCode() {
         return Objects.hash(mNetId, mIpChanged, mProxyChanged, mCredentialChanged, mIsNewNetwork);
     }
+
+    @Override
+    public String toString() {
+        return "NetworkUpdateResult{"
+                + "mNetId=" + mNetId
+                + ", mIpChanged=" + mIpChanged
+                + ", mProxyChanged=" + mProxyChanged
+                + ", mCredentialChanged=" + mCredentialChanged
+                + ", mIsNewNetwork=" + mIsNewNetwork
+                + '}';
+    }
 }
