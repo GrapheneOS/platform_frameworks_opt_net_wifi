@@ -45,7 +45,6 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.hotspot2.PasspointConfiguration;
-import android.net.wifi.util.SdkLevelUtil;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
@@ -60,6 +59,7 @@ import android.view.WindowManager;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.util.ExternalCallbackTracker;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.WifiPermissionsUtil;
@@ -1009,7 +1009,7 @@ public class WifiNetworkSuggestionsManager {
                     return false;
                 }
             }
-            if (!SdkLevelUtil.isAtLeastS()) {
+            if (!SdkLevel.isAtLeastS()) {
                 if (wns.wifiConfiguration.oemPaid) {
                     Log.e(TAG, "OEM paid suggestions are only allowed from Android S.");
                     return false;
