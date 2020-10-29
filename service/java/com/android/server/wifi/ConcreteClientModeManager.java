@@ -119,7 +119,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     private String mClientInterfaceName;
     private boolean mIfaceIsUp = false;
-    private DeferStopHandler mDeferStopHandler;
+    private final DeferStopHandler mDeferStopHandler;
     @Nullable
     private ClientRole mRole = null;
     @Nullable
@@ -205,10 +205,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
         private final Runnable mRunnable = () -> continueToStopWifi();
         private int mMaximumDeferringTimeMillis = 0;
         private long mDeferringStartTimeMillis = 0;
-        private NetworkRequest mImsRequest = null;
         private ConnectivityManager mConnectivityManager = null;
 
-        private RegistrationManager.RegistrationCallback mImsRegistrationCallback =
+        private final RegistrationManager.RegistrationCallback mImsRegistrationCallback =
                 new RegistrationManager.RegistrationCallback() {
                     @Override
                     public void onRegistered(int imsRadioTech) {
@@ -227,7 +226,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     }
                 };
 
-        private NetworkCallback mImsNetworkCallback = new NetworkCallback() {
+        private final NetworkCallback mImsNetworkCallback = new NetworkCallback() {
             private int mRegisteredImsNetworkCount = 0;
 
             @Override
@@ -294,7 +293,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 return;
             }
 
-            mImsRequest = new NetworkRequest.Builder()
+            NetworkRequest imsRequest = new NetworkRequest.Builder()
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_IMS)
                     .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
                     .build();
@@ -302,7 +301,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             mConnectivityManager =
                     (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-            mConnectivityManager.registerNetworkCallback(mImsRequest, mImsNetworkCallback,
+            mConnectivityManager.registerNetworkCallback(imsRequest, mImsNetworkCallback,
                     new Handler(mLooper));
         }
 
@@ -873,6 +872,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                         setRoleInternalAndInvokeCallback(role);
                         break;
                     case CMD_SWITCH_TO_SCAN_ONLY_MODE:
+                    case CMD_INTERFACE_DESTROYED:
                         updateConnectModeState(mRole, WifiManager.WIFI_STATE_DISABLING,
                                 WifiManager.WIFI_STATE_ENABLED);
                         return NOT_HANDLED; // Handled in StartedState.
@@ -897,10 +897,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
                                 return HANDLED; // For MAC randomization, ignore...
                             }
                         }
-                        return NOT_HANDLED; // Handled in StartedState.
-                    case CMD_INTERFACE_DESTROYED:
-                        updateConnectModeState(mRole, WifiManager.WIFI_STATE_DISABLING,
-                                WifiManager.WIFI_STATE_ENABLED);
                         return NOT_HANDLED; // Handled in StartedState.
                     default:
                         return NOT_HANDLED;
