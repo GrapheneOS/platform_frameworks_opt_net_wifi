@@ -345,6 +345,58 @@ public class CandidateScorerTest extends WifiBaseTest {
     }
 
     /**
+     * Prefer not oem paid suggestion over privileged oem private suggestion even though the OEM
+     * paid network has better t'put & RSSI.
+     */
+    @Test
+    public void testPreferNotOemPrivateOverOemPrivate() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-71)
+                        .setPredictedThroughputMbps(100)
+                        .setEphemeral(true)
+                        .setOemPrivate(false)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                        .setEphemeral(true)
+                        .setPredictedThroughputMbps(1000)
+                        .setOemPaid(true))));
+    }
+
+    /**
+     * Prefer not oem paid metered suggestion over privileged oem private suggestion even though the
+     * OEM paid network has better t'put & RSSI.
+     */
+    @Test
+    public void testPreferNotOemPrivateMeteredOverOemPrivate() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-71)
+                        .setPredictedThroughputMbps(100)
+                        .setEphemeral(true)
+                        .setMetered(true)
+                        .setOemPrivate(false)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                        .setEphemeral(true)
+                        .setPredictedThroughputMbps(1000)
+                        .setOemPaid(true))));
+    }
+
+    /**
+     * Prefer oem paid suggestion over oem private suggestion even though the
+     * OEM private network has better t'put & RSSI.
+     */
+    @Test
+    public void testPreferOemPaidOverOemPrivate() throws Exception {
+        if (mExpectedExpId != ThroughputScorer.THROUGHPUT_SCORER_DEFAULT_EXPID) return;
+        assertThat(evaluate(mCandidate1.setScanRssi(-71)
+                        .setPredictedThroughputMbps(100)
+                        .setEphemeral(true)
+                        .setOemPaid(true)),
+                greaterThan(evaluate(mCandidate2.setScanRssi(-40)
+                        .setPredictedThroughputMbps(1000)
+                        .setEphemeral(true)
+                        .setOemPrivate(true))));
+    }
+
+    /**
      * Prefer carrier untrusted over other untrusted.
      */
     @Test

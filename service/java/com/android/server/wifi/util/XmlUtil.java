@@ -356,6 +356,7 @@ public class XmlUtil {
         public static final String XML_TAG_IS_AUTO_JOIN = "AutoJoinEnabled";
         public static final String XML_TAG_IS_TRUSTED = "Trusted";
         public static final String XML_TAG_IS_OEM_PAID = "OemPaid";
+        public static final String XML_TAG_IS_OEM_PRIVATE = "OemPrivate";
         private static final String XML_TAG_IS_MOST_RECENTLY_CONNECTED = "IsMostRecentlyConnected";
 
         /**
@@ -488,6 +489,7 @@ public class XmlUtil {
             writeCommonElementsToXml(out, configuration, encryptionUtil);
             XmlUtil.writeNextValue(out, XML_TAG_IS_TRUSTED, configuration.trusted);
             XmlUtil.writeNextValue(out, XML_TAG_IS_OEM_PAID, configuration.oemPaid);
+            XmlUtil.writeNextValue(out, XML_TAG_IS_OEM_PRIVATE, configuration.oemPrivate);
             XmlUtil.writeNextValue(out, XML_TAG_BSSID, configuration.BSSID);
             XmlUtil.writeNextValue(out, XML_TAG_STATUS, configuration.status);
             XmlUtil.writeNextValue(out, XML_TAG_FQDN, configuration.FQDN);
@@ -720,6 +722,9 @@ public class XmlUtil {
                             break;
                         case XML_TAG_IS_OEM_PAID:
                             configuration.oemPaid = (boolean) value;
+                            break;
+                        case XML_TAG_IS_OEM_PRIVATE:
+                            configuration.oemPrivate = (boolean) value;
                             break;
                         case XML_TAG_IS_MOST_RECENTLY_CONNECTED:
                             configuration.isMostRecentlyConnected = (boolean) value;
