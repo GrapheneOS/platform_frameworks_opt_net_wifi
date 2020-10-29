@@ -24,7 +24,6 @@ import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.wifi.V1_0.NanStatusType;
-import android.net.wifi.aware.AwareResources;
 import android.net.wifi.aware.Characteristics;
 import android.net.wifi.aware.ConfigRequest;
 import android.net.wifi.aware.DiscoverySession;
@@ -158,12 +157,6 @@ public class WifiAwareServiceImpl extends IWifiAwareManager.Stub {
 
         return mStateManager.getCapabilities() == null ? null
                 : mStateManager.getCapabilities().toPublicCharacteristics();
-    }
-
-    @Override
-    public AwareResources getAvailableAwareResources() {
-        enforceAccessPermission();
-        return mStateManager.getAvailableAwareResources();
     }
 
     @Override
