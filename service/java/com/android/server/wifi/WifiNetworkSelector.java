@@ -91,6 +91,7 @@ public class WifiNetworkSelector {
     private final WifiConfigManager mWifiConfigManager;
     private final Clock mClock;
     private final LocalLog mLocalLog;
+    private boolean mVerboseLoggingEnabled = false;
     private final WifiMetrics mWifiMetrics;
     private long mLastNetworkSelectionTimeStamp = INVALID_TIME_STAMP;
     // Buffer of filtered scan results (Scan results considered by network selection) & associated
@@ -188,9 +189,17 @@ public class WifiNetworkSelector {
     private final List<NetworkNominator> mNominators = new ArrayList<>(3);
 
     // A helper to log debugging information in the local log buffer, which can
-    // be retrieved in bugreport.
+    // be retrieved in bugreport. It is also used to print the log in the console.
     private void localLog(String log) {
         mLocalLog.log(log);
+        if (mVerboseLoggingEnabled) Log.d(TAG, log);
+    }
+
+    /**
+     * Enable verbose logging in the console
+     */
+    public void enableVerboseLogging(boolean verbose) {
+        mVerboseLoggingEnabled = verbose;
     }
 
     /**
