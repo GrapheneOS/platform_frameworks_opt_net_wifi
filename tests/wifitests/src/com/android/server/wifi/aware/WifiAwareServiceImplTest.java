@@ -172,12 +172,6 @@ public class WifiAwareServiceImplTest extends WifiBaseTest {
         verify(mAwareStateManagerMock).isUsageEnabled();
     }
 
-    @Test
-    public void testGetAwareResources() {
-        mDut.getAvailableAwareResources();
-        verify(mAwareStateManagerMock).getAvailableAwareResources();
-    }
-
     /**
      * Validate enableInstantCommunicationMode() and isInstantCommunicationModeEnabled() function
      */
