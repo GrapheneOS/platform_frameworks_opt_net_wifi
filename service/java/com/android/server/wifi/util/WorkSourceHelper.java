@@ -77,12 +77,17 @@ public class WorkSourceHelper {
     }
 
     private boolean isSystem(String packageName, int uid) {
+        // when checking ActiveModeWarden#INTERNAL_REQUESTOR_WS
+        if (packageName == null) {
+            return false;
+        }
         try {
             ApplicationInfo info = mPackageManager.getApplicationInfoAsUser(
                     packageName, 0, UserHandle.getUserHandleForUid(uid));
             return (info.flags & APP_INFO_FLAGS_SYSTEM_APP) != 0;
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Failed to retrieve app info", e);
+            Log.e(TAG, "Failed to retrieve app info for packageName=" + packageName + " uid=" + uid,
+                    e);
             // In case of exception, assume unknown app (more strict checking)
             // Note: This case will never happen since checkPackage is
             // called to verify validity before checking App's version.
