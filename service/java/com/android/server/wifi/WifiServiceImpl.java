@@ -3297,7 +3297,7 @@ public class WifiServiceImpl extends BaseWifiService {
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
         WifiShellCommand shellCommand =  new WifiShellCommand(mWifiInjector, this, mContext,
-                mActiveModeWarden.getPrimaryClientModeManager(), mWifiGlobals);
+                mWifiGlobals);
         return shellCommand.exec(this, in.getFileDescriptor(), out.getFileDescriptor(),
                 err.getFileDescriptor(), args);
     }
