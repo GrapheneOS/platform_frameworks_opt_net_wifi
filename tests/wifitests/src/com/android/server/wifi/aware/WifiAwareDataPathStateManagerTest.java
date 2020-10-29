@@ -523,7 +523,6 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                     netInfo.getPeerIpv6Addr().getAddress());
             assertEquals(port, netInfo.getPort());
             assertEquals(transportProtocol, netInfo.getTransportProtocol());
-            assertEquals(i + 1, mDut.mDataPathMgr.getNumOfNdps());
         }
 
         // (3) end data-path (unless didn't get confirmation)
@@ -648,7 +647,6 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 netInfo.getPeerIpv6Addr().getAddress());
         assertEquals(port, netInfo.getPort());
         assertEquals(transportProtocol, netInfo.getTransportProtocol());
-        assertEquals(1, mDut.mDataPathMgr.getNumOfNdps());
 
         // (8) execute 'post' requests
         for (int i = numRequestsPre; i < numRequestsPre + numRequestsPost; ++i) {
@@ -767,7 +765,6 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                         netInfo.getPeerIpv6Addr().getAddress());
                 assertEquals(0, netInfo.getPort()); // uninitialized -> 0
                 assertEquals(-1, netInfo.getTransportProtocol()); // uninitialized -> -1
-                assertEquals(i + 1, mDut.mDataPathMgr.getNumOfNdps());
             } else {
                 verifyRequestDeclaredUnfullfillable(nr);
             }
@@ -1459,7 +1456,6 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 assertEquals(ipv6Address, netInfo.getPeerIpv6Addr().getHostAddress());
                 assertEquals(port, netInfo.getPort());
                 assertEquals(transportProtocol, netInfo.getTransportProtocol());
-                assertEquals(1, mDut.mDataPathMgr.getNumOfNdps());
             }
         } else {
             assertTrue(mAlarmManager.dispatch(
@@ -1577,7 +1573,6 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                         netInfo.getPeerIpv6Addr().getAddress());
                 assertEquals(0, netInfo.getPort());
                 assertEquals(-1, netInfo.getTransportProtocol());
-                assertEquals(1, mDut.mDataPathMgr.getNumOfNdps());
             } else {
                 assertTrue(mAlarmManager.dispatch(
                         WifiAwareStateManager.HAL_DATA_PATH_CONFIRM_TIMEOUT_TAG));
