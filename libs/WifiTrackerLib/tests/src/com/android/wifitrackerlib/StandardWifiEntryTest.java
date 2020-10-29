@@ -868,6 +868,8 @@ public class StandardWifiEntryTest {
         when(mMockScoredNetwork.calculateBadge(GOOD_RSSI)).thenReturn(SPEED_FAST);
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(BAD_RSSI);
+        when(mMockWifiInfo.getSSID()).thenReturn("\"ssid\"");
+        when(mMockWifiInfo.getBSSID()).thenReturn("01:23:45:67:89:ab");
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.networkId = 1;
