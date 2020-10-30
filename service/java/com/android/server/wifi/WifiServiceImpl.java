@@ -394,7 +394,9 @@ public class WifiServiceImpl extends BaseWifiService {
             }
 
             // do additional handling if we are current connected to a sim auth network
-            mActiveModeWarden.getPrimaryClientModeManager().resetSimAuthNetworks(resetReason);
+            for (ClientModeManager cmm : mActiveModeWarden.getClientModeManagers()) {
+                cmm.resetSimAuthNetworks(resetReason);
+            }
             mWifiNetworkSuggestionsManager.resetCarrierPrivilegedApps();
             if (resetReason != RESET_SIM_REASON_SIM_INSERTED) {
                 // Remove all ephemeral carrier networks keep subscriptionId update with SIM changes
