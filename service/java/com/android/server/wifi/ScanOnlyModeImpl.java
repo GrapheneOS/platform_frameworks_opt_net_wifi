@@ -139,9 +139,6 @@ public class ScanOnlyModeImpl implements ClientMode {
     public void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args) { }
 
     @Override
-    public void updateLinkLayerStatsRssiAndScoreReport() { }
-
-    @Override
     public void enableVerboseLogging(boolean verbose) { }
 
     @Override
