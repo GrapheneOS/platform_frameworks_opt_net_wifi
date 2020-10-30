@@ -1361,7 +1361,8 @@ public class SupplicantStaNetworkHal {
             if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
             if (iSupplicantStaNetworkV14 == null) return false;
             try {
-                SupplicantStatus status = iSupplicantStaNetworkV14.registerCallback_1_4(callback);
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                        iSupplicantStaNetworkV14.registerCallback_1_4(callback);
                 return checkStatusAndLogFailure(status, methodStr);
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
@@ -1509,6 +1510,23 @@ public class SupplicantStaNetworkHal {
     }
 
     /** See ISupplicantStaNetwork.hal for documentation */
+    private boolean setGroupCipher_1_4(int groupCipherMask) {
+        synchronized (mLock) {
+            final String methodStr = "setGroupCipher_1_4";
+            if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
+            if (null == getV1_4StaNetwork()) return false;
+
+            try {
+                return checkStatusAndLogFailure(
+                        getV1_4StaNetwork().setGroupCipher_1_4(groupCipherMask),
+                        methodStr);
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+    /** See ISupplicantStaNetwork.hal for documentation */
     private boolean setGroupCipher(int groupCipherMask) {
         synchronized (mLock) {
             final String methodStr = "setGroupCipher";
@@ -1521,7 +1539,7 @@ public class SupplicantStaNetworkHal {
                 if (null != getV1_4StaNetwork()) {
                     /* Support for new key group cipher types for GCMP_128
                      * Requires HAL v1.4 or higher */
-                    status = getV1_4StaNetwork().setGroupCipher_1_4(groupCipherMask);
+                    return setGroupCipher_1_4(groupCipherMask);
                 } else if (null != getV1_3StaNetwork()) {
                     /* Support for new key group cipher types for SMS4
                      * Requires HAL v1.3 or higher */
@@ -1597,6 +1615,24 @@ public class SupplicantStaNetworkHal {
     }
 
     /** See ISupplicantStaNetwork.hal for documentation */
+    private boolean setPairwiseCipher_1_4(int pairwiseCipherMask) {
+        synchronized (mLock) {
+            final String methodStr = "setPairwiseCipher_1_4";
+            if (!checkISupplicantStaNetworkAndLogFailure(methodStr)) return false;
+            if (null == getV1_4StaNetwork()) return false;
+
+            try {
+                return checkStatusAndLogFailure(
+                        getV1_4StaNetwork().setPairwiseCipher_1_4(pairwiseCipherMask),
+                        methodStr);
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
+    /** See ISupplicantStaNetwork.hal for documentation */
     private boolean setPairwiseCipher(int pairwiseCipherMask) {
         synchronized (mLock) {
             final String methodStr = "setPairwiseCipher";
@@ -1609,7 +1645,7 @@ public class SupplicantStaNetworkHal {
                 if (null != getV1_4StaNetwork()) {
                     /* Support for new key pairwise cipher types for GCMP_128
                      * Requires HAL v1.4 or higher */
-                    status = getV1_4StaNetwork().setPairwiseCipher_1_4(pairwiseCipherMask);
+                    return setPairwiseCipher_1_4(pairwiseCipherMask);
                 } else if (null != getV1_3StaNetwork()) {
                     /* Support for new key pairwise cipher types for SMS4
                      * Requires HAL v1.3 or higher */
@@ -2333,7 +2369,8 @@ public class SupplicantStaNetworkHal {
             final String methodStr = "getGroupCipher_1_4";
             try {
                 MutableBoolean statusOk = new MutableBoolean(false);
-                getV1_4StaNetwork().getGroupCipher_1_4((SupplicantStatus status,
+                getV1_4StaNetwork().getGroupCipher_1_4((
+                        android.hardware.wifi.supplicant.V1_4.SupplicantStatus status,
                         int groupCipherMaskValue) -> {
                     statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
                     if (statusOk.value) {
@@ -2407,7 +2444,8 @@ public class SupplicantStaNetworkHal {
             final String methodStr = "getPairwiseCipher_1_4";
             try {
                 MutableBoolean statusOk = new MutableBoolean(false);
-                getV1_4StaNetwork().getPairwiseCipher_1_4((SupplicantStatus status,
+                getV1_4StaNetwork().getPairwiseCipher_1_4((
+                        android.hardware.wifi.supplicant.V1_4.SupplicantStatus status,
                         int pairwiseCipherMaskValue) -> {
                     statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
                     if (statusOk.value) {
@@ -3520,6 +3558,27 @@ public class SupplicantStaNetworkHal {
     private boolean checkStatusAndLogFailure(SupplicantStatus status, final String methodStr) {
         synchronized (mLock) {
             if (status.code != SupplicantStatusCode.SUCCESS) {
+                Log.e(TAG, "ISupplicantStaNetwork." + methodStr + " failed: " + status);
+                return false;
+            } else {
+                if (mVerboseLoggingEnabled) {
+                    Log.d(TAG, "ISupplicantStaNetwork." + methodStr + " succeeded");
+                }
+                return true;
+            }
+        }
+    }
+
+    /**
+     * Returns true if provided status code is SUCCESS, logs debug message and returns false
+     * otherwise
+     */
+    private boolean checkStatusAndLogFailure(
+            android.hardware.wifi.supplicant.V1_4.SupplicantStatus status,
+            final String methodStr) {
+        synchronized (mLock) {
+            if (status.code
+                    != android.hardware.wifi.supplicant.V1_4.SupplicantStatusCode.SUCCESS) {
                 Log.e(TAG, "ISupplicantStaNetwork." + methodStr + " failed: " + status);
                 return false;
             } else {
