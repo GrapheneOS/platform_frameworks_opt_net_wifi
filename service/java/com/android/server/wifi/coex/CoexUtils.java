@@ -23,15 +23,21 @@ import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 import android.net.wifi.CoexUnsafeChannel;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
+import android.telephony.PhysicalChannelConfig;
+import android.telephony.TelephonyManager;
 import android.util.SparseIntArray;
+
+import androidx.annotation.NonNull;
 
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -40,6 +46,8 @@ import java.util.TreeSet;
 public class CoexUtils {
     private static final int INVALID_CHANNEL = -1;
     @VisibleForTesting
+    /* package */ static final int INVALID_BAND = -1;
+    @VisibleForTesting
     /* package */ static final int INVALID_FREQ = -1;
 
     private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_20_MHZ = create5g20MhzChannels();
@@ -47,6 +55,9 @@ public class CoexUtils {
     private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_80_MHZ = create5g80MhzChannels();
     private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_160_MHZ = create5g160MhzChannels();
     private static final SparseIntArray DEPENDENT_MAP_5_GHZ = create5gDependentChannelMap();
+    private static final Set<LteBandInfo> LTE_BAND_INFO_SET = createLteBandInfoSet();
+    private static final NavigableMap<Integer, LteBandInfo> EARFCN_OFFSET_TO_LTE_BAND_INFO =
+            createEarfcnOffsetToLteBandInfo();
 
     private static NavigableSet<Integer> create5g20MhzChannels() {
         NavigableSet<Integer> set = new TreeSet<>();
@@ -509,5 +520,336 @@ public class CoexUtils {
         }
 
         return coexUnsafeChannels;
+    }
+
+    // Cellular Utilities
+
+    /**
+     * Data structure containing the EARFCN and carrier frequency ranges for an LTE band.
+     */
+    private static class LteBandInfo {
+        private final int mBand;
+        private final int mDlLowKhz;
+        private final int mDlChannelStart;
+        private final int mDlChannelEnd;
+        private final int mUlLowKhz;
+        private final int mUlChannelStart;
+        private final int mUlChannelEnd;
+
+        /** Constructor for FDD bands */
+        private LteBandInfo(int band, int dlLowKhz, int dlChannelStart, int dlChannelEnd,
+                int ulLowKhz, int ulChannelStart, int ulChannelEnd) {
+            mBand = band;
+            mDlLowKhz = dlLowKhz;
+            mDlChannelStart = dlChannelStart;
+            mDlChannelEnd = dlChannelEnd;
+            mUlLowKhz = ulLowKhz;
+            mUlChannelStart = ulChannelStart;
+            mUlChannelEnd = ulChannelEnd;
+        }
+
+        /** Constructor for TDD bands */
+        private LteBandInfo(int band, int lowKhz, int channelStart, int channelEnd) {
+            this(band,
+                    lowKhz, channelStart, channelEnd,
+                    lowKhz, channelStart, channelEnd);
+        }
+
+        public int getBand() {
+            return mBand;
+        }
+
+        public int getDlLowKhz() {
+            return mDlLowKhz;
+        }
+
+        public int getDlChannelStart() {
+            return mDlChannelStart;
+        }
+
+        public int getDlChannelEnd() {
+            return mDlChannelEnd;
+        }
+
+        public int getUlLowKhz() {
+            return mUlLowKhz;
+        }
+
+        public int getUlChannelStart() {
+            return mUlChannelStart;
+        }
+
+        public int getUlChannelEnd() {
+            return mUlChannelEnd;
+        }
+    }
+
+    private static Set<LteBandInfo> createLteBandInfoSet() {
+        Set<LteBandInfo> set = new HashSet<>();
+        set.add(new LteBandInfo(1,
+                2110_000, 0, 599,
+                1920_000, 18000, 18599));
+        set.add(new LteBandInfo(2,
+                1930_000, 600, 1199,
+                1850_000, 18600, 19199));
+        set.add(new LteBandInfo(3,
+                1805_000, 1200, 1949,
+                1710_000, 19200, 19949));
+        set.add(new LteBandInfo(4,
+                2110_000, 1950, 2399,
+                1710_000, 19950, 20399));
+        set.add(new LteBandInfo(5,
+                869_000, 2400, 2649,
+                824_000, 20400, 20649));
+        set.add(new LteBandInfo(6,
+                875_000, 2650, 2749,
+                830_000, 20650, 20749));
+        set.add(new LteBandInfo(7,
+                2620_000, 2750, 3449,
+                2500_000, 20750, 21449));
+        set.add(new LteBandInfo(8,
+                925_000, 3450, 3799,
+                880_000, 21450, 21799));
+        set.add(new LteBandInfo(9,
+                1844_900, 3800, 4149,
+                1749_900, 21800, 22149));
+        set.add(new LteBandInfo(10,
+                2110_000, 4150, 4749,
+                1710_000, 22150, 22749));
+        set.add(new LteBandInfo(11,
+                1475_900, 4750, 4949,
+                1427_900, 22750, 22949));
+        set.add(new LteBandInfo(12,
+                729_000, 5010, 5179,
+                699_000, 23010, 23179));
+        set.add(new LteBandInfo(13,
+                746_000, 5180, 5279,
+                777_000, 23180, 23279));
+        set.add(new LteBandInfo(14,
+                758_000, 5280, 5379,
+                788_000, 23280, 23379));
+        set.add(new LteBandInfo(17,
+                734_000, 5730, 5849,
+                704_000, 23730, 23849));
+        set.add(new LteBandInfo(18,
+                860_000, 5850, 5999,
+                815_000, 23850, 23999));
+        set.add(new LteBandInfo(19,
+                875_000, 6000, 6149,
+                830_000, 24000, 24149));
+        set.add(new LteBandInfo(20,
+                791_000, 6150, 6449,
+                832_000, 24150, 24449));
+        set.add(new LteBandInfo(21,
+                1495_900, 6450, 6599,
+                1447_900, 24450, 24599));
+        set.add(new LteBandInfo(22,
+                3510_000, 6600, 7399,
+                3410_000, 24600, 25399));
+        set.add(new LteBandInfo(23,
+                2180_000, 7500, 7699,
+                2000_000, 25500, 25699));
+        set.add(new LteBandInfo(24,
+                1525_000, 7700, 8039,
+                1626_500, 25700, 26039));
+        set.add(new LteBandInfo(25,
+                1930_000, 8040, 8689,
+                1850_000, 26040, 26689));
+        set.add(new LteBandInfo(26,
+                859_000, 8690, 9039,
+                814_000, 26690, 27039));
+        set.add(new LteBandInfo(27,
+                852_000, 9040, 9209,
+                807_000, 27040, 27209));
+        set.add(new LteBandInfo(28,
+                758_000, 9210, 9659,
+                703_000, 27210, 27659));
+        set.add(new LteBandInfo(29,
+                717_000, 9660, 9769,
+                INVALID_FREQ, INVALID_CHANNEL, INVALID_CHANNEL));
+        set.add(new LteBandInfo(30,
+                2350_000, 9770, 9869,
+                2305_000, 27660, 27759));
+        set.add(new LteBandInfo(31,
+                462_500, 9870, 9919,
+                452_500, 27760, 27809));
+        set.add(new LteBandInfo(32,
+                1452_000, 9920, 10359,
+                INVALID_FREQ, INVALID_CHANNEL, INVALID_CHANNEL));
+        set.add(new LteBandInfo(33,
+                1900_000, 36000, 36199));
+        set.add(new LteBandInfo(34,
+                2010_000, 36200, 36349));
+        set.add(new LteBandInfo(35,
+                1850_000, 36350, 36949));
+        set.add(new LteBandInfo(36,
+                1930_000, 36950, 37549));
+        set.add(new LteBandInfo(37,
+                1910_000, 37550, 37749));
+        set.add(new LteBandInfo(38,
+                2570_000, 37750, 38249));
+        set.add(new LteBandInfo(39,
+                1880_000, 38250, 38649));
+        set.add(new LteBandInfo(40,
+                2300_000, 38650, 39649));
+        set.add(new LteBandInfo(41,
+                2496_000, 39650, 41589));
+        set.add(new LteBandInfo(42,
+                3400_000, 41590, 43589));
+        set.add(new LteBandInfo(43,
+                3600_000, 43590, 45589));
+        set.add(new LteBandInfo(44,
+                703_000, 45590, 46589));
+        set.add(new LteBandInfo(45,
+                1447_000, 46590, 46789));
+        set.add(new LteBandInfo(46,
+                5150_000, 46790, 54539));
+        set.add(new LteBandInfo(47,
+                5855_000, 54540, 55239));
+        set.add(new LteBandInfo(48,
+                3550_000, 55240, 56739));
+        set.add(new LteBandInfo(49,
+                3550_000, 56740, 58239));
+        set.add(new LteBandInfo(50,
+                1432_000, 58240, 59089));
+        set.add(new LteBandInfo(51,
+                1427_000, 59090, 59139));
+        set.add(new LteBandInfo(52,
+                3300_000, 59140, 60139));
+        set.add(new LteBandInfo(53,
+                2483_500, 60140, 60254));
+        set.add(new LteBandInfo(65,
+                2110_000, 65536, 66435,
+                1920_000, 131072, 131971));
+        set.add(new LteBandInfo(66,
+                2110_000, 66436, 67335,
+                1710_000, 131972, 132671));
+        set.add(new LteBandInfo(67,
+                738_000, 67336, 67535,
+                INVALID_FREQ, INVALID_CHANNEL, INVALID_CHANNEL));
+        set.add(new LteBandInfo(68,
+                753_000, 67536, 67835,
+                698_000, 132672, 132971));
+        set.add(new LteBandInfo(69,
+                2570_000, 67836, 68335,
+                INVALID_FREQ, INVALID_CHANNEL, INVALID_CHANNEL));
+        set.add(new LteBandInfo(70,
+                1995_000, 68336, 68585,
+                1695_000, 132972, 133121));
+        set.add(new LteBandInfo(71,
+                617_000, 68586, 68935,
+                663_000, 133122, 133471));
+        set.add(new LteBandInfo(72,
+                461_000, 68936, 68985,
+                451_000, 133472, 133521));
+        set.add(new LteBandInfo(73,
+                460_000, 68986, 69035,
+                450_000, 133522, 133571));
+        set.add(new LteBandInfo(74,
+                1475_000, 69036, 69465,
+                1427_000, 133572, 134001));
+        set.add(new LteBandInfo(75,
+                1432_000, 69466, 70315,
+                INVALID_FREQ, INVALID_CHANNEL, INVALID_CHANNEL));
+        set.add(new LteBandInfo(76,
+                1427_000, 70316, 70365,
+                INVALID_FREQ, INVALID_CHANNEL, INVALID_CHANNEL));
+        set.add(new LteBandInfo(85,
+                728_000, 70366, 70545,
+                698_000, 134002, 134181));
+        set.add(new LteBandInfo(87,
+                420_000, 70546, 70595,
+                410_000, 134182, 134231));
+        set.add(new LteBandInfo(88,
+                422_000, 70596, 70645,
+                412_000, 134232, 134280));
+        return set;
+    }
+
+    private static NavigableMap<Integer, LteBandInfo> createEarfcnOffsetToLteBandInfo() {
+        NavigableMap<Integer, LteBandInfo> map = new TreeMap();
+        for (LteBandInfo lteBandInfo : LTE_BAND_INFO_SET) {
+            if (lteBandInfo.getDlChannelStart() != INVALID_CHANNEL) {
+                map.put(lteBandInfo.getDlChannelStart(), lteBandInfo);
+            }
+            if (lteBandInfo.getUlChannelStart() != INVALID_CHANNEL) {
+                map.put(lteBandInfo.getUlChannelStart(), lteBandInfo);
+            }
+        }
+        return map;
+    }
+
+    private static LteBandInfo getLteBandInfoForEarfcn(int earfcn) {
+        Integer earfcnOffset = EARFCN_OFFSET_TO_LTE_BAND_INFO.floorKey(earfcn);
+        if (earfcnOffset == null) {
+            return null;
+        }
+        LteBandInfo lteBandInfo = EARFCN_OFFSET_TO_LTE_BAND_INFO.get(earfcnOffset);
+        if (lteBandInfo == null) {
+            return null;
+        }
+        if (earfcn >= lteBandInfo.getDlChannelStart() && earfcn <= lteBandInfo.getDlChannelEnd()
+                || earfcn >= lteBandInfo.getUlChannelStart()
+                && earfcn <= lteBandInfo.getUlChannelEnd()) {
+            return lteBandInfo;
+        }
+        // EARFCN was not in the range of UL or DL EARFCNs for the band.
+        return null;
+    }
+
+    /**
+     * Gets the operating band number for a PhysicalChannelConfig
+     *
+     * <p>See 3GPP 36.101 sec 5.7.3-1 for calculation.
+     *
+     * @param config The PhysicalChannelConfig to get the band of.
+     * @return Operating band number, or {@link #INVALID_BAND} if no corresponding band exists
+     */
+    // TODO(b/153651001: Remove once band number is supported in PhysicalChannelConfig
+    static int getOperatingBandForPhysicalChannelConfig(@NonNull PhysicalChannelConfig config) {
+        switch(config.getNetworkType()) {
+            case TelephonyManager.NETWORK_TYPE_LTE:
+                final int earfcn = config.getChannelNumber();
+                LteBandInfo lteBandInfo = getLteBandInfoForEarfcn(earfcn);
+                if (lteBandInfo == null) {
+                    return INVALID_BAND;
+                }
+                return lteBandInfo.getBand();
+            case TelephonyManager.NETWORK_TYPE_NR:
+                // TODO(b/153651001: Add support for NR channels
+            default:
+                return INVALID_BAND;
+        }
+    }
+
+    /**
+     * Gets the carrier frequency in KHz for a given PhysicalChannelConfig.
+     *
+     * <p>See 3GPP 36.101 sec 5.7.3-1 for LTE calculation.
+     *
+     * @param config The PhysicalChannelConfig to get the carrier frequency of
+     * @return Carrier frequency in Khz, or INVALID_FREQ if the config has none.
+     */
+    static int getCarrierFreqKhzForPhysicalChannelConfig(@NonNull PhysicalChannelConfig config) {
+        switch(config.getNetworkType()) {
+            case TelephonyManager.NETWORK_TYPE_LTE:
+                final int earfcn = config.getChannelNumber();
+                LteBandInfo lteBandInfo = getLteBandInfoForEarfcn(earfcn);
+                if (lteBandInfo == null) {
+                    return INVALID_FREQ;
+                }
+                // DL EARFCN
+                if (earfcn >= lteBandInfo.getDlChannelStart()
+                        && earfcn <= lteBandInfo.getDlChannelEnd()) {
+                    return lteBandInfo.getDlLowKhz()
+                            + (earfcn - lteBandInfo.getDlChannelStart()) * 100;
+                }
+                // UL EARFCN
+                return lteBandInfo.getUlLowKhz() + (earfcn - lteBandInfo.getUlChannelStart()) * 100;
+            case TelephonyManager.NETWORK_TYPE_NR:
+                // TODO(b/153651001: Add support for NR channels
+            default:
+                return INVALID_BAND;
+        }
     }
 }

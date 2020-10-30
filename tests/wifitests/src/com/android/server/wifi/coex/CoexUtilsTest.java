@@ -19,21 +19,30 @@ package com.android.server.wifi.coex;
 import static android.net.wifi.WifiScanner.WIFI_BAND_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 
+import static com.android.server.wifi.coex.CoexUtils.INVALID_BAND;
 import static com.android.server.wifi.coex.CoexUtils.INVALID_FREQ;
 import static com.android.server.wifi.coex.CoexUtils.get2gHarmonicCoexUnsafeChannels;
 import static com.android.server.wifi.coex.CoexUtils.get5gHarmonicCoexUnsafeChannels;
+import static com.android.server.wifi.coex.CoexUtils.getCarrierFreqKhzForPhysicalChannelConfig;
 import static com.android.server.wifi.coex.CoexUtils.getIntermodCoexUnsafeChannels;
 import static com.android.server.wifi.coex.CoexUtils.getLowerFreqKhz;
 import static com.android.server.wifi.coex.CoexUtils.getNeighboringCoexUnsafeChannels;
+import static com.android.server.wifi.coex.CoexUtils.getOperatingBandForPhysicalChannelConfig;
 import static com.android.server.wifi.coex.CoexUtils.getUpperFreqKhz;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.when;
+
 import android.net.wifi.CoexUnsafeChannel;
+import android.telephony.Annotation;
+import android.telephony.PhysicalChannelConfig;
+import android.telephony.TelephonyManager;
 
 import androidx.test.filters.SmallTest;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,6 +59,14 @@ public class CoexUtilsTest {
 
     private int getHarmonicUlBandwidthKhz(int unsafeLowerKhz, int unsafeUpperKhz, int harmonicDeg) {
         return (unsafeUpperKhz - unsafeLowerKhz) / harmonicDeg;
+    }
+
+    private PhysicalChannelConfig createMockPhysicalChannelConfig(
+            @Annotation.NetworkType int rat, int arfcn) {
+        PhysicalChannelConfig config = Mockito.mock(PhysicalChannelConfig.class);
+        when(config.getNetworkType()).thenReturn(rat);
+        when(config.getChannelNumber()).thenReturn(arfcn);
+        return config;
     }
 
     /**
@@ -317,5 +334,93 @@ public class CoexUtilsTest {
         // Includes channel 6 but not channel 11
         assertThat(getIntermodCoexUnsafeChannels(ulFreqKhz, bandwidthKhz, dlFreqKhz, bandwidthKhz,
                 2, -1, maxOverlap, WIFI_BAND_24_GHZ)).containsExactlyElementsIn(coexUnsafeChannels);
+    }
+
+    /**
+     * Verifies that getOperatingBandForPhysicalChannelConfig returns the correct bands for a given
+     * set of example configs.
+     */
+    @Test
+    public void testGetOperatingBandForPhysicalChannelConfig_exampleConfigs_returnsCorrectBands() {
+        // DL
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 500))).isEqualTo(1);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 2800))).isEqualTo(7);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 5300))).isEqualTo(14);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 67700))).isEqualTo(68);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 70600))).isEqualTo(88);
+        // UL
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 18000))).isEqualTo(1);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 21000))).isEqualTo(7);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 23300))).isEqualTo(14);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 132672))).isEqualTo(68);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 134280))).isEqualTo(88);
+        // TDD
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 36000))).isEqualTo(33);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 50000))).isEqualTo(46);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 60000))).isEqualTo(52);
+        // Invalid EARFCNs
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, -1))).isEqualTo(INVALID_BAND);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 64000))).isEqualTo(INVALID_BAND);
+        assertThat(getOperatingBandForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 14000))).isEqualTo(INVALID_BAND);
+    }
+
+    /**
+     * Verifies that getCarrierFreqKhzForPhysicalChannelConfig returns the correct carrier
+     * frequencies for a given set of example configs.
+     */
+    @Test
+    public void testgetCarrierFreqKhzForPhysicalChannelConfig_exampleEarfcns_returnsCorrectFreq() {
+        // DL
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 500))).isEqualTo(2160_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 2800))).isEqualTo(2625_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 5300))).isEqualTo(760_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 67700))).isEqualTo(769_400);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 70600))).isEqualTo(422_400);
+        // UL
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 18000))).isEqualTo(1920_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 21000))).isEqualTo(2525_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 23300))).isEqualTo(790_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 132672))).isEqualTo(698_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 134280))).isEqualTo(416_800);
+        // TDD
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 36000))).isEqualTo(1900_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 50000))).isEqualTo(5471_000);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 60000))).isEqualTo(3386_000);
+        // Invalid EARFCNs
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, -1))).isEqualTo(INVALID_BAND);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 64000))).isEqualTo(INVALID_BAND);
+        assertThat(getCarrierFreqKhzForPhysicalChannelConfig(createMockPhysicalChannelConfig(
+                TelephonyManager.NETWORK_TYPE_LTE, 14000))).isEqualTo(INVALID_BAND);
     }
 }
