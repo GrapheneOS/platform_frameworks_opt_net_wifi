@@ -244,7 +244,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
         final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        mCurrentNetworkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
         updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
         updateWifiEntries();
     }

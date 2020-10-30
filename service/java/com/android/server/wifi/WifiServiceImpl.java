@@ -83,7 +83,6 @@ import android.net.wifi.WifiSsid;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
-import android.net.wifi.util.SdkLevelUtil;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
@@ -111,6 +110,7 @@ import android.util.MutableBoolean;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.net.module.util.Inet4AddressUtils;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvider;
@@ -3034,7 +3034,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
     @Override
     public boolean is60GHzBandSupported() {
-        if (!SdkLevelUtil.isAtLeastS()) {
+        if (!SdkLevel.isAtLeastS()) {
             throw new UnsupportedOperationException();
         }
 
@@ -3297,7 +3297,7 @@ public class WifiServiceImpl extends BaseWifiService {
             @NonNull ParcelFileDescriptor out, @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
         WifiShellCommand shellCommand =  new WifiShellCommand(mWifiInjector, this, mContext,
-                mActiveModeWarden.getPrimaryClientModeManager(), mWifiGlobals);
+                mWifiGlobals);
         return shellCommand.exec(this, in.getFileDescriptor(), out.getFileDescriptor(),
                 err.getFileDescriptor(), args);
     }
@@ -3838,7 +3838,7 @@ public class WifiServiceImpl extends BaseWifiService {
                         concurrencyFeatureSet |= WifiManager.WIFI_FEATURE_AP_STA;
                     }
                     // New feature flag in S.
-                    if (SdkLevelUtil.isAtLeastS()
+                    if (SdkLevel.isAtLeastS()
                             && mActiveModeWarden.isStaStaConcurrencySupported()) {
                         concurrencyFeatureSet |= WifiManager.WIFI_FEATURE_ADDITIONAL_STA;
                     }

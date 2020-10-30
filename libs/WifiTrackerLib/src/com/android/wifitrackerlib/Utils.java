@@ -46,6 +46,7 @@ import android.net.NetworkInfo.DetailedState;
 import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
 import android.net.ScoredNetwork;
+import android.net.WifiKey;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -82,6 +83,9 @@ import java.util.StringJoiner;
  * Utility methods for WifiTrackerLib.
  */
 class Utils {
+    /** Copy of the @hide Settings.Global.USE_OPEN_WIFI_PACKAGE constant. */
+    static final String SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE = "use_open_wifi_package";
+
     private static NetworkScoreManager sNetworkScoreManager;
 
     private static String getActiveScorerPackage(@NonNull Context context) {
@@ -345,8 +349,14 @@ class Utils {
     @Speed
     static int getSpeedFromWifiInfo(@NonNull WifiNetworkScoreCache scoreCache,
             @NonNull WifiInfo wifiInfo) {
+        final WifiKey wifiKey;
+        try {
+            wifiKey = new WifiKey(wifiInfo.getSSID(), wifiInfo.getBSSID());
+        } catch (IllegalArgumentException e) {
+            return SPEED_NONE;
+        }
         ScoredNetwork scoredNetwork = scoreCache.getScoredNetwork(
-                NetworkKey.createFromWifiInfo(wifiInfo));
+                new NetworkKey(wifiKey));
         if (scoredNetwork == null) {
             return SPEED_NONE;
         }
@@ -374,7 +384,7 @@ class Utils {
     static String getAppLabel(Context context, String packageName) {
         try {
             String openWifiPackageName = Settings.Global.getString(context.getContentResolver(),
-                    Settings.Global.USE_OPEN_WIFI_PACKAGE);
+                    SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE);
             if (!TextUtils.isEmpty(openWifiPackageName) && TextUtils.equals(packageName,
                     getActiveScorerPackage(context))) {
                 packageName = openWifiPackageName;
@@ -383,7 +393,7 @@ class Utils {
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfoAsUser(
                     packageName,
                     0 /* flags */,
-                    UserHandle.getUserId(UserHandle.USER_CURRENT));
+                    UserHandle.CURRENT);
             return appInfo.loadLabel(context.getPackageManager()).toString();
         } catch (PackageManager.NameNotFoundException e) {
             return "";

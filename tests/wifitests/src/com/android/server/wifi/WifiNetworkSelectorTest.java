@@ -810,6 +810,55 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         WifiConfigurationTestUtil.assertConfigurationEqual(userChoice, candidate);
     }
 
+
+    /**
+     * Verify that the user connect choice algorithm does not choose a network that unexpectedly
+     * has no internet.
+     */
+    @Test
+    public void userConnectChoiceDoesNotOverrideWhenUnexpectedNoInternet() {
+        String[] ssids = {"\"test1\"", "\"test2\""};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2437, 5180};
+        String[] caps = {"[WPA2-PSK][ESS]", "[WPA2-PSK][ESS]"};
+        int[] levels = {mThresholdMinimumRssi2G + RSSI_BUMP, mThresholdMinimumRssi5G + RSSI_BUMP};
+        int[] securities = {SECURITY_PSK, SECURITY_PSK};
+        ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
+                WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
+                        freqs, caps, levels, securities, mWifiConfigManager, mClock);
+        List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
+        WifiConfiguration[] wifiConfigs = scanDetailsAndConfigs.getWifiConfigs();
+        HashSet<String> blocklist = new HashSet<>();
+
+        // PlaceholderNominator should select the first network in the list.
+        WifiConfiguration networkSelectorChoice = wifiConfigs[0];
+        networkSelectorChoice.getNetworkSelectionStatus()
+                .setSeenInLastQualifiedNetworkSelection(true);
+
+        // But setup UCC so that the second network gets selected
+        WifiConfiguration userChoice = wifiConfigs[1];
+        userChoice.getNetworkSelectionStatus().setCandidate(scanDetails.get(1).getScanResult());
+        userChoice.getNetworkSelectionStatus().setConnectChoice(null);
+        networkSelectorChoice.getNetworkSelectionStatus().setConnectChoice(userChoice.getKey());
+
+        // Verify that the user connect choice network is chosen.
+        List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
+                scanDetails, blocklist, mWifiInfo, false, true, false, true);
+        WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
+        WifiConfigurationTestUtil.assertConfigurationEqual(userChoice, candidate);
+
+        // Now label the user connect choice network as unexpected no internet
+        userChoice.numNoInternetAccessReports = 1;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime()
+                + WifiNetworkSelector.MINIMUM_NETWORK_SELECTION_INTERVAL_MS + 2000);
+        candidates = mWifiNetworkSelector.getCandidatesFromScan(
+                scanDetails, blocklist, mWifiInfo, false, true, false, true);
+        candidate = mWifiNetworkSelector.selectNetwork(candidates);
+
+        // Should now select the non user choice network.
+        WifiConfigurationTestUtil.assertConfigurationEqual(networkSelectorChoice, candidate);
+    }
+
     /**
      * Tests when multiple Nominators nominate the same candidate, any one of the nominator IDs is
      * acceptable.

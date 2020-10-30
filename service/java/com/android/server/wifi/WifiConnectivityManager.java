@@ -1965,7 +1965,7 @@ public class WifiConnectivityManager {
      * Handler for on-demand connectivity scan
      */
     public void forceConnectivityScan(WorkSource workSource) {
-        if (!mWifiEnabled) return;
+        if (!mWifiEnabled || !mRunning) return;
         localLog("forceConnectivityScan in request of " + workSource);
 
         clearConnectionAttemptTimeStamps();

@@ -111,7 +111,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
     @Override
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        mCurrentNetworkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
         getWifiEntry().updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
     }
 

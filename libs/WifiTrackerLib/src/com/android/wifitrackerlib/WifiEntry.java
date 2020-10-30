@@ -714,7 +714,8 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
 
         // Find IPv4 default gateway.
         for (RouteInfo routeInfo : linkProperties.getRoutes()) {
-            if (routeInfo.isIPv4Default() && routeInfo.hasGateway()) {
+            if (routeInfo.isDefaultRoute() && routeInfo.getDestination().getAddress()
+                    instanceof Inet4Address && routeInfo.hasGateway()) {
                 mConnectedInfo.gateway = routeInfo.getGateway().getHostAddress();
                 break;
             }

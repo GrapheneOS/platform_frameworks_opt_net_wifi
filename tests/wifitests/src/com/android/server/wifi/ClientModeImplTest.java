@@ -598,6 +598,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mWifiLastResortWatchdog, atLeastOnce()).clearAllFailureCounts();
+        // set ready for country code changes at initialization.
+        verify(mCountryCode, atLeastOnce()).setReadyForChange(true);
         assertEquals("DisconnectedState", getCurrentState().getName());
     }
 
@@ -704,6 +706,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConnectivityManager).prepareForForcedConnection(eq(config.networkId));
         verify(mWifiConfigManager).getConfiguredNetworkWithoutMasking(eq(config.networkId));
         verify(mWifiNative).connectToNetwork(eq(WIFI_IFACE_NAME), eq(config));
+        verify(mCountryCode, atLeastOnce()).setReadyForChange(false);
         assertEquals("L2ConnectingState", mCmi.getCurrentState().getName());
     }
 
@@ -1843,6 +1846,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
         // Set MAC address thrice - once at bootup, once for new connection, once for disconnect.
         verify(mWifiNative, times(3)).setStaMacAddress(eq(WIFI_IFACE_NAME), any());
+        verify(mCountryCode, times(2)).setReadyForChange(true);
     }
 
     /**
