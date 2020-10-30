@@ -541,7 +541,7 @@ public class WifiConfigManager {
     public MacAddress getPersistentMacAddress(WifiConfiguration config) {
         // mRandomizedMacAddressMapping had been the location to save randomized MAC addresses.
         String persistentMacString = mRandomizedMacAddressMapping.get(
-                config.getProfileKey());
+                config.getNetworkKey());
         // Use the MAC address stored in the storage if it exists and is valid. Otherwise
         // use the MAC address calculated from a hash function as the persistent MAC.
         if (persistentMacString != null) {
@@ -549,7 +549,7 @@ public class WifiConfigManager {
                 return MacAddress.fromString(persistentMacString);
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "Error creating randomized MAC address from stored value.");
-                mRandomizedMacAddressMapping.remove(config.getProfileKey());
+                mRandomizedMacAddressMapping.remove(config.getNetworkKey());
             }
         }
         MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getNetworkKey(),

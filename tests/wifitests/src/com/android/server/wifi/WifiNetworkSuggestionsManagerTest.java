@@ -248,6 +248,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.getCarrierIdForPackageWithCarrierPrivileges(any())).thenReturn(
                 TelephonyManager.UNKNOWN_CARRIER_ID);
         when(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(anyInt(), anyInt())).thenReturn(true);
+        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(any())).thenReturn(
+                SubscriptionManager.INVALID_SUBSCRIPTION_ID);
 
         when(mWifiKeyStore.updateNetworkKeys(any(), any())).thenReturn(true);
 
@@ -3364,6 +3366,13 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                     add(networkSuggestion2);
                     add(networkSuggestion3);
                 }};
+        networkSuggestion1.wifiConfiguration.fromWifiNetworkSuggestion = true;
+        networkSuggestion2.wifiConfiguration.fromWifiNetworkSuggestion = true;
+        networkSuggestion3.wifiConfiguration.fromWifiNetworkSuggestion = true;
+        networkSuggestion1.wifiConfiguration.creatorName = TEST_PACKAGE_1;
+        networkSuggestion2.wifiConfiguration.creatorName = TEST_PACKAGE_1;
+        networkSuggestion3.wifiConfiguration.creatorName = TEST_PACKAGE_1;
+
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
@@ -4176,16 +4185,21 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 network2, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
 
         WifiConfiguration wcmConfig = new WifiConfiguration(network2);
+        wcmConfig.fromWifiNetworkSuggestion = true;
+        wcmConfig.creatorName = TEST_PACKAGE_1;
+        wcmConfig.creatorUid = TEST_UID_1;
         WifiConfiguration.NetworkSelectionStatus status =
                 mock(WifiConfiguration.NetworkSelectionStatus.class);
         when(status.isNetworkEnabled()).thenReturn(false);
         wcmConfig.setNetworkSelectionStatus(status);
-        when(mWifiConfigManager.getConfiguredNetwork(network2.getProfileKey()))
+        when(mWifiConfigManager.getConfiguredNetwork(wcmConfig.getProfileKey()))
                 .thenReturn(wcmConfig);
 
         List<ScanDetail> scanDetails = Arrays.asList(scanDetail1, scanDetail2);
         // Secure suggestions is auto-join disabled, should not be ignored.
         List<WifiNetworkSuggestion> suggestionList = Arrays.asList(suggestion1, suggestion2);
+        when(mWifiConfigManager.addOrUpdateNetwork(any(), anyInt(), anyString()))
+                .thenReturn(new NetworkUpdateResult(TEST_NETWORK_ID));
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(suggestionList, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));

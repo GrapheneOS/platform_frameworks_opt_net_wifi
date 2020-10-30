@@ -348,7 +348,7 @@ public class PasspointManager {
     private void updateWifiConfigInWcmIfPresent(
             WifiConfiguration newConfig, int uid, String packageName, boolean isFromSuggestion) {
         WifiConfiguration configInWcm =
-                mWifiConfigManager.getConfiguredNetwork(newConfig.getKey());
+                mWifiConfigManager.getConfiguredNetwork(newConfig.getProfileKey());
         if (configInWcm == null) return;
         // suggestion != saved
         if (isFromSuggestion != configInWcm.fromWifiNetworkSuggestion) return;
@@ -459,7 +459,7 @@ public class PasspointManager {
             // New profile changes the credential, remove the related WifiConfig.
             if (!old.equals(newProvider)) {
                 mWifiConfigManager.removePasspointConfiguredNetwork(
-                        newProvider.getWifiConfig().getKey());
+                        newProvider.getWifiConfig().getProfileKey());
             } else {
                 // If there is a config cached in WifiConfigManager, update it with new info.
                 updateWifiConfigInWcmIfPresent(
@@ -499,7 +499,7 @@ public class PasspointManager {
         String packageName = provider.getPackageName();
         // Remove any configs corresponding to the profile in WifiConfigManager.
         mWifiConfigManager.removePasspointConfiguredNetwork(
-                provider.getWifiConfig().getKey());
+                provider.getWifiConfig().getProfileKey());
         String uniqueId = provider.getConfig().getUniqueId();
         mProviders.remove(uniqueId);
         mWifiConfigManager.saveToStore(true /* forceWrite */);
@@ -646,7 +646,7 @@ public class PasspointManager {
                                     : UserActionEvent.EVENT_CONFIGURE_MAC_RANDOMIZATION_OFF,
                             provider.isFromSuggestion(), true);
                     mWifiConfigManager.removePasspointConfiguredNetwork(
-                            provider.getWifiConfig().getKey());
+                            provider.getWifiConfig().getProfileKey());
                 }
                 found = true;
             }
@@ -977,16 +977,9 @@ public class PasspointManager {
                     type = WifiManager.PASSPOINT_ROAMING_NETWORK;
                 }
                 Map<Integer, List<ScanResult>> scanResultsPerNetworkType =
-                        configs.get(config.getKey());
-                if (scanResultsPerNetworkType == null) {
-                    scanResultsPerNetworkType = new HashMap<>();
-                    configs.put(config.getKey(), scanResultsPerNetworkType);
-                }
-                List<ScanResult> matchingScanResults = scanResultsPerNetworkType.get(type);
-                if (matchingScanResults == null) {
-                    matchingScanResults = new ArrayList<>();
-                    scanResultsPerNetworkType.put(type, matchingScanResults);
-                }
+                        configs.computeIfAbsent(config.getProfileKey(), k -> new HashMap<>());
+                List<ScanResult> matchingScanResults = scanResultsPerNetworkType.computeIfAbsent(
+                        type, k -> new ArrayList<>());
                 matchingScanResults.add(scanResult);
             }
         }

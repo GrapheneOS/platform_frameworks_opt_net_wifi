@@ -728,17 +728,17 @@ public class WifiNetworkSelector {
         // Update the scan detail cache at the start, even if we skip network selection
         updateScanDetailCache(scanDetails);
 
-        // Shall we start network selection at all?
-        if (!isNetworkSelectionNeeded(scanDetails, wifiInfo, connected, disconnected)) {
-            return null;
-        }
-
         // Update all configured networks before initiating network selection.
         updateConfiguredNetworks();
 
         // Update the registered network nominators.
         for (NetworkNominator registeredNominator : mNominators) {
             registeredNominator.update(scanDetails);
+        }
+
+        // Shall we start network selection at all?
+        if (!isNetworkSelectionNeeded(scanDetails, wifiInfo, connected, disconnected)) {
+            return null;
         }
 
         // Filter out unwanted networks.
