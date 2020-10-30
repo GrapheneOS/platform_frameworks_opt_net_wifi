@@ -79,6 +79,7 @@
           <item type="bool" name="config_wifiSofapClientForceDisconnectSupported" />
           <item type="bool" name="config_wifi_softap_acs_supported" />
           <item type="bool" name="config_wifi_softap_sae_supported" />
+          <item type="bool" name="config_wifiSoftapMacAddressCustomizationSupported" />
           <item type="bool" name="config_wifi_softap_ieee80211ac_supported" />
           <item type="bool" name="config_wifiSoftapIeee80211axSupported" />
           <item type="bool" name="config_wifiSoftap6ghzSupported" />
