@@ -5926,6 +5926,17 @@ public class WifiMetrics {
     }
 
     /**
+     * Logs that wifi bug report is taken
+     */
+    public void logBugReport() {
+        synchronized (mLock) {
+            if (mCurrentConnectionEvent != null) {
+                mCurrentConnectionEvent.mConnectionEvent.automaticBugReportTaken = true;
+            }
+        }
+    }
+
+    /**
      * Add a new listener for Wi-Fi usability stats handling.
      */
     public void addOnWifiUsabilityListener(IBinder binder, IOnWifiUsabilityStatsListener listener,
