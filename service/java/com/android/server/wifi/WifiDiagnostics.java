@@ -363,6 +363,7 @@ public class WifiDiagnostics {
             return;
         }
         mLastBugReportTime = currentTime;
+        mWifiMetrics.logBugReport();
         BugreportManager bugreportManager = mContext.getSystemService(BugreportManager.class);
         BugreportParams params = new BugreportParams(BugreportParams.BUGREPORT_MODE_FULL);
         try {
