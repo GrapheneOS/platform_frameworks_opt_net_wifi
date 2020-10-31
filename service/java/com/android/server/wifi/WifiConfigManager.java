@@ -3358,7 +3358,7 @@ public class WifiConfigManager {
         if (config == null) {
             return;
         }
-        config.recentFailure.setAssociationStatus(reason);
+        config.recentFailure.setAssociationStatus(reason, mClock.getElapsedSinceBootMillis());
     }
 
     /**
@@ -3370,6 +3370,22 @@ public class WifiConfigManager {
             return;
         }
         config.recentFailure.clear();
+    }
+
+    /**
+     * Clear all recent failure reasons that have timed out.
+     */
+    public void cleanupExpiredRecentFailureReasons() {
+        long timeoutDuration = mContext.getResources().getInteger(
+                R.integer.config_wifiRecentFailureReasonExpirationMinutes) * 60 * 1000;
+        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
+            if (config.recentFailure.getAssociationStatus()
+                    != WifiConfiguration.RECENT_FAILURE_NONE
+                    && mClock.getElapsedSinceBootMillis()
+                    >= config.recentFailure.getLastUpdateTimeSinceBootMillis() + timeoutDuration) {
+                config.recentFailure.clear();
+            }
+        }
     }
 
     /**

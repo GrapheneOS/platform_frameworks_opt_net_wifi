@@ -503,6 +503,7 @@ public class WifiInjector {
         mThroughputPredictor.enableVerboseLogging(verboseBool);
         mWifiDataStall.enableVerboseLogging(verboseBool);
         mWifiConnectivityManager.enableVerboseLogging(verboseBool);
+        mWifiNetworkSelector.enableVerboseLogging(verboseBool);
     }
 
     public UserManager getUserManager() {

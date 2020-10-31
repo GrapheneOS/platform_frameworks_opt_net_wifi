@@ -2792,6 +2792,43 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that setRecentFailureAssociationStatus is setting the recent failure reason and
+     * expiration timestamp properly. Then, verify that cleanupExpiredRecentFailureReasons
+     * properly clears expired recent failure statuses.
+     */
+    @Test
+    public void testSetRecentFailureAssociationStatus() {
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
+        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(config);
+        int expectedStatusCode = WifiConfiguration.RECENT_FAILURE_POOR_CHANNEL_CONDITIONS;
+        long updateTimeMs = 1234L;
+        mResources.setInteger(R.integer.config_wifiRecentFailureReasonExpirationMinutes, 1);
+        long expectedExpirationTimeMs = updateTimeMs + 60_000;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(updateTimeMs);
+        mWifiConfigManager.setRecentFailureAssociationStatus(config.networkId, expectedStatusCode);
+
+        // Verify the recent failure association status is set properly
+        List<WifiConfiguration> configs = mWifiConfigManager.getSavedNetworks(Process.WIFI_UID);
+        assertEquals(1, configs.size());
+        assertEquals(expectedStatusCode, configs.get(0).getRecentFailureReason());
+        assertEquals(updateTimeMs,
+                configs.get(0).recentFailure.getLastUpdateTimeSinceBootMillis());
+
+        // Verify at t-1 the failure status is not cleared yet.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(expectedExpirationTimeMs - 1);
+        mWifiConfigManager.cleanupExpiredRecentFailureReasons();
+        assertEquals(expectedStatusCode, mWifiConfigManager.getSavedNetworks(Process.WIFI_UID)
+                .get(0).getRecentFailureReason());
+
+        // Verify at the expiration time the failure status is cleared.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(expectedExpirationTimeMs);
+        mWifiConfigManager.cleanupExpiredRecentFailureReasons();
+        assertEquals(WifiConfiguration.RECENT_FAILURE_NONE,
+                mWifiConfigManager.getSavedNetworks(Process.WIFI_UID)
+                        .get(0).getRecentFailureReason());
+    }
+
+    /**
      * Verifies the linking of networks when they have scan results with same first 16 ASCII of
      * bssid in
      * {@link WifiConfigManager#getOrCreateScanDetailCacheForNetwork(WifiConfiguration)}.

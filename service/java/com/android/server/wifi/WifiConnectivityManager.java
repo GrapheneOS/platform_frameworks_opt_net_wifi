@@ -313,6 +313,9 @@ public class WifiConnectivityManager {
         Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
                 mWifiInfo.getSSID());
 
+        // Clear expired recent failure statuses
+        mConfigManager.cleanupExpiredRecentFailureReasons();
+
         if (clientModeManager.isSupplicantTransientState()) {
             localLog(listenerName
                     + " onResults: No network selection because supplicantTransientState is "

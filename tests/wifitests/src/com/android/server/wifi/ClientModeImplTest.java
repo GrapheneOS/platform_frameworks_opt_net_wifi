@@ -2936,6 +2936,59 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the recent failure association status is updated properly when
+     * ASSOC_REJECTED_TEMPORARILY occurs.
+     */
+    @Test
+    public void testAssocRejectedTemporarilyUpdatesRecentAssociationFailureStatus()
+            throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT,
+                new AssocRejectEventInfo(sSSID, sBSSID,
+                        ISupplicantStaIfaceCallback.StatusCode.ASSOC_REJECTED_TEMPORARILY,
+                        false));
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).setRecentFailureAssociationStatus(anyInt(),
+                eq(WifiConfiguration.RECENT_FAILURE_REFUSED_TEMPORARILY));
+    }
+
+    /**
+     * Verify that the recent failure association status is updated properly when
+     * DENIED_POOR_CHANNEL_CONDITIONS occurs.
+     */
+    @Test
+    public void testAssocRejectedPoorChannelConditionsUpdatesRecentAssociationFailureStatus()
+            throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mCmi.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT,
+                new AssocRejectEventInfo(sSSID, sBSSID,
+                        ISupplicantStaIfaceCallback.StatusCode.DENIED_POOR_CHANNEL_CONDITIONS,
+                        false));
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).setRecentFailureAssociationStatus(anyInt(),
+                eq(WifiConfiguration.RECENT_FAILURE_POOR_CHANNEL_CONDITIONS));
+    }
+
+    /**
+     * Verify that the recent failure association status is updated properly when a disconnection
+     * with reason code DISASSOC_AP_BUSY occurs.
+     */
+    @Test
+    public void testNetworkDisconnectionApBusyUpdatesRecentAssociationFailureStatus()
+            throws Exception {
+        connect();
+        // Disconnection with reason = DISASSOC_AP_BUSY
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(sSSID, sBSSID, 5, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).setRecentFailureAssociationStatus(anyInt(),
+                eq(WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY));
+    }
+
+    /**
      * Verifies that the BssidBlocklistMonitor is notified, but the WifiLastResortWatchdog is
      * not notified of association rejections of type REASON_CODE_AP_UNABLE_TO_HANDLE_NEW_STA.
      * @throws Exception
