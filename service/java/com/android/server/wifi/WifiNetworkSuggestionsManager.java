@@ -1014,6 +1014,10 @@ public class WifiNetworkSuggestionsManager {
                     Log.e(TAG, "OEM paid suggestions are only allowed from Android S.");
                     return false;
                 }
+                if (wns.wifiConfiguration.oemPrivate) {
+                    Log.e(TAG, "OEM private suggestions are only allowed from Android S.");
+                    return false;
+                }
                 if (wns.wifiConfiguration.subscriptionId
                         != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
                     Log.e(TAG, "Setting Subscription Id is only allowed from Android S.");

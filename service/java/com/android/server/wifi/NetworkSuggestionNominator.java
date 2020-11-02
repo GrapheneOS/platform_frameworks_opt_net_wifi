@@ -75,6 +75,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     public void nominateNetworks(List<ScanDetail> scanDetails,
             WifiConfiguration currentNetwork, String currentBssid, boolean connected,
             boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
+            boolean oemPrivateNetworkAllowed,
             @NonNull OnConnectableListener onConnectableListener) {
         if (scanDetails.isEmpty()) {
             return;
@@ -83,9 +84,11 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions = new HashSet<>();
 
         findMatchedPasspointSuggestionNetworks(
-                scanDetails, matchMetaInfo, untrustedNetworkAllowed, oemPaidNetworkAllowed);
+                scanDetails, matchMetaInfo, untrustedNetworkAllowed, oemPaidNetworkAllowed,
+                oemPrivateNetworkAllowed);
         findMatchedSuggestionNetworks(scanDetails, matchMetaInfo,
-                autoJoinDisabledSuggestions, untrustedNetworkAllowed, oemPaidNetworkAllowed);
+                autoJoinDisabledSuggestions, untrustedNetworkAllowed, oemPaidNetworkAllowed,
+                oemPrivateNetworkAllowed);
 
         if (matchMetaInfo.isEmpty()) {
             mLocalLog.log("did not see any matching auto-join enabled network suggestions.");
@@ -96,9 +99,43 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         addAutojoinDisabledSuggestionToWifiConfigManager(autoJoinDisabledSuggestions);
     }
 
+    /** Helper method to avoid code duplication in regular & passpoint based suggestions filter. */
+    private boolean shouldIgnoreBasedOnChecksForTrustedOrOemPaidOrOemPrivate(
+            WifiConfiguration config, boolean untrustedNetworkAllowed,
+            boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed) {
+        // If untrusted network is not allowed, ignore untrusted suggestion.
+        if (!untrustedNetworkAllowed && !config.trusted) {
+            return true;
+        }
+        // For suggestions with both oem paid & oem private set, ignore them If both oem paid
+        // & oem private network is not allowed. If oem paid network is allowed, then mark
+        // the suggestion oem paid for this connection attempt, else mark oem private for this
+        // connection attempt.
+        if (config.oemPaid && config.oemPrivate) {
+            if (!oemPaidNetworkAllowed && !oemPrivateNetworkAllowed) {
+                return true;
+            }
+            if (oemPaidNetworkAllowed) {
+                config.oemPrivate = false; // only oemPaid set.
+            } else if (oemPrivateNetworkAllowed) {
+                config.oemPaid = false; // only oemPrivate set.
+            }
+        } else {
+            // If oem paid network is not allowed, ignore oem paid suggestion.
+            if (!oemPaidNetworkAllowed && config.oemPaid) {
+                return true;
+            }
+            // If oem paid network is not allowed, ignore oem paid suggestion.
+            if (!oemPrivateNetworkAllowed && config.oemPrivate) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void findMatchedPasspointSuggestionNetworks(List<ScanDetail> scanDetails,
             MatchMetaInfo matchMetaInfo, boolean untrustedNetworkAllowed,
-            boolean oemPaidNetworkAllowed) {
+            boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed) {
         List<Pair<ScanDetail, WifiConfiguration>> candidates =
                 mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, true);
         for (Pair<ScanDetail, WifiConfiguration> candidate : candidates) {
@@ -119,12 +156,9 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             if (!isSimBasedNetworkAvailableToAutoConnect(config)) {
                 continue;
             }
-            // If untrusted network is not allowed, ignore untrusted suggestion.
-            if (!untrustedNetworkAllowed && !config.trusted) {
-                continue;
-            }
-            // If oem paid network is not allowed, ignore oem paid suggestion.
-            if (!oemPaidNetworkAllowed && config.oemPaid) {
+            if (shouldIgnoreBasedOnChecksForTrustedOrOemPaidOrOemPrivate(
+                    config, untrustedNetworkAllowed, oemPaidNetworkAllowed,
+                    oemPrivateNetworkAllowed)) {
                 continue;
             }
             Set<ExtendedWifiNetworkSuggestion> autoJoinEnabledExtSuggestions =
@@ -143,7 +177,8 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     private void findMatchedSuggestionNetworks(List<ScanDetail> scanDetails,
             MatchMetaInfo matchMetaInfo,
             Set<ExtendedWifiNetworkSuggestion> autoJoinDisabledSuggestions,
-            boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed) {
+            boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
+            boolean oemPrivateNetworkAllowed) {
         for (ScanDetail scanDetail : scanDetails) {
             Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestions =
                     mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(scanDetail);
@@ -158,12 +193,9 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                     continue;
                 }
                 WifiConfiguration config = ewns.wns.wifiConfiguration;
-                // If untrusted network is not allowed, ignore untrusted suggestion.
-                if (!untrustedNetworkAllowed && !config.trusted) {
-                    continue;
-                }
-                // If oem paid network is not allowed, ignore oem paid suggestion.
-                if (!oemPaidNetworkAllowed && config.oemPaid) {
+                if (shouldIgnoreBasedOnChecksForTrustedOrOemPaidOrOemPrivate(
+                        config, untrustedNetworkAllowed, oemPaidNetworkAllowed,
+                        oemPrivateNetworkAllowed)) {
                     continue;
                 }
                 if (WifiConfiguration.isMetered(config, null)

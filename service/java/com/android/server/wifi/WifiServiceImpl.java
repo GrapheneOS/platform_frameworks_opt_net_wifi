@@ -455,6 +455,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiInjector.getWifiNetworkFactory().register();
             mWifiInjector.getUntrustedWifiNetworkFactory().register();
             mWifiInjector.getOemPaidWifiNetworkFactory().register();
+            mWifiInjector.getOemPrivateWifiNetworkFactory().register();
             mWifiInjector.getWifiP2pConnection().handleBootCompleted();
             mTetheredSoftApTracker.handleBootCompleted();
         });
@@ -3387,6 +3388,7 @@ public class WifiServiceImpl extends BaseWifiService {
             mWifiInjector.getWifiNetworkFactory().dump(fd, pw, args);
             mWifiInjector.getUntrustedWifiNetworkFactory().dump(fd, pw, args);
             mWifiInjector.getOemPaidWifiNetworkFactory().dump(fd, pw, args);
+            mWifiInjector.getOemPrivateWifiNetworkFactory().dump(fd, pw, args);
             pw.println("Wlan Wake Reasons:" + mWifiNative.getWlanWakeReasonCount());
             pw.println();
             mWifiConfigManager.dump(fd, pw, args);

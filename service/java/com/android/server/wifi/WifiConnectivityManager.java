@@ -169,6 +169,7 @@ public class WifiConnectivityManager {
     private boolean mAutoJoinEnabledExternal = true; // enabled by default
     private boolean mUntrustedConnectionAllowed = false;
     private boolean mOemPaidConnectionAllowed = false;
+    private boolean mOemPrivateConnectionAllowed = false;
     private boolean mTrustedConnectionAllowed = false;
     private boolean mSpecificNetworkRequestInProgress = false;
     private int mScanRestartCount = 0;
@@ -328,7 +329,7 @@ public class WifiConnectivityManager {
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
                 scanDetails, bssidBlocklist, mWifiInfo, clientModeManager.isConnected(),
                 clientModeManager.isDisconnected(), mUntrustedConnectionAllowed,
-                mOemPaidConnectionAllowed);
+                mOemPaidConnectionAllowed, mOemPrivateConnectionAllowed);
         mLatestCandidates = candidates;
         mLatestCandidatesTimestampMs = mClock.getElapsedSinceBootMillis();
 
@@ -1897,7 +1898,7 @@ public class WifiConnectivityManager {
         // External triggers to disable always trumps any internal state.
         setAutoJoinEnabled(mAutoJoinEnabledExternal
                 && (mUntrustedConnectionAllowed || mOemPaidConnectionAllowed
-                || mTrustedConnectionAllowed)
+                || mOemPrivateConnectionAllowed || mTrustedConnectionAllowed)
                 && !mSpecificNetworkRequestInProgress);
         startConnectivityScan(SCAN_IMMEDIATELY);
     }
@@ -1934,6 +1935,18 @@ public class WifiConnectivityManager {
 
         if (mOemPaidConnectionAllowed != allowed) {
             mOemPaidConnectionAllowed = allowed;
+            checkAllStatesAndEnableAutoJoin();
+        }
+    }
+
+    /**
+     * Triggered when {@link OemPrivateWifiNetworkFactory} has a pending network request.
+     */
+    public void setOemPrivateConnectionAllowed(boolean allowed) {
+        localLog("setOemPrivateConnectionAllowed: allowed=" + allowed);
+
+        if (mOemPrivateConnectionAllowed != allowed) {
+            mOemPrivateConnectionAllowed = allowed;
             checkAllStatesAndEnableAutoJoin();
         }
     }

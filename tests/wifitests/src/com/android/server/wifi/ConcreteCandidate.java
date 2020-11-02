@@ -32,6 +32,7 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     private boolean mIsEphemeral;
     private boolean mIsTrusted = true;
     private boolean mIsOemPaid;
+    private boolean mIsOemPrivate;
     private boolean mCarrierOrPrivileged;
     private boolean mIsMetered;
     private boolean mHasNoInternetAccess;
@@ -146,6 +147,16 @@ public final class ConcreteCandidate implements WifiCandidates.Candidate {
     @Override
     public boolean isOemPaid() {
         return mIsOemPaid;
+    }
+
+    public ConcreteCandidate setOemPrivate(boolean isOemPrivate) {
+        mIsOemPrivate = isOemPrivate;
+        return this;
+    }
+
+    @Override
+    public boolean isOemPrivate() {
+        return mIsOemPrivate;
     }
 
     public ConcreteCandidate setCarrierOrPrivileged(boolean carrierOrPrivileged) {

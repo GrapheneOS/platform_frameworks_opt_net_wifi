@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import static android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET;
 import static android.net.NetworkCapabilities.NET_CAPABILITY_OEM_PAID;
+import static android.net.NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE;
 import static android.net.NetworkCapabilities.NET_CAPABILITY_TRUSTED;
 import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
@@ -605,7 +606,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.addNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME, null);
                     // untrusted/oem-paid networks need a corresponding NetworkRequest.
-                    if (suggestion.isUntrusted() || suggestion.isOemPaid()) {
+                    if (suggestion.isUntrusted() || suggestion.isOemPaid()
+                            || suggestion.isOemPrivate()) {
                         NetworkRequest.Builder networkRequestBuilder =
                                 new NetworkRequest.Builder()
                                         .addTransportType(TRANSPORT_WIFI);
@@ -614,6 +616,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         }
                         if (suggestion.isOemPaid()) {
                             networkRequestBuilder.addCapability(NET_CAPABILITY_OEM_PAID);
+                        }
+                        if (suggestion.isOemPrivate()) {
+                            networkRequestBuilder.addCapability(NET_CAPABILITY_OEM_PRIVATE);
                         }
                         NetworkRequest networkRequest = networkRequestBuilder.build();
                         ConnectivityManager.NetworkCallback networkCallback =
@@ -640,7 +645,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.removeNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME);
                     // untrusted/oem-paid networks need a corresponding NetworkRequest.
-                    if (suggestion.isUntrusted() || suggestion.isOemPaid()) {
+                    if (suggestion.isUntrusted() || suggestion.isOemPaid()
+                            || suggestion.isOemPrivate()) {
                         Pair<NetworkRequest, ConnectivityManager.NetworkCallback> nrAndNc =
                                 sActiveRequests.remove(suggestion.getSsid());
                         if (nrAndNc == null) {
@@ -892,6 +898,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 suggestionBuilder.setUntrusted(true);
             } else if (option.equals("-o")) {
                 suggestionBuilder.setOemPaid(true);
+            } else if (option.equals("-p")) {
+                suggestionBuilder.setOemPrivate(true);
             } else if (option.equals("-m")) {
                 suggestionBuilder.setIsMetered(true);
             } else if (option.equals("-s")) {
@@ -900,7 +908,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 suggestionBuilder.setIsInitialAutojoinEnabled(false);
             } else if (option.equals("-b")) {
                 suggestionBuilder.setBssid(MacAddress.fromString(getNextArgRequired()));
-            } else if (option.equals("-p")) {
+            } else if (option.equals("-e")) {
                 suggestionBuilder.setIsEnhancedMacRandomizationEnabled(false);
             } else {
                 pw.println("Ignoring unknown option " + option);
@@ -1156,8 +1164,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Current wifi status");
         pw.println("  set-verbose-logging enabled|disabled ");
         pw.println("    Set the verbose logging enabled or disabled");
-        pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-o] [-m] [-s]"
-                + "[-d] [-b <bssid>] [-p]");
+        pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-o] [-p] [-m] "
+                + " [-s] [-d] [-b <bssid>] [-e]");
         pw.println("    Add a network suggestion with provided params");
         pw.println("    Use 'network-suggestions-set-user-approved " + SHELL_PACKAGE_NAME + " yes'"
                 +  " to approve suggestions added via shell (Needs root access)");
@@ -1171,11 +1179,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("           - 'wpa3' - WPA-3 PSK networks");
         pw.println("    -u - Mark the suggestion untrusted.");
         pw.println("    -o - Mark the suggestion oem paid.");
+        pw.println("    -p - Mark the suggestion oem private.");
         pw.println("    -m - Mark the suggestion metered.");
         pw.println("    -s - Share the suggestion with user.");
         pw.println("    -d - Mark the suggestion autojoin disabled.");
         pw.println("    -b <bssid> - Set specific BSSID.");
-        pw.println("    -p - Mark the suggestion to use persistent MAC randomization.");
+        pw.println("    -e - Disable enhanced randomization "
+                + "(i.e use persistent MAC randomization).");
         pw.println("  remove-suggestion <ssid>");
         pw.println("    Remove a network suggestion with provided SSID of the network");
         pw.println("  remove-all-suggestions");
