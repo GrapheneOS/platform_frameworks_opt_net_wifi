@@ -89,7 +89,8 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                     WifiConfiguration currentNetwork, String currentBssid, boolean connected,
                     boolean untrustedNetworkAllowed /* unused */,
                     boolean oemPaidNetworkAllowed /* unused */,
-                    @NonNull OnConnectableListener onConnectableListener) {
+                    boolean oemPrivateNetworkAllowed /* unused */,
+            @NonNull OnConnectableListener onConnectableListener) {
         findMatchedSavedNetworks(scanDetails, onConnectableListener);
         findMatchedPasspointNetworks(scanDetails, onConnectableListener);
     }

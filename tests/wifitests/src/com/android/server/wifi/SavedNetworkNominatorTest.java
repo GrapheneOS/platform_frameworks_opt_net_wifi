@@ -112,7 +112,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         }
 
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -138,7 +138,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.isSimPresent(eq(INVALID_SUBID))).thenReturn(false);
 
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -165,7 +165,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         }
 
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -190,13 +190,13 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
 
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, times(2)).onConnectable(any(), any());
         reset(mOnConnectableListener);
         savedConfigs[1].allowAutojoin = false;
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(),
                 mWifiConfigurationArgumentCaptor.capture());
         WifiConfigurationTestUtil.assertConfigurationEqual(savedConfigs[0],
@@ -224,7 +224,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
             wifiConfiguration.allowAutojoin = false;
         }
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
 
@@ -246,7 +246,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false))
                 .thenReturn(passpointCandidates);
         mSavedNetworkNominator.nominateNetworks(scanDetails, null, null,
-                false, false, true, mOnConnectableListener);
+                false, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(scanDetail1, configuration1);
         verify(mOnConnectableListener, never()).onConnectable(scanDetail2, configuration2);
     }
@@ -270,7 +270,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
                 .thenReturn(false);
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
         reset(mOnConnectableListener);
         when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
@@ -301,7 +301,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(false);
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
         verify(mWifiCarrierInfoManager)
                 .sendImsiProtectionExemptionNotificationIfRequired(TEST_CARRIER_ID);
@@ -309,7 +309,7 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(true);
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
         // If from settings app, will bypass the IMSI check.
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
@@ -336,14 +336,14 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
                 .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
                 .thenReturn(true);
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
 
         when(mWifiNetworkSuggestionsManager
                 .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
                 .thenReturn(false);
         mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, mOnConnectableListener);
+                null, null, true, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
     }
 }

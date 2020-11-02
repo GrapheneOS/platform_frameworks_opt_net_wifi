@@ -379,7 +379,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mCandidateList = new ArrayList<WifiCandidates.Candidate>();
         mCandidateList.add(mCandidate1);
         when(ns.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean())).thenReturn(mCandidateList);
+                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(mCandidateList);
         when(ns.selectNetwork(any()))
                 .then(new AnswerWithArguments() {
                     public WifiConfiguration answer(List<WifiCandidates.Candidate> candidateList) {
@@ -929,7 +929,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidateList.add(mCandidate1);
         candidateList.add(otherCandidate);
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean())).thenReturn(candidateList);
+                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(candidateList);
 
         // Set WiFi to disconnected state to trigger scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -995,7 +995,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidateList.add(mCandidate1);
         candidateList.add(otherCandidate);
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean())).thenReturn(candidateList);
+                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(candidateList);
 
         // Set WiFi to disconnected state to trigger scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -2695,8 +2695,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * on a DBS supported device.
      *
      * Expected behavior: WifiConnectivityManager invokes
-     * {@link WifiNetworkSelector#selectNetwork(List, HashSet, WifiInfo, boolean, boolean, boolean)}
-     * after filtering out the scan results obtained via DBS scan.
+     * {@link WifiNetworkSelector#getCandidatesFromScan(List, Set, WifiInfo, boolean, boolean,
+     * boolean, boolean, boolean)} after filtering out the scan results obtained via DBS scan.
      */
     @Test
     public void filterScanResultsWithOneRadioChainInfoForNetworkSelectionIfConfigDisabled() {
@@ -2714,13 +2714,16 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
             public List<WifiCandidates.Candidate> answer(
                     List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
                     boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
-                    boolean oemPaidNetworkAllowed) throws Exception {
+                    boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed)
+                    throws Exception {
                 capturedScanDetails.addAll(scanDetails);
                 return null;
             }}).when(mWifiNS).getCandidatesFromScan(
-                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), eq(true),
+                    eq(false));
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+        mWifiConnectivityManager.setOemPaidConnectionAllowed(true);
         // Set WiFi to disconnected state with screen on which triggers a scan immediately.
         setWifiEnabled(true);
         setScreenState(true);
@@ -2770,13 +2773,16 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
             public List<WifiCandidates.Candidate> answer(
                     List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
                     boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
-                    boolean oemPaidNetworkAllowed) throws Exception {
+                    boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed)
+                    throws Exception {
                 capturedScanDetails.addAll(scanDetails);
                 return null;
             }}).when(mWifiNS).getCandidatesFromScan(
-                any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), eq(false),
+                    eq(true));
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+        mWifiConnectivityManager.setOemPrivateConnectionAllowed(true);
         // Set WiFi to disconnected state with screen on which triggers a scan immediately.
         setWifiEnabled(true);
         setScreenState(true);

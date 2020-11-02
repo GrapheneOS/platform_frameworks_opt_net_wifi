@@ -358,6 +358,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private WifiNetworkFactory mNetworkFactory;
     private UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
     private OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
+    private OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
     private WifiNetworkAgent mNetworkAgent;
 
     private byte[] mRssiRanges;
@@ -600,6 +601,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             WifiNetworkFactory networkFactory,
             UntrustedWifiNetworkFactory untrustedWifiNetworkFactory,
             OemPaidWifiNetworkFactory oemPaidWifiNetworkFactory,
+            OemPrivateWifiNetworkFactory oemPrivateWifiNetworkFactory,
             WifiLastResortWatchdog wifiLastResortWatchdog,
             WakeupController wakeupController,
             WifiLockManager wifiLockManager,
@@ -681,6 +683,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mUntrustedNetworkFactory = untrustedWifiNetworkFactory;
         mOemPaidWifiNetworkFactory = oemPaidWifiNetworkFactory;
+        mOemPrivateWifiNetworkFactory = oemPrivateWifiNetworkFactory;
 
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWakeupController = wakeupController;
@@ -2275,6 +2278,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
             mWifiInfo.setOemPaid(config.oemPaid);
+            mWifiInfo.setOemPrivate(config.oemPrivate);
             mWifiInfo.setOsuAp(config.osu);
             if (config.fromWifiNetworkSpecifier || config.fromWifiNetworkSuggestion) {
                 mWifiInfo.setRequestingPackageName(config.creatorName);
@@ -2733,6 +2737,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiInfo.setEphemeral(config.ephemeral);
             mWifiInfo.setTrusted(config.trusted);
             mWifiInfo.setOemPaid(config.oemPaid);
+            mWifiInfo.setOemPrivate(config.oemPrivate);
             mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpResults.leaseDuration);
             mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(mLastBssid, mWifiInfo.getSSID());
         }
@@ -3609,6 +3614,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
         } else {
             builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
+        }
+        if (mWifiInfo.isOemPrivate()) {
+            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
+        } else {
+            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
         }
 
         builder.setOwnerUid(currentWifiConfiguration.creatorUid);
@@ -5420,7 +5430,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private boolean hasConnectionRequests() {
         return mNetworkFactory.hasConnectionRequests()
                 || mUntrustedNetworkFactory.hasConnectionRequests()
-                || mOemPaidWifiNetworkFactory.hasConnectionRequests();
+                || mOemPaidWifiNetworkFactory.hasConnectionRequests()
+                || mOemPrivateWifiNetworkFactory.hasConnectionRequests();
     }
 
     /**

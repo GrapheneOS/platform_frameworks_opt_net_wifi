@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import static android.net.NetworkCapabilities.NET_CAPABILITY_OEM_PAID;
+import static android.net.NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE;
 import static android.net.NetworkCapabilitiesProto.NET_CAPABILITY_TRUSTED;
 import static android.net.NetworkCapabilitiesProto.TRANSPORT_WIFI;
 import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
@@ -524,6 +525,39 @@ public class WifiShellCommandTest extends WifiBaseTest {
             return (sL.size() == 1)
                     && (sL.get(0).getSsid().equals("ssid1234"))
                     && (sL.get(0).isOemPaid());
+        }), eq(SHELL_PACKAGE_NAME));
+        verify(mConnectivityManager).unregisterNetworkCallback(
+                any(ConnectivityManager.NetworkCallback.class));
+    }
+
+    @Test
+    public void testAddSuggestionWithOemPrivate() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"add-suggestion", "ssid1234", "open", "-p"});
+        verify(mWifiService).addNetworkSuggestions(argThat(sL -> {
+            return (sL.size() == 1)
+                    && (sL.get(0).getSsid().equals("ssid1234"))
+                    && (sL.get(0).isOemPrivate());
+        }), eq(SHELL_PACKAGE_NAME), any());
+        verify(mConnectivityManager).requestNetwork(argThat(nR -> {
+            return (nR.hasTransport(TRANSPORT_WIFI))
+                    && (nR.hasCapability(NET_CAPABILITY_OEM_PRIVATE));
+        }), any(ConnectivityManager.NetworkCallback.class));
+
+        when(mWifiService.getNetworkSuggestions(any()))
+                .thenReturn(Arrays.asList(
+                        new WifiNetworkSuggestion.Builder()
+                                .setSsid("ssid1234")
+                                .setOemPrivate(true)
+                                .build()));
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"remove-suggestion", "ssid1234"});
+        verify(mWifiService).removeNetworkSuggestions(argThat(sL -> {
+            return (sL.size() == 1)
+                    && (sL.get(0).getSsid().equals("ssid1234"))
+                    && (sL.get(0).isOemPrivate());
         }), eq(SHELL_PACKAGE_NAME));
         verify(mConnectivityManager).unregisterNetworkCallback(
                 any(ConnectivityManager.NetworkCallback.class));
