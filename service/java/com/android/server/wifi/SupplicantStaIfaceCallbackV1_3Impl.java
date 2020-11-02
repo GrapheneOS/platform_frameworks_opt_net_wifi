@@ -118,8 +118,7 @@ abstract class SupplicantStaIfaceCallbackV1_3Impl extends
 
     @Override
     public void onEapFailure_1_3(int code) {
-        mWifiMonitor.broadcastAuthenticationFailureEvent(
-                mIfaceName, WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE, code);
+        mCallbackV12.onEapFailure_1_1(code);
     }
 
     @Override
