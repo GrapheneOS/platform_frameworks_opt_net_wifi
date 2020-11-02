@@ -51,7 +51,6 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
-import android.os.BasicShellCommandHandler;
 import android.os.Binder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -60,6 +59,7 @@ import android.text.TextUtils;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.utils.BasicShellCommandHandler;
 import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
