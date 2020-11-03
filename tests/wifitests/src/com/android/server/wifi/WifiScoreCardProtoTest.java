@@ -69,7 +69,7 @@ public class WifiScoreCardProtoTest extends WifiBaseTest {
                 WifiScoreCardProto.SecurityType.EAP.getNumber());
         assertEquals(WifiConfiguration.SECURITY_TYPE_SAE,
                 WifiScoreCardProto.SecurityType.SAE.getNumber());
-        assertEquals(WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B,
+        assertEquals(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT,
                 WifiScoreCardProto.SecurityType.EAP_SUITE_B.getNumber());
         assertEquals(WifiConfiguration.SECURITY_TYPE_OWE,
                 WifiScoreCardProto.SecurityType.OWE.getNumber());
