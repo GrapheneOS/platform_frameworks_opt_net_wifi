@@ -5114,7 +5114,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     /**
      * Ensure that {@link ClientModeImpl#dump(FileDescriptor, PrintWriter, String[])}
-     * {@link ClientModeImpl#updateLinkLayerStatsRssiAndScoreReport()}, at least once before calling
+     * {@link WifiNative#getWifiLinkLayerStats(String)}, at least once before calling
      * {@link WifiScoreReport#dump(FileDescriptor, PrintWriter, String[])}.
      *
      * This ensures that WifiScoreReport will always get updated RSSI and link layer stats before

@@ -96,8 +96,6 @@ public interface ClientMode {
 
     void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args);
 
-    void updateLinkLayerStatsRssiAndScoreReport();
-
     String getFactoryMacAddress();
 
     /**

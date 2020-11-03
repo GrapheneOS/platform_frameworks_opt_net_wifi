@@ -4728,7 +4728,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /**
      * Fetches link stats and updates Wifi Score Report.
      */
-    public void updateLinkLayerStatsRssiAndScoreReport() {
+    private void updateLinkLayerStatsRssiAndScoreReport() {
         sendMessage(CMD_ONESHOT_RSSI_POLL);
     }
 
