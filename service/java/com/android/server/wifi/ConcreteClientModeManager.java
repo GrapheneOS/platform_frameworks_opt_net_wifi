@@ -1053,11 +1053,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public void updateLinkLayerStatsRssiAndScoreReport() {
-        getClientMode().updateLinkLayerStatsRssiAndScoreReport();
-    }
-
-    @Override
     public void enableVerboseLogging(boolean verbose) {
         mVerboseLoggingEnabled = verbose;
         getClientMode().enableVerboseLogging(verbose);
