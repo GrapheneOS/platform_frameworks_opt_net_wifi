@@ -352,6 +352,13 @@ public class WifiConnectivityManager {
         return handleCandidatesFromScanResults(listenerName, candidates);
     }
 
+    /**
+     * Executes selection of best network from the candidates provided, initiation of connection
+     * attempt to that network.
+     *
+     * @return true - if a candidate is selected by WifiNetworkSelector
+     *         false - if no candidate is selected by WifiNetworkSelector
+     */
     private boolean handleCandidatesFromScanResults(
             String listenerName, List<WifiCandidates.Candidate> candidates) {
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
@@ -520,7 +527,7 @@ public class WifiConnectivityManager {
                 Log.i(TAG, "Number of scan results ignored due to single radio chain scan: "
                         + mNumScanResultsIgnoredDueToSingleRadioChain);
             }
-            boolean wasConnectAttempted = handleScanResults(mScanDetails,
+            boolean wasCandidateSelected = handleScanResults(mScanDetails,
                     ALL_SINGLE_SCAN_LISTENER, isFullBandScanResults);
             clearScanDetails();
 
@@ -529,7 +536,7 @@ public class WifiConnectivityManager {
             // Note: We don't update the background scan metrics any more as it is
             //       not in use.
             if (mPnoScanStarted) {
-                if (wasConnectAttempted) {
+                if (wasCandidateSelected) {
                     mWifiMetrics.incrementNumConnectivityWatchdogPnoBad();
                 } else {
                     mWifiMetrics.incrementNumConnectivityWatchdogPnoGood();
@@ -541,7 +548,7 @@ public class WifiConnectivityManager {
                 // Done with initial scan
                 setInitialScanState(INITIAL_SCAN_STATE_COMPLETE);
 
-                if (wasConnectAttempted) {
+                if (wasCandidateSelected) {
                     Log.i(TAG, "Connection attempted with the reduced initial scans");
                     schedulePeriodicScanTimer(
                             getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
@@ -553,7 +560,7 @@ public class WifiConnectivityManager {
                     mFailedInitialPartialScan = true;
                 }
             } else if (mInitialScanState == INITIAL_SCAN_STATE_COMPLETE) {
-                if (mFailedInitialPartialScan && wasConnectAttempted) {
+                if (mFailedInitialPartialScan && wasCandidateSelected) {
                     // Initial scan failed, but following full scan succeeded
                     mWifiMetrics.reportInitialPartialScan(mInitialPartialScanChannelCount, false);
                 }
@@ -713,12 +720,12 @@ public class WifiConnectivityManager {
                 mScanDetails.add(ScanResultUtil.toScanDetail(result));
             }
 
-            boolean wasConnectAttempted;
-            wasConnectAttempted = handleScanResults(mScanDetails, PNO_SCAN_LISTENER, false);
+            boolean wasCandidateSelected =
+                    handleScanResults(mScanDetails, PNO_SCAN_LISTENER, false);
             clearScanDetails();
             mScanRestartCount = 0;
 
-            if (!wasConnectAttempted) {
+            if (!wasCandidateSelected) {
                 // The scan results were rejected by WifiNetworkSelector due to low RSSI values
 
                 // Lazy initialization
