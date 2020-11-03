@@ -396,6 +396,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiNetworkFactory mWifiNetworkFactory;
     @Mock UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     @Mock OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
+    @Mock OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
     @Mock WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock LinkProbeManager mLinkProbeManager;
     @Mock PackageManager mPackageManager;
@@ -472,6 +473,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
         when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
+        when(mOemPrivateWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
 
         mFrameworkFacade = getFrameworkFacade();
         mContext = getContext();
@@ -577,7 +579,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 mBssidBlocklistMonitor, mConnectionFailureNotifier,
                 WifiInjector.NETWORK_CAPABILITIES_FILTER, mWifiNetworkFactory,
                 mUntrustedWifiNetworkFactory, mOemPaidWifiNetworkFactory,
-                mWifiLastResortWatchdog, mWakeupController,
+                mOemPrivateWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
                 mWifiLockManager, mFrameworkFacade, mLooper.getLooper(),
                 mCountryCode, mWifiNative,
                 mWrongPasswordNotifier, mWifiTrafficPoller, mLinkProbeManager,
@@ -766,6 +768,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
+        when(mOemPrivateWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
 
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.networkId = FRAMEWORK_NETWORK_ID;
@@ -1241,6 +1244,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
+        when(mOemPrivateWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
 
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         config.networkId = FRAMEWORK_NETWORK_ID + 1;
@@ -1267,6 +1271,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
         when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
+        when(mOemPrivateWifiNetworkFactory.hasConnectionRequests()).thenReturn(false);
 
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
 
@@ -4657,10 +4662,10 @@ public class ClientModeImplTest extends WifiBaseTest {
      */
     @Test
     public void testWifiInfoOnConnectingNextNetwork() throws Exception {
-
         mConnectedNetwork.ephemeral = true;
         mConnectedNetwork.trusted = true;
         mConnectedNetwork.oemPaid = true;
+        mConnectedNetwork.oemPrivate = true;
         mConnectedNetwork.osu = true;
 
         triggerConnect();
@@ -4685,6 +4690,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(mConnectedNetwork.ephemeral, mWifiInfo.isEphemeral());
         assertEquals(mConnectedNetwork.trusted, mWifiInfo.isTrusted());
         assertEquals(mConnectedNetwork.oemPaid, mWifiInfo.isOemPaid());
+        assertEquals(mConnectedNetwork.oemPrivate, mWifiInfo.isOemPrivate());
         assertEquals(mConnectedNetwork.osu, mWifiInfo.isOsuAp());
     }
 
@@ -5194,7 +5200,6 @@ public class ClientModeImplTest extends WifiBaseTest {
                     assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID));
                 });
     }
-
     @Test
     public void testNotOemPaidNetworkCapability() throws Exception {
         mConnectedNetwork.oemPaid = false;
@@ -5202,6 +5207,26 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((agentConfig) -> { },
                 (cap) -> {
                     assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID));
+                });
+    }
+
+    @Test
+    public void testOemPrivateNetworkCapability() throws Exception {
+        mConnectedNetwork.oemPrivate = true;
+        connect();
+        expectRegisterNetworkAgent((agentConfig) -> { },
+                (cap) -> {
+                    assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE));
+                });
+    }
+
+    @Test
+    public void testNotOemPrivateNetworkCapability() throws Exception {
+        mConnectedNetwork.oemPrivate = false;
+        connect();
+        expectRegisterNetworkAgent((agentConfig) -> { },
+                (cap) -> {
+                    assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE));
                 });
     }
 

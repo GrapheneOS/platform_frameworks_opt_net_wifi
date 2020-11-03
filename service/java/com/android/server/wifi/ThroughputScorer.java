@@ -52,10 +52,21 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
     // config_wifi_framework_RSSI_SCORE_SLOPE
     public static final int RSSI_SCORE_SLOPE_IS_4 = 4;
 
+    /**
+     * Sample scoring buckets (assumes default overlay bucket sizes for metered, saved, etc):
+     * 0 -> 500: OEM private
+     * 500 -> 1000: OEM paid
+     * 1000 -> 1500: untrusted 3rd party
+     * 1500 -> 2000: untrusted carrier
+     * 2000 -> 2500: metered suggestions
+     * 2500 -> 3000: metered saved
+     * 3000 -> 3500: unmetered suggestions
+     * 3500 -> 4000: unmetered saved
+     */
     public static final int TRUSTED_AWARD = 1000;
     public static final int HALF_TRUSTED_AWARD = 1000 / 2;
-
     public static final int NOT_OEM_PAID_AWARD = 500;
+    public static final int NOT_OEM_PRIVATE_AWARD = 500;
 
     private static final boolean USE_USER_CONNECT_CHOICE = true;
 
@@ -120,9 +131,19 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
             notOemPaidAward = 0;
         }
 
+        int notOemPrivateAward = NOT_OEM_PRIVATE_AWARD;
+        if (candidate.isOemPrivate()) {
+            savedNetworkAward = 0; // Saved networks are not oem paid, but clear anyway
+            unmeteredAward = 0; // Ignore metered for oem paid networks
+            trustedAward = 0; // Ignore untrusted for oem paid networks.
+            notOemPaidAward = 0;
+            notOemPrivateAward = 0;
+        }
+
+
         int score = rssiBaseScore + throughputBonusScore
                 + currentNetworkBoost + securityAward + unmeteredAward + savedNetworkAward
-                + trustedAward + notOemPaidAward;
+                + trustedAward + notOemPaidAward + notOemPrivateAward;
 
         if (candidate.getLastSelectionWeight() > 0.0) {
             // Put a recently-selected network in a tier above everything else,
@@ -139,6 +160,7 @@ final class ThroughputScorer implements WifiCandidates.CandidateScorer {
                     + " savedNetworkAward: " + savedNetworkAward
                     + " trustedAward: " + trustedAward
                     + " notOemPaidAward: " + notOemPaidAward
+                    + " notOemPrivateAward: " + notOemPrivateAward
                     + " final score: " + score);
         }
 

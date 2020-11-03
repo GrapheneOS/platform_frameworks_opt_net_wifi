@@ -477,6 +477,21 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                         TEST_PACKAGE_1, TEST_FEATURE));
     }
 
+
+    @Test
+    public void testAddOemPrivateNetworkSuggestionOnPreSDevices() {
+        assumeFalse(SdkLevel.isAtLeastS());
+
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createEapNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
+        networkSuggestion.wifiConfiguration.oemPrivate = true;
+        List<WifiNetworkSuggestion> networkSuggestionList = Arrays.asList(networkSuggestion);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+    }
+
     @Test
     public void testSetSubscriptionIdOnPreSDevices() {
         assumeFalse(SdkLevel.isAtLeastS());

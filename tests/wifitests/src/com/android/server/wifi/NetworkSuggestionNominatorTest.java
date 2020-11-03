@@ -118,7 +118,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -159,7 +159,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -200,7 +200,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -244,7 +244,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -291,7 +291,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -342,7 +342,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -391,7 +391,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -450,7 +450,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -498,7 +498,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -556,7 +556,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -612,7 +612,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) ->
                         connectableNetworks.add(Pair.create(scanDetail, configuration)));
 
@@ -670,7 +670,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -735,7 +735,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -792,7 +792,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 .thenReturn(matchedExtSuggestions);
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -836,7 +836,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -887,7 +887,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -936,7 +936,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -947,7 +947,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
     }
 
     /**
-     * Ensure that we nominate the no matching network suggestion.
+     * Ensure that we nominate no matching network suggestion.
      * Because the only matched suggestion is untrusted and untrusted is not allowed
      * Expected connectable Networks: {}
      */
@@ -980,7 +980,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -1024,7 +1024,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, true, false,
+                Arrays.asList(scanDetails), null, null, true, true, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -1032,11 +1032,11 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         validateConnectableNetworks(connectableNetworks, scanSsids[0]);
 
-        verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+        verifyAddToWifiConfigManager(false, false, false, suggestions[0].wns.wifiConfiguration);
     }
 
     /**
-     * Ensure that we nominate the no matching network suggestion.
+     * Ensure that we nominate no matching network suggestion.
      * Because the only matched suggestion is oem paid and oem paid is not allowed
      * Expected connectable Networks: {}
      */
@@ -1069,7 +1069,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -1114,7 +1114,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, true,
+                Arrays.asList(scanDetails), null, null, true, false, true, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -1122,8 +1122,299 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         validateConnectableNetworks(connectableNetworks, scanSsids[0]);
 
-        verifyAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+        verifyAddToWifiConfigManager(true, true, false, suggestions[0].wns.wifiConfiguration);
     }
+
+    /**
+     * Ensure that we nominate no matching network suggestion.
+     * Because the only matched suggestion is oem private and oem private is not allowed
+     * Expected connectable Networks: {}
+     */
+    @Test
+    public void testSelectNetworkSuggestionForOneMatchOemPrivateNotAllow() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+        suggestions[0].wns.wifiConfiguration.oemPrivate = true;
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+        assertTrue(connectableNetworks.isEmpty());
+    }
+
+
+    /**
+     * Ensure that we nominate the one matching network suggestion.
+     * Because the only matched suggestion is oem private and oem private is allowed
+     * Expected connectable Networks: {suggestionSsids[0]}
+     */
+    @Test
+    public void testSelectNetworkSuggestionForOneMatchOemPrivateAllow() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+        suggestions[0].wns.wifiConfiguration.oemPrivate = true;
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false, false, true,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+
+        validateConnectableNetworks(connectableNetworks, scanSsids[0]);
+
+        verifyAddToWifiConfigManager(true, false, true, suggestions[0].wns.wifiConfiguration);
+    }
+
+    /**
+     * Ensure that we nominate the one matching network suggestion.
+     * Because the only matched suggestion has oem private & oem paid flags and both oem private and
+     * oem paid is allowed.
+     * Ensure that only the oemPaid flag is set in the candidate chosen to connect.
+     * Expected connectable Networks: {suggestionSsids[0]}
+     */
+    @Test
+    public void
+    testSelectNetworkSuggestionForOneOemPaidAndOemPrivateMatchWithOemPaidAndOemPrivateAllow() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+        suggestions[0].wns.wifiConfiguration.oemPaid = true;
+        suggestions[0].wns.wifiConfiguration.oemPrivate = true;
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false, true, true,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+
+        validateConnectableNetworks(connectableNetworks, scanSsids[0]);
+
+        verifyAddToWifiConfigManager(true, true, false, suggestions[0].wns.wifiConfiguration);
+    }
+
+    /**
+     * Ensure that we nominate no matching network suggestion.
+     * Because the only matched suggestion has oem private & oem paid flags and both oem private and
+     * oem paid is not allowed.
+     * Expected connectable Networks: {}
+     */
+    @Test
+    public void
+    testSelectNetworkSuggestionForOneOemPaidAndOemPrivateMatchWithOemPaidAndOemPrivateNotAllow() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+        suggestions[0].wns.wifiConfiguration.oemPaid = true;
+        suggestions[0].wns.wifiConfiguration.oemPrivate = true;
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+        assertTrue(connectableNetworks.isEmpty());
+    }
+
+    /**
+     * Ensure that we nominate the one matching network suggestion.
+     * Because the only matched suggestion has oem private & oem paid flags and only oem paid is
+     * allowed.
+     * Ensure that only the oemPaid flag is set in the candidate chosen to connect.
+     * Expected connectable Networks: {suggestionSsids[0]}
+     */
+    @Test
+    public void
+            testSelectNetworkSuggestionForOneOemPaidAndOemPrivateMatchWithOemPaidAllow() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+        suggestions[0].wns.wifiConfiguration.oemPaid = true;
+        suggestions[0].wns.wifiConfiguration.oemPrivate = true;
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false, true, false,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+
+        validateConnectableNetworks(connectableNetworks, scanSsids[0]);
+
+        verifyAddToWifiConfigManager(true, true, false, suggestions[0].wns.wifiConfiguration);
+    }
+
+    /**
+     * Ensure that we nominate the one matching network suggestion.
+     * Because the only matched suggestion has oem private & oem paid flags and only oem private is
+     * allowed.
+     * Ensure that only the oemPrivate flag is set in the candidate chosen to connect.
+     * Expected connectable Networks: {suggestionSsids[0]}
+     */
+    @Test
+    public void
+            testSelectNetworkSuggestionForOneOemPaidAndOemPrivateMatchWithOemPrivateAllow() {
+        String[] scanSsids = {"test1", "test2"};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2470, 2437};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-EAP-CCMP][ESS]"};
+        int[] levels = {-67, -76};
+        String[] suggestionSsids = {"\"" + scanSsids[0] + "\""};
+        int[] securities = {SECURITY_PSK};
+        boolean[] appInteractions = {true};
+        boolean[] meteredness = {true};
+        int[] priorities = {-1};
+        int[] uids = {TEST_UID};
+        String[] packageNames = {TEST_PACKAGE};
+        boolean[] autojoin = {true};
+        boolean[] shareWithUser = {true};
+        int[] priorityGroup = {0};
+
+        ScanDetail[] scanDetails =
+                buildScanDetails(scanSsids, bssids, freqs, caps, levels, mClock);
+        ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
+                securities, appInteractions, meteredness, priorities, uids,
+                packageNames, autojoin, shareWithUser, priorityGroup);
+        suggestions[0].wns.wifiConfiguration.oemPaid = true;
+        suggestions[0].wns.wifiConfiguration.oemPrivate = true;
+        // Link the scan result with suggestions.
+        linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
+
+        setupAddToWifiConfigManager(suggestions[0].wns.wifiConfiguration);
+
+        List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
+        mNetworkSuggestionNominator.nominateNetworks(
+                Arrays.asList(scanDetails), null, null, true, false, false, true,
+                (ScanDetail scanDetail, WifiConfiguration configuration) -> {
+                    connectableNetworks.add(Pair.create(scanDetail, configuration));
+                });
+
+
+        validateConnectableNetworks(connectableNetworks, scanSsids[0]);
+
+        verifyAddToWifiConfigManager(true, false, true, suggestions[0].wns.wifiConfiguration);
+    }
+
 
     /**
      * Ensure that we nominate the no matching network suggestion.
@@ -1160,7 +1451,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
         mNetworkSuggestionNominator.nominateNetworks(
-                Arrays.asList(scanDetails), null, null, true, false, false,
+                Arrays.asList(scanDetails), null, null, true, false, false, false,
                 (ScanDetail scanDetail, WifiConfiguration configuration) -> {
                     connectableNetworks.add(Pair.create(scanDetail, configuration));
                 });
@@ -1199,6 +1490,12 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
     }
 
     private void verifyAddToWifiConfigManager(WifiConfiguration...candidates) {
+        verifyAddToWifiConfigManager(true, false, false, candidates);
+    }
+
+    private void verifyAddToWifiConfigManager(
+            boolean trustedSet, boolean oemPaidSet, boolean oemPrivateSet,
+            WifiConfiguration...candidates) {
         // check for any saved networks.
         verify(mWifiConfigManager, atLeast(candidates.length)).getConfiguredNetwork(anyString());
 
@@ -1218,6 +1515,9 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
             assertNotNull(addedWifiConfiguration);
             assertTrue(addedWifiConfiguration.ephemeral);
             assertTrue(addedWifiConfiguration.fromWifiNetworkSuggestion);
+            assertEquals(trustedSet, addedWifiConfiguration.trusted);
+            assertEquals(oemPaidSet, addedWifiConfiguration.oemPaid);
+            assertEquals(oemPrivateSet, addedWifiConfiguration.oemPrivate);
         }
 
         verify(mWifiConfigManager, times(candidates.length)).updateNetworkSelectionStatus(
