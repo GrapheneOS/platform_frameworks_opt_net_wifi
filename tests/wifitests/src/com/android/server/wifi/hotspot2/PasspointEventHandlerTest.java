@@ -156,4 +156,21 @@ public class PasspointEventHandlerTest extends WifiBaseTest {
         mHandler.notifyANQPDone(new AnqpEvent(BSSID, null));
         verify(mCallbacks).onANQPResponse(BSSID, null);
     }
+
+    /**
+     * Test for requesting Hotspot 2.0 R3 Venue URL ANQP-element.
+     */
+    @Test
+    public void requestVenueUrlAnqp() {
+        // wpa_supplicant succeeded the request.
+        when(mWifiNative.requestVenueUrlAnqp(any(), eq(BSSID_STR))).thenReturn(true);
+        assertTrue(mHandler.requestVenueUrlAnqp(BSSID));
+
+        // wpa_supplicant failed the request.
+        when(mWifiNative.requestVenueUrlAnqp(any(), eq(BSSID_STR))).thenReturn(false);
+        assertFalse(mHandler.requestVenueUrlAnqp(BSSID));
+
+        // 0 BSSID
+        assertFalse(mHandler.requestVenueUrlAnqp(0));
+    }
 }

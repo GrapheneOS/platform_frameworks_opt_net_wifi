@@ -72,6 +72,8 @@ public class ANQPParser {
                 return DomainNameElement.parse(payload);
             case ANQPVendorSpec:
                 return parseVendorSpecificElement(payload);
+            case ANQPVenueUrl:
+                return VenueUrlElement.parse(payload);
             default:
                 throw new ProtocolException("Unknown element ID: " + infoID);
         }
