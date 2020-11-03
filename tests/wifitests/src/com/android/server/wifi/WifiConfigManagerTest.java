@@ -5566,7 +5566,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                     NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP,
                     retrievedDisableTime);
             verifyUpdateNetworkStatus(retrievedNetwork, WifiConfiguration.Status.ENABLED);
-        } else if (reason < NetworkSelectionStatus.PERMANENTLY_DISABLED_STARTING_INDEX) {
+        } else if (mWifiConfigManager.getNetworkSelectionDisableTimeoutMillis(reason)
+                < Integer.MAX_VALUE) {
             // For temporarily disabled networks, we need to ensure that the current status remains
             // until the threshold is crossed.
             assertEquals(temporaryDisableReasonCounter, retrievedDisableReasonCounter);

@@ -1774,7 +1774,7 @@ public class WifiConfigManager {
         if (reason == NetworkSelectionStatus.DISABLED_NONE) {
             setNetworkSelectionEnabled(config);
             setNetworkStatus(config, WifiConfiguration.Status.ENABLED);
-        } else if (reason < NetworkSelectionStatus.PERMANENTLY_DISABLED_STARTING_INDEX) {
+        } else if (getNetworkSelectionDisableTimeoutMillis(reason) < Integer.MAX_VALUE) {
             setNetworkSelectionTemporarilyDisabled(config, reason);
             sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
         } else {
