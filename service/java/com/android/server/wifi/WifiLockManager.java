@@ -628,8 +628,7 @@ public class WifiLockManager {
         // Now switch to the new opMode
         switch (newLockMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(
-                        false)) {
+                if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(false)) {
                     Log.e(TAG, "Failed to set the OpMode to hi-perf");
                     return false;
                 }

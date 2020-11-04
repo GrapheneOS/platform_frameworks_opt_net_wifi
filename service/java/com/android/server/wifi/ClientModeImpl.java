@@ -4394,6 +4394,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiScoreCard.noteNetworkAgentCreated(mWifiInfo,
                     mNetworkAgent.getNetwork().getNetId());
             mBssidBlocklistMonitor.handleBssidConnectionSuccess(mLastBssid, mWifiInfo.getSSID());
+            // too many places to record connection failure with too many failure reasons.
+            // So only record success here.
+            mWifiMetrics.noteFirstL2ConnectionAfterBoot(true);
         }
 
         @Override
@@ -4992,6 +4995,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiLockManager.updateWifiClientConnected(true);
             mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().getNetId());
             updateLinkLayerStatsRssiAndScoreReport();
+            // too many places to record L3 failure with too many failure reasons.
+            // So only record success here.
+            mWifiMetrics.noteFirstL3ConnectionAfterBoot(true);
         }
         @Override
         public boolean processMessage(Message message) {
