@@ -21,6 +21,7 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkFactory;
 import android.net.NetworkRequest;
 import android.os.Looper;
+import android.os.WorkSource;
 import android.util.Log;
 
 import java.io.FileDescriptor;
@@ -48,7 +49,9 @@ public class OemPaidWifiNetworkFactory extends NetworkFactory {
     protected void needNetworkFor(NetworkRequest networkRequest, int score) {
         if (networkRequest.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID)) {
             if (++mConnectionReqCount == 1) {
-                mWifiConnectivityManager.setOemPaidConnectionAllowed(true);
+                mWifiConnectivityManager.setOemPaidConnectionAllowed(
+                        true, new WorkSource(networkRequest.getRequestorUid(),
+                                networkRequest.getRequestorPackageName()));
             }
         }
     }
@@ -61,7 +64,7 @@ public class OemPaidWifiNetworkFactory extends NetworkFactory {
                 return;
             }
             if (--mConnectionReqCount == 0) {
-                mWifiConnectivityManager.setOemPaidConnectionAllowed(false);
+                mWifiConnectivityManager.setOemPaidConnectionAllowed(false, null);
             }
         }
     }

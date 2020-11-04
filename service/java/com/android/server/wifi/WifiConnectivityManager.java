@@ -176,6 +176,8 @@ public class WifiConnectivityManager {
     private boolean mUntrustedConnectionAllowed = false;
     private boolean mOemPaidConnectionAllowed = false;
     private boolean mOemPrivateConnectionAllowed = false;
+    private WorkSource mOemPaidConnectionRequestorWs = null;
+    private WorkSource mOemPrivateConnectionRequestorWs = null;
     private boolean mTrustedConnectionAllowed = false;
     private boolean mSpecificNetworkRequestInProgress = false;
     private int mScanRestartCount = 0;
@@ -2020,11 +2022,13 @@ public class WifiConnectivityManager {
     /**
      * Triggered when {@link OemPaidWifiNetworkFactory} has a pending network request.
      */
-    public void setOemPaidConnectionAllowed(boolean allowed) {
-        localLog("setOemPaidConnectionAllowed: allowed=" + allowed);
+    public void setOemPaidConnectionAllowed(boolean allowed, WorkSource requestorWs) {
+        localLog("setOemPaidConnectionAllowed: allowed=" + allowed + ", requestorWs="
+                + requestorWs);
 
         if (mOemPaidConnectionAllowed != allowed) {
             mOemPaidConnectionAllowed = allowed;
+            mOemPaidConnectionRequestorWs = requestorWs;
             checkAllStatesAndEnableAutoJoin();
         }
     }
@@ -2032,11 +2036,13 @@ public class WifiConnectivityManager {
     /**
      * Triggered when {@link OemPrivateWifiNetworkFactory} has a pending network request.
      */
-    public void setOemPrivateConnectionAllowed(boolean allowed) {
-        localLog("setOemPrivateConnectionAllowed: allowed=" + allowed);
+    public void setOemPrivateConnectionAllowed(boolean allowed, WorkSource requestorWs) {
+        localLog("setOemPrivateConnectionAllowed: allowed=" + allowed + ", requestorWs="
+                + requestorWs);
 
         if (mOemPrivateConnectionAllowed != allowed) {
             mOemPrivateConnectionAllowed = allowed;
+            mOemPrivateConnectionRequestorWs = requestorWs;
             checkAllStatesAndEnableAutoJoin();
         }
     }
