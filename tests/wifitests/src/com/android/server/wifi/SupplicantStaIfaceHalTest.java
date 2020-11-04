@@ -158,6 +158,8 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
 
     SupplicantStatus mStatusSuccess;
     SupplicantStatus mStatusFailure;
+    android.hardware.wifi.supplicant.V1_4.SupplicantStatus mStatusSuccessV14;
+    android.hardware.wifi.supplicant.V1_4.SupplicantStatus mStatusFailureV14;
     ISupplicant.IfaceInfo mStaIface0;
     ISupplicant.IfaceInfo mStaIface1;
     ISupplicant.IfaceInfo mP2pIface;
@@ -254,6 +256,10 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         MockitoAnnotations.initMocks(this);
         mStatusSuccess = createSupplicantStatus(SupplicantStatusCode.SUCCESS);
         mStatusFailure = createSupplicantStatus(SupplicantStatusCode.FAILURE_UNKNOWN);
+        mStatusSuccessV14 = createSupplicantStatusV1_4(
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatusCode.SUCCESS);
+        mStatusFailureV14 = createSupplicantStatusV1_4(
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatusCode.FAILURE_UNKNOWN);
         mStaIface0 = createIfaceInfo(IfaceType.STA, WLAN0_IFACE_NAME);
         mStaIface1 = createIfaceInfo(IfaceType.STA, WLAN1_IFACE_NAME);
         mP2pIface = createIfaceInfo(IfaceType.P2P, P2P_IFACE_NAME);
@@ -2102,7 +2108,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
 
         public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
                 .getConnectionCapabilities_1_4Callback cb) {
-            cb.onValues(mStatusSuccess, mConnCapabilities);
+            cb.onValues(mStatusSuccessV14, mConnCapabilities);
         }
     }
 
@@ -2495,11 +2501,11 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
 
         /** Callback registration */
         doAnswer(new MockAnswerUtil.AnswerWithArguments() {
-            public SupplicantStatus answer(
+            public android.hardware.wifi.supplicant.V1_4.SupplicantStatus answer(
                     android.hardware.wifi.supplicant.V1_4.ISupplicantStaIfaceCallback cb)
                     throws RemoteException {
                 mISupplicantStaIfaceCallbackV14 = spy(cb);
-                return mStatusSuccess;
+                return mStatusSuccessV14;
             }
         }).when(mISupplicantStaIfaceMockV14)
                 .registerCallback_1_4(
@@ -2536,6 +2542,14 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
 
     private SupplicantStatus createSupplicantStatus(int code) {
         SupplicantStatus status = new SupplicantStatus();
+        status.code = code;
+        return status;
+    }
+
+    private android.hardware.wifi.supplicant.V1_4.SupplicantStatus
+            createSupplicantStatusV1_4(int code) {
+        android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                new android.hardware.wifi.supplicant.V1_4.SupplicantStatus();
         status.code = code;
         return status;
     }

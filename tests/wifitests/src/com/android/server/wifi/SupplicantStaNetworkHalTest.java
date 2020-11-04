@@ -77,6 +77,8 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     private SupplicantStaNetworkHal mSupplicantNetwork;
     private SupplicantStatus mStatusSuccess;
     private SupplicantStatus mStatusFailure;
+    private android.hardware.wifi.supplicant.V1_4.SupplicantStatus mStatusSuccessV14;
+    private android.hardware.wifi.supplicant.V1_4.SupplicantStatus mStatusFailureV14;
     @Mock private ISupplicantStaNetwork mISupplicantStaNetworkMock;
     @Mock
     private android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork mISupplicantStaNetworkV12;
@@ -160,6 +162,10 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         MockitoAnnotations.initMocks(this);
         mStatusSuccess = createSupplicantStatus(SupplicantStatusCode.SUCCESS);
         mStatusFailure = createSupplicantStatus(SupplicantStatusCode.FAILURE_UNKNOWN);
+        mStatusSuccessV14 = createSupplicantStatusV1_4(
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatusCode.SUCCESS);
+        mStatusFailureV14 = createSupplicantStatusV1_4(
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatusCode.FAILURE_UNKNOWN);
         mSupplicantVariables = new SupplicantNetworkVariables();
         setupISupplicantNetworkMock();
 
@@ -938,7 +944,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         when(mISupplicantStaNetworkV14.registerCallback_1_4(any(
                         android.hardware.wifi.supplicant.V1_4
                         .ISupplicantStaNetworkCallback.class)))
-                .thenReturn(mStatusFailure);
+                .thenReturn(mStatusFailureV14);
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
         assertFalse(mSupplicantNetwork.saveWifiConfiguration(config));
     }
@@ -1634,16 +1640,17 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
 
         /** allowedGroupCiphers v1.4 */
         doAnswer(new AnswerWithArguments() {
-            public SupplicantStatus answer(int mask) throws RemoteException {
+            public android.hardware.wifi.supplicant.V1_4.SupplicantStatus
+                    answer(int mask) throws RemoteException {
                 mSupplicantVariables.groupCipherMask = mask;
-                return mStatusSuccess;
+                return mStatusSuccessV14;
             }
         }).when(mISupplicantStaNetworkV14).setGroupCipher_1_4(any(int.class));
         doAnswer(new AnswerWithArguments() {
             public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
                     .getGroupCipher_1_4Callback cb)
                     throws RemoteException {
-                cb.onValues(mStatusSuccess, mSupplicantVariables.groupCipherMask);
+                cb.onValues(mStatusSuccessV14, mSupplicantVariables.groupCipherMask);
             }
         }).when(mISupplicantStaNetworkV14)
                 .getGroupCipher_1_4(any(android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
@@ -1699,16 +1706,17 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
 
         /** allowedPairwiseCiphers v1.4 */
         doAnswer(new AnswerWithArguments() {
-            public SupplicantStatus answer(int mask) throws RemoteException {
+            public android.hardware.wifi.supplicant.V1_4.SupplicantStatus
+                    answer(int mask) throws RemoteException {
                 mSupplicantVariables.pairwiseCipherMask = mask;
-                return mStatusSuccess;
+                return mStatusSuccessV14;
             }
         }).when(mISupplicantStaNetworkV14).setPairwiseCipher_1_4(any(int.class));
         doAnswer(new AnswerWithArguments() {
             public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaNetwork
                     .getPairwiseCipher_1_4Callback cb)
                     throws RemoteException {
-                cb.onValues(mStatusSuccess, mSupplicantVariables.pairwiseCipherMask);
+                cb.onValues(mStatusSuccessV14, mSupplicantVariables.pairwiseCipherMask);
             }
         }).when(mISupplicantStaNetworkV14)
                 .getPairwiseCipher_1_4(any(android.hardware.wifi.supplicant.V1_4
@@ -1979,12 +1987,12 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
 
         /** Callback registration */
         doAnswer(new AnswerWithArguments() {
-            public SupplicantStatus answer(
+            public android.hardware.wifi.supplicant.V1_4.SupplicantStatus answer(
                     android.hardware.wifi.supplicant.V1_4
                     .ISupplicantStaNetworkCallback cb)
                     throws RemoteException {
                 mISupplicantStaNetworkCallbackV14 = cb;
-                return mStatusSuccess;
+                return mStatusSuccessV14;
             }
         }).when(mISupplicantStaNetworkV14)
                 .registerCallback_1_4(any(
@@ -2057,6 +2065,14 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
 
     private SupplicantStatus createSupplicantStatus(int code) {
         SupplicantStatus status = new SupplicantStatus();
+        status.code = code;
+        return status;
+    }
+
+    private android.hardware.wifi.supplicant.V1_4.SupplicantStatus
+            createSupplicantStatusV1_4(int code) {
+        android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                new android.hardware.wifi.supplicant.V1_4.SupplicantStatus();
         status.code = code;
         return status;
     }
