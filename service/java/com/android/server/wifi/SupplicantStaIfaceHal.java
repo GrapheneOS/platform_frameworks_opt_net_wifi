@@ -322,10 +322,29 @@ public class SupplicantStaIfaceHal {
         }
     }
 
+    private boolean trySetupStaIfaceV1_4(@NonNull String ifaceName,
+            @NonNull ISupplicantStaIface iface)  throws RemoteException {
+        if (!isV1_4()) return false;
+
+        SupplicantStaIfaceHalCallbackV1_4 callbackV14 =
+                new SupplicantStaIfaceHalCallbackV1_4(ifaceName);
+        if (!registerCallbackV1_4(getStaIfaceMockableV1_4(iface), callbackV14)) {
+            throw new RemoteException("Init StaIface V1_4 failed.");
+        }
+        /* keep this in a store to avoid recycling by garbage collector. */
+        mISupplicantStaIfaceCallbacks.put(ifaceName, callbackV14);
+        return true;
+    }
+
     private boolean trySetupStaIfaceV1_3(@NonNull String ifaceName,
             @NonNull ISupplicantStaIface iface)  throws RemoteException {
         if (!isV1_3()) return false;
 
+        /* try newer version first. */
+        if (trySetupStaIfaceV1_4(ifaceName, iface)) {
+            logd("Newer HAL is found, skip V1_3 remaining init flow.");
+            return true;
+        }
         SupplicantStaIfaceHalCallbackV1_3 callbackV13 =
                 new SupplicantStaIfaceHalCallbackV1_3(ifaceName);
         if (!registerCallbackV1_3(getStaIfaceMockableV1_3(iface), callbackV13)) {
@@ -340,7 +359,7 @@ public class SupplicantStaIfaceHal {
             @NonNull ISupplicantStaIface iface) throws RemoteException {
         if (!isV1_2()) return false;
 
-        /* try newer version fist. */
+        /* try newer version first. */
         if (trySetupStaIfaceV1_3(ifaceName, iface)) {
             logd("Newer HAL is found, skip V1_2 remaining init flow.");
             return true;
@@ -360,7 +379,7 @@ public class SupplicantStaIfaceHal {
             @NonNull ISupplicantStaIface iface) throws RemoteException {
         if (!isV1_1()) return false;
 
-        /* try newer version fist. */
+        /* try newer version first. */
         if (trySetupStaIfaceV1_2(ifaceName, iface)) {
             logd("Newer HAL is found, skip V1_1 remaining init flow.");
             return true;
@@ -1446,6 +1465,23 @@ public class SupplicantStaIfaceHal {
             if (iface == null) return false;
             try {
                 SupplicantStatus status =  iface.registerCallback_1_3(callback);
+                return checkStatusAndLogFailure(status, methodStr);
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
+    private boolean registerCallbackV1_4(
+            android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface iface,
+            android.hardware.wifi.supplicant.V1_4.ISupplicantStaIfaceCallback callback) {
+        synchronized (mLock) {
+            String methodStr = "registerCallback_1_4";
+
+            if (iface == null) return false;
+            try {
+                SupplicantStatus status =  iface.registerCallback_1_4(callback);
                 return checkStatusAndLogFailure(status, methodStr);
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
@@ -2694,6 +2730,12 @@ public class SupplicantStaIfaceHal {
     protected class SupplicantStaIfaceHalCallbackV1_3 extends SupplicantStaIfaceCallbackV1_3Impl {
         SupplicantStaIfaceHalCallbackV1_3(@NonNull String ifaceName) {
             super(SupplicantStaIfaceHal.this, ifaceName, mWifiMonitor);
+        }
+    }
+
+    protected class SupplicantStaIfaceHalCallbackV1_4 extends SupplicantStaIfaceCallbackV1_4Impl {
+        SupplicantStaIfaceHalCallbackV1_4(@NonNull String ifaceName) {
+            super(SupplicantStaIfaceHal.this, ifaceName, mLock, mWifiMonitor);
         }
     }
 

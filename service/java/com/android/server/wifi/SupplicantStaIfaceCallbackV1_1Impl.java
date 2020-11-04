@@ -121,11 +121,7 @@ abstract class SupplicantStaIfaceCallbackV1_1Impl extends
 
     @Override
     public void onEapFailure_1_1(int code) {
-        synchronized (mLock) {
-            mStaIfaceHal.logCallback("onEapFailure_1_1");
-            mWifiMonitor.broadcastAuthenticationFailureEvent(
-                    mIfaceName, WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE, code);
-        }
+        mCallbackV10.onEapFailure(code);
     }
 
     @Override

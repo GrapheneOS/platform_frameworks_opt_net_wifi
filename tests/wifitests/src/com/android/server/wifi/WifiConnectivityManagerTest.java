@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static android.content.Intent.ACTION_SCREEN_OFF;
 import static android.content.Intent.ACTION_SCREEN_ON;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
 import static com.android.server.wifi.WifiConfigurationTestUtil.generateWifiConfig;
 
@@ -29,7 +30,6 @@ import android.app.AlarmManager;
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.app.test.TestAlarmManager;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
@@ -60,6 +60,7 @@ import android.util.LocalLog;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.ActiveModeWarden.ExternalClientModeManagerRequestListener;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.util.LruConnectionTracker;
 import com.android.server.wifi.util.ScanResultUtil;
@@ -128,6 +129,13 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(powerManager.isInteractive()).thenReturn(false);
         when(mPrimaryClientModeManager.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
         when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mPrimaryClientModeManager);
+        doAnswer(new AnswerWithArguments() {
+            public void answer(ExternalClientModeManagerRequestListener listener,
+                    WorkSource requestorWs, String ssid, String bssid) {
+                listener.onAnswer(mPrimaryClientModeManager);
+            }
+        }).when(mActiveModeWarden).requestSecondaryTransientClientModeManager(
+                any(), eq(ActiveModeWarden.INTERNAL_REQUESTOR_WS), any(), any());
 
         mWifiConnectivityManager = createConnectivityManager();
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
@@ -185,7 +193,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         validateMockitoUsage();
     }
 
-    private Context mContext;
+    private WifiContext mContext;
     private TestAlarmManager mAlarmManager;
     private TestLooper mLooper = new TestLooper();
     private WifiConnectivityManager mWifiConnectivityManager;
@@ -229,6 +237,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private MockResources mResources;
 
     private static final int CANDIDATE_NETWORK_ID = 0;
+    private static final int CANDIDATE_NETWORK_ID_2 = 2;
     private static final String CANDIDATE_SSID = "\"AnSsid\"";
     private static final String CANDIDATE_BSSID = "6c:f3:7f:ae:8c:f3";
     private static final String CANDIDATE_BSSID_2 = "6c:f3:7f:ae:8d:f3";
@@ -263,8 +272,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     private static final int LOW_RSSI_NETWORK_RETRY_START_DELAY_SEC = 20;
     private static final int LOW_RSSI_NETWORK_RETRY_MAX_DELAY_SEC = 80;
 
-    Context mockContext() {
-        Context context = mock(Context.class);
+    WifiContext mockContext() {
+        WifiContext context = mock(WifiContext.class);
 
         when(context.getResources()).thenReturn(mResources);
         when(context.getSystemService(AlarmManager.class)).thenReturn(
@@ -448,6 +457,133 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityManager.handleConnectionStateChanged(
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_CONNECTED);
+    }
+
+    /**
+     * Don't connect to the candidate network if we're already connected to that network on the
+     * primary ClientModeManager.
+     */
+    @Test
+    public void alreadyConnectedOnPrimaryCmm_dontConnectAgain() {
+        when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
+        // Set screen to on
+        setScreenState(true);
+
+        WifiConfiguration config = new WifiConfiguration();
+        config.networkId = CANDIDATE_NETWORK_ID;
+        when(mPrimaryClientModeManager.getConnectingWifiConfiguration()).thenReturn(config);
+
+        // Set WiFi to disconnected state
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        verify(mActiveModeWarden, never()).requestSecondaryTransientClientModeManager(
+                any(), any(), any(), any());
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
+                anyInt(), anyInt(), any());
+    }
+
+    /** Connect using the primary ClientModeManager if it's not connected to anything */
+    @Test
+    public void disconnectedOnPrimaryCmm_connectUsingPrimaryCmm() {
+        when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
+        // Set screen to on
+        setScreenState(true);
+
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration()).thenReturn(null);
+        when(mPrimaryClientModeManager.getConnectingWifiConfiguration()).thenReturn(null);
+
+        // Set WiFi to disconnected state
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        verify(mPrimaryClientModeManager).startConnectToNetwork(
+                CANDIDATE_NETWORK_ID, Process.WIFI_UID, "any");
+        verify(mActiveModeWarden).stopAllClientModeManagersInRole(ROLE_CLIENT_SECONDARY_TRANSIENT);
+        verify(mActiveModeWarden, never()).requestSecondaryTransientClientModeManager(
+                any(), any(), any(), any());
+    }
+
+    /** Don't crash if allocated a null ClientModeManager. */
+    @Test
+    public void requestSecondaryTransientCmm_gotNullCmm() {
+        doAnswer(new AnswerWithArguments() {
+            public void answer(ExternalClientModeManagerRequestListener listener,
+                    WorkSource requestorWs, String ssid, String bssid) {
+                listener.onAnswer(null);
+            }
+        }).when(mActiveModeWarden).requestSecondaryTransientClientModeManager(
+                any(), eq(ActiveModeWarden.INTERNAL_REQUESTOR_WS), any(), any());
+
+        // primary CMM already connected
+        WifiConfiguration config2 = new WifiConfiguration();
+        config2.networkId = CANDIDATE_NETWORK_ID_2;
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
+                .thenReturn(config2);
+
+        // Set screen to on
+        setScreenState(true);
+
+        // Set WiFi to disconnected state
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        verify(mActiveModeWarden).requestSecondaryTransientClientModeManager(
+                any(),
+                eq(ActiveModeWarden.INTERNAL_REQUESTOR_WS),
+                eq(CANDIDATE_SSID),
+                eq(CANDIDATE_BSSID));
+        verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
+                anyInt(), anyInt(), any());
+    }
+
+    /**
+     * Don't attempt to connect again if the allocated ClientModeManager is already connected to
+     * the desired network.
+     */
+    @Test
+    public void requestSecondaryTransientCmm_gotAlreadyConnectedCmm() {
+        when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
+
+        WifiConfiguration config = new WifiConfiguration();
+        config.networkId = CANDIDATE_NETWORK_ID;
+        ClientModeManager alreadyConnectedCmm = mock(ClientModeManager.class);
+        when(alreadyConnectedCmm.getConnectingWifiConfiguration()).thenReturn(config);
+
+        doAnswer(new AnswerWithArguments() {
+            public void answer(ExternalClientModeManagerRequestListener listener,
+                    WorkSource requestorWs, String ssid, String bssid) {
+                listener.onAnswer(alreadyConnectedCmm);
+            }
+        }).when(mActiveModeWarden).requestSecondaryTransientClientModeManager(
+                any(), eq(ActiveModeWarden.INTERNAL_REQUESTOR_WS), any(), any());
+
+        // primary CMM already connected
+        WifiConfiguration config2 = new WifiConfiguration();
+        config2.networkId = CANDIDATE_NETWORK_ID_2;
+        when(mPrimaryClientModeManager.getConnectedWifiConfiguration())
+                .thenReturn(config2);
+
+        // Set screen to on
+        setScreenState(true);
+
+        // Set WiFi to disconnected state
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        verify(mActiveModeWarden).requestSecondaryTransientClientModeManager(
+                any(),
+                eq(ActiveModeWarden.INTERNAL_REQUESTOR_WS),
+                eq(CANDIDATE_SSID),
+                eq("any"));
+
+        // already connected, don't connect again
+        verify(alreadyConnectedCmm, never()).startConnectToNetwork(
+                anyInt(), anyInt(), any());
     }
 
     /**
