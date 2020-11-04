@@ -1038,61 +1038,61 @@ public class WifiConnectivityManager {
         return true;
     }
 
-    private void triggerConnectToNetwork(WifiConfiguration candidate) {
-        ScanResult scanResultCandidate = candidate.getNetworkSelectionStatus().getCandidate();
-        String targetBssid = scanResultCandidate.BSSID;
-        String targetAssociationId = candidate.SSID + " : " + targetBssid;
-        int targetNetworkId = candidate.networkId;
+    private String getAssociationId(@Nullable WifiConfiguration config, @Nullable String bssid) {
+        return config == null ? "Disconnected" : config.SSID + " : " + bssid;
+    }
+
+    private void triggerConnectToNetwork(@NonNull WifiConfiguration targetNetwork) {
+        ScanResult targetScanResultCandidate =
+                targetNetwork.getNetworkSelectionStatus().getCandidate();
+        String targetBssid = targetScanResultCandidate.BSSID;
+        int targetNetworkId = targetNetwork.networkId;
 
         ClientModeManager primaryManager = getPrimaryClientModeManager();
-        WifiConfiguration currentConnectedNetwork =
-                primaryManager.getConnectedWifiConfiguration();
-        String currentAssociationId = (currentConnectedNetwork == null) ? "Disconnected" :
-                (currentConnectedNetwork.SSID + " : " + primaryManager.getConnectedBssid());
+        WifiConfiguration currentNetwork = coalesce(
+                primaryManager.getConnectedWifiConfiguration(),
+                primaryManager.getConnectingWifiConfiguration());
+        String currentBssid = coalesce(
+                primaryManager.getConnectedBssid(), primaryManager.getConnectingBssid());
 
-        localLog("Current Network: " + currentConnectedNetwork + ", Target Network: " + candidate);
+        localLog("Current Network: " + currentNetwork + ", Target Network: " + targetNetwork);
 
         // Already on desired network id
-        if (currentConnectedNetwork != null
-                && (currentConnectedNetwork.networkId == targetNetworkId
+        if (currentNetwork != null
+                && (currentNetwork.networkId == targetNetworkId
                 //TODO(b/36788683): re-enable linked configuration check
-                /* || currentConnectedNetwork.isLinked(candidate) */)) {
-            if (mConnectivityHelper.isFirmwareRoamingSupported()) {
-                // Firmware roaming is supported.
-                // Framework does nothing, firmware will roam if necessary.
-            } else {
+                /* || currentNetwork.isLinked(candidate) */)) {
+            // Is Firmware roaming control is supported?
+            //   - Yes, framework does nothing, firmware will roam if necessary.
+            //   - No, framework initiates roaming.
+            if (!mConnectivityHelper.isFirmwareRoamingSupported()) {
                 // Framework initiates roaming only if firmware doesn't support
                 // {@link android.net.wifi.WifiManager#WIFI_FEATURE_CONTROL_ROAMING}.
-                localLog("connectToNetwork: Roaming to " + targetAssociationId + " from "
-                        + currentAssociationId);
+                localLog("connectToNetwork: Roam to "
+                        + getAssociationId(targetNetwork, targetBssid) + " from "
+                        + getAssociationId(currentNetwork, currentBssid));
                 if (!shouldConnect()) {
                     return;
                 }
-                primaryManager.startRoamToNetwork(targetNetworkId, scanResultCandidate);
+                primaryManager.startRoamToNetwork(targetNetworkId, targetScanResultCandidate);
             }
             return;
         }
 
         // Need to connect to a different network id
-
         // Framework specifies the connection target BSSID if firmware doesn't support
         // {@link android.net.wifi.WifiManager#WIFI_FEATURE_CONTROL_ROAMING} or the
         // candidate configuration contains a specified BSSID.
         if (mConnectivityHelper.isFirmwareRoamingSupported()
-                && (candidate.BSSID == null
-                || candidate.BSSID.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY))) {
+                && (targetNetwork.BSSID == null
+                || targetNetwork.BSSID.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY))) {
             targetBssid = ClientModeImpl.SUPPLICANT_BSSID_ANY;
-            localLog("connectToNetwork: Connect to " + candidate.SSID + ":" + targetBssid
-                    + " from " + currentAssociationId);
-        } else {
-            localLog("connectToNetwork: Connect to " + targetAssociationId + " from "
-                    + currentAssociationId);
         }
+        localLog("connectToNetwork: Connect to "
+                + getAssociationId(targetNetwork, targetBssid) + " from "
+                + getAssociationId(currentNetwork, currentBssid));
 
-        WifiConfiguration primaryConnectingOrConnectedNetwork = coalesce(
-                primaryManager.getConnectedWifiConfiguration(),
-                primaryManager.getConnectingWifiConfiguration());
-        if (primaryConnectingOrConnectedNetwork == null) {
+        if (currentNetwork == null) {
             localLog("connecting using existing primary ClientModeManager "
                     + primaryManager + " since it is not connected to anything");
             if (!shouldConnect()) {
@@ -1121,9 +1121,9 @@ public class WifiConnectivityManager {
                     // we don't know which ClientModeManager will be allocated to us. Thus, double
                     // check if we're already connected before connecting.
                     if (isClientModeManagerConnectedOrConnectingToCandidate(
-                            clientModeManager, candidate)) {
+                            clientModeManager, targetNetwork)) {
                         localLog("connectToNetwork: already connected or connecting to candidate="
-                                + candidate + " on " + clientModeManager);
+                                + targetNetwork + " on " + clientModeManager);
                         return;
                     }
 
@@ -1134,7 +1134,7 @@ public class WifiConnectivityManager {
                             targetNetworkId, Process.WIFI_UID, finalTargetBssid);
                 },
                 ActiveModeWarden.INTERNAL_REQUESTOR_WS,
-                candidate.SSID,
+                targetNetwork.SSID,
                 targetBssid);
     }
 
