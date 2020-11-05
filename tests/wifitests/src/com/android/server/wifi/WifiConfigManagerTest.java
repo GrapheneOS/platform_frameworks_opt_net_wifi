@@ -2102,7 +2102,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * Verify that the |HasEverConnected| is set when
-     * {@link WifiConfigManager#updateNetworkAfterConnect(int)} is invoked.
+     * {@link WifiConfigManager#updateNetworkAfterConnect(int, boolean)} is invoked.
      */
     @Test
     public void testUpdateConfigAfterConnectHasEverConnectedTrue() {
@@ -3907,7 +3907,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private void setUserConnectChoice(int preferredNetId, int notPreferredNetId) {
         assertTrue(mWifiConfigManager.setNetworkCandidateScanResult(
                 notPreferredNetId, mock(ScanResult.class), 54));
-        assertTrue(mWifiConfigManager.setUserConnectChoice(preferredNetId));
+        assertTrue(mWifiConfigManager.updateNetworkAfterConnect(preferredNetId, true));
         WifiConfiguration preferred = mWifiConfigManager.getConfiguredNetwork(preferredNetId);
         assertNull(preferred.getNetworkSelectionStatus().getConnectChoice());
         WifiConfiguration notPreferred = mWifiConfigManager.getConfiguredNetwork(notPreferredNetId);
@@ -4139,7 +4139,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(network1);
         verifyAddNetworkToWifiConfigManager(network2);
         verifyAddNetworkToWifiConfigManager(network3);
-        mWifiConfigManager.updateNetworkAfterConnect(network3.networkId);
+        mWifiConfigManager.updateNetworkAfterConnect(network3.networkId, false);
 
         // Now set scan results of network2 to set the corresponding
         // {@link NetworkSelectionStatus#mSeenInLastQualifiedNetworkSelection} field.
@@ -5677,11 +5677,11 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * Updates an existing network after connection using
-     * {@link WifiConfigManager#updateNetworkAfterConnect(int)} and asserts that the
+     * {@link WifiConfigManager#updateNetworkAfterConnect(int, boolean)} and asserts that the
      * |HasEverConnected| flag is set to true.
      */
     private void verifyUpdateNetworkAfterConnectHasEverConnectedTrue(int networkId) {
-        assertTrue(mWifiConfigManager.updateNetworkAfterConnect(networkId));
+        assertTrue(mWifiConfigManager.updateNetworkAfterConnect(networkId, false));
         WifiConfiguration retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(networkId);
         assertTrue("hasEverConnected expected to be true after connection.",
                 retrievedNetwork.getNetworkSelectionStatus().hasEverConnected());
@@ -5819,7 +5819,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(testNetwork1);
         WifiConfiguration testNetwork2 = WifiConfigurationTestUtil.createOpenNetwork();
         verifyAddNetworkToWifiConfigManager(testNetwork2);
-        mWifiConfigManager.updateNetworkAfterConnect(testNetwork2.networkId);
+        mWifiConfigManager.updateNetworkAfterConnect(testNetwork2.networkId, false);
         mWifiConfigManager.saveToStore(true);
         Pair<List<WifiConfiguration>, List<WifiConfiguration>> networkStoreData =
                 captureWriteNetworksListStoreData();
@@ -5872,7 +5872,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      *                    test1's configkey for test2. test3's WifiConfiguration is unchanged.
      */
     @Test
-    public void setUserConnectChoice() throws Exception {
+    public void testSetUserConnectChoice() throws Exception {
         WifiConfiguration selectedWifiConfig = WifiConfigurationTestUtil.createOpenNetwork();
         selectedWifiConfig.getNetworkSelectionStatus().setCandidate(mock(ScanResult.class));
         selectedWifiConfig.getNetworkSelectionStatus().setNetworkSelectionStatus(
@@ -5894,7 +5894,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.loadFromStore());
         verify(mWifiConfigStore).read();
 
-        assertTrue(mWifiConfigManager.setUserConnectChoice(selectedWifiConfig.networkId));
+        assertTrue(mWifiConfigManager.updateNetworkAfterConnect(selectedWifiConfig.networkId,
+                true));
 
         selectedWifiConfig = mWifiConfigManager.getConfiguredNetwork(selectedWifiConfig.networkId);
         assertEquals(NetworkSelectionStatus.DISABLED_NONE,
