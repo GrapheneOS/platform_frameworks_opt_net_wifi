@@ -162,6 +162,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         when(mWifiInjector.getScanRequestProxy()).thenReturn(mScanRequestProxy);
         when(mClientModeManager.getRole()).thenReturn(ROLE_CLIENT_PRIMARY);
+        when(mClientModeManager.getInterfaceName()).thenReturn(WIFI_IFACE_NAME);
         when(mContext.getResources()).thenReturn(mResources);
         when(mSoftApManager.getRole()).thenReturn(ROLE_SOFTAP_TETHERED);
 
@@ -2431,6 +2432,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 .makeClientModeManager(any(), eq(TEST_WORKSOURCE), eq(role), anyBoolean());
         additionalClientListener.value.onStarted(additionalClientModeManager);
         mLooper.dispatchAll();
+        // Ensure the hardware is correctly configured for STA + STA
+        if (role == ROLE_CLIENT_LOCAL_ONLY || role == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+            verify(mWifiNative).setMultiStaUseCase(WifiNative.DUAL_STA_NON_TRANSIENT_UNBIASED);
+        } else if (role == ROLE_CLIENT_SECONDARY_TRANSIENT) {
+            verify(mWifiNative).setMultiStaUseCase(WifiNative.DUAL_STA_TRANSIENT_PREFER_PRIMARY);
+        }
+        verify(mWifiNative).setMultiStaPrimaryConnection(WIFI_IFACE_NAME);
         // Returns the new local only client mode manager.
         ArgumentCaptor<ClientModeManager> requestedClientModeManager =
                 ArgumentCaptor.forClass(ClientModeManager.class);

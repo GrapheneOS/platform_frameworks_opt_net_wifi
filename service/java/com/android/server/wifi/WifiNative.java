@@ -3005,8 +3005,6 @@ public class WifiNative {
     /**
      * Set use-case when multiple STA ifaces are active.
      *
-     * TODO(b/170305665): Use these API's!
-     *
      * @param useCase one of the use cases.
      * @return true for success
      */
@@ -3018,8 +3016,6 @@ public class WifiNative {
 
     /**
      * Get the supported features
-     *
-     * TODO(b/170305665): Use these API's!
      *
      * @param ifaceName Name of the interface.
      * @return bitmask defined by WifiManager.WIFI_FEATURE_*
