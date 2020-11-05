@@ -78,7 +78,7 @@ android_test {
     min_sdk_version: "29",
     privileged: true,
     test_suites: [
-        "device-tests",
+        "general-tests",
         "mts",
     ],
 
