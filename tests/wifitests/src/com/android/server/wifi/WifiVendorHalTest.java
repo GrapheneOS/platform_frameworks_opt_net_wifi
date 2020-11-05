@@ -224,14 +224,9 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * Spy used to return the V1_2 IWifiChip and IWifiStaIface mock objects to simulate
      * the 1.2 HAL running on the device.
      */
-    private class WifiVendorHalSpyV1_2 extends WifiVendorHal {
+    private class WifiVendorHalSpyV1_2 extends WifiVendorHalSpyV1_1 {
         WifiVendorHalSpyV1_2(HalDeviceManager halDeviceManager, Handler handler) {
             super(halDeviceManager, handler);
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_1.IWifiChip getWifiChipForV1_1Mockable() {
-            return mIWifiChipV11;
         }
 
         @Override
@@ -240,31 +235,9 @@ public class WifiVendorHalTest extends WifiBaseTest {
         }
 
         @Override
-        protected android.hardware.wifi.V1_3.IWifiChip getWifiChipForV1_3Mockable() {
-            return null;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_4.IWifiChip getWifiChipForV1_4Mockable() {
-            return null;
-        }
-
-        @Override
         protected android.hardware.wifi.V1_2.IWifiStaIface getWifiStaIfaceForV1_2Mockable(
                 String ifaceName) {
             return mIWifiStaIfaceV12;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
-                String ifaceName) {
-            return null;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
-                String ifaceName) {
-            return null;
         }
     }
 
@@ -272,19 +245,9 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * Spy used to return the V1_3 IWifiChip and V1_3 IWifiStaIface mock objects to simulate
      * the 1.3 HAL running on the device.
      */
-    private class WifiVendorHalSpyV1_3 extends WifiVendorHal {
+    private class WifiVendorHalSpyV1_3 extends WifiVendorHalSpyV1_2 {
         WifiVendorHalSpyV1_3(HalDeviceManager halDeviceManager, Handler handler) {
             super(halDeviceManager, handler);
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_1.IWifiChip getWifiChipForV1_1Mockable() {
-            return mIWifiChipV11;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_2.IWifiChip getWifiChipForV1_2Mockable() {
-            return mIWifiChipV12;
         }
 
         @Override
@@ -293,26 +256,9 @@ public class WifiVendorHalTest extends WifiBaseTest {
         }
 
         @Override
-        protected android.hardware.wifi.V1_4.IWifiChip getWifiChipForV1_4Mockable() {
-            return null;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_2.IWifiStaIface getWifiStaIfaceForV1_2Mockable(
-                String ifaceName) {
-            return mIWifiStaIfaceV12;
-        }
-
-        @Override
         protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
                 String ifaceName) {
             return mIWifiStaIfaceV13;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
-                String ifaceName) {
-            return null;
         }
     }
 
@@ -320,47 +266,14 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * Spy used to return the V1_4 IWifiChip and V1_4 IWifiStaIface mock objects to simulate
      * the 1.4 HAL running on the device.
      */
-    private class WifiVendorHalSpyV1_4 extends WifiVendorHal {
+    private class WifiVendorHalSpyV1_4 extends WifiVendorHalSpyV1_3 {
         WifiVendorHalSpyV1_4(HalDeviceManager halDeviceManager, Handler handler) {
             super(halDeviceManager, handler);
         }
 
         @Override
-        protected android.hardware.wifi.V1_1.IWifiChip getWifiChipForV1_1Mockable() {
-            return mIWifiChipV11;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_2.IWifiChip getWifiChipForV1_2Mockable() {
-            return mIWifiChipV12;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_3.IWifiChip getWifiChipForV1_3Mockable() {
-            return mIWifiChipV13;
-        }
-
-        @Override
         protected android.hardware.wifi.V1_4.IWifiChip getWifiChipForV1_4Mockable() {
             return mIWifiChipV14;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_2.IWifiStaIface getWifiStaIfaceForV1_2Mockable(
-                String ifaceName) {
-            return mIWifiStaIfaceV12;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
-                String ifaceName) {
-            return mIWifiStaIfaceV13;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
-                String ifaceName) {
-            return null;
         }
     }
 
@@ -368,46 +281,14 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * Spy used to return the V1_5 IWifiChip and V1_5 IWifiStaIface mock objects to simulate
      * the 1.5 HAL running on the device.
      */
-    private class WifiVendorHalSpyV1_5 extends WifiVendorHal {
+    private class WifiVendorHalSpyV1_5 extends WifiVendorHalSpyV1_4 {
         WifiVendorHalSpyV1_5(HalDeviceManager halDeviceManager, Handler handler) {
             super(halDeviceManager, handler);
         }
 
         @Override
-        protected android.hardware.wifi.V1_1.IWifiChip getWifiChipForV1_1Mockable() {
-            return mIWifiChipV11;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_2.IWifiChip getWifiChipForV1_2Mockable() {
-            return mIWifiChipV12;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_3.IWifiChip getWifiChipForV1_3Mockable() {
-            return mIWifiChipV13;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_4.IWifiChip getWifiChipForV1_4Mockable() {
-            return mIWifiChipV14;
-        }
-
-        @Override
         protected android.hardware.wifi.V1_5.IWifiChip getWifiChipForV1_5Mockable() {
             return mIWifiChipV15;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_2.IWifiStaIface getWifiStaIfaceForV1_2Mockable(
-                String ifaceName) {
-            return mIWifiStaIfaceV12;
-        }
-
-        @Override
-        protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
-                String ifaceName) {
-            return mIWifiStaIfaceV13;
         }
 
         @Override
@@ -929,6 +810,26 @@ public class WifiVendorHalTest extends WifiBaseTest {
         assertEquals(expected, mWifiVendorHal.wifiFeatureMaskFromChipCapabilities_1_3(caps));
     }
 
+    private void testGetSupportedFeaturesCommon(
+            int staIfaceHidlCaps, int chipHidlCaps, long expectedFeatureSet) throws Exception {
+        assertTrue(mWifiVendorHal.startVendorHalSta());
+
+        Set<Integer> halDeviceManagerSupportedIfaces = new HashSet<Integer>() {{
+                add(IfaceType.STA);
+                add(IfaceType.P2P);
+            }};
+
+        doAnswer(new AnswerWithArguments() {
+            public void answer(IWifiStaIface.getCapabilitiesCallback cb) throws RemoteException {
+                cb.onValues(mWifiStatusSuccess, staIfaceHidlCaps);
+            }
+        }).when(mIWifiStaIface).getCapabilities(any(IWifiStaIface.getCapabilitiesCallback.class));
+
+        when(mHalDeviceManager.getSupportedIfaceTypes())
+                .thenReturn(halDeviceManagerSupportedIfaces);
+
+        assertEquals(expectedFeatureSet, mWifiVendorHal.getSupportedFeatureSet(TEST_IFACE_NAME));
+    }
     /**
      * Test get supported features. Tests whether we coalesce information from different sources
      * (IWifiStaIface, IWifiChip and HalDeviceManager) into the bitmask of supported features
@@ -936,18 +837,12 @@ public class WifiVendorHalTest extends WifiBaseTest {
      */
     @Test
     public void testGetSupportedFeatures() throws Exception {
-        assertTrue(mWifiVendorHal.startVendorHalSta());
-
         int staIfaceHidlCaps = (
                 IWifiStaIface.StaIfaceCapabilityMask.BACKGROUND_SCAN
                         | IWifiStaIface.StaIfaceCapabilityMask.LINK_LAYER_STATS
         );
         int chipHidlCaps =
                 android.hardware.wifi.V1_1.IWifiChip.ChipCapabilityMask.SET_TX_POWER_LIMIT;
-        Set<Integer>  halDeviceManagerSupportedIfaces = new HashSet<Integer>() {{
-                add(IfaceType.STA);
-                add(IfaceType.P2P);
-            }};
         long expectedFeatureSet = (
                 WifiManager.WIFI_FEATURE_SCANNER
                         | WifiManager.WIFI_FEATURE_LINK_LAYER_STATS
@@ -957,19 +852,86 @@ public class WifiVendorHalTest extends WifiBaseTest {
         );
 
         doAnswer(new AnswerWithArguments() {
-            public void answer(IWifiStaIface.getCapabilitiesCallback cb) throws RemoteException {
-                cb.onValues(mWifiStatusSuccess, staIfaceHidlCaps);
-            }
-        }).when(mIWifiStaIface).getCapabilities(any(IWifiStaIface.getCapabilitiesCallback.class));
-        doAnswer(new AnswerWithArguments() {
             public void answer(IWifiChip.getCapabilitiesCallback cb) throws RemoteException {
                 cb.onValues(mWifiStatusSuccess, chipHidlCaps);
             }
         }).when(mIWifiChip).getCapabilities(any(IWifiChip.getCapabilitiesCallback.class));
-        when(mHalDeviceManager.getSupportedIfaceTypes())
-                .thenReturn(halDeviceManagerSupportedIfaces);
 
-        assertEquals(expectedFeatureSet, mWifiVendorHal.getSupportedFeatureSet(TEST_IFACE_NAME));
+        mWifiVendorHal = new WifiVendorHalSpyV1_1(mHalDeviceManager, mHandler);
+        testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
+    }
+
+    /**
+     * Test get supported features. Tests whether we coalesce information from different sources
+     * (IWifiStaIface, IWifiChip and HalDeviceManager) into the bitmask of supported features
+     * correctly.
+     */
+    @Test
+    public void testGetSupportedFeaturesForHalV1_3() throws Exception {
+        assertTrue(mWifiVendorHal.startVendorHalSta());
+
+        int staIfaceHidlCaps = (
+                IWifiStaIface.StaIfaceCapabilityMask.BACKGROUND_SCAN
+                        | IWifiStaIface.StaIfaceCapabilityMask.LINK_LAYER_STATS
+        );
+        int chipHidlCaps =
+                android.hardware.wifi.V1_3.IWifiChip.ChipCapabilityMask.SET_LATENCY_MODE
+                        | android.hardware.wifi.V1_3.IWifiChip.ChipCapabilityMask.P2P_RAND_MAC;
+        long expectedFeatureSet = (
+                WifiManager.WIFI_FEATURE_SCANNER
+                        | WifiManager.WIFI_FEATURE_LINK_LAYER_STATS
+                        | WifiManager.WIFI_FEATURE_LOW_LATENCY
+                        | WifiManager.WIFI_FEATURE_P2P_RAND_MAC
+                        | WifiManager.WIFI_FEATURE_INFRA
+                        | WifiManager.WIFI_FEATURE_P2P
+        );
+
+        doAnswer(new AnswerWithArguments() {
+            public void answer(
+                    android.hardware.wifi.V1_3.IWifiChip.getCapabilities_1_3Callback cb)
+                    throws RemoteException {
+                cb.onValues(mWifiStatusSuccess, chipHidlCaps);
+            }
+        }).when(mIWifiChipV13).getCapabilities_1_3(
+                any(android.hardware.wifi.V1_3.IWifiChip.getCapabilities_1_3Callback.class));
+
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
+    }
+
+    /**
+     * Test get supported features. Tests whether we coalesce information from different sources
+     * (IWifiStaIface, IWifiChip and HalDeviceManager) into the bitmask of supported features
+     * correctly.
+     */
+    @Test
+    public void testGetSupportedFeaturesForHalV1_5() throws Exception {
+        assertTrue(mWifiVendorHal.startVendorHalSta());
+
+        int staIfaceHidlCaps = (
+                IWifiStaIface.StaIfaceCapabilityMask.BACKGROUND_SCAN
+                        | IWifiStaIface.StaIfaceCapabilityMask.LINK_LAYER_STATS
+        );
+        int chipHidlCaps = android.hardware.wifi.V1_5.IWifiChip.ChipCapabilityMask.WIGIG;
+        long expectedFeatureSet = (
+                WifiManager.WIFI_FEATURE_SCANNER
+                        | WifiManager.WIFI_FEATURE_LINK_LAYER_STATS
+                        | WifiManager.WIFI_FEATURE_INFRA_60G
+                        | WifiManager.WIFI_FEATURE_INFRA
+                        | WifiManager.WIFI_FEATURE_P2P
+        );
+
+        doAnswer(new AnswerWithArguments() {
+            public void answer(
+                    android.hardware.wifi.V1_5.IWifiChip.getCapabilities_1_5Callback cb)
+                    throws RemoteException {
+                cb.onValues(mWifiStatusSuccess, chipHidlCaps);
+            }
+        }).when(mIWifiChipV15).getCapabilities_1_5(
+                any(android.hardware.wifi.V1_5.IWifiChip.getCapabilities_1_5Callback.class));
+
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
     }
 
    /**
@@ -3053,6 +3015,14 @@ public class WifiVendorHalTest extends WifiBaseTest {
     private void startHalInStaModeAndRegisterRadioModeChangeCallback14() {
         // Expose the 1.4 IWifiChip.
         mWifiVendorHal = new WifiVendorHalSpyV1_4(mHalDeviceManager, mHandler);
+        mWifiVendorHal.registerRadioModeChangeHandler(mVendorHalRadioModeChangeHandler);
+        assertTrue(mWifiVendorHal.startVendorHalSta());
+        assertNotNull(mIWifiChipEventCallbackV14);
+    }
+
+    private void startHalInStaModeAndRegisterRadioModeChangeCallback15() {
+        // Expose the 1.5 IWifiChip.
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
         mWifiVendorHal.registerRadioModeChangeHandler(mVendorHalRadioModeChangeHandler);
         assertTrue(mWifiVendorHal.startVendorHalSta());
         assertNotNull(mIWifiChipEventCallbackV14);
