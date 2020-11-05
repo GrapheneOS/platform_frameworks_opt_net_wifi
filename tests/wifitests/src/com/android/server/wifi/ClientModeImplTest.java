@@ -200,6 +200,15 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     private long mBinderToken;
     private MockitoSession mSession;
+    private TestNetworkParams mTestNetworkParams = new TestNetworkParams();
+
+    /**
+     * Helper class for setting the default parameters of the WifiConfiguration that gets used
+     * in connect().
+     */
+    class TestNetworkParams {
+        public boolean hasEverConnected = false;
+    }
 
     private static <T> T mockWithInterfaces(Class<T> class1, Class<?>... interfaces) {
         return mock(class1, withSettings().extraInterfaces(interfaces));
@@ -470,6 +479,7 @@ public class ClientModeImplTest extends WifiBaseTest {
             }
         }).when(mWifiConfigManager).getRandomizedMacAndUpdateIfNeeded(any());
 
+        mTestNetworkParams = new TestNetworkParams();
         when(mWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
         when(mUntrustedWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
         when(mOemPaidWifiNetworkFactory.hasConnectionRequests()).thenReturn(true);
@@ -732,6 +742,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         config.networkId = FRAMEWORK_NETWORK_ID;
         config.setRandomizedMacAddress(TEST_LOCAL_MAC_ADDRESS);
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
+        config.getNetworkSelectionStatus().setHasEverConnected(mTestNetworkParams.hasEverConnected);
         setupAndStartConnectSequence(config);
         validateSuccessfulConnectSequence(config);
     }
@@ -839,7 +850,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertTrue(sWifiSsid.equals(wifiInfo.getWifiSsid()));
         assertNull(wifiInfo.getPasspointProviderFriendlyName());
         // Ensure the connection stats for the network is updated.
-        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID);
+        verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID),
+                anyBoolean());
         verify(mWifiConfigManager).updateRandomizedMacExpireTime(any(), anyLong());
 
         // Anonymous Identity is not set.
@@ -1864,7 +1876,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void setHasEverConnectedTrueOnConnect() throws Exception {
         connect();
-        verify(mWifiConfigManager, atLeastOnce()).updateNetworkAfterConnect(0);
+        verify(mWifiConfigManager, atLeastOnce()).updateNetworkAfterConnect(0, false);
     }
 
     /**
@@ -1876,7 +1888,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void connectionFailureDoesNotSetHasEverConnectedTrue() throws Exception {
         testDhcpFailure();
-        verify(mWifiConfigManager, never()).updateNetworkAfterConnect(0);
+        verify(mWifiConfigManager, never()).updateNetworkAfterConnect(0, false);
     }
 
     @Test
@@ -2299,41 +2311,41 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     /**
      * Test that the helper method
-     * {@link ClientModeImpl#shouldEvaluateWhetherToSendExplicitlySelected(WifiConfiguration)}
+     * {@link ClientModeImpl#isRecentlySelectedByTheUser(WifiConfiguration)}
      * returns true when we connect to the last selected network before expiration of
      * {@link ClientModeImpl#LAST_SELECTED_NETWORK_EXPIRATION_AGE_MILLIS}.
      */
     @Test
-    public void testShouldEvaluateWhetherToSendExplicitlySelected_SameNetworkNotExpired() {
+    public void testIsRecentlySelectedByTheUser_SameNetworkNotExpired() {
         WifiConfiguration currentConfig = makeLastSelectedWifiConfiguration(5,
                 ClientModeImpl.LAST_SELECTED_NETWORK_EXPIRATION_AGE_MILLIS - 1);
-        assertTrue(mCmi.shouldEvaluateWhetherToSendExplicitlySelected(currentConfig));
+        assertTrue(mCmi.isRecentlySelectedByTheUser(currentConfig));
     }
 
     /**
      * Test that the helper method
-     * {@link ClientModeImpl#shouldEvaluateWhetherToSendExplicitlySelected(WifiConfiguration)}
+     * {@link ClientModeImpl#isRecentlySelectedByTheUser(WifiConfiguration)}
      * returns false when we connect to the last selected network after expiration of
      * {@link ClientModeImpl#LAST_SELECTED_NETWORK_EXPIRATION_AGE_MILLIS}.
      */
     @Test
-    public void testShouldEvaluateWhetherToSendExplicitlySelected_SameNetworkExpired() {
+    public void testIsRecentlySelectedByTheUser_SameNetworkExpired() {
         WifiConfiguration currentConfig = makeLastSelectedWifiConfiguration(5,
                 ClientModeImpl.LAST_SELECTED_NETWORK_EXPIRATION_AGE_MILLIS + 1);
-        assertFalse(mCmi.shouldEvaluateWhetherToSendExplicitlySelected(currentConfig));
+        assertFalse(mCmi.isRecentlySelectedByTheUser(currentConfig));
     }
 
     /**
      * Test that the helper method
-     * {@link ClientModeImpl#shouldEvaluateWhetherToSendExplicitlySelected(WifiConfiguration)}
+     * {@link ClientModeImpl#isRecentlySelectedByTheUser(WifiConfiguration)}
      * returns false when we connect to a different network to the last selected network.
      */
     @Test
-    public void testShouldEvaluateWhetherToSendExplicitlySelected_DifferentNetwork() {
+    public void testIsRecentlySelectedByTheUser_DifferentNetwork() {
         WifiConfiguration currentConfig = makeLastSelectedWifiConfiguration(5,
                 ClientModeImpl.LAST_SELECTED_NETWORK_EXPIRATION_AGE_MILLIS - 1);
         currentConfig.networkId = 4;
-        assertFalse(mCmi.shouldEvaluateWhetherToSendExplicitlySelected(currentConfig));
+        assertFalse(mCmi.isRecentlySelectedByTheUser(currentConfig));
     }
 
     private void expectRegisterNetworkAgent(Consumer<NetworkAgentConfig> configChecker,
@@ -3429,18 +3441,30 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
         connect();
         verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
-        verify(mWifiConfigManager, never()).setUserConnectChoice(anyInt());
+        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID, false);
     }
 
     /**
-     * Verify that we set the user connect choice after a successful connection.
+     * Verify that we do not set the user connect choice after connecting to a newly added network.
      */
     @Test
-    public void testSettingsConnectionSetUserConnectChoice() throws Exception {
+    public void testNoSetUserConnectChoiceOnFirstConnection() throws Exception {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         connect();
         verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
-        verify(mWifiConfigManager).setUserConnectChoice(anyInt());
+        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID, false);
+    }
+
+    /**
+     * Verify that on the second successful connection to a network we set the user connect choice.
+     */
+    @Test
+    public void testConnectionSetUserConnectChoiceOnSecondConnection() throws Exception {
+        when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
+        mTestNetworkParams.hasEverConnected = true;
+        connect();
+        verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
+        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID, true);
     }
 
     /**
