@@ -1939,6 +1939,54 @@ public class SupplicantStaIfaceHal {
     }
 
     /**
+     * Request Venue URL ANQP element from the specified AP |bssid|.
+     *
+     * @param ifaceName Name of the interface.
+     * @param bssid BSSID of the AP
+     * @return true if request is sent successfully, false otherwise.
+     */
+    public boolean initiateVenueUrlAnqpQuery(@NonNull String ifaceName, String bssid) {
+        synchronized (mLock) {
+            try {
+                return initiateVenueUrlAnqpQuery(
+                        ifaceName, NativeUtil.macAddressToByteArray(bssid));
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Illegal argument " + bssid, e);
+                return false;
+            }
+        }
+    }
+
+    /** See ISupplicantStaIface.hal for documentation */
+    private boolean initiateVenueUrlAnqpQuery(@NonNull String ifaceName, byte[/* 6 */] macAddress) {
+        synchronized (mLock) {
+            final String methodStr = "initiateVenueUrlAnqpQuery";
+            if (!isV1_4()) {
+                Log.e(TAG, "Method " + methodStr + " is not supported in existing HAL");
+                return false;
+            }
+            ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+            // Get a v1.4 supplicant STA Interface
+            android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface staIfaceV14 =
+                    getStaIfaceMockableV1_4(iface);
+
+            if (staIfaceV14 == null) {
+                Log.e(TAG, methodStr
+                        + ": SupplicantStaIface is null, cannot initiate Venue URL ANQP request");
+                return false;
+            }
+            try {
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                        staIfaceV14.initiateVenueUrlAnqpQuery(macAddress);
+                return checkStatusAndLogFailure(status, methodStr);
+            } catch (RemoteException e) {
+                handleRemoteException(e, methodStr);
+                return false;
+            }
+        }
+    }
+
+    /**
      * Request the specified ANQP ICON from the specified AP |bssid|.
      *
      * @param ifaceName Name of the interface.

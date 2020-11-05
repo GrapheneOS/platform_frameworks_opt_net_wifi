@@ -29,6 +29,7 @@ abstract class SupplicantStaIfaceCallbackV1_4Impl extends
     private final WifiMonitor mWifiMonitor;
     private final Object mLock;
     private final SupplicantStaIfaceHal.SupplicantStaIfaceHalCallbackV1_3 mCallbackV13;
+    private final SupplicantStaIfaceHal.SupplicantStaIfaceHalCallback mCallbackV10;
 
     SupplicantStaIfaceCallbackV1_4Impl(@NonNull SupplicantStaIfaceHal staIfaceHal,
             @NonNull String ifaceName, @NonNull Object lock,
@@ -40,6 +41,7 @@ abstract class SupplicantStaIfaceCallbackV1_4Impl extends
         // Create an older callback for function delegation,
         // and it would cascadingly create older one.
         mCallbackV13 = mStaIfaceHal.new SupplicantStaIfaceHalCallbackV1_3(mIfaceName);
+        mCallbackV10 = mStaIfaceHal.new SupplicantStaIfaceHalCallback(mIfaceName);
     }
 
     @Override
@@ -59,8 +61,19 @@ abstract class SupplicantStaIfaceCallbackV1_4Impl extends
     }
 
     @Override
-    public void onAnqpQueryDone(byte[/* 6 */] bssid,
+    public void onAnqpQueryDone_1_4(byte[/* 6 */] bssid,
             AnqpData data,
+            Hs20AnqpData hs20Data) {
+        synchronized (mLock) {
+            mStaIfaceHal.logCallback("onAnqpQueryDone_1_4");
+            mCallbackV10.onAnqpQueryDone(bssid, data.V1_0 /* v1.0 elemnt */, hs20Data,
+                    data /* v1.4 element */);
+        }
+    }
+
+    @Override
+    public void onAnqpQueryDone(byte[/* 6 */] bssid,
+            android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.AnqpData data,
             Hs20AnqpData hs20Data) {
         mCallbackV13.onAnqpQueryDone(bssid, data, hs20Data);
     }
