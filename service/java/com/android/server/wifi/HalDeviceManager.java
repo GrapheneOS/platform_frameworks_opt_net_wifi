@@ -1690,6 +1690,9 @@ public class HalDeviceManager {
     private static final int PRIORITY_FG_SERVICE = 3;
     private static final int PRIORITY_BG = 4;
     private static final int PRIORITY_INTERNAL = 5;
+    // Keep these in sync with any additions/deletions to above buckets.
+    private static final int PRIORITY_MIN = PRIORITY_PRIVILEGED;
+    private static final int PRIORITY_MAX = PRIORITY_INTERNAL;
     @IntDef(prefix = { "PRIORITY_" }, value = {
             PRIORITY_PRIVILEGED,
             PRIORITY_SYSTEM,
@@ -1863,7 +1866,7 @@ public class HalDeviceManager {
             int numIfacesToDelete = 0;
             List<WifiIfaceInfo> ifacesToDelete = new ArrayList<>(excessInterfaces);
             // Iterate from lowest priority to highest priority ifaces.
-            for (int i = PRIORITY_BG; i >= PRIORITY_PRIVILEGED; i--) {
+            for (int i = PRIORITY_MAX; i >= PRIORITY_MIN; i--) {
                 List<WifiIfaceInfo> ifacesToDeleteListWithinPriority =
                         ifacesToDeleteMap.getOrDefault(i, new ArrayList<>());
                 int numIfacesToDeleteWithinPriority =

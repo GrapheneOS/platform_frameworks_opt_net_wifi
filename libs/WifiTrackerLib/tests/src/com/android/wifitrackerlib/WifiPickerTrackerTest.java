@@ -370,6 +370,36 @@ public class WifiPickerTrackerTest {
         assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
     }
 
+    @Test
+    public void testGetWifiEntries_differentSsidSameBssid_returnsDifferentEntries() {
+        when(mMockResources.getString(anyInt())).thenReturn("");
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                // Identical BSSID for 4 different SSIDs should return 4 entries.
+                buildScanResult("ssid0", "bssid0", START_MILLIS),
+                buildScanResult("ssid1", "bssid0", START_MILLIS),
+                buildScanResult("ssid2", "bssid0", START_MILLIS),
+                buildScanResult("ssid3", "bssid0", START_MILLIS),
+                // Another identical BSSID for 4 different SSIDs should return 4 more entries.
+                buildScanResult("ssid4", "bssid1", START_MILLIS),
+                buildScanResult("ssid5", "bssid1", START_MILLIS),
+                buildScanResult("ssid6", "bssid1", START_MILLIS),
+                buildScanResult("ssid7", "bssid1", START_MILLIS),
+                // Same SSID as the last for 2 different BSSIDs should not increase entries.
+                buildScanResult("ssid7", "bssid2", START_MILLIS),
+                buildScanResult("ssid7", "bssid3", START_MILLIS)));
+
+
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
+        assertThat(wifiPickerTracker.getWifiEntries()).hasSize(8);
+    }
+
     /**
      * Tests that a CONFIGURED_NETWORKS_CHANGED broadcast updates the correct WifiEntry from
      * unsaved to saved.

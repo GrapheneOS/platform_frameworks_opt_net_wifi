@@ -712,7 +712,13 @@ public class SupplicantStaIfaceHal {
                 return startDaemon_V1_1();
             } else {
                 Log.i(TAG, "Starting supplicant using init");
-                mFrameworkFacade.startSupplicant();
+                try {
+                    mFrameworkFacade.startSupplicant();
+                } catch (RuntimeException e) {
+                    // likely a "failed to set system property" runtime exception
+                    Log.e(TAG, "Failed to start supplicant using init", e);
+                    return false;
+                }
                 return true;
             }
         }
@@ -1481,7 +1487,8 @@ public class SupplicantStaIfaceHal {
 
             if (iface == null) return false;
             try {
-                SupplicantStatus status =  iface.registerCallback_1_4(callback);
+                android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                        iface.registerCallback_1_4(callback);
                 return checkStatusAndLogFailure(status, methodStr);
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
@@ -2639,6 +2646,28 @@ public class SupplicantStaIfaceHal {
     }
 
     /**
+     * Returns true if provided status code is SUCCESS, logs debug message and returns false
+     * otherwise
+     */
+    private boolean checkStatusAndLogFailure(
+            android.hardware.wifi.supplicant.V1_4.SupplicantStatus status,
+            final String methodStr) {
+        synchronized (mLock) {
+            if (status == null
+                    || status.code
+                    != android.hardware.wifi.supplicant.V1_4.SupplicantStatusCode.SUCCESS) {
+                Log.e(TAG, "ISupplicantStaIface." + methodStr + " failed: " + status);
+                return false;
+            } else {
+                if (mVerboseLoggingEnabled) {
+                    Log.d(TAG, "ISupplicantStaIface." + methodStr + " succeeded");
+                }
+                return true;
+            }
+        }
+    }
+
+    /**
      * Helper function to log callbacks.
      */
     protected void logCallback(final String methodStr) {
@@ -3140,7 +3169,7 @@ public class SupplicantStaIfaceHal {
 
         try {
             staIfaceV14.getConnectionCapabilities_1_4(
-                    (SupplicantStatus statusInternal,
+                    (android.hardware.wifi.supplicant.V1_4.SupplicantStatus statusInternal,
                             android.hardware.wifi.supplicant.V1_4.ConnectionCapabilities cap)
                             -> {
                         if (statusInternal.code == SupplicantStatusCode.SUCCESS) {

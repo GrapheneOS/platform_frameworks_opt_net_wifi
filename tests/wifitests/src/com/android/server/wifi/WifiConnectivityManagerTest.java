@@ -2859,7 +2859,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                     eq(false));
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
-        mWifiConnectivityManager.setOemPaidConnectionAllowed(true);
+        mWifiConnectivityManager.setOemPaidConnectionAllowed(true, new WorkSource());
         // Set WiFi to disconnected state with screen on which triggers a scan immediately.
         setWifiEnabled(true);
         setScreenState(true);
@@ -2918,7 +2918,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                     eq(true));
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
-        mWifiConnectivityManager.setOemPrivateConnectionAllowed(true);
+        mWifiConnectivityManager.setOemPrivateConnectionAllowed(true, new WorkSource());
         // Set WiFi to disconnected state with screen on which triggers a scan immediately.
         setWifiEnabled(true);
         setScreenState(true);
