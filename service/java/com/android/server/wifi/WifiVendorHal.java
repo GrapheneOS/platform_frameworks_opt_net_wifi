@@ -47,6 +47,7 @@ import android.hardware.wifi.V1_0.WifiInformationElement;
 import android.hardware.wifi.V1_0.WifiStatus;
 import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.hardware.wifi.V1_2.IWifiChipEventCallback.IfaceInfo;
+import android.hardware.wifi.V1_5.IWifiChip.MultiStaUseCase;
 import android.hardware.wifi.V1_5.WifiBand;
 import android.net.MacAddress;
 import android.net.apf.ApfCapabilities;
@@ -953,10 +954,13 @@ public class WifiVendorHal {
      * @return the statistics, or null if unable to do so
      */
     public WifiLinkLayerStats getWifiLinkLayerStats(@NonNull String ifaceName) {
-        if (getWifiStaIfaceForV1_3Mockable(ifaceName) != null) {
+        if (getWifiStaIfaceForV1_5Mockable(ifaceName) != null) {
+            return getWifiLinkLayerStats_1_5_Internal(ifaceName);
+        } else if (getWifiStaIfaceForV1_3Mockable(ifaceName) != null) {
             return getWifiLinkLayerStats_1_3_Internal(ifaceName);
+        } else {
+            return getWifiLinkLayerStats_internal(ifaceName);
         }
-        return getWifiLinkLayerStats_internal(ifaceName);
     }
 
     private WifiLinkLayerStats getWifiLinkLayerStats_internal(@NonNull String ifaceName) {
@@ -1004,6 +1008,29 @@ public class WifiVendorHal {
         return stats;
     }
 
+    private WifiLinkLayerStats getWifiLinkLayerStats_1_5_Internal(@NonNull String ifaceName) {
+        class AnswerBox {
+            public android.hardware.wifi.V1_5.StaLinkLayerStats value = null;
+        }
+        AnswerBox answer = new AnswerBox();
+        synchronized (sLock) {
+            try {
+                android.hardware.wifi.V1_5.IWifiStaIface iface =
+                        getWifiStaIfaceForV1_5Mockable(ifaceName);
+                if (iface == null) return null;
+                iface.getLinkLayerStats_1_5((status, stats) -> {
+                    if (!ok(status)) return;
+                    answer.value = stats;
+                });
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return null;
+            }
+        }
+        WifiLinkLayerStats stats = frameworkFromHalLinkLayerStats_1_5(answer.value);
+        return stats;
+    }
+
 
     /**
      * Makes the framework version of link layer stats from the hal version.
@@ -1034,6 +1061,21 @@ public class WifiVendorHal {
         return out;
     }
 
+    /**
+     * Makes the framework version of link layer stats from the hal version.
+     */
+    @VisibleForTesting
+    static WifiLinkLayerStats frameworkFromHalLinkLayerStats_1_5(
+            android.hardware.wifi.V1_5.StaLinkLayerStats stats) {
+        if (stats == null) return null;
+        WifiLinkLayerStats out = new WifiLinkLayerStats();
+        setIfaceStats_1_5(out, stats.iface);
+        setRadioStats_1_3(out, stats.radios);
+        setTimeStamp(out, stats.timeStampInMs);
+        out.version = WifiLinkLayerStats.V1_5;
+        return out;
+    }
+
     private static void setIfaceStats(WifiLinkLayerStats stats, StaLinkLayerIfaceStats iface) {
         if (iface == null) return;
         stats.beacon_rx = iface.beaconRx;
@@ -1059,6 +1101,13 @@ public class WifiVendorHal {
         stats.txmpdu_vo = iface.wmeVoPktStats.txMpdu;
         stats.lostmpdu_vo = iface.wmeVoPktStats.lostMpdu;
         stats.retries_vo = iface.wmeVoPktStats.retries;
+    }
+
+    private static void setIfaceStats_1_5(WifiLinkLayerStats stats,
+            android.hardware.wifi.V1_5.StaLinkLayerIfaceStats iface) {
+        if (iface == null) return;
+        setIfaceStats(stats, iface.V1_0);
+        stats.timeSliceDutyCycleInPercent = iface.timeSliceDutyCycleInPercent;
     }
 
     private static void setRadioStats(WifiLinkLayerStats stats,
@@ -2489,6 +2538,20 @@ public class WifiVendorHal {
         return android.hardware.wifi.V1_3.IWifiStaIface.castFrom(iface);
     }
 
+    /**
+     * Method to mock out the V1_5 IWifiStaIface retrieval in unit tests.
+     *
+     * @param ifaceName Name of the interface
+     * @return 1.5 IWifiStaIface object if the device is running the 1.5 wifi hal service, null
+     * otherwise.
+     */
+    protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
+            @NonNull String ifaceName) {
+        IWifiStaIface iface = getStaIface(ifaceName);
+        if (iface == null) return null;
+        return android.hardware.wifi.V1_5.IWifiStaIface.castFrom(iface);
+    }
+
     protected android.hardware.wifi.V1_4.IWifiApIface getWifiApIfaceForV1_4Mockable(
             String ifaceName) {
         IWifiApIface iface = getApIface(ifaceName);
@@ -2570,6 +2633,65 @@ public class WifiVendorHal {
     public boolean isItPossibleToCreateStaIface(@NonNull WorkSource requestorWs) {
         synchronized (sLock) {
             return mHalDeviceManager.isItPossibleToCreateIface(IfaceType.STA, requestorWs);
+        }
+
+    }
+    /**
+     * Set primary connection when multiple STA ifaces are active.
+     *
+     * @param ifaceName Name of the interface.
+     * @return true for success
+     */
+    public boolean setMultiStaPrimaryConnection(@NonNull String ifaceName) {
+        if (TextUtils.isEmpty(ifaceName)) return boolResult(false);
+        synchronized (sLock) {
+            try {
+                android.hardware.wifi.V1_5.IWifiChip iWifiChipV15 = getWifiChipForV1_5Mockable();
+                if (iWifiChipV15 == null) return boolResult(false);
+                WifiStatus status = iWifiChipV15.setMultiStaPrimaryConnection(ifaceName);
+                if (!ok(status)) return false;
+                return true;
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return false;
+            }
+        }
+    }
+
+    private byte frameworkMultiStaUseCaseToHidl(@WifiNative.MultiStaUseCase int useCase)
+            throws IllegalArgumentException {
+        switch (useCase) {
+            case WifiNative.DUAL_STA_TRANSIENT_PREFER_PRIMARY:
+                return MultiStaUseCase.DUAL_STA_TRANSIENT_PREFER_PRIMARY;
+            case WifiNative.DUAL_STA_NON_TRANSIENT_UNBIASED:
+                return MultiStaUseCase.DUAL_STA_NON_TRANSIENT_UNBIASED;
+            default:
+                throw new IllegalArgumentException("Invalid use case " + useCase);
+        }
+    }
+
+    /**
+     * Set use-case when multiple STA ifaces are active.
+     *
+     * @param useCase one of the use cases.
+     * @return true for success
+     */
+    public boolean setMultiStaUseCase(@WifiNative.MultiStaUseCase int useCase) {
+        synchronized (sLock) {
+            try {
+                android.hardware.wifi.V1_5.IWifiChip iWifiChipV15 = getWifiChipForV1_5Mockable();
+                if (iWifiChipV15 == null) return boolResult(false);
+                WifiStatus status = iWifiChipV15.setMultiStaUseCase(
+                        frameworkMultiStaUseCaseToHidl(useCase));
+                if (!ok(status)) return false;
+                return true;
+            } catch (IllegalArgumentException e) {
+                mLog.e("Invalid use case " + e);
+                return boolResult(false);
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return false;
+            }
         }
     }
 

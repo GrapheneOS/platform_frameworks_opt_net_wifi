@@ -30,6 +30,7 @@ import java.util.Arrays;
 public class WifiLinkLayerStats {
     public static final String V1_0 = "V1_0";
     public static final String V1_3 = "V1_3";
+    public static final String V1_5 = "V1_5";
 
     /** The version of hal StaLinkLayerStats **/
     public String version;
@@ -144,6 +145,14 @@ public class WifiLinkLayerStats {
      * TimeStamp - absolute milliseconds from boot when these stats were sampled.
      */
     public long timeStampInMs;
+
+    /**
+     * Duty cycle of the iface.
+     * if this iface is being served using time slicing on a radio with one or more ifaces
+     * (i.e MCC), then the duty cycle assigned to this iface in %.
+     * If not using time slicing (i.e SCC or DBS), set to 100.
+     */
+    public short timeSliceDutyCycleInPercent = -1;
 
     /**
      * numRadios - Number of radios.
