@@ -106,6 +106,8 @@ public class ApConfigUtil {
                 return WifiScanner.WIFI_BAND_5_GHZ;
             case SoftApConfiguration.BAND_6GHZ:
                 return WifiScanner.WIFI_BAND_6_GHZ;
+            case SoftApConfiguration.BAND_60GHZ:
+                return WifiScanner.WIFI_BAND_60_GHZ;
             default:
                 return WifiScanner.WIFI_BAND_UNSPECIFIED;
         }
@@ -136,6 +138,8 @@ public class ApConfigUtil {
             return SoftApConfiguration.BAND_5GHZ;
         } else if (ScanResult.is6GHz(frequency)) {
             return SoftApConfiguration.BAND_6GHZ;
+        } else if (ScanResult.is60GHz(frequency)) {
+            return SoftApConfiguration.BAND_60GHZ;
         }
 
         return -1;
@@ -164,7 +168,9 @@ public class ApConfigUtil {
      * Checks if band is a valid combination of {link  SoftApConfiguration#BandType} values
      */
     public static boolean isBandValid(@BandType int band) {
-        return ((band != 0) && ((band & ~SoftApConfiguration.BAND_ANY) == 0));
+        int bandAny = SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ
+                | SoftApConfiguration.BAND_6GHZ | SoftApConfiguration.BAND_60GHZ;
+        return ((band != 0) && ((band & ~bandAny) == 0));
     }
 
     /**
@@ -267,6 +273,11 @@ public class ApConfigUtil {
                         R.string.config_wifiSoftap6gChannelList));
                 scannerBand = WifiScanner.WIFI_BAND_6_GHZ;
                 break;
+            case SoftApConfiguration.BAND_60GHZ:
+                configuredList = convertStringToChannelList(resources.getString(
+                        R.string.config_wifiSoftap60gChannelList));
+                scannerBand = WifiScanner.WIFI_BAND_60_GHZ;
+                break;
             default:
                 return null;
         }
@@ -314,6 +325,14 @@ public class ApConfigUtil {
         }
 
         List<Integer> allowedFreqList = null;
+
+        if ((apBand & SoftApConfiguration.BAND_60GHZ) != 0) {
+            allowedFreqList = getAvailableChannelFreqsForBand(SoftApConfiguration.BAND_60GHZ,
+                    wifiNative, resources, true);
+            if (allowedFreqList != null && allowedFreqList.size() > 0) {
+                return allowedFreqList.get(sRandom.nextInt(allowedFreqList.size())).intValue();
+            }
+        }
 
         if ((apBand & SoftApConfiguration.BAND_6GHZ) != 0) {
             allowedFreqList = getAvailableChannelFreqsForBand(SoftApConfiguration.BAND_6GHZ,
@@ -423,6 +442,9 @@ public class ApConfigUtil {
                     break;
                 case WifiConfiguration.AP_BAND_5GHZ:
                     band = SoftApConfiguration.BAND_5GHZ;
+                    break;
+                case WifiConfiguration.AP_BAND_60GHZ:
+                    band = SoftApConfiguration.BAND_60GHZ;
                     break;
                 default:
                     // WifiConfiguration.AP_BAND_ANY means only 2GHz and 5GHz bands

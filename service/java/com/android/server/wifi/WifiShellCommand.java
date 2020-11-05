@@ -369,7 +369,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 || (band == SoftApConfiguration.BAND_5GHZ
                                 && !mWifiService.is5GHzBandSupported())
                                 || (band == SoftApConfiguration.BAND_6GHZ
-                                && !mWifiService.is6GHzBandSupported())) {
+                                && !mWifiService.is6GHzBandSupported())
+                                || (band == SoftApConfiguration.BAND_60GHZ
+                                && !mWifiService.is60GHzBandSupported())) {
                             pw.println("Invalid argument to 'force-softap-channel enabled' "
                                     + "- must be a valid WLAN channel"
                                     + " in a band supported by the device");
@@ -1120,6 +1122,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         int[] allowed5gDfsFreq =
             mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ_DFS_ONLY);
         int[] allowed6gFreq = mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_6_GHZ);
+        int[] allowed60gFreq = mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_60_GHZ);
         if (allowed2gFreq == null) {
             allowed2gFreq = new int[0];
         }
@@ -1132,14 +1135,19 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         if (allowed6gFreq == null) {
             allowed6gFreq = new int[0];
         }
+        if (allowed60gFreq == null) {
+            allowed60gFreq = new int[0];
+        }
         pw.println("2G freq: " + Arrays.toString(allowed2gFreq));
         pw.println("5G freq: " + Arrays.toString(allowed5gFreq));
         pw.println("5G DFS: " + Arrays.toString(allowed5gDfsFreq));
         pw.println("6G freq: " + Arrays.toString(allowed6gFreq));
+        pw.println("60G freq: " + Arrays.toString(allowed60gFreq));
         return (Arrays.binarySearch(allowed2gFreq, apChannelMHz) >= 0
                 || Arrays.binarySearch(allowed5gFreq, apChannelMHz) >= 0
                 || Arrays.binarySearch(allowed5gDfsFreq, apChannelMHz) >= 0)
-                || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0;
+                || Arrays.binarySearch(allowed6gFreq, apChannelMHz) >= 0
+                || Arrays.binarySearch(allowed60gFreq, apChannelMHz) >= 0;
     }
 
     private void waitForWifiEnabled(boolean enabled) throws InterruptedException {
