@@ -1651,6 +1651,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, config,
                 "Green", WifiMetricsProto.ConnectionEvent.ROAM_NONE);
         mWifiMetrics.setConnectionScanDetail(TEST_IFACE_NAME, scanDetail);
+        mWifiMetrics.logBugReport();
         mWifiMetrics.endConnectionEvent(TEST_IFACE_NAME,
                 WifiMetrics.ConnectionEvent.FAILURE_NONE,
                 WifiMetricsProto.ConnectionEvent.HLF_NONE,
@@ -1683,6 +1684,8 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(SCAN_RESULT_LEVEL, mDecodedProto.connectionEvent[1].signalStrength);
         assertEquals(NETWORK_DETAIL_WIFIMODE,
                 mDecodedProto.connectionEvent[1].routerFingerprint.routerTechnology);
+        assertFalse(mDecodedProto.connectionEvent[0].automaticBugReportTaken);
+        assertTrue(mDecodedProto.connectionEvent[1].automaticBugReportTaken);
         assertTrue(mDecodedProto.connectionEvent[0].useRandomizedMac);
         assertFalse(mDecodedProto.connectionEvent[1].useRandomizedMac);
         assertEquals(WifiMetricsProto.ConnectionEvent.NOMINATOR_MANUAL,
