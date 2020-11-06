@@ -1396,9 +1396,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /**
      * Get the supported feature set synchronously
      */
-    public long syncGetSupportedFeatures() {
-        return mWifiThreadRunner.call(
-                () -> mWifiNative.getSupportedFeatureSet(mInterfaceName), 0L);
+    public long getSupportedFeatures() {
+        return mWifiNative.getSupportedFeatureSet(mInterfaceName);
     }
 
     /**

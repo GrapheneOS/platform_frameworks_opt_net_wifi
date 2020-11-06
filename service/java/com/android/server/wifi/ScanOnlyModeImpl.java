@@ -114,7 +114,7 @@ public class ScanOnlyModeImpl implements ClientMode {
     }
 
     @Override
-    public long syncGetSupportedFeatures() {
+    public long getSupportedFeatures() {
         return 0L;
     }
 

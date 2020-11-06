@@ -1013,8 +1013,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public long syncGetSupportedFeatures() {
-        return getClientMode().syncGetSupportedFeatures();
+    public long getSupportedFeatures() {
+        return getClientMode().getSupportedFeatures();
     }
 
     @Override
