@@ -265,7 +265,7 @@ public class BssidBlocklistMonitorTest {
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_2, TEST_SSID_2,
                 failureReason, threshold);
 
-        // Verify verify that only TEST_BSSID_2 is added to the blocklist.
+        // Verify that only TEST_BSSID_2 is added to the blocklist.
         assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
         assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
     }
@@ -288,6 +288,40 @@ public class BssidBlocklistMonitorTest {
         // Verify verify that TEST_BSSID_1 is in the blocklist
         assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
         assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+    }
+
+    /**
+     * Verify that if a failure happens on a disabled WifiConfiguration, the failure will not get
+     * ignored even if it's the only BSSID remaining.
+     */
+    @Test
+    public void testFailuresOnDisabledConfigsGetBlocked() {
+        // setup both TEST_BSSID_1 and TEST_BSSID_2 to be the only BSSID for its SSID
+        when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_1)).thenReturn(true);
+        when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_2)).thenReturn(true);
+
+        // setup TEST_SSID_2 to be disabled
+        mBssidBlocklistMonitor.handleWifiConfigurationDisabled(TEST_SSID_2);
+
+        // Simulate both BSSIDs failing
+        int failureReason = BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
+        int threshold = BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(failureReason);
+        handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1,
+                failureReason, threshold);
+        handleBssidConnectionFailureMultipleTimes(TEST_BSSID_2, TEST_SSID_2,
+                failureReason, threshold);
+
+        // Verify that only TEST_BSSID_2 is added to the blocklist.
+        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
+
+        // Now simulate having a connection success on TEST_BSSID_2 and verify there are
+        // no more blocked BSSIDs, and connection failure should be ignored on TEST_BSSID_2 again.
+        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_2, TEST_SSID_2);
+        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_2);
+        handleBssidConnectionFailureMultipleTimes(TEST_BSSID_2, TEST_SSID_2,
+                failureReason, threshold);
+        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**

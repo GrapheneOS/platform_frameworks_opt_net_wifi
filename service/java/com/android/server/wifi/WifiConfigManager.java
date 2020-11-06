@@ -1724,6 +1724,7 @@ public class WifiConfigManager {
             listener.onNetworkTemporarilyDisabled(
                     createExternalWifiConfiguration(config, true, Process.WIFI_UID), disableReason);
         }
+        mBssidBlocklistMonitor.handleWifiConfigurationDisabled(config.SSID);
     }
 
     /**
@@ -1742,6 +1743,7 @@ public class WifiConfigManager {
             listener.onNetworkPermanentlyDisabled(
                     createExternalWifiConfiguration(config, true, Process.WIFI_UID), disableReason);
         }
+        mBssidBlocklistMonitor.handleWifiConfigurationDisabled(config.SSID);
     }
 
     /**
