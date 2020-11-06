@@ -30,7 +30,6 @@ import android.net.IpConfiguration;
 import android.net.MacAddress;
 import android.net.ProxyInfo;
 import android.net.StaticIpConfiguration;
-import android.net.util.MacAddressUtils;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -53,6 +52,7 @@ import android.util.Pair;
 import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.net.module.util.MacAddressUtils;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.LruConnectionTracker;
@@ -2060,9 +2060,10 @@ public class WifiConfigManager {
      * 5. Sets the status of network as |CURRENT|.
      *
      * @param networkId network ID corresponding to the network.
+     * @param shouldSetUserConnectChoice setup user connect choice on this network.
      * @return true if the network was found, false otherwise.
      */
-    public boolean updateNetworkAfterConnect(int networkId) {
+    public boolean updateNetworkAfterConnect(int networkId, boolean shouldSetUserConnectChoice) {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Update network after connect for " + networkId);
         }
@@ -2074,6 +2075,9 @@ public class WifiConfigManager {
         // Only record connection order for non-passpoint from user saved or suggestion.
         if (!config.isPasspoint() && (config.fromWifiNetworkSuggestion || !config.ephemeral)) {
             mLruConnectionTracker.addNetwork(config);
+        }
+        if (shouldSetUserConnectChoice) {
+            setUserConnectChoice(config.networkId);
         }
         config.lastConnected = mClock.getWallClockMillis();
         config.numAssociation++;
@@ -3417,11 +3421,8 @@ public class WifiConfigManager {
     }
 
     /**
-     * This API is called when user explicitly selects a network. Currently, it is used in following
-     * cases:
-     * (1) User explicitly chooses to connect to a saved network.
-     * (2) User saves a network after adding a new network.
-     * (3) User saves a network after modifying a saved network.
+     * This API is called when a connection successfully completes on an existing network
+     * selected by the user. It is not called after the first connection of a newly added network.
      * Following actions will be triggered:
      * 1. If this network is disabled, we need re-enable it again.
      * 2. This network is favored over all the other networks visible in latest network
@@ -3431,7 +3432,7 @@ public class WifiConfigManager {
      * @return true -- There is change made to connection choice of any saved network.
      * false -- There is no change made to connection choice of any saved network.
      */
-    public boolean setUserConnectChoice(int netId) {
+    private boolean setUserConnectChoice(int netId) {
         localLog("userSelectNetwork: network ID=" + netId);
         WifiConfiguration selected = getInternalConfiguredNetwork(netId);
 
@@ -3446,9 +3447,6 @@ public class WifiConfigManager {
                     WifiConfiguration.NetworkSelectionStatus.DISABLED_NONE);
         }
         boolean changed = setLegacyUserConnectChoice(selected);
-        if (changed) {
-            saveToStore(false);
-        }
         return changed;
     }
 

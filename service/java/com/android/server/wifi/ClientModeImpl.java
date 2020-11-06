@@ -59,8 +59,6 @@ import android.net.ip.IpClientManager;
 import android.net.shared.Layer2Information;
 import android.net.shared.ProvisioningConfiguration;
 import android.net.shared.ProvisioningConfiguration.ScanResultInfo;
-import android.net.util.MacAddressUtils;
-import android.net.util.NetUtils;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -98,6 +96,8 @@ import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.net.module.util.Inet4AddressUtils;
+import com.android.net.module.util.MacAddressUtils;
+import com.android.net.module.util.NetUtils;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
@@ -3059,9 +3059,18 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mPasspointManager.clearAnqpRequestsAndFlushCache();
     }
 
+    /**
+     * Helper method called when a L3 connection is successfully established to a network.
+     */
     void registerConnected() {
         if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID) {
-            mWifiConfigManager.updateNetworkAfterConnect(mLastNetworkId);
+            WifiConfiguration config = getConnectedWifiConfigurationInternal();
+            boolean shouldSetUserConnectChoice = config != null
+                    && isRecentlySelectedByTheUser(config)
+                    && config.getNetworkSelectionStatus().hasEverConnected()
+                    && mWifiPermissionsUtil.checkNetworkSettingsPermission(config.lastConnectUid);
+            mWifiConfigManager.updateNetworkAfterConnect(mLastNetworkId,
+                    shouldSetUserConnectChoice);
             // Notify PasspointManager of Passpoint network connected event.
             WifiConfiguration currentNetwork = getConnectedWifiConfigurationInternal();
             if (currentNetwork != null && currentNetwork.isPasspoint()) {
@@ -4370,18 +4379,13 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             final WifiConfiguration config = getConnectedWifiConfigurationInternal();
 
             boolean explicitlySelected = false;
-            if (shouldEvaluateWhetherToSendExplicitlySelected(config)) {
+            if (isRecentlySelectedByTheUser(config)) {
                 // If explicitlySelected is true, the network was selected by the user via Settings
                 // or QuickSettings. If this network has Internet access, switch to it. Otherwise,
                 // switch to it only if the user confirms that they really want to switch, or has
                 // already confirmed and selected "Don't ask again".
                 explicitlySelected =
                         mWifiPermissionsUtil.checkNetworkSettingsPermission(config.lastConnectUid);
-                if (explicitlySelected) {
-                    // Note user connect choice here, so that it will be considered in the
-                    // next network selection.
-                    mWifiConfigManager.setUserConnectChoice(config.networkId);
-                }
                 if (mVerboseLoggingEnabled) {
                     log("Network selected by UID " + config.lastConnectUid + " explicitlySelected="
                             + explicitlySelected);
@@ -4805,13 +4809,17 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     }
 
     /**
-     * Helper function to check if we need to invoke
-     * {@link NetworkAgent#explicitlySelected(boolean, boolean)} to indicate that we connected to a
-     * network which the user just chose
+     * Helper function to check if a nework has been recently selected by the user.
      * (i.e less than {@link #LAST_SELECTED_NETWORK_EXPIRATION_AGE_MILLIS) before).
+     *
+     * This is used to determine if we should call
+     * {@link NetworkAgent#explicitlySelected(boolean, boolean)} to indicate that we connected to
+     * a network the user just chose.
+     * This is also used to determine if we should set the network as the user connect choice when
+     * a connection gets successfully established.
      */
     @VisibleForTesting
-    public boolean shouldEvaluateWhetherToSendExplicitlySelected(WifiConfiguration currentConfig) {
+    public boolean isRecentlySelectedByTheUser(WifiConfiguration currentConfig) {
         if (currentConfig == null) {
             Log.wtf(getTag(), "Current WifiConfiguration is null, "
                     + "but IP provisioning just succeeded");

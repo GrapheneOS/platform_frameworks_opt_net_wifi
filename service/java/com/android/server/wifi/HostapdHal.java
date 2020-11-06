@@ -425,17 +425,17 @@ public class HostapdHal {
             ifaceParams.hwModeParams.enable80211AC =
                     mContext.getResources().getBoolean(
                             R.bool.config_wifi_softap_ieee80211ac_supported);
-            int band;
-            boolean enableAcs = ApConfigUtil.isAcsSupported(mContext) && config.getChannel() == 0
-                    && !mForceApChannel;
+            if (mForceApChannel) {
+                config = new SoftApConfiguration.Builder(config)
+                        .setChannel(mForcedApChannel, mForcedApBand).build();
+            }
+            boolean enableAcs = ApConfigUtil.isAcsSupported(mContext) && config.getChannel() == 0;
             if (enableAcs) {
                 ifaceParams.channelParams.enableAcs = true;
                 ifaceParams.channelParams.acsShouldExcludeDfs = !mContext.getResources()
                         .getBoolean(R.bool.config_wifiSoftapAcsIncludeDfs);
             }
-            ifaceParams.channelParams.channel =
-                    mForceApChannel ? mForcedApChannel : config.getChannel();
-            band = mForceApChannel ? mForcedApBand : config.getBand();
+            ifaceParams.channelParams.channel = config.getChannel();
 
             android.hardware.wifi.hostapd.V1_2.IHostapd.NetworkParams nwParamsV1_2 =
                     prepareNetworkParams(config);
@@ -445,7 +445,7 @@ public class HostapdHal {
                 HostapdStatus status;
                 if (!isV1_1()) {
                     // V1_0 case
-                    ifaceParams.channelParams.band = getHalBand(band);
+                    ifaceParams.channelParams.band = getHalBand(config.getBand());
                     status = mIHostapd.addAccessPoint(ifaceParams, nwParamsV1_2.V1_0);
                     if (!checkStatusAndLogFailure(status, methodStr)) {
                         return false;
@@ -456,15 +456,15 @@ public class HostapdHal {
                     ifaceParams1_1.V1_0 = ifaceParams;
                     if (!isV1_2()) {
                         // V1_1 case
-                        ifaceParams.channelParams.band = getHalBand(band);
+                        ifaceParams.channelParams.band = getHalBand(config.getBand());
 
                         if (ifaceParams.channelParams.enableAcs) {
-                            if ((band & SoftApConfiguration.BAND_2GHZ) != 0) {
+                            if ((config.getBand() & SoftApConfiguration.BAND_2GHZ) != 0) {
                                 ifaceParams1_1.channelParams.acsChannelRanges.addAll(
                                         toAcsChannelRanges(mContext.getResources().getString(
                                             R.string.config_wifiSoftap2gChannelList)));
                             }
-                            if ((band & SoftApConfiguration.BAND_5GHZ) != 0) {
+                            if ((config.getBand() & SoftApConfiguration.BAND_5GHZ) != 0) {
                                 ifaceParams1_1.channelParams.acsChannelRanges.addAll(
                                         toAcsChannelRanges(mContext.getResources().getString(
                                             R.string.config_wifiSoftap5gChannelList)));
@@ -504,23 +504,14 @@ public class HostapdHal {
                         ifaceParams1_2.hwModeParams.enableHeTargetWakeTime =
                                 mContext.getResources().getBoolean(
                                     R.bool.config_wifiSoftapHeTwtSupported);
-                        ifaceParams1_2.channelParams.bandMask = getHalBandMask(band);
+                        ifaceParams1_2.channelParams.bandMask = getHalBandMask(config.getBand());
 
                         // Prepare freq ranges/lists if needed
                         if (ifaceParams.channelParams.enableAcs
-                                && ApConfigUtil.isSendFreqRangesNeeded(band, mContext)) {
-                            if ((band & SoftApConfiguration.BAND_2GHZ) != 0) {
-                                ifaceParams1_2.channelParams.acsChannelFreqRangesMhz.addAll(
-                                        toAcsFreqRanges(SoftApConfiguration.BAND_2GHZ));
-                            }
-                            if ((band & SoftApConfiguration.BAND_5GHZ) != 0) {
-                                ifaceParams1_2.channelParams.acsChannelFreqRangesMhz.addAll(
-                                        toAcsFreqRanges(SoftApConfiguration.BAND_5GHZ));
-                            }
-                            if ((band & SoftApConfiguration.BAND_6GHZ) != 0) {
-                                ifaceParams1_2.channelParams.acsChannelFreqRangesMhz.addAll(
-                                        toAcsFreqRanges(SoftApConfiguration.BAND_6GHZ));
-                            }
+                                && ApConfigUtil.isSendFreqRangesNeeded(
+                                config.getBand(), mContext)) {
+                            prepareAcsChannelFreqRangesMhz(ifaceParams1_2.channelParams,
+                                    config.getBand());
                         }
 
                         if (!isV1_3()) {
@@ -538,10 +529,40 @@ public class HostapdHal {
                                     .IHostapd.NetworkParams();
                             nwParamsV1_3.V1_2 = nwParamsV1_2;
                             nwParamsV1_3.isMetered = isMetered;
+
+                            android.hardware.wifi.hostapd.V1_3
+                                    .IHostapd.IfaceParams ifaceParams1_3 =
+                                    new android.hardware.wifi.hostapd.V1_3
+                                    .IHostapd.IfaceParams();
+                            ifaceParams1_3.V1_2 = ifaceParams1_2;
+                            ArrayList<android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams>
+                                    channelParams1_3List = new ArrayList<>();
+                            for (int i = 0; i < config.getChannels().size(); i++) {
+                                android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams
+                                        channelParam13 = new android.hardware.wifi.hostapd
+                                        .V1_3.IHostapd.ChannelParams();
+                                // Prepare channel
+                                channelParam13.channel = config.getChannels().valueAt(i);
+                                // Prepare enableAcs
+                                channelParam13.enableAcs = ApConfigUtil.isAcsSupported(mContext)
+                                        && channelParam13.channel == 0;
+                                // Prepare the bandMask
+                                channelParam13.V1_2.bandMask = getHalBandMask(
+                                        config.getChannels().keyAt(i));
+                                // Prepare  AcsChannelFreqRangesMhz
+                                if (channelParam13.enableAcs
+                                        && ApConfigUtil.isSendFreqRangesNeeded(
+                                        config.getChannels().keyAt(i), mContext)) {
+                                    prepareAcsChannelFreqRangesMhz(channelParam13.V1_2,
+                                            config.getChannels().keyAt(i));
+                                }
+                                channelParams1_3List.add(channelParam13);
+                            }
+                            ifaceParams1_3.channelParamsList = channelParams1_3List;
                             android.hardware.wifi.hostapd.V1_3.IHostapd iHostapdV1_3 =
                                     getHostapdMockableV1_3();
                             if (iHostapdV1_3 == null) return false;
-                            status12 = iHostapdV1_3.addAccessPoint_1_3(ifaceParams1_2,
+                            status12 = iHostapdV1_3.addAccessPoint_1_3(ifaceParams1_3,
                                     nwParamsV1_3);
                         }
                         if (!checkStatusAndLogFailure12(status12, methodStr)) {
@@ -553,7 +574,7 @@ public class HostapdHal {
                 mSoftApFailureListeners.put(ifaceName, onFailureListener);
                 return true;
             } catch (IllegalArgumentException e) {
-                Log.e(TAG, "Unrecognized apBand: " + band);
+                Log.e(TAG, "Unrecognized apBand: " + config.getBand());
                 return false;
             } catch (RemoteException e) {
                 handleRemoteException(e, methodStr);
@@ -943,6 +964,27 @@ public class HostapdHal {
         return acsChannelRanges;
     }
 
+
+    /**
+     * Prepare the acsChannelFreqRangesMhz in V1_2.IHostapd.ChannelParams.
+     */
+    private void prepareAcsChannelFreqRangesMhz(
+            android.hardware.wifi.hostapd.V1_2.IHostapd.ChannelParams channelParams12,
+            @BandType int band) {
+        if ((band & SoftApConfiguration.BAND_2GHZ) != 0) {
+            channelParams12.acsChannelFreqRangesMhz.addAll(
+                    toAcsFreqRanges(SoftApConfiguration.BAND_2GHZ));
+        }
+        if ((band & SoftApConfiguration.BAND_5GHZ) != 0) {
+            channelParams12.acsChannelFreqRangesMhz.addAll(
+                    toAcsFreqRanges(SoftApConfiguration.BAND_5GHZ));
+        }
+        if ((band & SoftApConfiguration.BAND_6GHZ) != 0) {
+            channelParams12.acsChannelFreqRangesMhz.addAll(
+                    toAcsFreqRanges(SoftApConfiguration.BAND_6GHZ));
+        }
+    }
+
     /**
      * Convert channel list string like '1-6,11' to list of AcsFreqRange
      */
@@ -1150,6 +1192,7 @@ public class HostapdHal {
         @Override
         public void onApInstanceInfoChanged(String ifaceName, String apIfaceInstance,
                 int frequency, int bandwidth, int generation, byte[] apIfaceInstanceMacAddress) {
+            Log.d(TAG, "onApInstanceInfoChanged on " + ifaceName + " / " + apIfaceInstance);
             try {
                 if (mSoftApEventListener != null) {
                     mSoftApEventListener.onInfoChanged(apIfaceInstance, frequency,

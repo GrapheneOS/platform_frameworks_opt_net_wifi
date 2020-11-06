@@ -41,9 +41,11 @@ import android.os.Handler;
 import android.os.IHwBinder;
 import android.os.RemoteException;
 import android.os.test.TestLooper;
+import android.util.SparseIntArray;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.NativeUtil;
 import com.android.wifi.resources.R;
 
@@ -101,6 +103,9 @@ public class HostapdHalTest extends WifiBaseTest {
     private ArgumentCaptor<android.hardware.wifi.hostapd.V1_2.IHostapd.IfaceParams>
             mIfaceParamsCaptorV12 =
             ArgumentCaptor.forClass(android.hardware.wifi.hostapd.V1_2.IHostapd.IfaceParams.class);
+    private ArgumentCaptor<android.hardware.wifi.hostapd.V1_3.IHostapd.IfaceParams>
+            mIfaceParamsCaptorV13 =
+            ArgumentCaptor.forClass(android.hardware.wifi.hostapd.V1_3.IHostapd.IfaceParams.class);
     private ArgumentCaptor<IHostapd.NetworkParams> mNetworkParamsCaptor =
             ArgumentCaptor.forClass(IHostapd.NetworkParams.class);
     private ArgumentCaptor<android.hardware.wifi.hostapd.V1_2.IHostapd.NetworkParams>
@@ -1074,7 +1079,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
-                mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
+                mIfaceParamsCaptorV13.capture(), mNetworkParamsV13Captor.capture()))
                 .thenReturn(mStatusSuccess12);
 
 
@@ -1083,10 +1088,10 @@ public class HostapdHalTest extends WifiBaseTest {
                 () -> mSoftApListener.onFailure()));
         verify(mIHostapdMockV13).addAccessPoint_1_3(any(), any());
 
-        assertEquals(IFACE_NAME, mIfaceParamsCaptorV12.getValue().V1_1.V1_0.ifaceName);
-        assertTrue(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211N);
-        assertFalse(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211AC);
-        assertFalse(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.channelParams.enableAcs);
+        assertEquals(IFACE_NAME, mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.ifaceName);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211AC);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.channelParams.enableAcs);
 
         assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
                 mNetworkParamsV13Captor.getValue().V1_2.V1_0.ssid);
@@ -1121,7 +1126,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
-                mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
+                mIfaceParamsCaptorV13.capture(), mNetworkParamsV13Captor.capture()))
                 .thenReturn(mStatusSuccess12);
 
 
@@ -1130,10 +1135,10 @@ public class HostapdHalTest extends WifiBaseTest {
                 () -> mSoftApListener.onFailure()));
         verify(mIHostapdMockV13).addAccessPoint_1_3(any(), any());
 
-        assertEquals(IFACE_NAME, mIfaceParamsCaptorV12.getValue().V1_1.V1_0.ifaceName);
-        assertTrue(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211N);
-        assertFalse(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211AC);
-        assertFalse(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.channelParams.enableAcs);
+        assertEquals(IFACE_NAME, mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.ifaceName);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211AC);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.channelParams.enableAcs);
 
         assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
                 mNetworkParamsV13Captor.getValue().V1_2.V1_0.ssid);
@@ -1295,7 +1300,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
-                mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
+                mIfaceParamsCaptorV13.capture(), mNetworkParamsV13Captor.capture()))
                 .thenReturn(mStatusSuccess12);
 
 
@@ -1304,10 +1309,10 @@ public class HostapdHalTest extends WifiBaseTest {
                 () -> mSoftApListener.onFailure()));
         verify(mIHostapdMockV13).addAccessPoint_1_3(any(), any());
 
-        assertEquals(IFACE_NAME, mIfaceParamsCaptorV12.getValue().V1_1.V1_0.ifaceName);
-        assertTrue(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211N);
-        assertFalse(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211AC);
-        assertTrue(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.channelParams.enableAcs);
+        assertEquals(IFACE_NAME, mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.ifaceName);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211AC);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.channelParams.enableAcs);
 
         assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
                 mNetworkParamsV13Captor.getValue().V1_2.V1_0.ssid);
@@ -1343,7 +1348,7 @@ public class HostapdHalTest extends WifiBaseTest {
         configurationBuilder.setBand(mBand256G);
 
         when(mIHostapdMockV13.addAccessPoint_1_3(
-                mIfaceParamsCaptorV12.capture(), mNetworkParamsV13Captor.capture()))
+                mIfaceParamsCaptorV13.capture(), mNetworkParamsV13Captor.capture()))
                 .thenReturn(mStatusSuccess12);
 
 
@@ -1352,10 +1357,10 @@ public class HostapdHalTest extends WifiBaseTest {
                 () -> mSoftApListener.onFailure()));
         verify(mIHostapdMockV13).addAccessPoint_1_3(any(), any());
 
-        assertEquals(IFACE_NAME, mIfaceParamsCaptorV12.getValue().V1_1.V1_0.ifaceName);
-        assertTrue(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211N);
-        assertFalse(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.hwModeParams.enable80211AC);
-        assertTrue(mIfaceParamsCaptorV12.getValue().V1_1.V1_0.channelParams.enableAcs);
+        assertEquals(IFACE_NAME, mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.ifaceName);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211AC);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.channelParams.enableAcs);
 
         assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
                 mNetworkParamsV13Captor.getValue().V1_2.V1_0.ssid);
@@ -1365,6 +1370,158 @@ public class HostapdHalTest extends WifiBaseTest {
         assertEquals(NETWORK_PSK, mNetworkParamsV13Captor.getValue().V1_2.passphrase);
         assertEquals("", mNetworkParamsV13Captor.getValue().V1_2.V1_0.pskPassphrase);
         assertFalse(mNetworkParamsV13Captor.getValue().isMetered);
+    }
+
+    /**
+     * Verifies the successful addition of access point with Dual channel config.
+     */
+    @Test
+    public void testAddAccessPointSuccess_DualBandConfig() throws Exception {
+        mResources.setBoolean(R.bool.config_wifi_softap_acs_supported, true);
+        when(mServiceManagerMock.getTransport(anyString(), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
+        mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
+        // Enable ACS and set available channels in the config.
+        final String acsChannelStr2g = "1,6,11-13";
+        final String acsChannelStr5g = "40";
+        final String acsChannelStr6g = "";
+        mResources.setString(R.string.config_wifiSoftap2gChannelList, acsChannelStr2g);
+        mResources.setString(R.string.config_wifiSoftap5gChannelList, acsChannelStr5g);
+        mResources.setString(R.string.config_wifiSoftap6gChannelList, acsChannelStr6g);
+
+        android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange freqRange1 =
+                new android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange();
+        android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange freqRange2 =
+                new android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange();
+        android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange freqRange3 =
+                new android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange();
+        android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange freqRange4 =
+                new android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange();
+
+        freqRange1.start = freqRange1.end = ApConfigUtil.convertChannelToFrequency(
+                1, SoftApConfiguration.BAND_2GHZ);
+        freqRange2.start = freqRange2.end = ApConfigUtil.convertChannelToFrequency(
+                6, SoftApConfiguration.BAND_2GHZ);
+        freqRange3.start = ApConfigUtil.convertChannelToFrequency(11,
+                SoftApConfiguration.BAND_2GHZ);
+        freqRange3.end = ApConfigUtil.convertChannelToFrequency(13, SoftApConfiguration.BAND_2GHZ);
+        ArrayList<android.hardware.wifi.hostapd.V1_2.IHostapd.AcsFrequencyRange> acsFreqRanges =
+                new ArrayList<>();
+        acsFreqRanges.add(freqRange1);
+        acsFreqRanges.add(freqRange2);
+        acsFreqRanges.add(freqRange3);
+
+        mHostapdHal = new HostapdHalSpy();
+
+        executeAndValidateInitializationSequenceOnLastHIDL(false);
+
+        SparseIntArray dual_channels = new SparseIntArray(2);
+        dual_channels.put(SoftApConfiguration.BAND_5GHZ, 149);
+        dual_channels.put(SoftApConfiguration.BAND_2GHZ, 0);
+
+        Builder configurationBuilder = new SoftApConfiguration.Builder();
+        configurationBuilder.setSsid(NETWORK_SSID);
+        configurationBuilder.setHiddenSsid(false);
+        configurationBuilder.setPassphrase(NETWORK_PSK,
+                SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
+        configurationBuilder.setChannels(dual_channels);
+
+        when(mIHostapdMockV13.addAccessPoint_1_3(
+                mIfaceParamsCaptorV13.capture(), mNetworkParamsV13Captor.capture()))
+                .thenReturn(mStatusSuccess12);
+
+
+        assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
+                configurationBuilder.build(), true,
+                () -> mSoftApListener.onFailure()));
+        verify(mIHostapdMockV13).addAccessPoint_1_3(any(), any());
+
+        assertEquals(IFACE_NAME, mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.ifaceName);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211AC);
+        // 2.4G band, ACS case.
+        assertTrue(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0).enableAcs);
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0).V1_2.bandMask,
+                android.hardware.wifi.hostapd.V1_2.IHostapd.BandMask.BAND_2_GHZ);
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0).channel, 0);
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0)
+                .V1_2.acsChannelFreqRangesMhz, acsFreqRanges);
+        // 5G band, specific channel.
+        assertFalse(mIfaceParamsCaptorV13.getValue().channelParamsList.get(1).enableAcs);
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(1).V1_2.bandMask,
+                android.hardware.wifi.hostapd.V1_2.IHostapd.BandMask.BAND_5_GHZ);
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(1).channel, 149);
+        // No acsChannelFreqRangesMh
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(1)
+                .V1_2.acsChannelFreqRangesMhz.size(), 0);
+
+        assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
+                mNetworkParamsV13Captor.getValue().V1_2.V1_0.ssid);
+        assertFalse(mNetworkParamsV13Captor.getValue().V1_2.V1_0.isHidden);
+        assertEquals(android.hardware.wifi.hostapd.V1_2.IHostapd.EncryptionType.WPA3_SAE,
+                mNetworkParamsV13Captor.getValue().V1_2.encryptionType);
+        assertEquals(NETWORK_PSK, mNetworkParamsV13Captor.getValue().V1_2.passphrase);
+        assertEquals("", mNetworkParamsV13Captor.getValue().V1_2.V1_0.pskPassphrase);
+    }
+
+    /**
+     * Verifies the successful addition of access point with Dual channel config
+     * and enabled the forced channel feature.
+     */
+    @Test
+    public void testAddAccessPointSuccess_DualBandConfigAndEnableForceApChannel() throws Exception {
+        mResources.setBoolean(R.bool.config_wifi_softap_acs_supported, true);
+        when(mServiceManagerMock.getTransport(anyString(), anyString()))
+                .thenReturn(IServiceManager.Transport.HWBINDER);
+        mIHostapdMockV11 = mock(android.hardware.wifi.hostapd.V1_1.IHostapd.class);
+        mIHostapdMockV12 = mock(android.hardware.wifi.hostapd.V1_2.IHostapd.class);
+        mIHostapdMockV13 = mock(android.hardware.wifi.hostapd.V1_3.IHostapd.class);
+        mHostapdHal = new HostapdHalSpy();
+
+        executeAndValidateInitializationSequenceOnLastHIDL(false);
+
+        SparseIntArray dual_channels = new SparseIntArray(2);
+        dual_channels.put(SoftApConfiguration.BAND_5GHZ, 149);
+        dual_channels.put(SoftApConfiguration.BAND_2GHZ, 0);
+
+        Builder configurationBuilder = new SoftApConfiguration.Builder();
+        configurationBuilder.setSsid(NETWORK_SSID);
+        configurationBuilder.setHiddenSsid(false);
+        configurationBuilder.setPassphrase(NETWORK_PSK,
+                SoftApConfiguration.SECURITY_TYPE_WPA3_SAE);
+        configurationBuilder.setChannels(dual_channels);
+
+        when(mIHostapdMockV13.addAccessPoint_1_3(
+                mIfaceParamsCaptorV13.capture(), mNetworkParamsV13Captor.capture()))
+                .thenReturn(mStatusSuccess12);
+
+        mHostapdHal.enableForceSoftApChannel(11, SoftApConfiguration.BAND_2GHZ);
+        assertTrue(mHostapdHal.addAccessPoint(IFACE_NAME,
+                configurationBuilder.build(), true,
+                () -> mSoftApListener.onFailure()));
+        verify(mIHostapdMockV13).addAccessPoint_1_3(any(), any());
+
+        assertEquals(IFACE_NAME, mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.ifaceName);
+        assertTrue(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211N);
+        assertFalse(mIfaceParamsCaptorV13.getValue().V1_2.V1_1.V1_0.hwModeParams.enable80211AC);
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.size(), 1);
+        // 2.4G band
+        assertFalse(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0).enableAcs);
+
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0).V1_2.bandMask,
+                android.hardware.wifi.hostapd.V1_2.IHostapd.BandMask.BAND_2_GHZ);
+
+        assertEquals(mIfaceParamsCaptorV13.getValue().channelParamsList.get(0).channel, 11);
+
+        assertEquals(NativeUtil.stringToByteArrayList(NETWORK_SSID),
+                mNetworkParamsV13Captor.getValue().V1_2.V1_0.ssid);
+        assertFalse(mNetworkParamsV13Captor.getValue().V1_2.V1_0.isHidden);
+        assertEquals(android.hardware.wifi.hostapd.V1_2.IHostapd.EncryptionType.WPA3_SAE,
+                mNetworkParamsV13Captor.getValue().V1_2.encryptionType);
+        assertEquals(NETWORK_PSK, mNetworkParamsV13Captor.getValue().V1_2.passphrase);
+        assertEquals("", mNetworkParamsV13Captor.getValue().V1_2.V1_0.pskPassphrase);
     }
 }
 
