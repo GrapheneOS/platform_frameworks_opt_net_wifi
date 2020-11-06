@@ -436,11 +436,16 @@ class Utils {
         } else if (wifiEntry.getLevel() == WifiEntry.WIFI_LEVEL_UNREACHABLE) {
             // Do nothing because users know it by signal icon.
         } else { // In range, not disabled.
-            if (wifiConfiguration.getRecentFailureReason()
-                    == WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA
-                    || wifiConfiguration.getRecentFailureReason()
-                    == WifiConfiguration.RECENT_FAILURE_MBO_OCE_DISCONNECT) {
-                return context.getString(R.string.wifitrackerlib_wifi_ap_unable_to_handle_new_sta);
+            switch (wifiConfiguration.getRecentFailureReason()) {
+                case WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA:
+                case WifiConfiguration.RECENT_FAILURE_REFUSED_TEMPORARILY:
+                case WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY:
+                    return context.getString(R.string
+                            .wifitrackerlib_wifi_ap_unable_to_handle_new_sta);
+                case WifiConfiguration.RECENT_FAILURE_POOR_CHANNEL_CONDITIONS:
+                    return context.getString(R.string.wifitrackerlib_wifi_poor_channel_conditions);
+                default:
+                    // do nothing
             }
         }
         return "";
