@@ -361,4 +361,15 @@ public class ANQPRequestManagerTest extends WifiBaseTest {
         assertTrue(mManager.requestANQPElements(TEST_BSSID, TEST_ANQP_KEY, true,
                 NetworkDetail.HSRelease.R3));
     }
+
+    /**
+     * Verify that the Venue URL ANQP element is being requested when called.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void requestVenueUrlAnqpElement() throws Exception {
+        when(mHandler.requestVenueUrlAnqp(TEST_BSSID)).thenReturn(true);
+        assertTrue(mManager.requestVenueUrlAnqpElement(TEST_BSSID, TEST_ANQP_KEY));
+    }
 }

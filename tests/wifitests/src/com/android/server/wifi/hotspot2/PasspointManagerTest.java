@@ -441,7 +441,7 @@ public class PasspointManagerTest extends WifiBaseTest {
 
         when(mAnqpRequestManager.onRequestCompleted(TEST_BSSID, true)).thenReturn(TEST_ANQP_KEY);
         mCallbacks.onANQPResponse(TEST_BSSID, anqpElementMap);
-        verify(mAnqpCache).addEntry(TEST_ANQP_KEY, anqpElementMap);
+        verify(mAnqpCache).addOrUpdateEntry(TEST_ANQP_KEY, anqpElementMap);
         verify(mContext, never()).sendBroadcastAsUser(any(Intent.class), any(UserHandle.class),
                 any(String.class));
     }
@@ -460,7 +460,7 @@ public class PasspointManagerTest extends WifiBaseTest {
 
         when(mAnqpRequestManager.onRequestCompleted(TEST_BSSID, true)).thenReturn(null);
         mCallbacks.onANQPResponse(TEST_BSSID, anqpElementMap);
-        verify(mAnqpCache, never()).addEntry(any(ANQPNetworkKey.class), anyMap());
+        verify(mAnqpCache, never()).addOrUpdateEntry(any(ANQPNetworkKey.class), anyMap());
     }
 
     /**
@@ -472,7 +472,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     public void anqpResponseFailure() throws Exception {
         when(mAnqpRequestManager.onRequestCompleted(TEST_BSSID, false)).thenReturn(TEST_ANQP_KEY);
         mCallbacks.onANQPResponse(TEST_BSSID, null);
-        verify(mAnqpCache, never()).addEntry(any(ANQPNetworkKey.class), anyMap());
+        verify(mAnqpCache, never()).addOrUpdateEntry(any(ANQPNetworkKey.class), anyMap());
 
     }
 
@@ -2571,5 +2571,29 @@ public class PasspointManagerTest extends WifiBaseTest {
         verify(mWifiMetrics).incrementNumPasspointProviderWithSubscriptionExpiration();
         verify(mWifiMetrics).incrementNumPasspointProviderInstallation();
         verify(mWifiMetrics).incrementNumPasspointProviderInstallSuccess();
+    }
+
+    /**
+     * Verify that venue URL ANQP request is sent correctly.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void verifyRequestVenueUrlAnqpElement() throws Exception {
+        // static mocking
+        MockitoSession session =
+                com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession().mockStatic(
+                        InformationElementUtil.class).startMocking();
+        try {
+            ScanResult scanResult = createTestScanResult();
+            InformationElementUtil.Vsa vsa = new InformationElementUtil.Vsa();
+            vsa.anqpDomainID = scanResult.anqpDomainId;
+            when(InformationElementUtil.getHS2VendorSpecificIE(isNull())).thenReturn(vsa);
+            long bssid = Utils.parseMac(scanResult.BSSID);
+            mManager.requestVenueUrlAnqpElement(scanResult);
+            verify(mAnqpRequestManager).requestVenueUrlAnqpElement(eq(bssid), any());
+        } finally {
+            session.finishMocking();
+        }
     }
 }

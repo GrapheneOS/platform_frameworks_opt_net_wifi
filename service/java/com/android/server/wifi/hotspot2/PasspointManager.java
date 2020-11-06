@@ -143,7 +143,11 @@ public class PasspointManager {
                 Map<Constants.ANQPElementType, ANQPElement> anqpElements) {
             if (mVerboseLoggingEnabled) {
                 Log.d(TAG, "ANQP response received from BSSID "
-                        + Utils.macToString(bssid));
+                        + Utils.macToString(bssid) + " - List of ANQP elements:");
+                int i = 0;
+                for (Constants.ANQPElementType type : anqpElements.keySet()) {
+                    Log.d(TAG, "#" + i++ + ": " + type);
+                }
             }
             // Notify request manager for the completion of a request.
             ANQPNetworkKey anqpKey =
@@ -155,7 +159,7 @@ public class PasspointManager {
             }
 
             // Add new entry to the cache.
-            mAnqpCache.addEntry(anqpKey, anqpElements);
+            mAnqpCache.addOrUpdateEntry(anqpKey, anqpElements);
         }
 
         @Override
@@ -1315,5 +1319,28 @@ public class PasspointManager {
         PKIXParameters params = new PKIXParameters(ks);
         params.setRevocationEnabled(false);
         validator.validate(path, params);
+    }
+
+    /**
+     * Request the Venue URL ANQP-element from the AP post connection
+     *
+     * @param scanResult Scan result associated to the requested AP
+     */
+    public void requestVenueUrlAnqpElement(@NonNull ScanResult scanResult) {
+        long bssid;
+        try {
+            bssid = Utils.parseMac(scanResult.BSSID);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid BSSID provided in the scan result: " + scanResult.BSSID);
+            return;
+        }
+        InformationElementUtil.Vsa vsa = InformationElementUtil.getHS2VendorSpecificIE(
+                scanResult.informationElements);
+        ANQPNetworkKey anqpKey = ANQPNetworkKey.buildKey(scanResult.SSID, bssid, scanResult.hessid,
+                vsa.anqpDomainID);
+        // TODO(haishalom@): Should we limit to R3 only? vsa.hsRelease > NetworkDetail.HSRelease.R2
+        // I am seeing R2's that respond to Venue URL request, so may keep it this way.
+        // APs that do not support this ANQP request simply ignore it.
+        mAnqpRequestManager.requestVenueUrlAnqpElement(bssid, anqpKey);
     }
 }
