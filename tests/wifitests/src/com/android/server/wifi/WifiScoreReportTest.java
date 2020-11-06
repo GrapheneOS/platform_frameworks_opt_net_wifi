@@ -206,7 +206,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         when(mAdaptiveConnectivityEnabledSettingObserver.get()).thenReturn(true);
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                 mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
-                mDeviceConfigFacade, mContext, mWifiLooper, mFrameworkFacade,
+                mDeviceConfigFacade, mContext,
                 mAdaptiveConnectivityEnabledSettingObserver, TEST_IFACE_NAME);
         mWifiScoreReport.setNetworkAgent(mNetworkAgent);
         when(mDeviceConfigFacade.getMinConfirmationDurationSendLowScoreMs()).thenReturn(

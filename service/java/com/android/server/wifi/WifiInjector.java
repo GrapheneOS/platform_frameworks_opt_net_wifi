@@ -672,8 +672,7 @@ public class WifiInjector {
                 mSimRequiredNotifier,
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
                         mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
-                        mDeviceConfigFacade, mContext, mWifiHandlerThread.getLooper(),
-                        mFrameworkFacade, mAdaptiveConnectivityEnabledSettingObserver,
+                        mDeviceConfigFacade, mContext, mAdaptiveConnectivityEnabledSettingObserver,
                         ifaceName),
                 mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager,
                 verboseLoggingEnabled);
