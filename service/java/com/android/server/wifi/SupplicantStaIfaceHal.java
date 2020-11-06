@@ -21,6 +21,7 @@ import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA384;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_MBO;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_OCE;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_OWE;
+import static android.net.wifi.WifiManager.WIFI_FEATURE_SAE_PK;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_WAPI;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_WPA3_SAE;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_WPA3_SUITE_B;
@@ -3054,6 +3055,67 @@ public class SupplicantStaIfaceHal {
         return keyMgmtMask.value;
     }
 
+    private MutableInt getWpaDriverCapabilities_1_4(@NonNull String ifaceName) {
+        final String methodStr = "getWpaDriverCapabilities_1_4";
+        MutableInt drvCapabilitiesMask = new MutableInt(0);
+        ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+
+        if (null == iface) return drvCapabilitiesMask;
+
+        android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface staIfaceV14 =
+                getStaIfaceMockableV1_4(iface);
+        if (null == staIfaceV14) {
+            Log.e(TAG, methodStr
+                    + ": SupplicantStaIface is null, cannot get wpa driver features");
+            return drvCapabilitiesMask;
+        }
+
+        try {
+            staIfaceV14.getWpaDriverCapabilities_1_4(
+                    (android.hardware.wifi.supplicant.V1_4.SupplicantStatus statusInternal,
+                            int drvCapabilities) -> {
+                        if (statusInternal.code
+                                == android.hardware.wifi.supplicant.V1_4
+                                .SupplicantStatusCode.SUCCESS) {
+                            drvCapabilitiesMask.value = drvCapabilities;
+                        }
+                        checkStatusAndLogFailure(statusInternal, methodStr);
+                    });
+        } catch (RemoteException e) {
+            handleRemoteException(e, methodStr);
+        }
+        return drvCapabilitiesMask;
+    }
+
+    private MutableInt getWpaDriverCapabilities_1_3(@NonNull String ifaceName) {
+        final String methodStr = "getWpaDriverCapabilities_1_3";
+        MutableInt drvCapabilitiesMask = new MutableInt(0);
+        ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+
+        if (null == iface) return drvCapabilitiesMask;
+
+        android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface staIfaceV13 =
+                getStaIfaceMockableV1_3(iface);
+        if (null == staIfaceV13) {
+            Log.e(TAG, methodStr
+                    + ": SupplicantStaIface is null, cannot get wpa driver features");
+            return drvCapabilitiesMask;
+        }
+
+        try {
+            staIfaceV13.getWpaDriverCapabilities(
+                    (SupplicantStatus statusInternal, int drvCapabilities) -> {
+                        if (statusInternal.code == SupplicantStatusCode.SUCCESS) {
+                            drvCapabilitiesMask.value = drvCapabilities;
+                        }
+                        checkStatusAndLogFailure(statusInternal, methodStr);
+                    });
+        } catch (RemoteException e) {
+            handleRemoteException(e, methodStr);
+        }
+        return drvCapabilitiesMask;
+    }
+
     /**
      * Get the driver supported features through supplicant.
      *
@@ -3065,31 +3127,10 @@ public class SupplicantStaIfaceHal {
         MutableInt drvCapabilitiesMask = new MutableInt(0);
         long featureSet = 0;
 
-        if (isV1_3()) {
-            ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
-            if (iface == null) {
-                return 0;
-            }
-            // Get a v1.3 supplicant STA Interface
-            android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface staIfaceV13 =
-                    getStaIfaceMockableV1_3(iface);
-            if (staIfaceV13 == null) {
-                Log.e(TAG, methodStr
-                        + ": SupplicantStaIface is null, cannot get wpa driver features");
-                return 0;
-            }
-
-            try {
-                staIfaceV13.getWpaDriverCapabilities(
-                        (SupplicantStatus statusInternal, int drvCapabilities) -> {
-                            if (statusInternal.code == SupplicantStatusCode.SUCCESS) {
-                                drvCapabilitiesMask.value = drvCapabilities;
-                            }
-                            checkStatusAndLogFailure(statusInternal, methodStr);
-                        });
-            } catch (RemoteException e) {
-                handleRemoteException(e, methodStr);
-            }
+        if (isV1_4()) {
+            drvCapabilitiesMask = getWpaDriverCapabilities_1_4(ifaceName);
+        } else if (isV1_3()) {
+            drvCapabilitiesMask = getWpaDriverCapabilities_1_3(ifaceName);
         } else {
             Log.i(TAG, "Method " + methodStr + " is not supported in existing HAL");
             return 0;
@@ -3106,6 +3147,14 @@ public class SupplicantStaIfaceHal {
                 if (mVerboseLoggingEnabled) {
                     Log.v(TAG, methodStr + ": OCE supported");
                 }
+            }
+        }
+
+        if ((drvCapabilitiesMask.value
+                & android.hardware.wifi.supplicant.V1_4.WpaDriverCapabilitiesMask.SAE_PK) != 0) {
+            featureSet |= WIFI_FEATURE_SAE_PK;
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, methodStr + ": SAE-PK supported");
             }
         }
 
