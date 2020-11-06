@@ -103,6 +103,7 @@ public class ActiveModeWarden {
     private final WifiNative mWifiNative;
     private final WifiController mWifiController;
     private final Graveyard mGraveyard;
+    private final WifiMetrics mWifiMetrics;
 
     private WifiManager.SoftApCallback mSoftApCallback;
     private WifiManager.SoftApCallback mLohsCallback;
@@ -203,15 +204,16 @@ public class ActiveModeWarden {
     }
 
     ActiveModeWarden(WifiInjector wifiInjector,
-                     Looper looper,
-                     WifiNative wifiNative,
-                     DefaultClientModeManager defaultClientModeManager,
-                     BatteryStatsManager batteryStatsManager,
-                     WifiDiagnostics wifiDiagnostics,
-                     Context context,
-                     WifiSettingsStore settingsStore,
-                     FrameworkFacade facade,
-                     WifiPermissionsUtil wifiPermissionsUtil) {
+            Looper looper,
+            WifiNative wifiNative,
+            DefaultClientModeManager defaultClientModeManager,
+            BatteryStatsManager batteryStatsManager,
+            WifiDiagnostics wifiDiagnostics,
+            Context context,
+            WifiSettingsStore settingsStore,
+            FrameworkFacade facade,
+            WifiPermissionsUtil wifiPermissionsUtil,
+            WifiMetrics wifiMetrics) {
         mWifiInjector = wifiInjector;
         mLooper = looper;
         mHandler = new Handler(looper);
@@ -224,6 +226,7 @@ public class ActiveModeWarden {
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
         mWifiNative = wifiNative;
+        mWifiMetrics = wifiMetrics;
         mWifiController = new WifiController();
         mGraveyard = new Graveyard();
 
@@ -1157,6 +1160,7 @@ public class ActiveModeWarden {
             } else {
                 setInitialState(mDisabledState);
             }
+            mWifiMetrics.noteWifiEnabledDuringBoot(mSettingsStore.isWifiToggleEnabled());
 
             // Initialize the lower layers before we start.
             mWifiNative.initialize();

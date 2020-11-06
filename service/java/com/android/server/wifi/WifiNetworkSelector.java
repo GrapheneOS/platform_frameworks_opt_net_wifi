@@ -811,7 +811,7 @@ public class WifiNetworkSelector {
      * @param candidates - Candidates to perferm network selection on.
      * @return WifiConfiguration - the selected network, or null.
      */
-    @NonNull
+    @Nullable
     public WifiConfiguration selectNetwork(List<WifiCandidates.Candidate> candidates) {
         if (candidates == null || candidates.size() == 0) {
             return null;
