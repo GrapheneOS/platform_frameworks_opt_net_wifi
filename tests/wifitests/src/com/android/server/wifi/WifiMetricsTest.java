@@ -5378,6 +5378,90 @@ public class WifiMetricsTest extends WifiBaseTest {
     }
 
     @Test
+    public void testFirstConnectAfterBootStats() throws Exception {
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(1000L);
+        mWifiMetrics.noteWifiEnabledDuringBoot(true);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(2000L);
+        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(true);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(3000L);
+        mWifiMetrics.noteFirstL2ConnectionAfterBoot(true);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(4000L);
+        mWifiMetrics.noteFirstL3ConnectionAfterBoot(true);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(1000, mDecodedProto
+                .firstConnectAfterBootStats.wifiEnabledAtBoot.timestampSinceBootMillis);
+        assertTrue(mDecodedProto.firstConnectAfterBootStats.wifiEnabledAtBoot.isSuccess);
+        assertEquals(2000, mDecodedProto
+                .firstConnectAfterBootStats.firstNetworkSelection.timestampSinceBootMillis);
+        assertTrue(mDecodedProto.firstConnectAfterBootStats.firstNetworkSelection.isSuccess);
+        assertEquals(3000, mDecodedProto
+                .firstConnectAfterBootStats.firstL2Connection.timestampSinceBootMillis);
+        assertTrue(mDecodedProto.firstConnectAfterBootStats.firstL2Connection.isSuccess);
+        assertEquals(4000, mDecodedProto
+                .firstConnectAfterBootStats.firstL3Connection.timestampSinceBootMillis);
+        assertTrue(mDecodedProto.firstConnectAfterBootStats.firstL3Connection.isSuccess);
+    }
+
+    @Test
+    public void testFirstConnectAfterBootStats_firstCallWins() throws Exception {
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(1000L);
+        mWifiMetrics.noteWifiEnabledDuringBoot(true);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(2000L);
+        mWifiMetrics.noteWifiEnabledDuringBoot(false);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(1000, mDecodedProto
+                .firstConnectAfterBootStats.wifiEnabledAtBoot.timestampSinceBootMillis);
+        assertTrue(mDecodedProto.firstConnectAfterBootStats.wifiEnabledAtBoot.isSuccess);
+    }
+
+    @Test
+    public void testFirstConnectAfterBootStats_secondDumpNull() throws Exception {
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(1000L);
+        mWifiMetrics.noteWifiEnabledDuringBoot(true);
+
+        dumpProtoAndDeserialize();
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(2000L);
+        mWifiMetrics.noteWifiEnabledDuringBoot(false);
+
+        dumpProtoAndDeserialize();
+
+        assertNull(mDecodedProto.firstConnectAfterBootStats);
+    }
+
+    @Test
+    public void testFirstConnectAfterBootStats_falseInvalidatesSubsequentCalls() throws Exception {
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(1000L);
+        mWifiMetrics.noteWifiEnabledDuringBoot(false);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(2000L);
+        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(true);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(3000L);
+        mWifiMetrics.noteFirstL2ConnectionAfterBoot(true);
+
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(4000L);
+        mWifiMetrics.noteFirstL3ConnectionAfterBoot(true);
+
+        dumpProtoAndDeserialize();
+
+        assertEquals(1000, mDecodedProto
+                .firstConnectAfterBootStats.wifiEnabledAtBoot.timestampSinceBootMillis);
+        assertFalse(mDecodedProto.firstConnectAfterBootStats.wifiEnabledAtBoot.isSuccess);
+        assertNull(mDecodedProto.firstConnectAfterBootStats.firstNetworkSelection);
+        assertNull(mDecodedProto.firstConnectAfterBootStats.firstL2Connection);
+        assertNull(mDecodedProto.firstConnectAfterBootStats.firstL3Connection);
+    }
+
+    @Test
     public void testWifiConnectionResultAtomNotEmittedWithNoConnectionEndEvent() {
         mSession = ExtendedMockito.mockitoSession()
                 .strictness(Strictness.LENIENT)

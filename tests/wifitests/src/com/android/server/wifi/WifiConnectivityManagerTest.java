@@ -888,6 +888,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mPrimaryClientModeManager,
                 WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
 
+        verify(mWifiMetrics).noteFirstNetworkSelectionAfterBoot(false);
+
         // Get the retry delay value after QNS didn't select a
         // network candidate from the PNO scan results.
         int lowRssiNetworkRetryDelayAfterOnePnoMs = mWifiConnectivityManager
@@ -2594,6 +2596,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
 
         verify(mPrimaryClientModeManager).startConnectToNetwork(
                 CANDIDATE_NETWORK_ID, Process.WIFI_UID, CANDIDATE_BSSID);
+
+        verify(mWifiMetrics).noteFirstNetworkSelectionAfterBoot(true);
     }
 
     /*

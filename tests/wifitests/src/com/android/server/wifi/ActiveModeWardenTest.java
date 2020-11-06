@@ -133,6 +133,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Mock WifiPermissionsUtil mWifiPermissionsUtil;
     @Mock SoftApCapability mSoftApCapability;
     @Mock ActiveModeWarden.ModeChangeCallback mModeChangeCallback;
+    @Mock WifiMetrics mWifiMetrics;
 
     ActiveModeManager.Listener<ConcreteClientModeManager> mClientListener;
     ActiveModeManager.Listener<SoftApManager> mSoftApListener;
@@ -203,6 +204,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden.start();
         mLooper.dispatchAll();
 
+        verify(mWifiMetrics).noteWifiEnabledDuringBoot(false);
+
         verify(mWifiNative).registerStatusListener(mStatusListenerCaptor.capture());
         verify(mWifiNative).initialize();
         mWifiNativeStatusListener = mStatusListenerCaptor.getValue();
@@ -240,7 +243,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 mContext,
                 mSettingsStore,
                 mFacade,
-                mWifiPermissionsUtil);
+                mWifiPermissionsUtil,
+                mWifiMetrics);
         // SelfRecovery is created in WifiInjector after ActiveModeWarden, so getSelfRecovery()
         // returns null when constructing ActiveModeWarden.
         when(mWifiInjector.getSelfRecovery()).thenReturn(mSelfRecovery);
@@ -1190,6 +1194,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mActiveModeWarden = createActiveModeWarden();
         mActiveModeWarden.start();
         mLooper.dispatchAll();
+
+        verify(mWifiMetrics).noteWifiEnabledDuringBoot(true);
 
         assertInEnabledState();
 

@@ -393,7 +393,7 @@ public class WifiInjector {
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
         mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
                 mWifiNative, new DefaultClientModeManager(), mBatteryStats, mWifiDiagnostics,
-                mContext, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil);
+                mContext, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil, mWifiMetrics);
         mWifiP2pConnection = new WifiP2pConnection(mContext, wifiLooper, mActiveModeWarden);
         mConnectHelper = new ConnectHelper(mActiveModeWarden, mWifiConfigManager);
         mOpenNetworkNotifier = new OpenNetworkNotifier(mContext,
