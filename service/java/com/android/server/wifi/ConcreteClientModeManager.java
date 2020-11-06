@@ -129,8 +129,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Nullable
     private WorkSource mRequestorWs = null;
     private boolean mVerboseLoggingEnabled = false;
-    /** Cache to store the external scorer for primary and secondary client mode impl. */
-    @Nullable private Pair<IBinder, IWifiConnectedNetworkScorer> mScorer;
     private int mActiveSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
     /**
      * mClientModeImpl is only non-null when in {@link ClientModeStateMachine.ConnectModeState} -
@@ -841,10 +839,6 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     mClientModeImpl = mWifiInjector.makeClientModeImpl(
                             mClientInterfaceName, ConcreteClientModeManager.this,
                             mVerboseLoggingEnabled);
-                    if (mScorer != null) {
-                        mClientModeImpl.setWifiConnectedNetworkScorer(
-                                mScorer.first, mScorer.second);
-                    }
                 }
                 if (!(mConnectRoleToSetOnTransition instanceof ClientConnectivityRole)) {
                     Log.wtf(TAG, "Unexpected mConnectRoleToSetOnTransition: "
@@ -853,7 +847,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     mConnectRoleToSetOnTransition = ROLE_CLIENT_PRIMARY;
                 }
                 updateConnectModeState(mConnectRoleToSetOnTransition,
-                        WifiManager.WIFI_STATE_ENABLED, WifiManager.WIFI_STATE_ENABLING);
+                        WIFI_STATE_ENABLED, WIFI_STATE_ENABLING);
                 // Could be any one of possible connect mode roles.
                 setRoleInternalAndInvokeCallback(mConnectRoleToSetOnTransition);
             }
@@ -980,13 +974,11 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public boolean setWifiConnectedNetworkScorer(
             IBinder binder, IWifiConnectedNetworkScorer scorer) {
-        mScorer = Pair.create(binder, scorer);
         return getClientMode().setWifiConnectedNetworkScorer(binder, scorer);
     }
 
     @Override
     public void clearWifiConnectedNetworkScorer() {
-        mScorer = null;
         getClientMode().clearWifiConnectedNetworkScorer();
     }
 

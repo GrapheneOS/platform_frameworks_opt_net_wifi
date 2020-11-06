@@ -634,6 +634,7 @@ public class WifiScoreReport {
             pw.println(line);
         }
         history.clear();
+        pw.println("externalScorerActive=" + (mWifiConnectedNetworkScorerHolder != null));
     }
 
     /**

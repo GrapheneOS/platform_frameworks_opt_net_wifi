@@ -502,7 +502,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         }
         setupToGenerateAReportWhenPrintlnIsCalled();
         mWifiScoreReport.dump(null, mPrintWriter, null);
-        verify(mPrintWriter, times(11)).println(anyString());
+        verify(mPrintWriter, times(12)).println(anyString());
     }
 
     /**
@@ -523,7 +523,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
             mWifiScoreReport.calculateAndReportScore();
         }
         mWifiScoreReport.dump(null, mPrintWriter, null);
-        verify(mPrintWriter, atMost(3601)).println(anyString());
+        verify(mPrintWriter, atMost(3602)).println(anyString());
     }
 
     /**
