@@ -23,6 +23,7 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.util.ArrayMap;
+import android.util.ArraySet;
 import android.util.LocalLog;
 import android.util.Log;
 
@@ -113,6 +114,7 @@ public class BssidBlocklistMonitor {
 
     // Map of bssid to BssidStatus
     private Map<String, BssidStatus> mBssidStatusMap = new ArrayMap<>();
+    private Set<String> mDisabledSsids = new ArraySet<>();
 
     // Keeps history of 30 blocked BSSIDs that were most recently removed.
     private BssidStatusHistoryLogger mBssidStatusHistoryLogger = new BssidStatusHistoryLogger(30);
@@ -383,7 +385,7 @@ public class BssidBlocklistMonitor {
             Log.e(TAG, "Bssid disable reason not found. ReasonCode=" + reasonCode);
             return false;
         }
-        if (bssidDisableReason.ignoreIfOnlyBssid
+        if (bssidDisableReason.ignoreIfOnlyBssid && !mDisabledSsids.contains(ssid)
                 && mWifiLastResortWatchdog.isBssidOnlyApOfSsid(bssid)) {
             localLog("Ignoring BSSID failure due to no other APs available. BSSID=" + bssid);
             return false;
@@ -401,9 +403,20 @@ public class BssidBlocklistMonitor {
     }
 
     /**
+     * To be called when a WifiConfiguration is either temporarily disabled or permanently disabled.
+     * @param ssid of the WifiConfiguration that is disabled.
+     */
+    public void handleWifiConfigurationDisabled(String ssid) {
+        if (ssid != null) {
+            mDisabledSsids.add(ssid);
+        }
+    }
+
+    /**
      * Note a connection success event on a bssid and clear appropriate failure counters.
      */
     public void handleBssidConnectionSuccess(@NonNull String bssid, @NonNull String ssid) {
+        mDisabledSsids.remove(ssid);
         /**
          * First reset the blocklist streak.
          * This needs to be done even if a BssidStatus is not found, since the BssidStatus may
@@ -522,6 +535,7 @@ public class BssidBlocklistMonitor {
             localLog(TAG + " clearBssidBlocklist: num BSSIDs cleared="
                     + (prevSize - mBssidStatusMap.size()));
         }
+        mDisabledSsids.clear();
     }
 
     /**

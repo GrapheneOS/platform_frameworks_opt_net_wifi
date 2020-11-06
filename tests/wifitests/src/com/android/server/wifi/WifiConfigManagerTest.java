@@ -1372,6 +1372,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 wifiConfigCaptor.capture(),
                 eq(NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY));
         assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        verify(mBssidBlocklistMonitor).handleWifiConfigurationDisabled(anyString());
         // Now set it back to enabled.
         verifyUpdateNetworkSelectionStatus(
                 result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
