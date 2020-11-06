@@ -960,10 +960,33 @@ public class ActiveModeWarden {
             mExternalRequestListener = externalRequestListener;
         }
 
+        /**
+         * Hardware needs to be configured for STA + STA before sending the callbacks to clients
+         * letting them know that CM is ready for use.
+         */
+        private void configureHwForMultiStaIfNecessary(
+                ConcreteClientModeManager clientModeManager) {
+            ClientRole clientRole = clientModeManager.getRole();
+            if (clientRole == ROLE_CLIENT_PRIMARY || clientRole == ROLE_CLIENT_SCAN_ONLY) {
+                // not multi sta.
+                return;
+            }
+            // All other client roles are secondary (i.e multi STA) by definition.
+            if (clientRole == ROLE_CLIENT_LOCAL_ONLY
+                    || clientRole == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+                mWifiNative.setMultiStaUseCase(WifiNative.DUAL_STA_NON_TRANSIENT_UNBIASED);
+            } else if (clientRole == ROLE_CLIENT_SECONDARY_TRANSIENT) {
+                mWifiNative.setMultiStaUseCase(WifiNative.DUAL_STA_TRANSIENT_PREFER_PRIMARY);
+            }
+            mWifiNative.setMultiStaPrimaryConnection(
+                    getPrimaryClientModeManager().getInterfaceName());
+        }
+
         @Override
         public void onStarted(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
+            configureHwForMultiStaIfNecessary(clientModeManager);
             if (mExternalRequestListener != null) {
                 mExternalRequestListener.onAnswer(clientModeManager);
             }
@@ -974,6 +997,7 @@ public class ActiveModeWarden {
         public void onRoleChanged(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
+            configureHwForMultiStaIfNecessary(clientModeManager);
             invokeOnRoleChangedCallbacks(clientModeManager);
         }
 
