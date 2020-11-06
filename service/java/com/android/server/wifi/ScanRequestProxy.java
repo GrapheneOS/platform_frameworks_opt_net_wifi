@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_SCAN_THROTTLE_ENABLED;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.AppOpsManager;
 import android.content.Context;
@@ -42,9 +43,11 @@ import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -107,7 +110,9 @@ public class ScanRequestProxy {
     private final ArrayMap<Pair<Integer, String>, LinkedList<Long>> mLastScanTimestampsForFgApps =
             new ArrayMap();
     // Scan results cached from the last full single scan request.
-    private final List<ScanResult> mLastScanResults = new ArrayList<>();
+    // Stored as a map of bssid -> ScanResult to allow other clients to perform ScanResult lookup
+    // for bssid more efficiently.
+    private final Map<String, ScanResult> mLastScanResultsMap = new HashMap<>();
     // external ScanResultCallback tracker
     private final RemoteCallbackList<IScanResultsCallback> mRegisteredScanResultsCallbacks;
     // Global scan listener for listening to all scan requests.
@@ -141,8 +146,8 @@ public class ScanRequestProxy {
             // Only process full band scan results.
             if (WifiScanner.isFullBandScan(scanData.getBandScanned(), false)) {
                 // Store the last scan results & send out the scan completion broadcast.
-                mLastScanResults.clear();
-                mLastScanResults.addAll(Arrays.asList(scanResults));
+                mLastScanResultsMap.clear();
+                Arrays.stream(scanResults).forEach(s -> mLastScanResultsMap.put(s.BSSID, s));
                 sendScanResultBroadcast(true);
                 sendScanResultsAvailableToCallbacks();
             }
@@ -465,14 +470,28 @@ public class ScanRequestProxy {
      */
     public List<ScanResult> getScanResults() {
         // return a copy to prevent external modification
-        return new ArrayList<>(mLastScanResults);
+        return new ArrayList<>(mLastScanResultsMap.values());
     }
+
+    /**
+     * Return the ScanResult from the most recent access point scan for the provided bssid.
+     *
+     * @param bssid BSSID as string {@link ScanResult#BSSID}.
+     * @return ScanResult for the corresponding bssid if found, null otherwise.
+     */
+    public @Nullable ScanResult getScanResult(@NonNull String bssid) {
+        ScanResult scanResult = mLastScanResultsMap.get(bssid);
+        if (scanResult == null) return null;
+        // return a copy to prevent external modification
+        return new ScanResult(scanResult);
+    }
+
 
     /**
      * Clear the stored scan results.
      */
     private void clearScanResults() {
-        mLastScanResults.clear();
+        mLastScanResultsMap.clear();
         mLastScanTimestampForBgApps = 0;
         mLastScanTimestampsForFgApps.clear();
     }
