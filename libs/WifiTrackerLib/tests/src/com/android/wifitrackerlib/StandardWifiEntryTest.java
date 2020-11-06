@@ -529,7 +529,8 @@ public class StandardWifiEntryTest {
         final StandardWifiEntry eapWifiEntry =
                 getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_EAP);
         final StandardWifiEntry eapSuiteBWifiEntry =
-                getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B);
+                getSavedStandardWifiEntry(
+                        WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
 
         assertThat(eapWifiEntry.canShare()).isFalse();
         assertThat(eapSuiteBWifiEntry.canShare()).isFalse();
@@ -571,7 +572,8 @@ public class StandardWifiEntryTest {
         final StandardWifiEntry wpa2EnterpriseWifiEntry =
                 getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_EAP);
         final StandardWifiEntry wpa3EnterpriseWifiEntry =
-                getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B);
+                getSavedStandardWifiEntry(
+                        WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
         final StandardWifiEntry oweWifiEntry =
                 getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_OWE);
 
