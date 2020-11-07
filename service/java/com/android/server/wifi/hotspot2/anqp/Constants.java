@@ -1,9 +1,5 @@
 package com.android.server.wifi.hotspot2.anqp;
 
-import java.net.ProtocolException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -40,6 +36,7 @@ public class Constants {
     public static final int ANQP_3GPP_NETWORK = 264;
     public static final int ANQP_DOM_NAME = 268;
     public static final int ANQP_VENDOR_SPEC = 56797;
+    public static final int ANQP_VENUE_URL = 277;
 
     public static final int HS_QUERY_LIST = 1;
     public static final int HS_FRIENDLY_NAME = 3;
@@ -59,6 +56,7 @@ public class Constants {
         ANQP3GPPNetwork,
         ANQPDomName,
         ANQPVendorSpec,
+        ANQPVenueUrl,
         HSQueryList,
         HSFriendlyName,
         HSWANMetrics,
@@ -85,6 +83,7 @@ public class Constants {
         sAnqpMap.put(ANQP_3GPP_NETWORK, ANQPElementType.ANQP3GPPNetwork);
         sAnqpMap.put(ANQP_DOM_NAME, ANQPElementType.ANQPDomName);
         sAnqpMap.put(ANQP_VENDOR_SPEC, ANQPElementType.ANQPVendorSpec);
+        sAnqpMap.put(ANQP_VENUE_URL, ANQPElementType.ANQPVenueUrl);
 
         sHs20Map.put(HS_QUERY_LIST, ANQPElementType.HSQueryList);
         sHs20Map.put(HS_FRIENDLY_NAME, ANQPElementType.HSFriendlyName);

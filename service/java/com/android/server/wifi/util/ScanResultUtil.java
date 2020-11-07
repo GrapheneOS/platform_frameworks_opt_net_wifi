@@ -190,7 +190,7 @@ public class ScanResultUtil {
         } else if (isScanResultForPskNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         } else if (isScanResultForEapSuiteBNetwork(scanResult)) {
-            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B);
+            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
         } else if (isScanResultForEapNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         } else if (isScanResultForWepNetwork(scanResult)) {

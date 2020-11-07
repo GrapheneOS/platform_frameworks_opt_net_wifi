@@ -364,6 +364,7 @@ public class WifiConnectivityManager {
     private boolean handleCandidatesFromScanResults(
             String listenerName, List<WifiCandidates.Candidate> candidates) {
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
+        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(candidate != null);
         if (candidate != null) {
             localLog(listenerName + ":  WNS candidate-" + candidate.SSID);
             connectToNetwork(candidate);

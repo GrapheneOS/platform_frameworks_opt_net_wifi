@@ -20,6 +20,7 @@ import static android.net.wifi.WifiConfiguration.MeteredOverride;
 
 import static java.lang.StrictMath.toIntExact;
 
+import android.annotation.Nullable;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -72,6 +73,8 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.DeviceMobilityStatePnoScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.ExperimentValues;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.FirstConnectAfterBootStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.FirstConnectAfterBootStats.Attempt;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.HealthMonitorMetrics;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.InitPartialScanStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats;
@@ -530,6 +533,11 @@ public class WifiMetrics {
 
     private final CarrierWifiMetrics mCarrierWifiMetrics =
             new CarrierWifiMetrics();
+
+    @Nullable
+    private FirstConnectAfterBootStats mFirstConnectAfterBootStats =
+            new FirstConnectAfterBootStats();
+    private boolean mIsFirstConnectionAttemptComplete = false;
 
     @VisibleForTesting
     static class NetworkSelectionExperimentResults {
@@ -3985,6 +3993,7 @@ public class WifiMetrics {
                         + mRxThroughputMbpsHistogramAbove2G);
                 pw.println("mCarrierWifiMetrics:\n"
                         + mCarrierWifiMetrics);
+                pw.println(firstConnectAfterBootStatsToString(mFirstConnectAfterBootStats));
 
                 dumpInitPartialScanMetrics(pw);
             }
@@ -4668,7 +4677,7 @@ public class WifiMetrics {
             mWifiLogProto.initPartialScanStats = initialPartialScanStats;
             mWifiLogProto.carrierWifiMetrics = mCarrierWifiMetrics.toProto();
             mWifiLogProto.mainlineModuleVersion = mWifiHealthMonitor.getWifiStackVersion();
-
+            mWifiLogProto.firstConnectAfterBootStats = mFirstConnectAfterBootStats;
         }
     }
 
@@ -4893,6 +4902,7 @@ public class WifiMetrics {
             mInitPartialScanSuccessHistogram.clear();
             mInitPartialScanFailureHistogram.clear();
             mCarrierWifiMetrics.clear();
+            mFirstConnectAfterBootStats = null;
         }
     }
 
@@ -6937,5 +6947,96 @@ public class WifiMetrics {
         } else {
             return mWifiUsabilityStatsEntriesList.getLast().totalBeaconRx;
         }
+    }
+
+    /** Note whether Wifi was enabled at boot time. */
+    public void noteWifiEnabledDuringBoot(boolean isWifiEnabled) {
+        synchronized (mLock) {
+            if (mIsFirstConnectionAttemptComplete
+                    || mFirstConnectAfterBootStats == null
+                    || mFirstConnectAfterBootStats.wifiEnabledAtBoot != null) {
+                return;
+            }
+            Attempt wifiEnabledAtBoot = new Attempt();
+            wifiEnabledAtBoot.isSuccess = isWifiEnabled;
+            wifiEnabledAtBoot.timestampSinceBootMillis = mClock.getElapsedSinceBootMillis();
+            mFirstConnectAfterBootStats.wifiEnabledAtBoot = wifiEnabledAtBoot;
+            if (!isWifiEnabled) {
+                mIsFirstConnectionAttemptComplete = true;
+            }
+        }
+    }
+
+    /** Note the first network selection after boot. */
+    public void noteFirstNetworkSelectionAfterBoot(boolean wasAnyCandidatesFound) {
+        synchronized (mLock) {
+            if (mIsFirstConnectionAttemptComplete
+                    || mFirstConnectAfterBootStats == null
+                    || mFirstConnectAfterBootStats.firstNetworkSelection != null) {
+                return;
+            }
+            Attempt firstNetworkSelection = new Attempt();
+            firstNetworkSelection.isSuccess = wasAnyCandidatesFound;
+            firstNetworkSelection.timestampSinceBootMillis = mClock.getElapsedSinceBootMillis();
+            mFirstConnectAfterBootStats.firstNetworkSelection = firstNetworkSelection;
+            if (!wasAnyCandidatesFound) {
+                mIsFirstConnectionAttemptComplete = true;
+            }
+        }
+    }
+
+    /** Note the first L2 connection after boot. */
+    public void noteFirstL2ConnectionAfterBoot(boolean wasConnectionSuccessful) {
+        synchronized (mLock) {
+            if (mIsFirstConnectionAttemptComplete
+                    || mFirstConnectAfterBootStats == null
+                    || mFirstConnectAfterBootStats.firstL2Connection != null) {
+                return;
+            }
+            Attempt firstL2Connection = new Attempt();
+            firstL2Connection.isSuccess = wasConnectionSuccessful;
+            firstL2Connection.timestampSinceBootMillis = mClock.getElapsedSinceBootMillis();
+            mFirstConnectAfterBootStats.firstL2Connection = firstL2Connection;
+            if (!wasConnectionSuccessful) {
+                mIsFirstConnectionAttemptComplete = true;
+            }
+        }
+    }
+
+    /** Note the first L3 connection after boot. */
+    public void noteFirstL3ConnectionAfterBoot(boolean wasConnectionSuccessful) {
+        synchronized (mLock) {
+            if (mIsFirstConnectionAttemptComplete
+                    || mFirstConnectAfterBootStats == null
+                    || mFirstConnectAfterBootStats.firstL3Connection != null) {
+                return;
+            }
+            Attempt firstL3Connection = new Attempt();
+            firstL3Connection.isSuccess = wasConnectionSuccessful;
+            firstL3Connection.timestampSinceBootMillis = mClock.getElapsedSinceBootMillis();
+            mFirstConnectAfterBootStats.firstL3Connection = firstL3Connection;
+            if (!wasConnectionSuccessful) {
+                mIsFirstConnectionAttemptComplete = true;
+            }
+        }
+    }
+
+    private static String attemptToString(@Nullable Attempt attempt) {
+        if (attempt == null) return "Attempt=null";
+        return "Attempt{"
+                + "timestampSinceBootMillis=" + attempt.timestampSinceBootMillis
+                + ",isSuccess=" + attempt.isSuccess
+                + "}";
+    }
+
+    private static String firstConnectAfterBootStatsToString(
+            @Nullable FirstConnectAfterBootStats stats) {
+        if (stats == null) return "FirstConnectAfterBootStats=null";
+        return "FirstConnectAfterBootStats{"
+                + "wifiEnabledAtBoot=" + attemptToString(stats.wifiEnabledAtBoot)
+                + ",firstNetworkSelection" + attemptToString(stats.firstNetworkSelection)
+                + ",firstL2Connection" + attemptToString(stats.firstL2Connection)
+                + ",firstL3Connection" + attemptToString(stats.firstL3Connection)
+                + "}";
     }
 }

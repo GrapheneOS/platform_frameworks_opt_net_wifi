@@ -103,6 +103,7 @@ public class ActiveModeWarden {
     private final WifiNative mWifiNative;
     private final WifiController mWifiController;
     private final Graveyard mGraveyard;
+    private final WifiMetrics mWifiMetrics;
 
     private WifiManager.SoftApCallback mSoftApCallback;
     private WifiManager.SoftApCallback mLohsCallback;
@@ -203,15 +204,16 @@ public class ActiveModeWarden {
     }
 
     ActiveModeWarden(WifiInjector wifiInjector,
-                     Looper looper,
-                     WifiNative wifiNative,
-                     DefaultClientModeManager defaultClientModeManager,
-                     BatteryStatsManager batteryStatsManager,
-                     WifiDiagnostics wifiDiagnostics,
-                     Context context,
-                     WifiSettingsStore settingsStore,
-                     FrameworkFacade facade,
-                     WifiPermissionsUtil wifiPermissionsUtil) {
+            Looper looper,
+            WifiNative wifiNative,
+            DefaultClientModeManager defaultClientModeManager,
+            BatteryStatsManager batteryStatsManager,
+            WifiDiagnostics wifiDiagnostics,
+            Context context,
+            WifiSettingsStore settingsStore,
+            FrameworkFacade facade,
+            WifiPermissionsUtil wifiPermissionsUtil,
+            WifiMetrics wifiMetrics) {
         mWifiInjector = wifiInjector;
         mLooper = looper;
         mHandler = new Handler(looper);
@@ -224,6 +226,7 @@ public class ActiveModeWarden {
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
         mWifiNative = wifiNative;
+        mWifiMetrics = wifiMetrics;
         mWifiController = new WifiController();
         mGraveyard = new Graveyard();
 
@@ -957,10 +960,33 @@ public class ActiveModeWarden {
             mExternalRequestListener = externalRequestListener;
         }
 
+        /**
+         * Hardware needs to be configured for STA + STA before sending the callbacks to clients
+         * letting them know that CM is ready for use.
+         */
+        private void configureHwForMultiStaIfNecessary(
+                ConcreteClientModeManager clientModeManager) {
+            ClientRole clientRole = clientModeManager.getRole();
+            if (clientRole == ROLE_CLIENT_PRIMARY || clientRole == ROLE_CLIENT_SCAN_ONLY) {
+                // not multi sta.
+                return;
+            }
+            // All other client roles are secondary (i.e multi STA) by definition.
+            if (clientRole == ROLE_CLIENT_LOCAL_ONLY
+                    || clientRole == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+                mWifiNative.setMultiStaUseCase(WifiNative.DUAL_STA_NON_TRANSIENT_UNBIASED);
+            } else if (clientRole == ROLE_CLIENT_SECONDARY_TRANSIENT) {
+                mWifiNative.setMultiStaUseCase(WifiNative.DUAL_STA_TRANSIENT_PREFER_PRIMARY);
+            }
+            mWifiNative.setMultiStaPrimaryConnection(
+                    getPrimaryClientModeManager().getInterfaceName());
+        }
+
         @Override
         public void onStarted(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
+            configureHwForMultiStaIfNecessary(clientModeManager);
             if (mExternalRequestListener != null) {
                 mExternalRequestListener.onAnswer(clientModeManager);
             }
@@ -971,6 +997,7 @@ public class ActiveModeWarden {
         public void onRoleChanged(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
+            configureHwForMultiStaIfNecessary(clientModeManager);
             invokeOnRoleChangedCallbacks(clientModeManager);
         }
 
@@ -1157,6 +1184,7 @@ public class ActiveModeWarden {
             } else {
                 setInitialState(mDisabledState);
             }
+            mWifiMetrics.noteWifiEnabledDuringBoot(mSettingsStore.isWifiToggleEnabled());
 
             // Initialize the lower layers before we start.
             mWifiNative.initialize();

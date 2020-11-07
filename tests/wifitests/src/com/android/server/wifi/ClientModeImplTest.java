@@ -817,6 +817,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
+        verify(mWifiMetrics).noteFirstL2ConnectionAfterBoot(true);
+
         // L2 connected, but not L3 connected yet. So, still "Connecting"...
         assertNotNull(mCmi.getConnectingWifiConfiguration());
         assertNull(mCmi.getConnectedWifiConfiguration());
@@ -865,6 +867,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiMetrics).setConnectionMaxSupportedLinkSpeedMbps(WIFI_IFACE_NAME, 90, 80);
         verify(mWifiDataStall).setConnectionCapabilities(any());
         assertEquals(90, wifiInfo.getMaxSupportedTxLinkSpeedMbps());
+        verify(mWifiMetrics).noteFirstL3ConnectionAfterBoot(true);
     }
 
     private void setupEapSimConnection() throws Exception {

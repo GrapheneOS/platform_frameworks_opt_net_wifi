@@ -2489,6 +2489,22 @@ public class WifiNative {
     }
 
     /**
+     * Initiate Venue URL ANQP query.
+     *
+     * @param ifaceName Name of the interface.
+     * @param bssid BSSID of the AP to be queried
+     * @return true on success, false otherwise.
+     */
+    public boolean requestVenueUrlAnqp(
+            @NonNull String ifaceName, String bssid) {
+        if (bssid == null) {
+            Log.e(TAG, "Invalid arguments for Venue URL ANQP request.");
+            return false;
+        }
+        return mSupplicantStaIfaceHal.initiateVenueUrlAnqpQuery(ifaceName, bssid);
+    }
+
+    /**
      * Get the currently configured network's WPS NFC token.
      *
      * @param ifaceName Name of the interface.
@@ -2977,6 +2993,40 @@ public class WifiNative {
     public boolean isItPossibleToCreateStaIface(@NonNull WorkSource requestorWs) {
         synchronized (mLock) {
             return mWifiVendorHal.isItPossibleToCreateStaIface(requestorWs);
+        }
+    }
+
+    /**
+     * Set primary connection when multiple STA ifaces are active.
+     *
+     * @param ifaceName Name of the interface.
+     * @return true for success
+     */
+    public boolean setMultiStaPrimaryConnection(@NonNull String ifaceName) {
+        synchronized (mLock) {
+            return mWifiVendorHal.setMultiStaPrimaryConnection(ifaceName);
+        }
+    }
+
+    /**
+     * Multi STA use case flags.
+     */
+    public static final int DUAL_STA_TRANSIENT_PREFER_PRIMARY = 0;
+    public static final int DUAL_STA_NON_TRANSIENT_UNBIASED = 1;
+
+    @IntDef({DUAL_STA_TRANSIENT_PREFER_PRIMARY, DUAL_STA_NON_TRANSIENT_UNBIASED})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface MultiStaUseCase{}
+
+    /**
+     * Set use-case when multiple STA ifaces are active.
+     *
+     * @param useCase one of the use cases.
+     * @return true for success
+     */
+    public boolean setMultiStaUseCase(@MultiStaUseCase int useCase) {
+        synchronized (mLock) {
+            return mWifiVendorHal.setMultiStaUseCase(useCase);
         }
     }
 

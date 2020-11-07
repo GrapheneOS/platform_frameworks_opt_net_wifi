@@ -733,6 +733,9 @@ message WifiLog {
 
   // Histogram of Rx link speed at 6G high band
   repeated Int32Count rx_link_speed_count_6g_high = 207;
+
+  // Metrics about the first connection after boot.
+  optional FirstConnectAfterBootStats first_connect_after_boot_stats = 208;
 }
 
 // Information that gets logged for every WiFi connection.
@@ -3447,4 +3450,34 @@ message CarrierWifiMetrics {
   // Number of failed authentication from network connection using Carrier ID
   optional int32 num_connection_auth_failure = 2;
   optional int32 num_connection_non_auth_failure = 3;
+}
+
+message FirstConnectAfterBootStats {
+  message Attempt {
+    // The attempt completion timestamp, in milliseconds since boot.
+    optional int64 timestamp_since_boot_millis = 1;
+
+    // whether the attempt was successful.
+    optional bool is_success = 2;
+  }
+
+  // Info about whether Wifi was enabled at boot time.
+  // `is_success` is true if Wifi is toggled ON at boot, false otherwise.
+  // This field will never be null.
+  optional Attempt wifi_enabled_at_boot = 1;
+
+  // Info about the first network selection attempt for auto-join.
+  // `is_success` is true if a network candidate was found, false otherwise.
+  // This field is null if `wifi_enabled_at_boot.is_success` is false.
+  optional Attempt first_network_selection = 2;
+
+  // Info about the first successful L2 connection.
+  // `is_success` is true if the L2 connection was successfully established, false otherwise.
+  // This field is null if `first_network_selection.is_success` is false.
+  optional Attempt first_l2_connection = 3;
+
+  // Info about the first successful L3 connection.
+  // `is_success` is true if the L3 connection was successfully established, false otherwise.
+  // This field is null if `first_l2_connection.is_success` is false.
+  optional Attempt first_l3_connection = 4;
 }

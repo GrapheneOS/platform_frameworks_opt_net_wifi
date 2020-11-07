@@ -91,6 +91,17 @@ public class PasspointEventHandler {
     }
 
     /**
+     * Request the Venue URL ANQP element from the specified AP |bssid|.
+     * @param bssid BSSID of the AP
+     * @return true if request is sent successfully, false otherwise
+     */
+    public boolean requestVenueUrlAnqp(long bssid) {
+        if (bssid == 0) return false;
+        return mSupplicantHook.requestVenueUrlAnqp(
+                mSupplicantHook.getClientInterfaceName(), Utils.macToString(bssid));
+    }
+
+    /**
      * Request a passpoint icon file |filename| from the specified AP |bssid|.
      * @param bssid BSSID of the AP
      * @param fileName name of the icon file

@@ -78,6 +78,7 @@ import android.hardware.wifi.V1_0.WifiStatusCode;
 import android.hardware.wifi.V1_2.IWifiChipEventCallback.IfaceInfo;
 import android.hardware.wifi.V1_2.IWifiChipEventCallback.RadioModeInfo;
 import android.hardware.wifi.V1_3.WifiChannelStats;
+import android.hardware.wifi.V1_5.IWifiChip.MultiStaUseCase;
 import android.net.KeepalivePacketData;
 import android.net.MacAddress;
 import android.net.NattKeepalivePacketData;
@@ -153,11 +154,15 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Mock
     private android.hardware.wifi.V1_4.IWifiChip mIWifiChipV14;
     @Mock
+    private android.hardware.wifi.V1_5.IWifiChip mIWifiChipV15;
+    @Mock
     private IWifiStaIface mIWifiStaIface;
     @Mock
     private android.hardware.wifi.V1_2.IWifiStaIface mIWifiStaIfaceV12;
     @Mock
     private android.hardware.wifi.V1_3.IWifiStaIface mIWifiStaIfaceV13;
+    @Mock
+    private android.hardware.wifi.V1_5.IWifiStaIface mIWifiStaIfaceV15;
     private IWifiStaIfaceEventCallback mIWifiStaIfaceEventCallback;
     private IWifiChipEventCallback mIWifiChipEventCallback;
     private android.hardware.wifi.V1_2.IWifiChipEventCallback mIWifiChipEventCallbackV12;
@@ -207,6 +212,12 @@ public class WifiVendorHalTest extends WifiBaseTest {
                 String ifaceName) {
             return null;
         }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
+                String ifaceName) {
+            return null;
+        }
     }
 
     /**
@@ -246,6 +257,12 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
         @Override
         protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
+                String ifaceName) {
+            return null;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
                 String ifaceName) {
             return null;
         }
@@ -291,6 +308,12 @@ public class WifiVendorHalTest extends WifiBaseTest {
                 String ifaceName) {
             return mIWifiStaIfaceV13;
         }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
+                String ifaceName) {
+            return null;
+        }
     }
 
     /**
@@ -332,6 +355,65 @@ public class WifiVendorHalTest extends WifiBaseTest {
         protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
                 String ifaceName) {
             return mIWifiStaIfaceV13;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
+                String ifaceName) {
+            return null;
+        }
+    }
+
+    /**
+     * Spy used to return the V1_5 IWifiChip and V1_5 IWifiStaIface mock objects to simulate
+     * the 1.5 HAL running on the device.
+     */
+    private class WifiVendorHalSpyV1_5 extends WifiVendorHal {
+        WifiVendorHalSpyV1_5(HalDeviceManager halDeviceManager, Handler handler) {
+            super(halDeviceManager, handler);
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_1.IWifiChip getWifiChipForV1_1Mockable() {
+            return mIWifiChipV11;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_2.IWifiChip getWifiChipForV1_2Mockable() {
+            return mIWifiChipV12;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_3.IWifiChip getWifiChipForV1_3Mockable() {
+            return mIWifiChipV13;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_4.IWifiChip getWifiChipForV1_4Mockable() {
+            return mIWifiChipV14;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiChip getWifiChipForV1_5Mockable() {
+            return mIWifiChipV15;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_2.IWifiStaIface getWifiStaIfaceForV1_2Mockable(
+                String ifaceName) {
+            return mIWifiStaIfaceV12;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_3.IWifiStaIface getWifiStaIfaceForV1_3Mockable(
+                String ifaceName) {
+            return mIWifiStaIfaceV13;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiStaIface getWifiStaIfaceForV1_5Mockable(
+                String ifaceName) {
+            return mIWifiStaIfaceV15;
         }
     }
 
@@ -943,6 +1025,16 @@ public class WifiVendorHalTest extends WifiBaseTest {
         mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
         mWifiVendorHal.getWifiLinkLayerStats(TEST_IFACE_NAME);
         verify(mIWifiStaIfaceV13).getLinkLayerStats_1_3(any());
+    }
+
+    /**
+     * Test getLinkLayerStats_1_5 gets called when the hal version is V1_5.
+     */
+    @Test
+    public void testLinkLayerStatsCorrectVersionWithHalV1_5() throws Exception {
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        mWifiVendorHal.getWifiLinkLayerStats(TEST_IFACE_NAME);
+        verify(mIWifiStaIfaceV15).getLinkLayerStats_1_5(any());
     }
 
     /**
@@ -2922,6 +3014,32 @@ public class WifiVendorHalTest extends WifiBaseTest {
         when(mHalDeviceManager.canSupportIfaceCombo(
                 argThat(ifaceCombo -> ifaceCombo.get(IfaceType.STA) == 2))).thenReturn(true);
         assertTrue(mWifiVendorHal.isStaStaConcurrencySupported());
+    }
+
+    @Test
+    public void testSetMultiStaPrimaryConnection() throws Exception {
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        when(mIWifiChipV15.setMultiStaPrimaryConnection(any())).thenReturn(mWifiStatusSuccess);
+        assertTrue(mWifiVendorHal.setMultiStaPrimaryConnection(TEST_IFACE_NAME));
+        verify(mIWifiChipV15).setMultiStaPrimaryConnection(TEST_IFACE_NAME);
+    }
+
+    @Test
+    public void testSetMultiStaUseCase() throws Exception {
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        when(mIWifiChipV15.setMultiStaUseCase(MultiStaUseCase.DUAL_STA_TRANSIENT_PREFER_PRIMARY))
+                .thenReturn(mWifiStatusSuccess);
+        when(mIWifiChipV15.setMultiStaUseCase(MultiStaUseCase.DUAL_STA_NON_TRANSIENT_UNBIASED))
+                .thenReturn(mWifiStatusFailure);
+
+        assertTrue(mWifiVendorHal.setMultiStaUseCase(WifiNative.DUAL_STA_TRANSIENT_PREFER_PRIMARY));
+        verify(mIWifiChipV15).setMultiStaUseCase(MultiStaUseCase.DUAL_STA_TRANSIENT_PREFER_PRIMARY);
+
+        assertFalse(mWifiVendorHal.setMultiStaUseCase(WifiNative.DUAL_STA_NON_TRANSIENT_UNBIASED));
+        verify(mIWifiChipV15).setMultiStaUseCase(MultiStaUseCase.DUAL_STA_NON_TRANSIENT_UNBIASED);
+
+        // illegal value.
+        assertFalse(mWifiVendorHal.setMultiStaUseCase(5));
     }
 
     private void startHalInStaModeAndRegisterRadioModeChangeCallback() {

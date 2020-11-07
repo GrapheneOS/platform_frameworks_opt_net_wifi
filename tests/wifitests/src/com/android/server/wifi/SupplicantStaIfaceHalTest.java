@@ -921,6 +921,32 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     }
 
     /**
+     * Tests the handling of ANQP done callback.
+     * Note: Since the ANQP element parsing methods are static, this can only test the negative test
+     * where all the parsing fails because the data is empty. It'll be non-trivial and unnecessary
+     * to test out the parsing logic here.
+     */
+    @Test
+    public void testAnqpDoneCallback_1_4() throws Exception {
+        setupMocksForHalV1_4();
+        executeAndValidateInitializationSequenceV1_4();
+        assertNotNull(mISupplicantStaIfaceCallbackV14);
+        byte[] bssid = NativeUtil.macAddressToByteArray(BSSID);
+        mISupplicantStaIfaceCallbackV14.onAnqpQueryDone_1_4(
+                bssid,
+                new android.hardware.wifi.supplicant.V1_4.ISupplicantStaIfaceCallback.AnqpData(),
+                new ISupplicantStaIfaceCallback.Hs20AnqpData());
+
+        ArgumentCaptor<AnqpEvent> anqpEventCaptor = ArgumentCaptor.forClass(AnqpEvent.class);
+        verify(mWifiMonitor).broadcastAnqpDoneEvent(
+                eq(WLAN0_IFACE_NAME), anqpEventCaptor.capture());
+        assertEquals(
+                ByteBufferReader.readInteger(
+                        ByteBuffer.wrap(bssid), ByteOrder.BIG_ENDIAN, bssid.length),
+                anqpEventCaptor.getValue().getBssid());
+    }
+
+    /**
      * Tests the handling of Icon done callback.
      */
     @Test
@@ -2878,6 +2904,19 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         }
     }
 
+    private class GetWpaDriverCapabilities_1_4Answer extends MockAnswerUtil.AnswerWithArguments {
+        private int mWpaDriverCapabilities;
+
+        GetWpaDriverCapabilities_1_4Answer(int wpaDriverCapabilities) {
+            mWpaDriverCapabilities = wpaDriverCapabilities;
+        }
+
+        public void answer(android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
+                .getWpaDriverCapabilities_1_4Callback cb) {
+            cb.onValues(mStatusSuccessV14, mWpaDriverCapabilities);
+        }
+    }
+
     /**
      * Test To get wpa driver capabilities API on old HAL, should
      * return 0 (not supported)
@@ -2925,6 +2964,27 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 .when(mISupplicantStaIfaceMockV13).getWpaDriverCapabilities(any(
                 android.hardware.wifi.supplicant.V1_3.ISupplicantStaIface
                         .getWpaDriverCapabilitiesCallback.class));
+
+        assertEquals(WIFI_FEATURE_MBO | WIFI_FEATURE_OCE,
+                mDut.getWpaDriverFeatureSet(WLAN0_IFACE_NAME));
+    }
+
+    /**
+     * Test getWpaDriverCapabilities_1_4
+     */
+    @Test
+    public void testGetWpaDriverCapabilities_1_4() throws Exception {
+        setupMocksForHalV1_4();
+
+        executeAndValidateInitializationSequenceV1_4();
+
+        doAnswer(new GetWpaDriverCapabilities_1_4Answer(android.hardware.wifi.supplicant.V1_3
+                .WpaDriverCapabilitiesMask.MBO
+                | android.hardware.wifi.supplicant.V1_3
+                .WpaDriverCapabilitiesMask.OCE))
+                .when(mISupplicantStaIfaceMockV14).getWpaDriverCapabilities_1_4(any(
+                android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface
+                        .getWpaDriverCapabilities_1_4Callback.class));
 
         assertEquals(WIFI_FEATURE_MBO | WIFI_FEATURE_OCE,
                 mDut.getWpaDriverFeatureSet(WLAN0_IFACE_NAME));

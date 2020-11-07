@@ -63,7 +63,7 @@ public class ScanResultMatchInfo {
         } else if (WifiConfigurationUtil.isConfigForEapNetwork(config)) {
             return WifiConfiguration.SECURITY_TYPE_EAP;
         } else if (WifiConfigurationUtil.isConfigForEapSuiteBNetwork(config)) {
-            return WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B;
+            return WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT;
         } else if (WifiConfigurationUtil.isConfigForWepNetwork(config)) {
             return WifiConfiguration.SECURITY_TYPE_WEP;
         } else if (WifiConfigurationUtil.isConfigForOweNetwork(config)) {
@@ -97,7 +97,7 @@ public class ScanResultMatchInfo {
         } else if (ScanResultUtil.isScanResultForPskNetwork(scanResult)) {
             return WifiConfiguration.SECURITY_TYPE_PSK;
         } else if (ScanResultUtil.isScanResultForEapSuiteBNetwork(scanResult)) {
-            return WifiConfiguration.SECURITY_TYPE_EAP_SUITE_B;
+            return WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT;
         } else if (ScanResultUtil.isScanResultForEapNetwork(scanResult)) {
             return WifiConfiguration.SECURITY_TYPE_EAP;
         } else if (ScanResultUtil.isScanResultForWepNetwork(scanResult)) {
