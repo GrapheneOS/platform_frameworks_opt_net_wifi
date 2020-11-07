@@ -19,6 +19,9 @@ package com.android.server.wifi;
 import android.annotation.NonNull;
 import android.net.wifi.WifiManager;
 
+import com.android.server.wifi.hotspot2.WnmData;
+import com.android.server.wifi.util.NativeUtil;
+
 import java.util.ArrayList;
 
 abstract class SupplicantStaIfaceCallbackV1_4Impl extends
@@ -218,7 +221,9 @@ abstract class SupplicantStaIfaceCallbackV1_4Impl extends
             String url) {
         synchronized (mLock) {
             mStaIfaceHal.logCallback("onHs20TermsAndConditionsAcceptanceRequestedNotification");
-            // empty (for now - until it is implemented)
+            mWifiMonitor.broadcastWnmEvent(mIfaceName,
+                    WnmData.createTermsAndConditionsAccetanceRequiredEvent(
+                            NativeUtil.macAddressToLong(bssid), url));
         }
     }
 }

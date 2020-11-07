@@ -244,7 +244,8 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             mStaIfaceHal.logCallback("onHs20SubscriptionRemediation");
             mWifiMonitor.broadcastWnmEvent(
                     mIfaceName,
-                    new WnmData(NativeUtil.macAddressToLong(bssid), url, osuMethod));
+                    WnmData.createRemediationEvent(NativeUtil.macAddressToLong(bssid), url,
+                            osuMethod));
         }
     }
 
@@ -255,7 +256,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             mStaIfaceHal.logCallback("onHs20DeauthImminentNotice");
             mWifiMonitor.broadcastWnmEvent(
                     mIfaceName,
-                    new WnmData(NativeUtil.macAddressToLong(bssid), url,
+                    WnmData.createDeauthImminentEvent(NativeUtil.macAddressToLong(bssid), url,
                             reasonCode == WnmData.ESS, reAuthDelayInSec));
         }
     }
