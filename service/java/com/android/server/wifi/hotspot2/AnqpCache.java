@@ -59,6 +59,24 @@ public class AnqpCache {
     }
 
     /**
+     * Add or update additional ANQP elements to an ANQP entry associated with a given key. This
+     * method is useful for Venue URL or any other ANQP element which is queried after a connection
+     * is made.
+     *
+     * @param key The key that's associated with the entry
+     * @param anqpElements The additional ANQP elements from the AP, post connection
+     */
+    public void addOrUpdateEntry(ANQPNetworkKey key,
+            Map<Constants.ANQPElementType, ANQPElement> anqpElements) {
+        if (!mANQPCache.containsKey(key)) {
+            // Create a new entry
+            addEntry(key, anqpElements);
+            return;
+        }
+        mANQPCache.get(key).update(anqpElements);
+    }
+
+    /**
      * Get the ANQP data associated with the given AP.
      *
      * @param key The key that's associated with the entry

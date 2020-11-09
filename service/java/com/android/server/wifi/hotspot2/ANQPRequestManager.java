@@ -138,6 +138,22 @@ public class ANQPRequestManager {
     }
 
     /**
+     * Request Venue URL ANQP-element from the specified AP post connection.
+     *
+     * @param bssid The BSSID of the AP
+     * @param anqpNetworkKey The unique network key associated with this request
+     * @return true if a request was sent successfully
+     */
+    public boolean requestVenueUrlAnqpElement(long bssid, ANQPNetworkKey anqpNetworkKey) {
+        if (!mPasspointHandler.requestVenueUrlAnqp(bssid)) {
+            return false;
+        }
+
+        mPendingQueries.put(bssid, anqpNetworkKey);
+        return true;
+    }
+
+    /**
      * Notification of the completion of an ANQP request.
      *
      * @param bssid The BSSID of the AP

@@ -5276,5 +5276,47 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mLinkProbeCallback, never()).onFailure(anyInt());
         verify(mLinkProbeCallback, never()).onAck(anyInt());
     }
-}
 
+    private void setupPasspointConnection() throws Exception {
+        mConnectedNetwork = spy(WifiConfigurationTestUtil.createPasspointNetwork());
+        mConnectedNetwork.carrierId = CARRIER_ID_1;
+        doReturn(DATA_SUBID).when(mWifiCarrierInfoManager)
+                .getBestMatchSubscriptionId(any(WifiConfiguration.class));
+        when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
+        when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
+        mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
+
+        triggerConnect();
+
+        when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
+                .thenReturn(mScanDetailCache);
+        when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
+        when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
+
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+        assertEquals("L3ProvisioningState", getCurrentState().getName());
+    }
+
+    /**
+     * When connecting to a Passpoint network, verify that the Venue URL ANQP request is sent.
+     */
+    @Test
+    public void testVenueUrlRequestForPasspointNetworks() throws Exception {
+        setupPasspointConnection();
+        verify(mPasspointManager).requestVenueUrlAnqpElement(any(ScanResult.class));
+        assertEquals("L3ProvisioningState", getCurrentState().getName());
+    }
+
+    /**
+     * Verify that the Venue URL ANQP request is not sent for non-Passpoint EAP networks
+     */
+    @Test
+    public void testVenueUrlNotRequestedForNonPasspointNetworks() throws Exception {
+        setupEapSimConnection();
+        verify(mPasspointManager, never()).requestVenueUrlAnqpElement(any(ScanResult.class));
+        assertEquals("L3ProvisioningState", getCurrentState().getName());
+    }
+}
