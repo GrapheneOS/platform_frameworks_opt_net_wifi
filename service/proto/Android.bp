@@ -17,7 +17,8 @@ java_library {
     proto: {
         type: "lite",
     },
-    sdk_version: "system_30",
+    sdk_version: "system_current",
+    min_sdk_version: "30",
     srcs: ["src/scorecard.proto"],
 }
 
@@ -31,7 +32,8 @@ java_library {
         "src/metrics.proto",
         ":system-messages-proto-src",
     ],
-    sdk_version: "system_30",
+    sdk_version: "system_current",
+    min_sdk_version: "30",
     // Pin java_version until jarjar is certified to support later versions. http://b/72703434
     java_version: "1.8",
     target: {
