@@ -317,6 +317,16 @@ public class ActiveModeWarden {
         mCallbacks.remove(Objects.requireNonNull(callback));
     }
 
+    private void updateWifiConnectedNetworkScorer(ConcreteClientModeManager manager) {
+        ClientRole newRole = manager.getRole();
+        if (newRole == ROLE_CLIENT_PRIMARY && mClientModeManagerScorer != null) {
+            manager.setWifiConnectedNetworkScorer(
+                    mClientModeManagerScorer.first, mClientModeManagerScorer.second);
+        } else {
+            manager.clearWifiConnectedNetworkScorer();
+        }
+    }
+
     /**
      * Notify that device is shutting down
      * Keep it simple and don't add collection access codes
@@ -768,14 +778,6 @@ public class ActiveModeWarden {
 
         ConcreteClientModeManager manager = mWifiInjector.makeClientModeManager(
                 new ClientListener(), requestorWs, role, mVerboseLoggingEnabled);
-
-        if (mClientModeManagerScorer != null) {
-            // TODO (b/160346062): Clear the connected scorer from this mode manager when
-            // we switch it out of primary role for the MBB use-case.
-            // Also vice versa, we need to set the scorer on the new primary mode manager.
-            manager.setWifiConnectedNetworkScorer(
-                    mClientModeManagerScorer.first, mClientModeManagerScorer.second);
-        }
         mClientModeManagers.add(manager);
         return true;
     }
@@ -982,11 +984,16 @@ public class ActiveModeWarden {
                     getPrimaryClientModeManager().getInterfaceName());
         }
 
-        @Override
-        public void onStarted(ConcreteClientModeManager clientModeManager) {
+        private void updateOnStartedOrRoleChanged(ConcreteClientModeManager clientModeManager) {
             updateClientScanMode();
             updateBatteryStats();
             configureHwForMultiStaIfNecessary(clientModeManager);
+            updateWifiConnectedNetworkScorer(clientModeManager);
+        }
+
+        @Override
+        public void onStarted(ConcreteClientModeManager clientModeManager) {
+            updateOnStartedOrRoleChanged(clientModeManager);
             if (mExternalRequestListener != null) {
                 mExternalRequestListener.onAnswer(clientModeManager);
             }
@@ -995,9 +1002,7 @@ public class ActiveModeWarden {
 
         @Override
         public void onRoleChanged(ConcreteClientModeManager clientModeManager) {
-            updateClientScanMode();
-            updateBatteryStats();
-            configureHwForMultiStaIfNecessary(clientModeManager);
+            updateOnStartedOrRoleChanged(clientModeManager);
             invokeOnRoleChangedCallbacks(clientModeManager);
         }
 

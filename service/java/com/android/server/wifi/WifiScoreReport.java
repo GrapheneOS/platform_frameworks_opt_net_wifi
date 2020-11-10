@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import static com.android.server.wifi.WifiDataStall.INVALID_THROUGHPUT;
 
+import android.annotation.Nullable;
 import android.content.Context;
 import android.net.Network;
 import android.net.NetworkAgent;
@@ -25,9 +26,7 @@ import android.net.wifi.IScoreUpdateObserver;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.nl80211.WifiNl80211Manager;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -73,17 +72,16 @@ public class WifiScoreReport {
     private long mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
     private long mLastScoreBreachHighTimeMillis = INVALID_WALL_CLOCK_MILLIS;
 
-    ConnectedScore mAggressiveConnectedScore;
-    VelocityBasedConnectedScore mVelocityBasedConnectedScore;
+    private final ConnectedScore mAggressiveConnectedScore;
+    private VelocityBasedConnectedScore mVelocityBasedConnectedScore;
 
-    NetworkAgent mNetworkAgent;
-    WifiMetrics mWifiMetrics;
-    WifiInfo mWifiInfo;
-    WifiNative mWifiNative;
-    WifiThreadRunner mWifiThreadRunner;
-    DeviceConfigFacade mDeviceConfigFacade;
-    Handler mHandler;
-    FrameworkFacade mFrameworkFacade;
+    @Nullable
+    private NetworkAgent mNetworkAgent;
+    private final WifiMetrics mWifiMetrics;
+    private final WifiInfo mWifiInfo;
+    private final WifiNative mWifiNative;
+    private final WifiThreadRunner mWifiThreadRunner;
+    private final DeviceConfigFacade mDeviceConfigFacade;
 
     /**
      * Callback proxy. See {@link android.net.wifi.WifiManager.ScoreUpdateObserver}.
@@ -324,8 +322,7 @@ public class WifiScoreReport {
             WifiInfo wifiInfo, WifiNative wifiNative,
             BssidBlocklistMonitor bssidBlocklistMonitor,
             WifiThreadRunner wifiThreadRunner, WifiDataStall wifiDataStall,
-            DeviceConfigFacade deviceConfigFacade, Context context, Looper looper,
-            FrameworkFacade frameworkFacade,
+            DeviceConfigFacade deviceConfigFacade, Context context,
             AdaptiveConnectivityEnabledSettingObserver adaptiveConnectivityEnabledSettingObserver,
             String interfaceName) {
         mScoringParams = scoringParams;
@@ -341,9 +338,7 @@ public class WifiScoreReport {
         mWifiDataStall = wifiDataStall;
         mDeviceConfigFacade = deviceConfigFacade;
         mContext = context;
-        mFrameworkFacade = frameworkFacade;
         mInterfaceName = interfaceName;
-        mHandler = new Handler(looper);
     }
 
     /**
@@ -639,6 +634,7 @@ public class WifiScoreReport {
             pw.println(line);
         }
         history.clear();
+        pw.println("externalScorerActive=" + (mWifiConnectedNetworkScorerHolder != null));
     }
 
     /**
