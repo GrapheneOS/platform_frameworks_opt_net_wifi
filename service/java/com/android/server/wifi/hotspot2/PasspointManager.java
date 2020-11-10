@@ -1103,7 +1103,7 @@ public class PasspointManager {
             if (mWifiConfigManager.shouldUseEnhancedRandomization(config)) {
                 config.setRandomizedMacAddress(MacAddress.fromString(DEFAULT_MAC_ADDRESS));
             } else {
-                MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getMacRandomKey(),
+                MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getNetworkKey(),
                         mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
                 if (result != null) {
                     config.setRandomizedMacAddress(result);

@@ -552,10 +552,10 @@ public class WifiConfigManager {
                 mRandomizedMacAddressMapping.remove(config.getKey());
             }
         }
-        MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getMacRandomKey(),
+        MacAddress result = mMacAddressUtil.calculatePersistentMac(config.getNetworkKey(),
                 mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
         if (result == null) {
-            result = mMacAddressUtil.calculatePersistentMac(config.getMacRandomKey(),
+            result = mMacAddressUtil.calculatePersistentMac(config.getNetworkKey(),
                     mMacAddressUtil.obtainMacRandHashFunction(Process.WIFI_UID));
         }
         if (result == null) {
