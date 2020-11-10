@@ -603,37 +603,64 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      */
     @Test
     public void testAddNetworkSuggestionsSuccessOnInPlaceModificationWhenNotInWcm() {
-        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
-                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true,
+        PasspointConfiguration passpointConfiguration =
+                createTestConfigWithUserCredential(TEST_FQDN, TEST_FRIENDLY_NAME);
+        WifiConfiguration placeholderConfig = createPlaceholderConfigForPasspoint(TEST_FQDN);
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
+                openNetwork, null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
+        WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
+                placeholderConfig, passpointConfiguration, false, false, true, true,
                 DEFAULT_PRIORITY_GROUP);
         List<WifiNetworkSuggestion> networkSuggestionList1 =
                 new ArrayList<WifiNetworkSuggestion>() {{
-                add(networkSuggestion);
-            }};
+                    add(networkSuggestion1);
+                    add(networkSuggestion2);
+                }};
 
+        when(mPasspointManager.addOrUpdateProvider(any(),
+                anyInt(), anyString(), eq(true), anyBoolean())).thenReturn(true);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
-
-        // Assert that the original config was not metered.
-        assertEquals(WifiConfiguration.METERED_OVERRIDE_NONE,
-                networkSuggestion.wifiConfiguration.meteredOverride);
+        mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
 
         // Nothing in WCM.
-        when(mWifiConfigManager.getConfiguredNetwork(networkSuggestion.wifiConfiguration.getKey()))
+        when(mWifiConfigManager.getConfiguredNetwork(networkSuggestion1.wifiConfiguration.getKey()))
+                .thenReturn(null);
+        when(mWifiConfigManager.getConfiguredNetwork(networkSuggestion2.wifiConfiguration.getKey()))
                 .thenReturn(null);
 
-        // Modify the original suggestion to mark it metered.
-        networkSuggestion.wifiConfiguration.meteredOverride =
-                WifiConfiguration.METERED_OVERRIDE_METERED;
+        // Modify the same suggestion to mark it auto-join disabled.
+        WifiNetworkSuggestion networkSuggestion3 = new WifiNetworkSuggestion(
+                openNetwork, null, false, false, true, false,
+                DEFAULT_PRIORITY_GROUP);
+        WifiNetworkSuggestion networkSuggestion4 = new WifiNetworkSuggestion(
+                placeholderConfig, passpointConfiguration, false, false, true, false,
+                DEFAULT_PRIORITY_GROUP);
+        List<WifiNetworkSuggestion> networkSuggestionList2 =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion3);
+                    add(networkSuggestion4);
+                }};
 
         // Replace attempt should success.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
-                mWifiNetworkSuggestionsManager.add(networkSuggestionList1, TEST_UID_1,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList2, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
-        assertEquals(WifiConfiguration.METERED_OVERRIDE_METERED,
-                mWifiNetworkSuggestionsManager
-                        .get(TEST_PACKAGE_1).get(0).wifiConfiguration.meteredOverride);
+
+        Set<ExtendedWifiNetworkSuggestion> matchedPasspointSuggestions =
+                mWifiNetworkSuggestionsManager.getNetworkSuggestionsForFqdn(TEST_FQDN);
+        assertEquals(1, matchedPasspointSuggestions.size());
+        assertFalse(matchedPasspointSuggestions.iterator().next().isAutojoinEnabled);
+
+        ScanDetail scanDetail = createScanDetailForNetwork(openNetwork);
+        Set<ExtendedWifiNetworkSuggestion> matchedSuggestions =
+                mWifiNetworkSuggestionsManager.getNetworkSuggestionsForScanDetail(scanDetail);
+        assertEquals(1, matchedSuggestions.size());
+        assertFalse(matchedSuggestions.iterator().next().isAutojoinEnabled);
+
         // Verify we did not update config in WCM.
         verify(mWifiConfigManager, never()).addOrUpdateNetwork(any(), anyInt(), any());
     }

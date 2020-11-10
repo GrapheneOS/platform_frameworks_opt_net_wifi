@@ -732,6 +732,7 @@ public class WifiNetworkSuggestionsManager {
         if (extendedWifiNetworkSuggestions == null) {
             extendedWifiNetworkSuggestions = new HashSet<>();
         }
+        extendedWifiNetworkSuggestions.remove(ewns);
         extendedWifiNetworkSuggestions.add(ewns);
         mPasspointInfo.put(ewns.wns.wifiConfiguration.FQDN, extendedWifiNetworkSuggestions);
     }
