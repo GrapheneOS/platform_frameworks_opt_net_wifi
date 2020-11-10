@@ -2282,6 +2282,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiInfo.setTrusted(config.trusted);
             mWifiInfo.setOemPaid(config.oemPaid);
             mWifiInfo.setOemPrivate(config.oemPrivate);
+            mWifiInfo.setCarrierMerged(config.carrierMerged);
             mWifiInfo.setOsuAp(config.osu);
             if (config.fromWifiNetworkSpecifier || config.fromWifiNetworkSuggestion) {
                 mWifiInfo.setRequestingPackageName(config.creatorName);
@@ -2741,6 +2742,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiInfo.setTrusted(config.trusted);
             mWifiInfo.setOemPaid(config.oemPaid);
             mWifiInfo.setOemPrivate(config.oemPrivate);
+            mWifiInfo.setCarrierMerged(config.carrierMerged);
             mWifiConfigManager.updateRandomizedMacExpireTime(config, dhcpResults.leaseDuration);
             mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(mLastBssid, mWifiInfo.getSSID());
         }
