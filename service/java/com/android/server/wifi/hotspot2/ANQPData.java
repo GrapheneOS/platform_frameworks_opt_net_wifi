@@ -37,7 +37,7 @@ public class ANQPData {
 
     private final Clock mClock;
     private final Map<Constants.ANQPElementType, ANQPElement> mANQPElements;
-    private final long mExpiryTime;
+    private long mExpiryTime;
 
     public ANQPData(Clock clock, Map<Constants.ANQPElementType, ANQPElement> anqpElements) {
         mClock = clock;
@@ -45,6 +45,16 @@ public class ANQPData {
         if (anqpElements != null) {
             mANQPElements.putAll(anqpElements);
         }
+        mExpiryTime = mClock.getElapsedSinceBootMillis() + DATA_LIFETIME_MILLISECONDS;
+    }
+
+    /**
+     * Update an entry with post association ANQP elelemtns
+     *
+     * @param anqpElements ANQP elements to add
+     */
+    public void update(Map<Constants.ANQPElementType, ANQPElement> anqpElements) {
+        mANQPElements.putAll(anqpElements);
         mExpiryTime = mClock.getElapsedSinceBootMillis() + DATA_LIFETIME_MILLISECONDS;
     }
 

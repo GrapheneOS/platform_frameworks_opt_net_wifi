@@ -3445,8 +3445,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     break;
                 }
                 case WifiMonitor.ANQP_DONE_EVENT: {
-                    // TODO(zqiu): remove this when switch over to wificond for ANQP requests.
                     mPasspointManager.notifyANQPDone((AnqpEvent) message.obj);
+                    //TODO(haishalom@): If this was a Venue URL response, need to invoke the
+                    //networking API to display a notification
                     break;
                 }
                 case CMD_STOP_IP_PACKET_OFFLOAD: {
@@ -3458,13 +3459,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     break;
                 }
                 case WifiMonitor.RX_HS20_ANQP_ICON_EVENT: {
-                    // TODO(zqiu): remove this when switch over to wificond for icon requests.
                     mPasspointManager.notifyIconDone((IconEvent) message.obj);
                     break;
                 }
                 case WifiMonitor.HS20_REMEDIATION_EVENT: {
-                    // TODO(zqiu): remove this when switch over to wificond for WNM frames
-                    // monitoring.
                     mPasspointManager.receivedWnmFrame((WnmData) message.obj);
                     break;
                 }
@@ -3972,54 +3970,74 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     // work, so disconnect the network and let network selector reselect a new
                     // network.
                     WifiConfiguration config = getConnectedWifiConfigurationInternal();
-                    if (config != null) {
-                        mWifiInfo.setBSSID(mLastBssid);
-                        mWifiInfo.setNetworkId(mLastNetworkId);
-                        mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
-
-                        ScanDetailCache scanDetailCache =
-                                mWifiConfigManager.getScanDetailCacheForNetwork(config.networkId);
-                        if (scanDetailCache != null && mLastBssid != null) {
-                            ScanResult scanResult = scanDetailCache.getScanResult(mLastBssid);
-                            if (scanResult != null) {
-                                mWifiInfo.setFrequency(scanResult.frequency);
-                            }
-                        }
-
-                        // We need to get the updated pseudonym from supplicant for EAP-SIM/AKA/AKA'
-                        if (config.enterpriseConfig != null
-                                && config.enterpriseConfig.isAuthenticationSimBased()) {
-                            mLastSubId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
-                            mLastSimBasedConnectionCarrierName =
-                                    mWifiCarrierInfoManager.getCarrierNameforSubId(mLastSubId);
-                            String anonymousIdentity =
-                                    mWifiNative.getEapAnonymousIdentity(mInterfaceName);
-                            if (!TextUtils.isEmpty(anonymousIdentity)
-                                    && !WifiCarrierInfoManager
-                                    .isAnonymousAtRealmIdentity(anonymousIdentity)) {
-                                String decoratedPseudonym = mWifiCarrierInfoManager
-                                        .decoratePseudonymWith3GppRealm(config,
-                                                anonymousIdentity);
-                                if (decoratedPseudonym != null) {
-                                    anonymousIdentity = decoratedPseudonym;
-                                }
-                                if (mVerboseLoggingEnabled) {
-                                    log("EAP Pseudonym: " + anonymousIdentity);
-                                }
-                                // Save the pseudonym only if it is a real one
-                                config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
-                            } else {
-                                // Clear any stored pseudonyms
-                                config.enterpriseConfig.setAnonymousIdentity(null);
-                            }
-                            mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
-                        }
-                        transitionTo(mL3ProvisioningState);
-                    } else {
+                    if (config == null) {
                         logw("Connected to unknown networkId " + mLastNetworkId
                                 + ", disconnecting...");
                         sendMessage(CMD_DISCONNECT);
+                        break;
                     }
+                    mWifiInfo.setBSSID(mLastBssid);
+                    mWifiInfo.setNetworkId(mLastNetworkId);
+                    mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
+
+                    ScanDetailCache scanDetailCache =
+                            mWifiConfigManager.getScanDetailCacheForNetwork(config.networkId);
+                    ScanResult scanResult = null;
+                    if (scanDetailCache != null && mLastBssid != null) {
+                        scanResult = scanDetailCache.getScanResult(mLastBssid);
+                        if (scanResult != null) {
+                            mWifiInfo.setFrequency(scanResult.frequency);
+                        }
+                    }
+
+                    // We need to get the updated pseudonym from supplicant for EAP-SIM/AKA/AKA'
+                    if (config.enterpriseConfig != null
+                            && config.enterpriseConfig.isAuthenticationSimBased()) {
+                        mLastSubId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+                        mLastSimBasedConnectionCarrierName =
+                                mWifiCarrierInfoManager.getCarrierNameforSubId(mLastSubId);
+                        String anonymousIdentity =
+                                mWifiNative.getEapAnonymousIdentity(mInterfaceName);
+                        if (!TextUtils.isEmpty(anonymousIdentity)
+                                && !WifiCarrierInfoManager
+                                .isAnonymousAtRealmIdentity(anonymousIdentity)) {
+                            String decoratedPseudonym = mWifiCarrierInfoManager
+                                    .decoratePseudonymWith3GppRealm(config,
+                                            anonymousIdentity);
+                            if (decoratedPseudonym != null) {
+                                anonymousIdentity = decoratedPseudonym;
+                            }
+                            if (mVerboseLoggingEnabled) {
+                                log("EAP Pseudonym: " + anonymousIdentity);
+                            }
+                            // Save the pseudonym only if it is a real one
+                            config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
+                        } else {
+                            // Clear any stored pseudonyms
+                            config.enterpriseConfig.setAnonymousIdentity(null);
+                        }
+                        mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
+                    }
+                    // When connecting to Passpoint, ask for the Venue URL
+                    if (config.isPasspoint()) {
+                        if (scanResult == null && mLastBssid != null) {
+                            // The cached scan result of connected network would be null at the
+                            // first connection, try to check full scan result list again to look up
+                            // matched scan result associated to the current SSID and BSSID.
+                            List<ScanResult> scanResults = mScanRequestProxy.getScanResults();
+                            for (ScanResult result : scanResults) {
+                                if (result.SSID.equals(WifiInfo.removeDoubleQuotes(config.SSID))
+                                        && result.BSSID.equals(mLastBssid)) {
+                                    scanResult = result;
+                                    break;
+                                }
+                            }
+                        }
+                        if (scanResult != null) {
+                            mPasspointManager.requestVenueUrlAnqpElement(scanResult);
+                        }
+                    }
+                    transitionTo(mL3ProvisioningState);
                     break;
                 }
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT: {

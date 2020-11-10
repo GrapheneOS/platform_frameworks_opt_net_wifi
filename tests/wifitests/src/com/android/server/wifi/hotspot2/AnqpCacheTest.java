@@ -16,6 +16,7 @@
 
 package com.android.server.wifi.hotspot2;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -26,12 +27,22 @@ import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.WifiBaseTest;
-import com.android.server.wifi.hotspot2.ANQPData;
-import com.android.server.wifi.hotspot2.AnqpCache;
+import com.android.server.wifi.hotspot2.anqp.ANQPElement;
+import com.android.server.wifi.hotspot2.anqp.Constants;
+import com.android.server.wifi.hotspot2.anqp.I18Name;
+import com.android.server.wifi.hotspot2.anqp.VenueNameElement;
+import com.android.server.wifi.hotspot2.anqp.VenueUrlElement;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Unit tests for {@link com.android.server.wifi.hotspot2.AnqpCache}.
@@ -42,6 +53,13 @@ import org.mockito.Mock;
 @SmallTest
 public class AnqpCacheTest extends WifiBaseTest {
     private static final ANQPNetworkKey ENTRY_KEY = new ANQPNetworkKey("test", 0L, 0L, 1);
+    private static final String TEST_LANGUAGE = "en";
+    private static final Locale TEST_LOCALE = Locale.forLanguageTag(TEST_LANGUAGE);
+    private static final String TEST_VENUE_NAME1 = "Venue1";
+    private static final String TEST_VENUE_NAME2 = "Venue2";
+    private static final String TEST_VENUE_URL1 = "https://www.google.com/";
+    private static final String TEST_VENUE_URL2 = "https://www.android.com/";
+    private static final String TEST_VENUE_URL3 = "https://support.google.com/";
 
     @Mock Clock mClock;
     AnqpCache mCache;
@@ -111,5 +129,53 @@ public class AnqpCacheTest extends WifiBaseTest {
         mCache.addEntry(ENTRY_KEY, null);
         mCache.flush();
         assertNull(mCache.getEntry(ENTRY_KEY));
+    }
+
+    private URL createUrlFromString(String stringUrl) {
+        URL url;
+        try {
+            url = new URL(stringUrl);
+        } catch (java.net.MalformedURLException e) {
+            return null;
+        }
+        return url;
+    }
+
+    /**
+     * Verify expectation for addOrUpdateEntry and getEntry.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void addThenUpdateAndGetEntry() throws Exception {
+        Map<Constants.ANQPElementType, ANQPElement> anqpList1 = new HashMap<>();
+        List<I18Name> nameList = new ArrayList<>();
+        nameList.add(new I18Name(TEST_LANGUAGE, TEST_LOCALE, TEST_VENUE_NAME1));
+        nameList.add(new I18Name(TEST_LANGUAGE, TEST_LOCALE, TEST_VENUE_NAME2));
+        VenueNameElement venueNameElement = new VenueNameElement(nameList);
+
+        // Add one ANQP element
+        anqpList1.put(Constants.ANQPElementType.ANQPVenueName, venueNameElement);
+        mCache.addOrUpdateEntry(ENTRY_KEY, anqpList1);
+        ANQPData data = mCache.getEntry(ENTRY_KEY);
+        assertNotNull(data);
+        assertFalse(data.getElements().isEmpty());
+        assertTrue(data.getElements().get(Constants.ANQPElementType.ANQPVenueName)
+                .equals(venueNameElement));
+
+        // Add another ANQP element to the same entry
+        Map<Constants.ANQPElementType, ANQPElement> anqpList2 = new HashMap<>();
+        Map<Integer, URL> urlList = new HashMap<>();
+        urlList.put(Integer.valueOf(1), createUrlFromString(TEST_VENUE_URL1));
+        urlList.put(Integer.valueOf(2), createUrlFromString(TEST_VENUE_URL2));
+        urlList.put(Integer.valueOf(4), createUrlFromString(TEST_VENUE_URL3));
+        VenueUrlElement venueUrlElement = new VenueUrlElement(urlList);
+        anqpList2.put(Constants.ANQPElementType.ANQPVenueUrl, venueUrlElement);
+        mCache.addOrUpdateEntry(ENTRY_KEY, anqpList2);
+        data = mCache.getEntry(ENTRY_KEY);
+        assertTrue(data.getElements().get(Constants.ANQPElementType.ANQPVenueName)
+                .equals(venueNameElement));
+        assertTrue(data.getElements().get(Constants.ANQPElementType.ANQPVenueUrl)
+                .equals(venueUrlElement));
     }
 }
