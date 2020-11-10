@@ -450,7 +450,7 @@ public class WifiInjector {
                 mWifiConfigStore, mWifiNetworkSuggestionsManager, mWifiMetrics.getWakeupMetrics(),
                 this, mFrameworkFacade, mClock);
         mLockManager = new WifiLockManager(mContext, mBatteryStats, mActiveModeWarden,
-                mFrameworkFacade, wifiHandler, mWifiNative, mClock, mWifiMetrics);
+                mFrameworkFacade, wifiHandler, mClock, mWifiMetrics);
         mSelfRecovery = new SelfRecovery(mContext, mActiveModeWarden, mClock);
         mWifiMulticastLockManager = new WifiMulticastLockManager(mActiveModeWarden, mBatteryStats);
         mDppManager = new DppManager(wifiHandler, mWifiNative,

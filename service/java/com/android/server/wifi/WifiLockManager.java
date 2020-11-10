@@ -67,7 +67,6 @@ public class WifiLockManager {
     private final ActivityManager mActivityManager;
     private final Handler mHandler;
     private final WifiMetrics mWifiMetrics;
-    private final WifiNative mWifiNative;
 
     private final List<WifiLock> mWifiLocks = new ArrayList<>();
     // map UIDs to their corresponding records (for low-latency locks)
@@ -89,14 +88,13 @@ public class WifiLockManager {
 
     WifiLockManager(Context context, BatteryStatsManager batteryStats,
             ActiveModeWarden activeModeWarden, FrameworkFacade frameworkFacade,
-            Handler handler, WifiNative wifiNative, Clock clock, WifiMetrics wifiMetrics) {
+            Handler handler, Clock clock, WifiMetrics wifiMetrics) {
         mContext = context;
         mBatteryStats = batteryStats;
         mActiveModeWarden = activeModeWarden;
         mFrameworkFacade = frameworkFacade;
         mActivityManager = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
         mCurrentOpMode = WifiManager.WIFI_MODE_NO_LOCKS_HELD;
-        mWifiNative = wifiNative;
         mHandler = handler;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
@@ -658,23 +656,23 @@ public class WifiLockManager {
         return true;
     }
 
+    /** Returns the cached low latency mode support value, or tries to fetch it if not yet known. */
     private int getLowLatencyModeSupport() {
-        if (mLatencyModeSupport == LOW_LATENCY_SUPPORT_UNDEFINED) {
-            String ifaceName = mWifiNative.getClientInterfaceName();
-            if (ifaceName == null) {
-                return LOW_LATENCY_SUPPORT_UNDEFINED;
-            }
-
-            long supportedFeatures = mWifiNative.getSupportedFeatureSet(ifaceName);
-            if (supportedFeatures != 0) {
-                if ((supportedFeatures & WifiManager.WIFI_FEATURE_LOW_LATENCY) != 0) {
-                    mLatencyModeSupport = LOW_LATENCY_SUPPORTED;
-                } else {
-                    mLatencyModeSupport = LOW_LATENCY_NOT_SUPPORTED;
-                }
-            }
+        if (mLatencyModeSupport != LOW_LATENCY_SUPPORT_UNDEFINED) {
+            return mLatencyModeSupport;
         }
 
+        long supportedFeatures =
+                mActiveModeWarden.getPrimaryClientModeManager().getSupportedFeatures();
+        if (supportedFeatures == 0L) {
+            return LOW_LATENCY_SUPPORT_UNDEFINED;
+        }
+
+        if ((supportedFeatures & WifiManager.WIFI_FEATURE_LOW_LATENCY) != 0) {
+            mLatencyModeSupport = LOW_LATENCY_SUPPORTED;
+        } else {
+            mLatencyModeSupport = LOW_LATENCY_NOT_SUPPORTED;
+        }
         return mLatencyModeSupport;
     }
 

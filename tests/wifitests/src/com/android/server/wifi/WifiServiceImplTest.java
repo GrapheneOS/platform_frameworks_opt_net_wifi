@@ -5993,7 +5993,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void getWifiActivityEnergyInfoAsyncFeatureUnsupported() throws Exception {
-        when(mClientModeManager.syncGetSupportedFeatures()).thenReturn(0L);
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(0L);
         mLooper.startAutoDispatch();
         mWifiServiceImpl.getWifiActivityEnergyInfoAsync(mOnWifiActivityEnergyInfoListener);
         mLooper.stopAutoDispatch();
@@ -6006,7 +6006,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void getWifiActivityEnergyInfoAsyncSuccess() throws Exception {
-        when(mClientModeManager.syncGetSupportedFeatures()).thenReturn(Long.MAX_VALUE);
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(Long.MAX_VALUE);
         setupReportActivityInfo();
         mLooper.startAutoDispatch();
         mWifiServiceImpl.getWifiActivityEnergyInfoAsync(mOnWifiActivityEnergyInfoListener);
@@ -6190,7 +6190,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
             long supportedFeaturesFromClientModeManager, boolean rttDisabled) {
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_WIFI_RTT)).thenReturn(
                 !rttDisabled);
-        when(mClientModeManager.syncGetSupportedFeatures())
+        when(mClientModeManager.getSupportedFeatures())
                 .thenReturn(supportedFeaturesFromClientModeManager);
         mLooper.startAutoDispatch();
         long supportedFeatures = mWifiServiceImpl.getSupportedFeatures();
@@ -6248,7 +6248,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mResources.getBoolean(
                 R.bool.config_wifi_p2p_mac_randomization_supported))
                 .thenReturn(p2pMacRandomizationEnabled);
-        when(mClientModeManager.syncGetSupportedFeatures())
+        when(mClientModeManager.getSupportedFeatures())
                 .thenReturn(supportedFeaturesFromClientModeManager);
         mLooper.startAutoDispatch();
         long supportedFeatures = mWifiServiceImpl.getSupportedFeatures();
@@ -6298,7 +6298,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void syncGetSupportedFeaturesForStaApConcurrency() {
         long supportedFeaturesFromClientModeManager = WifiManager.WIFI_FEATURE_OWE;
-        when(mClientModeManager.syncGetSupportedFeatures())
+        when(mClientModeManager.getSupportedFeatures())
                 .thenReturn(supportedFeaturesFromClientModeManager);
 
         when(mActiveModeWarden.isStaApConcurrencySupported())
@@ -6325,7 +6325,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         assumeTrue(SdkLevel.isAtLeastS());
 
         long supportedFeaturesFromClientModeManager = WifiManager.WIFI_FEATURE_OWE;
-        when(mClientModeManager.syncGetSupportedFeatures())
+        when(mClientModeManager.getSupportedFeatures())
                 .thenReturn(supportedFeaturesFromClientModeManager);
 
         when(mActiveModeWarden.isStaStaConcurrencySupported())
