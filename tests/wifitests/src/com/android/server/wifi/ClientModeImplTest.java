@@ -4523,10 +4523,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         ScanResult.InformationElement ie = createIE(ScanResult.InformationElement.EID_SSID,
                 sFilsSsid.getBytes(StandardCharsets.UTF_8));
         scanResult.informationElements = new ScanResult.InformationElement[]{ie};
-        List<ScanResult> scanResults = new ArrayList<>();
-        scanResults.add(scanResult);
-
-        when(mScanRequestProxy.getScanResults()).thenReturn(scanResults);
+        when(mScanRequestProxy.getScanResults()).thenReturn(Arrays.asList(scanResult));
+        when(mScanRequestProxy.getScanResult(eq(sBSSID))).thenReturn(scanResult);
     }
 
 

@@ -5811,16 +5811,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
                 // The cached scan result of connected network would be null at the first
                 // connection, try to check full scan result list again to look up matched
-                // scan result associated to the current SSID and BSSID.
+                // scan result associated to the current BSSID.
                 if (scanResult == null) {
-                    List<ScanResult> scanResults = mScanRequestProxy.getScanResults();
-                    for (ScanResult result : scanResults) {
-                        if (result.SSID.equals(WifiInfo.removeDoubleQuotes(config.SSID))
-                                && result.BSSID.equals(mLastBssid)) {
-                            scanResult = result;
-                            break;
-                        }
-                    }
+                    scanResult = mScanRequestProxy.getScanResult(mLastBssid);
                 }
             }
 
