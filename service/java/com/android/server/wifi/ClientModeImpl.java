@@ -739,6 +739,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             WifiMonitor.GAS_QUERY_DONE_EVENT,
             WifiMonitor.GAS_QUERY_START_EVENT,
             WifiMonitor.HS20_REMEDIATION_EVENT,
+            WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT,
+            WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT,
             WifiMonitor.NETWORK_CONNECTION_EVENT,
             WifiMonitor.NETWORK_DISCONNECTION_EVENT,
             WifiMonitor.RX_HS20_ANQP_ICON_EVENT,
@@ -1938,6 +1940,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 return "GAS_QUERY_DONE_EVENT";
             case WifiMonitor.HS20_REMEDIATION_EVENT:
                 return "HS20_REMEDIATION_EVENT";
+            case WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT:
+                return "HS20_DEAUTH_IMMINENT_EVENT";
+            case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT:
+                return "HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT";
             case WifiMonitor.GAS_QUERY_START_EVENT:
                 return "GAS_QUERY_START_EVENT";
             case WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE:
@@ -3465,7 +3471,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mPasspointManager.notifyIconDone((IconEvent) message.obj);
                     break;
                 }
-                case WifiMonitor.HS20_REMEDIATION_EVENT: {
+                case WifiMonitor.HS20_REMEDIATION_EVENT:
+                case WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT:
+                case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT: {
                     mPasspointManager.receivedWnmFrame((WnmData) message.obj);
                     break;
                 }

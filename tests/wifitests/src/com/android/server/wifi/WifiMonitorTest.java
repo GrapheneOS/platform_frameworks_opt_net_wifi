@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,6 +41,7 @@ import androidx.test.filters.SmallTest;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.hotspot2.AnqpEvent;
 import com.android.server.wifi.hotspot2.IconEvent;
+import com.android.server.wifi.hotspot2.WnmData;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +59,8 @@ public class WifiMonitorTest extends WifiBaseTest {
     private static final String BSSID = "fe:45:23:12:12:0a";
     private static final int NETWORK_ID = 5;
     private static final String SSID = "\"test124\"";
+    private static final long BSSID_LONG = 0xf3452312120aL;
+    private static final String PASSPOINT_URL = "https://www.google.com/";
     private WifiMonitor mWifiMonitor;
     private TestLooper mLooper;
     private Handler mHandlerSpy;
@@ -611,5 +615,62 @@ public class WifiMonitorTest extends WifiBaseTest {
         assertEquals(networkId, messageCaptor.getValue().arg1);
         assertEquals(1, messageCaptor.getValue().arg2);
         assertEquals(bssid, (String) messageCaptor.getValue().obj);
+    }
+
+    /**
+     * Broadcast Passpoint remediation event test.
+     */
+    @Test
+    public void testBroadcastPasspointRemediationEvent() {
+        mWifiMonitor.registerHandler(
+                WLAN_IFACE_NAME, WifiMonitor.HS20_REMEDIATION_EVENT, mHandlerSpy);
+        WnmData wnmData = WnmData.createRemediationEvent(BSSID_LONG, PASSPOINT_URL, 0);
+        mWifiMonitor.broadcastWnmEvent(WLAN_IFACE_NAME, wnmData);
+
+        mLooper.dispatchAll();
+
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(mHandlerSpy).handleMessage(messageCaptor.capture());
+        assertEquals(WifiMonitor.HS20_REMEDIATION_EVENT, messageCaptor.getValue().what);
+        assertTrue(wnmData.equals(messageCaptor.getValue().obj));
+    }
+
+    /**
+     * Broadcast Passpoint deauth imminent event test.
+     */
+    @Test
+    public void testBroadcastPasspointDeauthImminentEvent() {
+        mWifiMonitor.registerHandler(
+                WLAN_IFACE_NAME, WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT, mHandlerSpy);
+        WnmData wnmData = WnmData.createDeauthImminentEvent(BSSID_LONG, PASSPOINT_URL, true, 10);
+        mWifiMonitor.broadcastWnmEvent(WLAN_IFACE_NAME, wnmData);
+
+        mLooper.dispatchAll();
+
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(mHandlerSpy).handleMessage(messageCaptor.capture());
+        assertEquals(WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT, messageCaptor.getValue().what);
+        assertTrue(wnmData.equals(messageCaptor.getValue().obj));
+    }
+
+    /**
+     * Broadcast Passpoint terms & conditions acceptance required event test.
+     */
+    @Test
+    public void testBroadcastPasspointTermsAndConditionsRequiredEvent() {
+        mWifiMonitor.registerHandler(
+                WLAN_IFACE_NAME, WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT,
+                mHandlerSpy);
+        WnmData wnmData =
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(BSSID_LONG, PASSPOINT_URL);
+        mWifiMonitor.broadcastWnmEvent(WLAN_IFACE_NAME, wnmData);
+
+        mLooper.dispatchAll();
+
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(mHandlerSpy).handleMessage(messageCaptor.capture());
+        assertEquals(WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT,
+                messageCaptor.getValue().what);
+        assertTrue(wnmData.equals(messageCaptor.getValue().obj));
     }
 }

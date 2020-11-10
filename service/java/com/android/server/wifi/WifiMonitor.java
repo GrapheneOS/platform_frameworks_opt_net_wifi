@@ -84,13 +84,15 @@ public class WifiMonitor {
     public static final int ASSOCIATED_BSSID_EVENT               = BASE + 45;
     public static final int TARGET_BSSID_EVENT                   = BASE + 46;
 
-    /* hotspot 2.0 ANQP events */
+    /* Passpoint ANQP events */
     public static final int GAS_QUERY_START_EVENT                = BASE + 51;
     public static final int GAS_QUERY_DONE_EVENT                 = BASE + 52;
     public static final int RX_HS20_ANQP_ICON_EVENT              = BASE + 53;
 
-    /* hotspot 2.0 events */
+    /* Passpoint events */
     public static final int HS20_REMEDIATION_EVENT               = BASE + 61;
+    public static final int HS20_DEAUTH_IMMINENT_EVENT           = BASE + 62;
+    public static final int HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT = BASE + 63;
 
     /* MBO/OCE events */
     public static final int MBO_OCE_BSS_TM_HANDLING_DONE         = BASE + 71;
@@ -359,7 +361,25 @@ public class WifiMonitor {
      * @param wnmData Instance of WnmData containing the event data.
      */
     public void broadcastWnmEvent(String iface, WnmData wnmData) {
-        sendMessage(iface, HS20_REMEDIATION_EVENT, wnmData);
+        if (mVerboseLoggingEnabled) Log.d(TAG, "WNM-Notification " + wnmData.getEventType());
+        switch (wnmData.getEventType()) {
+            case WnmData.HS20_REMEDIATION_EVENT:
+                sendMessage(iface, HS20_REMEDIATION_EVENT, wnmData);
+                break;
+
+            case WnmData.HS20_DEAUTH_IMMINENT_EVENT:
+                sendMessage(iface, HS20_DEAUTH_IMMINENT_EVENT, wnmData);
+                break;
+
+            case WnmData.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT:
+                sendMessage(iface, HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT, wnmData);
+                break;
+
+            default:
+                Log.e(TAG, "Broadcast request for an unknown WNM-notification "
+                        + wnmData.getEventType());
+                break;
+        }
     }
 
     /**
