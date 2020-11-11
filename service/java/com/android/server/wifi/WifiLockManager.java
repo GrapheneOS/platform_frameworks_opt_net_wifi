@@ -16,6 +16,10 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
+
+import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -34,6 +38,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.proto.WifiStatsLog;
 import com.android.server.wifi.util.WorkSourceUtil;
 
@@ -71,8 +76,10 @@ public class WifiLockManager {
     private final List<WifiLock> mWifiLocks = new ArrayList<>();
     // map UIDs to their corresponding records (for low-latency locks)
     private final SparseArray<UidRec> mLowLatencyUidWatchList = new SparseArray<>();
-    private int mCurrentOpMode;
+    /** the current op mode of the primary ClientModeManager */
+    private int mCurrentOpMode = WifiManager.WIFI_MODE_NO_LOCKS_HELD;
     private boolean mScreenOn = false;
+    /** whether Wifi is connected on the primary ClientModeManager */
     private boolean mWifiConnected = false;
 
     // For shell command support
@@ -94,7 +101,6 @@ public class WifiLockManager {
         mActiveModeWarden = activeModeWarden;
         mFrameworkFacade = frameworkFacade;
         mActivityManager = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
-        mCurrentOpMode = WifiManager.WIFI_MODE_NO_LOCKS_HELD;
         mHandler = handler;
         mClock = clock;
         mWifiMetrics = wifiMetrics;
@@ -118,6 +124,9 @@ public class WifiLockManager {
 
         // Register for UID fg/bg transitions
         registerUidImportanceTransitions();
+
+        mActiveModeWarden.registerPrimaryClientModeManagerChangedCallback(
+                new PrimaryClientModeManagerChangedCallback());
     }
 
     // Check for conditions to activate high-perf lock
@@ -229,7 +238,8 @@ public class WifiLockManager {
      *
      * @return int representing the currently held (highest power consumption) lock.
      */
-    public synchronized int getStrongestLockMode() {
+    @VisibleForTesting
+    synchronized int getStrongestLockMode() {
         // If Wifi Client is not connected, then all locks are not effective
         if (!mWifiConnected) {
             return WifiManager.WIFI_MODE_NO_LOCKS_HELD;
@@ -371,7 +381,13 @@ public class WifiLockManager {
     /**
      * Handler for Wifi Client mode state changes
      */
-    public void updateWifiClientConnected(boolean isConnected) {
+    public void updateWifiClientConnected(
+            ClientModeManager clientModeManager, boolean isConnected) {
+        // ignore if not primary
+        if (clientModeManager.getRole() != ROLE_CLIENT_PRIMARY) {
+            return;
+        }
+
         if (mWifiConnected == isConnected) {
             // No need to take action
             return;
@@ -582,22 +598,15 @@ public class WifiLockManager {
         return true;
     }
 
-    private synchronized boolean updateOpMode() {
-        final int newLockMode = getStrongestLockMode();
-
-        if (newLockMode == mCurrentOpMode) {
-            // No action is needed
-            return true;
-        }
-
-        if (mVerboseLoggingEnabled) {
-            Log.d(TAG, "Current opMode: " + mCurrentOpMode + " New LockMode: " + newLockMode);
-        }
-
-        // Otherwise, we need to change current mode, first reset it to normal
+    /**
+     * Reset the given ClientModeManager's power save/low latency mode to the default.
+     * The method calls needed to reset is the reverse of the method calls used to set.
+     * @return true if the operation succeeded, false otherwise
+     */
+    private boolean resetCurrentMode(@NonNull ClientModeManager clientModeManager) {
         switch (mCurrentOpMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(true)) {
+                if (!clientModeManager.setPowerSave(true)) {
                     Log.e(TAG, "Failed to reset the OpMode from hi-perf to Normal");
                     return false;
                 }
@@ -606,7 +615,7 @@ public class WifiLockManager {
                 break;
 
             case WifiManager.WIFI_MODE_FULL_LOW_LATENCY:
-                if (!setLowLatencyMode(false)) {
+                if (!setLowLatencyMode(clientModeManager, false)) {
                     Log.e(TAG, "Failed to reset the OpMode from low-latency to Normal");
                     return false;
                 }
@@ -620,13 +629,19 @@ public class WifiLockManager {
                 break;
         }
 
-        // Set the current mode, before we attempt to set the new mode
+        // reset the current mode
         mCurrentOpMode = WifiManager.WIFI_MODE_NO_LOCKS_HELD;
+        return true;
+    }
 
-        // Now switch to the new opMode
+    /**
+     * Set the new lock mode on the given ClientModeManager
+     * @return true if the operation succeeded, false otherwise
+     */
+    private boolean setNewMode(@NonNull ClientModeManager clientModeManager, int newLockMode) {
         switch (newLockMode) {
             case WifiManager.WIFI_MODE_FULL_HIGH_PERF:
-                if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(false)) {
+                if (!clientModeManager.setPowerSave(false)) {
                     Log.e(TAG, "Failed to set the OpMode to hi-perf");
                     return false;
                 }
@@ -634,7 +649,7 @@ public class WifiLockManager {
                 break;
 
             case WifiManager.WIFI_MODE_FULL_LOW_LATENCY:
-                if (!setLowLatencyMode(true)) {
+                if (!setLowLatencyMode(clientModeManager, true)) {
                     Log.e(TAG, "Failed to set the OpMode to low-latency");
                     return false;
                 }
@@ -646,7 +661,7 @@ public class WifiLockManager {
                 break;
 
             default:
-                // Invalid mode, don't change currentOpMode , and exit with error
+                // Invalid mode, don't change currentOpMode, and exit with error
                 Log.e(TAG, "Invalid new opMode: " + newLockMode);
                 return false;
         }
@@ -654,6 +669,51 @@ public class WifiLockManager {
         // Now set the mode to the new value
         mCurrentOpMode = newLockMode;
         return true;
+    }
+
+    private synchronized boolean updateOpMode() {
+        final int newLockMode = getStrongestLockMode();
+
+        if (newLockMode == mCurrentOpMode) {
+            // No action is needed
+            return true;
+        }
+
+        if (mVerboseLoggingEnabled) {
+            Log.d(TAG, "Current opMode: " + mCurrentOpMode
+                    + " New LockMode: " + newLockMode);
+        }
+
+        ClientModeManager primaryManager = mActiveModeWarden.getPrimaryClientModeManager();
+
+        // Otherwise, we need to change current mode, first reset it to normal
+        if (!resetCurrentMode(primaryManager)) {
+            return false;
+        }
+
+        // Now switch to the new opMode
+        return setNewMode(primaryManager, newLockMode);
+    }
+
+    private class PrimaryClientModeManagerChangedCallback
+            implements ActiveModeWarden.PrimaryClientModeManagerChangedCallback {
+
+        @Override
+        public void onChange(
+                @Nullable ConcreteClientModeManager prevPrimaryClientModeManager,
+                @Nullable ConcreteClientModeManager newPrimaryClientModeManager) {
+            // reset wifi lock on previous primary
+            if (prevPrimaryClientModeManager != null) {
+                resetCurrentMode(prevPrimaryClientModeManager);
+            }
+            // set wifi lock on new primary
+            if (newPrimaryClientModeManager != null) {
+                mWifiConnected = newPrimaryClientModeManager.isConnected();
+                setNewMode(newPrimaryClientModeManager, getStrongestLockMode());
+            } else {
+                mWifiConnected = false;
+            }
+        }
     }
 
     /** Returns the cached low latency mode support value, or tries to fetch it if not yet known. */
@@ -676,7 +736,7 @@ public class WifiLockManager {
         return mLatencyModeSupport;
     }
 
-    private boolean setLowLatencyMode(boolean enabled) {
+    private boolean setLowLatencyMode(ClientModeManager clientModeManager, boolean enabled) {
         int lowLatencySupport = getLowLatencyModeSupport();
 
         if (lowLatencySupport == LOW_LATENCY_SUPPORT_UNDEFINED) {
@@ -685,21 +745,20 @@ public class WifiLockManager {
         }
 
         if (lowLatencySupport == LOW_LATENCY_SUPPORTED) {
-            if (!mActiveModeWarden.getPrimaryClientModeManager().setLowLatencyMode(
-                    enabled)) {
+            if (!clientModeManager.setLowLatencyMode(enabled)) {
                 Log.e(TAG, "Failed to set low latency mode");
                 return false;
             }
 
-            if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(!enabled)) {
+            if (!clientModeManager.setPowerSave(!enabled)) {
                 Log.e(TAG, "Failed to set power save mode");
                 // Revert the low latency mode
-                mActiveModeWarden.getPrimaryClientModeManager().setLowLatencyMode(!enabled);
+                clientModeManager.setLowLatencyMode(!enabled);
                 return false;
             }
         } else if (lowLatencySupport == LOW_LATENCY_NOT_SUPPORTED) {
             // Only set power save mode
-            if (!mActiveModeWarden.getPrimaryClientModeManager().setPowerSave(!enabled)) {
+            if (!clientModeManager.setPowerSave(!enabled)) {
                 Log.e(TAG, "Failed to set power save mode");
                 return false;
             }

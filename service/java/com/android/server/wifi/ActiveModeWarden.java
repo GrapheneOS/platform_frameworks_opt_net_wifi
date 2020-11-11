@@ -1032,6 +1032,10 @@ public class ActiveModeWarden {
             updateBatteryStats();
             configureHwForMultiStaIfNecessary(clientModeManager);
             updateWifiConnectedNetworkScorer(clientModeManager);
+        }
+
+        private void onPrimaryChangedDueToStartedOrRoleChanged(
+                ConcreteClientModeManager clientModeManager) {
             if (clientModeManager.getRole() != ROLE_CLIENT_PRIMARY
                     && clientModeManager == mLastPrimaryClientModeManager) {
                 // CMM was primary, but is no longer primary
@@ -1053,12 +1057,15 @@ public class ActiveModeWarden {
                 mExternalRequestListener.onAnswer(clientModeManager);
             }
             invokeOnAddedCallbacks(clientModeManager);
+            // invoke "added" callbacks before primary changed
+            onPrimaryChangedDueToStartedOrRoleChanged(clientModeManager);
         }
 
         @Override
         public void onRoleChanged(@NonNull ConcreteClientModeManager clientModeManager) {
             onStartedOrRoleChanged(clientModeManager);
             invokeOnRoleChangedCallbacks(clientModeManager);
+            onPrimaryChangedDueToStartedOrRoleChanged(clientModeManager);
         }
 
         private void onStoppedOrStartFailure(ConcreteClientModeManager clientModeManager) {
@@ -1066,13 +1073,14 @@ public class ActiveModeWarden {
             mGraveyard.inter(clientModeManager);
             updateClientScanMode();
             updateBatteryStats();
-            invokeOnRemovedCallbacks(clientModeManager);
             if (clientModeManager == mLastPrimaryClientModeManager) {
                 // CMM was primary, but was stopped
                 invokeOnPrimaryClientModeManagerChangedCallbacks(
                         mLastPrimaryClientModeManager, null);
                 mLastPrimaryClientModeManager = null;
             }
+            // invoke "removed" callbacks after primary changed
+            invokeOnRemovedCallbacks(clientModeManager);
         }
 
         @Override
