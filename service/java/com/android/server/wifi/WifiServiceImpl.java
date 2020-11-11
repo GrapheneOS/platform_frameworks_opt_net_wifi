@@ -3976,6 +3976,7 @@ public class WifiServiceImpl extends BaseWifiService {
      * @param callingPackageName Package Name of the app getting the suggestions.
      * @return a list of network suggestions suggested by this app
      */
+    @Override
     public List<WifiNetworkSuggestion> getNetworkSuggestions(String callingPackageName) {
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackageName);
         enforceAccessPermission();
@@ -3985,6 +3986,26 @@ public class WifiServiceImpl extends BaseWifiService {
         return mWifiThreadRunner.call(() ->
                 mWifiNetworkSuggestionsManager.get(callingPackageName), Collections.emptyList());
     }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#getNetworkSuggestionUserApprovalStatus(String)
+     * @param callingPackageName Package Name of the app getting the approval status.
+     * @return
+     */
+    @Override
+    public int getNetworkSuggestionUserApprovalStatus(String callingPackageName) {
+        mAppOps.checkPackage(Binder.getCallingUid(), callingPackageName);
+        enforceAccessPermission();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("getNetworkSuggestionUserApprovalStatus uid=%")
+                    .c(Binder.getCallingUid()).flush();
+        }
+        return mWifiThreadRunner.call(() -> mWifiNetworkSuggestionsManager
+                        .getNetworkSuggestionUserApprovalStatus(Binder.getCallingUid(),
+                                callingPackageName),
+                WifiManager.STATUS_SUGGESTION_APPROVAL_UNKNOWN);
+    }
+
 
     /**
      * Gets the factory Wi-Fi MAC addresses.
