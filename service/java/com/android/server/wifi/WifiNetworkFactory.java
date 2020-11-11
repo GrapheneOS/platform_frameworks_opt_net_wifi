@@ -874,9 +874,6 @@ public class WifiNetworkFactory extends NetworkFactory {
     }
 
     private void handleConnectToNetworkUserSelectionInternal(WifiConfiguration network) {
-        // Disable Auto-join so that NetworkFactory can take control of the network connection.
-        mWifiConnectivityManager.setSpecificNetworkRequestInProgress(true);
-
         // Copy over the credentials from the app's request and then copy the ssid from user
         // selection.
         WifiConfiguration networkToConnect =
@@ -1075,8 +1072,10 @@ public class WifiNetworkFactory extends NetworkFactory {
         cleanupActiveRequest();
         // ensure there is no connected request in progress.
         if (mConnectedSpecificNetworkRequest == null) {
-            mWifiConnectivityManager.setSpecificNetworkRequestInProgress(false);
             if (mClientModeManager != null) {
+                if (mClientModeManager.getRole() == ActiveModeManager.ROLE_CLIENT_PRIMARY) {
+                    mWifiConnectivityManager.setSpecificNetworkRequestInProgress(false);
+                }
                 mActiveModeWarden.removeClientModeManager(mClientModeManager);
                 // For every connection attempt, get the appropriate client mode impl to use.
                 mClientModeManager = null;
@@ -1104,8 +1103,10 @@ public class WifiNetworkFactory extends NetworkFactory {
         mConnectedSpecificNetworkRequestSpecifier = null;
         // ensure there is no active request in progress.
         if (mActiveSpecificNetworkRequest == null) {
-            mWifiConnectivityManager.setSpecificNetworkRequestInProgress(false);
             if (mClientModeManager != null) {
+                if (mClientModeManager.getRole() == ActiveModeManager.ROLE_CLIENT_PRIMARY) {
+                    mWifiConnectivityManager.setSpecificNetworkRequestInProgress(false);
+                }
                 mActiveModeWarden.removeClientModeManager(mClientModeManager);
                 // For every connection attempt, get the appropriate client mode impl to use.
                 mClientModeManager = null;
@@ -1157,6 +1158,12 @@ public class WifiNetworkFactory extends NetworkFactory {
             Log.e(TAG, "No user selected network to connect to. Ignoring ClientModeManager"
                     + "retrieval..");
             return;
+        }
+
+        // If using primary STA, disable Auto-join so that NetworkFactory can take control of the
+        // network connection.
+        if (mClientModeManager.getRole() == ActiveModeManager.ROLE_CLIENT_PRIMARY) {
+            mWifiConnectivityManager.setSpecificNetworkRequestInProgress(true);
         }
 
         // Disconnect from the current network before issuing a new connect request.

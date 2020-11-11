@@ -135,6 +135,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Implementation of ClientMode.  Event handling for Client mode logic is done here,
@@ -738,6 +739,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             WifiMonitor.GAS_QUERY_DONE_EVENT,
             WifiMonitor.GAS_QUERY_START_EVENT,
             WifiMonitor.HS20_REMEDIATION_EVENT,
+            WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT,
+            WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT,
             WifiMonitor.NETWORK_CONNECTION_EVENT,
             WifiMonitor.NETWORK_DISCONNECTION_EVENT,
             WifiMonitor.RX_HS20_ANQP_ICON_EVENT,
@@ -1396,9 +1399,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     /**
      * Get the supported feature set synchronously
      */
-    public long syncGetSupportedFeatures() {
-        return mWifiThreadRunner.call(
-                () -> mWifiNative.getSupportedFeatureSet(mInterfaceName), 0L);
+    public long getSupportedFeatures() {
+        return mWifiNative.getSupportedFeatureSet(mInterfaceName);
     }
 
     /**
@@ -1938,6 +1940,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 return "GAS_QUERY_DONE_EVENT";
             case WifiMonitor.HS20_REMEDIATION_EVENT:
                 return "HS20_REMEDIATION_EVENT";
+            case WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT:
+                return "HS20_DEAUTH_IMMINENT_EVENT";
+            case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT:
+                return "HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT";
             case WifiMonitor.GAS_QUERY_START_EVENT:
                 return "GAS_QUERY_START_EVENT";
             case WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE:
@@ -2227,7 +2233,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
         if (hidden || state == mNetworkAgentState) return;
         mNetworkAgentState = state;
+        sendNetworkChangeBroadcastWithCurrentState();
+    }
 
+    private void sendNetworkChangeBroadcastWithCurrentState() {
         Intent intent = new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         NetworkInfo networkInfo = makeNetworkInfo();
@@ -3462,7 +3471,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mPasspointManager.notifyIconDone((IconEvent) message.obj);
                     break;
                 }
-                case WifiMonitor.HS20_REMEDIATION_EVENT: {
+                case WifiMonitor.HS20_REMEDIATION_EVENT:
+                case WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT:
+                case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT: {
                     mPasspointManager.receivedWnmFrame((WnmData) message.obj);
                     break;
                 }
@@ -4492,6 +4503,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 }
                 case CMD_IPV4_PROVISIONING_SUCCESS: {
                     handleIPv4Success((DhcpResultsParcelable) message.obj);
+                    sendNetworkChangeBroadcastWithCurrentState();
                     break;
                 }
                 case CMD_IPV4_PROVISIONING_FAILURE: {
@@ -4560,7 +4572,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mLastNetworkId = message.arg1;
                     mWifiInfo.setNetworkId(mLastNetworkId);
                     mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
-                    mLastBssid = (String) message.obj;
+                    if (!Objects.equals(mLastBssid, message.obj)) {
+                        mLastBssid = (String) message.obj;
+                        sendNetworkChangeBroadcastWithCurrentState();
+                    }
                     break;
                 }
                 case CMD_ONESHOT_RSSI_POLL: {
@@ -4620,6 +4635,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 }
                             }
                         }
+                        sendNetworkChangeBroadcastWithCurrentState();
                     }
                     break;
                 }
@@ -4951,6 +4967,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         mLastBssid = (String) message.obj;
                         mWifiInfo.setBSSID(mLastBssid);
                         mWifiInfo.setNetworkId(mLastNetworkId);
+                        sendNetworkChangeBroadcastWithCurrentState();
 
                         // Successful framework roam! (probably)
                         mBssidBlocklistMonitor.handleBssidConnectionSuccess(mLastBssid,
@@ -5811,16 +5828,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
                 // The cached scan result of connected network would be null at the first
                 // connection, try to check full scan result list again to look up matched
-                // scan result associated to the current SSID and BSSID.
+                // scan result associated to the current BSSID.
                 if (scanResult == null) {
-                    List<ScanResult> scanResults = mScanRequestProxy.getScanResults();
-                    for (ScanResult result : scanResults) {
-                        if (result.SSID.equals(WifiInfo.removeDoubleQuotes(config.SSID))
-                                && result.BSSID.equals(mLastBssid)) {
-                            scanResult = result;
-                            break;
-                        }
-                    }
+                    scanResult = mScanRequestProxy.getScanResult(mLastBssid);
                 }
             }
 

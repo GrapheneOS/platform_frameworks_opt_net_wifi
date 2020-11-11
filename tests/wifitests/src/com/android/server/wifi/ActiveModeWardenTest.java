@@ -2179,6 +2179,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInDisabledState();
         verify(mClientModeManager).stop();
         verify(mClientModeManager, atLeastOnce()).getRole();
+        verify(mClientModeManager).clearWifiConnectedNetworkScorer();
         verify(mModeChangeCallback).onActiveModeManagerRemoved(mClientModeManager);
 
         mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
@@ -3011,5 +3012,20 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         mActiveModeWarden.setWifiConnectedNetworkScorer(iBinder, iScorer);
         verify(mClientModeManager, times(2)).setWifiConnectedNetworkScorer(iBinder, iScorer);
+    }
+
+    @Test
+    public void propagateConnectedWifiScorerToPrimaryClientModeManager_enterScanOnlyState()
+            throws Exception {
+        IBinder iBinder = mock(IBinder.class);
+        IWifiConnectedNetworkScorer iScorer = mock(IWifiConnectedNetworkScorer.class);
+        mActiveModeWarden.setWifiConnectedNetworkScorer(iBinder, iScorer);
+        enterClientModeActiveState();
+        assertInEnabledState();
+        verify(mClientModeManager).setWifiConnectedNetworkScorer(iBinder, iScorer);
+
+        enterScanOnlyModeActiveState(true);
+
+        verify(mClientModeManager).clearWifiConnectedNetworkScorer();
     }
 }

@@ -49,8 +49,14 @@
     <!-- Status for networks disabled for unknown reason [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_wifi_disabled_generic">Disabled</string>
 
-    <!-- Summary for networks failing to connect due to association rejection status 17, AP full [CHAR LIMIT=NONE] -->
+    <!-- Summary for networks failing to connect due to one of the following reasons:
+     association rejection status 17 - AP full,
+     association rejection status 30 - AP rejected the device temporarily
+     disconnection reason code 5 - AP can't handle all existing stations [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta">Access point temporarily full</string>
+
+    <!-- Summary for networks failing to connect due to association rejection status 34, poor channel conditions [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_poor_channel_conditions">Temporary poor network conditions</string>
 
     <!-- Summary for the disconnected network. [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_disconnected">Disconnected</string>

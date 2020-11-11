@@ -16,6 +16,9 @@
 
 package com.android.server.wifi;
 
+import static android.net.NetworkInfo.DetailedState.CONNECTED;
+import static android.net.NetworkInfo.DetailedState.CONNECTING;
+import static android.net.NetworkInfo.DetailedState.OBTAINING_IPADDR;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_NONE;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_NOT_METERED;
@@ -654,6 +657,22 @@ public class ClientModeImplTest extends WifiBaseTest {
         }
     }
 
+    private class NetworkStateChangedIntentMatcher implements ArgumentMatcher<Intent> {
+        private final NetworkInfo.DetailedState mState;
+        NetworkStateChangedIntentMatcher(NetworkInfo.DetailedState state) {
+            mState = state;
+        }
+        @Override
+        public boolean matches(Intent intent) {
+            if (WifiManager.NETWORK_STATE_CHANGED_ACTION != intent.getAction()) {
+                // not the correct type
+                return false;
+            }
+            NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+            return networkInfo.getDetailedState() == mState;
+        }
+    }
+
     private void canSaveNetworkConfig() throws Exception {
         IActionListener connectActionListener = mock(IActionListener.class);
         mCmi.saveNetwork(
@@ -828,6 +847,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         assertEquals("L3ProvisioningState", getCurrentState().getName());
+        verify(mContext).sendStickyBroadcastAsUser(
+                argThat(new NetworkStateChangedIntentMatcher(CONNECTING)), any());
+        verify(mContext).sendStickyBroadcastAsUser(
+                argThat(new NetworkStateChangedIntentMatcher(OBTAINING_IPADDR)), any());
 
         DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
         dhcpResults.baseConfiguration = new StaticIpConfiguration();
@@ -855,6 +878,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID),
                 anyBoolean());
         verify(mWifiConfigManager).updateRandomizedMacExpireTime(any(), anyLong());
+        verify(mContext).sendStickyBroadcastAsUser(
+                argThat(new NetworkStateChangedIntentMatcher(CONNECTED)), any());
 
         // Anonymous Identity is not set.
         assertEquals("", mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
@@ -2119,6 +2144,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(sBSSID1, wifiInfo.getBSSID());
         assertEquals(sFreq1, wifiInfo.getFrequency());
         assertEquals(SupplicantState.COMPLETED, wifiInfo.getSupplicantState());
+        verify(mContext, times(2)).sendStickyBroadcastAsUser(
+                argThat(new NetworkStateChangedIntentMatcher(CONNECTED)), any());
     }
 
     /**
@@ -4523,10 +4550,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         ScanResult.InformationElement ie = createIE(ScanResult.InformationElement.EID_SSID,
                 sFilsSsid.getBytes(StandardCharsets.UTF_8));
         scanResult.informationElements = new ScanResult.InformationElement[]{ie};
-        List<ScanResult> scanResults = new ArrayList<>();
-        scanResults.add(scanResult);
-
-        when(mScanRequestProxy.getScanResults()).thenReturn(scanResults);
+        when(mScanRequestProxy.getScanResults()).thenReturn(Arrays.asList(scanResult));
+        when(mScanRequestProxy.getScanResult(eq(sBSSID))).thenReturn(scanResult);
     }
 
 
@@ -5114,7 +5139,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     @Test
-    public void testRoamAfterConnectDoesNotUpdateNetworkInfoInNetworkStateChangeBroadcast()
+    public void testRoamAfterConnectDoesNotChangeNetworkInfoInNetworkStateChangeBroadcast()
             throws Exception {
         connect();
 
@@ -5135,7 +5160,12 @@ public class ClientModeImplTest extends WifiBaseTest {
                 new StateChangeResult(0, sWifiSsid, sBSSID1, SupplicantState.COMPLETED));
         mLooper.dispatchAll();
 
-        verify(mContext, never()).sendStickyBroadcastAsUser(any(), any());
+        verify(mContext, atLeastOnce()).sendStickyBroadcastAsUser(intentCaptor.capture(), any());
+        intent = intentCaptor.getValue();
+        assertNotNull(intent);
+        assertEquals(WifiManager.NETWORK_STATE_CHANGED_ACTION, intent.getAction());
+        networkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        assertTrue(networkInfo.isConnected());
     }
 
 
@@ -5318,5 +5348,37 @@ public class ClientModeImplTest extends WifiBaseTest {
         setupEapSimConnection();
         verify(mPasspointManager, never()).requestVenueUrlAnqpElement(any(ScanResult.class));
         assertEquals("L3ProvisioningState", getCurrentState().getName());
+    }
+
+    @Test
+    public void testFirmwareRoam() throws Exception {
+        connect();
+
+        // Now send a network connection (indicating a roam) event
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID1);
+        mLooper.dispatchAll();
+
+        verify(mContext, times(2)).sendStickyBroadcastAsUser(
+                argThat(new NetworkStateChangedIntentMatcher(CONNECTED)), any());
+    }
+
+    @Test
+    public void testProvisioningUpdateAfterConnect() throws Exception {
+        connect();
+
+        // Trigger a IP params update (maybe a dhcp lease renewal).
+        DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
+        dhcpResults.baseConfiguration = new StaticIpConfiguration();
+        dhcpResults.baseConfiguration.gateway = InetAddresses.parseNumericAddress("1.2.3.4");
+        dhcpResults.baseConfiguration.ipAddress =
+                new LinkAddress(InetAddresses.parseNumericAddress("192.168.1.100"), 0);
+        dhcpResults.baseConfiguration.dnsServers.add(InetAddresses.parseNumericAddress("8.8.8.8"));
+        dhcpResults.leaseDuration = 3600;
+
+        injectDhcpSuccess(dhcpResults);
+        mLooper.dispatchAll();
+
+        verify(mContext, times(2)).sendStickyBroadcastAsUser(
+                argThat(new NetworkStateChangedIntentMatcher(CONNECTED)), any());
     }
 }

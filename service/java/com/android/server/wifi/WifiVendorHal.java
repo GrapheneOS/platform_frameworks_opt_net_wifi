@@ -1258,7 +1258,7 @@ public class WifiVendorHal {
     @VisibleForTesting
     long wifiFeatureMaskFromChipCapabilities_1_5(int capabilities) {
         // First collect features from previous versions
-        long features = wifiFeatureMaskFromChipCapabilities(capabilities);
+        long features = wifiFeatureMaskFromChipCapabilities_1_3(capabilities);
 
         // Next collect features for V1_5 version
         for (int i = 0; i < sChipFeatureCapabilityTranslation15.length; i++) {

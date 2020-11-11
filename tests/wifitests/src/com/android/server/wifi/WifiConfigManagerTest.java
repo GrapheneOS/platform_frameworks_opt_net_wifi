@@ -6094,6 +6094,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     public void testGetPersistRandomMacAddress() {
         WifiConfiguration network = WifiConfigurationTestUtil.createPskNetwork();
         mWifiConfigManager.getPersistentMacAddress(network);
-        verify(mMacAddressUtil).calculatePersistentMac(eq(network.getMacRandomKey()), any());
+        verify(mMacAddressUtil).calculatePersistentMac(eq(network.getNetworkKey()), any());
     }
 }

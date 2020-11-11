@@ -25,11 +25,14 @@ import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiScanner.ScanData;
 import android.net.wifi.WifiSsid;
 
+import com.android.net.module.util.MacAddressUtils;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -241,7 +244,8 @@ public class ScanTestUtil {
     }
 
     public static ScanResult createScanResult(int freq) {
-        return new ScanResult(WifiSsid.createFromAsciiEncoded("AN SSID"), "00:00:00:00:00:00", 0L,
+        return new ScanResult(WifiSsid.createFromAsciiEncoded("AN SSID"),
+                MacAddressUtils.createRandomUnicastAddress().toString(), 0L,
                 -1, null, "", 0, freq, 0);
     }
 
@@ -305,6 +309,24 @@ public class ScanTestUtil {
         }
     }
 
+    private static void assertScanResultsEqualsAnyOrder(String prefix, ScanResult[] expected,
+            ScanResult[] actual) {
+        assertNotNull(prefix + "expected ScanResults was null", expected);
+        assertNotNull(prefix + "actual ScanResults was null", actual);
+        assertEquals(prefix + "results.length", expected.length, actual.length);
+
+        // Sort using the bssids.
+        ScanResult[] sortedExpected = Arrays
+                .stream(expected)
+                .sorted(Comparator.comparing(s -> s.BSSID))
+                .toArray(ScanResult[]::new);
+        ScanResult[] sortedActual = Arrays
+                .stream(actual)
+                .sorted(Comparator.comparing(s -> s.BSSID))
+                .toArray(ScanResult[]::new);
+        assertScanResultsEquals(prefix, sortedExpected, sortedActual);
+    }
+
     /**
      * Asserts if the provided scan results are the same.
      */
@@ -317,6 +339,13 @@ public class ScanTestUtil {
      */
     public static void assertScanResultsEquals(ScanResult[] expected, ScanResult[] actual) {
         assertScanResultsEquals("", expected, actual);
+    }
+
+    /**
+     * Asserts if the provided scan result arrays are the same.
+     */
+    public static void assertScanResultsEqualsAnyOrder(ScanResult[] expected, ScanResult[] actual) {
+        assertScanResultsEqualsAnyOrder("", expected, actual);
     }
 
     private static void assertScanDataEquals(String prefix, ScanData expected, ScanData actual) {
