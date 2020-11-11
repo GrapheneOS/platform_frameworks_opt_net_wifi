@@ -4720,6 +4720,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mConnectedNetwork.oemPrivate = true;
         mConnectedNetwork.carrierMerged = true;
         mConnectedNetwork.osu = true;
+        mConnectedNetwork.subscriptionId = DATA_SUBID;
 
         triggerConnect();
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
@@ -4746,6 +4747,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals(mConnectedNetwork.oemPrivate, mWifiInfo.isOemPrivate());
         assertEquals(mConnectedNetwork.carrierMerged, mWifiInfo.isCarrierMerged());
         assertEquals(mConnectedNetwork.osu, mWifiInfo.isOsuAp());
+        assertEquals(DATA_SUBID, mWifiInfo.getSubscriptionId());
     }
 
     /**
