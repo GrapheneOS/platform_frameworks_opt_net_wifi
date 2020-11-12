@@ -367,7 +367,7 @@ public class WifiConnectivityManager {
         mWifiMetrics.noteFirstNetworkSelectionAfterBoot(candidate != null);
         if (candidate != null) {
             localLog(listenerName + ":  WNS candidate-" + candidate.SSID);
-            connectToNetwork(candidate);
+            connectToNetworkForPrimaryCmm(candidate);
             return true;
         } else {
             if (mWifiState == WIFI_STATE_DISCONNECTED) {
@@ -978,6 +978,9 @@ public class WifiConnectivityManager {
                 connectedOrConnectingWifiConfiguration != null
                         && targetNetworkId == connectedOrConnectingWifiConfiguration.networkId;
 
+        // Is Firmware roaming control is supported?
+        //   - Yes, framework does nothing, firmware will roam if necessary.
+        //   - No, framework initiates roaming.
         if (mConnectivityHelper.isFirmwareRoamingSupported()) {
             // just check for networkID.
             return connectingOrConnectedToTarget;
@@ -995,37 +998,143 @@ public class WifiConnectivityManager {
     }
 
     /**
+     * Trigger network connection for primary client mode manager.
+     *
+     * Note: This may trigger make before break on a secondary STA if available which will
+     * eventually become primary after validation or torn down if it does not become primary.
+     */
+    private void connectToNetworkForPrimaryCmm(@NonNull WifiConfiguration candidate) {
+        ClientModeManager primaryManager = mActiveModeWarden.getPrimaryClientModeManager();
+        connectToNetworkUsingCmm(
+                primaryManager, candidate,
+                new ConnectHandler() {
+                    @Override
+                    public void triggerConnectWhenDisconnected(
+                            WifiConfiguration targetNetwork, String targetBssid) {
+                        triggerConnectToNetworkUsingCmm(primaryManager, targetNetwork, targetBssid);
+                        // since using primary manager to connect, stop any existing managers in the
+                        // secondary transient role since they are no longer needed.
+                        mActiveModeWarden.stopAllClientModeManagersInRole(
+                                ROLE_CLIENT_SECONDARY_TRANSIENT);
+                    }
+
+                    @Override
+                    public void triggerConnectWhenConnected(WifiConfiguration targetNetwork,
+                            String targetBssid) {
+                        // Use MBB if possible.
+                        triggerConnectToNetworkUsingMakeBeforeBreakIfAvailable(
+                                targetNetwork, targetBssid);
+                    }
+
+                    @Override
+                    public void triggerRoamWhenConnected(WifiConfiguration targetNetwork,
+                            String targetBssid) {
+                        triggerRoamToNetworkUsingCmm(
+                                primaryManager, targetNetwork, targetBssid);
+                        // since using primary manager to connect, stop any existing managers in the
+                        // secondary transient role since they are no longer needed.
+                        mActiveModeWarden.stopAllClientModeManagersInRole(
+                                ROLE_CLIENT_SECONDARY_TRANSIENT);
+                    }
+                });
+
+    }
+
+    /**
+     * Interface to use for trigger connection in various scenarios.
+     */
+    private interface ConnectHandler {
+        /**
+         * Invoked to trigger connection to a network when disconnected.
+         */
+        void triggerConnectWhenDisconnected(
+                @NonNull WifiConfiguration targetNetwork, @NonNull String targetBssid);
+        /**
+         * Invoked to trigger connection to a network when connected to a different network.
+         */
+        void triggerConnectWhenConnected(
+                @NonNull WifiConfiguration targetNetwork, @NonNull String targetBssid);
+        /**
+         * Invoked to trigger roam to a specific bssid network when connected to a network.
+         */
+        void triggerRoamWhenConnected(
+                @NonNull WifiConfiguration targetNetwork, @NonNull String targetBssid);
+    }
+
+    private String getAssociationId(@Nullable WifiConfiguration config, @Nullable String bssid) {
+        return config == null ? "Disconnected" : config.SSID + " : " + bssid;
+    }
+
+    /**
      * Attempt to connect to a network candidate.
      *
      * Based on the currently connected network, this method determines whether we should
      * connect or roam to the network candidate recommended by WifiNetworkSelector.
      */
-    private void connectToNetwork(WifiConfiguration candidate) {
-        ScanResult scanResultCandidate = candidate.getNetworkSelectionStatus().getCandidate();
-        if (scanResultCandidate == null) {
-            localLog("connectToNetwork: bad candidate - "  + candidate + " scanResult is null!");
+    private void connectToNetworkUsingCmm(@NonNull ClientModeManager clientModeManager,
+            @NonNull WifiConfiguration targetNetwork,
+            @NonNull ConnectHandler connectHandler) {
+        if (targetNetwork.getNetworkSelectionStatus().getCandidate() == null) {
+            localLog("connectToNetwork(" + clientModeManager + "): bad candidate - "
+                    + targetNetwork + " scanResult is null!");
+            return;
+        }
+        String targetBssid = targetNetwork.getNetworkSelectionStatus().getCandidate().BSSID;
+        String targetAssociationId = getAssociationId(targetNetwork, targetBssid);
+
+        if (isClientModeManagerConnectedOrConnectingToCandidate(clientModeManager, targetNetwork)) {
+            localLog("connectToNetwork(" + clientModeManager + "(: Primary ClientModeManager="
+                    + clientModeManager + " either already connected or is connecting to "
+                    + targetAssociationId);
             return;
         }
 
-        String targetBssid = scanResultCandidate.BSSID;
-        final String targetAssociationId = candidate.SSID + " : " + targetBssid;
-
-        ClientModeManager primaryManager = getPrimaryClientModeManager();
-        if (isClientModeManagerConnectedOrConnectingToCandidate(primaryManager, candidate)) {
-            localLog("connectToNetwork: Primary ClientModeManager=" + primaryManager
-                    + " either already connected or is connecting to " + targetAssociationId);
+        if (targetNetwork.BSSID != null
+                && !targetNetwork.BSSID.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY)
+                && !targetNetwork.BSSID.equals(targetBssid)) {
+            localLog("connectToNetwork(" + clientModeManager + "): target BSSID " + targetBssid
+                    + " does not match the config specified BSSID " + targetNetwork.BSSID
+                    + ". Drop it!");
             return;
         }
 
-        if (candidate.BSSID != null
-                && !candidate.BSSID.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY)
-                && !candidate.BSSID.equals(targetBssid)) {
-            localLog("connectToNetwork: target BSSID " + targetBssid + " does not match the "
-                    + "config specified BSSID " + candidate.BSSID + ". Drop it!");
+        WifiConfiguration currentNetwork = coalesce(
+                clientModeManager.getConnectedWifiConfiguration(),
+                clientModeManager.getConnectingWifiConfiguration());
+        String currentBssid = coalesce(
+                clientModeManager.getConnectedBssid(), clientModeManager.getConnectingBssid());
+        String currentAssociationId = getAssociationId(currentNetwork, currentBssid);
+
+        // Already on desired network id, we need to trigger roam since the device does not
+        // support firmware roaming (already checked in
+        // isClientModeManagerConnectedOrConnectingToCandidate()).
+        if (currentNetwork != null
+                && (currentNetwork.networkId == targetNetwork.networkId
+                //TODO(b/36788683): re-enable linked configuration check
+                /* || currentNetwork.isLinked(candidate) */)) {
+            localLog("connectToNetwork(" + clientModeManager + "): Roam to " + targetAssociationId
+                    + " from " + currentAssociationId);
+            connectHandler.triggerRoamWhenConnected(targetNetwork, targetBssid);
             return;
         }
 
-        triggerConnectToNetwork(candidate);
+        // Need to connect to a different network id
+        // Framework specifies the connection target BSSID if firmware doesn't support
+        // {@link android.net.wifi.WifiManager#WIFI_FEATURE_CONTROL_ROAMING} or the
+        // candidate configuration contains a specified BSSID.
+        if (mConnectivityHelper.isFirmwareRoamingSupported()
+                && (targetNetwork.BSSID == null
+                || targetNetwork.BSSID.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY))) {
+            targetBssid = ClientModeImpl.SUPPLICANT_BSSID_ANY;
+        }
+        localLog("connectToNetwork(" + clientModeManager + "): Connect to "
+                + getAssociationId(targetNetwork, targetBssid) + " from "
+                + currentAssociationId);
+        if (currentNetwork == null) {
+            connectHandler.triggerConnectWhenDisconnected(targetNetwork, targetBssid);
+            return;
+        }
+        connectHandler.triggerConnectWhenConnected(targetNetwork, targetBssid);
     }
 
     private boolean shouldConnect() {
@@ -1039,76 +1148,41 @@ public class WifiConnectivityManager {
         return true;
     }
 
-    private String getAssociationId(@Nullable WifiConfiguration config, @Nullable String bssid) {
-        return config == null ? "Disconnected" : config.SSID + " : " + bssid;
+    /**
+     * Trigger roaming to a new bssid while being connected to a different bssid in same network.
+     */
+    private void triggerRoamToNetworkUsingCmm(
+            @NonNull ClientModeManager clientModeManager,
+            @NonNull WifiConfiguration targetNetwork,
+            @NonNull String targetBssid) {
+        if (!shouldConnect()) {
+            return;
+        }
+        clientModeManager.startRoamToNetwork(targetNetwork.networkId, targetBssid);
     }
 
-    private void triggerConnectToNetwork(@NonNull WifiConfiguration targetNetwork) {
-        ScanResult targetScanResultCandidate =
-                targetNetwork.getNetworkSelectionStatus().getCandidate();
-        String targetBssid = targetScanResultCandidate.BSSID;
-        int targetNetworkId = targetNetwork.networkId;
-
-        ClientModeManager primaryManager = getPrimaryClientModeManager();
-        WifiConfiguration currentNetwork = coalesce(
-                primaryManager.getConnectedWifiConfiguration(),
-                primaryManager.getConnectingWifiConfiguration());
-        String currentBssid = coalesce(
-                primaryManager.getConnectedBssid(), primaryManager.getConnectingBssid());
-
-        localLog("Current Network: " + currentNetwork + ", Target Network: " + targetNetwork);
-
-        // Already on desired network id
-        if (currentNetwork != null
-                && (currentNetwork.networkId == targetNetworkId
-                //TODO(b/36788683): re-enable linked configuration check
-                /* || currentNetwork.isLinked(candidate) */)) {
-            // Is Firmware roaming control is supported?
-            //   - Yes, framework does nothing, firmware will roam if necessary.
-            //   - No, framework initiates roaming.
-            if (!mConnectivityHelper.isFirmwareRoamingSupported()) {
-                // Framework initiates roaming only if firmware doesn't support
-                // {@link android.net.wifi.WifiManager#WIFI_FEATURE_CONTROL_ROAMING}.
-                localLog("connectToNetwork: Roam to "
-                        + getAssociationId(targetNetwork, targetBssid) + " from "
-                        + getAssociationId(currentNetwork, currentBssid));
-                if (!shouldConnect()) {
-                    return;
-                }
-                primaryManager.startRoamToNetwork(targetNetworkId, targetBssid);
-            }
+    /**
+     * Trigger connection to a new wifi network while being disconnected.
+     */
+    private void triggerConnectToNetworkUsingCmm(
+            @NonNull ClientModeManager clientModeManager,
+            @NonNull WifiConfiguration targetNetwork, @NonNull String targetBssid) {
+        if (!shouldConnect()) {
             return;
         }
+        clientModeManager.startConnectToNetwork(
+                targetNetwork.networkId, Process.WIFI_UID, targetBssid);
+    }
 
-        // Need to connect to a different network id
-        // Framework specifies the connection target BSSID if firmware doesn't support
-        // {@link android.net.wifi.WifiManager#WIFI_FEATURE_CONTROL_ROAMING} or the
-        // candidate configuration contains a specified BSSID.
-        if (mConnectivityHelper.isFirmwareRoamingSupported()
-                && (targetNetwork.BSSID == null
-                || targetNetwork.BSSID.equals(ClientModeImpl.SUPPLICANT_BSSID_ANY))) {
-            targetBssid = ClientModeImpl.SUPPLICANT_BSSID_ANY;
-        }
-        localLog("connectToNetwork: Connect to "
-                + getAssociationId(targetNetwork, targetBssid) + " from "
-                + getAssociationId(currentNetwork, currentBssid));
-
-        if (currentNetwork == null) {
-            localLog("connecting using existing primary ClientModeManager "
-                    + primaryManager + " since it is not connected to anything");
-            if (!shouldConnect()) {
-                return;
-            }
-            primaryManager.startConnectToNetwork(targetNetworkId, Process.WIFI_UID, targetBssid);
-            // since using primary manager to connect, stop any existing managers in the
-            // requested role since they are no longer needed.
-            mActiveModeWarden.stopAllClientModeManagersInRole(ROLE_CLIENT_SECONDARY_TRANSIENT);
-            return;
-        }
-
-        // need effectively-final temp variable to use within lambda.
-        String finalTargetBssid = targetBssid;
-        // request a ClientModeManager from ActiveModeWarden to connect with - may be an existing
+    /**
+     * Trigger connection to a new wifi network while being connected to another network.
+     * Depending on device configuration, this uses
+     *  - MBB make before break (Dual STA), or
+     *  - BBM break before make (Single STA)
+     */
+    private void triggerConnectToNetworkUsingMakeBeforeBreakIfAvailable(
+            @NonNull WifiConfiguration targetNetwork, @NonNull String targetBssid) {
+        // Request a ClientModeManager from ActiveModeWarden to connect with - may be an existing
         // CMM or a newly created one (potentially switching networks using Make-Before-Break)
         mActiveModeWarden.requestSecondaryTransientClientModeManager(
                 (@Nullable ClientModeManager clientModeManager) -> {
@@ -1118,7 +1192,6 @@ public class WifiConnectivityManager {
                         localLog("connectToNetwork: Wifi has been toggled off, aborting");
                         return;
                     }
-
                     // we don't know which ClientModeManager will be allocated to us. Thus, double
                     // check if we're already connected before connecting.
                     if (isClientModeManagerConnectedOrConnectingToCandidate(
@@ -1127,12 +1200,7 @@ public class WifiConnectivityManager {
                                 + targetNetwork + " on " + clientModeManager);
                         return;
                     }
-
-                    if (!shouldConnect()) {
-                        return;
-                    }
-                    clientModeManager.startConnectToNetwork(
-                            targetNetworkId, Process.WIFI_UID, finalTargetBssid);
+                    triggerConnectToNetworkUsingCmm(clientModeManager, targetNetwork, targetBssid);
                 },
                 ActiveModeWarden.INTERNAL_REQUESTOR_WS,
                 targetNetwork.SSID,
@@ -1975,7 +2043,7 @@ public class WifiConnectivityManager {
                 mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
                         TEMP_BSSID_BLOCK_DURATION,
                         BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 0);
-                connectToNetwork(candidate);
+                connectToNetworkForPrimaryCmm(candidate);
             }
         } catch (IllegalArgumentException e) {
             localLog("retryConnectionOnLatestCandidates: failed to create MacAddress from bssid="
