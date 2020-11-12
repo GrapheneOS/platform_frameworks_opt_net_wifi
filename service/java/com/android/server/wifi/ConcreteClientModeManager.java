@@ -1102,12 +1102,12 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @Override
     public boolean isConnecting() {
-        return mClientModeImpl.isConnecting();
+        return getClientMode().isConnecting();
     }
 
     @Override
     public boolean isRoaming() {
-        return mClientModeImpl.isRoaming();
+        return getClientMode().isRoaming();
     }
 
     @Override
