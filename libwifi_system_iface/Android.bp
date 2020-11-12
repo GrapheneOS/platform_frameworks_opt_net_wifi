@@ -29,6 +29,7 @@ wifi_system_iface_cflags = [
 cc_library {
     name: "libwifi-system-iface",
     vendor_available: true,
+    product_available: true,
     vndk: {
         enabled: true,
     },
