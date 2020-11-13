@@ -191,11 +191,10 @@ public class OsuNetworkConnection {
         config.providerFriendlyName = friendlyName;
 
         if (TextUtils.isEmpty(nai)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         } else {
             // Setup OSEN connection with Unauthenticated user TLS and WFA Root certs
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.OSEN);
-            config.allowedProtocols.set(WifiConfiguration.Protocol.OSEN);
+            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OSEN);
             config.enterpriseConfig.setDomainSuffixMatch(nai);
             config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.UNAUTH_TLS);
             config.enterpriseConfig.setCaPath(WfaKeyStore.DEFAULT_WFA_CERT_DIR);

@@ -184,14 +184,16 @@ public class ScanResultUtil {
         if (isScanResultForSaeNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         } else if (isScanResultForWapiPskNetwork(scanResult)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_PSK);
+            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_WAPI_PSK);
         } else if (isScanResultForWapiCertNetwork(scanResult)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_CERT);
+            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_WAPI_CERT);
         } else if (isScanResultForPskNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         } else if (isScanResultForEapSuiteBNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
         } else if (isScanResultForEapNetwork(scanResult)) {
+            // TODO: b/175928875, add support for WPA3_ENTERPRISE type
+            //       (isScanResultForEapNetwork + MFPR from AP).
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         } else if (isScanResultForWepNetwork(scanResult)) {
             config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_WEP);

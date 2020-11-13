@@ -208,7 +208,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = "\"Test_SSID\"";
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = "\"secretPassword\"";
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -256,7 +256,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = "\"Test_SSID\"";
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = "\"secretPassword\"";
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -302,7 +302,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -327,7 +327,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -351,7 +351,7 @@ public class DppManagerTest extends WifiBaseTest {
         WifiConfiguration selectedNetwork = new WifiConfiguration();
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -375,7 +375,7 @@ public class DppManagerTest extends WifiBaseTest {
         WifiConfiguration selectedNetwork = new WifiConfiguration();
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -413,7 +413,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = 1;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -466,7 +466,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = 1;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -529,7 +529,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         // Generate a progress event
         dppEventCallback.onProgress(AUTHENTICATION_SUCCESS);
@@ -560,7 +560,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -845,7 +845,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = 1;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);
@@ -902,7 +902,7 @@ public class DppManagerTest extends WifiBaseTest {
         selectedNetwork.SSID = TEST_SSID;
         selectedNetwork.networkId = TEST_NETWORK_ID;
         selectedNetwork.preSharedKey = TEST_PASSWORD;
-        selectedNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        selectedNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
 
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(anyInt())).thenReturn(
                 selectedNetwork);

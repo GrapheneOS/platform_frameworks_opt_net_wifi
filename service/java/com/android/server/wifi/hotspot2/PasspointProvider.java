@@ -495,6 +495,11 @@ public class PasspointProvider {
      */
     public WifiConfiguration getWifiConfig() {
         WifiConfiguration wifiConfig = new WifiConfiguration();
+
+        // TODO: b/175928647, Initialize PASSPOINT_R3 type if AP broadcasts MFPR
+        //       or configuration mandates R3 only.
+        wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PASSPOINT_R1_R2);
+
         wifiConfig.FQDN = mConfig.getHomeSp().getFqdn();
         wifiConfig.setPasspointUniqueId(mConfig.getUniqueId());
         if (mConfig.getHomeSp().getRoamingConsortiumOis() != null) {
@@ -511,8 +516,6 @@ public class PasspointProvider {
             }
         }
         wifiConfig.providerFriendlyName = mConfig.getHomeSp().getFriendlyName();
-        wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
-        wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
         int carrierId = mConfig.getCarrierId();
         if (carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
             carrierId = mBestGuessCarrierId;
@@ -525,9 +528,6 @@ public class PasspointProvider {
         wifiConfig.carrierMerged = mConfig.isCarrierMerged();
         wifiConfig.oemPaid = mConfig.isOemPaid();
         wifiConfig.oemPrivate = mConfig.isOemPrivate();
-
-        // Set RSN only to tell wpa_supplicant that this network is for Passpoint.
-        wifiConfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
 
         WifiEnterpriseConfig enterpriseConfig = new WifiEnterpriseConfig();
         enterpriseConfig.setRealm(mConfig.getCredential().getRealm());
