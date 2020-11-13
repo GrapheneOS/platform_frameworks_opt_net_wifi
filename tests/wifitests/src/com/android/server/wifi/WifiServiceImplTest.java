@@ -6475,4 +6475,17 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.stopAutoDispatchAndIgnoreExceptions();
         verify(mWakeupController).dump(any(), any(), any());
     }
+
+    @Test
+    public void testGetNetworkSuggestionUserApprovalStatus() {
+        when(mWifiNetworkSuggestionsManager
+                .getNetworkSuggestionUserApprovalStatus(anyInt(), anyString()))
+                .thenReturn(WifiManager.STATUS_SUGGESTION_APPROVAL_APPROVED_BY_USER);
+        mLooper.startAutoDispatch();
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_APPROVED_BY_USER,
+                mWifiServiceImpl.getNetworkSuggestionUserApprovalStatus(TEST_PACKAGE_NAME));
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
+        verify(mWifiNetworkSuggestionsManager)
+                .getNetworkSuggestionUserApprovalStatus(anyInt(), eq(TEST_PACKAGE_NAME));
+    }
 }
