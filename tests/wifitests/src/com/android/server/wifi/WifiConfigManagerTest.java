@@ -4807,6 +4807,30 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verifies that SIM configs are reset on {@link WifiConfigManager#loadFromStore()}.
+     */
+    @Test
+    public void testLoadFromStoreIgnoresMalformedNetworks() {
+        WifiConfiguration validNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        WifiConfiguration invalidNetwork = WifiConfigurationTestUtil.createPskNetwork();
+        // SSID larger than 32 chars.
+        invalidNetwork.SSID = "\"sdhdfsjdkdskkdfskldfslksflfdslsflfsalaladlalaala;lalalal\"";
+
+        // Set up the store data.
+        List<WifiConfiguration> sharedNetworks = Arrays.asList(validNetwork, invalidNetwork);
+        setupStoreDataForRead(sharedNetworks, new ArrayList<>());
+
+        // read from store now
+        assertTrue(mWifiConfigManager.loadFromStore());
+
+        // Ensure that the invalid network has been ignored.
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
+                Arrays.asList(validNetwork), retrievedNetworks);
+    }
+
+    /**
      * Verifies the deletion of ephemeral network using
      * {@link WifiConfigManager#userTemporarilyDisabledNetwork(String)}.
      */
