@@ -19,7 +19,6 @@ package com.android.server.wifi;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
 import android.net.wifi.IWifiConnectedNetworkScorer;
-import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -75,7 +74,7 @@ public class ScanOnlyModeImpl implements ClientMode {
     public void startConnectToNetwork(int networkId, int uid, String bssid) { }
 
     @Override
-    public void startRoamToNetwork(int networkId, ScanResult scanResult) { }
+    public void startRoamToNetwork(int networkId, String bssid) { }
 
     @Override
     public boolean setWifiConnectedNetworkScorer(

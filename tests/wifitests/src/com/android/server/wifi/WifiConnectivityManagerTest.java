@@ -227,7 +227,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Mock WifiCandidates.Candidate mCandidate1;
     @Mock WifiCandidates.Candidate mCandidate2;
     private List<WifiCandidates.Candidate> mCandidateList;
-    @Captor ArgumentCaptor<ScanResult> mCandidateScanResultCaptor;
+    @Captor ArgumentCaptor<String> mCandidateBssidCaptor;
     @Captor ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener>
             mNetworkUpdateListenerCaptor;
     @Captor ArgumentCaptor<WifiNetworkSuggestionsManager.OnSuggestionUpdateListener>
@@ -2670,8 +2670,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         setScreenState(true);
 
         verify(mPrimaryClientModeManager).startRoamToNetwork(eq(CANDIDATE_NETWORK_ID),
-                mCandidateScanResultCaptor.capture());
-        assertEquals(mCandidateScanResultCaptor.getValue().BSSID, CANDIDATE_BSSID);
+                mCandidateBssidCaptor.capture());
+        assertEquals(mCandidateBssidCaptor.getValue(), CANDIDATE_BSSID);
         verify(mPrimaryClientModeManager, never()).startConnectToNetwork(
                 anyInt(), anyInt(), anyObject());
     }
