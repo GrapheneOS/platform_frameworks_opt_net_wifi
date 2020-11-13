@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AppOpsManager;
@@ -47,6 +48,7 @@ import android.util.LocalLog;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.aware.WifiAwareMetrics;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
@@ -101,10 +103,6 @@ public class WifiInjector {
     private static final NetworkCapabilities OEM_PAID_NETWORK_CAPABILITIES_FILTER =
             new NetworkCapabilities.Builder(NETWORK_CAPABILITIES_FILTER)
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID)
-                    .build();
-    private static final NetworkCapabilities OEM_PRIVATE_NETWORK_CAPABILITIES_FILTER =
-            new NetworkCapabilities.Builder(NETWORK_CAPABILITIES_FILTER)
-                    .addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)
                     .build();
 
     static WifiInjector sWifiInjector = null;
@@ -198,7 +196,7 @@ public class WifiInjector {
     private final WifiNetworkFactory mWifiNetworkFactory;
     private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     private final OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
-    private final OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
+    @Nullable private final OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
     private final SupplicantStateTracker mSupplicantStateTracker;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
@@ -431,9 +429,18 @@ public class WifiInjector {
         mOemPaidWifiNetworkFactory = new OemPaidWifiNetworkFactory(
                 wifiLooper, mContext, OEM_PAID_NETWORK_CAPABILITIES_FILTER,
                 mWifiConnectivityManager);
-        mOemPrivateWifiNetworkFactory = new OemPrivateWifiNetworkFactory(
-                wifiLooper, mContext, OEM_PRIVATE_NETWORK_CAPABILITIES_FILTER,
-                mWifiConnectivityManager);
+        // OEM_PRIVATE capability was only added in Android S.
+        if (SdkLevel.isAtLeastS()) {
+            NetworkCapabilities oemPrivateNetworkCapabilitiesFilter =
+                    new NetworkCapabilities.Builder(NETWORK_CAPABILITIES_FILTER)
+                            .addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)
+                            .build();
+            mOemPrivateWifiNetworkFactory = new OemPrivateWifiNetworkFactory(
+                    wifiLooper, mContext, oemPrivateNetworkCapabilitiesFilter,
+                    mWifiConnectivityManager);
+        } else {
+            mOemPrivateWifiNetworkFactory = null;
+        }
         mWifiScanAlwaysAvailableSettingsCompatibility =
                 new WifiScanAlwaysAvailableSettingsCompatibility(mContext, wifiHandler,
                         mSettingsStore, mActiveModeWarden, mFrameworkFacade);
@@ -905,7 +912,7 @@ public class WifiInjector {
         return mOemPaidWifiNetworkFactory;
     }
 
-    public OemPrivateWifiNetworkFactory getOemPrivateWifiNetworkFactory() {
+    @Nullable public OemPrivateWifiNetworkFactory getOemPrivateWifiNetworkFactory() {
         return mOemPrivateWifiNetworkFactory;
     }
 

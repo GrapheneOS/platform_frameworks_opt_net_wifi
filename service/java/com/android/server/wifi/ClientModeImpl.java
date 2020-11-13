@@ -356,10 +356,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private volatile IpClientManager mIpClient;
     private IpClientCallbacksImpl mIpClientCallbacks;
 
-    private WifiNetworkFactory mNetworkFactory;
-    private UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
-    private OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
-    private OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
+    private final WifiNetworkFactory mNetworkFactory;
+    private final UntrustedWifiNetworkFactory mUntrustedNetworkFactory;
+    private final OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
+    @Nullable private final OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
     private WifiNetworkAgent mNetworkAgent;
 
     private byte[] mRssiRanges;
@@ -576,55 +576,55 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     /** Note that this constructor will also start() the StateMachine. */
     public ClientModeImpl(
-            Context context,
-            WifiMetrics wifiMetrics,
-            Clock clock,
-            WifiScoreCard wifiScoreCard,
-            WifiStateTracker wifiStateTracker,
-            WifiPermissionsUtil wifiPermissionsUtil,
-            WifiConfigManager wifiConfigManager,
-            PasspointManager passpointManager,
-            WifiMonitor wifiMonitor,
-            WifiDiagnostics wifiDiagnostics,
-            WifiDataStall wifiDataStall,
-            ScoringParams scoringParams,
-            WifiThreadRunner wifiThreadRunner,
-            WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager,
-            WifiHealthMonitor wifiHealthMonitor,
-            ThroughputPredictor throughputPredictor,
-            DeviceConfigFacade deviceConfigFacade,
-            ScanRequestProxy scanRequestProxy,
-            ExtendedWifiInfo wifiInfo,
-            WifiConnectivityManager wifiConnectivityManager,
-            BssidBlocklistMonitor bssidBlocklistMonitor,
-            ConnectionFailureNotifier connectionFailureNotifier,
-            NetworkCapabilities networkCapabilitiesFilter,
-            WifiNetworkFactory networkFactory,
-            UntrustedWifiNetworkFactory untrustedWifiNetworkFactory,
-            OemPaidWifiNetworkFactory oemPaidWifiNetworkFactory,
-            OemPrivateWifiNetworkFactory oemPrivateWifiNetworkFactory,
-            WifiLastResortWatchdog wifiLastResortWatchdog,
-            WakeupController wakeupController,
-            WifiLockManager wifiLockManager,
-            FrameworkFacade facade,
-            Looper looper,
-            WifiCountryCode countryCode,
-            WifiNative wifiNative,
-            WrongPasswordNotifier wrongPasswordNotifier,
-            WifiTrafficPoller wifiTrafficPoller,
-            LinkProbeManager linkProbeManager,
+            @NonNull Context context,
+            @NonNull WifiMetrics wifiMetrics,
+            @NonNull Clock clock,
+            @NonNull WifiScoreCard wifiScoreCard,
+            @NonNull WifiStateTracker wifiStateTracker,
+            @NonNull WifiPermissionsUtil wifiPermissionsUtil,
+            @NonNull WifiConfigManager wifiConfigManager,
+            @NonNull PasspointManager passpointManager,
+            @NonNull WifiMonitor wifiMonitor,
+            @NonNull WifiDiagnostics wifiDiagnostics,
+            @NonNull WifiDataStall wifiDataStall,
+            @NonNull ScoringParams scoringParams,
+            @NonNull WifiThreadRunner wifiThreadRunner,
+            @NonNull WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager,
+            @NonNull WifiHealthMonitor wifiHealthMonitor,
+            @NonNull ThroughputPredictor throughputPredictor,
+            @NonNull DeviceConfigFacade deviceConfigFacade,
+            @NonNull ScanRequestProxy scanRequestProxy,
+            @NonNull ExtendedWifiInfo wifiInfo,
+            @NonNull WifiConnectivityManager wifiConnectivityManager,
+            @NonNull BssidBlocklistMonitor bssidBlocklistMonitor,
+            @NonNull ConnectionFailureNotifier connectionFailureNotifier,
+            @NonNull NetworkCapabilities networkCapabilitiesFilter,
+            @NonNull WifiNetworkFactory networkFactory,
+            @NonNull UntrustedWifiNetworkFactory untrustedWifiNetworkFactory,
+            @NonNull OemPaidWifiNetworkFactory oemPaidWifiNetworkFactory,
+            @Nullable OemPrivateWifiNetworkFactory oemPrivateWifiNetworkFactory,
+            @NonNull WifiLastResortWatchdog wifiLastResortWatchdog,
+            @NonNull WakeupController wakeupController,
+            @NonNull WifiLockManager wifiLockManager,
+            @NonNull FrameworkFacade facade,
+            @NonNull Looper looper,
+            @NonNull WifiCountryCode countryCode,
+            @NonNull WifiNative wifiNative,
+            @NonNull WrongPasswordNotifier wrongPasswordNotifier,
+            @NonNull WifiTrafficPoller wifiTrafficPoller,
+            @NonNull LinkProbeManager linkProbeManager,
             long id,
-            BatteryStatsManager batteryStatsManager,
-            SupplicantStateTracker supplicantStateTracker,
-            MboOceController mboOceController,
-            WifiCarrierInfoManager wifiCarrierInfoManager,
-            EapFailureNotifier eapFailureNotifier,
-            SimRequiredNotifier simRequiredNotifier,
-            WifiScoreReport wifiScoreReport,
-            WifiP2pConnection wifiP2pConnection,
-            WifiGlobals wifiGlobals,
-            String ifaceName,
-            ConcreteClientModeManager clientModeManager,
+            @NonNull BatteryStatsManager batteryStatsManager,
+            @NonNull SupplicantStateTracker supplicantStateTracker,
+            @NonNull MboOceController mboOceController,
+            @NonNull WifiCarrierInfoManager wifiCarrierInfoManager,
+            @NonNull EapFailureNotifier eapFailureNotifier,
+            @NonNull SimRequiredNotifier simRequiredNotifier,
+            @NonNull WifiScoreReport wifiScoreReport,
+            @NonNull WifiP2pConnection wifiP2pConnection,
+            @NonNull WifiGlobals wifiGlobals,
+            @NonNull String ifaceName,
+            @NonNull ConcreteClientModeManager clientModeManager,
             boolean verboseLoggingEnabled) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
@@ -5480,7 +5480,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return mNetworkFactory.hasConnectionRequests()
                 || mUntrustedNetworkFactory.hasConnectionRequests()
                 || mOemPaidWifiNetworkFactory.hasConnectionRequests()
-                || mOemPrivateWifiNetworkFactory.hasConnectionRequests();
+                || (mOemPrivateWifiNetworkFactory != null
+                    && mOemPrivateWifiNetworkFactory.hasConnectionRequests());
     }
 
     /**
