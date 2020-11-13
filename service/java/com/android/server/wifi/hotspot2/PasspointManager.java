@@ -122,6 +122,7 @@ public class PasspointManager {
     private final AppOpsManager mAppOps;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final MacAddressUtil mMacAddressUtil;
+    private final Clock mClock;
 
     /**
      * Map of package name of an app to the app ops changed listener for the app.
@@ -314,7 +315,7 @@ public class PasspointManager {
         mProviderIndex = 0;
         mWifiCarrierInfoManager = wifiCarrierInfoManager;
         wifiConfigStore.registerStoreData(objectFactory.makePasspointConfigUserStoreData(
-                mKeyStore, mWifiCarrierInfoManager, new UserDataSourceHandler()));
+                mKeyStore, mWifiCarrierInfoManager, new UserDataSourceHandler(), clock));
         wifiConfigStore.registerStoreData(objectFactory.makePasspointConfigSharedStoreData(
                 new SharedDataSourceHandler()));
         mPasspointProvisioner = objectFactory.makePasspointProvisioner(context, wifiNative,
@@ -322,6 +323,7 @@ public class PasspointManager {
         mAppOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
         sPasspointManager = this;
         mMacAddressUtil = macAddressUtil;
+        mClock = clock;
     }
 
     /**
@@ -406,7 +408,8 @@ public class PasspointManager {
         mWifiCarrierInfoManager.tryUpdateCarrierIdForPasspoint(config);
         // Create a provider and install the necessary certificates and keys.
         PasspointProvider newProvider = mObjectFactory.makePasspointProvider(config, mKeyStore,
-                mWifiCarrierInfoManager, mProviderIndex++, uid, packageName, isFromSuggestion);
+                mWifiCarrierInfoManager, mProviderIndex++, uid, packageName, isFromSuggestion,
+                mClock);
         newProvider.setTrusted(isTrusted);
 
         boolean metricsNoRootCa = false;
@@ -836,7 +839,7 @@ public class PasspointManager {
                         + anqpEntry.getElements().get(Constants.ANQPElementType.ANQPDomName));
             }
             PasspointMatch matchStatus = provider.match(anqpEntry.getElements(),
-                    roamingConsortium);
+                    roamingConsortium, scanResult);
             if (matchStatus == PasspointMatch.HomeProvider
                     || matchStatus == PasspointMatch.RoamingProvider) {
                 allMatches.add(Pair.create(provider, matchStatus));
@@ -907,8 +910,6 @@ public class PasspointManager {
 
     /**
      * Notify the reception of a Wireless Network Management (WNM) frame.
-     * TODO(zqiu): currently the notification is done through WifiMonitor,
-     * will no longer be the case once we switch over to use wificond.
      */
     public void receivedWnmFrame(WnmData data) {
         mPasspointEventHandler.notifyWnmFrameReceived(data);
@@ -1210,7 +1211,7 @@ public class PasspointManager {
                 mWifiCarrierInfoManager,
                 mProviderIndex++, wifiConfig.creatorUid, null, false,
                 Arrays.asList(enterpriseConfig.getCaCertificateAlias()),
-                enterpriseConfig.getClientCertificateAlias(), null, false, false);
+                enterpriseConfig.getClientCertificateAlias(), null, false, false, mClock);
         provider.enableVerboseLogging(mVerboseLoggingEnabled);
         mProviders.put(passpointConfig.getUniqueId(), provider);
         return true;
@@ -1262,11 +1263,12 @@ public class PasspointManager {
             @NonNull PasspointConfiguration passpointConfiguration,
             @NonNull List<ScanResult> scanResults) {
         PasspointProvider provider = mObjectFactory.makePasspointProvider(passpointConfiguration,
-                null, mWifiCarrierInfoManager, 0, 0, null, false);
+                null, mWifiCarrierInfoManager, 0, 0, null, false, mClock);
         List<ScanResult> filteredScanResults = new ArrayList<>();
         for (ScanResult scanResult : scanResults) {
             PasspointMatch matchInfo = provider.match(getANQPElements(scanResult),
-                    InformationElementUtil.getRoamingConsortiumIE(scanResult.informationElements));
+                    InformationElementUtil.getRoamingConsortiumIE(scanResult.informationElements),
+                    scanResult);
             if (matchInfo == PasspointMatch.HomeProvider
                     || matchInfo == PasspointMatch.RoamingProvider) {
                 filteredScanResults.add(scanResult);
@@ -1335,5 +1337,22 @@ public class PasspointManager {
         // I am seeing R2's that respond to Venue URL request, so may keep it this way.
         // APs that do not support this ANQP request simply ignore it.
         mAnqpRequestManager.requestVenueUrlAnqpElement(bssid, anqpKey);
+    }
+
+    /**
+     * Handle Deauthentication Imminent WNM-Notification event
+     *
+     * @param event Deauthentication Imminent WNM-Notification data
+     * @param config Configuration of the currently connected network
+     */
+    public void handleDeauthImminentEvent(WnmData event, WifiConfiguration config) {
+        if (event == null || config == null) {
+            return;
+        }
+
+        PasspointProvider provider = mProviders.get(config.getProfileKey());
+        if (provider != null) {
+            provider.blockBssOrEss(event.getBssid(), event.isEss(), event.getDelay());
+        }
     }
 }

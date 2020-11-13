@@ -21,6 +21,7 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.server.wifi.Clock;
 import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiConfigStore;
 import com.android.server.wifi.WifiKeyStore;
@@ -79,6 +80,7 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
     private final WifiKeyStore mKeyStore;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final DataSource mDataSource;
+    private final Clock mClock;
 
     /**
      * Interface define the data source for the Passpoint configuration store data.
@@ -100,10 +102,11 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
     }
 
     PasspointConfigUserStoreData(WifiKeyStore keyStore,
-            WifiCarrierInfoManager wifiCarrierInfoManager, DataSource dataSource) {
+            WifiCarrierInfoManager wifiCarrierInfoManager, DataSource dataSource, Clock clock) {
         mKeyStore = keyStore;
         mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mDataSource = dataSource;
+        mClock = clock;
     }
 
     @Override
@@ -352,7 +355,7 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
                 mWifiCarrierInfoManager,
                 providerId, creatorUid, packageName, isFromSuggestion, caCertificateAliases,
                 clientPrivateKeyAndCertificateAlias, remediationCaCertificateAlias,
-                hasEverConnected, shared);
+                hasEverConnected, shared, mClock);
         if (isFromSuggestion) {
             provider.setTrusted(isTrusted);
         }

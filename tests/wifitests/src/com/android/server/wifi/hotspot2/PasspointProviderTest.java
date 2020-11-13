@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.net.wifi.EAPConstants;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.hotspot2.PasspointConfiguration;
@@ -37,7 +38,9 @@ import android.util.Pair;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.Clock;
 import com.android.server.wifi.FakeKeys;
+import com.android.server.wifi.MboOceConstants;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiKeyStore;
@@ -95,13 +98,13 @@ public class PasspointProviderTest extends WifiBaseTest {
     private static final String TEST_FQDN2 = "test2.com";
     private static final String TEST_FQDN3 = "test3.com";
     private static final String TEST_FRIENDLY_NAME = "Friendly Name";
-    private static final long[] TEST_RC_OIS = new long[] {0x1234L, 0x2345L};
-    private static final long[] TEST_IE_RC_OIS = new long[] {0x1234L, 0x2133L};
-    private static final long[] TEST_IE_NO_MATCHED_RC_OIS = new long[] {0x2255L, 0x2133L};
-    private static final Long[] TEST_ANQP_RC_OIS = new Long[] {0x1234L, 0x2133L};
+    private static final long[] TEST_RC_OIS = new long[]{0x1234L, 0x2345L};
+    private static final long[] TEST_IE_RC_OIS = new long[]{0x1234L, 0x2133L};
+    private static final long[] TEST_IE_NO_MATCHED_RC_OIS = new long[]{0x2255L, 0x2133L};
+    private static final Long[] TEST_ANQP_RC_OIS = new Long[]{0x1234L, 0x2133L};
     private static final String TEST_REALM = "realm.com";
     private static final String[] TEST_TRUSTED_NAME =
-            new String[] {"trusted.fqdn.com", "another.fqdn.com"};
+            new String[]{"trusted.fqdn.com", "another.fqdn.com"};
     // User credential data
     private static final String TEST_USERNAME = "username";
     private static final String TEST_PASSWORD = "password3";
@@ -112,16 +115,27 @@ public class PasspointProviderTest extends WifiBaseTest {
     private static final int VALID_CARRIER_ID = 1;
     private static final int VALID_SUBSCRIPTION_ID = 2;
 
+    private static final String TEST_SSID = "TestSSID";
+    private static final String TEST_BSSID_STRING = "11:22:33:44:55:66";
+    private static final String TEST_BSSID_STRING_2 = "11:22:33:44:55:67";
+    private static final long TEST_HESSID = 0x5678L;
+    private static final int TEST_ANQP_DOMAIN_ID = 0;
+    private static final long TEST_ELAPSED_TIME_SINCE_BOOT = 100000L;
+
     private enum CredentialType {
         USER,
         CERT,
         SIM
     }
 
-    @Mock WifiKeyStore mKeyStore;
+    @Mock
+    WifiKeyStore mKeyStore;
     @Mock
     WifiCarrierInfoManager mWifiCarrierInfoManager;
-    @Mock RoamingConsortium mRoamingConsortium;
+    @Mock
+    RoamingConsortium mRoamingConsortium;
+    @Mock
+    Clock mClock;
     PasspointProvider mProvider;
     X509Certificate mRemediationCaCertificate;
     String mExpectedResult;
@@ -140,7 +154,9 @@ public class PasspointProviderTest extends WifiBaseTest {
         mExpectedResult = expectedResult;
     }
 
-    /** Sets up test. */
+    /**
+     * Sets up test.
+     */
     @Before
     public void setUp() throws Exception {
         initMocks(this);
@@ -155,15 +171,15 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     private PasspointProvider createProvider(PasspointConfiguration config) {
         return new PasspointProvider(config, mKeyStore, mWifiCarrierInfoManager, PROVIDER_ID,
-                CREATOR_UID, CREATOR_PACKAGE, false);
+                CREATOR_UID, CREATOR_PACKAGE, false, mClock);
     }
 
     /**
-     * Verify that the configuration associated with the provider is the same or not the same
-     * as the expected configuration.
+     * Verify that the configuration associated with the provider is the same or not the same as the
+     * expected configuration.
      *
      * @param expectedConfig The expected configuration
-     * @param equals Flag indicating equality or inequality check
+     * @param equals         Flag indicating equality or inequality check
      */
     private void verifyInstalledConfig(PasspointConfiguration expectedConfig, boolean equals) {
         PasspointConfiguration actualConfig = mProvider.getConfig();
@@ -187,9 +203,9 @@ public class PasspointProviderTest extends WifiBaseTest {
     /**
      * Helper function for creating a NAI Realm ANQP element.
      *
-     * @param realm The realm of the network
+     * @param realm       The realm of the network
      * @param eapMethodID EAP Method ID
-     * @param authParam Authentication parameter
+     * @param authParam   Authentication parameter
      * @return {@link NAIRealmElement}
      */
     private NAIRealmElement createNAIRealmElement(String realm, int eapMethodID,
@@ -201,9 +217,9 @@ public class PasspointProviderTest extends WifiBaseTest {
             authParamMap.put(authParam.getAuthTypeID(), authSet);
         }
         EAPMethod eapMethod = new EAPMethod(eapMethodID, authParamMap);
-        NAIRealmData realmData = new NAIRealmData(Arrays.asList(new String[] {realm}),
-                Arrays.asList(new EAPMethod[] {eapMethod}));
-        return new NAIRealmElement(Arrays.asList(new NAIRealmData[] {realmData}));
+        NAIRealmData realmData = new NAIRealmData(Arrays.asList(new String[]{realm}),
+                Arrays.asList(new EAPMethod[]{eapMethod}));
+        return new NAIRealmElement(Arrays.asList(new NAIRealmData[]{realmData}));
     }
 
     /**
@@ -224,16 +240,16 @@ public class PasspointProviderTest extends WifiBaseTest {
      */
     private ThreeGPPNetworkElement createThreeGPPNetworkElement(String[] imsiList) {
         CellularNetwork network = new CellularNetwork(Arrays.asList(imsiList));
-        return new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[] {network}));
+        return new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[]{network}));
     }
 
     /**
      * Helper function for generating test passpoint configuration for test cases
      *
      * @param credentialType which type credential is generated.
-     * @param isLegacy if true, omit some passpoint fields to avoid breaking comparison
-     *                 between passpoint configuration converted from wifi configuration
-     *                 and generated passpoint configuration.
+     * @param isLegacy       if true, omit some passpoint fields to avoid breaking comparison
+     *                       between passpoint configuration converted from wifi configuration and
+     *                       generated passpoint configuration.
      * @return a valid passpoint configuration
      * @throws Exception
      */
@@ -262,7 +278,7 @@ public class PasspointProviderTest extends WifiBaseTest {
             userCredential.setUsername(TEST_USERNAME);
             userCredential.setPassword(encodedPasswordStr);
             if (!isLegacy) {
-                credential.setCaCertificates(new X509Certificate[] {FakeKeys.CA_CERT0});
+                credential.setCaCertificates(new X509Certificate[]{FakeKeys.CA_CERT0});
             }
             credential.setUserCredential(userCredential);
         } else if (credentialType == CredentialType.CERT) {
@@ -271,10 +287,10 @@ public class PasspointProviderTest extends WifiBaseTest {
             if (!isLegacy) {
                 certCredential.setCertSha256Fingerprint(
                         MessageDigest.getInstance("SHA-256")
-                        .digest(FakeKeys.CLIENT_CERT.getEncoded()));
-                credential.setCaCertificates(new X509Certificate[] {FakeKeys.CA_CERT0});
+                                .digest(FakeKeys.CLIENT_CERT.getEncoded()));
+                credential.setCaCertificates(new X509Certificate[]{FakeKeys.CA_CERT0});
                 credential.setClientPrivateKey(FakeKeys.RSA_KEY1);
-                credential.setClientCertificateChain(new X509Certificate[] {FakeKeys.CLIENT_CERT});
+                credential.setClientCertificateChain(new X509Certificate[]{FakeKeys.CLIENT_CERT});
             } else {
                 certCredential.setCertType(Credential.CertificateCredential.CERT_TYPE_X509V3);
             }
@@ -294,8 +310,7 @@ public class PasspointProviderTest extends WifiBaseTest {
      * Helper function for verifying wifi configuration based on Passpoint configuration
      *
      * @param passpointConfig the source of wifi configuration.
-     * @param wifiConfig wifi configuration be verified.
-     *
+     * @param wifiConfig      wifi configuration be verified.
      * @throws Exception
      */
     private void verifyWifiConfigWithTestData(
@@ -439,8 +454,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that modification to the configuration used for creating PasspointProvider
-     * will not change the configuration stored inside the PasspointProvider.
+     * Verify that modification to the configuration used for creating PasspointProvider will not
+     * change the configuration stored inside the PasspointProvider.
      *
      * @throws Exception
      */
@@ -459,8 +474,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that modification to the configuration retrieved from the PasspointProvider
-     * will not change the configuration stored inside the PasspointProvider.
+     * Verify that modification to the configuration retrieved from the PasspointProvider will not
+     * change the configuration stored inside the PasspointProvider.
      *
      * @throws Exception
      */
@@ -506,7 +521,7 @@ public class PasspointProviderTest extends WifiBaseTest {
                 .thenReturn(true);
         when(mKeyStore.putUserPrivKeyAndCertsInKeyStore(
                 CLIENT_PRIVATE_KEY_AND_CERT_ALIAS, FakeKeys.RSA_KEY1,
-                new Certificate[] {FakeKeys.CLIENT_CERT}))
+                new Certificate[]{FakeKeys.CLIENT_CERT}))
                 .thenReturn(true);
         when(mKeyStore.putCaCertInKeyStore(REMEDIATION_CA_CERTIFICATE_ALIAS, FakeKeys.CA_CERT0))
                 .thenReturn(true);
@@ -555,7 +570,7 @@ public class PasspointProviderTest extends WifiBaseTest {
                 .thenReturn(false);
         when(mKeyStore.putUserPrivKeyAndCertsInKeyStore(
                 CLIENT_PRIVATE_KEY_AND_CERT_ALIAS, FakeKeys.RSA_KEY1,
-                new Certificate[] {FakeKeys.CLIENT_CERT}))
+                new Certificate[]{FakeKeys.CLIENT_CERT}))
                 .thenReturn(true);
         when(mKeyStore.putCaCertInKeyStore(REMEDIATION_CA_CERTIFICATE_ALIAS, FakeKeys.CA_CERT0))
                 .thenReturn(true);
@@ -601,7 +616,7 @@ public class PasspointProviderTest extends WifiBaseTest {
                 .thenReturn(true);
         when(mKeyStore.putUserPrivKeyAndCertsInKeyStore(
                 CLIENT_PRIVATE_KEY_AND_CERT_ALIAS, FakeKeys.RSA_KEY1,
-                new Certificate[] {FakeKeys.CLIENT_CERT}))
+                new Certificate[]{FakeKeys.CLIENT_CERT}))
                 .thenReturn(true);
         when(mKeyStore.putCaCertInKeyStore(REMEDIATION_CA_CERTIFICATE_ALIAS, FakeKeys.CA_CERT0))
                 .thenReturn(true);
@@ -628,8 +643,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that a provider is a home provider when its FQDN matches a domain name in the
-     * Domain Name ANQP element and no NAI realm is provided.
+     * Verify that a provider is a home provider when its FQDN matches a domain name in the Domain
+     * Name ANQP element and no NAI realm is provided.
      *
      * @throws Exception
      */
@@ -643,15 +658,15 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup ANQP elements.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN}));
+                createDomainNameElement(new String[]{TEST_FQDN}));
 
         assertEquals(PasspointMatch.HomeProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that a provider is a home provider when its FQDN matches a domain name in the
-     * Domain Name ANQP element and the provider's credential matches the NAI realm provided.
+     * Verify that a provider is a home provider when its FQDN matches a domain name in the Domain
+     * Name ANQP element and the provider's credential matches the NAI realm provided.
      *
      * @throws Exception
      */
@@ -665,20 +680,20 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN}));
+                createDomainNameElement(new String[]{TEST_FQDN}));
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
                         new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
 
         assertEquals(PasspointMatch.HomeProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
      * Verify that Home provider is matched even when the provider's FQDN matches a domain name in
      * the Domain Name ANQP element but the provider's credential doesn't match the authentication
-     * method provided in the NAI realm. This can happen when the infrastructure provider is not
-     * the identity provider, and authentication method matching is not required in the spec.
+     * method provided in the NAI realm. This can happen when the infrastructure provider is not the
+     * identity provider, and authentication method matching is not required in the spec.
      *
      * @throws Exception
      */
@@ -692,12 +707,12 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN}));
+                createDomainNameElement(new String[]{TEST_FQDN}));
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TLS, null));
 
         assertEquals(PasspointMatch.HomeProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -718,16 +733,16 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {"wlan.mnc456.mcc123.3gppnetwork.org"}));
+                createDomainNameElement(new String[]{"wlan.mnc456.mcc123.3gppnetwork.org"}));
 
         assertEquals(PasspointMatch.HomeProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that a provider is a home provider when its FQDN, roaming consortium OI, and
-     * IMSI all matched against the ANQP elements, since we prefer matching home provider over
-     * roaming provider.
+     * Verify that a provider is a home provider when its FQDN, roaming consortium OI, and IMSI all
+     * matched against the ANQP elements, since we prefer matching home provider over roaming
+     * provider.
      *
      * @throws Exception
      */
@@ -743,19 +758,19 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup ANQP elements.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN}));
+                createDomainNameElement(new String[]{TEST_FQDN}));
         anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
                 createRoamingConsortiumElement(TEST_ANQP_RC_OIS));
         anqpElementMap.put(ANQPElementType.ANQP3GPPNetwork,
-                createThreeGPPNetworkElement(new String[] {"123456"}));
+                createThreeGPPNetworkElement(new String[]{"123456"}));
 
         assertEquals(PasspointMatch.HomeProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI
-     * in the roaming consortium ANQP element and no NAI realm is provided.
+     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI in
+     * the roaming consortium ANQP element and no NAI realm is provided.
      *
      * @throws Exception
      */
@@ -775,13 +790,13 @@ public class PasspointProviderTest extends WifiBaseTest {
                 createRoamingConsortiumElement(TEST_ANQP_RC_OIS));
 
         assertEquals(PasspointMatch.RoamingProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI
-     * in the roaming consortium ANQP element and the provider's credential matches the
-     * NAI realm provided.
+     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI in
+     * the roaming consortium ANQP element and the provider's credential matches the NAI realm
+     * provided.
      *
      * @throws Exception
      */
@@ -802,12 +817,12 @@ public class PasspointProviderTest extends WifiBaseTest {
                         new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
 
         assertEquals(PasspointMatch.RoamingProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that there is Roaming provider match when a roaming consortium OI matches an OI
-     * in the roaming consortium ANQP element and regardless of NAI realm mismatch.
+     * Verify that there is Roaming provider match when a roaming consortium OI matches an OI in the
+     * roaming consortium ANQP element and regardless of NAI realm mismatch.
      *
      * @throws Exception
      */
@@ -827,12 +842,12 @@ public class PasspointProviderTest extends WifiBaseTest {
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TLS, null));
 
         assertEquals(PasspointMatch.RoamingProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI
-     * in the roaming consortium information element and no NAI realm is provided.
+     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI in
+     * the roaming consortium information element and no NAI realm is provided.
      *
      * @throws Exception
      */
@@ -850,13 +865,13 @@ public class PasspointProviderTest extends WifiBaseTest {
         when(mRoamingConsortium.getRoamingConsortiums()).thenReturn(TEST_IE_RC_OIS);
 
         assertEquals(PasspointMatch.RoamingProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI
-     * in the roaming consortium information element and the provider's credential matches the
-     * NAI realm provided.
+     * Verify that a provider is a roaming provider when a roaming consortium OI matches an OI in
+     * the roaming consortium information element and the provider's credential matches the NAI
+     * realm provided.
      *
      * @throws Exception
      */
@@ -877,18 +892,16 @@ public class PasspointProviderTest extends WifiBaseTest {
                         new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
 
         assertEquals(PasspointMatch.RoamingProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that there is Roaming provider match when a roaming consortium OI matches an OI
-     * in the roaming consortium information element, but NAI realm is not matched.
-     * This can happen in roaming federation where the infrastructure provider is not the
-     * identity provider.
-     * Page 133 in the Hotspot2.0 specification states:
-     * Per subclause 11.25.8 of [2], if the value of HomeOI matches an OI in the Roaming
-     * Consortium advertised by a hotspot operator, successful authentication with that hotspot
-     * is possible.
+     * Verify that there is Roaming provider match when a roaming consortium OI matches an OI in the
+     * roaming consortium information element, but NAI realm is not matched. This can happen in
+     * roaming federation where the infrastructure provider is not the identity provider. Page 133
+     * in the Hotspot2.0 specification states: Per subclause 11.25.8 of [2], if the value of HomeOI
+     * matches an OI in the Roaming Consortium advertised by a hotspot operator, successful
+     * authentication with that hotspot is possible.
      *
      * @throws Exception
      */
@@ -909,13 +922,12 @@ public class PasspointProviderTest extends WifiBaseTest {
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TLS, null));
 
         assertEquals(PasspointMatch.RoamingProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that none of matched providers are found when a roaming consortium OI doesn't
-     * matches an OI in the roaming consortium information element and
-     * none of NAI realms match each other.
+     * Verify that none of matched providers are found when a roaming consortium OI doesn't matches
+     * an OI in the roaming consortium information element and none of NAI realms match each other.
      *
      * @throws Exception
      */
@@ -933,7 +945,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         when(mRoamingConsortium.getRoamingConsortiums()).thenReturn(TEST_IE_NO_MATCHED_RC_OIS);
 
         assertEquals(PasspointMatch.None,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -955,15 +967,15 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup 3GPP Network ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQP3GPPNetwork,
-                createThreeGPPNetworkElement(new String[] {"123456"}));
+                createThreeGPPNetworkElement(new String[]{"123456"}));
 
         // Setup NAI Realm ANQP element with different realm.
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
-                new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
+                        new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
 
         assertEquals(PasspointMatch.RoamingProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -985,20 +997,20 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup 3GPP Network ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQP3GPPNetwork,
-                createThreeGPPNetworkElement(new String[] {"123456"}));
+                createThreeGPPNetworkElement(new String[]{"123456"}));
 
         // Setup NAI Realm ANQP element with same realm.
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_AKA, null));
 
         assertEquals(PasspointMatch.RoamingProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
         assertEquals(VALID_CARRIER_ID, mProvider.getWifiConfig().carrierId);
     }
 
     /**
-     * Verify that when the SIM card matched by carrier ID of profile is absent, it shouldn't
-     * be matched even the profile and ANQP elements are matched.
+     * Verify that when the SIM card matched by carrier ID of profile is absent, it shouldn't be
+     * matched even the profile and ANQP elements are matched.
      *
      * @throws Exception
      */
@@ -1017,19 +1029,19 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup 3GPP Network ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQP3GPPNetwork,
-                createThreeGPPNetworkElement(new String[] {"123456"}));
+                createThreeGPPNetworkElement(new String[]{"123456"}));
 
         // Setup NAI Realm ANQP element with same realm.
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_AKA, null));
 
         assertEquals(PasspointMatch.None,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that when the SIM card matched by IMSI of profile is absent, it shouldn't be
-     * matched even the profile and ANQP elements are matched.
+     * Verify that when the SIM card matched by IMSI of profile is absent, it shouldn't be matched
+     * even the profile and ANQP elements are matched.
      *
      * @throws Exception
      */
@@ -1045,14 +1057,14 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup 3GPP Network ANQP element.
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQP3GPPNetwork,
-                createThreeGPPNetworkElement(new String[] {"123456"}));
+                createThreeGPPNetworkElement(new String[]{"123456"}));
 
         // Setup NAI Realm ANQP element with same realm.
         anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
                 createNAIRealmElement(TEST_REALM, EAPConstants.EAP_AKA, null));
 
         assertEquals(PasspointMatch.None,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -1075,12 +1087,12 @@ public class PasspointProviderTest extends WifiBaseTest {
                         new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
 
         assertEquals(PasspointMatch.RoamingProvider,
-            mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a user credential.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * user credential.
      *
      * @throws Exception
      */
@@ -1108,8 +1120,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a user credential which has AAA server trusted names provisioned.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * user credential which has AAA server trusted names provisioned.
      *
      * @throws Exception
      */
@@ -1141,8 +1153,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a user credential which has no CA cert.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * user credential which has no CA cert.
      *
      * @throws Exception
      */
@@ -1160,8 +1172,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a certificate credential.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * certificate credential.
      *
      * @throws Exception
      */
@@ -1177,7 +1189,7 @@ public class PasspointProviderTest extends WifiBaseTest {
                 .thenReturn(true);
         when(mKeyStore.putUserPrivKeyAndCertsInKeyStore(
                 CLIENT_PRIVATE_KEY_AND_CERT_ALIAS, FakeKeys.RSA_KEY1,
-                new Certificate[] {FakeKeys.CLIENT_CERT}))
+                new Certificate[]{FakeKeys.CLIENT_CERT}))
                 .thenReturn(true);
         assertTrue(mProvider.installCertsAndKeys());
 
@@ -1187,8 +1199,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a certificate credential which has AAA server trusted names provisioned.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * certificate credential which has AAA server trusted names provisioned.
      *
      * @throws Exception
      */
@@ -1205,7 +1217,7 @@ public class PasspointProviderTest extends WifiBaseTest {
                 .thenReturn(true);
         when(mKeyStore.putUserPrivKeyAndCertsInKeyStore(
                 CLIENT_PRIVATE_KEY_AND_CERT_ALIAS, FakeKeys.RSA_KEY1,
-                new Certificate[] {FakeKeys.CLIENT_CERT}))
+                new Certificate[]{FakeKeys.CLIENT_CERT}))
                 .thenReturn(true);
         assertTrue(mProvider.installCertsAndKeys());
 
@@ -1215,8 +1227,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a certificate credential which has no CA cert.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * certificate credential which has no CA cert.
      *
      * @throws Exception
      */
@@ -1231,7 +1243,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Install certificate.
         when(mKeyStore.putUserPrivKeyAndCertsInKeyStore(
                 CLIENT_PRIVATE_KEY_AND_CERT_ALIAS, FakeKeys.RSA_KEY1,
-                new Certificate[] {FakeKeys.CLIENT_CERT}))
+                new Certificate[]{FakeKeys.CLIENT_CERT}))
                 .thenReturn(true);
         assertTrue(mProvider.installCertsAndKeys());
 
@@ -1241,8 +1253,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a SIM credential.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * SIM credential.
      *
      * @throws Exception
      */
@@ -1313,8 +1325,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected {@link PasspointConfiguration} will be returned when converting
-     * from a {@link WifiConfiguration} containing a user credential.
+     * Verify that an expected {@link PasspointConfiguration} will be returned when converting from
+     * a {@link WifiConfiguration} containing a user credential.
      *
      * @throws Exception
      */
@@ -1342,8 +1354,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected {@link PasspointConfiguration} will be returned when converting
-     * from a {@link WifiConfiguration} containing a SIM credential.
+     * Verify that an expected {@link PasspointConfiguration} will be returned when converting from
+     * a {@link WifiConfiguration} containing a SIM credential.
      *
      * @throws Exception
      */
@@ -1366,8 +1378,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected {@link PasspointConfiguration} will be returned when converting
-     * from a {@link WifiConfiguration} containing a certificate credential.
+     * Verify that an expected {@link PasspointConfiguration} will be returned when converting from
+     * a {@link WifiConfiguration} containing a certificate credential.
      *
      * @throws Exception
      */
@@ -1419,8 +1431,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that hasEverConnected flag is set correctly using
-     * {@link PasspointProvider#setHasEverConnected}.
+     * Verify that hasEverConnected flag is set correctly using {@link
+     * PasspointProvider#setHasEverConnected}.
      *
      * @throws Exception
      */
@@ -1474,8 +1486,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider
-     * with a user credential.
+     * Verify that an expected WifiConfiguration will be returned for a Passpoint provider with a
+     * user credential.
      *
      * @throws Exception
      */
@@ -1488,17 +1500,17 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Configuration was created with TEST_FQDN as the FQDN, add TEST_FQDN3 as other home
         // partner.
         HomeSp homeSp = config.getHomeSp();
-        homeSp.setOtherHomePartners(new String [] {TEST_FQDN3});
+        homeSp.setOtherHomePartners(new String[]{TEST_FQDN3});
         config.setHomeSp(homeSp);
         mProvider = createProvider(config);
 
         // Setup Domain Name ANQP element to TEST_FQDN2 and TEST_FQDN3
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN2, TEST_FQDN3}));
+                createDomainNameElement(new String[]{TEST_FQDN2, TEST_FQDN3}));
 
         assertEquals(PasspointMatch.HomeProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -1511,7 +1523,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
-        Long[] anqpOis = new Long[] {0x1234L, 0xdeadL, 0xf0cdL};
+        Long[] anqpOis = new Long[]{0x1234L, 0xdeadL, 0xf0cdL};
 
         // Configuration was created with TEST_FQDN as the FQDN
         HomeSp homeSp = config.getHomeSp();
@@ -1523,13 +1535,13 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element to TEST_FQDN2 and TEST_FQDN3
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN2, TEST_FQDN3}));
+                createDomainNameElement(new String[]{TEST_FQDN2, TEST_FQDN3}));
         // Setup RCOIs advertised by the AP
         anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
                 createRoamingConsortiumElement(anqpOis));
 
         assertEquals(PasspointMatch.HomeProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -1542,7 +1554,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
-        Long[] anqpOis = new Long[] {0x12a4L, 0xceadL, 0xf0cdL};
+        Long[] anqpOis = new Long[]{0x12a4L, 0xceadL, 0xf0cdL};
 
         // Configuration was created with TEST_FQDN as the FQDN
         HomeSp homeSp = config.getHomeSp();
@@ -1554,13 +1566,13 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element to TEST_FQDN2 and TEST_FQDN3
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN2, TEST_FQDN3}));
+                createDomainNameElement(new String[]{TEST_FQDN2, TEST_FQDN3}));
         // Setup RCOIs advertised by the AP
         anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
                 createRoamingConsortiumElement(anqpOis));
 
         assertEquals(PasspointMatch.None,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -1573,7 +1585,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup test provider.
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
-        Long[] anqpOis = new Long[] {0x1234L, 0x2345L, 0xabcdL, 0xdeadL, 0xf0cdL};
+        Long[] anqpOis = new Long[]{0x1234L, 0x2345L, 0xabcdL, 0xdeadL, 0xf0cdL};
 
         // Configuration was created with TEST_FQDN as the FQDN
         HomeSp homeSp = config.getHomeSp();
@@ -1585,13 +1597,13 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element to TEST_FQDN2 and TEST_FQDN3
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN2, TEST_FQDN3}));
+                createDomainNameElement(new String[]{TEST_FQDN2, TEST_FQDN3}));
         // Setup RCOIs advertised by the AP
         anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
                 createRoamingConsortiumElement(anqpOis));
 
         assertEquals(PasspointMatch.HomeProvider,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
     }
 
     /**
@@ -1605,7 +1617,7 @@ public class PasspointProviderTest extends WifiBaseTest {
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
         // 0x1234 matches, but 0x2345 does not
-        Long[] anqpOis = new Long[] {0x1234L, 0x5678L, 0xdeadL, 0xf0cdL};
+        Long[] anqpOis = new Long[]{0x1234L, 0x5678L, 0xdeadL, 0xf0cdL};
 
         // Configuration was created with TEST_FQDN as the FQDN
         HomeSp homeSp = config.getHomeSp();
@@ -1617,12 +1629,241 @@ public class PasspointProviderTest extends WifiBaseTest {
         // Setup Domain Name ANQP element to TEST_FQDN2 and TEST_FQDN3
         Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
         anqpElementMap.put(ANQPElementType.ANQPDomName,
-                createDomainNameElement(new String[] {TEST_FQDN2, TEST_FQDN3}));
+                createDomainNameElement(new String[]{TEST_FQDN2, TEST_FQDN3}));
         // Setup RCOIs advertised by the AP
         anqpElementMap.put(ANQPElementType.ANQPRoamingConsortium,
                 createRoamingConsortiumElement(anqpOis));
 
         assertEquals(PasspointMatch.None,
-                mProvider.match(anqpElementMap, mRoamingConsortium));
+                mProvider.match(anqpElementMap, mRoamingConsortium, createTestScanResult()));
+    }
+
+    /**
+     * Helper function for creating a ScanResult for testing.
+     *
+     * @return {@link ScanResult}
+     */
+    private ScanResult createTestScanResult() {
+        ScanResult scanResult = new ScanResult();
+        scanResult.SSID = TEST_SSID;
+        scanResult.BSSID = TEST_BSSID_STRING;
+        scanResult.hessid = TEST_HESSID;
+        scanResult.anqpDomainId = TEST_ANQP_DOMAIN_ID;
+        scanResult.flags = ScanResult.FLAG_PASSPOINT_NETWORK;
+        return scanResult;
+    }
+
+    /**
+     * Verify that a home provider is not matched followed by a Deauthentication-imminent WNM
+     * notification from the AP that covers a specific BSS.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void noMatchWithBlockedBss() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        mProvider = createProvider(config);
+
+        // Setup Domain Name ANQP element.
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[]{TEST_FQDN}));
+        anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
+                createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
+                        new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
+
+        ScanResult scanResult = createTestScanResult();
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT);
+
+        // Confirm this is a match under normal circumstances
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now block the BSS (simulate Deauth-imminent notification)
+        mProvider.blockBssOrEss(Utils.parseMac(scanResult.BSSID), false, 300 /* Seconds */);
+
+        // Confirm there is no match
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now modify the BSSID
+        scanResult.BSSID = TEST_BSSID_STRING_2;
+
+        // Confirm there is a match
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+    }
+
+    /**
+     * Verify that a home provider is not matched followed by a Deauthentication-imminent WNM
+     * notification from the AP that covers the entire ESS.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void noMatchWithBlockedEss() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        mProvider = createProvider(config);
+
+        // Setup Domain Name ANQP element.
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[]{TEST_FQDN}));
+        anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
+                createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
+                        new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
+
+        ScanResult scanResult = createTestScanResult();
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT);
+
+        // Confirm this is a match under normal circumstances
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now block the BSS (simulate Deauth-imminent notification)
+        mProvider.blockBssOrEss(Utils.parseMac(scanResult.BSSID), true, 300 /* Seconds */);
+
+        // Confirm there is no match
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now modify the BSSID
+        scanResult.BSSID = TEST_BSSID_STRING_2;
+
+        // Confirm there is no match
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+    }
+
+    /**
+     * Verify that a home provider that was not matched followed by a Deauthentication-imminent WNM
+     * notification from the AP is matched again after the reathentication delay expires.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void blockedBssMatchRestoredAfterDelayExpires() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        mProvider = createProvider(config);
+
+        // Setup Domain Name ANQP element.
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[]{TEST_FQDN}));
+        anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
+                createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
+                        new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
+
+        ScanResult scanResult = createTestScanResult();
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT);
+
+        // Confirm this is a match under normal circumstances
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now block the BSS (simulate Deauth-imminent notification)
+        mProvider.blockBssOrEss(Utils.parseMac(scanResult.BSSID), false, 300 /* Seconds */);
+
+        // Confirm there is no match
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now advance the time to some time in the future, after the delay expires
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT
+                + (300 * 1000) + 5000);
+
+        // Confirm there is a match now
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+    }
+
+
+    /**
+     * Verify that a home provider that was not matched followed by a Deauthentication-imminent WNM
+     * notification from the AP is matched again after the reathentication delay expires for WNM
+     * notifications that do not specify an explicit delay (default is 5 minutes in AOSP).
+     *
+     * @throws Exception
+     */
+    @Test
+    public void blockedBssMatchRestoredAfterDelayExpiresNoDelaySpecified() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        mProvider = createProvider(config);
+
+        // Setup Domain Name ANQP element.
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[]{TEST_FQDN}));
+        anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
+                createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
+                        new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
+
+        ScanResult scanResult = createTestScanResult();
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT);
+
+        // Confirm this is a match under normal circumstances
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now block the BSS (simulate Deauth-imminent notification)
+        mProvider.blockBssOrEss(Utils.parseMac(scanResult.BSSID), false, 0 /* Seconds */);
+
+        // Confirm there is no match
+        assertEquals(PasspointMatch.None,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Now advance the time to some time in the future, after the delay expires
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT
+                + (MboOceConstants.DEFAULT_BLOCKLIST_DURATION_MS));
+
+        // Confirm there is a match now
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+    }
+
+    /**
+     * Verify that a WNM-Notification with some invalid values is ignored and doesn't affect
+     * the provider
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testNoBlockingWithInvalidWnmData() throws Exception {
+        // Setup test provider.
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        mProvider = createProvider(config);
+
+        // Setup Domain Name ANQP element.
+        Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+        anqpElementMap.put(ANQPElementType.ANQPDomName,
+                createDomainNameElement(new String[]{TEST_FQDN}));
+        anqpElementMap.put(ANQPElementType.ANQPNAIRealm,
+                createNAIRealmElement(TEST_REALM, EAPConstants.EAP_TTLS,
+                        new NonEAPInnerAuth(NonEAPInnerAuth.AUTH_TYPE_MSCHAPV2)));
+
+        ScanResult scanResult = createTestScanResult();
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(TEST_ELAPSED_TIME_SINCE_BOOT);
+
+        // Confirm this is a match under normal circumstances
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        // Test some invalid values
+        mProvider.blockBssOrEss(Utils.parseMac(scanResult.BSSID), false, -40 /* Seconds */);
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+
+        mProvider.blockBssOrEss(0, false, 300 /* Seconds */);
+        assertEquals(PasspointMatch.HomeProvider,
+                mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
     }
 }

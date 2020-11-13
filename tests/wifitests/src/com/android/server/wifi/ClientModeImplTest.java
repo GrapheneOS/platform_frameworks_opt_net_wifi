@@ -125,6 +125,7 @@ import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.hotspot2.NetworkDetail;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvisioningTestUtil;
+import com.android.server.wifi.hotspot2.WnmData;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.StaEvent;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiIsUnusableEvent;
@@ -200,6 +201,9 @@ public class ClientModeImplTest extends WifiBaseTest {
 
     private static final int DATA_SUBID = 1;
     private static final int CARRIER_ID_1 = 100;
+
+    private static final long TEST_BSSID = 0x112233445566L;
+    private static final int TEST_DELAY_IN_SECONDS = 300;
 
     private long mBinderToken;
     private MockitoSession mSession;
@@ -5384,5 +5388,20 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         verify(mContext, times(2)).sendStickyBroadcastAsUser(
                 argThat(new NetworkStateChangedIntentMatcher(CONNECTED)), any());
+    }
+
+    /**
+     * Verify that the Deauth-Imminent WNM-Notification is handled by relaying to the Passpoint
+     * Manager.
+     */
+    @Test
+    public void testHandlePasspointDeauthImminentWnmNotification() throws Exception {
+        setupEapSimConnection();
+        WnmData wnmData = WnmData.createDeauthImminentEvent(TEST_BSSID, "", false,
+                TEST_DELAY_IN_SECONDS);
+        mCmi.sendMessage(WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT, 0, 0, wnmData);
+        mLooper.dispatchAll();
+        verify(mPasspointManager).handleDeauthImminentEvent(eq(wnmData),
+                any(WifiConfiguration.class));
     }
 }
