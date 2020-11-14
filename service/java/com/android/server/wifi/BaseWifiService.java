@@ -504,6 +504,11 @@ public class BaseWifiService extends IWifiManager.Stub {
     }
 
     @Override
+    public int getNetworkSuggestionUserApprovalStatus(String packageName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String[] getFactoryMacAddresses() {
         throw new UnsupportedOperationException();
     }

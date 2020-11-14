@@ -2472,6 +2472,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      */
     @Test
     public void testUserApprovalNotificationClickOnAllowWhenGetScanResult() {
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_UNKNOWN, mWifiNetworkSuggestionsManager
+                .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
                 DEFAULT_PRIORITY_GROUP);
@@ -2483,6 +2485,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
                         TEST_PACKAGE_1, TEST_FEATURE));
         validateUserApprovalNotification(TEST_APP_NAME_1);
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_PENDING,
+                mWifiNetworkSuggestionsManager
+                        .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
 
         // Simulate user dismissal notification.
         sendBroadcastForUserActionOnApp(
@@ -2506,6 +2511,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertTrue(mDataSource.hasNewDataToSerialize());
         verify(mWifiMetrics).addUserApprovalSuggestionAppUiReaction(
                 WifiNetworkSuggestionsManager.ACTION_USER_ALLOWED_APP, false);
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_APPROVED_BY_USER,
+                mWifiNetworkSuggestionsManager
+                        .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
 
         reset(mNotificationManger);
         // We should not resend the notification next time the network is found in scan results.
@@ -2520,6 +2528,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
      */
     @Test
     public void testUserApprovalNotificationClickOnDisallowWhenGetScanResult() {
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_UNKNOWN, mWifiNetworkSuggestionsManager
+                .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
         WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
                 WifiConfigurationTestUtil.createOpenNetwork(), null, true, false, true, true,
                 DEFAULT_PRIORITY_GROUP);
@@ -2533,6 +2543,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         verify(mAppOpsManager).startWatchingMode(eq(OPSTR_CHANGE_WIFI_STATE),
                 eq(TEST_PACKAGE_1), mAppOpChangedListenerCaptor.capture());
         validateUserApprovalNotification(TEST_APP_NAME_1);
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_PENDING,
+                mWifiNetworkSuggestionsManager
+                        .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
 
         // Simulate user dismissal notification.
         sendBroadcastForUserActionOnApp(
@@ -2572,6 +2585,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         listener.onOpChanged(OPSTR_CHANGE_WIFI_STATE, TEST_PACKAGE_1);
         mLooper.dispatchAll();
         assertTrue(mWifiNetworkSuggestionsManager.getAllNetworkSuggestions().isEmpty());
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_REJECTED_BY_USER,
+                mWifiNetworkSuggestionsManager
+                        .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
 
         // Assuming the user re-enabled the app again & added the same suggestions back.
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
@@ -3429,6 +3445,9 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         assertEquals(1,  mWifiNetworkSuggestionsManager.get(TEST_PACKAGE_1).size());
         verify(mWifiMetrics).incrementNetworkSuggestionApiUsageNumOfAppInType(
                 WifiNetworkSuggestionsManager.APP_TYPE_CARRIER_PRIVILEGED);
+        assertEquals(WifiManager.STATUS_SUGGESTION_APPROVAL_APPROVED_BY_CARRIER_PRIVILEGE,
+                mWifiNetworkSuggestionsManager
+                        .getNetworkSuggestionUserApprovalStatus(TEST_UID_1, TEST_PACKAGE_1));
     }
 
     /**

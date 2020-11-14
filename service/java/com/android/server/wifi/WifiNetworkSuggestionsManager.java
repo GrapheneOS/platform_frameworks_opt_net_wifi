@@ -2170,6 +2170,28 @@ public class WifiNetworkSuggestionsManager {
         return false;
     }
 
+    /**
+     * Check the suggestion user approval status.
+     */
+    public @WifiManager.SuggestionUserApprovalStatus int getNetworkSuggestionUserApprovalStatus(
+            int uid, String packageName) {
+        if (mAppOps.unsafeCheckOpNoThrow(OPSTR_CHANGE_WIFI_STATE, uid, packageName)
+                == AppOpsManager.MODE_IGNORED) {
+            return WifiManager.STATUS_SUGGESTION_APPROVAL_REJECTED_BY_USER;
+        }
+        if (!mActiveNetworkSuggestionsPerApp.containsKey(packageName)) {
+            return WifiManager.STATUS_SUGGESTION_APPROVAL_UNKNOWN;
+        }
+        PerAppInfo info = mActiveNetworkSuggestionsPerApp.get(packageName);
+        if (info.hasUserApproved) {
+            return WifiManager.STATUS_SUGGESTION_APPROVAL_APPROVED_BY_USER;
+        }
+        if (info.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+            return WifiManager.STATUS_SUGGESTION_APPROVAL_APPROVED_BY_CARRIER_PRIVILEGE;
+        }
+        return WifiManager.STATUS_SUGGESTION_APPROVAL_PENDING;
+    }
+
     private boolean hasSecureSuggestionFromSameCarrierAvailable(
             ExtendedWifiNetworkSuggestion extendedWifiNetworkSuggestion,
             List<ScanDetail> scanDetails) {

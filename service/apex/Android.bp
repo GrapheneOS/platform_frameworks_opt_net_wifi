@@ -33,6 +33,7 @@ apex_defaults {
         "OsuLogin",
         "ServiceWifiResources",
     ],
+    min_sdk_version: "30",
 }
 
 filegroup {
