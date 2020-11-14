@@ -67,6 +67,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.UserHandle;
 import android.os.test.TestLooper;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.view.LayoutInflater;
@@ -4298,6 +4299,62 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                     add(networkSuggestion2);
                 }},
                 mWifiNetworkSuggestionsManager.getAllApprovedNetworkSuggestions());
+    }
+
+    /**
+     * Verify only carrier privileged app can suggest carrier merged network. A valid carrier
+     * merged network must be metered enterprise network with a valid subscription Id.
+     */
+    @Test
+    public void testAddCarrierMergedNetwork() {
+        WifiConfiguration eapSimConfig = WifiConfigurationTestUtil.createEapNetwork(
+                WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE);
+        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        eapSimConfig.carrierMerged = true;
+        eapSimConfig.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
+        eapSimConfig.subscriptionId = TEST_SUBID;
+        config.carrierMerged = true;
+        config.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
+        config.subscriptionId = TEST_SUBID;
+
+        // Adding carrier merged network < EAP will fail.
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                config, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(Arrays.asList(networkSuggestion), TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        // Adding carrier merged network is not metered will fail.
+        eapSimConfig.meteredOverride = WifiConfiguration.METERED_OVERRIDE_NONE;
+        networkSuggestion = new WifiNetworkSuggestion(
+                eapSimConfig, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(Arrays.asList(networkSuggestion), TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        // Adding carrier merged network without a valid SubID will fail.
+        eapSimConfig.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
+        eapSimConfig.subscriptionId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+        networkSuggestion = new WifiNetworkSuggestion(
+                eapSimConfig, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID,
+                mWifiNetworkSuggestionsManager.add(Arrays.asList(networkSuggestion), TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        // Adding carrier merged network from a non carrier privileged app will not be allowed.
+        eapSimConfig.subscriptionId = TEST_SUBID;
+        networkSuggestion = new WifiNetworkSuggestion(
+                eapSimConfig, null, false, false, true, true, DEFAULT_PRIORITY_GROUP);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_NOT_ALLOWED,
+                mWifiNetworkSuggestionsManager.add(Arrays.asList(networkSuggestion), TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
+                .thenReturn(true);
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(Arrays.asList(networkSuggestion), TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
     }
 
     /**

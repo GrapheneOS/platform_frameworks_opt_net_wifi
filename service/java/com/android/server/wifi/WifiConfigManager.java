@@ -1130,6 +1130,7 @@ public class WifiConfigManager {
         internalConfig.trusted = externalConfig.trusted;
         internalConfig.oemPaid = externalConfig.oemPaid;
         internalConfig.oemPrivate = externalConfig.oemPrivate;
+        internalConfig.carrierMerged = externalConfig.carrierMerged;
 
         // Copy over macRandomizationSetting
         internalConfig.macRandomizationSetting = externalConfig.macRandomizationSetting;
