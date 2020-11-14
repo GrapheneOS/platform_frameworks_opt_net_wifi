@@ -26,6 +26,8 @@
     <string name="wifitrackerlib_wifi_disabled_network_failure" msgid="3046956554224277166">"IP စီစဉ်သတ်မှတ်ခြင်း မအောင်မြင်ပါ"</string>
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"ပိတ်ထားသည်"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"ချိတ်ဆက်ရန်နေရာ ယာယီပြည့်နေသည်"</string>
+    <!-- no translation found for wifitrackerlib_wifi_poor_channel_conditions (26484680900376236) -->
+    <skip />
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ချိတ်ဆက်မထားပါ"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"သိမ်းပြီးပါပြီ"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"အခမဲ့ မဟုတ်ပါ"</string>
