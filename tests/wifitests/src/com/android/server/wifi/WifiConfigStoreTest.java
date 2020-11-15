@@ -99,6 +99,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<boolean name=\"Trusted\" value=\"true\" />\n"
                     + "<boolean name=\"OemPaid\" value=\"false\" />\n"
                     + "<boolean name=\"OemPrivate\" value=\"false\" />\n"
+                    + "<boolean name=\"CarrierMerged\" value=\"false\" />\n"
                     + "<null name=\"BSSID\" />\n"
                     + "<int name=\"Status\" value=\"2\" />\n"
                     + "<null name=\"FQDN\" />\n"

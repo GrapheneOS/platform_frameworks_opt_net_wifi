@@ -26,6 +26,8 @@
     <string name="wifitrackerlib_wifi_disabled_network_failure" msgid="3046956554224277166">"IP కాన్ఫిగరేషన్ వైఫల్యం"</string>
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"డిజేబుల్ చేయబడింది"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"యాక్సెస్ పాయింట్ తాత్కాలికంగా నిండి ఉంది"</string>
+    <!-- no translation found for wifitrackerlib_wifi_poor_channel_conditions (26484680900376236) -->
+    <skip />
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"డిస్‌కనెక్ట్ అయింది"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"సేవ్ అయింది"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"గణించబడింది"</string>

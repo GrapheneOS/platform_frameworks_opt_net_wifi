@@ -665,6 +665,7 @@ public class WifiConfigurationTestUtil {
         assertEquals(expected.trusted, actual.trusted);
         assertEquals(expected.oemPaid, actual.oemPaid);
         assertEquals(expected.oemPrivate, actual.oemPrivate);
+        assertEquals(expected.carrierMerged, actual.carrierMerged);
         assertEquals(0, actual.numAssociation);
         assertEquals(expected.creatorUid, actual.creatorUid);
         assertEquals(expected.creatorName, actual.creatorName);
