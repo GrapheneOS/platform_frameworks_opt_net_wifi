@@ -301,15 +301,25 @@ public class WifiConnectivityManager {
             };
 
     /**
+     * Interface for callback from handling scan results.
+     */
+    private interface HandleScanResultsListener {
+        /**
+         * @param wasCandidateSelected true - if a candidate is selected by WifiNetworkSelector
+         *                             false - if no candidate is selected by WifiNetworkSelector
+         */
+        void onHandled(boolean wasCandidateSelected);
+    }
+
+    /**
      * Handles 'onResult' callbacks for the Periodic, Single & Pno ScanListener.
      * Executes selection of potential network candidates, initiation of connection attempt to that
      * network.
-     *
-     * @return true - if a candidate is selected by WifiNetworkSelector
-     *         false - if no candidate is selected by WifiNetworkSelector
      */
-    private boolean handleScanResults(List<ScanDetail> scanDetails, String listenerName,
-            boolean isFullScan) {
+    private void handleScanResults(@NonNull List<ScanDetail> scanDetails,
+            @NonNull String listenerName,
+            boolean isFullScan,
+            @NonNull HandleScanResultsListener handleScanResultsListener) {
         ClientModeManager clientModeManager = getPrimaryClientModeManager();
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
                 clientModeManager.getWifiLinkLayerStats(),
@@ -329,7 +339,8 @@ public class WifiConnectivityManager {
             localLog(listenerName
                     + " onResults: No network selection because supplicantTransientState is "
                     + clientModeManager.isSupplicantTransientState());
-            return false;
+            handleScanResultsListener.onHandled(false);
+            return;
         }
 
         localLog(listenerName + " onResults: start network selection");
@@ -351,30 +362,29 @@ public class WifiConnectivityManager {
         mWifiLastResortWatchdog.updateAvailableNetworks(
                 mNetworkSelector.getConnectableScanDetails());
         mWifiMetrics.countScanResults(scanDetails);
-        return handleCandidatesFromScanResults(listenerName, candidates);
+        handleCandidatesFromScanResultsForPrimaryCmm(
+                listenerName, candidates, handleScanResultsListener);
     }
 
     /**
      * Executes selection of best network from the candidates provided, initiation of connection
      * attempt to that network.
-     *
-     * @return true - if a candidate is selected by WifiNetworkSelector
-     *         false - if no candidate is selected by WifiNetworkSelector
      */
-    private boolean handleCandidatesFromScanResults(
-            String listenerName, List<WifiCandidates.Candidate> candidates) {
+    private void handleCandidatesFromScanResultsForPrimaryCmm(
+            @NonNull String listenerName, @NonNull List<WifiCandidates.Candidate> candidates,
+            @NonNull HandleScanResultsListener handleScanResultsListener) {
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
         mWifiMetrics.noteFirstNetworkSelectionAfterBoot(candidate != null);
         if (candidate != null) {
             localLog(listenerName + ":  WNS candidate-" + candidate.SSID);
             connectToNetworkForPrimaryCmm(candidate);
-            return true;
+            handleScanResultsListener.onHandled(true);
         } else {
             if (mWifiState == WIFI_STATE_DISCONNECTED) {
                 mOpenNetworkNotifier.handleScanResults(
                         mNetworkSelector.getFilteredScanDetailsForOpenUnsavedNetworks());
             }
-            return false;
+            handleScanResultsListener.onHandled(false);
         }
     }
 
@@ -530,46 +540,51 @@ public class WifiConnectivityManager {
                 Log.i(TAG, "Number of scan results ignored due to single radio chain scan: "
                         + mNumScanResultsIgnoredDueToSingleRadioChain);
             }
-            boolean wasCandidateSelected = handleScanResults(mScanDetails,
-                    ALL_SINGLE_SCAN_LISTENER, isFullBandScanResults);
-            clearScanDetails();
+            handleScanResults(mScanDetails,
+                    ALL_SINGLE_SCAN_LISTENER, isFullBandScanResults,
+                    wasCandidateSelected -> {
+                        clearScanDetails();
 
-            // Update metrics to see if a single scan detected a valid network
-            // while PNO scan didn't.
-            // Note: We don't update the background scan metrics any more as it is
-            //       not in use.
-            if (mPnoScanStarted) {
-                if (wasCandidateSelected) {
-                    mWifiMetrics.incrementNumConnectivityWatchdogPnoBad();
-                } else {
-                    mWifiMetrics.incrementNumConnectivityWatchdogPnoGood();
-                }
-            }
+                        // Update metrics to see if a single scan detected a valid network
+                        // while PNO scan didn't.
+                        // Note: We don't update the background scan metrics any more as it is
+                        //       not in use.
+                        if (mPnoScanStarted) {
+                            if (wasCandidateSelected) {
+                                mWifiMetrics.incrementNumConnectivityWatchdogPnoBad();
+                            } else {
+                                mWifiMetrics.incrementNumConnectivityWatchdogPnoGood();
+                            }
+                        }
 
-            // Check if we are in the middle of initial partial scan
-            if (mInitialScanState == INITIAL_SCAN_STATE_AWAITING_RESPONSE) {
-                // Done with initial scan
-                setInitialScanState(INITIAL_SCAN_STATE_COMPLETE);
+                        // Check if we are in the middle of initial partial scan
+                        if (mInitialScanState == INITIAL_SCAN_STATE_AWAITING_RESPONSE) {
+                            // Done with initial scan
+                            setInitialScanState(INITIAL_SCAN_STATE_COMPLETE);
 
-                if (wasCandidateSelected) {
-                    Log.i(TAG, "Connection attempted with the reduced initial scans");
-                    schedulePeriodicScanTimer(
-                            getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
-                    mWifiMetrics.reportInitialPartialScan(mInitialPartialScanChannelCount, true);
-                    mInitialPartialScanChannelCount = 0;
-                } else {
-                    Log.i(TAG, "Connection was not attempted, issuing a full scan");
-                    startConnectivityScan(SCAN_IMMEDIATELY);
-                    mFailedInitialPartialScan = true;
-                }
-            } else if (mInitialScanState == INITIAL_SCAN_STATE_COMPLETE) {
-                if (mFailedInitialPartialScan && wasCandidateSelected) {
-                    // Initial scan failed, but following full scan succeeded
-                    mWifiMetrics.reportInitialPartialScan(mInitialPartialScanChannelCount, false);
-                }
-                mFailedInitialPartialScan = false;
-                mInitialPartialScanChannelCount = 0;
-            }
+                            if (wasCandidateSelected) {
+                                Log.i(TAG, "Connection attempted with the reduced initial scans");
+                                schedulePeriodicScanTimer(
+                                        getScheduledSingleScanIntervalMs(
+                                                mCurrentSingleScanScheduleIndex));
+                                mWifiMetrics.reportInitialPartialScan(
+                                        mInitialPartialScanChannelCount, true);
+                                mInitialPartialScanChannelCount = 0;
+                            } else {
+                                Log.i(TAG, "Connection was not attempted, issuing a full scan");
+                                startConnectivityScan(SCAN_IMMEDIATELY);
+                                mFailedInitialPartialScan = true;
+                            }
+                        } else if (mInitialScanState == INITIAL_SCAN_STATE_COMPLETE) {
+                            if (mFailedInitialPartialScan && wasCandidateSelected) {
+                                // Initial scan failed, but following full scan succeeded
+                                mWifiMetrics.reportInitialPartialScan(
+                                        mInitialPartialScanChannelCount, false);
+                            }
+                            mFailedInitialPartialScan = false;
+                            mInitialPartialScanChannelCount = 0;
+                        }
+                    });
         }
 
         @Override
@@ -723,27 +738,27 @@ public class WifiConnectivityManager {
                 mScanDetails.add(ScanResultUtil.toScanDetail(result));
             }
 
-            boolean wasCandidateSelected =
-                    handleScanResults(mScanDetails, PNO_SCAN_LISTENER, false);
-            clearScanDetails();
-            mScanRestartCount = 0;
+            handleScanResults(mScanDetails, PNO_SCAN_LISTENER, false,
+                    wasCandidateSelected -> {
+                        clearScanDetails();
+                        mScanRestartCount = 0;
 
-            if (!wasCandidateSelected) {
-                // The scan results were rejected by WifiNetworkSelector due to low RSSI values
+                        if (!wasCandidateSelected) {
+                            // The scan results were rejected by WifiNetworkSelector due to low
+                            // RSSI values
+                            // Lazy initialization
+                            if (mLowRssiNetworkRetryDelayMs == 0) {
+                                resetLowRssiNetworkRetryDelay();
+                            }
+                            scheduleDelayedConnectivityScan(mLowRssiNetworkRetryDelayMs);
 
-                // Lazy initialization
-                if (mLowRssiNetworkRetryDelayMs == 0) {
-                    resetLowRssiNetworkRetryDelay();
-                }
-
-                scheduleDelayedConnectivityScan(mLowRssiNetworkRetryDelayMs);
-
-                // Set up the delay value for next retry.
-                mLowRssiNetworkRetryDelayMs *= 2;
-                limitLowRssiNetworkRetryDelay();
-            } else {
-                resetLowRssiNetworkRetryDelay();
-            }
+                            // Set up the delay value for next retry.
+                            mLowRssiNetworkRetryDelayMs *= 2;
+                            limitLowRssiNetworkRetryDelay();
+                        } else {
+                            resetLowRssiNetworkRetryDelay();
+                        }
+                    });
         }
     }
 
