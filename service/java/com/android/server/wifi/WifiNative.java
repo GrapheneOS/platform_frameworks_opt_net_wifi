@@ -43,6 +43,7 @@ import android.util.Log;
 
 import com.android.internal.annotations.Immutable;
 import com.android.internal.util.HexDump;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.hotspot2.NetworkDetail;
 import com.android.server.wifi.util.FrameParser;
 import com.android.server.wifi.util.InformationElementUtil;
@@ -1474,6 +1475,10 @@ public class WifiNative {
      * @throws IllegalArgumentException if band is not recognized.
      */
     public int [] getChannelsForBand(@WifiAnnotations.WifiBandBasic int band) {
+        if (!SdkLevel.isAtLeastS() && band == WifiScanner.WIFI_BAND_60_GHZ) {
+            // 60 GHz band is new in Android S, return empty array on older SDK versions
+            return new int[0];
+        }
         return mWifiCondManager.getChannelsMhzForBand(band);
     }
 
