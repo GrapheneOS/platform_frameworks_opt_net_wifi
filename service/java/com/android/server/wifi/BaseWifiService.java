@@ -557,6 +557,16 @@ public class BaseWifiService extends IWifiManager.Stub {
     }
 
     @Override
+    public void startTemporarilyDisablingAllNonCarrierMergedWifi(int subId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void stopTemporarilyDisablingAllNonCarrierMergedWifi() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void save(WifiConfiguration config, IActionListener callback) {
         throw new UnsupportedOperationException();
     }

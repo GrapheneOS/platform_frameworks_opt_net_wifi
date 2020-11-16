@@ -2638,6 +2638,39 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * See
+     * {@link android.net.wifi.WifiManager#startTemporarilyDisablingAllNonCarrierMergedWifi(int)}
+     * @param subscriptionId the subscription ID of the carrier whose merged wifi networks won't be
+     *                       disabled.
+     */
+    @Override
+    public void startTemporarilyDisablingAllNonCarrierMergedWifi(int subscriptionId) {
+        if (!SdkLevel.isAtLeastS()) {
+            throw new UnsupportedOperationException();
+        }
+        enforceNetworkSettingsPermission();
+
+        mLog.info("startTemporarilyDisablingAllNonCarrierMergedWifi=% uid=%").c(subscriptionId)
+                .c(Binder.getCallingUid()).flush();
+        // TODO: b/173054916 Implement this API
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#stopTemporarilyDisablingAllNonCarrierMergedWifi()}
+     */
+    @Override
+    public void stopTemporarilyDisablingAllNonCarrierMergedWifi() {
+        if (!SdkLevel.isAtLeastS()) {
+            throw new UnsupportedOperationException();
+        }
+        enforceNetworkSettingsPermission();
+
+        mLog.info("stopTemporarilyDisablingAllNonCarrierMergedWifi uid=%")
+                .c(Binder.getCallingUid()).flush();
+        // TODO: b/173054916 Implement this API
+    }
+
+    /**
      * See {@link android.net.wifi.WifiManager#allowAutojoinGlobal(boolean)}
      * @param choice the OEM's choice to allow auto-join
      */
