@@ -26,6 +26,7 @@ import android.net.ProxyInfo;
 import android.net.RouteInfo;
 import android.net.StaticIpConfiguration;
 import android.net.Uri;
+import android.net.wifi.SecurityParams;
 import android.net.wifi.WifiConfiguration;
 import android.util.Log;
 import android.util.Pair;
@@ -92,7 +93,7 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
 
     private static final String TAG = "WifiBackupDataV1Parser";
 
-    private static final int HIGHEST_SUPPORTED_MINOR_VERSION = 2;
+    private static final int HIGHEST_SUPPORTED_MINOR_VERSION = 3;
 
     // List of tags supported for <WifiConfiguration> section in minor version 0
     private static final Set<String> WIFI_CONFIGURATION_MINOR_V0_SUPPORTED_TAGS =
@@ -126,8 +127,20 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                 add(WifiConfigurationXmlUtil.XML_TAG_IS_AUTO_JOIN);
             }};
 
-    // List of tags supported for <IpConfiguration> section in minor version 0 to 2
-    private static final Set<String> IP_CONFIGURATION_MINOR_V0_V1_V2_SUPPORTED_TAGS =
+    // List of tags supported for <WifiConfiguration> section in minor version 3
+    private static final Set<String> WIFI_CONFIGURATION_MINOR_V3_SUPPORTED_TAGS =
+            new HashSet<String>() {{
+                addAll(WIFI_CONFIGURATION_MINOR_V2_SUPPORTED_TAGS);
+                add(WifiConfigurationXmlUtil.XML_TAG_SECURITY_PARAMS_LIST);
+                add(WifiConfigurationXmlUtil.XML_TAG_SECURITY_PARAMS);
+                add(WifiConfigurationXmlUtil.XML_TAG_SECURITY_TYPE);
+                add(WifiConfigurationXmlUtil.XML_TAG_SAE_IS_H2E_ONLY_MODE);
+                add(WifiConfigurationXmlUtil.XML_TAG_SAE_IS_PK_ONLY_MODE);
+                add(WifiConfigurationXmlUtil.XML_TAG_IS_ADDED_BY_AUTO_UPGRADE);
+            }};
+
+    // List of tags supported for <IpConfiguration> section in minor version 0 to 3
+    private static final Set<String> IP_CONFIGURATION_MINOR_V0_V1_V2_V3_SUPPORTED_TAGS =
             new HashSet<String>(Arrays.asList(new String[] {
                 IpConfigurationXmlUtil.XML_TAG_IP_ASSIGNMENT,
                 IpConfigurationXmlUtil.XML_TAG_LINK_ADDRESS,
@@ -291,11 +304,20 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
 
         // Loop through and parse out all the elements from the stream within this section.
         while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
-            String[] valueName = new String[1];
-            Object value = XmlUtil.readCurrentValue(in, valueName);
-            String tagName = valueName[0];
-            if (tagName == null) {
-                throw new XmlPullParserException("Missing value name");
+            String tagName = null;
+            Object value = null;
+            if (in.getAttributeValue(null, "name") != null) {
+                String[] valueName = new String[1];
+                value = XmlUtil.readCurrentValue(in, valueName);
+                tagName = valueName[0];
+                if (tagName == null) {
+                    throw new XmlPullParserException("Missing value name");
+                }
+            } else {
+                tagName = in.getName();
+                if (tagName == null) {
+                    throw new XmlPullParserException("Unexpected null tag found");
+                }
             }
 
             // ignore the tags that are not supported up until the current minor version
@@ -359,10 +381,13 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                 case WifiConfigurationXmlUtil.XML_TAG_IS_AUTO_JOIN:
                     configuration.allowAutojoin = (boolean) value;
                     break;
+                case WifiConfigurationXmlUtil.XML_TAG_SECURITY_PARAMS_LIST:
+                    parseSecurityParamsListFromXml(in, outerTagDepth + 1, configuration);
+                    break;
                 default:
                     // should never happen, since other tags are filtered out earlier
                     throw new XmlPullParserException(
-                            "Unknown value name found: " + valueName[0]);
+                            "Unknown value name found: " + tagName);
             }
         }
         clearAnyKnownIssuesInParsedConfiguration(configuration);
@@ -385,6 +410,8 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                 return WIFI_CONFIGURATION_MINOR_V1_SUPPORTED_TAGS;
             case 2:
                 return WIFI_CONFIGURATION_MINOR_V2_SUPPORTED_TAGS;
+            case 3:
+                return WIFI_CONFIGURATION_MINOR_V3_SUPPORTED_TAGS;
             default:
                 Log.e(TAG, "Invalid minorVersion: " + minorVersion);
                 return Collections.<String>emptySet();
@@ -411,6 +438,59 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
                 wepKeys[i] = null;
             } else {
                 wepKeys[i] = wepKeysInData[i];
+            }
+        }
+    }
+
+    private static SecurityParams parseSecurityParamsFromXml(
+            XmlPullParser in, int outerTagDepth) throws XmlPullParserException, IOException {
+        SecurityParams params = null;
+        while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
+            String[] valueName = new String[1];
+            Object value = XmlUtil.readCurrentValue(in, valueName);
+            String tagName = valueName[0];
+            if (tagName == null) {
+                throw new XmlPullParserException("Missing value name");
+            }
+            switch (tagName) {
+                case WifiConfigurationXmlUtil.XML_TAG_SECURITY_TYPE:
+                    params = SecurityParams.createSecurityParamsBySecurityType((int) value);
+                    break;
+                case WifiConfigurationXmlUtil.XML_TAG_SAE_IS_H2E_ONLY_MODE:
+                    if (null == params) throw new XmlPullParserException("Missing security type.");
+                    params.enableSaeH2eOnlyMode((boolean) value);
+                    break;
+                case WifiConfigurationXmlUtil.XML_TAG_SAE_IS_PK_ONLY_MODE:
+                    if (null == params) throw new XmlPullParserException("Missing security type.");
+                    params.enableSaePkOnlyMode((boolean) value);
+                    break;
+                case WifiConfigurationXmlUtil.XML_TAG_IS_ADDED_BY_AUTO_UPGRADE:
+                    if (null == params) throw new XmlPullParserException("Missing security type.");
+                    params.setIsAddedByAutoUpgrade((boolean) value);
+                    break;
+            }
+        }
+        return params;
+    }
+
+    /**
+     * Populate security params list elements only if they were non-empty in the backup data.
+     *
+     * @throws XmlPullParserException if parsing errors occur.
+     */
+    private static void parseSecurityParamsListFromXml(
+            XmlPullParser in, int outerTagDepth,
+            WifiConfiguration configuration)
+            throws XmlPullParserException, IOException {
+
+        while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
+            switch (in.getName()) {
+                case WifiConfigurationXmlUtil.XML_TAG_SECURITY_PARAMS:
+                    SecurityParams params = parseSecurityParamsFromXml(in, outerTagDepth + 1);
+                    if (params != null) {
+                        configuration.addSecurityParams(params);
+                    }
+                    break;
             }
         }
     }
@@ -612,7 +692,8 @@ class WifiBackupDataV1Parser implements WifiBackupDataParser {
             case 0:
             case 1:
             case 2:
-                return IP_CONFIGURATION_MINOR_V0_V1_V2_SUPPORTED_TAGS;
+            case 3:
+                return IP_CONFIGURATION_MINOR_V0_V1_V2_V3_SUPPORTED_TAGS;
             default:
                 Log.e(TAG, "Invalid minorVersion: " + minorVersion);
                 return Collections.<String>emptySet();

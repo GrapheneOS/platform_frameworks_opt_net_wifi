@@ -80,6 +80,14 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<byte-array name=\"AllowedSuiteBCiphers\" num=\"0\"></byte-array>\n"
                     + "<boolean name=\"Shared\" value=\"%s\" />\n"
                     + "<boolean name=\"AutoJoinEnabled\" value=\"true\" />\n"
+                    + "<SecurityParamsList>\n"
+                    + "<SecurityParams>\n"
+                    + "<int name=\"SecurityType\" value=\"0\" />\n"
+                    + "<boolean name=\"SaeIsH2eOnlyMode\" value=\"false\" />\n"
+                    + "<boolean name=\"SaeIsPkOnlyMode\" value=\"false\" />\n"
+                    + "<boolean name=\"IsAddedByAutoUpgrade\" value=\"false\" />\n"
+                    + "</SecurityParams>\n"
+                    + "</SecurityParamsList>\n"
                     + "<boolean name=\"Trusted\" value=\"true\" />\n"
                     + "<boolean name=\"OemPaid\" value=\"false\" />\n"
                     + "<boolean name=\"OemPrivate\" value=\"false\" />\n"
@@ -141,6 +149,14 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<byte-array name=\"AllowedSuiteBCiphers\" num=\"0\"></byte-array>\n"
                     + "<boolean name=\"Shared\" value=\"%s\" />\n"
                     + "<boolean name=\"AutoJoinEnabled\" value=\"true\" />\n"
+                    + "<SecurityParamsList>\n"
+                    + "<SecurityParams>\n"
+                    + "<int name=\"SecurityType\" value=\"3\" />\n"
+                    + "<boolean name=\"SaeIsH2eOnlyMode\" value=\"false\" />\n"
+                    + "<boolean name=\"SaeIsPkOnlyMode\" value=\"false\" />\n"
+                    + "<boolean name=\"IsAddedByAutoUpgrade\" value=\"false\" />\n"
+                    + "</SecurityParams>\n"
+                    + "</SecurityParamsList>\n"
                     + "<boolean name=\"Trusted\" value=\"true\" />\n"
                     + "<boolean name=\"OemPaid\" value=\"false\" />\n"
                     + "<boolean name=\"OemPrivate\" value=\"false\" />\n"
@@ -225,6 +241,14 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<byte-array name=\"AllowedSuiteBCiphers\" num=\"0\"></byte-array>\n"
                     + "<boolean name=\"Shared\" value=\"%s\" />\n"
                     + "<boolean name=\"AutoJoinEnabled\" value=\"true\" />\n"
+                    + "<SecurityParamsList>\n"
+                    + "<SecurityParams>\n"
+                    + "<int name=\"SecurityType\" value=\"4\" />\n"
+                    + "<boolean name=\"SaeIsH2eOnlyMode\" value=\"false\" />\n"
+                    + "<boolean name=\"SaeIsPkOnlyMode\" value=\"false\" />\n"
+                    + "<boolean name=\"IsAddedByAutoUpgrade\" value=\"false\" />\n"
+                    + "</SecurityParams>\n"
+                    + "</SecurityParamsList>\n"
                     + "<boolean name=\"Trusted\" value=\"true\" />\n"
                     + "<boolean name=\"OemPaid\" value=\"false\" />\n"
                     + "<boolean name=\"OemPrivate\" value=\"false\" />\n"
@@ -494,7 +518,8 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
         byte[] expectedData = getTestNetworksXmlBytes(networkList.get(0), networkList.get(1),
                 networkList.get(2));
         byte[] serializedData = serializeData();
-        assertArrayEquals(expectedData, serializeData());
+        assertEquals(new String(expectedData, StandardCharsets.UTF_8),
+                new String(serializeData(), StandardCharsets.UTF_8));
     }
 
     /**
