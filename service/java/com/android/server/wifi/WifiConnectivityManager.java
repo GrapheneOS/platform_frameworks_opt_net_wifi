@@ -362,6 +362,13 @@ public class WifiConnectivityManager {
         mWifiLastResortWatchdog.updateAvailableNetworks(
                 mNetworkSelector.getConnectableScanDetails());
         mWifiMetrics.countScanResults(scanDetails);
+        // No candidates, return early.
+        if (candidates == null || candidates.size() == 0) {
+            localLog(listenerName + ":  No candidates");
+            mWifiMetrics.noteFirstNetworkSelectionAfterBoot(false);
+            handleScanResultsListener.onHandled(false);
+            return;
+        }
         handleCandidatesFromScanResultsForPrimaryCmm(
                 listenerName, candidates, handleScanResultsListener);
     }

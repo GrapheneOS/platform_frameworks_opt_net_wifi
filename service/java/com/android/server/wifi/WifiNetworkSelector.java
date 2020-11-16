@@ -812,7 +812,7 @@ public class WifiNetworkSelector {
      * @return WifiConfiguration - the selected network, or null.
      */
     @Nullable
-    public WifiConfiguration selectNetwork(List<WifiCandidates.Candidate> candidates) {
+    public WifiConfiguration selectNetwork(@NonNull List<WifiCandidates.Candidate> candidates) {
         if (candidates == null || candidates.size() == 0) {
             return null;
         }
