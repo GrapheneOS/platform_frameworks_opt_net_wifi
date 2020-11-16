@@ -1695,19 +1695,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 sb.append(Integer.toString(msg.arg1));
                 sb.append(" ");
                 sb.append(Integer.toString(msg.arg2));
-                ScanResult result = (ScanResult) msg.obj;
-                if (result != null) {
-                    now = mClock.getWallClockMillis();
-                    sb.append(" bssid=").append(result.BSSID);
-                    sb.append(" rssi=").append(result.level);
-                    sb.append(" freq=").append(result.frequency);
-                    if (result.seen > 0 && result.seen < now) {
-                        sb.append(" seen=").append(now - result.seen);
-                    } else {
-                        // Somehow the timestamp for this scan result is inconsistent
-                        sb.append(" !seen=").append(result.seen);
-                    }
-                }
+                String bssid = (String) msg.obj;
+                sb.append(" bssid=").append(bssid);
                 if (mTargetBssid != null) {
                     sb.append(" ").append(mTargetBssid);
                 }
@@ -5190,10 +5179,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 case CMD_START_ROAM: {
                     /* Connect command coming from auto-join */
                     int netId = message.arg1;
-                    ScanResult candidate = (ScanResult) message.obj;
-                    String bssid = SUPPLICANT_BSSID_ANY;
-                    if (candidate != null) {
-                        bssid = candidate.BSSID;
+                    String bssid = (String) message.obj;
+                    if (bssid == null) {
+                        bssid = SUPPLICANT_BSSID_ANY;
                     }
                     WifiConfiguration config =
                             mWifiConfigManager.getConfiguredNetworkWithoutMasking(netId);
@@ -5419,10 +5407,10 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * Automatically roam to the network specified
      *
      * @param networkId ID of the network to roam to
-     * @param scanResult scan result which identifies the network to roam to
+     * @param bssid BSSID of the access point to roam to.
      */
-    public void startRoamToNetwork(int networkId, ScanResult scanResult) {
-        sendMessage(CMD_START_ROAM, networkId, 0, scanResult);
+    public void startRoamToNetwork(int networkId, String bssid) {
+        sendMessage(CMD_START_ROAM, networkId, 0, bssid);
     }
 
     /**

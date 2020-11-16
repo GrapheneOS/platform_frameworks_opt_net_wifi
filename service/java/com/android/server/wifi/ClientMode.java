@@ -21,7 +21,6 @@ import android.annotation.Nullable;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
 import android.net.wifi.IWifiConnectedNetworkScorer;
-import android.net.wifi.ScanResult;
 import android.net.wifi.WifiAnnotations;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -61,7 +60,7 @@ public interface ClientMode {
 
     void startConnectToNetwork(int networkId, int uid, String bssid);
 
-    void startRoamToNetwork(int networkId, ScanResult scanResult);
+    void startRoamToNetwork(int networkId, String bssid);
 
     boolean setWifiConnectedNetworkScorer(IBinder binder, IWifiConnectedNetworkScorer scorer);
 

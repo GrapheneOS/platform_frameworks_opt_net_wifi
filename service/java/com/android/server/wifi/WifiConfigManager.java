@@ -3034,6 +3034,11 @@ public class WifiConfigManager {
             List<WifiConfiguration> configurations,
             Map<String, String> macAddressMapping) {
         for (WifiConfiguration configuration : configurations) {
+            if (!WifiConfigurationUtil.validate(
+                    configuration, WifiConfigurationUtil.VALIDATE_FOR_ADD)) {
+                Log.e(TAG, "Skipping malformed network from shared store: " + configuration);
+                continue;
+            }
             configuration.networkId = mNextNetworkId++;
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "Adding network from shared store " + configuration.getKey());
@@ -3055,6 +3060,11 @@ public class WifiConfigManager {
      */
     private void loadInternalDataFromUserStore(List<WifiConfiguration> configurations) {
         for (WifiConfiguration configuration : configurations) {
+            if (!WifiConfigurationUtil.validate(
+                    configuration, WifiConfigurationUtil.VALIDATE_FOR_ADD)) {
+                Log.e(TAG, "Skipping malformed network from user store: " + configuration);
+                continue;
+            }
             configuration.networkId = mNextNetworkId++;
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "Adding network from user store " + configuration.getKey());
