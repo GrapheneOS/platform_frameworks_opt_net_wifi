@@ -3364,7 +3364,11 @@ public class WifiConfigManager {
         if (config == null) {
             return;
         }
+        int previousReason = config.recentFailure.getAssociationStatus();
         config.recentFailure.setAssociationStatus(reason, mClock.getElapsedSinceBootMillis());
+        if (previousReason != reason) {
+            sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
+        }
     }
 
     /**
@@ -3390,6 +3394,7 @@ public class WifiConfigManager {
                     && mClock.getElapsedSinceBootMillis()
                     >= config.recentFailure.getLastUpdateTimeSinceBootMillis() + timeoutDuration) {
                 config.recentFailure.clear();
+                sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
             }
         }
     }
