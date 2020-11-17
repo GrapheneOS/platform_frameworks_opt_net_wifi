@@ -434,6 +434,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         peapSimConfig.carrierId = DATA_CARRIER_ID;
 
         assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(peapSimConfig));
+        verify(mDataTelephonyManager, never()).getCarrierInfoForImsiEncryption(anyInt());
     }
 
     @Test
@@ -458,6 +459,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         peapAkaConfig.carrierId = DATA_CARRIER_ID;
 
         assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(peapAkaConfig));
+        verify(mDataTelephonyManager, never()).getCarrierInfoForImsiEncryption(anyInt());
     }
 
     @Test
@@ -482,6 +484,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         peapAkaPConfig.carrierId = DATA_CARRIER_ID;
 
         assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(peapAkaPConfig));
+        verify(mDataTelephonyManager, never()).getCarrierInfoForImsiEncryption(anyInt());
     }
 
     /**
@@ -499,6 +502,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         String encryptedIdentity = "\0" + encryptedImsi;
         final Pair<String, String> expectedIdentity = Pair.create(permanentIdentity,
                 encryptedIdentity);
+        WifiCarrierInfoManager spyTu = spy(mWifiCarrierInfoManager);
+        doReturn(true).when(spyTu).requiresImsiEncryption(DATA_SUBID);
 
         // static mocking
         MockitoSession session = ExtendedMockito.mockitoSession().mockStatic(
@@ -519,7 +524,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
                             WifiEnterpriseConfig.Phase2.NONE);
             config.carrierId = DATA_CARRIER_ID;
 
-            assertEquals(expectedIdentity, mWifiCarrierInfoManager.getSimIdentity(config));
+            assertEquals(expectedIdentity, spyTu.getSimIdentity(config));
         } finally {
             session.finishMocking();
         }
@@ -549,13 +554,15 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
             when(mDataTelephonyManager.getCarrierInfoForImsiEncryption(
                     eq(TelephonyManager.KEY_TYPE_WLAN)))
                     .thenReturn(info);
+            WifiCarrierInfoManager spyTu = spy(mWifiCarrierInfoManager);
+            doReturn(true).when(spyTu).requiresImsiEncryption(DATA_SUBID);
 
             WifiConfiguration config =
                     WifiConfigurationTestUtil.createEapNetwork(WifiEnterpriseConfig.Eap.AKA,
                             WifiEnterpriseConfig.Phase2.NONE);
             config.carrierId = DATA_CARRIER_ID;
 
-            assertNull(mWifiCarrierInfoManager.getSimIdentity(config));
+            assertNull(spyTu.getSimIdentity(config));
         } finally {
             session.finishMocking();
         }

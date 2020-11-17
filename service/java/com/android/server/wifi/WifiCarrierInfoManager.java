@@ -524,6 +524,10 @@ public class WifiCarrierInfoManager {
             return null;
         }
 
+        if (!requiresImsiEncryption(subId)) {
+            return Pair.create(identity, "");
+        }
+
         ImsiEncryptionInfo imsiEncryptionInfo;
         try {
             imsiEncryptionInfo = specifiedTm.getCarrierInfoForImsiEncryption(
