@@ -60,6 +60,7 @@ import android.hidl.manager.V1_0.IServiceNotification;
 import android.hidl.manager.V1_2.IServiceManager;
 import android.os.Handler;
 import android.os.IHwBinder;
+import android.os.RemoteException;
 import android.os.WorkSource;
 import android.os.test.TestLooper;
 import android.util.Log;
@@ -109,6 +110,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
     @Mock private WorkSourceHelper mWorkSourceHelper0;
     @Mock private WorkSourceHelper mWorkSourceHelper1;
     @Mock private WorkSourceHelper mWorkSourceHelper2;
+    private android.hardware.wifi.V1_5.IWifiChip mWifiChipV15 = null;
     private TestLooper mTestLooper;
     private Handler mHandler;
     private ArgumentCaptor<IHwBinder.DeathRecipient> mDeathRecipientCaptor =
@@ -135,6 +137,11 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         @Override
         protected IServiceManager getServiceManagerMockable() {
             return mServiceManagerMock;
+        }
+
+        @Override
+        protected android.hardware.wifi.V1_5.IWifiChip getWifiChipForV1_5Mockable(IWifiChip chip) {
+            return mWifiChipV15;
         }
     }
 
@@ -2271,7 +2278,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
     }
 
     public void verify60GhzIfaceCreation(
-            ChipMockBase chipMock, int finalChipModeId, boolean isWigigSupported)
+            ChipMockBase chipMock, int chipModeId, int finalChipModeId, boolean isWigigSupported)
             throws Exception {
         long requiredChipCapabilities =
                 android.hardware.wifi.V1_5.IWifiChip.ChipCapabilityMask.WIGIG;
@@ -2312,7 +2319,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         if (isWigigSupported) {
             apIface = validateInterfaceSequence(chipMock,
                     true, // chipModeValid
-                    TestChipV5.CHIP_MODE_ID, // chipModeId (only used if chipModeValid is true)
+                    chipModeId, // chipModeId (only used if chipModeValid is true)
                     HDM_CREATE_IFACE_AP, // ifaceTypeToCreate
                     "wlan0", // ifaceName
                     finalChipModeId, // finalChipMode
@@ -2341,21 +2348,44 @@ public class HalDeviceManagerTest extends WifiBaseTest {
      */
     @Test
     public void testIsItPossibleToCreate60GhzIfaceTestChipV5() throws Exception {
-        verify60GhzIfaceCreation(new TestChipV5(), TestChipV5.CHIP_MODE_ID, true);
+        TestChipV5 chipMock = new TestChipV5();
+        setupWifiChipV15(chipMock);
+        verify60GhzIfaceCreation(
+                chipMock, TestChipV5.CHIP_MODE_ID, TestChipV5.CHIP_MODE_ID, true);
     }
 
     /*
      * Verify that 60GHz iface creation request could not be procceed by a chip does
-     * not supports WIGIG.
+     * not supports WIGIG on V1.5 HAL.
      */
     @Test
     public void testIsItPossibleToCreate60GhzIfaceTestChipV4() throws Exception {
-        verify60GhzIfaceCreation(new TestChipV4(), TestChipV4.CHIP_MODE_ID, false);
+        TestChipV4 chipMock = new TestChipV4();
+        setupWifiChipV15(chipMock);
+        verify60GhzIfaceCreation(
+                chipMock, TestChipV4.CHIP_MODE_ID, TestChipV4.CHIP_MODE_ID, false);
+    }
+
+    /*
+     * Verify that 60GHz iface creation request could be procceed by a chip does
+     * not supports WIGIG on a HAL older than v1.5.
+     */
+    @Test
+    public void testIsItPossibleToCreate60GhzIfaceTestChipV4WithHalOlderThan1_5() throws Exception {
+        TestChipV4 chipMock = new TestChipV4();
+        verify60GhzIfaceCreation(
+                chipMock, TestChipV4.CHIP_MODE_ID, TestChipV4.CHIP_MODE_ID, true);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // utilities
     ///////////////////////////////////////////////////////////////////////////////////////
+    private void setupWifiChipV15(ChipMockBase chipMock) throws RemoteException {
+        mWifiChipV15 = mock(android.hardware.wifi.V1_5.IWifiChip.class);
+        doAnswer(new GetCapabilities_1_5Answer(chipMock))
+                .when(mWifiChipV15).getCapabilities_1_5(any(
+                        android.hardware.wifi.V1_5.IWifiChip.getCapabilities_1_5Callback.class));
+    }
 
     private void dumpDut(String prefix) {
         StringWriter sw = new StringWriter();
@@ -2782,6 +2812,19 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         }
 
         public void answer(IWifiChip.getCapabilitiesCallback cb) {
+            cb.onValues(mStatusOk, mChipMockBase.chipCapabilities);
+        }
+    }
+
+    private class GetCapabilities_1_5Answer extends MockAnswerUtil.AnswerWithArguments {
+        private ChipMockBase mChipMockBase;
+
+        GetCapabilities_1_5Answer(ChipMockBase chipMockBase) {
+            mChipMockBase = chipMockBase;
+        }
+
+        public void answer(
+                android.hardware.wifi.V1_5.IWifiChip.getCapabilities_1_5Callback cb) {
             cb.onValues(mStatusOk, mChipMockBase.chipCapabilities);
         }
     }

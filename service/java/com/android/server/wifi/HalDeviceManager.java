@@ -72,6 +72,7 @@ public class HalDeviceManager {
     private boolean mDbg = false;
 
     public static final long CHIP_CAPABILITY_ANY = 0L;
+    private static final long CHIP_CAPABILITY_UNINITIALIZED = -1L;
 
     private static final int START_HAL_RETRY_INTERVAL_MS = 20;
     // Number of attempts a start() is re-tried. A value of 0 means no retries after a single
@@ -744,6 +745,11 @@ public class HalDeviceManager {
             Log.e(TAG, "Exception getting IServiceManager: " + e);
             return null;
         }
+    }
+
+    protected android.hardware.wifi.V1_5.IWifiChip getWifiChipForV1_5Mockable(IWifiChip chip) {
+        if (null == chip) return null;
+        return android.hardware.wifi.V1_5.IWifiChip.castFrom(chip);
     }
 
     // internal implementation
@@ -1542,6 +1548,8 @@ public class HalDeviceManager {
         if (chipInfo == null) return false;
 
         if (requiredChipCapabilities == CHIP_CAPABILITY_ANY) return true;
+
+        if (CHIP_CAPABILITY_UNINITIALIZED == chipInfo.chipCapabilities) return true;
 
         return (chipInfo.chipCapabilities & requiredChipCapabilities)
                 == requiredChipCapabilities;
@@ -2539,6 +2547,8 @@ public class HalDeviceManager {
     /**
      * Get the chip capabilities
      *
+     * This is called before creating an interface and needs at least v1.5 HAL.
+     *
      * @param wifiChip WifiChip
      * @return bitmask defined by HAL interface
      */
@@ -2547,25 +2557,14 @@ public class HalDeviceManager {
         if (wifiChip == null) return featureSet;
 
         try {
-            final MutableLong feat = new MutableLong(0);
+            final MutableLong feat = new MutableLong(CHIP_CAPABILITY_UNINITIALIZED);
             synchronized (mLock) {
-                android.hardware.wifi.V1_3.IWifiChip iWifiChipV13 =
-                        android.hardware.wifi.V1_3.IWifiChip.castFrom(wifiChip);
                 android.hardware.wifi.V1_5.IWifiChip iWifiChipV15 =
-                        android.hardware.wifi.V1_5.IWifiChip.castFrom(wifiChip);
+                        getWifiChipForV1_5Mockable(wifiChip);
+                // HAL newer than v1.5 support getting capabilities before creating an interface.
                 if (iWifiChipV15 != null) {
                     iWifiChipV15.getCapabilities_1_5((status, capabilities) -> {
                         if (!ok("getCapabilities_1_5", status)) return;
-                        feat.value = capabilities;
-                    });
-                } else if (iWifiChipV13 != null) {
-                    iWifiChipV13.getCapabilities_1_3((status, capabilities) -> {
-                        if (!ok("getCapabilities_1_3", status)) return;
-                        feat.value = capabilities;
-                    });
-                } else if (wifiChip != null) {
-                    wifiChip.getCapabilities((status, capabilities) -> {
-                        if (!ok("getCapabilities", status)) return;
                         feat.value = capabilities;
                     });
                 }
