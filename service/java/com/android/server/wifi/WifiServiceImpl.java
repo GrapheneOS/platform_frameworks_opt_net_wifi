@@ -199,6 +199,7 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiConnectivityManager mWifiConnectivityManager;
     private final ConnectHelper mConnectHelper;
     private final WifiGlobals mWifiGlobals;
+    private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     /**
      * Verbose logging flag. Toggled by developer options.
      */
@@ -300,6 +301,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mConnectHelper = wifiInjector.getConnectHelper();
         mWifiGlobals = wifiInjector.getWifiGlobals();
         mSimRequiredNotifier = wifiInjector.getSimRequiredNotifier();
+        mWifiCarrierInfoManager = wifiInjector.getWifiCarrierInfoManager();
     }
 
     /**
@@ -4692,5 +4694,37 @@ public class WifiServiceImpl extends BaseWifiService {
             mLog.info("isAutoWakeupEnabled uid=%").c(Binder.getCallingUid()).flush();
         }
         return mWifiThreadRunner.call(()-> mWifiInjector.getWakeupController().isEnabled(), false);
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#setCarrierNetworkOffloadEnabled(int, boolean, boolean)}
+     */
+    @Override
+    public void setCarrierNetworkOffloadEnabled(int subscriptionId, boolean merged,
+            boolean enabled) {
+        if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
+            throw new SecurityException(TAG + ": Permission denied");
+        }
+        if (mVerboseLoggingEnabled) {
+            mLog.info("setCarrierNetworkOffloadEnabled uid=%").c(Binder.getCallingUid()).flush();
+        }
+        mWifiThreadRunner.post(() ->
+                mWifiCarrierInfoManager.setCarrierNetworkOffloadEnabled(subscriptionId, merged, enabled));
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#isCarrierNetworkOffloadEnabled(int, boolean)}
+     */
+    @Override
+    public boolean isCarrierNetworkOffloadEnabled(int subId, boolean merged) {
+        if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
+            throw new SecurityException(TAG + ": Permission denied");
+        }
+        if (mVerboseLoggingEnabled) {
+            mLog.info("isCarrierNetworkOffload uid=%").c(Binder.getCallingUid()).flush();
+        }
+
+        return mWifiThreadRunner.call(()->
+                mWifiCarrierInfoManager.isCarrierNetworkOffloadEnabled(subId, merged), true);
     }
 }

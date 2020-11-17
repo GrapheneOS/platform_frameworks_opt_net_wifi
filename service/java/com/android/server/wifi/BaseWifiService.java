@@ -536,6 +536,18 @@ public class BaseWifiService extends IWifiManager.Stub {
     }
 
     @Override
+    public void setCarrierNetworkOffloadEnabled(int subId, boolean merged, boolean enabled)
+            throws RemoteException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCarrierNetworkOffloadEnabled(int subId, boolean merged)
+            throws RemoteException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String[] getFactoryMacAddresses() {
         throw new UnsupportedOperationException();
     }

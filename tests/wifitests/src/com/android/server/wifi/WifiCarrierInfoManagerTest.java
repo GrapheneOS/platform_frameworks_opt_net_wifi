@@ -24,6 +24,7 @@ import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_D
 import static com.android.server.wifi.WifiCarrierInfoManager.NOTIFICATION_USER_DISMISSED_INTENT_ACTION;
 
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.*;
 
 import android.app.AlertDialog;
@@ -58,6 +59,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
 import com.android.wifi.resources.R;
@@ -76,7 +78,6 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.crypto.BadPaddingException;
@@ -122,7 +123,8 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
     @Mock WifiConfigStore mWifiConfigStore;
     @Mock WifiInjector mWifiInjector;
     @Mock WifiConfigManager mWifiConfigManager;
-    @Mock ImsiPrivacyProtectionExemptionStoreData mImsiPrivacyProtectionExemptionStoreData;
+    @Mock
+    WifiCarrierInfoStoreManagerData mWifiCarrierInfoStoreManagerData;
     @Mock NotificationManager mNotificationManger;
     @Mock Notification.Builder mNotificationBuilder;
     @Mock Notification mNotification;
@@ -135,7 +137,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
 
     MockitoSession mMockingSession = null;
     TestLooper mLooper;
-    private ImsiPrivacyProtectionExemptionStoreData.DataSource mImsiDataSource;
+    private WifiCarrierInfoStoreManagerData.DataSource mImsiDataSource;
     private ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
 
@@ -174,17 +176,17 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         when(mNotificationBuilder.setColor(anyInt())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.addAction(any())).thenReturn(mNotificationBuilder);
         when(mNotificationBuilder.build()).thenReturn(mNotification);
-        when(mWifiInjector.makeImsiProtectionExemptionStoreData(any()))
-                .thenReturn(mImsiPrivacyProtectionExemptionStoreData);
+        when(mWifiInjector.makeWifiCarrierInfoStoreManagerData(any()))
+                .thenReturn(mWifiCarrierInfoStoreManagerData);
         when(mWifiInjector.getWifiConfigManager()).thenReturn(mWifiConfigManager);
         mWifiCarrierInfoManager = new WifiCarrierInfoManager(mTelephonyManager,
                 mSubscriptionManager, mWifiInjector, mFrameworkFacade, mContext, mWifiConfigStore,
                 new Handler(mLooper.getLooper()), mWifiMetrics);
-        ArgumentCaptor<ImsiPrivacyProtectionExemptionStoreData.DataSource>
+        ArgumentCaptor<WifiCarrierInfoStoreManagerData.DataSource>
                 imsiDataSourceArgumentCaptor =
-                ArgumentCaptor.forClass(ImsiPrivacyProtectionExemptionStoreData.DataSource.class);
+                ArgumentCaptor.forClass(WifiCarrierInfoStoreManagerData.DataSource.class);
         verify(mContext).registerReceiver(mBroadcastReceiverCaptor.capture(), any(), any(), any());
-        verify(mWifiInjector).makeImsiProtectionExemptionStoreData(imsiDataSourceArgumentCaptor
+        verify(mWifiInjector).makeWifiCarrierInfoStoreManagerData(imsiDataSourceArgumentCaptor
                 .capture());
         mImsiDataSource = imsiDataSourceArgumentCaptor.getValue();
         assertNotNull(mImsiDataSource);
@@ -247,7 +249,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
                 eq(R.string.wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation)))
                 .thenReturn("blah");
         mWifiCarrierInfoManager.addImsiExemptionUserApprovalListener(mListener);
-        mImsiDataSource.fromDeserialized(new HashMap<>());
+        mImsiDataSource.deserializeComplete();
     }
 
     @After
@@ -1761,7 +1763,7 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
         verifyNoMoreInteractions(mNotificationManger);
 
         // Loaded user data store, notification should be sent
-        mImsiDataSource.fromDeserialized(new HashMap<>());
+        mImsiDataSource.deserializeComplete();
         mWifiCarrierInfoManager.sendImsiProtectionExemptionNotificationIfRequired(DATA_CARRIER_ID);
         validateImsiProtectionNotification(CARRIER_NAME);
     }
@@ -1796,6 +1798,15 @@ public class WifiCarrierInfoManagerTest extends WifiBaseTest {
                 DATA_SUBID, DATA_CARRIER_ID));
         assertFalse(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(
                 NON_DATA_SUBID, DATA_CARRIER_ID));
+    }
+
+    @Test
+    public void testSetAndGetCarrierNetworkOffload() {
+        assumeTrue(SdkLevel.isAtLeastS());
+        mWifiCarrierInfoManager.setCarrierNetworkOffloadEnabled(DATA_SUBID, true, false);
+        verify(mWifiConfigManager).saveToStore(true);
+        assertFalse(mWifiCarrierInfoManager.isCarrierNetworkOffloadEnabled(DATA_SUBID, true));
+        assertTrue(mWifiCarrierInfoManager.isCarrierNetworkOffloadEnabled(DATA_SUBID, false));
     }
 
     private void validateImsiProtectionNotification(String carrierName) {
