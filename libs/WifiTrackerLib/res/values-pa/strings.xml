@@ -26,8 +26,7 @@
     <string name="wifitrackerlib_wifi_disabled_network_failure" msgid="3046956554224277166">"IP ਸੰਰੂਪਣ ਅਸਫਲਤਾ"</string>
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"ਬੰਦ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"ਪਹੁੰਚ ਬਿੰਦੂ ਅਸਥਾਈ ਤੌਰ \'ਤੇ ਸੰਪੂਰਨ ਰੁਝੇਂਵੇਂ ਵਿੱਚ ਹੈ"</string>
-    <!-- no translation found for wifitrackerlib_wifi_poor_channel_conditions (26484680900376236) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"ਅਸਥਾਈ ਖਰਾਬ ਨੈੱਟਵਰਕ ਸਥਿਤੀ"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ਡਿਸਕਨੈਕਟ ਹੋਇਆ"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
