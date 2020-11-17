@@ -88,11 +88,16 @@ public class HalDeviceManager {
     // cache the value for supporting vendor HAL or not
     private boolean mIsVendorHalSupported = false;
 
-    private static final int HDM_CREATE_IFACE_STA = 0;
-    private static final int HDM_CREATE_IFACE_AP = 1;
-    private static final int HDM_CREATE_IFACE_AP_BRIDGE = 2;
-    private static final int HDM_CREATE_IFACE_P2P = 3;
-    private static final int HDM_CREATE_IFACE_NAN = 4;
+    @VisibleForTesting
+    public static final int HDM_CREATE_IFACE_STA = 0;
+    @VisibleForTesting
+    public static final int HDM_CREATE_IFACE_AP = 1;
+    @VisibleForTesting
+    public static final int HDM_CREATE_IFACE_AP_BRIDGE = 2;
+    @VisibleForTesting
+    public static final int HDM_CREATE_IFACE_P2P = 3;
+    @VisibleForTesting
+    public static final int HDM_CREATE_IFACE_NAN = 4;
 
     @IntDef(flag = false, prefix = { "HDM_CREATE_IFACE_TYPE_" }, value = {
             HDM_CREATE_IFACE_STA,
