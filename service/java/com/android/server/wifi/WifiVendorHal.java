@@ -333,7 +333,7 @@ public class WifiVendorHal {
             if (!startVendorHal()) {
                 return false;
             }
-            if (TextUtils.isEmpty(createApIface(null, null))) {
+            if (TextUtils.isEmpty(createApIface(null, null, false))) {
                 stopVendorHal();
                 return false;
             }
@@ -507,14 +507,15 @@ public class WifiVendorHal {
      *
      * @param destroyedListener Listener to be invoked when the interface is destroyed.
      * @param requestorWs Requestor worksource.
+     * @param isBridged Whether or not AP interface is a bridge interface.
      * @return iface name on success, null otherwise.
      */
     public String createApIface(@Nullable InterfaceDestroyedListener destroyedListener,
-            @NonNull WorkSource requestorWs) {
+            @NonNull WorkSource requestorWs, boolean isBridged) {
         synchronized (sLock) {
             IWifiApIface iface = mHalDeviceManager.createApIface(
                     new ApInterfaceDestroyedListenerInternal(destroyedListener), null,
-                    requestorWs);
+                    requestorWs, isBridged);
             if (iface == null) {
                 mLog.err("Failed to create AP iface").flush();
                 return stringResult(null);

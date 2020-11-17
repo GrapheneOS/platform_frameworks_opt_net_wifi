@@ -439,11 +439,6 @@ public class SoftApManager implements ActiveModeManager {
      */
     private int startSoftAp() {
         SoftApConfiguration config = mApConfig.getSoftApConfiguration();
-        if (config == null || config.getSsid() == null) {
-            Log.e(getTag(), "Unable to start soft AP without valid configuration");
-            return ERROR_GENERIC;
-        }
-
         Log.d(getTag(), "band " + config.getBand() + " iface "
                 + mApInterfaceName + " country " + mCountryCode);
 
@@ -648,8 +643,20 @@ public class SoftApManager implements ActiveModeManager {
                         break;
                     case CMD_START:
                         mRequestorWs = (WorkSource) message.obj;
+                        SoftApConfiguration config = mApConfig.getSoftApConfiguration();
+                        if (config == null || config.getSsid() == null) {
+                            Log.e(getTag(), "Unable to start soft AP without valid configuration");
+                            updateApState(WifiManager.WIFI_AP_STATE_FAILED,
+                                    WifiManager.WIFI_AP_STATE_DISABLED,
+                                    WifiManager.SAP_START_FAILURE_GENERAL);
+                            mWifiMetrics.incrementSoftApStartResult(
+                                    false, WifiManager.SAP_START_FAILURE_GENERAL);
+                            mModeListener.onStartFailure(SoftApManager.this);
+                            break;
+                        }
                         mApInterfaceName = mWifiNative.setupInterfaceForSoftApMode(
-                                mWifiNativeInterfaceCallback, mRequestorWs);
+                                mWifiNativeInterfaceCallback, mRequestorWs,
+                                mApConfig.getSoftApConfiguration().getBands().length > 1);
                         if (TextUtils.isEmpty(mApInterfaceName)) {
                             Log.e(getTag(), "setup failure when creating ap interface.");
                             updateApState(WifiManager.WIFI_AP_STATE_FAILED,
