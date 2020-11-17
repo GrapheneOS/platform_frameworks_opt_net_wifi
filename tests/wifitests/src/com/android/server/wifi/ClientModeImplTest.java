@@ -5230,10 +5230,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiNative.roamToNetwork(any(), any())).thenReturn(true);
 
         // Trigger roam to a BSSID.
-        ScanResult scanResult = new ScanResult();
-        scanResult.SSID = WifiInfo.sanitizeSsid(mConnectedNetwork.SSID);
-        scanResult.BSSID = sBSSID1;
-        mCmi.startRoamToNetwork(FRAMEWORK_NETWORK_ID, scanResult);
+        mCmi.startRoamToNetwork(FRAMEWORK_NETWORK_ID, sBSSID1);
         mLooper.dispatchAll();
 
 

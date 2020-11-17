@@ -1075,7 +1075,7 @@ public class WifiConnectivityManager {
                 if (!shouldConnect()) {
                     return;
                 }
-                primaryManager.startRoamToNetwork(targetNetworkId, targetScanResultCandidate);
+                primaryManager.startRoamToNetwork(targetNetworkId, targetBssid);
             }
             return;
         }

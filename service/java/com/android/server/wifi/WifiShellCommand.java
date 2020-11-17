@@ -601,6 +601,15 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.enableVerboseLogging(enabled ? 1 : 0);
                     return 0;
                 }
+                case "start-temporarily-disabling-all-non-carrier-merged-wifi": {
+                    int subId = Integer.parseInt(getNextArgRequired());
+                    mWifiService.startTemporarilyDisablingAllNonCarrierMergedWifi(subId);
+                    return 0;
+                }
+                case "stop-temporarily-disabling-all-non-carrier-merged-wifi": {
+                    mWifiService.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+                    return 0;
+                }
                 case "add-suggestion": {
                     WifiNetworkSuggestion suggestion = buildSuggestion(pw);
                     mWifiService.addNetworkSuggestions(
@@ -1164,6 +1173,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Current wifi status");
         pw.println("  set-verbose-logging enabled|disabled ");
         pw.println("    Set the verbose logging enabled or disabled");
+        pw.println("  start-temporarily-disabling-all-non-carrier-merged-wifi subId");
+        pw.println("    temporarily disable all wifi networks except merged carrier networks with"
+                + " the given subId");
+        pw.println("  stop-temporarily-disabling-all-non-carrier-merged-wifi");
+        pw.println("    Undo the effects of "
+                + "start-temporarily-disabling-all-non-carrier-merged-wifi");
         pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-o] [-p] [-m] "
                 + " [-s] [-d] [-b <bssid>] [-e]");
         pw.println("    Add a network suggestion with provided params");
