@@ -886,7 +886,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiStateTracker).updateState(eq(WifiStateTracker.CONNECTED));
         assertEquals("L3ConnectedState", getCurrentState().getName());
         verify(mWifiMetrics).incrementNumOfCarrierWifiConnectionSuccess();
-        verify(mWifiLockManager).updateWifiClientConnected(true);
+        verify(mWifiLockManager).updateWifiClientConnected(mClientModeManager, true);
         verify(mWifiNative).getConnectionCapabilities(any());
         verify(mThroughputPredictor).predictMaxTxThroughput(any());
         verify(mWifiMetrics).setConnectionMaxSupportedLinkSpeedMbps(WIFI_IFACE_NAME, 90, 80);
@@ -1871,7 +1871,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(WifiHealthMonitor.REASON_SHORT_CONNECTION_NONLOCAL);
         InOrder inOrderWifiLockManager = inOrder(mWifiLockManager);
         connect();
-        inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(true);
+        inOrderWifiLockManager.verify(mWifiLockManager)
+                .updateWifiClientConnected(mClientModeManager, true);
 
         DisconnectEventInfo disconnectEventInfo =
                 new DisconnectEventInfo(mConnectedNetwork.SSID, sBSSID, 0, false);
@@ -1885,7 +1886,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiStateTracker).updateState(eq(WifiStateTracker.DISCONNECTED));
         verify(mWifiNetworkSuggestionsManager).handleDisconnect(any(), any());
         assertEquals("DisconnectedState", getCurrentState().getName());
-        inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(false);
+        inOrderWifiLockManager.verify(mWifiLockManager)
+                .updateWifiClientConnected(mClientModeManager, false);
         verify(mWifiScoreCard).detectAbnormalDisconnection();
         verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
         verify(mWifiNative).disableNetwork(WIFI_IFACE_NAME);
@@ -4971,7 +4973,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(WifiHealthMonitor.REASON_SHORT_CONNECTION_NONLOCAL);
         InOrder inOrderWifiLockManager = inOrder(mWifiLockManager);
         connect();
-        inOrderWifiLockManager.verify(mWifiLockManager).updateWifiClientConnected(true);
+        inOrderWifiLockManager.verify(mWifiLockManager)
+                .updateWifiClientConnected(mClientModeManager, true);
 
         // got 4WAY_HANDSHAKE_TIMEOUT
         DisconnectEventInfo disconnectEventInfo =

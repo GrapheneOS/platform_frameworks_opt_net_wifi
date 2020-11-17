@@ -4468,7 +4468,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiMetrics.setWifiState(WifiMetricsProto.WifiLog.WIFI_DISCONNECTED);
             mWifiStateTracker.updateState(WifiStateTracker.DISCONNECTED);
             // Inform WifiLockManager
-            mWifiLockManager.updateWifiClientConnected(false);
+            mWifiLockManager.updateWifiClientConnected(mClientModeManager, false);
         }
 
         @Override
@@ -5053,7 +5053,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             mWifiLastResortWatchdog.connectedStateTransition(true);
             mWifiStateTracker.updateState(WifiStateTracker.CONNECTED);
             // Inform WifiLockManager
-            mWifiLockManager.updateWifiClientConnected(true);
+            mWifiLockManager.updateWifiClientConnected(mClientModeManager, true);
             mWifiScoreReport.startConnectedNetworkScorer(mNetworkAgent.getNetwork().getNetId());
             updateLinkLayerStatsRssiAndScoreReport();
             // too many places to record L3 failure with too many failure reasons.

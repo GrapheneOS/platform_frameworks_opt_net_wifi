@@ -265,6 +265,18 @@ public class ActiveModeWarden {
                 });
             }
         });
+
+        registerPrimaryClientModeManagerChangedCallback(
+                (prevPrimaryClientModeManager, newPrimaryClientModeManager) -> {
+                    if (prevPrimaryClientModeManager != null) {
+                        prevPrimaryClientModeManager.clearWifiConnectedNetworkScorer();
+                    }
+                    if (newPrimaryClientModeManager != null && mClientModeManagerScorer != null) {
+                        newPrimaryClientModeManager.setWifiConnectedNetworkScorer(
+                                mClientModeManagerScorer.first,
+                                mClientModeManagerScorer.second);
+                    }
+                });
     }
 
     private void invokeOnAddedCallbacks(@NonNull ActiveModeManager activeModeManager) {
@@ -358,16 +370,6 @@ public class ActiveModeWarden {
     public void unregisterPrimaryClientModeManagerChangedCallback(
             @NonNull PrimaryClientModeManagerChangedCallback callback) {
         mPrimaryChangedCallbacks.remove(Objects.requireNonNull(callback));
-    }
-
-    private void updateWifiConnectedNetworkScorer(ConcreteClientModeManager manager) {
-        ClientRole newRole = manager.getRole();
-        if (newRole == ROLE_CLIENT_PRIMARY && mClientModeManagerScorer != null) {
-            manager.setWifiConnectedNetworkScorer(
-                    mClientModeManagerScorer.first, mClientModeManagerScorer.second);
-        } else {
-            manager.clearWifiConnectedNetworkScorer();
-        }
     }
 
     /**
@@ -1031,7 +1033,10 @@ public class ActiveModeWarden {
             updateClientScanMode();
             updateBatteryStats();
             configureHwForMultiStaIfNecessary(clientModeManager);
-            updateWifiConnectedNetworkScorer(clientModeManager);
+        }
+
+        private void onPrimaryChangedDueToStartedOrRoleChanged(
+                ConcreteClientModeManager clientModeManager) {
             if (clientModeManager.getRole() != ROLE_CLIENT_PRIMARY
                     && clientModeManager == mLastPrimaryClientModeManager) {
                 // CMM was primary, but is no longer primary
@@ -1053,12 +1058,15 @@ public class ActiveModeWarden {
                 mExternalRequestListener.onAnswer(clientModeManager);
             }
             invokeOnAddedCallbacks(clientModeManager);
+            // invoke "added" callbacks before primary changed
+            onPrimaryChangedDueToStartedOrRoleChanged(clientModeManager);
         }
 
         @Override
         public void onRoleChanged(@NonNull ConcreteClientModeManager clientModeManager) {
             onStartedOrRoleChanged(clientModeManager);
             invokeOnRoleChangedCallbacks(clientModeManager);
+            onPrimaryChangedDueToStartedOrRoleChanged(clientModeManager);
         }
 
         private void onStoppedOrStartFailure(ConcreteClientModeManager clientModeManager) {
@@ -1066,13 +1074,14 @@ public class ActiveModeWarden {
             mGraveyard.inter(clientModeManager);
             updateClientScanMode();
             updateBatteryStats();
-            invokeOnRemovedCallbacks(clientModeManager);
             if (clientModeManager == mLastPrimaryClientModeManager) {
                 // CMM was primary, but was stopped
                 invokeOnPrimaryClientModeManagerChangedCallbacks(
                         mLastPrimaryClientModeManager, null);
                 mLastPrimaryClientModeManager = null;
             }
+            // invoke "removed" callbacks after primary changed
+            invokeOnRemovedCallbacks(clientModeManager);
         }
 
         @Override
