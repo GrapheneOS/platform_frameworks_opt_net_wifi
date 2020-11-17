@@ -1851,7 +1851,7 @@ public class WifiConnectivityManager {
 
         // If we have a single suggestion network, and we are connected to it, return true.
         WifiNetworkSuggestion network = suggestionsNetworks.iterator().next();
-        String suggestionKey = network.getWifiConfiguration().getKey();
+        String suggestionKey = network.getWifiConfiguration().getProfileKey();
         WifiConfiguration config = mConfigManager.getConfiguredNetwork(suggestionKey);
         return (config != null && config.networkId == currentNetworkId);
     }
