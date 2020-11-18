@@ -311,6 +311,19 @@ public class WifiConnectivityManager {
     }
 
     /**
+     * Helper method to consolidate handling of scan results when no candidate is selected.
+     */
+    private void handleScanResultsWithNoCandidate(
+            @NonNull HandleScanResultsListener handleScanResultsListener) {
+        if (mWifiState == WIFI_STATE_DISCONNECTED) {
+            mOpenNetworkNotifier.handleScanResults(
+                    mNetworkSelector.getFilteredScanDetailsForOpenUnsavedNetworks());
+        }
+        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(false);
+        handleScanResultsListener.onHandled(false);
+    }
+
+    /**
      * Handles 'onResult' callbacks for the Periodic, Single & Pno ScanListener.
      * Executes selection of potential network candidates, initiation of connection attempt to that
      * network.
@@ -365,8 +378,7 @@ public class WifiConnectivityManager {
         // No candidates, return early.
         if (candidates == null || candidates.size() == 0) {
             localLog(listenerName + ":  No candidates");
-            mWifiMetrics.noteFirstNetworkSelectionAfterBoot(false);
-            handleScanResultsListener.onHandled(false);
+            handleScanResultsWithNoCandidate(handleScanResultsListener);
             return;
         }
         handleCandidatesFromScanResultsForPrimaryCmm(
@@ -381,17 +393,13 @@ public class WifiConnectivityManager {
             @NonNull String listenerName, @NonNull List<WifiCandidates.Candidate> candidates,
             @NonNull HandleScanResultsListener handleScanResultsListener) {
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
-        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(candidate != null);
         if (candidate != null) {
             localLog(listenerName + ":  WNS candidate-" + candidate.SSID);
             connectToNetworkForPrimaryCmm(candidate);
+            mWifiMetrics.noteFirstNetworkSelectionAfterBoot(true);
             handleScanResultsListener.onHandled(true);
         } else {
-            if (mWifiState == WIFI_STATE_DISCONNECTED) {
-                mOpenNetworkNotifier.handleScanResults(
-                        mNetworkSelector.getFilteredScanDetailsForOpenUnsavedNetworks());
-            }
-            handleScanResultsListener.onHandled(false);
+            handleScanResultsWithNoCandidate(handleScanResultsListener);
         }
     }
 
