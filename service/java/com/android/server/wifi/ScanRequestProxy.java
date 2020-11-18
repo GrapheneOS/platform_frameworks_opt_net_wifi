@@ -371,16 +371,15 @@ public class ScanRequestProxy {
     }
 
     /**
-     * Check if the request comes from background app.
+     * Safely retrieve package importance.
      */
-    private boolean isRequestFromBackground(int callingUid, String packageName) {
+    private int getPackageImportance(int callingUid, String packageName) {
         mAppOps.checkPackage(callingUid, packageName);
         try {
-            return mActivityManager.getPackageImportance(packageName)
-                    > ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
+            return mActivityManager.getPackageImportance(packageName);
         } catch (SecurityException e) {
             Log.e(TAG, "Failed to check the app state", e);
-            return true;
+            return ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE;
         }
     }
 
@@ -388,9 +387,11 @@ public class ScanRequestProxy {
      * Checks if the scan request from the app (specified by callingUid & packageName) needs
      * to be throttled.
      */
-    private boolean shouldScanRequestBeThrottledForApp(int callingUid, String packageName) {
+    private boolean shouldScanRequestBeThrottledForApp(int callingUid, String packageName,
+            int packageImportance) {
         boolean isThrottled;
-        if (isRequestFromBackground(callingUid, packageName)) {
+        if (packageImportance
+                > ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE) {
             isThrottled = shouldScanRequestBeThrottledForBackgroundApp();
             if (isThrottled) {
                 if (mVerboseLoggingEnabled) {
@@ -431,14 +432,17 @@ public class ScanRequestProxy {
         // Check and throttle scan request unless,
         // a) App has either NETWORK_SETTINGS or NETWORK_SETUP_WIZARD permission.
         // b) Throttling has been disabled by user.
+        int packageImportance = getPackageImportance(callingUid, packageName);
         if (!fromSettingsOrSetupWizard && mThrottleEnabled
-                && shouldScanRequestBeThrottledForApp(callingUid, packageName)) {
+                && shouldScanRequestBeThrottledForApp(callingUid, packageName, packageImportance)) {
             Log.i(TAG, "Scan request from " + packageName + " throttled");
             sendScanResultFailureBroadcastToPackage(packageName);
             return false;
         }
         // Create a worksource using the caller's UID.
         WorkSource workSource = new WorkSource(callingUid, packageName);
+        mWifiMetrics.getScanMetrics().setWorkSource(workSource);
+        mWifiMetrics.getScanMetrics().setImportance(packageImportance);
 
         // Create the scan settings.
         WifiScanner.ScanSettings settings = new WifiScanner.ScanSettings();

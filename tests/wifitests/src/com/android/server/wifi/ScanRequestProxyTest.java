@@ -86,6 +86,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
     @Mock private WifiScanner mWifiScanner;
     @Mock private WifiPermissionsUtil mWifiPermissionsUtil;
     @Mock private WifiMetrics mWifiMetrics;
+    @Mock private WifiMetrics.ScanMetrics mScanMetrics;
     @Mock private Clock mClock;
     @Mock private WifiSettingsConfigStore mWifiSettingsConfigStore;
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
@@ -119,6 +120,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         when(mWifiConfigManager.retrieveHiddenNetworkList()).thenReturn(TEST_HIDDEN_NETWORKS_LIST);
         when(mWifiNetworkSuggestionsManager.retrieveHiddenNetworkList())
                 .thenReturn(TEST_HIDDEN_NETWORKS_LIST_NS);
+        when(mWifiMetrics.getScanMetrics()).thenReturn(mScanMetrics);
         doNothing().when(mWifiScanner).registerScanListener(
                 any(),
                 mGlobalScanListenerArgumentCaptor.capture());
@@ -166,6 +168,22 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(782L);
     }
 
+    private void verifyScanMetricsDataWasSet() {
+        verifyScanMetricsDataWasSet(1);
+    }
+
+    private void verifyScanMetricsDataWasSet(int times) {
+        verifyScanMetricsDataWasSet(times, times);
+    }
+
+    private void verifyScanMetricsDataWasSet(int timesExternalRequest, int timesDataSet) {
+        verify(mWifiMetrics,
+                times(timesExternalRequest)).incrementExternalAppOneshotScanRequestsCount();
+        verify(mWifiMetrics, times(timesDataSet * 2)).getScanMetrics();
+        verify(mScanMetrics, times(timesDataSet)).setWorkSource(any());
+        verify(mScanMetrics, times(timesDataSet)).setImportance(anyInt());
+    }
+
     /**
      * Verify scan enable sequence.
      */
@@ -211,7 +229,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                 new WorkSource(TEST_UID, TEST_PACKAGE_NAME_1)));
         validateScanSettings(mScanSettingsArgumentCaptor.getValue(), false);
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -227,6 +245,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mWorkSourceArgumentCaptor.getValue().equals(
                 new WorkSource(TEST_UID, TEST_PACKAGE_NAME_1)));
         validateScanSettings(mScanSettingsArgumentCaptor.getValue(), false, true);
+        verifyScanMetricsDataWasSet(0, 1);
     }
 
     /**
@@ -242,6 +261,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertEquals(mWorkSourceArgumentCaptor.getValue(),
                 new WorkSource(TEST_UID, TEST_PACKAGE_NAME_1));
         validateScanSettings(mScanSettingsArgumentCaptor.getValue(), false, true);
+        verifyScanMetricsDataWasSet(0, 1);
     }
 
     /**
@@ -263,7 +283,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                 new WorkSource(TEST_UID, TEST_PACKAGE_NAME_1));
         validateScanSettings(mScanSettingsArgumentCaptor.getValue(), false);
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -286,7 +306,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                 new WorkSource(TEST_UID, TEST_PACKAGE_NAME_1));
         validateScanSettings(mScanSettingsArgumentCaptor.getValue(), true);
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -308,7 +328,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         ScanTestUtil.assertScanResultEquals(mTestScanDatas1[0].getResults()[0],
                 mScanRequestProxy.getScanResult(mTestScanDatas1[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -327,7 +347,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mScanRequestProxy.getScanResults().isEmpty());
         assertNull(mScanRequestProxy.getScanResult(mTestScanDatas1[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -362,7 +382,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         ScanTestUtil.assertScanResultEquals(mTestScanDatas2[0].getResults()[0],
                 mScanRequestProxy.getScanResult(mTestScanDatas2[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
     /**
@@ -397,7 +417,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         ScanTestUtil.assertScanResultEquals(mTestScanDatas1[0].getResults()[0],
                 mScanRequestProxy.getScanResult(mTestScanDatas1[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
     /**
@@ -434,7 +454,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         ScanTestUtil.assertScanResultEquals(mTestScanDatas2[0].getResults()[0],
                 mScanRequestProxy.getScanResult(mTestScanDatas2[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
     /**
@@ -471,7 +491,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         ScanTestUtil.assertScanResultEquals(mTestScanDatas2[0].getResults()[0],
                 mScanRequestProxy.getScanResult(mTestScanDatas2[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
 
@@ -507,7 +527,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         ScanTestUtil.assertScanResultEquals(mTestScanDatas2[0].getResults()[0],
                 mScanRequestProxy.getScanResult(mTestScanDatas2[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
     /**
@@ -542,7 +562,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mScanRequestProxy.getScanResults().isEmpty());
         assertNull(mScanRequestProxy.getScanResult(mTestScanDatas1[0].getResults()[0].BSSID));
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -566,7 +586,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
 
         assertNotEquals(listener1, listener2);
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
     /**
@@ -588,9 +608,9 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertFalse(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_1));
         validateScanResultsFailureBroadcastSent(TEST_PACKAGE_NAME_1);
 
-        verify(mWifiMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1))
-                .incrementExternalAppOneshotScanRequestsCount();
         verify(mWifiMetrics).incrementExternalForegroundAppOneshotScanRequestsThrottledCount();
+        verifyScanMetricsDataWasSet(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1,
+                SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS);
     }
 
     /**
@@ -614,8 +634,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_1));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
 
-        verify(mWifiMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1))
-                .incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1);
     }
 
     /**
@@ -637,6 +656,8 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         // Make next scan request from the same package name & ensure that it is not throttled.
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_1));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
+
+        verifyScanMetricsDataWasSet(0, SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1);
     }
 
     /**
@@ -658,6 +679,8 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         // Make next scan request from the same package name & ensure that it is not throttled.
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_1));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
+
+        verifyScanMetricsDataWasSet(0, SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1);
     }
 
     /**
@@ -681,6 +704,8 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         // Make next scan request from the same package name & ensure that it is not throttled.
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_1));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
+
+        verifyScanMetricsDataWasSet(0, SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1);
     }
 
     /**
@@ -707,8 +732,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_2));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
 
-        verify(mWifiMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 2))
-                .incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 2);
     }
 
     /**
@@ -734,8 +758,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_1));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
 
-        verify(mWifiMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1))
-                .incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1);
     }
 
     /**
@@ -765,6 +788,12 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         verify(mWifiMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS + 1))
                 .incrementExternalAppOneshotScanRequestsCount();
         verify(mWifiMetrics).incrementExternalForegroundAppOneshotScanRequestsThrottledCount();
+        verify(mWifiMetrics,
+                times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS * 2)).getScanMetrics();
+        verify(mScanMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS)).setWorkSource(
+                any());
+        verify(mScanMetrics, times(SCAN_REQUEST_THROTTLE_MAX_IN_TIME_WINDOW_FG_APPS)).setImportance(
+                anyInt());
     }
 
     /**
@@ -789,8 +818,8 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertFalse(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_2));
         validateScanResultsFailureBroadcastSent(TEST_PACKAGE_NAME_2);
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
         verify(mWifiMetrics).incrementExternalBackgroundAppOneshotScanRequestsThrottledCount();
+        verifyScanMetricsDataWasSet(2, 1);
     }
 
     /**
@@ -818,7 +847,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
         assertTrue(mScanRequestProxy.startScan(TEST_UID, TEST_PACKAGE_NAME_2));
         mInOrder.verify(mWifiScanner).startScan(any(), any(), any(), any());
 
-        verify(mWifiMetrics, times(2)).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet(2);
     }
 
     /**
@@ -848,7 +877,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                 mTestScanDatas2[0].getResults(),
                 mScanRequestProxy.getScanResults().stream().toArray(ScanResult[]::new));
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     /**
@@ -880,7 +909,7 @@ public class ScanRequestProxyTest extends WifiBaseTest {
                 mTestScanDatas1[0].getResults(),
                 mScanRequestProxy.getScanResults().stream().toArray(ScanResult[]::new));
 
-        verify(mWifiMetrics).incrementExternalAppOneshotScanRequestsCount();
+        verifyScanMetricsDataWasSet();
     }
 
     private void validateScanSettings(WifiScanner.ScanSettings scanSettings,
