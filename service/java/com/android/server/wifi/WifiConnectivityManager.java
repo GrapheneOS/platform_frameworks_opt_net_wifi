@@ -139,7 +139,6 @@ public class WifiConnectivityManager {
     private final WifiContext mContext;
     private final WifiConfigManager mConfigManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
-    private final WifiInfo mWifiInfo;
     private final WifiConnectivityHelper mConnectivityHelper;
     private final WifiNetworkSelector mNetworkSelector;
     private final WifiLastResortWatchdog mWifiLastResortWatchdog;
@@ -329,8 +328,9 @@ public class WifiConnectivityManager {
 
         // Check if any blocklisted BSSIDs can be freed.
         mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
+        WifiInfo wifiInfo = getPrimaryWifiInfo();
         Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
-                mWifiInfo.getSSID());
+                wifiInfo.getSSID());
 
         // Clear expired recent failure statuses
         mConfigManager.cleanupExpiredRecentFailureReasons();
@@ -346,7 +346,7 @@ public class WifiConnectivityManager {
         localLog(listenerName + " onResults: start network selection");
 
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
-                scanDetails, bssidBlocklist, mWifiInfo, clientModeManager.isConnected(),
+                scanDetails, bssidBlocklist, wifiInfo, clientModeManager.isConnected(),
                 clientModeManager.isDisconnected(), mUntrustedConnectionAllowed,
                 mOemPaidConnectionAllowed, mOemPrivateConnectionAllowed);
         mLatestCandidates = candidates;
@@ -842,7 +842,6 @@ public class WifiConnectivityManager {
             ScoringParams scoringParams,
             WifiConfigManager configManager,
             WifiNetworkSuggestionsManager wifiNetworkSuggestionsManager,
-            WifiInfo wifiInfo,
             WifiNetworkSelector networkSelector,
             WifiConnectivityHelper connectivityHelper,
             WifiLastResortWatchdog wifiLastResortWatchdog,
@@ -861,7 +860,6 @@ public class WifiConnectivityManager {
         mScoringParams = scoringParams;
         mConfigManager = configManager;
         mWifiNetworkSuggestionsManager = wifiNetworkSuggestionsManager;
-        mWifiInfo = wifiInfo;
         mNetworkSelector = networkSelector;
         mConnectivityHelper = connectivityHelper;
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
@@ -907,6 +905,11 @@ public class WifiConnectivityManager {
         mWifiNetworkSuggestionsManager.addOnSuggestionUpdateListener(
                 new OnSuggestionUpdateListener());
         mActiveModeWarden.registerModeChangeCallback(new ModeChangeCallback());
+    }
+
+    @NonNull
+    private WifiInfo getPrimaryWifiInfo() {
+        return getPrimaryClientModeManager().syncRequestConnectionInfo();
     }
 
     private ClientModeManager getPrimaryClientModeManager() {
@@ -1309,9 +1312,10 @@ public class WifiConnectivityManager {
         final int maxNumActiveChannelsForPartialScans = mContext.getResources().getInteger(
                 R.integer.config_wifi_framework_associated_partial_scan_max_num_active_channels);
         Set<Integer> channelSet = new HashSet<>();
+        WifiInfo wifiInfo = getPrimaryWifiInfo();
         // First add the currently connected network channel.
-        if (mWifiInfo.getFrequency() > 0) {
-            channelSet.add(mWifiInfo.getFrequency());
+        if (wifiInfo.getFrequency() > 0) {
+            channelSet.add(wifiInfo.getFrequency());
         }
         // Then get channels for the network.
         addChannelFromWifiScoreCard(channelSet, config, maxNumActiveChannelsForPartialScans,
@@ -1399,9 +1403,10 @@ public class WifiConnectivityManager {
                 <= 1000 * mContext.getResources().getInteger(
                 R.integer.config_wifiConnectedHighRssiScanMinimumWindowSizeSec));
 
+        WifiInfo wifiInfo = getPrimaryWifiInfo();
         boolean isGoodLinkAndAcceptableInternetAndShortTimeSinceLastNetworkSelection =
-                mNetworkSelector.hasSufficientLinkQuality(mWifiInfo)
-                && mNetworkSelector.hasInternetOrExpectNoInternet(mWifiInfo)
+                mNetworkSelector.hasSufficientLinkQuality(wifiInfo)
+                && mNetworkSelector.hasInternetOrExpectNoInternet(wifiInfo)
                 && isShortTimeSinceLastNetworkSelection;
         // Check it is one of following conditions to skip scan (with firmware roaming)
         // or do partial scan only (without firmware roaming).
@@ -1410,9 +1415,9 @@ public class WifiConnectivityManager {
         //    and it is a short time since last network selection
         // 3) There is active stream such that scan will be likely disruptive
         if (mWifiState == WIFI_STATE_CONNECTED
-                && (mNetworkSelector.isNetworkSufficient(mWifiInfo)
+                && (mNetworkSelector.isNetworkSufficient(wifiInfo)
                 || isGoodLinkAndAcceptableInternetAndShortTimeSinceLastNetworkSelection
-                || mNetworkSelector.hasActiveStream(mWifiInfo))) {
+                || mNetworkSelector.hasActiveStream(wifiInfo))) {
             // If only partial scan is proposed and firmware roaming control is supported,
             // we will not issue any scan because firmware roaming will take care of
             // intra-SSID roam.
@@ -2030,10 +2035,11 @@ public class WifiConnectivityManager {
                     new Throwable());
             return;
         }
+        WifiInfo wifiInfo = getPrimaryWifiInfo();
         if (failureCode == WifiMetrics.ConnectionEvent.FAILURE_NONE) {
-            String ssidUnquoted = (mWifiInfo.getWifiSsid() == null)
+            String ssidUnquoted = (wifiInfo.getWifiSsid() == null)
                     ? null
-                    : mWifiInfo.getWifiSsid().toString();
+                    : wifiInfo.getWifiSsid().toString();
             mOpenNetworkNotifier.handleWifiConnected(ssidUnquoted);
         } else {
             mOpenNetworkNotifier.handleConnectionFailure();

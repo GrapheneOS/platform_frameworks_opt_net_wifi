@@ -128,6 +128,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(PowerManager.class)).thenReturn(powerManager);
         when(powerManager.isInteractive()).thenReturn(false);
         when(mPrimaryClientModeManager.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        when(mPrimaryClientModeManager.syncRequestConnectionInfo()).thenReturn(mWifiInfo);
         when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mPrimaryClientModeManager);
         doAnswer(new AnswerWithArguments() {
             public void answer(ExternalClientModeManagerRequestListener listener,
@@ -425,7 +426,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     WifiConnectivityManager createConnectivityManager() {
         WifiConnectivityManager wCm = new WifiConnectivityManager(mContext, mScoringParams,
                 mWifiConfigManager, mWifiNetworkSuggestionsManager,
-                mWifiInfo, mWifiNS, mWifiConnectivityHelper,
+                mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
                 mLocalLog, mWifiScoreCard, mBssidBlocklistMonitor, mWifiChannelUtilization,
