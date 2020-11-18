@@ -477,7 +477,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         Map<String, String> randomizedMacAddressMapping = new HashMap<>();
         final String randMac = "12:23:34:45:56:67";
-        randomizedMacAddressMapping.put(openNetwork.getKey(), randMac);
+        randomizedMacAddressMapping.put(openNetwork.getNetworkKey(), randMac);
         assertNotEquals(randMac, openNetwork.getRandomizedMacAddress());
         when(mRandomizedMacStoreData.getMacMapping()).thenReturn(randomizedMacAddressMapping);
 
@@ -832,7 +832,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         assertEquals(1, retrievedNetworks.size());
-        assertEquals(openNetworkSuggestion.getKey(), retrievedNetworks.get(0).getKey());
+        assertEquals(openNetworkSuggestion.getProfileKey(),
+                retrievedNetworks.get(0).getProfileKey());
     }
 
     /**
@@ -1056,7 +1057,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         List<WifiConfiguration> retrievedSavedNetworks = mWifiConfigManager.getSavedNetworks(
                 Process.WIFI_UID);
         assertEquals(retrievedSavedNetworks.size(), 1);
-        assertEquals(retrievedSavedNetworks.get(0).getKey(), pskNetwork.getKey());
+        assertEquals(retrievedSavedNetworks.get(0).getProfileKey(), pskNetwork.getProfileKey());
         assertPasswordsMaskedInWifiConfiguration(retrievedSavedNetworks.get(0));
     }
 
@@ -1081,7 +1082,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         List<WifiConfiguration> retrievedSavedNetworks = mWifiConfigManager.getSavedNetworks(
                 Process.WIFI_UID);
         assertEquals(retrievedSavedNetworks.size(), 1);
-        assertEquals(retrievedSavedNetworks.get(0).getKey(), wepNetwork.getKey());
+        assertEquals(retrievedSavedNetworks.get(0).getProfileKey(), wepNetwork.getProfileKey());
         assertPasswordsMaskedInWifiConfiguration(retrievedSavedNetworks.get(0));
     }
 
@@ -2793,7 +2794,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 if (otherNetwork == network) {
                     continue;
                 }
-                assertNotNull(network.linkedConfigurations.get(otherNetwork.getKey()));
+                assertNotNull(network.linkedConfigurations.get(otherNetwork.getProfileKey()));
             }
         }
     }
@@ -2871,7 +2872,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 if (otherNetwork == network) {
                     continue;
                 }
-                assertNotNull(network.linkedConfigurations.get(otherNetwork.getKey()));
+                assertNotNull(network.linkedConfigurations.get(otherNetwork.getProfileKey()));
             }
         }
     }
@@ -2976,7 +2977,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 if (otherNetwork == network) {
                     continue;
                 }
-                assertNotNull(network.linkedConfigurations.get(otherNetwork.getKey()));
+                assertNotNull(network.linkedConfigurations.get(otherNetwork.getProfileKey()));
             }
         }
 
@@ -3047,9 +3048,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         for (WifiConfiguration network : retrievedNetworks) {
-            if (network.getKey().equals(sharedNetwork1.getKey())) {
+            if (network.getProfileKey().equals(sharedNetwork1.getProfileKey())) {
                 sharedNetwork1Id = network.networkId;
-            } else if (network.getKey().equals(sharedNetwork2.getKey())) {
+            } else if (network.getProfileKey().equals(sharedNetwork2.getProfileKey())) {
                 sharedNetwork2Id = network.networkId;
             }
         }
@@ -3075,9 +3076,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         int updatedSharedNetwork2Id = WifiConfiguration.INVALID_NETWORK_ID;
         retrievedNetworks = mWifiConfigManager.getConfiguredNetworksWithPasswords();
         for (WifiConfiguration network : retrievedNetworks) {
-            if (network.getKey().equals(sharedNetwork1.getKey())) {
+            if (network.getProfileKey().equals(sharedNetwork1.getProfileKey())) {
                 updatedSharedNetwork1Id = network.networkId;
-            } else if (network.getKey().equals(sharedNetwork2.getKey())) {
+            } else if (network.getProfileKey().equals(sharedNetwork2.getProfileKey())) {
                 updatedSharedNetwork2Id = network.networkId;
             }
         }
@@ -3130,7 +3131,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         for (WifiConfiguration network : retrievedNetworks) {
-            if (network.getKey().equals(user1Network.getKey())) {
+            if (network.getProfileKey().equals(user1Network.getProfileKey())) {
                 user1NetworkId = network.networkId;
             }
         }
@@ -3195,7 +3196,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         List<WifiConfiguration> retrievedNetworks =
                 mWifiConfigManager.getConfiguredNetworksWithPasswords();
         for (WifiConfiguration network : retrievedNetworks) {
-            if (network.getKey().equals(ephemeralNetwork.getKey())) {
+            if (network.getProfileKey().equals(ephemeralNetwork.getProfileKey())) {
                 ephemeralNetworkId = network.networkId;
             }
         }
@@ -3856,7 +3857,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertTrue(mWifiConfigManager.enableNetwork(
                 result.getNetworkId(), true, TEST_CREATOR_UID, TEST_CREATOR_NAME));
         assertEquals(result.getNetworkId(), mWifiConfigManager.getLastSelectedNetwork());
-        assertEquals(openNetwork.getKey(), mWifiConfigManager.getLastSelectedNetworkConfigKey());
+        assertEquals(openNetwork.getProfileKey(),
+                mWifiConfigManager.getLastSelectedNetworkConfigKey());
 
         assertTrue(mWifiConfigManager.removeNetwork(
                 result.getNetworkId(), TEST_CREATOR_UID, TEST_CREATOR_NAME));
@@ -3912,7 +3914,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration preferred = mWifiConfigManager.getConfiguredNetwork(preferredNetId);
         assertNull(preferred.getNetworkSelectionStatus().getConnectChoice());
         WifiConfiguration notPreferred = mWifiConfigManager.getConfiguredNetwork(notPreferredNetId);
-        assertEquals(preferred.getKey(),
+        assertEquals(preferred.getProfileKey(),
                 notPreferred.getNetworkSelectionStatus().getConnectChoice());
     }
 
@@ -3935,7 +3937,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration retrievedNetwork =
                 mWifiConfigManager.getConfiguredNetwork(network1.networkId);
         assertEquals(
-                network2.getKey(),
+                network2.getProfileKey(),
                 retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // Remove network 3 and ensure that the connect choice on network 1 is not removed.
@@ -3943,7 +3945,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 network3.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME));
         retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(network1.networkId);
         assertEquals(
-                network2.getKey(),
+                network2.getProfileKey(),
                 retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // Now remove network 2 and ensure that the connect choice on network 1 is removed..
@@ -3951,7 +3953,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 network2.networkId, TEST_CREATOR_UID, TEST_CREATOR_NAME));
         retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(network1.networkId);
         assertNotEquals(
-                network2.getKey(),
+                network2.getProfileKey(),
                 retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // This should have triggered 2 buffered writes. 1 for setting the connect choice, 1 for
@@ -3978,7 +3980,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration retrievedNetwork =
                 mWifiConfigManager.getConfiguredNetwork(network3.networkId);
         assertEquals(
-                network2.getKey(),
+                network2.getProfileKey(),
                 retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // Disable network 3
@@ -3991,7 +3993,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Ensure that the connect choice on network 1 is not removed.
         retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(network1.networkId);
         assertEquals(
-                network2.getKey(),
+                network2.getProfileKey(),
                 retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
     }
 
@@ -4040,7 +4042,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddPasspointNetworkToWifiConfigManager(passpointNetwork);
 
         assertTrue(mWifiConfigManager.removePasspointConfiguredNetwork(
-                passpointNetwork.getKey()));
+                passpointNetwork.getProfileKey()));
     }
 
     /**
@@ -4055,7 +4057,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddEphemeralNetworkToWifiConfigManager(suggestedNetwork);
 
         assertTrue(mWifiConfigManager.removeSuggestionConfiguredNetwork(
-                suggestedNetwork.getKey()));
+                suggestedNetwork.getProfileKey()));
     }
 
     /**
@@ -4888,7 +4890,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration retrievedSavedNetwork =
                 mWifiConfigManager.getConfiguredNetwork(savedNetwork.networkId);
         assertEquals(
-                passpointNetwork.getKey(),
+                passpointNetwork.getProfileKey(),
                 retrievedSavedNetwork.getNetworkSelectionStatus().getConnectChoice());
 
         // Disable the passpoint network & ensure the user choice is now removed from saved network.
@@ -5203,7 +5205,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             WifiConfiguration configuration, List<WifiConfiguration> networkList) {
         boolean foundNetworkInStoreData = false;
         for (WifiConfiguration retrievedConfig : networkList) {
-            if (retrievedConfig.getKey().equals(configuration.getKey())) {
+            if (retrievedConfig.getProfileKey().equals(configuration.getProfileKey())) {
                 foundNetworkInStoreData = true;
                 break;
             }
@@ -5929,7 +5931,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         configInLastNetworkSelection = mWifiConfigManager.getConfiguredNetwork(
                 configInLastNetworkSelection.networkId);
-        assertEquals(selectedWifiConfig.getKey(),
+        assertEquals(selectedWifiConfig.getProfileKey(),
                 configInLastNetworkSelection.getNetworkSelectionStatus().getConnectChoice());
 
         configNotInLastNetworkSelection = mWifiConfigManager.getConfiguredNetwork(

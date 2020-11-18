@@ -32,7 +32,7 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
     }
 
     @Override
-    public Role getRole() {
+    public ClientRole getRole() {
         return null;
     }
 

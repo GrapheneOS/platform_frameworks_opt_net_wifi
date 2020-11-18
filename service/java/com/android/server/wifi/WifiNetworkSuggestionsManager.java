@@ -22,6 +22,7 @@ import static android.app.AppOpsManager.OPSTR_CHANGE_WIFI_STATE;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
@@ -88,6 +89,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * NOTE: This class should always be invoked from the main wifi service thread.
  */
 @NotThreadSafe
+@SuppressLint("LongLogTag")
 public class WifiNetworkSuggestionsManager {
     private static final String TAG = "WifiNetworkSuggestionsManager";
 
@@ -718,7 +720,7 @@ public class WifiNetworkSuggestionsManager {
 
     private void removeNetworkFromScoreCard(WifiConfiguration wifiConfiguration) {
         WifiConfiguration existing =
-                mWifiConfigManager.getConfiguredNetwork(wifiConfiguration.getKey());
+                mWifiConfigManager.getConfiguredNetwork(wifiConfiguration.getProfileKey());
         // If there is a saved network, do not remove from the score card.
         if (existing != null && !existing.fromWifiNetworkSuggestion) {
             return;
@@ -767,7 +769,7 @@ public class WifiNetworkSuggestionsManager {
                         + "Removing from config manager...");
                 // will trigger a disconnect.
                 mWifiConfigManager.removeSuggestionConfiguredNetwork(
-                        activeWifiConfiguration.getKey());
+                        activeWifiConfiguration.getProfileKey());
             }
         }
     }
@@ -811,8 +813,9 @@ public class WifiNetworkSuggestionsManager {
 
     private void updateWifiConfigInWcmIfPresent(
             WifiConfiguration newConfig, int uid, String packageName) {
+        newConfig.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(newConfig);
         WifiConfiguration configInWcm =
-                mWifiConfigManager.getConfiguredNetwork(newConfig.getKey());
+                mWifiConfigManager.getConfiguredNetwork(newConfig.getProfileKey());
         if (configInWcm == null) return;
         // !suggestion
         if (!configInWcm.fromWifiNetworkSuggestion) return;
@@ -1367,7 +1370,7 @@ public class WifiNetworkSuggestionsManager {
                     continue;
                 }
                 WifiConfiguration network = mWifiConfigManager
-                        .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getKey());
+                        .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getProfileKey());
                 if (network == null) {
                     network = ewns.createInternalWifiConfiguration();
                 }
@@ -1693,20 +1696,22 @@ public class WifiNetworkSuggestionsManager {
             if (sharedNetworkSuggestions.isEmpty()) {
                 continue;
             }
-            ExtendedWifiNetworkSuggestion ewns =
-                    sharedNetworkSuggestions.stream().findFirst().get();
-            if (mVerboseLoggingEnabled) {
-                Log.v(TAG, "getWifiConfigForMatchedNetworkSuggestionsSharedWithUser Found "
-                        + ewns + " for " + scanResult.SSID + "[" + scanResult.capabilities + "]");
-            }
-            WifiConfiguration config = ewns.wns.wifiConfiguration;
-            WifiConfiguration existingConfig = mWifiConfigManager
-                    .getConfiguredNetwork(config.getKey());
-            if (existingConfig == null || !existingConfig.fromWifiNetworkSuggestion) {
-                continue;
-            }
-            if (networkKeys.add(existingConfig.getKey())) {
-                sharedWifiConfigs.add(existingConfig);
+            for (ExtendedWifiNetworkSuggestion ewns : sharedNetworkSuggestions) {
+                if (mVerboseLoggingEnabled) {
+                    Log.v(TAG, "getWifiConfigForMatchedNetworkSuggestionsSharedWithUser Found "
+                            + ewns + " for " + scanResult.SSID
+                            + "[" + scanResult.capabilities + "]");
+                }
+                WifiConfiguration config = ewns.createInternalWifiConfiguration();
+                config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+                WifiConfiguration wCmWifiConfig = mWifiConfigManager
+                        .getConfiguredNetwork(config.getProfileKey());
+                if (wCmWifiConfig == null) {
+                    continue;
+                }
+                if (networkKeys.add(wCmWifiConfig.getProfileKey())) {
+                    sharedWifiConfigs.add(wCmWifiConfig);
+                }
             }
         }
         return sharedWifiConfigs;
@@ -2080,7 +2085,7 @@ public class WifiNetworkSuggestionsManager {
         Set<ExtendedWifiNetworkSuggestion> matchingExtendedWifiNetworkSuggestions =
                 getNetworkSuggestionsForWifiConfiguration(config, config.BSSID);
         if (config.isPasspoint()) {
-            if (!mWifiInjector.getPasspointManager().enableAutojoin(config.getKey(),
+            if (!mWifiInjector.getPasspointManager().enableAutojoin(config.getProfileKey(),
                     null, choice)) {
                 return false;
             }
@@ -2248,7 +2253,7 @@ public class WifiNetworkSuggestionsManager {
                 continue;
             }
             WifiConfiguration wcmConfig = mWifiConfigManager
-                    .getConfiguredNetwork(ewns.wns.wifiConfiguration.getKey());
+                    .getConfiguredNetwork(ewns.wns.wifiConfiguration.getProfileKey());
             // Network selection is disabled, ignore.
             if (wcmConfig != null && !wcmConfig.getNetworkSelectionStatus().isNetworkEnabled()) {
                 continue;

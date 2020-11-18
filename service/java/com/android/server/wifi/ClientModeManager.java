@@ -21,4 +21,7 @@ package com.android.server.wifi;
  */
 public interface ClientModeManager extends ActiveModeManager, ClientMode {
     int syncGetWifiState();
+
+    @Override
+    ClientRole getRole();
 }
