@@ -539,19 +539,22 @@ public class WifiConnectivityManager {
                     mWaitForFullBandScanResults = false;
                 }
             }
+
+            // Create a new list to avoid looping call trigger concurrent exception.
+            List<ScanDetail> scanDetailList = new ArrayList<>(mScanDetails);
+            clearScanDetails();
+
             if (results != null && results.length > 0) {
-                mWifiMetrics.incrementAvailableNetworksHistograms(mScanDetails,
+                mWifiMetrics.incrementAvailableNetworksHistograms(scanDetailList,
                         isFullBandScanResults);
             }
             if (mNumScanResultsIgnoredDueToSingleRadioChain > 0) {
                 Log.i(TAG, "Number of scan results ignored due to single radio chain scan: "
                         + mNumScanResultsIgnoredDueToSingleRadioChain);
             }
-            handleScanResults(mScanDetails,
+            handleScanResults(scanDetailList,
                     ALL_SINGLE_SCAN_LISTENER, isFullBandScanResults,
                     wasCandidateSelected -> {
-                        clearScanDetails();
-
                         // Update metrics to see if a single scan detected a valid network
                         // while PNO scan didn't.
                         // Note: We don't update the background scan metrics any more as it is
@@ -745,11 +748,13 @@ public class WifiConnectivityManager {
                 mScanDetails.add(ScanResultUtil.toScanDetail(result));
             }
 
-            handleScanResults(mScanDetails, PNO_SCAN_LISTENER, false,
-                    wasCandidateSelected -> {
-                        clearScanDetails();
-                        mScanRestartCount = 0;
+            // Create a new list to avoid looping call trigger concurrent exception.
+            List<ScanDetail> scanDetailList = new ArrayList<>(mScanDetails);
+            clearScanDetails();
+            mScanRestartCount = 0;
 
+            handleScanResults(scanDetailList, PNO_SCAN_LISTENER, false,
+                    wasCandidateSelected -> {
                         if (!wasCandidateSelected) {
                             // The scan results were rejected by WifiNetworkSelector due to low
                             // RSSI values
@@ -1683,8 +1688,6 @@ public class WifiConnectivityManager {
         scanSettings.reportEvents = WifiScanner.REPORT_EVENT_NO_BATCH;
         scanSettings.numBssidsPerScan = 0;
         scanSettings.periodInMs = deviceMobilityStateToPnoScanIntervalMs(mDeviceMobilityState);
-
-        mPnoScanListener.clearScanDetails();
 
         mScanner.startDisconnectedPnoScan(
                 scanSettings, pnoSettings, new HandlerExecutor(mEventHandler), mPnoScanListener);
