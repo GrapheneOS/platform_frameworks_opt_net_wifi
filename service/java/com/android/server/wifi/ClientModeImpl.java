@@ -3464,8 +3464,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mPasspointManager.notifyIconDone((IconEvent) message.obj);
                     break;
                 }
-                case WifiMonitor.HS20_REMEDIATION_EVENT:
                 case WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT:
+                    mPasspointManager.handleDeauthImminentEvent((WnmData) message.obj,
+                            getConnectedWifiConfigurationInternal());
+                    break;
+                case WifiMonitor.HS20_REMEDIATION_EVENT:
                 case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT: {
                     mPasspointManager.receivedWnmFrame((WnmData) message.obj);
                     break;

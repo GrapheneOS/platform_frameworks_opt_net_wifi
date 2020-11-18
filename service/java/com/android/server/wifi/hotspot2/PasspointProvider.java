@@ -18,8 +18,11 @@ package com.android.server.wifi.hotspot2;
 
 import static android.net.wifi.WifiConfiguration.MeteredOverride;
 
+import static com.android.server.wifi.MboOceConstants.DEFAULT_BLOCKLIST_DURATION_MS;
+
 import android.annotation.Nullable;
 import android.net.wifi.EAPConstants;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.hotspot2.PasspointConfiguration;
@@ -34,6 +37,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.server.wifi.Clock;
 import com.android.server.wifi.IMSIParameter;
 import com.android.server.wifi.WifiCarrierInfoManager;
 import com.android.server.wifi.WifiKeyStore;
@@ -108,18 +112,22 @@ public class PasspointProvider {
     private boolean mIsTrusted;
     private boolean mVerboseLoggingEnabled;
 
+    private final Clock mClock;
+    private long mReauthDelay = 0;
+    private List<String> mBlockedBssids = new ArrayList<>();
+
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
             WifiCarrierInfoManager wifiCarrierInfoManager, long providerId, int creatorUid,
-            String packageName, boolean isFromSuggestion) {
+            String packageName, boolean isFromSuggestion, Clock clock) {
         this(config, keyStore, wifiCarrierInfoManager, providerId, creatorUid, packageName,
-                isFromSuggestion, null, null, null, false, false);
+                isFromSuggestion, null, null, null, false, false, clock);
     }
 
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
             WifiCarrierInfoManager wifiCarrierInfoManager, long providerId, int creatorUid,
             String packageName, boolean isFromSuggestion, List<String> caCertificateAliases,
             String clientPrivateKeyAndCertificateAlias, String remediationCaCertificateAlias,
-            boolean hasEverConnected, boolean isShared) {
+            boolean hasEverConnected, boolean isShared, Clock clock) {
         // Maintain a copy of the configuration to avoid it being updated by others.
         mConfig = new PasspointConfiguration(config);
         mKeyStore = keyStore;
@@ -134,6 +142,7 @@ public class PasspointProvider {
         mIsFromSuggestion = isFromSuggestion;
         mWifiCarrierInfoManager = wifiCarrierInfoManager;
         mIsTrusted = true;
+        mClock = clock;
 
         // Setup EAP method and authentication parameter based on the credential.
         if (mConfig.getCredential().getUserCredential() != null) {
@@ -389,10 +398,20 @@ public class PasspointProvider {
      *
      * @param anqpElements ANQP elements from the AP
      * @param roamingConsortiumFromAp Roaming Consortium information element from the AP
+     * @param scanResult Latest Scan result
      * @return {@link PasspointMatch}
      */
     public PasspointMatch match(Map<ANQPElementType, ANQPElement> anqpElements,
-            RoamingConsortium roamingConsortiumFromAp) {
+            RoamingConsortium roamingConsortiumFromAp, ScanResult scanResult) {
+        if (isProviderBlocked(scanResult)) {
+            if (mVerboseLoggingEnabled) {
+                Log.d(TAG, "Provider " + mConfig.getServiceFriendlyName()
+                        + " is blocked because reauthentication delay duration is still in"
+                        + " progess");
+            }
+            return PasspointMatch.None;
+        }
+
         // If the profile requires a SIM credential, make sure that the installed SIM matches
         String matchingSimImsi = null;
         if (mConfig.getCredential().getSimCredential() != null) {
@@ -650,6 +669,21 @@ public class PasspointProvider {
         builder.append("Shared: ").append(mIsShared).append("\n");
         builder.append("Suggestion: ").append(mIsFromSuggestion).append("\n");
         builder.append("Trusted: ").append(mIsTrusted).append("\n");
+        if (mReauthDelay != 0 && mClock.getElapsedSinceBootMillis() < mReauthDelay) {
+            builder.append("Reauth delay remaining (seconds): ")
+                    .append((mReauthDelay - mClock.getElapsedSinceBootMillis()) / 1000)
+                    .append("\n");
+            if (mBlockedBssids.isEmpty()) {
+                builder.append("ESS is blocked").append("\n");
+            } else {
+                builder.append("List of blocked BSSIDs:").append("\n");
+                for (String bssid : mBlockedBssids) {
+                    builder.append(bssid).append("\n");
+                }
+            }
+        } else {
+            builder.append("Provider is not blocked").append("\n");
+        }
 
         if (mPackageName != null) {
             builder.append("PackageName: ").append(mPackageName).append("\n");
@@ -1017,5 +1051,62 @@ public class PasspointProvider {
      */
     public void enableVerboseLogging(boolean verbose) {
         mVerboseLoggingEnabled = verbose;
+    }
+
+    /**
+     * Block a BSS or ESS following a Deauthentication-Imminent WNM-Notification
+     *
+     * @param bssid BSSID of the source AP
+     * @param isEss true: Block ESS, false: Block BSS
+     * @param delayInSeconds Delay duration in seconds
+     */
+    public void blockBssOrEss(long bssid, boolean isEss, int delayInSeconds) {
+        if (delayInSeconds < 0 || bssid == 0) {
+            return;
+        }
+
+        mReauthDelay = mClock.getElapsedSinceBootMillis();
+        if (delayInSeconds == 0) {
+            // Section 3.2.1.2 in the specification defines that a Re-Auth Delay field
+            // value of 0 means the delay value is chosen by the mobile device.
+            mReauthDelay += DEFAULT_BLOCKLIST_DURATION_MS;
+        } else {
+            mReauthDelay += (delayInSeconds * 1000);
+        }
+        if (isEss) {
+            // Deauth-imminent for the entire ESS, do not try to reauthenticate until the delay
+            // is over. Clear the list of blocked BSSIDs.
+            mBlockedBssids.clear();
+        } else {
+            // Add this MAC address to the list of blocked BSSIDs.
+            mBlockedBssids.add(Utils.macToString(bssid));
+        }
+    }
+
+    /**
+     * Checks if this provider is blocked or if there are any BSSes blocked
+     *
+     * @param scanResult Latest scan result
+     * @return true if blocked, false otherwise
+     */
+    private boolean isProviderBlocked(ScanResult scanResult) {
+        if (mReauthDelay == 0) {
+            return false;
+        }
+
+        if (mClock.getElapsedSinceBootMillis() >= mReauthDelay) {
+            // Provider was blocked, but the delay duration have passed
+            mReauthDelay = 0;
+            mBlockedBssids.clear();
+            return false;
+        }
+
+        // Empty means the entire ESS is blocked
+        if (mBlockedBssids.isEmpty() || mBlockedBssids.contains(scanResult.BSSID)) {
+            return true;
+        }
+
+        // Trying to associate to another BSS in the ESS
+        return false;
     }
 }
