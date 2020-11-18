@@ -196,7 +196,6 @@ public class WifiInjector {
     private final UntrustedWifiNetworkFactory mUntrustedWifiNetworkFactory;
     private final OemPaidWifiNetworkFactory mOemPaidWifiNetworkFactory;
     @Nullable private final OemPrivateWifiNetworkFactory mOemPrivateWifiNetworkFactory;
-    private final SupplicantStateTracker mSupplicantStateTracker;
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
     private final SimRequiredNotifier mSimRequiredNotifier;
@@ -381,8 +380,6 @@ public class WifiInjector {
         mWifiMetrics.setWifiDataStall(mWifiDataStall);
         mLinkProbeManager = new LinkProbeManager(mClock, mWifiNative, mWifiMetrics,
                 mFrameworkFacade, wifiHandler, mContext);
-        mSupplicantStateTracker = new SupplicantStateTracker(
-                mContext, mWifiConfigManager, mBatteryStats, wifiHandler, mWifiMonitor);
         mMboOceController = new MboOceController(makeTelephonyManager(), mWifiNative);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);
@@ -506,7 +503,6 @@ public class WifiInjector {
         mWifiMonitor.enableVerboseLogging(verboseBool);
         mWifiNative.enableVerboseLogging(verboseBool);
         mWifiConfigManager.enableVerboseLogging(verboseBool);
-        mSupplicantStateTracker.enableVerboseLogging(verboseBool);
         mPasspointManager.enableVerboseLogging(verboseBool);
         mWifiNetworkFactory.enableVerboseLogging(verboseBool);
         mLinkProbeManager.enableVerboseLogging(verboseBool);
@@ -661,6 +657,10 @@ public class WifiInjector {
             @NonNull ConcreteClientModeManager clientModeManager,
             boolean verboseLoggingEnabled) {
         ExtendedWifiInfo wifiInfo = new ExtendedWifiInfo(mWifiGlobals);
+        SupplicantStateTracker supplicantStateTracker = new SupplicantStateTracker(
+                mContext, mWifiConfigManager, mBatteryStats, mWifiHandlerThread.getLooper(),
+                mWifiMonitor, ifaceName);
+        supplicantStateTracker.enableVerboseLogging(verboseLoggingEnabled);
         return new ClientModeImpl(mContext, mWifiMetrics, mClock,
                 mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
                 mPasspointManager, mWifiMonitor, mWifiDiagnostics,
@@ -673,7 +673,7 @@ public class WifiInjector {
                 mLockManager, mFrameworkFacade, mWifiHandlerThread.getLooper(), mCountryCode,
                 mWifiNative, new WrongPasswordNotifier(mContext, mFrameworkFacade),
                 mWifiTrafficPoller, mLinkProbeManager, mClock.getElapsedSinceBootMillis(),
-                mBatteryStats, mSupplicantStateTracker, mMboOceController, mWifiCarrierInfoManager,
+                mBatteryStats, supplicantStateTracker, mMboOceController, mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 mSimRequiredNotifier,
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, wifiInfo,

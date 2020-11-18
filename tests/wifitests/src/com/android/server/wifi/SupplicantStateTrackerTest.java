@@ -15,8 +15,8 @@
  */
 package com.android.server.wifi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -26,12 +26,12 @@ import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiSsid;
 import android.os.BatteryStatsManager;
-import android.os.Handler;
 import android.os.Message;
 import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -47,12 +47,12 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
     private static final String   sSSID = "\"GoogleGuest\"";
     private static final WifiSsid sWifiSsid = WifiSsid.createFromAsciiEncoded(sSSID);
     private static final String   sBSSID = "01:02:03:04:05:06";
+    private static final String TEST_IFACE = "wlan_test";
 
     private @Mock WifiConfigManager mWcm;
     private @Mock Context mContext;
     private @Mock BatteryStatsManager mBatteryStats;
     private @Mock WifiMonitor mWifiMonitor;
-    private Handler mHandler;
     private SupplicantStateTracker mSupplicantStateTracker;
     private TestLooper mLooper;
 
@@ -66,10 +66,17 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
     @Before
     public void setUp() {
         mLooper = new TestLooper();
-        mHandler = new Handler(mLooper.getLooper());
         MockitoAnnotations.initMocks(this);
         mSupplicantStateTracker = new SupplicantStateTracker(mContext, mWcm, mBatteryStats,
-                mHandler, mWifiMonitor);
+                mLooper.getLooper(), mWifiMonitor, TEST_IFACE);
+
+        verify(mWifiMonitor, atLeastOnce()).registerHandler(eq(TEST_IFACE), anyInt(), any());
+    }
+
+    @After
+    public void tearDown() {
+        mSupplicantStateTracker.stop();
+        verify(mWifiMonitor, atLeastOnce()).deregisterHandler(eq(TEST_IFACE), anyInt(), any());
     }
 
     /**
