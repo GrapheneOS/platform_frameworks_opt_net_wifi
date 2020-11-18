@@ -79,7 +79,7 @@ import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.internal.util.AsyncChannel;
+import com.android.connectivity.aidl.INetworkAgent;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.MockResources;
 import com.android.server.wifi.WifiBaseTest;
@@ -463,7 +463,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
 
         mResources.setBoolean(R.bool.config_wifiAllowMultipleNetworksOnSameAwareNdi, true);
 
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
         ArgumentCaptor<Short> transactionId = ArgumentCaptor.forClass(Short.class);
         ArgumentCaptor<NetworkCapabilities> netCapCaptor = ArgumentCaptor.forClass(
                 NetworkCapabilities.class);
@@ -473,7 +473,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
 
         NetworkRequest[] nrs = new NetworkRequest[3];
         DataPathEndPointInfo[] ress = new DataPathEndPointInfo[3];
-        Messenger[] agentMessengers = new Messenger[3];
+        INetworkAgent[] agentBinders = new INetworkAgent[3];
         Messenger messenger = null;
         boolean first = true;
         for (int i : startOrder) {
@@ -519,9 +519,9 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
 
                 first = false;
             }
-            inOrder.verify(mMockCm).registerNetworkAgent(messengerCaptor.capture(), any(), any(),
+            inOrder.verify(mMockCm).registerNetworkAgent(agentCaptor.capture(), any(), any(),
                     netCapCaptor.capture(), anyInt(), any(), anyInt());
-            agentMessengers[i] = messengerCaptor.getValue();
+            agentBinders[i] = agentCaptor.getValue();
             inOrderM.verify(mAwareMetricsMock).recordNdpStatus(eq(NanStatusType.SUCCESS),
                     eq(false), anyLong());
             inOrderM.verify(mAwareMetricsMock).recordNdpCreation(anyInt(), any(), any());
@@ -543,9 +543,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
             endNetworkReqMsg.obj = nrs[i];
             messenger.send(endNetworkReqMsg);
 
-            Message endNetworkUsageMsg = Message.obtain();
-            endNetworkUsageMsg.what = AsyncChannel.CMD_CHANNEL_DISCONNECTED;
-            agentMessengers[i].send(endNetworkUsageMsg);
+            agentBinders[i].onDisconnected();
             mMockLooper.dispatchAll();
 
             inOrder.verify(mMockNative).endDataPath(transactionId.capture(), eq(ndpId + i));
@@ -581,7 +579,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         NetworkRequest[] nrs = new NetworkRequest[numRequestsPre + numRequestsPost + 1];
 
         ArgumentCaptor<Short> transactionId = ArgumentCaptor.forClass(Short.class);
-        ArgumentCaptor<Messenger> agentMessengerCaptor = ArgumentCaptor.forClass(Messenger.class);
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
         ArgumentCaptor<NetworkCapabilities> netCapCaptor = ArgumentCaptor.forClass(
                 NetworkCapabilities.class);
         InOrder inOrder = inOrder(mMockNative, mMockCm, mMockCallback, mMockSessionCallback,
@@ -645,7 +643,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
 
         inOrder.verify(mMockNetdWrapper).setInterfaceUp(anyString());
         inOrder.verify(mMockNetdWrapper).enableIpv6(anyString());
-        inOrder.verify(mMockCm).registerNetworkAgent(agentMessengerCaptor.capture(), any(), any(),
+        inOrder.verify(mMockCm).registerNetworkAgent(agentCaptor.capture(), any(), any(),
                 netCapCaptor.capture(), anyInt(), any(), anyInt());
         inOrderM.verify(mAwareMetricsMock).recordNdpStatus(eq(NanStatusType.SUCCESS),
                 eq(true), anyLong());
@@ -690,9 +688,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
             mMockLooper.dispatchAll();
         }
 
-        Message endNetworkUsageMsg = Message.obtain();
-        endNetworkUsageMsg.what = AsyncChannel.CMD_CHANNEL_DISCONNECTED;
-        agentMessengerCaptor.getValue().send(endNetworkUsageMsg);
+        agentCaptor.getValue().onDisconnected();
         mMockLooper.dispatchAll();
 
         // (10) verify that NDP torn down
@@ -1537,7 +1533,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         final String passphrase = "some passphrase";
         final byte[] peerDiscoveryMac = HexEncoding.decode("000102030405".toCharArray(), false);
 
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
         ArgumentCaptor<Short> transactionId = ArgumentCaptor.forClass(Short.class);
         ArgumentCaptor<NetworkCapabilities> netCapCaptor = ArgumentCaptor.forClass(
                 NetworkCapabilities.class);
@@ -1649,7 +1645,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 inOrder.verify(mMockNative).endDataPath(transactionId.capture(), eq(ndpId));
                 mDut.onEndDataPathResponse(transactionId.getValue(), true, 0);
             } else {
-                inOrder.verify(mMockCm).registerNetworkAgent(messengerCaptor.capture(), any(),
+                inOrder.verify(mMockCm).registerNetworkAgent(agentCaptor.capture(), any(),
                         any(), netCapCaptor.capture(), anyInt(), any(), anyInt());
                 inOrder.verify(mMockNetworkInterface).setConnected(any());
                 inOrderM.verify(mAwareMetricsMock).recordNdpStatus(eq(NanStatusType.SUCCESS),
@@ -1681,9 +1677,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
             endNetworkReqMsg.obj = nr;
             res.mMessenger.send(endNetworkReqMsg);
 
-            Message endNetworkUsageMsg = Message.obtain();
-            endNetworkUsageMsg.what = AsyncChannel.CMD_CHANNEL_DISCONNECTED;
-            messengerCaptor.getValue().send(endNetworkUsageMsg);
+            agentCaptor.getValue().onDisconnected();
             mDut.onEndDataPathResponse(transactionId.getValue(), true, 0);
             mDut.onDataPathEndNotification(ndpId);
             mMockLooper.dispatchAll();
@@ -1709,7 +1703,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
         final byte[] peerDiscoveryMac = HexEncoding.decode("000102030405".toCharArray(), false);
         final byte[] peerDataPathMac = HexEncoding.decode("0A0B0C0D0E0F".toCharArray(), false);
 
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
         ArgumentCaptor<Short> transactionId = ArgumentCaptor.forClass(Short.class);
         ArgumentCaptor<NetworkCapabilities> netCapCaptor = ArgumentCaptor.forClass(
                 NetworkCapabilities.class);
@@ -1766,7 +1760,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 mMockLooper.dispatchAll();
                 inOrder.verify(mMockNetdWrapper).setInterfaceUp(anyString());
                 inOrder.verify(mMockNetdWrapper).enableIpv6(anyString());
-                inOrder.verify(mMockCm).registerNetworkAgent(messengerCaptor.capture(), any(),
+                inOrder.verify(mMockCm).registerNetworkAgent(agentCaptor.capture(), any(),
                         any(), netCapCaptor.capture(), anyInt(), any(), anyInt());
                 inOrderM.verify(mAwareMetricsMock).recordNdpStatus(eq(NanStatusType.SUCCESS),
                         eq(useDirect), anyLong());
@@ -1798,9 +1792,7 @@ public class WifiAwareDataPathStateManagerTest extends WifiBaseTest {
                 endNetworkMsg.obj = nr;
                 res.mMessenger.send(endNetworkMsg);
 
-                Message endNetworkUsageMsg = Message.obtain();
-                endNetworkUsageMsg.what = AsyncChannel.CMD_CHANNEL_DISCONNECTED;
-                messengerCaptor.getValue().send(endNetworkUsageMsg);
+                agentCaptor.getValue().onDisconnected();
 
                 mDut.onEndDataPathResponse(transactionId.getValue(), true, 0);
                 mDut.onDataPathEndNotification(ndpId);
