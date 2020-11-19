@@ -108,7 +108,6 @@ public class WifiInjector {
     static WifiInjector sWifiInjector = null;
 
     private final WifiContext mContext;
-    private final ExtendedWifiInfo mWifiInfo;
     private final BatteryStatsManager mBatteryStats;
     private final FrameworkFacade mFrameworkFacade = new FrameworkFacade();
     private final DeviceConfigFacade mDeviceConfigFacade;
@@ -230,7 +229,6 @@ public class WifiInjector {
         mWifiGlobals = new WifiGlobals(mContext);
         mScoringParams = new ScoringParams(mContext);
         mWifiChannelUtilizationScan = new WifiChannelUtilization(mClock, mContext);
-        mWifiInfo = new ExtendedWifiInfo(mWifiGlobals);
         mSettingsMigrationDataHolder = new SettingsMigrationDataHolder(mContext);
         mConnectionFailureNotificationBuilder = new ConnectionFailureNotificationBuilder(
                 mContext, getWifiStackPackageName(), mFrameworkFacade);
@@ -316,7 +314,7 @@ public class WifiInjector {
                 new LastMileLogger(this), mClock, mWifiDiagnosticsHandlerThread.getLooper());
         mWifiLastResortWatchdog = new WifiLastResortWatchdog(this, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
-                mDeviceConfigFacade, mWifiThreadRunner, mWifiInfo, mWifiMonitor);
+                mDeviceConfigFacade, mWifiThreadRunner, mWifiMonitor);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard,
                 mScoringParams);
@@ -400,7 +398,7 @@ public class WifiInjector {
                 new ConnectToNetworkNotificationBuilder(mContext, this, mFrameworkFacade));
         mWifiConnectivityManager = new WifiConnectivityManager(
                 mContext, mScoringParams, mWifiConfigManager,
-                mWifiNetworkSuggestionsManager, mWifiInfo, mWifiNetworkSelector,
+                mWifiNetworkSuggestionsManager, mWifiNetworkSelector,
                 mWifiConnectivityHelper, mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, wifiHandler,
                 mClock, mConnectivityLocalLog, mWifiScoreCard, mBssidBlocklistMonitor,
@@ -662,12 +660,13 @@ public class WifiInjector {
             @NonNull String ifaceName,
             @NonNull ConcreteClientModeManager clientModeManager,
             boolean verboseLoggingEnabled) {
+        ExtendedWifiInfo wifiInfo = new ExtendedWifiInfo(mWifiGlobals);
         return new ClientModeImpl(mContext, mWifiMetrics, mClock,
                 mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
                 mPasspointManager, mWifiMonitor, mWifiDiagnostics,
                 mWifiDataStall, mScoringParams, mWifiThreadRunner,
                 mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
-                mDeviceConfigFacade, mScanRequestProxy, mWifiInfo, mWifiConnectivityManager,
+                mDeviceConfigFacade, mScanRequestProxy, wifiInfo, mWifiConnectivityManager,
                 mBssidBlocklistMonitor, mConnectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
                 mWifiNetworkFactory, mUntrustedWifiNetworkFactory, mOemPaidWifiNetworkFactory,
                 mOemPrivateWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
@@ -677,7 +676,7 @@ public class WifiInjector {
                 mBatteryStats, mSupplicantStateTracker, mMboOceController, mWifiCarrierInfoManager,
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 mSimRequiredNotifier,
-                new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
+                new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, wifiInfo,
                         mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
                         mDeviceConfigFacade, mContext, mAdaptiveConnectivityEnabledSettingObserver,
                         ifaceName),

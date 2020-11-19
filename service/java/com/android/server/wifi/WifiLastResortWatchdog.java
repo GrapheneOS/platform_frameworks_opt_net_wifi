@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -45,6 +46,8 @@ import java.util.Set;
  * Essentially this class automates a user toggling 'Airplane Mode' when WiFi "won't work".
  * IF each available saved network has failed connecting more times than the FAILURE_THRESHOLD
  * THEN Watchdog will restart Supplicant, wifi driver and return ClientModeImpl to InitialState.
+ * TODO(b/159944009): May need to rework this class to handle make before break transition on STA +
+ * STA devices.
  */
 public class WifiLastResortWatchdog {
     private static final String TAG = "WifiLastResortWatchdog";
@@ -120,7 +123,6 @@ public class WifiLastResortWatchdog {
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final Handler mHandler;
     private final WifiThreadRunner mWifiThreadRunner;
-    private final WifiInfo mWifiInfo;
     private final WifiMonitor mWifiMonitor;
 
     /**
@@ -136,7 +138,6 @@ public class WifiLastResortWatchdog {
             Looper clientModeImplLooper,
             DeviceConfigFacade deviceConfigFacade,
             WifiThreadRunner wifiThreadRunner,
-            WifiInfo wifiInfo,
             WifiMonitor wifiMonitor) {
         mWifiInjector = wifiInjector;
         mClock = clock;
@@ -145,7 +146,6 @@ public class WifiLastResortWatchdog {
         mContext = context;
         mDeviceConfigFacade = deviceConfigFacade;
         mWifiThreadRunner = wifiThreadRunner;
-        mWifiInfo = wifiInfo;
         mWifiMonitor = wifiMonitor;
         mHandler = new Handler(clientModeImplLooper) {
             public void handleMessage(Message msg) {
@@ -168,6 +168,17 @@ public class WifiLastResortWatchdog {
         for (int event : WIFI_MONITOR_EVENTS) {
             mWifiMonitor.deregisterHandler(ifaceName, event, mHandler);
         }
+    }
+
+    @NonNull
+    private WifiInfo getPrimaryWifiInfo() {
+        // This is retrieved lazily since there is a non-trivial circular dependency between
+        // ActiveModeWarden & WifiLastResortWatchdog.
+        ActiveModeWarden activeModeWarden = mWifiInjector.getActiveModeWarden();
+        if (activeModeWarden == null) return new WifiInfo();
+        // Cannot be null.
+        ClientModeManager primaryCmm = activeModeWarden.getPrimaryClientModeManager();
+        return primaryCmm.syncRequestConnectionInfo();
     }
 
     /**
@@ -361,11 +372,12 @@ public class WifiLastResortWatchdog {
         if (!isEntering) {
             return;
         }
+        WifiInfo wifiInfo = getPrimaryWifiInfo();
         if (!mWatchdogAllowedToTrigger && mWatchdogFixedWifi
                 && getWifiWatchdogFeature()
                 && checkIfAtleastOneNetworkHasEverConnected()
-                && checkIfConnectedBackToSameSsid()
-                && checkIfConnectedBssidHasEverFailed()) {
+                && checkIfConnectedBackToSameSsid(wifiInfo)
+                && checkIfConnectedBssidHasEverFailed(wifiInfo)) {
             takeBugReportWithCurrentProbability("Wifi fixed after restart");
             // WiFi has connected after a Watchdog trigger, without any new networks becoming
             // available, log a Watchdog success in wifi metrics
@@ -383,16 +395,16 @@ public class WifiLastResortWatchdog {
      * Helper function to check if device connected to BSSID
      * which is in BSSID failure list after watchdog trigger.
      */
-    private boolean checkIfConnectedBssidHasEverFailed() {
-        return mBssidFailureList.contains(mWifiInfo.getBSSID());
+    private boolean checkIfConnectedBssidHasEverFailed(@NonNull WifiInfo wifiInfo) {
+        return mBssidFailureList.contains(wifiInfo.getBSSID());
     }
 
     /**
      * Helper function to check if device connect back to same
      * SSID after watchdog trigger
      */
-    private boolean checkIfConnectedBackToSameSsid() {
-        if (TextUtils.equals(mSsidLastTrigger, mWifiInfo.getSSID())) {
+    private boolean checkIfConnectedBackToSameSsid(@NonNull WifiInfo wifiInfo) {
+        if (TextUtils.equals(mSsidLastTrigger, wifiInfo.getSSID())) {
             return true;
         }
         localLog("checkIfConnectedBackToSameSsid: different SSID be connected");

@@ -3129,4 +3129,16 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mPrimaryChangedCallback).onChange(mClientModeManager, null);
         verify(mPrimaryChangedCallback).onChange(null, additionalClientModeManager);
     }
+
+    @Test
+    public void testRegisterPrimaryCmmChangedCallbackWhenConnectModeActiveState() throws Exception {
+        enterClientModeActiveState();
+
+        // register a new primary cmm change callback.
+        ActiveModeWarden.PrimaryClientModeManagerChangedCallback primarCmmCallback = mock(
+                ActiveModeWarden.PrimaryClientModeManagerChangedCallback.class);
+        mActiveModeWarden.registerPrimaryClientModeManagerChangedCallback(primarCmmCallback);
+        // Ensure we get the callback immediately.
+        verify(primarCmmCallback).onChange(null, mClientModeManager);
+    }
 }

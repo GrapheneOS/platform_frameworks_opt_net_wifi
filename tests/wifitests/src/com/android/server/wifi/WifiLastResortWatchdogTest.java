@@ -57,6 +57,8 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
     @Mock Context mContext;
     @Mock DeviceConfigFacade mDeviceConfigFacade;
     @Mock WifiMonitor mWifiMonitor;
+    @Mock ActiveModeWarden mActiveModeWarden;
+    @Mock ClientModeManager mClientModeManager;
 
     @Captor ArgumentCaptor<Handler> mHandlerCaptor;
 
@@ -80,6 +82,9 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         initMocks(this);
         mLooper = new TestLooper();
         when(mWifiInjector.getSelfRecovery()).thenReturn(mSelfRecovery);
+        when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
+        when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
+        when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(mWifiInfo);
         when(mDeviceConfigFacade.isAbnormalConnectionBugreportEnabled()).thenReturn(true);
         when(mDeviceConfigFacade.getAbnormalConnectionDurationMs()).thenReturn(
                         DEFAULT_ABNORMAL_CONNECTION_DURATION_MS);
@@ -98,7 +103,7 @@ public class WifiLastResortWatchdogTest extends WifiBaseTest {
         WifiThreadRunner wifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
         mLastResortWatchdog = new WifiLastResortWatchdog(mWifiInjector, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, mLooper.getLooper(), mDeviceConfigFacade,
-                wifiThreadRunner, mWifiInfo, mWifiMonitor);
+                wifiThreadRunner, mWifiMonitor);
         mLastResortWatchdog.setBugReportProbability(1);
     }
 

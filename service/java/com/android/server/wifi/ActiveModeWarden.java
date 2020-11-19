@@ -364,6 +364,9 @@ public class ActiveModeWarden {
     public void registerPrimaryClientModeManagerChangedCallback(
             @NonNull PrimaryClientModeManagerChangedCallback callback) {
         mPrimaryChangedCallbacks.add(Objects.requireNonNull(callback));
+        // If there is already a primary CMM when registering, send a callback with the info.
+        ConcreteClientModeManager cm = getPrimaryClientModeManagerNullable();
+        if (cm != null) callback.onChange(null, cm);
     }
 
     /** Unregister for primary ClientModeManager changed callbacks. */
@@ -630,6 +633,17 @@ public class ActiveModeWarden {
     }
 
     /**
+     * Returns primary client mode manager if any, else returns null
+     * This mode manager can be the default route on the device & will handle all external API
+     * calls.
+     * @return Instance of {@link ConcreteClientModeManager} or null.
+     */
+    @Nullable
+    private ConcreteClientModeManager getPrimaryClientModeManagerNullable() {
+        return getClientModeManagerInRole(ROLE_CLIENT_PRIMARY);
+    }
+
+    /**
      * Returns primary client mode manager if any, else returns an instance of
      * {@link ClientModeManager}.
      * This mode manager can be the default route on the device & will handle all external API
@@ -638,7 +652,7 @@ public class ActiveModeWarden {
      */
     @NonNull
     public ClientModeManager getPrimaryClientModeManager() {
-        ClientModeManager cm = getClientModeManagerInRole(ROLE_CLIENT_PRIMARY);
+        ClientModeManager cm = getPrimaryClientModeManagerNullable();
         if (cm != null) return cm;
         // If there is no primary client manager, return the default one.
         return mDefaultClientModeManager;
@@ -736,7 +750,7 @@ public class ActiveModeWarden {
     }
 
     @Nullable
-    private ClientModeManager getClientModeManagerInRole(ClientRole role) {
+    private ConcreteClientModeManager getClientModeManagerInRole(ClientRole role) {
         for (ConcreteClientModeManager manager : mClientModeManagers) {
             if (manager.getRole() == role) return manager;
         }
