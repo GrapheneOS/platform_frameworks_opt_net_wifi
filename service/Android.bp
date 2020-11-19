@@ -95,7 +95,8 @@ java_library {
         "libnanohttpd",
         "services.net-module-wifi",
         "wifi-lite-protos",
-        "wifi-nano-protos"
+        "wifi-nano-protos",
+        "modules-utils-os",
     ],
 }
 

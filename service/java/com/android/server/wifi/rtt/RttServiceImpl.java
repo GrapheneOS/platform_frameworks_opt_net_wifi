@@ -39,7 +39,6 @@ import android.net.wifi.rtt.RangingResultCallback;
 import android.net.wifi.rtt.ResponderConfig;
 import android.net.wifi.rtt.ResponderLocation;
 import android.net.wifi.rtt.WifiRttManager;
-import android.os.BasicShellCommandHandler;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -55,6 +54,7 @@ import android.util.SparseIntArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.WakeupMessage;
+import com.android.modules.utils.BasicShellCommandHandler;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.WifiSettingsConfigStore;
 import com.android.server.wifi.proto.nano.WifiMetricsProto;
