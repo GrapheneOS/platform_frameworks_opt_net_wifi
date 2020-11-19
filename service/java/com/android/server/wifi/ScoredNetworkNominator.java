@@ -186,6 +186,11 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
                 debugLog("Ignoring disabled SSID: " + configuredNetwork.SSID);
                 continue;
             }
+            if (mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                    configuredNetwork)) {
+                debugLog("Ignoring non-carrier-merged SSID: " + configuredNetwork.SSID);
+                continue;
+            }
 
             // TODO(b/37485956): consider applying a boost for networks with only the same SSID
             boolean isCurrentNetwork = currentNetwork != null
