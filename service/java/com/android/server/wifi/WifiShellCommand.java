@@ -60,6 +60,7 @@ import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BasicShellCommandHandler;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.util.ApConfigUtil;
 import com.android.server.wifi.util.ArrayUtils;
@@ -615,19 +616,22 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.addNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME, null);
                     // untrusted/oem-paid networks need a corresponding NetworkRequest.
-                    if (suggestion.isUntrusted() || suggestion.isOemPaid()
-                            || suggestion.isOemPrivate()) {
+                    if (suggestion.isUntrusted()
+                            || (SdkLevel.isAtLeastS()
+                            && (suggestion.isOemPaid() || suggestion.isOemPrivate()))) {
                         NetworkRequest.Builder networkRequestBuilder =
                                 new NetworkRequest.Builder()
                                         .addTransportType(TRANSPORT_WIFI);
                         if (suggestion.isUntrusted()) {
                             networkRequestBuilder.removeCapability(NET_CAPABILITY_TRUSTED);
                         }
-                        if (suggestion.isOemPaid()) {
-                            networkRequestBuilder.addCapability(NET_CAPABILITY_OEM_PAID);
-                        }
-                        if (suggestion.isOemPrivate()) {
-                            networkRequestBuilder.addCapability(NET_CAPABILITY_OEM_PRIVATE);
+                        if (SdkLevel.isAtLeastS()) {
+                            if (suggestion.isOemPaid()) {
+                                networkRequestBuilder.addCapability(NET_CAPABILITY_OEM_PAID);
+                            }
+                            if (suggestion.isOemPrivate()) {
+                                networkRequestBuilder.addCapability(NET_CAPABILITY_OEM_PRIVATE);
+                            }
                         }
                         NetworkRequest networkRequest = networkRequestBuilder.build();
                         ConnectivityManager.NetworkCallback networkCallback =
@@ -654,8 +658,9 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.removeNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME);
                     // untrusted/oem-paid networks need a corresponding NetworkRequest.
-                    if (suggestion.isUntrusted() || suggestion.isOemPaid()
-                            || suggestion.isOemPrivate()) {
+                    if (suggestion.isUntrusted()
+                            || (SdkLevel.isAtLeastS()
+                            && (suggestion.isOemPaid() || suggestion.isOemPrivate()))) {
                         Pair<NetworkRequest, ConnectivityManager.NetworkCallback> nrAndNc =
                                 sActiveRequests.remove(suggestion.getSsid());
                         if (nrAndNc == null) {
@@ -906,9 +911,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             if (option.equals("-u")) {
                 suggestionBuilder.setUntrusted(true);
             } else if (option.equals("-o")) {
-                suggestionBuilder.setOemPaid(true);
+                if (SdkLevel.isAtLeastS()) {
+                    suggestionBuilder.setOemPaid(true);
+                }
             } else if (option.equals("-p")) {
-                suggestionBuilder.setOemPrivate(true);
+                if (SdkLevel.isAtLeastS()) {
+                    suggestionBuilder.setOemPrivate(true);
+                }
             } else if (option.equals("-m")) {
                 suggestionBuilder.setIsMetered(true);
             } else if (option.equals("-s")) {
