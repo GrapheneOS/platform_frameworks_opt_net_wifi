@@ -136,6 +136,7 @@ public class WifiScanningServiceTest extends WifiBaseTest {
     @Mock WifiPermissionsUtil mWifiPermissionsUtil;
     @Mock WifiNative mWifiNative;
     @Mock WifiMetrics mWifiMetrics;
+    @Mock WifiMetrics.ScanMetrics mScanMetrics;
     ChannelHelper mChannelHelper0;
     ChannelHelper mChannelHelper1;
     TestLooper mLooper;
@@ -176,6 +177,7 @@ public class WifiScanningServiceTest extends WifiBaseTest {
         when(mWifiScannerImpl1.getChannelHelper()).thenReturn(mChannelHelper1);
         when(mWifiScannerImpl1.getIfaceName()).thenReturn(TEST_IFACE_NAME_1);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
+        when(mWifiMetrics.getScanMetrics()).thenReturn(mScanMetrics);
         when(mWifiInjector.makeLog(anyString())).thenReturn(mLog);
         WifiAsyncChannel mWifiAsyncChannel = new WifiAsyncChannel("ScanningServiceTest");
         mWifiAsyncChannel.setWifiLog(mLog);

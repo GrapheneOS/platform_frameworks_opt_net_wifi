@@ -1135,10 +1135,14 @@ public class WifiVendorHal {
         for (android.hardware.wifi.V1_3.StaLinkLayerRadioStats radioStats : radios) {
             stats.on_time += radioStats.V1_0.onTimeInMs;
             stats.tx_time += radioStats.V1_0.txTimeInMs;
+            // Aggregate tx_time_per_level based on the assumption that the length of
+            // txTimeInMsPerLevel is the same across all radios. So txTimeInMsPerLevel on other
+            // radios at array indices greater than the length of first radio will be dropped.
             if (stats.tx_time_per_level == null) {
                 stats.tx_time_per_level = new int[radioStats.V1_0.txTimeInMsPerLevel.size()];
             }
-            for (int i = 0; i < stats.tx_time_per_level.length; i++) {
+            for (int i = 0; i < radioStats.V1_0.txTimeInMsPerLevel.size()
+                    && i < stats.tx_time_per_level.length; i++) {
                 stats.tx_time_per_level[i] += radioStats.V1_0.txTimeInMsPerLevel.get(i);
             }
             stats.rx_time += radioStats.V1_0.rxTimeInMs;

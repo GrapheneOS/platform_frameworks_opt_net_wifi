@@ -1017,6 +1017,9 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         ScanData latestScanResults =
                                 mScannerImplsTracker.getLatestSingleScanResults();
                         if (latestScanResults != null) {
+                            mWifiMetrics.getScanMetrics().logScanSucceeded(
+                                    WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE,
+                                    latestScanResults.getResults().length);
                             mWifiMetrics.incrementScanReturnEntry(
                                     WifiMetricsProto.WifiLog.SCAN_SUCCESS,
                                     mActiveScans.size());
@@ -1033,6 +1036,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                     case CMD_SCAN_FAILED:
                         mWifiMetrics.incrementScanReturnEntry(
                                 WifiMetricsProto.WifiLog.SCAN_UNKNOWN, mActiveScans.size());
+                        mWifiMetrics.getScanMetrics().logScanFailed(
+                                WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
                         sendOpFailedToAllAndClear(mActiveScans, WifiScanner.REASON_UNSPECIFIED,
                                 "Scan failed");
                         transitionTo(mIdleState);
@@ -1204,7 +1209,13 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         != 0) {
                     bucketSettings.report_events |= WifiScanner.REPORT_EVENT_FULL_SCAN_RESULT;
                 }
+
+                if (entry.clientInfo != null) {
+                    mWifiMetrics.getScanMetrics().setClientUid(entry.clientInfo.mUid);
+                }
+                mWifiMetrics.getScanMetrics().setWorkSource(entry.workSource);
             }
+
             if (hiddenNetworkList.size() > 0) {
                 settings.hiddenNetworks = new WifiNative.HiddenNetwork[hiddenNetworkList.size()];
                 int numHiddenNetworks = 0;
@@ -1216,7 +1227,11 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
             channels.fillBucketSettings(bucketSettings, Integer.MAX_VALUE);
 
             settings.buckets = new WifiNative.BucketSettings[] {bucketSettings};
+
             if (mScannerImplsTracker.startSingleScan(settings)) {
+                mWifiMetrics.getScanMetrics().logScanStarted(
+                        WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
                 // store the active scan settings
                 mActiveScanSettings = settings;
                 // swap pending and active scan requests
@@ -1229,6 +1244,9 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
             } else {
                 mWifiMetrics.incrementScanReturnEntry(
                         WifiMetricsProto.WifiLog.SCAN_UNKNOWN, mPendingScans.size());
+                mWifiMetrics.getScanMetrics().logScanFailedToStart(
+                        WifiMetrics.ScanMetrics.SCAN_TYPE_SINGLE);
+
                 // notify and cancel failed scans
                 sendOpFailedToAllAndClear(mPendingScans, WifiScanner.REASON_UNSPECIFIED,
                         "Failed to start single scan");
@@ -1516,7 +1534,12 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         replySucceeded(msg);
                         break;
                     case CMD_SCAN_RESULTS_AVAILABLE:
-                        reportScanResults(mScannerImpl.getLatestBatchedScanResults(true));
+                        WifiScanner.ScanData[] results = mScannerImpl.getLatestBatchedScanResults(
+                                true);
+                        mWifiMetrics.getScanMetrics().logScanSucceeded(
+                                WifiMetrics.ScanMetrics.SCAN_TYPE_BACKGROUND,
+                                results != null ? results.length : 0);
+                        reportScanResults(results);
                         break;
                     case CMD_FULL_SCAN_RESULTS:
                         reportFullScanResult((ScanResult) msg.obj, /* bucketsScanned */ msg.arg2);
@@ -1526,6 +1549,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         transitionTo(mPausedState);
                         break;
                     case CMD_SCAN_FAILED:
+                        mWifiMetrics.getScanMetrics().logScanFailed(
+                                WifiMetrics.ScanMetrics.SCAN_TYPE_BACKGROUND);
                         Log.e(TAG, "WifiScanner background scan gave CMD_SCAN_FAILED");
                         sendBackgroundScanFailedToAllAndClear(
                                 WifiScanner.REASON_UNSPECIFIED, "Background Scan failed");
@@ -1610,6 +1635,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
             }
 
             logScanRequest("addBackgroundScanRequest", ci, handler, null, settings, null);
+            mWifiMetrics.getScanMetrics().setClientUid(ci.mUid);
+            mWifiMetrics.getScanMetrics().setWorkSource(workSource);
             mActiveBackgroundScans.addRequest(ci, handler, workSource, settings);
 
             if (updateSchedule()) {
@@ -1661,6 +1688,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         Log.d(TAG, "scan restarted with " + schedule.num_buckets
                                 + " bucket(s) and base period: " + schedule.base_period_ms);
                     }
+                    mWifiMetrics.getScanMetrics().logScanStarted(
+                            WifiMetrics.ScanMetrics.SCAN_TYPE_BACKGROUND);
                     return true;
                 } else {
                     mPreviousSchedule = null;
@@ -1674,6 +1703,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                                 + "[" + bucket.report_events + "]: "
                                 + ChannelHelper.toString(bucket));
                     }
+                    mWifiMetrics.getScanMetrics().logScanFailedToStart(
+                            WifiMetrics.ScanMetrics.SCAN_TYPE_BACKGROUND);
                     return false;
                 }
             }
@@ -2054,9 +2085,14 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                                     "bad parcel params");
                             return HANDLED;
                         }
+
                         if (addHwPnoScanRequest(ci, msg.arg2, scanSettings, pnoSettings)) {
+                            mWifiMetrics.getScanMetrics().logPnoScanEvent(
+                                    WifiMetrics.ScanMetrics.PNO_SCAN_STATE_STARTED);
                             replySucceeded(msg);
                         } else {
+                            mWifiMetrics.getScanMetrics().logPnoScanEvent(
+                                    WifiMetrics.ScanMetrics.PNO_SCAN_STATE_FAILED_TO_START);
                             replyFailed(msg, WifiScanner.REASON_INVALID_REQUEST, "bad request");
                             transitionTo(mStartedState);
                         }
@@ -2067,6 +2103,9 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         break;
                     case CMD_PNO_NETWORK_FOUND:
                         ScanResult[] scanResults = ((ScanResult[]) msg.obj);
+                        mWifiMetrics.getScanMetrics().logPnoScanEvent(
+                                WifiMetrics.ScanMetrics.PNO_SCAN_STATE_COMPLETED_NETWORK_FOUND);
+
                         if (isSingleScanNeeded(scanResults)) {
                             ScanSettings activeScanSettings = getScanSettings();
                             if (activeScanSettings == null) {
@@ -2083,6 +2122,8 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         }
                         break;
                     case CMD_PNO_SCAN_FAILED:
+                        mWifiMetrics.getScanMetrics().logPnoScanEvent(
+                                WifiMetrics.ScanMetrics.PNO_SCAN_STATE_FAILED);
                         sendPnoScanFailedToAllAndClear(
                                 WifiScanner.REASON_UNSPECIFIED, "pno scan failed");
                         transitionTo(mStartedState);
@@ -2243,6 +2284,7 @@ public class WifiScanningServiceImpl extends IWifiScanner.Stub {
                         WifiScanner.CMD_START_SINGLE_SCAN, settings,
                         ClientModeImpl.WIFI_WORK_SOURCE);
             }
+            mWifiMetrics.getScanMetrics().setWorkSource(ClientModeImpl.WIFI_WORK_SOURCE);
         }
 
         /**
