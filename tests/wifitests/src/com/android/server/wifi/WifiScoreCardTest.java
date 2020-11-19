@@ -862,6 +862,29 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(1, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
     }
 
+    /**
+     * Check network stats after auth timeout/disconnection and a normal connection
+     */
+    @Test
+    public void testAuthTimeoutDisconnection() throws Exception {
+        makeAuthFailureExample();
+        mWifiScoreCard.resetConnectionState();
+
+        PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
+
+        assertEquals(1, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
+        assertEquals(1, dailyStats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(0, dailyStats.getCount(CNT_CONNECTION_DURATION_SEC));
+        assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
+        assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
+        assertEquals(1, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
+        assertEquals(1, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
+
+        makeNormalConnectionExample();
+        assertEquals(0, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
+    }
+
     private void makeAuthFailureAndWrongPassword() {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(500);
@@ -1071,6 +1094,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         millisecondsPass(7000);
         mWifiScoreCard.noteSignalPoll(mWifiInfo);
         millisecondsPass(3000);
+        mWifiScoreCard.noteIpConfiguration(mWifiInfo);
         mWifiScoreCard.resetConnectionState();
     }
 
