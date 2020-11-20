@@ -2815,6 +2815,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(updateTimeMs);
         mWifiConfigManager.setRecentFailureAssociationStatus(config.networkId, expectedStatusCode);
 
+        // Verify the config changed broadcast is sent
+        verifyNetworkUpdateBroadcast();
+
         // Verify the recent failure association status is set properly
         List<WifiConfiguration> configs = mWifiConfigManager.getSavedNetworks(Process.WIFI_UID);
         assertEquals(1, configs.size());
@@ -2834,6 +2837,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertEquals(WifiConfiguration.RECENT_FAILURE_NONE,
                 mWifiConfigManager.getSavedNetworks(Process.WIFI_UID)
                         .get(0).getRecentFailureReason());
+
+        verifyNetworkUpdateBroadcast();
     }
 
     /**

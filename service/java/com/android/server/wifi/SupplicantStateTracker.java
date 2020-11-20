@@ -39,6 +39,8 @@ import java.io.PrintWriter;
  * that is based on these state changes:
  * - detect a failed WPA handshake that loops indefinitely
  * - authentication failure handling
+ * TODO(b/159944009): Need to rework this class to handle make before break transition on STA +
+ * STA devices (Apps will not see SUPPLICANT_STATE_CHANGED_ACTION when switching wifi networks)
  */
 public class SupplicantStateTracker extends StateMachine {
 

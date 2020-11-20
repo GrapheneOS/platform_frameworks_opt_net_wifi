@@ -128,6 +128,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         when(mContext.getSystemService(PowerManager.class)).thenReturn(powerManager);
         when(powerManager.isInteractive()).thenReturn(false);
         when(mPrimaryClientModeManager.getRole()).thenReturn(ActiveModeManager.ROLE_CLIENT_PRIMARY);
+        when(mPrimaryClientModeManager.syncRequestConnectionInfo()).thenReturn(mWifiInfo);
         when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mPrimaryClientModeManager);
         doAnswer(new AnswerWithArguments() {
             public void answer(ExternalClientModeManagerRequestListener listener,
@@ -425,7 +426,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     WifiConnectivityManager createConnectivityManager() {
         WifiConnectivityManager wCm = new WifiConnectivityManager(mContext, mScoringParams,
                 mWifiConfigManager, mWifiNetworkSuggestionsManager,
-                mWifiInfo, mWifiNS, mWifiConnectivityHelper,
+                mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
                 mLocalLog, mWifiScoreCard, mBssidBlocklistMonitor, mWifiChannelUtilization,
@@ -1204,9 +1205,38 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Expected behavior: ONA handles scan results
      */
     @Test
-    public void wifiDisconnected_noConnectionCandidate_openNetworkNotifierScanResultsHandled() {
+    public void wifiDisconnected_noCandidateInSelect_openNetworkNotifierScanResultsHandled() {
         // no connection candidate selected
         when(mWifiNS.selectNetwork(any())).thenReturn(null);
+
+        List<ScanDetail> expectedOpenNetworks = new ArrayList<>();
+        expectedOpenNetworks.add(
+                new ScanDetail(
+                        new ScanResult(WifiSsid.createFromAsciiEncoded(CANDIDATE_SSID),
+                                CANDIDATE_SSID, CANDIDATE_BSSID, 1245, 0, "some caps", -78, 2450,
+                                1025, 22, 33, 20, 0, 0, true), null));
+
+        when(mWifiNS.getFilteredScanDetailsForOpenUnsavedNetworks())
+                .thenReturn(expectedOpenNetworks);
+
+        // Set WiFi to disconnected state to trigger PNO scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        verify(mOpenNetworkNotifier).handleScanResults(expectedOpenNetworks);
+    }
+
+    /**
+     * {@link OpenNetworkNotifier} handles scan results on network selection.
+     *
+     * Expected behavior: ONA handles scan results
+     */
+    @Test
+    public void wifiDisconnected_noCandidatesInScan_openNetworkNotifierScanResultsHandled() {
+        // no connection candidates from scan.
+        when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
+                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(null);
 
         List<ScanDetail> expectedOpenNetworks = new ArrayList<>();
         expectedOpenNetworks.add(

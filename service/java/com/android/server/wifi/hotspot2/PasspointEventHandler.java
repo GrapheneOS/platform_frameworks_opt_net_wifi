@@ -139,8 +139,7 @@ public class PasspointEventHandler {
 
     /**
      * Invoked when a Wireless Network Management (WNM) frame is received.
-     * TODO(zqiu): currently WNM frame notification is through WifiMonitor,
-     * this shouldn't be needed once we switch over to wificond for WNM frame monitoring.
+     *
      * @param data WNM frame data
      */
     public void notifyWnmFrameReceived(WnmData data) {

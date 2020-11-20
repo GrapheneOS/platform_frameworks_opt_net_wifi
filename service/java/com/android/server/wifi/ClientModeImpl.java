@@ -1273,9 +1273,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     /**
      * Get status information for the current connection, if any.
+     * Note: This call is synchronized and hence safe to call from any thread (if called from wifi
+     * thread, will execute synchronously).
      *
      * @return a {@link WifiInfo} object containing information about the current connection
      */
+    @Override
     public WifiInfo syncRequestConnectionInfo() {
         return mWifiThreadRunner.call(() -> new WifiInfo(mWifiInfo), new WifiInfo());
     }
@@ -3464,8 +3467,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mPasspointManager.notifyIconDone((IconEvent) message.obj);
                     break;
                 }
-                case WifiMonitor.HS20_REMEDIATION_EVENT:
                 case WifiMonitor.HS20_DEAUTH_IMMINENT_EVENT:
+                    mPasspointManager.handleDeauthImminentEvent((WnmData) message.obj,
+                            getConnectedWifiConfigurationInternal());
+                    break;
+                case WifiMonitor.HS20_REMEDIATION_EVENT:
                 case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT: {
                     mPasspointManager.receivedWnmFrame((WnmData) message.obj);
                     break;
