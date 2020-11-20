@@ -30,10 +30,11 @@ import android.hardware.wifi.V1_2.NanDataPathChannelInfo;
 import android.hardware.wifi.V1_2.NanDataPathScheduleUpdateInd;
 import android.net.MacAddress;
 import android.net.wifi.util.HexEncoding;
-import android.os.BasicShellCommandHandler;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
+
+import com.android.modules.utils.BasicShellCommandHandler;
 
 import org.json.JSONArray;
 import org.json.JSONException;
