@@ -34,6 +34,7 @@ filegroup {
         ":framework-wifi-service-shared-srcs",
         ":net-utils-wifi-service-common-srcs",
         ":statslog-wifi-java-gen",
+        ":coex-table-parser",
     ],
 }
 
