@@ -356,6 +356,7 @@ public class WifiCandidates {
                     + (isEphemeral() ? "ephemeral" : "saved") + ", "
                     + (isTrusted() ? "trusted, " : "")
                     + (isOemPaid() ? "oemPaid, " : "")
+                    + (isOemPrivate() ? "oemPrivate, " : "")
                     + (isCarrierOrPrivileged() ? "priv, " : "")
                     + (isMetered() ? "metered, " : "")
                     + (hasNoInternetAccess() ? "noInternet, " : "")
