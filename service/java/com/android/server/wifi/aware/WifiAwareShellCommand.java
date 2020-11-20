@@ -16,10 +16,11 @@
 
 package com.android.server.wifi.aware;
 
-import android.os.BasicShellCommandHandler;
 import android.os.Binder;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.android.modules.utils.BasicShellCommandHandler;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
