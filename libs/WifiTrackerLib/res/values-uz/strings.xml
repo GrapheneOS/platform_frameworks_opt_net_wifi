@@ -28,7 +28,7 @@
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Ulanish nuqtasi vaqtinchalik toʻlgan"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Tarmoq signali vaqtincha kuchsiz"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Uzildi"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Saqlandi"</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Saqlangan"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Trafik hisoblanadi"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Trafik hisoblanmaydi"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> orqali ulandi"</string>
