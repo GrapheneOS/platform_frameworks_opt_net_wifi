@@ -543,7 +543,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         mIpClientStartIndex++;
         if (mIpClient != null) {
             try {
-                mIpClient.stop();
+                mIpClient.shutdown();
             } catch (RemoteException e) {
                 e.rethrowFromSystemServer();
             }

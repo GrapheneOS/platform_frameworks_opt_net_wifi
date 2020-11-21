@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
 
@@ -65,6 +66,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class manages all the connectivity related scanning activities.
@@ -324,6 +326,15 @@ public class WifiConnectivityManager {
     }
 
     /**
+     * Helper method to consolidate handling of scan results when a candidate is selected.
+     */
+    private void handleScanResultsWithCandidate(
+            @NonNull HandleScanResultsListener handleScanResultsListener) {
+        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(true);
+        handleScanResultsListener.onHandled(true);
+    }
+
+    /**
      * Handles 'onResult' callbacks for the Periodic, Single & Pno ScanListener.
      * Executes selection of potential network candidates, initiation of connection attempt to that
      * network.
@@ -381,24 +392,138 @@ public class WifiConnectivityManager {
             handleScanResultsWithNoCandidate(handleScanResultsListener);
             return;
         }
-        handleCandidatesFromScanResultsForPrimaryCmm(
+        // We have an oem paid/private network request and device supports STA + STA, check if there
+        // are oem paid/private suggestions.
+        if ((mOemPaidConnectionAllowed || mOemPrivateConnectionAllowed)
+                && mActiveModeWarden.isStaStaConcurrencySupported()) {
+            // Split the candidates based on whether they are oem paid/oem private or not.
+            Map<Boolean, List<WifiCandidates.Candidate>> candidatesPartitioned =
+                    candidates.stream()
+                            .collect(Collectors.groupingBy(c -> c.isOemPaid() || c.isOemPrivate()));
+            List<WifiCandidates.Candidate> primaryCmmCandidates =
+                    candidatesPartitioned.getOrDefault(false, Collections.emptyList());
+            List<WifiCandidates.Candidate> secondaryCmmCandidates =
+                    candidatesPartitioned.getOrDefault(true, Collections.emptyList());
+            // Some oem paid/private suggestions found, use secondary cmm flow.
+            if (!secondaryCmmCandidates.isEmpty()) {
+                handleCandidatesFromScanResultsUsingSecondaryCmmIfAvailable(
+                        listenerName, primaryCmmCandidates, secondaryCmmCandidates,
+                        handleScanResultsListener);
+                return;
+            }
+            // intentional fallthrough: No oem paid/private suggestions, fallback to legacy flow.
+        }
+        handleCandidatesFromScanResultsForPrimaryCmmUsingMbbIfAvailable(
                 listenerName, candidates, handleScanResultsListener);
+    }
+
+    /**
+     * Executes selection of best network for 2 concurrent STA's from the candidates provided,
+     * initiation of connection attempt to a network on both the STA's (if found).
+     */
+    private void handleCandidatesFromScanResultsUsingSecondaryCmmIfAvailable(
+            @NonNull String listenerName,
+            @NonNull List<WifiCandidates.Candidate> primaryCmmCandidates,
+            @NonNull List<WifiCandidates.Candidate> secondaryCmmCandidates,
+            @NonNull HandleScanResultsListener handleScanResultsListener) {
+        // Perform network selection among secondary candidates.
+        WifiConfiguration secondaryCmmCandidate =
+                mNetworkSelector.selectNetwork(secondaryCmmCandidates);
+        // No oem paid/private selected, fallback to legacy flow (should never happen!).
+        if (secondaryCmmCandidate == null
+                || secondaryCmmCandidate.getNetworkSelectionStatus().getCandidate() == null) {
+            localLog(listenerName + ": No secondary candidate");
+            handleCandidatesFromScanResultsForPrimaryCmmUsingMbbIfAvailable(
+                    listenerName,
+                    Stream.concat(primaryCmmCandidates.stream(), secondaryCmmCandidates.stream())
+                            .collect(Collectors.toList()),
+                    handleScanResultsListener);
+            return;
+        }
+        String secondaryCmmCandidateBssid =
+                secondaryCmmCandidate.getNetworkSelectionStatus().getCandidate().BSSID;
+        WorkSource secondaryRequestorWs = null;
+        // OEM_PAID takes precedence over OEM_PRIVATE, so attribute to OEM_PAID requesting app.
+        if (secondaryCmmCandidate.oemPaid
+                && mActiveModeWarden.canRequestMoreClientModeManagers(
+                mOemPaidConnectionRequestorWs)) {
+            secondaryRequestorWs = mOemPaidConnectionRequestorWs;
+        } else if (secondaryCmmCandidate.oemPrivate
+                && mActiveModeWarden.canRequestMoreClientModeManagers(
+                mOemPrivateConnectionRequestorWs)) {
+            secondaryRequestorWs = mOemPrivateConnectionRequestorWs;
+        }
+        // Secondary STA not available, fallback to legacy flow.
+        if (secondaryRequestorWs == null) {
+            localLog(listenerName + ": No secondary STA available");
+            handleCandidatesFromScanResultsForPrimaryCmmUsingMbbIfAvailable(
+                    listenerName,
+                    Stream.concat(primaryCmmCandidates.stream(), secondaryCmmCandidates.stream())
+                            .collect(Collectors.toList()),
+                    handleScanResultsListener);
+            return;
+        }
+        WifiConfiguration primaryCmmCandidate =
+                mNetworkSelector.selectNetwork(primaryCmmCandidates);
+        // Request for a new client mode manager to spin up concurrent connection
+        mActiveModeWarden.requestSecondaryLongLivedClientModeManager(
+                (cm) -> {
+                    if (cm == null) {
+                        localLog(listenerName + ": Secondary client mode manager request returned "
+                                + "null, aborting (wifi off?)");
+                        handleScanResultsWithNoCandidate(handleScanResultsListener);
+                        return;
+                    }
+                    // We did not end up getting the secondary client mode manager for some reason
+                    // after we checked above! Fallback to legacy flow.
+                    if (cm.getRole() == ROLE_CLIENT_PRIMARY) {
+                        localLog(listenerName + ": Secondary client mode manager request returned"
+                                + " primary, falling back to single client mode manager flow.");
+                        handleCandidatesFromScanResultsForPrimaryCmmUsingMbbIfAvailable(
+                                listenerName,
+                                Stream.concat(primaryCmmCandidates.stream(),
+                                        secondaryCmmCandidates.stream())
+                                        .collect(Collectors.toList()),
+                                handleScanResultsListener);
+                        return;
+                    }
+                    // Don't use make before break for these connection requests.
+
+                    // If we also selected a primary candidate trigger connection.
+                    if (primaryCmmCandidate != null) {
+                        localLog(listenerName + ":  WNS candidate(primary)-"
+                                + primaryCmmCandidate.SSID);
+                        connectToNetworkUsingCmmWithoutMbb(
+                                getPrimaryClientModeManager(), primaryCmmCandidate);
+                    }
+
+                    localLog(listenerName + ":  WNS candidate(secondary)-"
+                            + secondaryCmmCandidate.SSID);
+                    // Secndary candidate cannot be null (otherwise we would have switched to legacy
+                    // flow above)
+                    connectToNetworkUsingCmmWithoutMbb(cm, secondaryCmmCandidate);
+
+                    handleScanResultsWithCandidate(handleScanResultsListener);
+                }, secondaryRequestorWs,
+                secondaryCmmCandidate.SSID,
+                mConnectivityHelper.isFirmwareRoamingSupported()
+                        ? null : secondaryCmmCandidateBssid);
     }
 
     /**
      * Executes selection of best network from the candidates provided, initiation of connection
      * attempt to that network.
      */
-    private void handleCandidatesFromScanResultsForPrimaryCmm(
+    private void handleCandidatesFromScanResultsForPrimaryCmmUsingMbbIfAvailable(
             @NonNull String listenerName, @NonNull List<WifiCandidates.Candidate> candidates,
             @NonNull HandleScanResultsListener handleScanResultsListener) {
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
         if (candidate != null) {
             localLog(listenerName + ":  WNS candidate-" + candidate.SSID);
-            connectToNetworkForPrimaryCmm(candidate);
-            mWifiMetrics.noteFirstNetworkSelectionAfterBoot(true);
-            handleScanResultsListener.onHandled(true);
+            connectToNetworkForPrimaryCmmUsingMbbIfAvailable(candidate);
+            handleScanResultsWithCandidate(handleScanResultsListener);
         } else {
+            localLog(listenerName + ":  No candidate");
             handleScanResultsWithNoCandidate(handleScanResultsListener);
         }
     }
@@ -1036,12 +1161,13 @@ public class WifiConnectivityManager {
     }
 
     /**
-     * Trigger network connection for primary client mode manager.
+     * Trigger network connection for primary client mode manager using make before break.
      *
      * Note: This may trigger make before break on a secondary STA if available which will
      * eventually become primary after validation or torn down if it does not become primary.
      */
-    private void connectToNetworkForPrimaryCmm(@NonNull WifiConfiguration candidate) {
+    private void connectToNetworkForPrimaryCmmUsingMbbIfAvailable(
+            @NonNull WifiConfiguration candidate) {
         ClientModeManager primaryManager = mActiveModeWarden.getPrimaryClientModeManager();
         connectToNetworkUsingCmm(
                 primaryManager, candidate,
@@ -1060,7 +1186,7 @@ public class WifiConnectivityManager {
                     public void triggerConnectWhenConnected(WifiConfiguration targetNetwork,
                             String targetBssid) {
                         // Use MBB if possible.
-                        triggerConnectToNetworkUsingMakeBeforeBreakIfAvailable(
+                        triggerConnectToNetworkUsingMbbIfAvailable(
                                 targetNetwork, targetBssid);
                     }
 
@@ -1076,6 +1202,39 @@ public class WifiConnectivityManager {
                     }
                 });
 
+    }
+
+    /**
+     * Trigger network connection for provided client mode manager without using make before break.
+     */
+    private void connectToNetworkUsingCmmWithoutMbb(
+            @NonNull ClientModeManager clientModeManager, @NonNull WifiConfiguration candidate) {
+        connectToNetworkUsingCmm(clientModeManager, candidate,
+                new ConnectHandler() {
+                    @Override
+                    public void triggerConnectWhenDisconnected(
+                            WifiConfiguration targetNetwork,
+                            String targetBssid) {
+                        triggerConnectToNetworkUsingCmm(
+                                clientModeManager, targetNetwork, targetBssid);
+                    }
+
+                    @Override
+                    public void triggerConnectWhenConnected(
+                            WifiConfiguration targetNetwork,
+                            String targetBssid) {
+                        triggerConnectToNetworkUsingCmm(
+                                clientModeManager, targetNetwork, targetBssid);
+                    }
+
+                    @Override
+                    public void triggerRoamWhenConnected(
+                            WifiConfiguration targetNetwork,
+                            String targetBssid) {
+                        triggerRoamToNetworkUsingCmm(
+                                clientModeManager, targetNetwork, targetBssid);
+                    }
+                });
     }
 
     /**
@@ -1121,9 +1280,8 @@ public class WifiConnectivityManager {
         String targetAssociationId = getAssociationId(targetNetwork, targetBssid);
 
         if (isClientModeManagerConnectedOrConnectingToCandidate(clientModeManager, targetNetwork)) {
-            localLog("connectToNetwork(" + clientModeManager + "(: Primary ClientModeManager="
-                    + clientModeManager + " either already connected or is connecting to "
-                    + targetAssociationId);
+            localLog("connectToNetwork(" + clientModeManager + "): either already connected or is "
+                    + "connecting to " + targetAssociationId);
             return;
         }
 
@@ -1218,7 +1376,7 @@ public class WifiConnectivityManager {
      *  - MBB make before break (Dual STA), or
      *  - BBM break before make (Single STA)
      */
-    private void triggerConnectToNetworkUsingMakeBeforeBreakIfAvailable(
+    private void triggerConnectToNetworkUsingMbbIfAvailable(
             @NonNull WifiConfiguration targetNetwork, @NonNull String targetBssid) {
         // Request a ClientModeManager from ActiveModeWarden to connect with - may be an existing
         // CMM or a newly created one (potentially switching networks using Make-Before-Break)
@@ -1242,7 +1400,7 @@ public class WifiConnectivityManager {
                 },
                 ActiveModeWarden.INTERNAL_REQUESTOR_WS,
                 targetNetwork.SSID,
-                targetBssid);
+                mConnectivityHelper.isFirmwareRoamingSupported() ? null : targetBssid);
     }
 
     // Helper for selecting the band for connectivity scan
@@ -2082,7 +2240,7 @@ public class WifiConnectivityManager {
                 mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
                         TEMP_BSSID_BLOCK_DURATION,
                         BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 0);
-                connectToNetworkForPrimaryCmm(candidate);
+                connectToNetworkForPrimaryCmmUsingMbbIfAvailable(candidate);
             }
         } catch (IllegalArgumentException e) {
             localLog("retryConnectionOnLatestCandidates: failed to create MacAddress from bssid="
