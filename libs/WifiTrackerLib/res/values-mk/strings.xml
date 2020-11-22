@@ -46,7 +46,7 @@
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"Се отвора <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_osu_connect_failed" msgid="3872233609000700930">"Не може да се поврзе"</string>
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Се завршува регистрацијата…"</string>
-    <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Не можеше да се заврши регистрацијата. Допрете за да се обидете повторно."</string>
+    <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Не може да се заврши регистрацијата. Допрете за да се обидете повторно."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Регистрацијата е завршена. Се поврзува…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Мрежава прима уникатен ID на SIM што може да се користи за следење на локацијата на уредот. "<annotation id="url">"Дознајте повеќе"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Многу бавна"</string>
