@@ -31,6 +31,8 @@ import android.os.test.TestLooper;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.server.wifi.ClientModeManagerBroadcastQueue.QueuedBroadcast;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,10 +57,13 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
     private @Mock Context mContext;
     private @Mock BatteryStatsManager mBatteryStats;
     private @Mock WifiMonitor mWifiMonitor;
+    private @Mock ClientModeManager mClientModeManager;
+    private @Mock ClientModeManagerBroadcastQueue mBroadcastQueue;
     private SupplicantStateTracker mSupplicantStateTracker;
     private TestLooper mLooper;
 
     private @Captor ArgumentCaptor<Intent> mIntentCaptor;
+    private @Captor ArgumentCaptor<QueuedBroadcast> mQueuedBroadcastCaptor;
 
     private Message getSupplicantStateChangeMessage(int networkId, WifiSsid wifiSsid,
             String bssid, SupplicantState newSupplicantState) {
@@ -71,7 +76,7 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
         mLooper = new TestLooper();
         MockitoAnnotations.initMocks(this);
         mSupplicantStateTracker = new SupplicantStateTracker(mContext, mWcm, mBatteryStats,
-                mLooper.getLooper(), mWifiMonitor, TEST_IFACE);
+                mLooper.getLooper(), mWifiMonitor, TEST_IFACE, mClientModeManager, mBroadcastQueue);
 
         verify(mWifiMonitor, atLeastOnce()).registerHandler(eq(TEST_IFACE), anyInt(), any());
     }
@@ -92,6 +97,10 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
                 BSSID, SupplicantState.SCANNING));
         mLooper.dispatchAll();
 
+        verify(mBroadcastQueue).queueOrSendBroadcast(
+                eq(mClientModeManager), mQueuedBroadcastCaptor.capture());
+        mQueuedBroadcastCaptor.getValue().send();
+
         verify(mContext).sendStickyBroadcastAsUser(mIntentCaptor.capture(), eq(UserHandle.ALL));
         Intent intent = mIntentCaptor.getValue();
         assertThat(intent.getAction()).isEqualTo(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
@@ -108,6 +117,10 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
                 BSSID, SupplicantState.AUTHENTICATING));
         mSupplicantStateTracker.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT);
         mLooper.dispatchAll();
+
+        verify(mBroadcastQueue).queueOrSendBroadcast(
+                eq(mClientModeManager), mQueuedBroadcastCaptor.capture());
+        mQueuedBroadcastCaptor.getValue().send();
 
         verify(mContext).sendStickyBroadcastAsUser(mIntentCaptor.capture(), eq(UserHandle.ALL));
         Intent intent = mIntentCaptor.getValue();
@@ -126,6 +139,10 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
         mSupplicantStateTracker.sendMessage(getSupplicantStateChangeMessage(0, WIFI_SSID,
                 BSSID, SupplicantState.AUTHENTICATING));
         mLooper.dispatchAll();
+
+        verify(mBroadcastQueue).queueOrSendBroadcast(
+                eq(mClientModeManager), mQueuedBroadcastCaptor.capture());
+        mQueuedBroadcastCaptor.getValue().send();
 
         verify(mContext).sendStickyBroadcastAsUser(mIntentCaptor.capture(), eq(UserHandle.ALL));
         Intent intent = mIntentCaptor.getValue();
@@ -147,6 +164,10 @@ public class SupplicantStateTrackerTest extends WifiBaseTest {
         mSupplicantStateTracker.sendMessage(getSupplicantStateChangeMessage(0, WIFI_SSID,
                 BSSID, SupplicantState.AUTHENTICATING));
         mLooper.dispatchAll();
+
+        verify(mBroadcastQueue).queueOrSendBroadcast(
+                eq(mClientModeManager), mQueuedBroadcastCaptor.capture());
+        mQueuedBroadcastCaptor.getValue().send();
 
         verify(mContext).sendStickyBroadcastAsUser(mIntentCaptor.capture(), eq(UserHandle.ALL));
         Intent intent = mIntentCaptor.getValue();

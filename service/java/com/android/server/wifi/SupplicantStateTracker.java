@@ -52,6 +52,8 @@ public class SupplicantStateTracker extends StateMachine {
     private final WifiMonitor mWifiMonitor;
     private final BatteryStatsManager mBatteryStatsManager;
     private final String mInterfaceName;
+    private final ClientModeManager mClientModeManager;
+    private final ClientModeManagerBroadcastQueue mBroadcastQueue;
 
     private boolean mVerboseLoggingEnabled = false;
     /* Indicates authentication failure in supplicant broadcast.
@@ -87,13 +89,17 @@ public class SupplicantStateTracker extends StateMachine {
             @NonNull BatteryStatsManager batteryStatsManager,
             @NonNull Looper looper,
             @NonNull WifiMonitor wifiMonitor,
-            @NonNull String interfaceName) {
+            @NonNull String interfaceName,
+            @NonNull ClientModeManager clientModeManager,
+            @NonNull ClientModeManagerBroadcastQueue broadcastQueue) {
         super(TAG, looper);
         mContext = context;
         mWifiConfigManager = wifiConfigManager;
         mBatteryStatsManager = batteryStatsManager;
         mWifiMonitor = wifiMonitor;
         mInterfaceName = interfaceName;
+        mClientModeManager = clientModeManager;
+        mBroadcastQueue = broadcastQueue;
 
         registerForWifiMonitorEvents();
 
@@ -245,9 +251,9 @@ public class SupplicantStateTracker extends StateMachine {
                     WifiManager.EXTRA_SUPPLICANT_ERROR_REASON,
                     reasonCode);
         }
-        // TODO(next CL in stack) only send for primary CMM, and buffer when transitioning from
-        //  secondary transient CMM for Make Before Break
-        mContext.sendStickyBroadcastAsUser(intent, UserHandle.ALL);
+        mBroadcastQueue.queueOrSendBroadcast(
+                mClientModeManager,
+                () -> mContext.sendStickyBroadcastAsUser(intent, UserHandle.ALL));
     }
 
     /********************************************************

@@ -154,6 +154,7 @@ public class WifiInjector {
     private final ScoredNetworkNominator mScoredNetworkNominator;
     private final WifiNetworkScoreCache mWifiNetworkScoreCache;
     private final NetworkScoreManager mNetworkScoreManager;
+    private final ClientModeManagerBroadcastQueue mBroadcastQueue;
     private WifiScanner mWifiScanner;
     private final WifiPermissionsWrapper mWifiPermissionsWrapper;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
@@ -401,6 +402,7 @@ public class WifiInjector {
                 mClock, mConnectivityLocalLog, mWifiScoreCard, mBssidBlocklistMonitor,
                 mWifiChannelUtilizationScan, mPasspointManager, mDeviceConfigFacade,
                 mActiveModeWarden);
+        mBroadcastQueue = new ClientModeManagerBroadcastQueue(mActiveModeWarden);
         NotificationManager notificationManager =
                 mContext.getSystemService(NotificationManager.class);
         mConnectionFailureNotifier = new ConnectionFailureNotifier(
@@ -659,7 +661,7 @@ public class WifiInjector {
         ExtendedWifiInfo wifiInfo = new ExtendedWifiInfo(mWifiGlobals);
         SupplicantStateTracker supplicantStateTracker = new SupplicantStateTracker(
                 mContext, mWifiConfigManager, mBatteryStats, mWifiHandlerThread.getLooper(),
-                mWifiMonitor, ifaceName);
+                mWifiMonitor, ifaceName, clientModeManager, mBroadcastQueue);
         supplicantStateTracker.enableVerboseLogging(verboseLoggingEnabled);
         return new ClientModeImpl(mContext, mWifiMetrics, mClock,
                 mWifiScoreCard, mWifiStateTracker, mWifiPermissionsUtil, mWifiConfigManager,
