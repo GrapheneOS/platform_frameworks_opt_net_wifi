@@ -183,9 +183,11 @@ message ConnectionStats {
   // Number of short connections caused by nonlocal disconnection at high RSSI
   // or at high Tx speed with a recent RSSI poll
   optional int32 num_short_connection_nonlocal = 7;
-  // Number of non-locally generated disconnections at high RSSI or Tx speed
-  // with a recent RSSI poll
+  // Number of non-local disconnections after L3 connection at high RSSI
+  // or Tx speed with a recent RSSI poll
   optional int32 num_disconnection_nonlocal = 8;
-  // Number of disconnections with a recent RSSI poll
+  // Number of disconnections after L3 connection with a recent RSSI poll
   optional int32 num_disconnection = 9;
+  // Number of non-local disconnections during the connecting state at high RSSI
+  optional int32 num_disconnection_nonlocal_connecting = 10;
 }

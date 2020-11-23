@@ -1184,6 +1184,9 @@ public class WifiMetrics {
                     case WifiMetricsProto.ConnectionEvent.AUTH_FAILURE_EAP_FAILURE:
                         sb.append("AUTH_FAILURE_EAP_FAILURE");
                         break;
+                    case WifiMetricsProto.ConnectionEvent.DISCONNECTION_NON_LOCAL:
+                        sb.append("DISCONNECTION_NON_LOCAL");
+                        break;
                     default:
                         sb.append("FAILURE_REASON_UNKNOWN");
                         break;

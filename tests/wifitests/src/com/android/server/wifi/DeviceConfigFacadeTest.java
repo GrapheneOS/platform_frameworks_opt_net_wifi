@@ -150,6 +150,10 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 mDeviceConfigFacade.getConnectionFailureHighThrPercent());
         assertEquals(DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_COUNT_MIN,
                 mDeviceConfigFacade.getConnectionFailureCountMin());
+        assertEquals(DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_DISCONNECTION_HIGH_THR_PERCENT,
+                mDeviceConfigFacade.getConnectionFailureDisconnectionHighThrPercent());
+        assertEquals(DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_DISCONNECTION_COUNT_MIN,
+                mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin());
         assertEquals(DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT,
                 mDeviceConfigFacade.getAssocRejectionHighThrPercent());
         assertEquals(DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_COUNT_MIN,
@@ -255,6 +259,12 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
                 anyInt())).thenReturn(31);
         when(DeviceConfig.getInt(anyString(), eq("connection_failure_count_min"),
                 anyInt())).thenReturn(4);
+        when(DeviceConfig.getInt(anyString(),
+                eq("connection_failure_disconnection_high_thr_percent"),
+                anyInt())).thenReturn(32);
+        when(DeviceConfig.getInt(anyString(),
+                eq("connection_failure_disconnection_count_min"),
+                anyInt())).thenReturn(8);
         when(DeviceConfig.getInt(anyString(), eq("assoc_rejection_high_thr_percent"),
                 anyInt())).thenReturn(10);
         when(DeviceConfig.getInt(anyString(), eq("assoc_rejection_count_min"),
@@ -349,6 +359,8 @@ public class DeviceConfigFacadeTest extends WifiBaseTest {
         assertEquals(5, mDeviceConfigFacade.getRxPktPerSecondThr());
         assertEquals(31, mDeviceConfigFacade.getConnectionFailureHighThrPercent());
         assertEquals(4, mDeviceConfigFacade.getConnectionFailureCountMin());
+        assertEquals(32, mDeviceConfigFacade.getConnectionFailureDisconnectionHighThrPercent());
+        assertEquals(8, mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin());
         assertEquals(10, mDeviceConfigFacade.getAssocRejectionHighThrPercent());
         assertEquals(5, mDeviceConfigFacade.getAssocRejectionCountMin());
         assertEquals(12, mDeviceConfigFacade.getAssocTimeoutHighThrPercent());

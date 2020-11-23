@@ -3007,6 +3007,26 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that WifiScoreCard and BssidBlocklistMonitor are notified properly when
+     * disconnection occurs in middle of connection states.
+     */
+    @Test
+    public void testDisconnectConnecting()
+            throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+        mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT,
+                new DisconnectEventInfo(sSSID, sBSSID,
+                        ISupplicantStaIfaceCallback.ReasonCode.FOURWAY_HANDSHAKE_TIMEOUT,
+                        false));
+        mLooper.dispatchAll();
+        verify(mWifiScoreCard).noteConnectionFailure(any(), anyInt(), anyString(), anyInt());
+        verify(mWifiScoreCard).resetConnectionState();
+        verify(mBssidBlocklistMonitor, never()).handleBssidConnectionFailure(anyString(),
+                anyString(), anyInt(), anyInt());
+    }
+
+    /**
      * Verify that the recent failure association status is updated properly when
      * DENIED_POOR_CHANNEL_CONDITIONS occurs.
      */
