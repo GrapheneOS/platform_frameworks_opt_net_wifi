@@ -120,7 +120,7 @@ public class ScanDetailCache {
         }
         ArrayList<ScanDetail> list = new ArrayList<ScanDetail>(mMap.values());
         if (list.size() != 0) {
-            // Sort by descending timestamp
+            // Sort by ascending timestamp (oldest scan results first)
             Collections.sort(list, new Comparator() {
                 public int compare(Object o1, Object o2) {
                     ScanDetail a = (ScanDetail) o1;
@@ -142,7 +142,22 @@ public class ScanDetailCache {
         }
     }
 
-    /* @hide */
+    /**
+     * Return the most recent ScanResult for this network, or null if non exists.
+     */
+    public ScanResult getMostRecentScanResult() {
+        ArrayList<ScanDetail> list = sort();
+        if (list.size() == 0) {
+            return null;
+        }
+        return list.get(0).getScanResult();
+    }
+
+    /**
+     * Returns the list of sorted ScanDetails in descending order of timestamp, followed by
+     * descending order of RSSI.
+     * @hide
+     **/
     private ArrayList<ScanDetail> sort() {
         ArrayList<ScanDetail> list = new ArrayList<ScanDetail>(mMap.values());
         if (list.size() != 0) {
