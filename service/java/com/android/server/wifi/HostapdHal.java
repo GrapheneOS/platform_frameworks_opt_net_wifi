@@ -837,20 +837,21 @@ public class HostapdHal {
         ifaceParamsV1_3.V1_2 = ifaceParamsV12;
         ArrayList<android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams>
                 channelParams1_3List = new ArrayList<>();
-        for (int i = 0; i < config.getChannels().size(); i++) {
+        for (int i = 0; i < config.getChannelsInternal().size(); i++) {
             android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams channelParam13 =
                     new android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams();
             // Prepare channel
-            channelParam13.channel = config.getChannels().valueAt(i);
+            channelParam13.channel = config.getChannelsInternal().valueAt(i);
             // Prepare enableAcs
             channelParam13.enableAcs = ApConfigUtil.isAcsSupported(mContext)
                     && channelParam13.channel == 0;
             // Prepare the bandMask
-            channelParam13.V1_2.bandMask = getHalBandMask(config.getChannels().keyAt(i));
+            channelParam13.V1_2.bandMask = getHalBandMask(config.getChannelsInternal().keyAt(i));
             // Prepare  AcsChannelFreqRangesMhz
             if (channelParam13.enableAcs && ApConfigUtil.isSendFreqRangesNeeded(
-                    config.getChannels().keyAt(i), mContext)) {
-                prepareAcsChannelFreqRangesMhz(channelParam13.V1_2, config.getChannels().keyAt(i));
+                    config.getChannelsInternal().keyAt(i), mContext)) {
+                prepareAcsChannelFreqRangesMhz(
+                        channelParam13.V1_2, config.getChannelsInternal().keyAt(i));
             }
             channelParams1_3List.add(channelParam13);
         }

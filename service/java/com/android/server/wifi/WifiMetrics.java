@@ -2855,7 +2855,7 @@ public class WifiMetrics {
                 if (event != null && event.eventType == SoftApConnectedClientsEvent.SOFT_AP_UP) {
                     event.channelFrequency = info.getFrequency();
                     event.channelBandwidth = info.getBandwidth();
-                    event.generation = info.getWifiStandard();
+                    event.generation = info.getWifiStandardInternal();
                     break;
                 }
             }
