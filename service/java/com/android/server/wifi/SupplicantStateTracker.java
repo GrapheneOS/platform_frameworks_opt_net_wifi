@@ -377,7 +377,7 @@ public class SupplicantStateTracker extends StateMachine {
         @Override
         public boolean processMessage(Message message) {
             if (mVerboseLoggingEnabled) Log.d(TAG, getName() + message.toString() + "\n");
-            switch(message.what) {
+            switch (message.what) {
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                     StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
                     SupplicantState state = stateChangeResult.state;
