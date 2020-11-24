@@ -95,6 +95,7 @@ import com.android.internal.util.IState;
 import com.android.internal.util.Protocol;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.net.module.util.Inet4AddressUtils;
 import com.android.net.module.util.MacAddressUtils;
 import com.android.net.module.util.NetUtils;
@@ -3627,15 +3628,17 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         } else {
             builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED);
         }
-        if (mWifiInfo.isOemPaid()) {
-            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
-        } else {
-            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
-        }
-        if (mWifiInfo.isOemPrivate()) {
-            builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
-        } else {
-            builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
+        if (SdkLevel.isAtLeastS()) {
+            if (mWifiInfo.isOemPaid()) {
+                builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
+            } else {
+                builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID);
+            }
+            if (mWifiInfo.isOemPrivate()) {
+                builder.addCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
+            } else {
+                builder.removeCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
+            }
         }
 
         builder.setOwnerUid(currentWifiConfiguration.creatorUid);
