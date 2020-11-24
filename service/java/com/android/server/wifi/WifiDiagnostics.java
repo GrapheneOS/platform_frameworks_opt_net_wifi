@@ -154,9 +154,10 @@ public class WifiDiagnostics {
     /** Interfaces started logging */
     private final Set<String> mActiveInterfaces = new ArraySet<>();
 
-    public WifiDiagnostics(Context context, WifiInjector wifiInjector,
-                           WifiNative wifiNative, BuildProperties buildProperties,
-                           LastMileLogger lastMileLogger, Clock clock, Looper workerLooper) {
+    public WifiDiagnostics(
+            Context context, WifiInjector wifiInjector,
+            WifiNative wifiNative, BuildProperties buildProperties,
+            LastMileLogger lastMileLogger, Clock clock, Looper workerLooper) {
         mContext = context;
         mWifiNative = wifiNative;
         mBuildProperties = buildProperties;
@@ -811,7 +812,10 @@ public class WifiDiagnostics {
         ArrayList<WifiNative.FateReport> mergedFates = new ArrayList<WifiNative.FateReport>();
         WifiNative.TxFateReport[] txFates =
                 new WifiNative.TxFateReport[WifiLoggerHal.MAX_FATE_LOG_LEN];
-        if (mWifiNative.getTxPktFates(mWifiNative.getClientInterfaceName(), txFates)) {
+        // TODO(b/159944009): this may need to monitor all client ifaces, not just the primary one
+        ClientModeManager primaryManager =
+                mWifiInjector.getActiveModeWarden().getPrimaryClientModeManager();
+        if (primaryManager.getTxPktFates(txFates)) {
             for (int i = 0; i < txFates.length && txFates[i] != null; i++) {
                 mergedFates.add(txFates[i]);
             }
@@ -819,7 +823,7 @@ public class WifiDiagnostics {
 
         WifiNative.RxFateReport[] rxFates =
                 new WifiNative.RxFateReport[WifiLoggerHal.MAX_FATE_LOG_LEN];
-        if (mWifiNative.getRxPktFates(mWifiNative.getClientInterfaceName(), rxFates)) {
+        if (primaryManager.getRxPktFates(rxFates)) {
             for (int i = 0; i < rxFates.length && rxFates[i] != null; i++) {
                 mergedFates.add(rxFates[i]);
             }

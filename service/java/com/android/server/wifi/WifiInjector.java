@@ -282,8 +282,6 @@ public class WifiInjector {
 
         // Now get instances of all the objects that depend on the HandlerThreads
         mWifiTrafficPoller = new WifiTrafficPoller(wifiHandler);
-        mCountryCode = new WifiCountryCode(mContext, wifiHandler, mWifiNative,
-                SystemProperties.get(BOOT_DEFAULT_WIFI_COUNTRY_CODE));
         // WifiConfigManager/Store objects and their dependencies.
         KeyStore keyStore = null;
         try {
@@ -306,7 +304,7 @@ public class WifiInjector {
         mWifiMetrics.setWifiScoreCard(mWifiScoreCard);
         mLruConnectionTracker = new LruConnectionTracker(MAX_RECENTLY_CONNECTED_NETWORK,
                 mContext);
-        mWifiConnectivityHelper = new WifiConnectivityHelper(mWifiNative);
+        mWifiConnectivityHelper = new WifiConnectivityHelper(this);
         mConnectivityLocalLog = new LocalLog(
                 mContext.getSystemService(ActivityManager.class).isLowRamDevice() ? 256 : 512);
         mWifiDiagnostics = new WifiDiagnostics(
@@ -336,7 +334,7 @@ public class WifiInjector {
         mWifiMetrics.setScoringParams(mScoringParams);
         mThroughputPredictor = new ThroughputPredictor(mContext);
         mWifiNetworkSelector = new WifiNetworkSelector(mContext, mWifiScoreCard, mScoringParams,
-                mWifiConfigManager, mClock, mConnectivityLocalLog, mWifiMetrics, mWifiNative,
+                mWifiConfigManager, mClock, mConnectivityLocalLog, mWifiMetrics, this,
                 mThroughputPredictor, mWifiChannelUtilizationScan, mWifiGlobals);
         CompatibilityScorer compatibilityScorer = new CompatibilityScorer(mScoringParams);
         mWifiNetworkSelector.registerCandidateScorer(compatibilityScorer);
@@ -381,7 +379,6 @@ public class WifiInjector {
         mWifiMetrics.setWifiDataStall(mWifiDataStall);
         mLinkProbeManager = new LinkProbeManager(mClock, mWifiNative, mWifiMetrics,
                 mFrameworkFacade, wifiHandler, mContext);
-        mMboOceController = new MboOceController(makeTelephonyManager(), mWifiNative);
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
@@ -403,6 +400,9 @@ public class WifiInjector {
                 mWifiChannelUtilizationScan, mPasspointManager, mDeviceConfigFacade,
                 mActiveModeWarden);
         mBroadcastQueue = new ClientModeManagerBroadcastQueue(mActiveModeWarden);
+        mMboOceController = new MboOceController(makeTelephonyManager(), mActiveModeWarden);
+        mCountryCode = new WifiCountryCode(mContext, mActiveModeWarden,
+                SystemProperties.get(BOOT_DEFAULT_WIFI_COUNTRY_CODE));
         NotificationManager notificationManager =
                 mContext.getSystemService(NotificationManager.class);
         mConnectionFailureNotifier = new ConnectionFailureNotifier(

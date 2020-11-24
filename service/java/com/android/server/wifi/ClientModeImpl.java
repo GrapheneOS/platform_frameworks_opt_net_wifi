@@ -136,6 +136,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Implementation of ClientMode.  Event handling for Client mode logic is done here,
@@ -693,7 +694,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mInterfaceName = ifaceName;
         mClientModeManager = clientModeManager;
-        updateInterfaceCapabilities(ifaceName);
+        updateInterfaceCapabilities();
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -1129,8 +1130,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      *
      * @param ifaceName name of interface to update
      */
-    private void updateInterfaceCapabilities(@NonNull String ifaceName) {
-        DeviceWiphyCapabilities cap = mWifiNative.getDeviceWiphyCapabilities(ifaceName);
+    private void updateInterfaceCapabilities() {
+        DeviceWiphyCapabilities cap = getDeviceWiphyCapabilities();
         if (cap != null) {
             // Some devices don't have support of 11ax indicated by the chip,
             // so an override config value is used
@@ -1138,8 +1139,13 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 cap.setWifiStandardSupport(ScanResult.WIFI_STANDARD_11AX, true);
             }
 
-            mWifiNative.setDeviceWiphyCapabilities(ifaceName, cap);
+            mWifiNative.setDeviceWiphyCapabilities(mInterfaceName, cap);
         }
+    }
+
+    @Override
+    public DeviceWiphyCapabilities getDeviceWiphyCapabilities() {
+        return mWifiNative.getDeviceWiphyCapabilities(mInterfaceName);
     }
 
     /**
@@ -1357,6 +1363,21 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     public boolean syncQueryPasspointIcon(long bssid, String fileName) {
         return mWifiThreadRunner.call(
                 () -> mPasspointManager.queryPasspointIcon(bssid, fileName), false);
+    }
+
+    @Override
+    public boolean requestAnqp(String bssid, Set<Integer> anqpIds, Set<Integer> hs20Subtypes) {
+        return mWifiNative.requestAnqp(mInterfaceName, bssid, anqpIds, hs20Subtypes);
+    }
+
+    @Override
+    public boolean requestVenueUrlAnqp(String bssid) {
+        return mWifiNative.requestVenueUrlAnqp(mInterfaceName, bssid);
+    }
+
+    @Override
+    public boolean requestIcon(String bssid, String fileName) {
+        return mWifiNative.requestIcon(mInterfaceName, bssid, fileName);
     }
 
     /**
@@ -5889,5 +5910,35 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     @Override
     public void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args) {
         mWifiScoreReport.dump(fd, pw, args);
+    }
+
+    @Override
+    public void setMboCellularDataStatus(boolean available) {
+        mWifiNative.setMboCellularDataStatus(mInterfaceName, available);
+    }
+
+    @Override
+    public boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities) {
+        return mWifiNative.getRoamingCapabilities(mInterfaceName, capabilities);
+    }
+
+    @Override
+    public boolean configureRoaming(WifiNative.RoamingConfig config) {
+        return mWifiNative.configureRoaming(mInterfaceName, config);
+    }
+
+    @Override
+    public boolean setCountryCode(String countryCode) {
+        return mWifiNative.setCountryCode(mInterfaceName, countryCode);
+    }
+
+    @Override
+    public boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs) {
+        return mWifiNative.getTxPktFates(mInterfaceName, reportBufs);
+    }
+
+    @Override
+    public boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs) {
+        return mWifiNative.getRxPktFates(mInterfaceName, reportBufs);
     }
 }

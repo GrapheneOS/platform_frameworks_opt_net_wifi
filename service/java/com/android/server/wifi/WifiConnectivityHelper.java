@@ -35,13 +35,13 @@ public class WifiConnectivityHelper {
     private static final String TAG = "WifiConnectivityHelper";
     @VisibleForTesting
     public static int INVALID_LIST_SIZE = -1;
-    private final WifiNative mWifiNative;
+    private final WifiInjector mWifiInjector;
     private boolean mFirmwareRoamingSupported = false;
     private int mMaxNumBlocklistBssid = INVALID_LIST_SIZE;
     private int mMaxNumAllowlistSsid = INVALID_LIST_SIZE;
 
-    WifiConnectivityHelper(WifiNative wifiNative) {
-        mWifiNative = wifiNative;
+    WifiConnectivityHelper(WifiInjector wifiInjector) {
+        mWifiInjector = wifiInjector;
     }
 
     /**
@@ -59,8 +59,9 @@ public class WifiConnectivityHelper {
         mMaxNumBlocklistBssid = INVALID_LIST_SIZE;
         mMaxNumAllowlistSsid = INVALID_LIST_SIZE;
 
-        long fwFeatureSet =
-                mWifiNative.getSupportedFeatureSet(mWifiNative.getClientInterfaceName());
+        ClientModeManager primaryManager =
+                mWifiInjector.getActiveModeWarden().getPrimaryClientModeManager();
+        long fwFeatureSet = primaryManager.getSupportedFeatures();
         Log.d(TAG, "Firmware supported feature set: " + Long.toHexString(fwFeatureSet));
 
         if ((fwFeatureSet & WIFI_FEATURE_CONTROL_ROAMING) == 0) {
@@ -69,7 +70,7 @@ public class WifiConnectivityHelper {
         }
 
         WifiNative.RoamingCapabilities roamingCap = new WifiNative.RoamingCapabilities();
-        if (mWifiNative.getRoamingCapabilities(mWifiNative.getClientInterfaceName(), roamingCap)) {
+        if (primaryManager.getRoamingCapabilities(roamingCap)) {
             if (roamingCap.maxBlocklistSize < 0 || roamingCap.maxAllowlistSize < 0) {
                 Log.e(TAG, "Invalid firmware roaming capabilities: max num blocklist bssid="
                         + roamingCap.maxBlocklistSize + " max num allowlist ssid="
@@ -160,6 +161,7 @@ public class WifiConnectivityHelper {
         roamConfig.blocklistBssids = blocklistBssids;
         roamConfig.allowlistSsids = allowlistSsids;
 
-        return mWifiNative.configureRoaming(mWifiNative.getClientInterfaceName(), roamConfig);
+        return mWifiInjector.getActiveModeWarden()
+                .getPrimaryClientModeManager().configureRoaming(roamConfig);
     }
 }

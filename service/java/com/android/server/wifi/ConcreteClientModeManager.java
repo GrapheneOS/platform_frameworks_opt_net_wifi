@@ -39,6 +39,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
+import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.IBinder;
@@ -74,6 +75,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -1132,6 +1134,56 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public long getId() {
         return mId;
+    }
+
+    @Override
+    public void setMboCellularDataStatus(boolean available) {
+        getClientMode().setMboCellularDataStatus(available);
+    }
+
+    @Override
+    public boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities) {
+        return getClientMode().getRoamingCapabilities(capabilities);
+    }
+
+    @Override
+    public boolean configureRoaming(WifiNative.RoamingConfig config) {
+        return getClientMode().configureRoaming(config);
+    }
+
+    @Override
+    public boolean setCountryCode(String countryCode) {
+        return getClientMode().setCountryCode(countryCode);
+    }
+
+    @Override
+    public boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs) {
+        return getClientMode().getTxPktFates(reportBufs);
+    }
+
+    @Override
+    public boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs) {
+        return getClientMode().getRxPktFates(reportBufs);
+    }
+
+    @Override
+    public DeviceWiphyCapabilities getDeviceWiphyCapabilities() {
+        return getClientMode().getDeviceWiphyCapabilities();
+    }
+
+    @Override
+    public boolean requestAnqp(String bssid, Set<Integer> anqpIds, Set<Integer> hs20Subtypes) {
+        return getClientMode().requestAnqp(bssid, anqpIds, hs20Subtypes);
+    }
+
+    @Override
+    public boolean requestVenueUrlAnqp(String bssid) {
+        return getClientMode().requestVenueUrlAnqp(bssid);
+    }
+
+    @Override
+    public boolean requestIcon(String bssid, String fileName) {
+        return getClientMode().requestIcon(bssid, fileName);
     }
 
     @Override

@@ -3612,6 +3612,7 @@ public class WifiNative {
     /**
      * Query the firmware roaming capabilities.
      * @param ifaceName Name of the interface.
+     * @param capabilities object to be filled in
      * @return true for success, false otherwise.
      */
     public boolean getRoamingCapabilities(
@@ -3686,7 +3687,6 @@ public class WifiNative {
      */
     public void setMboCellularDataStatus(@NonNull String ifaceName, boolean available) {
         mSupplicantStaIfaceHal.setMboCellularDataStatus(ifaceName, available);
-        return;
     }
 
     /**

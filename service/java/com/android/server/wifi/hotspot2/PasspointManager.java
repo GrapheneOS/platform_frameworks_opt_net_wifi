@@ -301,7 +301,7 @@ public class PasspointManager {
             WifiMetrics wifiMetrics,
             WifiCarrierInfoManager wifiCarrierInfoManager,
             MacAddressUtil macAddressUtil) {
-        mPasspointEventHandler = objectFactory.makePasspointEventHandler(wifiNative,
+        mPasspointEventHandler = objectFactory.makePasspointEventHandler(wifiInjector,
                 new CallbackHandler(context));
         mWifiInjector = wifiInjector;
         mHandler = handler;

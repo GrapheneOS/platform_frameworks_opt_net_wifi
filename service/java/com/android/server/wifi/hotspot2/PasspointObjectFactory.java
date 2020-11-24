@@ -21,6 +21,7 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.WifiCarrierInfoManager;
+import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiKeyStore;
 import com.android.server.wifi.WifiMetrics;
 import com.android.server.wifi.WifiNative;
@@ -44,9 +45,9 @@ public class PasspointObjectFactory{
      * @param callbacks Instance of {@link PasspointEventHandler.Callbacks}
      * @return {@link PasspointEventHandler}
      */
-    public PasspointEventHandler makePasspointEventHandler(WifiNative wifiNative,
+    public PasspointEventHandler makePasspointEventHandler(WifiInjector wifiInjector,
             PasspointEventHandler.Callbacks callbacks) {
-        return new PasspointEventHandler(wifiNative, callbacks);
+        return new PasspointEventHandler(wifiInjector, callbacks);
     }
 
     /**

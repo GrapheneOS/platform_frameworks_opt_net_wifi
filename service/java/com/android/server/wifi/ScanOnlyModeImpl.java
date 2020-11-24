@@ -25,6 +25,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
+import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.WorkSource;
@@ -33,6 +34,7 @@ import com.android.server.wifi.util.ActionListenerWrapper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.Set;
 
 /**
  * Used to respond to calls to ClientMode interface when ClientModeImpl is not up
@@ -226,5 +228,53 @@ public class ScanOnlyModeImpl implements ClientMode {
     @Override
     public long getId() {
         return ID;
+    }
+
+    @Override
+    public void setMboCellularDataStatus(boolean available) { }
+
+    @Override
+    public boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities) {
+        return false;
+    }
+
+    @Override
+    public boolean configureRoaming(WifiNative.RoamingConfig config) {
+        return false;
+    }
+
+    @Override
+    public boolean setCountryCode(String countryCode) {
+        return false;
+    }
+
+    @Override
+    public boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs) {
+        return false;
+    }
+
+    @Override
+    public boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs) {
+        return false;
+    }
+
+    @Override
+    public DeviceWiphyCapabilities getDeviceWiphyCapabilities() {
+        return null;
+    }
+
+    @Override
+    public boolean requestAnqp(String bssid, Set<Integer> anqpIds, Set<Integer> hs20Subtypes) {
+        return false;
+    }
+
+    @Override
+    public boolean requestVenueUrlAnqp(String bssid) {
+        return false;
+    }
+
+    @Override
+    public boolean requestIcon(String bssid, String fileName) {
+        return false;
     }
 }

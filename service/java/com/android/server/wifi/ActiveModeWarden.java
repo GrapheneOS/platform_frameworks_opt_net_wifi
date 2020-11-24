@@ -639,7 +639,7 @@ public class ActiveModeWarden {
      * @return Instance of {@link ConcreteClientModeManager} or null.
      */
     @Nullable
-    private ConcreteClientModeManager getPrimaryClientModeManagerNullable() {
+    public ConcreteClientModeManager getPrimaryClientModeManagerNullable() {
         return getClientModeManagerInRole(ROLE_CLIENT_PRIMARY);
     }
 

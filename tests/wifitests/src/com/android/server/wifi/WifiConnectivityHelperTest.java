@@ -46,7 +46,7 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
         MockitoAnnotations.initMocks(this);
         setupWifiNative();
 
-        mWifiConnectivityHelper = new WifiConnectivityHelper(mWifiNative);
+        mWifiConnectivityHelper = new WifiConnectivityHelper(mWifiInjector);
     }
 
     /** Cleans up test. */
@@ -56,7 +56,9 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
     }
 
     private WifiConnectivityHelper mWifiConnectivityHelper;
-    @Mock private WifiNative mWifiNative;
+    @Mock private WifiInjector mWifiInjector;
+    @Mock private ActiveModeWarden mActiveModeWarden;
+    @Mock private ClientModeManager mClientModeManager;
     @Captor ArgumentCaptor<WifiNative.RoamingConfig> mRoamingConfigCaptor;
     private int mFeatureSetValue;
     private static final String TAG = "WifiConnectivityHelperTest";
@@ -64,19 +66,20 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
     private static final int MAX_SSID_ALLOWLIST_SIZE = 8;
 
     private void setupWifiNative() {
+        when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
+        when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
+
         // Return firmware roaming feature as supported by default.
-        when(mWifiNative.getSupportedFeatureSet(any()))
-                .thenReturn((long) WIFI_FEATURE_CONTROL_ROAMING);
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(WIFI_FEATURE_CONTROL_ROAMING);
 
         doAnswer(new AnswerWithArguments() {
-            public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
-                    throws Exception {
+            public boolean answer(WifiNative.RoamingCapabilities roamCap) throws Exception {
                 roamCap.maxBlocklistSize = MAX_BSSID_BLOCKLIST_SIZE;
                 roamCap.maxAllowlistSize = MAX_SSID_ALLOWLIST_SIZE;
                 return true;
-            }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
+            }}).when(mClientModeManager).getRoamingCapabilities(isNotNull());
 
-        when(mWifiNative.configureRoaming(any(), anyObject())).thenReturn(true);
+        when(mClientModeManager.configureRoaming(isNotNull())).thenReturn(true);
     }
 
     private ArrayList<String> buildBssidBlocklist(int size) {
@@ -120,8 +123,7 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
      */
     @Test
     public void returnFirmwareRoamingNotSupported() {
-        when(mWifiNative.getSupportedFeatureSet(any()))
-                .thenReturn((long) ~WIFI_FEATURE_CONTROL_ROAMING);
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(~WIFI_FEATURE_CONTROL_ROAMING);
         assertTrue(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
     }
@@ -145,11 +147,7 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
      */
     @Test
     public void verifyFirmwareRoamingCapabilityWithFailureNativeCall() {
-        doAnswer(new AnswerWithArguments() {
-            public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
-                    throws Exception {
-                return false;
-            }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
+        when(mClientModeManager.getRoamingCapabilities(isNotNull())).thenReturn(false);
         assertFalse(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
@@ -166,12 +164,11 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
     @Test
     public void verifyFirmwareRoamingCapabilityWithInvalidMaxBssidBlocklistSize() {
         doAnswer(new AnswerWithArguments() {
-            public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
-                    throws Exception {
+            public boolean answer(WifiNative.RoamingCapabilities roamCap) throws Exception {
                 roamCap.maxBlocklistSize = -5;
                 roamCap.maxAllowlistSize = MAX_SSID_ALLOWLIST_SIZE;
                 return true;
-            }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
+            }}).when(mClientModeManager).getRoamingCapabilities(isNotNull());
         assertFalse(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
@@ -188,12 +185,11 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
     @Test
     public void verifyFirmwareRoamingCapabilityWithInvalidMaxSsidAllowlistSize() {
         doAnswer(new AnswerWithArguments() {
-            public boolean answer(String ifaceName, WifiNative.RoamingCapabilities roamCap)
-                    throws Exception {
+            public boolean answer(WifiNative.RoamingCapabilities roamCap) throws Exception {
                 roamCap.maxBlocklistSize = MAX_BSSID_BLOCKLIST_SIZE;
                 roamCap.maxAllowlistSize = -2;
                 return true;
-            }}).when(mWifiNative).getRoamingCapabilities(any(), anyObject());
+            }}).when(mClientModeManager).getRoamingCapabilities(isNotNull());
         assertFalse(mWifiConnectivityHelper.getFirmwareRoamingInfo());
         assertFalse(mWifiConnectivityHelper.isFirmwareRoamingSupported());
         assertEquals(WifiConnectivityHelper.INVALID_LIST_SIZE,
@@ -261,7 +257,7 @@ public class WifiConnectivityHelperTest extends WifiBaseTest {
         ArrayList<String> blocklist = buildBssidBlocklist(0);
         ArrayList<String> allowlist = buildSsidAllowlist(0);
         assertTrue(mWifiConnectivityHelper.setFirmwareRoamingConfiguration(blocklist, allowlist));
-        verify(mWifiNative).configureRoaming(any(), mRoamingConfigCaptor.capture());
+        verify(mClientModeManager).configureRoaming(mRoamingConfigCaptor.capture());
         assertEquals(0, mRoamingConfigCaptor.getValue().blocklistBssids.size());
         assertEquals(0, mRoamingConfigCaptor.getValue().allowlistSsids.size());
     }
