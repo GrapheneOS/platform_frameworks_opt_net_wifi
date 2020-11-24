@@ -39,10 +39,10 @@
     <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"જો તમે કનેક્ટ કરો છો, તો <xliff:g id="CARRIERNAME">%s</xliff:g> વાઇ-ફાઇ નેટવર્ક, તમારા SIM સાથે સંકળાયેલા અજોડ IDને ઍક્સેસ અથવા શેર કરી શકે છે. આમ કરવાથી તમારા ડિવાઇસનું સ્થાન ટ્રૅક કરવાની મંજૂરી આપવામાં આવી શકે છે."</string>
     <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"કનેક્ટ કરો"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"કનેક્ટ કરશો નહીં"</string>
-    <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"વાઇ-ફાઇ આપમેળે ચાલુ થઈ જશે"</string>
+    <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"વાઇ-ફાઇ ઑટોમૅટિક રીતે ચાલુ થઈ જશે"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"જ્યારે તમે એક ઉચ્ચ ક્વૉલિટીવાળા સાચવેલ નેટવર્કની નજીક હોવ"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"પાછું ચાલુ કરશો નહીં"</string>
-    <string name="wifi_wakeup_enabled_title" msgid="7758584632765597662">"વાઇ-ફાઇ આપમેળે ચાલુ થયું"</string>
+    <string name="wifi_wakeup_enabled_title" msgid="7758584632765597662">"વાઇ-ફાઇ ઑટોમૅટિક રીતે ચાલુ થયું"</string>
     <string name="wifi_wakeup_enabled_content" msgid="4713038331224656338">"તમે એક સાચવેલ નેટવર્કની નજીકમાં છો: <xliff:g id="NETWORK_SSID">%1$s</xliff:g>"</string>
     <string name="wifi_watchdog_network_disabled" msgid="688248897654073438">"વાઇ-ફાઇ સાથે કનેક્ટ કરી શકાયું નથી"</string>
     <string name="wifi_watchdog_network_disabled_detailed" msgid="2946200607682633112">" આમનું ઇન્ટરનેટ કનેક્શન નબળું છે."</string>
