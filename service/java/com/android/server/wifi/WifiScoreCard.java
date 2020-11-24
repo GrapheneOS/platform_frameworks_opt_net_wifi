@@ -361,6 +361,8 @@ public class WifiScoreCard {
      */
     public void noteIpConfiguration(@NonNull ExtendedWifiInfo wifiInfo) {
         updatePerBssid(Event.IP_CONFIGURATION_SUCCESS, wifiInfo);
+        updatePerNetwork(Event.IP_CONFIGURATION_SUCCESS, wifiInfo.getSSID(), wifiInfo.getRssi(),
+                wifiInfo.getTxLinkSpeedMbps(), UNKNOWN_REASON);
         mAttemptingSwitch = false;
         doWrites();
     }
@@ -917,6 +919,11 @@ public class WifiScoreCard {
                     }
                     changed = true;
                     break;
+                case IP_CONFIGURATION_SUCCESS:
+                    // Reset CNT_CONSECUTIVE_CONNECTION_FAILURE since L3 is also connected
+                    mRecentStats.clearCount(CNT_CONSECUTIVE_CONNECTION_FAILURE);
+                    changed = true;
+                    break;
                 case WIFI_DISABLED:
                 case DISCONNECTION:
                     handleDisconnection();
@@ -976,9 +983,6 @@ public class WifiScoreCard {
                     }
                 }
             }
-            // Reset CNT_CONSECUTIVE_CONNECTION_FAILURE here so that it can report the correct
-            // failure count after a connection success
-            mRecentStats.clearCount(CNT_CONSECUTIVE_CONNECTION_FAILURE);
             mConnectionSessionStartTimeMs = TS_NONE;
             mLastRssiPollTimeMs = TS_NONE;
         }
