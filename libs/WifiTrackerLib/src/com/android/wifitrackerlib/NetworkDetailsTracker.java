@@ -16,14 +16,24 @@
 
 package com.android.wifitrackerlib;
 
+import static androidx.core.util.Preconditions.checkNotNull;
+
+import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
+
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
@@ -75,6 +85,8 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
         }
     }
 
+    protected NetworkInfo mCurrentNetworkInfo;
+
     /**
      * Abstract constructor for NetworkDetailsTracker.
      * Clients must use {@link NetworkDetailsTracker#createNetworkDetailsTracker} for creating
@@ -93,6 +105,49 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
         super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis,
                 null /* listener */, tag);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
+        checkNotNull(intent, "Intent cannot be null!");
+        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        getWifiEntry().updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleRssiChangedAction() {
+        getWifiEntry().updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
+        final WifiEntry chosenEntry = getWifiEntry();
+        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            chosenEntry.updateLinkProperties(linkProperties);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkCapabilitiesChanged(@Nullable NetworkCapabilities capabilities) {
+        final WifiEntry chosenEntry = getWifiEntry();
+        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            chosenEntry.updateNetworkCapabilities(capabilities);
+            chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleDefaultRouteChanged() {
+        final WifiEntry chosenEntry = getWifiEntry();
+        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            chosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
     }
 
     /**

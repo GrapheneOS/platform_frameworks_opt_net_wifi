@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Sítě navrhované aplikací <xliff:g id="NAME">%s</xliff:g>. Zařízení se může připojovat automaticky."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Povolit"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Ne, díky"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Operátor <xliff:g id="CARRIERNAME">%s</xliff:g> se chce automaticky připojit"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Tyto sítě dostávají jedinečné ID, pomocí něhož lze sledovat polohu zařízení"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Přesto připojit"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Nepřipojovat"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Potvrdit připojení?"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Pokud se připojíte, sítě Wi-Fi operátora <xliff:g id="CARRIERNAME">%s</xliff:g> mohou získat přístup k jedinečnému ID přidruženému k vaší SIM kartě. Může to umožnit sledování polohy zařízení."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Připojit"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Nepřipojovat"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Upozornění ohledně soukromí v rámci ochrany IMSI"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> navrhuje sítě, které využívají údaje ze SIM karty bez ochrany osobních údajů. Povolit automatické připojování?"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Povolit"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Zakázat"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi se zapne automaticky"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Když budete v dosahu kvalitní uložené sítě"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Znovu nezapínat"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"K síti <xliff:g id="SSID">%1$s</xliff:g> se nelze připojit"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Klepnutím změníte nastavení ochrany soukromí a budete opakovat pokus"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Změnit nastavení ochrany soukromí?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"K připojení potřebuje síť <xliff:g id="SSID">%1$s</xliff:g> použít adresu MAC vašeho zařízení – jedinečný identifikátor. V současné době vaše nastavení ochrany soukromí pro tuto síť používá náhodný identifikátor. \n\nTato změna může zařízením v okolí umožnit sledovat polohu vašeho zařízení."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Síť <xliff:g id="SSID_0">%1$s</xliff:g> se může chtít připojit za pomoci adresy MAC vašeho zařízení, což je unikátní identifikátor. Zařízení v okolí díky tomu mohou sledovat polohu vašeho zařízení. \n\nBudete-li pokračovat, síť <xliff:g id="SSID_1">%1$s</xliff:g> změní nastavení ochrany soukromí a pokusí se znovu připojit."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Změnit nastavení"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Nastavení bylo aktualizováno. Zkuste se připojit znovu."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Nastavení bylo aktualizováno. Zkuste se připojit znovu."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Nastavení ochrany soukromí se nepodařilo změnit"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Síť nebyla nalezena"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>: Chyba ověření EAP 32760"</string>
@@ -77,8 +73,9 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>: Chyba ověření EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>: Chyba ověření EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>: Chyba ověření EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Hotspot je vypnutý"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Žádná připojená zařízení Upravíte klepnutím."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobilní hotspot deaktivován"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Mobilní hotspot byl deaktivován"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Mobilní hotspot byl deaktivován, protože vypršel limit neaktivity."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"Síť Wi-Fi je odpojena"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Chcete-li se připojit k síti <xliff:g id="SSID">%1$s</xliff:g>, vložte SIM kartu operátora <xliff:g id="CARRIER_NAME">%2$s</xliff:g>."</string>
+    <string name="wifi_sim_required_message" msgid="8337512370882674437">"Chcete-li se připojit k síti <xliff:g id="SSID">%1$s</xliff:g>, vložte SIM kartu operátora <xliff:g id="CARRIER_NAME">%2$s</xliff:g>."</string>
 </resources>

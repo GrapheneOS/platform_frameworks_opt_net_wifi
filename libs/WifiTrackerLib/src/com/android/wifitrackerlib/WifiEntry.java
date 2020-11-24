@@ -223,6 +223,10 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     protected boolean mCalledConnect = false;
     protected boolean mCalledDisconnect = false;
 
+    private boolean mIsValidated;
+    private boolean mIsDefaultNetwork;
+    protected boolean mIsLowQuality;
+
     WifiEntry(@NonNull Handler callbackHandler, @NonNull WifiManager wifiManager,
             @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
@@ -288,6 +292,14 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     public int getLevel() {
         return mLevel;
     };
+
+    /**
+     * Returns whether the level icon for this network should show an X or not.
+     */
+    public boolean shouldShowXLevelIcon() {
+        return getConnectedState() != CONNECTED_STATE_DISCONNECTED
+                && (!mIsValidated || !mIsDefaultNetwork) && !canSignIn();
+    }
 
     /** Returns the speed value of the network defined by the SPEED constants */
     @Speed
@@ -450,6 +462,20 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     /** Returns the network selection information of a WifiEntry */
     String getNetworkSelectionDescription() {
         return "";
+    }
+
+    /** Returns the network capability information of a WifiEntry */
+    String getNetworkCapabilityDescription() {
+        final StringBuilder sb = new StringBuilder();
+        if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            sb.append("isValidated:")
+                    .append(mIsValidated)
+                    .append(", isDefaultNetwork:")
+                    .append(mIsDefaultNetwork)
+                    .append(", isLowQuality:")
+                    .append(mIsLowQuality);
+        }
+        return sb.toString();
     }
 
     /**
@@ -627,6 +653,9 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
             mNetworkInfo = null;
             mNetworkCapabilities = null;
             mConnectedInfo = null;
+            mIsValidated = false;
+            mIsDefaultNetwork = false;
+            mIsLowQuality = false;
             if (mCalledDisconnect) {
                 mCalledDisconnect = false;
                 mCallbackHandler.post(() -> {
@@ -686,10 +715,27 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
         notifyOnUpdated();
     }
 
+    @WorkerThread
+    void setIsDefaultNetwork(boolean isDefaultNetwork) {
+        mIsDefaultNetwork = isDefaultNetwork;
+        notifyOnUpdated();
+    }
+
+    @WorkerThread
+    void setIsLowQuality(boolean isLowQuality) {
+        mIsLowQuality = isLowQuality;
+    }
+
     // Method for WifiTracker to update a connected WifiEntry's network capabilities.
     @WorkerThread
     void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
         mNetworkCapabilities = capabilities;
+        if (mConnectedInfo == null) {
+            return;
+        }
+        mIsValidated = mNetworkCapabilities != null
+                && mNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        notifyOnUpdated();
     }
 
     String getWifiInfoDescription() {
@@ -803,12 +849,17 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
                 .append(isSuggestion())
                 .append(",level:")
                 .append(getLevel())
+                .append(shouldShowXLevelIcon() ? "X" : "")
                 .append(",security:")
                 .append(getSecurity())
                 .append(",connected:")
                 .append(getConnectedState() == CONNECTED_STATE_CONNECTED ? "true" : "false")
                 .append(",connectedInfo:")
                 .append(getConnectedInfo())
+                .append(",isValidated:")
+                .append(mIsValidated)
+                .append(",isDefaultNetwork:")
+                .append(mIsDefaultNetwork)
                 .toString();
     }
 }

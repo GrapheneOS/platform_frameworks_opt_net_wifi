@@ -129,6 +129,19 @@ public class DeviceConfigFacade {
     // Default health monitor firmware alert valid time.
     // -1 disables firmware alert time check
     static final int DEFAULT_HEALTH_MONITOR_FW_ALERT_VALID_TIME_MS = -1;
+    // Default minimum confirmation duration for sending network score to connectivity service
+    // when score breaches low. The actual confirmation duration is longer in general and it
+    // depends on the score evaluation period normally controlled by
+    // 'com.android.wifi.resources.R' config_wifiPollRssiIntervalMilliseconds.
+    static final int DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS = 5000;
+    // Default minimum confirmation duration for sending network score to connectivity service
+    // when score breaches high. The actual confirmation duration is longer in general and it
+    // depends on the score evaluation period normally controlled by
+    // 'com.android.wifi.resources.R' config_wifiPollRssiIntervalMilliseconds.
+    static final int DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS = 0;
+    // Default RSSI threshold in dBm above which low score is not sent to connectivity service
+    // when external scorer takes action.
+    static final int DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM = -67;
     // Cached values of fields updated via updateDeviceConfigFlags()
     private boolean mIsAbnormalConnectionBugreportEnabled;
     private int mAbnormalConnectionDurationMs;
@@ -177,6 +190,9 @@ public class DeviceConfigFacade {
     private int mNonstationaryScanRssiValidTimeMs;
     private int mStationaryScanRssiValidTimeMs;
     private int mHealthMonitorFwAlertValidTimeMs;
+    private int mMinConfirmationDurationSendLowScoreMs;
+    private int mMinConfirmationDurationSendHighScoreMs;
+    private int mRssiThresholdNotSendLowScoreToCsDbm;
 
     public DeviceConfigFacade(Context context, Handler handler, WifiMetrics wifiMetrics) {
         mContext = context;
@@ -324,7 +340,15 @@ public class DeviceConfigFacade {
                 "health_monitor_fw_alert_valid_time_ms",
                 DEFAULT_HEALTH_MONITOR_FW_ALERT_VALID_TIME_MS);
         mWifiMetrics.setHealthMonitorRssiPollValidTimeMs(mHealthMonitorRssiPollValidTimeMs);
-
+        mMinConfirmationDurationSendLowScoreMs = DeviceConfig.getInt(NAMESPACE,
+                "min_confirmation_duration_send_low_score_ms",
+                DEFAULT_MIN_CONFIRMATION_DURATION_SEND_LOW_SCORE_MS);
+        mMinConfirmationDurationSendHighScoreMs = DeviceConfig.getInt(NAMESPACE,
+                "min_confirmation_duration_send_high_score_ms",
+                DEFAULT_MIN_CONFIRMATION_DURATION_SEND_HIGH_SCORE_MS);
+        mRssiThresholdNotSendLowScoreToCsDbm = DeviceConfig.getInt(NAMESPACE,
+                "rssi_threshold_not_send_low_score_to_cs_dbm",
+                DEFAULT_RSSI_THRESHOLD_NOT_SEND_LOW_SCORE_TO_CS_DBM);
     }
 
     private Set<String> getUnmodifiableSetQuoted(String key) {
@@ -672,5 +696,29 @@ public class DeviceConfigFacade {
      */
     public int getHealthMonitorFwAlertValidTimeMs() {
         return mHealthMonitorFwAlertValidTimeMs;
+    }
+
+    /**
+     * Gets the minimum confirmation duration for sending network score to connectivity service
+     * when score breaches low.
+     */
+    public int getMinConfirmationDurationSendLowScoreMs() {
+        return mMinConfirmationDurationSendLowScoreMs;
+    }
+
+    /**
+     * Gets the minimum confirmation duration for sending network score to connectivity service
+     * when score breaches high.
+     */
+    public int getMinConfirmationDurationSendHighScoreMs() {
+        return mMinConfirmationDurationSendHighScoreMs;
+    }
+
+    /**
+     * Gets the RSSI threshold above which low score is not sent to connectivity service when
+     * external scorer takes action.
+     */
+    public int getRssiThresholdNotSendLowScoreToCsDbm() {
+        return mRssiThresholdNotSendLowScoreToCsDbm;
     }
 }

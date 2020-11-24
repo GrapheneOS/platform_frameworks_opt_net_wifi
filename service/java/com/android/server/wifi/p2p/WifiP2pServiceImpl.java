@@ -44,6 +44,9 @@ import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
 import android.net.ip.IpClientUtil;
 import android.net.shared.ProvisioningConfiguration;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.IWifiP2pManager;
@@ -114,6 +117,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * WifiP2pService includes a state machine to perform Wi-Fi p2p operations. Applications
@@ -129,6 +133,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
     private static final String TAG = "WifiP2pService";
     private boolean mVerboseLoggingEnabled = false;
     private static final String NETWORKTYPE = "WIFI_P2P";
+    @VisibleForTesting
+    static final int DEFAULT_GROUP_OWNER_INTENT = 6;
 
     private Context mContext;
 
@@ -240,7 +246,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
 
     private final boolean mP2pSupported;
 
-    private WifiP2pDevice mThisDevice = new WifiP2pDevice();
+    private final WifiP2pDevice mThisDevice = new WifiP2pDevice();
 
     // When a group has been explicitly created by an app, we persist the group
     // even after all clients have been disconnected until an explicit remove
@@ -2239,6 +2245,8 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                         break;
                     case PEER_CONNECTION_USER_CONFIRM:
                         mSavedPeerConfig.wps.setup = WpsInfo.DISPLAY;
+                        mSavedPeerConfig.groupOwnerIntent =
+                                selectGroupOwnerIntentIfNecessary(mSavedPeerConfig);
                         mWifiNative.p2pConnect(mSavedPeerConfig, FORM_GROUP);
                         transitionTo(mGroupNegotiationState);
                         break;
@@ -3323,7 +3331,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         /**
          * This method unifies the persisent group list, cleans up unused
          * networks and if required, updates corresponding broadcast receivers
-         * @param boolean if true, reload the group list from scratch
+         * @param reload if true, reload the group list from scratch
          *                and send broadcast message with fresh list
          */
         private void updatePersistentNetworks(boolean reload) {
@@ -3333,7 +3341,11 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
             // no network has been found.
             if (mWifiNative.p2pListNetworks(mGroups) || reload) {
                 for (WifiP2pGroup group : mGroups.getGroupList()) {
-                    if (mThisDevice.deviceAddress.equals(group.getOwner().deviceAddress)) {
+                    if (group.getOwner() == null) {
+                        Log.d(TAG, "group.getOwner() null");
+                        continue;
+                    }
+                    if (Objects.equals(mThisDevice.deviceAddress, group.getOwner().deviceAddress)) {
                         group.setOwner(mThisDevice);
                     }
                 }
@@ -3532,6 +3544,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 Log.e(TAG, "Invalid device");
                 return;
             }
+            config.groupOwnerIntent = selectGroupOwnerIntentIfNecessary(config);
             String pin = mWifiNative.p2pConnect(config, dev.isGroupOwner());
             try {
                 Integer.parseInt(pin);
@@ -4308,6 +4321,38 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
                 clearServiceRequests(c.mMessenger);
             }
         }
+
+        private int selectGroupOwnerIntentIfNecessary(WifiP2pConfig config) {
+            int intent = config.groupOwnerIntent;
+            // return the legacy default value for invalid values.
+            if (intent != WifiP2pConfig.GROUP_OWNER_INTENT_AUTO) {
+                if (intent < WifiP2pConfig.GROUP_OWNER_INTENT_MIN
+                        || intent > WifiP2pConfig.GROUP_OWNER_INTENT_MAX) {
+                    intent = DEFAULT_GROUP_OWNER_INTENT;
+                }
+                return intent;
+            }
+
+            WifiManager wifiManager = mContext.getSystemService(WifiManager.class);
+
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            Log.d(TAG, "WifiInfo: " + wifiInfo);
+            int freq = wifiInfo.getFrequency();
+            if (wifiInfo.getNetworkId() == WifiConfiguration.INVALID_NETWORK_ID) {
+                intent = DEFAULT_GROUP_OWNER_INTENT + 1;
+            } else if (ScanResult.is24GHz(freq)) {
+                intent = WifiP2pConfig.GROUP_OWNER_INTENT_MIN;
+            } else if (ScanResult.is5GHz(freq)) {
+                // If both sides use the maximum, the negotiation would fail.
+                intent = WifiP2pConfig.GROUP_OWNER_INTENT_MAX - 1;
+            } else {
+                intent = DEFAULT_GROUP_OWNER_INTENT;
+            }
+            Log.i(TAG, "change GO intent value from "
+                    + config.groupOwnerIntent + " to " + intent);
+            return intent;
+        }
+
     }
 
     /**

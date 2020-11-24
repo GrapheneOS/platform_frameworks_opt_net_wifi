@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"شبکه‌های پیشنهادی <xliff:g id="NAME">%s</xliff:g>. ممکن است دستگاه به‌طور خودکار متصل شود."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"مجاز"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"نه متشکرم"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> می‌خواهد به‌طور خودکار متصل شود"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"این شبکه‌ها شناسه یکتایی دریافت می‌کنند که می‌توانید از آن برای ردیابی مکان دستگاه استفاده کرد"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"درهر صورت متصل شود"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"متصل نشود"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"اتصال را تأیید می‌کنید؟"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"‏اگر متصل شوید، شبکه‌های Wi‑Fi <xliff:g id="CARRIERNAME">%s</xliff:g> می‌توانند به شناسه یکتای مربوط به سیم‌کارتتان دسترسی پیدا کنند و از آن به‌صورت مشترک استفاده کنند. این کار ممکن است ردیابی مکان دستگاه را مجاز کند."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"اتصال"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"متصل نشود"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"‏هشدار حریم‌خصوصی درباره محافظت IMSI"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> بااستفاده از اطلاعات سیم کارتتان شبکه‌هایی را بدون محافظت حریم‌خصوصی پیشنهاد می‌دهد، شبکه مجاز است به‌طور خودکار وصل شود؟"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"مجاز است"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"مجاز نیست"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"‏Wi‑Fi به‌طور خودکار روشن خواهد شد"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"وقتی نزدیک شبکه ذخیره‌شده با کیفیت بالا هستید"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"دوباره روشن نشود"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"اتصال به <xliff:g id="SSID">%1$s</xliff:g> امکان‌پذیر نیست"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"برای تغییر تنظیم حریم‌خصوصی ضربه بزنید و دوباره امتحان کنید"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"تنظیم حریم‌خصوصی تغییر کند؟"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"‏برای اتصال، <xliff:g id="SSID">%1$s</xliff:g> باید از نشانی MAC دستگاهتان که شناسه‌ای منحصربه‌فرد است استفاده کند. درحال‌حاضر، تنظیم حریم‌خصوصی شما برای این شبکه از شناسه تصادفی استفاده می‌کند. \n\nاین تغییر ممکن است به دستگاه‌های اطراف امکان دهد مکان دستگاهتان را ردیابی کنند."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"‏<xliff:g id="SSID_0">%1$s</xliff:g> ممکن است بخواهد بااستفاده از نشانی MAC دستگاه شما که شناسه منحصربه‌فردی است متصل شود. این کار ممکن است به دستگاه‌های اطراف امکان دهد مکان دستگاهتان را ردیابی کنند. \n\nاگر ادامه دهید، <xliff:g id="SSID_1">%1$s</xliff:g> تنظیم حریم‌خصوصی شما را تغییر می‌دهد و دوباره سعی می‌کند متصل شود."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"تغییر تنظیم"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"تنظیم به‌روزرسانی شد. دوباره متصل شوید."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"تنظیمات به‌روزرسانی شد. سعی کنید دوباره متصل شوید."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"تنظیم حریم‌خصوصی تغییر نکرد"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"شبکه‌ای پیدا نشد"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۰ احراز هویت EAP"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۴ احراز هویت EAP"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۵ احراز هویت EAP"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۶ احراز هویت EAP"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"نقطه اتصال خاموش شد"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"هیچ دستگاهی متصل نیست. برای اصلاح ضربه بزنید."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"‏Wi-Fi قطع شد."</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"برای متصل شدن به <xliff:g id="SSID">%1$s</xliff:g>، یک سیم‌کارت <xliff:g id="CARRIER_NAME">%2$s</xliff:g> در دستگاه قرار دهید"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"نقطه اتصال دستگاه همراه غیرفعال شد"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"نقطه اتصال دستگاه همراه غیرفعال شد"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"نقطه اتصال دستگاه همراه به‌دلیل انقضای مهلت زمانی عدم فعالیت غیرفعال شد."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>

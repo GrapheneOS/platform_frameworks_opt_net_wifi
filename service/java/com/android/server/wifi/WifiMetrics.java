@@ -29,6 +29,7 @@ import android.net.wifi.SoftApCapability;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -73,6 +74,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.Experi
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkProbeStats.LinkProbeFailureReasonCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.LinkSpeedCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.MeteredNetworkStats;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkDisableReason;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkSelectionExperimentDecisions;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.PasspointProfileTypeCount;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.PasspointProvisionStats;
@@ -91,6 +93,7 @@ import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiLockStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkRequestApiLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiNetworkSuggestionApiLog.SuggestionAppCount;
+import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiStatus;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiToggleStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStats;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.WifiUsabilityStatsEntry;
@@ -112,6 +115,7 @@ import org.json.JSONObject;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -231,11 +235,13 @@ public class WifiMetrics {
     @VisibleForTesting static final int MAX_USER_ACTION_EVENTS = 200;
     private LinkedList<StaEventWithTime> mStaEventList = new LinkedList<>();
     private LinkedList<UserActionEventWithTime> mUserActionEventList = new LinkedList<>();
+    private WifiStatusBuilder mWifiStatusBuilder = new WifiStatusBuilder();
     private int mLastPollRssi = -127;
     private int mLastPollLinkSpeed = -1;
     private int mLastPollRxLinkSpeed = -1;
     private int mLastPollFreq = -1;
     private int mLastScore = -1;
+    private boolean mAdaptiveConnectivityEnabled = true;
 
     /**
      * Metrics are stored within an instance of the WifiLog proto during runtime,
@@ -752,6 +758,88 @@ public class WifiMetrics {
         }
     }
 
+    class WifiStatusBuilder {
+        private int mNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
+        private boolean mConnected;
+        private boolean mValidated;
+        private int mRssi;
+        private int mEstimatedTxKbps;
+        private int mEstimatedRxKbps;
+        private boolean mIsStuckDueToUserChoice;
+
+        public void setNetworkId(int networkId) {
+            mNetworkId = networkId;
+        }
+
+        public int getNetworkId() {
+            return mNetworkId;
+        }
+
+        public void setConnected(boolean connected) {
+            mConnected = connected;
+        }
+
+        public void setValidated(boolean validated) {
+            mValidated = validated;
+        }
+
+        public void setRssi(int rssi) {
+            mRssi = rssi;
+        }
+
+        public void setEstimatedTxKbps(int estimatedTxKbps) {
+            mEstimatedTxKbps = estimatedTxKbps;
+        }
+
+        public void setEstimatedRxKbps(int estimatedRxKbps) {
+            mEstimatedRxKbps = estimatedRxKbps;
+        }
+
+        public void setUserChoice(boolean userChoice) {
+            mIsStuckDueToUserChoice = userChoice;
+        }
+
+        public WifiStatus toProto() {
+            WifiStatus result = new WifiStatus();
+            result.isConnected = mConnected;
+            result.isValidated = mValidated;
+            result.lastRssi = mRssi;
+            result.estimatedTxKbps = mEstimatedTxKbps;
+            result.estimatedRxKbps = mEstimatedRxKbps;
+            result.isStuckDueToUserConnectChoice = mIsStuckDueToUserChoice;
+            return result;
+        }
+    }
+
+    private NetworkDisableReason convertToNetworkDisableReason(
+            WifiConfiguration config, Set<Integer> bssidBlocklistReasons) {
+        NetworkSelectionStatus status = config.getNetworkSelectionStatus();
+        NetworkDisableReason result = new NetworkDisableReason();
+        if (config.allowAutojoin) {
+            if (!status.isNetworkEnabled()) {
+                result.disableReason =
+                        MetricsUtils.convertNetworkSelectionDisableReasonToWifiProtoEnum(
+                                status.getNetworkSelectionDisableReason());
+                if (status.isNetworkPermanentlyDisabled()) {
+                    result.configPermanentlyDisabled = true;
+                } else {
+                    result.configTemporarilyDisabled = true;
+                }
+            }
+        } else {
+            result.disableReason = NetworkDisableReason.REASON_AUTO_JOIN_DISABLED;
+            result.configPermanentlyDisabled = true;
+        }
+
+        int[] convertedBssidBlockReasons = bssidBlocklistReasons.stream()
+                .mapToInt(i -> MetricsUtils.convertBssidBlocklistReasonToWifiProtoEnum(i))
+                .toArray();
+        if (convertedBssidBlockReasons.length > 0) {
+            result.bssidDisableReasons = convertedBssidBlockReasons;
+        }
+        return result;
+    }
+
     class UserActionEventWithTime {
         private UserActionEvent mUserActionEvent;
         private long mWallClockTimeMs = 0; // wall clock time for debugging only
@@ -762,13 +850,11 @@ public class WifiMetrics {
             mUserActionEvent.startTimeMillis = mClock.getElapsedSinceBootMillis();
             mWallClockTimeMs = mClock.getWallClockMillis();
             mUserActionEvent.targetNetworkInfo = targetNetworkInfo;
+            mUserActionEvent.wifiStatus = mWifiStatusBuilder.toProto();
         }
 
         UserActionEventWithTime(int eventType, int targetNetId) {
-            mUserActionEvent = new UserActionEvent();
-            mUserActionEvent.eventType = eventType;
-            mUserActionEvent.startTimeMillis = mClock.getElapsedSinceBootMillis();
-            mWallClockTimeMs = mClock.getWallClockMillis();
+            this(eventType, null);
             if (targetNetId >= 0) {
                 WifiConfiguration config = mWifiConfigManager.getConfiguredNetwork(targetNetId);
                 if (config != null) {
@@ -776,6 +862,8 @@ public class WifiMetrics {
                     networkInfo.isEphemeral = config.isEphemeral();
                     networkInfo.isPasspoint = config.isPasspoint();
                     mUserActionEvent.targetNetworkInfo = networkInfo;
+                    mUserActionEvent.networkDisableReason = convertToNetworkDisableReason(
+                            config, mBssidBlocklistMonitor.getFailureReasonsForSsid(config.SSID));
                 }
             }
         }
@@ -823,6 +911,9 @@ public class WifiMetrics {
                 case UserActionEvent.EVENT_MANUAL_CONNECT:
                     eventType = "EVENT_MANUAL_CONNECT";
                     break;
+                case UserActionEvent.EVENT_ADD_OR_UPDATE_NETWORK:
+                    eventType = "EVENT_ADD_OR_UPDATE_NETWORK";
+                    break;
             }
             sb.append(" eventType=").append(eventType);
             sb.append(" startTimeMillis=").append(mUserActionEvent.startTimeMillis);
@@ -830,6 +921,27 @@ public class WifiMetrics {
             if (networkInfo != null) {
                 sb.append(" isEphemeral=").append(networkInfo.isEphemeral);
                 sb.append(" isPasspoint=").append(networkInfo.isPasspoint);
+            }
+            WifiStatus wifiStatus = mUserActionEvent.wifiStatus;
+            if (wifiStatus != null) {
+                sb.append("\nWifiStatus: isConnected=").append(wifiStatus.isConnected);
+                sb.append(" isValidated=").append(wifiStatus.isValidated);
+                sb.append(" lastRssi=").append(wifiStatus.lastRssi);
+                sb.append(" estimatedTxKbps=").append(wifiStatus.estimatedTxKbps);
+                sb.append(" estimatedRxKbps=").append(wifiStatus.estimatedRxKbps);
+                sb.append(" isStuckDueToUserConnectChoice=")
+                        .append(wifiStatus.isStuckDueToUserConnectChoice);
+            }
+            NetworkDisableReason disableReason = mUserActionEvent.networkDisableReason;
+            if (disableReason != null) {
+                sb.append("\nNetworkDisableReason: DisableReason=")
+                        .append(disableReason.disableReason);
+                sb.append(" configTemporarilyDisabled=")
+                        .append(disableReason.configTemporarilyDisabled);
+                sb.append(" configPermanentlyDisabled=")
+                        .append(disableReason.configPermanentlyDisabled);
+                sb.append(" bssidDisableReasons=")
+                        .append(Arrays.toString(disableReason.bssidDisableReasons));
             }
             return sb.toString();
         }
@@ -1458,7 +1570,7 @@ public class WifiMetrics {
                     mScanResultRssiTimestampMillis = mClock.getElapsedSinceBootMillis();
                 }
                 mCurrentConnectionEvent.mConnectionEvent.numBssidInBlocklist =
-                        mBssidBlocklistMonitor.getNumBlockedBssidsForSsid(config.SSID);
+                        mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID);
                 mCurrentConnectionEvent.mConnectionEvent.networkType =
                         WifiMetricsProto.ConnectionEvent.TYPE_UNKNOWN;
                 mCurrentConnectionEvent.mConnectionEvent.isOsuProvisioned = false;
@@ -1606,6 +1718,7 @@ public class WifiMetrics {
                 if (!result) {
                     mScanResultRssiTimestampMillis = -1;
                 }
+                mWifiStatusBuilder.setConnected(result);
             }
         }
     }
@@ -2083,6 +2196,8 @@ public class WifiMetrics {
         mLastPollRxLinkSpeed = wifiInfo.getRxLinkSpeedMbps();
         incrementTxLinkSpeedBandCount(mLastPollLinkSpeed, mLastPollFreq);
         incrementRxLinkSpeedBandCount(mLastPollRxLinkSpeed, mLastPollFreq);
+        mWifiStatusBuilder.setRssi(mLastPollRssi);
+        mWifiStatusBuilder.setNetworkId(wifiInfo.getNetworkId());
     }
 
     /**
@@ -2258,6 +2373,8 @@ public class WifiMetrics {
                     mRxThroughputMbpsHistogramAbove2G.increment(rxThroughputKbps / 1000);
                 }
             }
+            mWifiStatusBuilder.setEstimatedTxKbps(txThroughputKbps);
+            mWifiStatusBuilder.setEstimatedRxKbps(rxThroughputKbps);
         }
     }
 
@@ -4645,6 +4762,10 @@ public class WifiMetrics {
             mWifiState = wifiState;
             mWifiWins = (wifiState == WifiMetricsProto.WifiLog.WIFI_ASSOCIATED);
             mWifiWinsUsabilityScore = (wifiState == WifiMetricsProto.WifiLog.WIFI_ASSOCIATED);
+            if (wifiState == WifiMetricsProto.WifiLog.WIFI_DISCONNECTED
+                    || wifiState == WifiMetricsProto.WifiLog.WIFI_DISABLED) {
+                mWifiStatusBuilder = new WifiStatusBuilder();
+            }
         }
     }
 
@@ -4749,6 +4870,7 @@ public class WifiMetrics {
             case StaEvent.TYPE_CMD_START_ROAM:
             case StaEvent.TYPE_CONNECT_NETWORK:
             case StaEvent.TYPE_NETWORK_AGENT_VALID_NETWORK:
+                mWifiStatusBuilder.setValidated(true);
             case StaEvent.TYPE_FRAMEWORK_DISCONNECT:
             case StaEvent.TYPE_SCORE_BREACH:
             case StaEvent.TYPE_MAC_CHANGE:
@@ -4786,6 +4908,7 @@ public class WifiMetrics {
         if (mWifiDataStall != null) {
             staEvent.isCellularDataAvailable = mWifiDataStall.isCellularDataAvailable();
         }
+        staEvent.isAdaptiveConnectivityEnabled = mAdaptiveConnectivityEnabled;
         mSupplicantStateChangeBitmask = 0;
         mLastPollRssi = -127;
         mLastPollFreq = -1;
@@ -5002,6 +5125,7 @@ public class WifiMetrics {
         if (event.totalRxBytes > 0) sb.append(" totalRxBytes=").append(event.totalRxBytes);
         sb.append(" screenOn=").append(event.screenOn);
         sb.append(" cellularData=").append(event.isCellularDataAvailable);
+        sb.append(" adaptiveConnectivity=").append(event.isAdaptiveConnectivityEnabled);
         if (event.supplicantStateChangesBitmask != 0) {
             sb.append(", ").append(supplicantStateChangesBitmaskToString(
                     event.supplicantStateChangesBitmask));
@@ -5219,6 +5343,15 @@ public class WifiMetrics {
                 break;
         }
         return result;
+    }
+
+    /**
+     * Converts Adaptive Connectivity state to UserActionEvent type.
+     * @param value
+     */
+    public static int convertAdaptiveConnectivityStateToUserActionEventType(boolean value) {
+        return value ? UserActionEvent.EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_ON
+                : UserActionEvent.EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_OFF;
     }
 
     static class MeteredNetworkStatsBuilder {
@@ -6154,6 +6287,13 @@ public class WifiMetrics {
         synchronized (mLock) {
             if (networkId == WifiConfiguration.INVALID_NETWORK_ID) return;
             mNetworkIdToNominatorId.put(networkId, nominatorId);
+
+            // user connect choice is preventing switcing off from the connected network
+            if (nominatorId
+                    == WifiMetricsProto.ConnectionEvent.NOMINATOR_SAVED_USER_CONNECT_CHOICE
+                    && mWifiStatusBuilder.getNetworkId() == networkId) {
+                mWifiStatusBuilder.setUserChoice(true);
+            }
         }
     }
 
@@ -6582,6 +6722,15 @@ public class WifiMetrics {
     public void incrementNumOfCarrierWifiConnectionNonAuthFailure() {
         synchronized (mLock) {
             mCarrierWifiMetrics.numConnectionNonAuthFailure++;
+        }
+    }
+
+    /**
+     *  Set Adaptive Connectivity state (On/Off)
+     */
+    public void setAdaptiveConnectivityState(boolean adaptiveConnectivityEnabled) {
+        synchronized (mLock) {
+            mAdaptiveConnectivityEnabled = adaptiveConnectivityEnabled;
         }
     }
 }

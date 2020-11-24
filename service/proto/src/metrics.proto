@@ -1471,6 +1471,9 @@ message StaEvent {
 
   // Whether cellular data network is available
   optional bool is_cellular_data_available = 25;
+
+  //Whether Adaptive Connectivity is enabled
+  optional bool is_adaptive_connectivity_enabled = 26;
 }
 
 // Wi-Fi Aware metrics
@@ -3156,6 +3159,12 @@ message UserActionEvent {
     EVENT_MANUAL_CONNECT = 11;
     // User changes the metered setting to "detect automatically"
     EVENT_CONFIGURE_METERED_STATUS_AUTO = 12;
+    // User adds a new network or updates configurations for an existing network.
+    EVENT_ADD_OR_UPDATE_NETWORK = 13;
+    // User sets the adaptive connectivity to on
+    EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_ON = 14;
+    // User sets the adaptive connectivity to off
+    EVENT_CONFIGURE_ADAPTIVE_CONNECTIVITY_OFF = 15;
   }
 
   // The type of user action
@@ -3167,6 +3176,34 @@ message UserActionEvent {
   // Additional information on the target network for the action. This is not applicable and will
   // be null for some actions such as EVENT_TOGGLE_WIFI_ON.
   optional TargetNetworkInfo target_network_info = 3;
+
+  // Information about the currently connected network.
+  optional WifiStatus wifi_status = 4;
+
+  // Reasons why the network applicable for this user action is disabled.
+  // Normally this should be referring to the currently connected network.
+  // For a manual connection, this is referring to the user selected networks.
+  optional NetworkDisableReason network_disable_reason = 5;
+}
+
+message WifiStatus {
+  // Wifi is connected.
+  optional bool is_connected = 1;
+
+  // Wifi is validated
+  optional bool is_validated = 2;
+
+  // The last observed RSSI
+  optional sint32 last_rssi = 3;
+
+  // Estimated TX
+  optional int32 estimated_tx_kbps = 4;
+
+  // Estimated RX
+  optional int32 estimated_rx_kbps = 5;
+
+  // There is another candidate with better score, but user connect choice is preventing the switch.
+  optional bool is_stuck_due_to_user_connect_choice = 6;
 }
 
 // Additional information on a network
@@ -3176,6 +3213,56 @@ message TargetNetworkInfo {
 
   // Whether the target is a passpoint network.
   optional bool is_passpoint = 2;
+}
+
+// Reasons why a configuration or BSSID is disabled.
+message NetworkDisableReason {
+  enum DisableReason {
+    // Default value, should not be used.
+    REASON_UNKNOWN = 0;
+    // AP unable to accept more clients, a special kind of association rejection failure.
+    REASON_AP_UNABLE_TO_HANDLE_NEW_STA = 1;
+    // No internet
+    REASON_NETWORK_VALIDATION_FAILURE = 2;
+    // Password is incorrect, a special kind of authentication failure.
+    REASON_WRONG_PASSWORD = 3;
+    // Incorrect EAP credentials.
+    REASON_EAP_FAILURE = 4;
+    // Other association rejection failures.
+    REASON_ASSOCIATION_REJECTION = 5;
+    // Associated timeout failures.
+    REASON_ASSOCIATION_TIMEOUT = 6;
+    // Other authentication failures.
+    REASON_AUTHENTICATION_FAILURE = 7;
+    // DHCP failures.
+    REASON_DHCP_FAILURE = 8;
+    // Device disconnected shortly after connection.
+    REASON_ABNORMAL_DISCONNECT = 9;
+    // AP initiated disconnect for a given duration.
+    REASON_FRAMEWORK_DISCONNECT_MBO_OCE = 10;
+    // Avoid connecting to the failed AP when trying to reconnect on other available candidates.
+    REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT = 11;
+    // The connected scorer has disconnected this network.
+    REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE = 12;
+    // The network is disabled due to absence of user credentials
+    REASON_AUTHENTICATION_NO_CREDENTIALS = 13;
+    // The network is disabled because service is not subscribed, a special kind of EAP failure.
+    REASON_AUTHENTICATION_NO_SUBSCRIPTION = 14;
+    // User disabled auto-join for this network.
+    REASON_AUTO_JOIN_DISABLED = 15;
+  }
+
+  // The reason for disabling a network.
+  optional DisableReason disable_reason = 1;
+
+  // The configuration is temporarily disabled.
+  optional bool config_temporarily_disabled = 2;
+
+  // The configuration is disabled until the user manually re-enables it.
+  optional bool config_permanently_disabled = 3;
+
+  // Reasons why 1 or more BSSIDs are temporarily disabled.
+  repeated DisableReason bssid_disable_reasons = 4;
 }
 
 // Number of networks with a large change of connection/disconnection

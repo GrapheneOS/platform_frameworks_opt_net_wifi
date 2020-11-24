@@ -663,8 +663,8 @@ public class InformationElementUtilTest extends WifiBaseTest {
         capabilities.from(ies, beaconCap, true);
         String result = capabilities.generateCapabilitiesString();
 
-        assertEquals("[WPA2-EAP+EAP-SHA256+FILS-SHA256-CCMP][RSN-EAP+EAP-SHA256+FILS-SHA256-CCMP]",
-                result);
+        assertEquals("[WPA2-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+EAP-FILS-SHA256-CCMP]", result);
     }
 
     /**
@@ -704,8 +704,8 @@ public class InformationElementUtilTest extends WifiBaseTest {
         capabilities.from(ies, beaconCap, true);
         String result = capabilities.generateCapabilitiesString();
 
-        assertEquals("[WPA2-EAP+EAP-SHA256+FILS-SHA384-CCMP][RSN-EAP+EAP-SHA256+FILS-SHA384-CCMP]",
-                result);
+        assertEquals("[WPA2-EAP+EAP-SHA256+EAP-FILS-SHA384-CCMP]"
+                + "[RSN-EAP+EAP-SHA256+EAP-FILS-SHA384-CCMP]", result);
     }
 
     /**
@@ -1367,7 +1367,7 @@ public class InformationElementUtilTest extends WifiBaseTest {
         assertTrue(heOperation.is6GhzInfoPresent());
         assertFalse(heOperation.isVhtInfoPresent());
         assertEquals(ScanResult.CHANNEL_WIDTH_80MHZ, heOperation.getChannelWidth());
-        assertEquals(6040, heOperation.getCenterFreq0());
+        assertEquals(6050, heOperation.getCenterFreq0());
         assertEquals(0, heOperation.getCenterFreq1());
     }
 
@@ -1412,8 +1412,8 @@ public class InformationElementUtilTest extends WifiBaseTest {
         assertTrue(heOperation.is6GhzInfoPresent());
         assertFalse(heOperation.isVhtInfoPresent());
         assertEquals(ScanResult.CHANNEL_WIDTH_160MHZ, heOperation.getChannelWidth());
-        assertEquals(6040, heOperation.getCenterFreq0());
-        assertEquals(6080, heOperation.getCenterFreq1());
+        assertEquals(6050, heOperation.getCenterFreq0());
+        assertEquals(6090, heOperation.getCenterFreq1());
     }
 
     /**

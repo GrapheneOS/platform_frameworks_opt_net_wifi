@@ -283,6 +283,19 @@ public class WifiAwareClientState {
     }
 
     /**
+     * Check if client needs ranging enabled.
+     * @return True if one of the discovery session has ranging enabled, false otherwise.
+     */
+    public boolean isRangingEnabled() {
+        for (int i = 0; i < mSessions.size(); ++i) {
+            if (mSessions.valueAt(i).isRangingEnabled()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Dump the internal state of the class.
      */
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {

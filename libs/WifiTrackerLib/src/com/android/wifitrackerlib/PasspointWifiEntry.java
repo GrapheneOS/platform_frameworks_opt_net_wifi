@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
@@ -244,6 +245,11 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                         ? carrierName
                         : suggestorLabel);
             }
+
+            if (mIsLowQuality) {
+                return mContext.getString(R.string.wifi_connected_low_quality);
+            }
+
             String networkCapabilitiesinformation =
                     getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
             if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
@@ -277,16 +283,21 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
 
     @Override
     public String getMacAddress() {
+        if (mWifiInfo != null) {
+            final String wifiInfoMac = mWifiInfo.getMacAddress();
+            if (!TextUtils.isEmpty(wifiInfoMac)
+                    && !TextUtils.equals(wifiInfoMac, DEFAULT_MAC_ADDRESS)) {
+                return wifiInfoMac;
+            }
+        }
         if (mWifiConfig == null || getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
             final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
             if (factoryMacs.length > 0) {
                 return factoryMacs[0];
-            } else {
-                return null;
             }
-        } else {
-            return mWifiConfig.getRandomizedMacAddress().toString();
+            return null;
         }
+        return mWifiConfig.getRandomizedMacAddress().toString();
     }
 
     @Override
@@ -470,26 +481,27 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Override
     public boolean isAutoJoinEnabled() {
         // Suggestion network; use WifiConfig instead
-        if (mPasspointConfig == null && mWifiConfig != null) {
+        if (mPasspointConfig != null) {
+            return mPasspointConfig.isAutojoinEnabled();
+        }
+        if (mWifiConfig != null) {
             return mWifiConfig.allowAutojoin;
         }
-
-        return mPasspointConfig.isAutojoinEnabled();
+        return false;
     }
 
     @Override
     public boolean canSetAutoJoinEnabled() {
-        return true;
+        return mPasspointConfig != null || mWifiConfig != null;
     }
 
     @Override
     public void setAutoJoinEnabled(boolean enabled) {
-        if (mPasspointConfig == null && mWifiConfig != null) {
+        if (mPasspointConfig != null) {
+            mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);
+        } else if (mWifiConfig != null) {
             mWifiManager.allowAutojoin(mWifiConfig.networkId, enabled);
-            return;
         }
-
-        mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);
     }
 
     @Override
@@ -614,7 +626,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     /** Pass a reference to a matching OsuWifiEntry for expiration handling */
     void setOsuWifiEntry(OsuWifiEntry osuWifiEntry) {
         mOsuWifiEntry = osuWifiEntry;
-        mOsuWifiEntry.setListener(this);
+        if (mOsuWifiEntry != null) {
+            mOsuWifiEntry.setListener(this);
+        }
     }
 
     /** Callback for updates to the linked OsuWifiEntry */

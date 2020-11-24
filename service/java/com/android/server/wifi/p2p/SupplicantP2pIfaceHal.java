@@ -63,7 +63,6 @@ public class SupplicantP2pIfaceHal {
     private static final String TAG = "SupplicantP2pIfaceHal";
     private static boolean sVerboseLoggingEnabled = true;
     private static final int RESULT_NOT_VALID = -1;
-    private static final int DEFAULT_GROUP_OWNER_INTENT = 6;
     private static final int DEFAULT_OPERATING_CLASS = 81;
     /**
      * Regex pattern for extracting the wps device type bytes.
@@ -307,7 +306,7 @@ public class SupplicantP2pIfaceHal {
                                 }
                                 supplicantIface.setResult(status, iface);
                             });
-                } catch (RemoteException e) {
+                } catch (RemoteException | IllegalArgumentException e) {
                     Log.e(TAG, "ISupplicant.getInterface exception: " + e);
                     supplicantServiceDiedHandler();
                     return null;
@@ -828,13 +827,9 @@ public class SupplicantP2pIfaceHal {
             String preSelectedPin = TextUtils.isEmpty(config.wps.pin) ? "" : config.wps.pin;
             boolean persistent = (config.netId == WifiP2pGroup.NETWORK_ID_PERSISTENT);
 
-            int goIntent = 0;
-            if (!joinExistingGroup) {
-                int groupOwnerIntent = config.groupOwnerIntent;
-                if (groupOwnerIntent < 0 || groupOwnerIntent > 15) {
-                    groupOwnerIntent = DEFAULT_GROUP_OWNER_INTENT;
-                }
-                goIntent = groupOwnerIntent;
+            if (config.groupOwnerIntent < 0 || config.groupOwnerIntent > 15) {
+                Log.e(TAG, "Invalid group owner intent: " + config.groupOwnerIntent);
+                return null;
             }
 
             SupplicantResult<String> result = new SupplicantResult(
@@ -842,7 +837,7 @@ public class SupplicantP2pIfaceHal {
             try {
                 mISupplicantP2pIface.connect(
                         peerAddress, provisionMethod, preSelectedPin, joinExistingGroup,
-                        persistent, goIntent,
+                        persistent, config.groupOwnerIntent,
                         (SupplicantStatus status, String generatedPin) -> {
                             result.setResult(status, generatedPin);
                         });

@@ -741,6 +741,56 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     }
 
     /**
+     * Wifi network selector stays with current network if current network is not nominated
+     * but has the higher score
+     */
+    @Test
+    public void includeCurrentNetworkWhenCurrentNetworkNotNominated() {
+        String[] ssids = {"\"test1\"", "\"test2\""};
+        String[] bssids = {"6c:f3:7f:ae:8c:f3", "6c:f3:7f:ae:8c:f4"};
+        int[] freqs = {2437, 5120};
+        String[] caps = {"[WPA2-EAP-CCMP][ESS]", "[WPA2-PSK][ESS]"};
+        int[] levels = {mThresholdMinimumRssi2G + 10, mThresholdMinimumRssi2G + 20};
+        int[] securities = {SECURITY_EAP, SECURITY_PSK};
+        // VHT cap IE
+        byte[] iesBytes = {(byte) 0x92, (byte) 0x01, (byte) 0x80, (byte) 0x33, (byte) 0xaa,
+                (byte) 0xff, (byte) 0x00, (byte) 0x00, (byte) 0xaa, (byte) 0xff, (byte) 0x00,
+                (byte) 0x00};
+        byte[][] iesByteStream = {iesBytes, iesBytes};
+        // Make a network selection to connect to test1.
+        ScanDetailsAndWifiConfigs scanDetailsAndConfigs =
+                WifiNetworkSelectorTestUtil.setupScanDetailsAndConfigStore(ssids, bssids,
+                        freqs, caps, levels, securities, mWifiConfigManager, mClock, iesByteStream);
+        List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
+        assertEquals(2, scanDetails.size());
+        HashSet<String> blocklist = new HashSet<String>();
+        List<WifiCandidates.Candidate> candidates = mWifiNetworkSelector.getCandidatesFromScan(
+                scanDetails, blocklist, mWifiInfo, false, true, false);
+        WifiConfiguration candidate = mWifiNetworkSelector.selectNetwork(candidates);
+
+        when(mWifiInfo.getSupplicantState()).thenReturn(SupplicantState.COMPLETED);
+        when(mWifiInfo.getNetworkId()).thenReturn(0); // 0 is current network
+        when(mWifiInfo.getBSSID()).thenReturn(bssids[0]);
+        when(mWifiInfo.is24GHz()).thenReturn(true);
+        when(mWifiInfo.getScore()).thenReturn(ConnectedScore.WIFI_TRANSITION_SCORE);
+        when(mWifiInfo.is5GHz()).thenReturn(false);
+        when(mWifiInfo.getFrequency()).thenReturn(2400);
+        when(mWifiInfo.getRssi()).thenReturn(levels[0]);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(SystemClock.elapsedRealtime()
+                + WifiNetworkSelector.MINIMUM_NETWORK_SELECTION_INTERVAL_MS + 2000);
+
+        when(mThroughputPredictor.predictThroughput(any(), anyInt(), anyInt(), anyInt(),
+                anyInt(), anyInt(), anyInt(), anyInt(), anyBoolean())).thenReturn(100);
+        // Force to return 2nd network in the network nominator
+        mDummyNominator.setNetworkIndexToReturn(1);
+
+        candidates = mWifiNetworkSelector.getCandidatesFromScan(
+                scanDetails, blocklist, mWifiInfo, true, false, false);
+        assertEquals(2, candidates.size());
+        assertEquals(100, candidates.get(0).getPredictedThroughputMbps());
+    }
+
+    /**
      * If two qualified networks, test1 and test2, are in range when the user selects test2 over
      * test1, WifiNetworkSelector will override the NetworkSelector's choice to connect to test1
      * with test2.

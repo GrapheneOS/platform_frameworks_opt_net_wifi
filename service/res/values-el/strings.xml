@@ -31,14 +31,10 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Προτεινόμενα δίκτυα <xliff:g id="NAME">%s</xliff:g>. Η συσκευή μπορεί να συνδεθεί αυτόματα."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Αποδοχή"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Όχι, ευχαριστώ"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"Η εταιρεία κινητής τηλεφωνίας <xliff:g id="CARRIERNAME">%s</xliff:g> θέλει αυτόματη σύνδεση"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Αυτά τα δίκτυα λαμβάνουν ένα μοναδικό αναγνωριστικό που μπορεί να χρησιμοποιηθεί για την παρακολούθηση της τοποθεσίας της συσκευής."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Σύνδεση ούτως ή άλλως"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Να μην γίνει σύνδεση."</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Επιβεβαίωση της σύνδεσης;"</string>
-    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Εάν συνδεθείτε, τα δίκτυα Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> ενδέχεται να έχουν πρόσβαση ή να μοιράζονται ένα μοναδικό αναγνωριστικό που σχετίζεται με την κάρτα σας SIM. Αυτό μπορεί να επιτρέψει την παρακολούθηση της τοποθεσίας της συσκευής σας."</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Σύνδεση"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Να μην γίνει σύνδεση."</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Προειδοποίηση απορρήτου για προστασία IMSI"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"Δίκτυα που προτείνονται από την εταιρεία κινητής τηλεφωνίας <xliff:g id="CARRIERNAME">%s</xliff:g> χρησιμοποιώντας τα στοιχεία της κάρτας SIM σας χωρίς προστασία απορρήτου, να επιτρέπεται στο δίκτυο να συνδέεται αυτόματα;"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Να επιτρέπεται"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Να μην επιτρέπεται"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Το Wi‑Fi θα ενεργοποιηθεί αυτόματα"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Όταν βρίσκεστε κοντά σε αποθηκευμένο δίκτυο υψηλής ποιότητας"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Να μην ενεργοποιηθεί ξανά"</string>
@@ -65,9 +61,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Δεν είναι δυνατή η σύνδεση με <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Πατήστε για αλλαγή των ρυθμίσεων απορρήτου και δοκιμάστε ξανά"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Αλλαγή της ρύθμισης απορρήτου;"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Για να συνδεθεί, το <xliff:g id="SSID">%1$s</xliff:g> θα πρέπει να χρησιμοποιήσει τη διεύθυνση MAC σας, η οποία είναι ένα μοναδικό αναγνωριστικό. Αυτήν τη στιγμή, η ρύθμιση απορρήτου σας για αυτό το δίκτυο χρησιμοποιεί ένα τυχαίο αναγνωριστικό. \n\nΑυτή η αλλαγή μπορεί να επιτρέψει την παρακολούθηση της τοποθεσίας της συσκευής σας από συσκευές σε κοντινή απόσταση."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Το <xliff:g id="SSID_0">%1$s</xliff:g> μπορεί να θέλει να συνδεθεί χρησιμοποιώντας τη διεύθυνση MAC της συσκευής σας, η οποία είναι ένα μοναδικό αναγνωριστικό. Αυτό μπορεί να επιτρέψει την παρακολούθηση της τοποθεσίας της συσκευής σας από συσκευές σε κοντινή απόσταση. \n\nΕάν συνεχίσετε, το <xliff:g id="SSID_1">%1$s</xliff:g> θα αλλάξει τη ρύθμιση απορρήτου σας και θα δοκιμάσει να συνδεθεί ξανά."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Αλλαγή ρύθμισης"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Η ρύθμιση ενημερώθηκε. Δοκιμάστε να συνδεθείτε ξανά."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Η ρύθμιση ενημερώθηκε. Δοκιμάστε να συνδεθείτε ξανά."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Δεν είναι δυνατή η αλλαγή της ρύθμισης απορρήτου"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Δεν βρέθηκε δίκτυο"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : Σφάλμα ελέγχου ταυτότητας EAP 32760"</string>
@@ -77,8 +73,11 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : Σφάλμα ελέγχου ταυτότητας EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : Σφάλμα ελέγχου ταυτότητας EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : Σφάλμα ελέγχου ταυτότητας EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Το σημείο πρόσβασης Wi-Fi απενεργοποιήθηκε."</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Δεν υπάρχουν συνδεδεμένες συσκευές. Πατήστε για τροποποίηση."</string>
-    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Το Wi-Fi αποσυνδέθηκε."</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Για να συνδεθείτε στο <xliff:g id="SSID">%1$s</xliff:g>, τοποθετήστε μια κάρτα SIM <xliff:g id="CARRIER_NAME">%2$s</xliff:g>."</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Σημείο πρόσβασης κινητής συσκευής ανενεργό"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Το σημείο πρόσβασης κινητής συσκευής απενεργοποιήθηκε"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Το σημείο πρόσβασης κινητής συσκευής απενεργοποιήθηκε λόγω λήξης χρονικού ορίου αδράνειας."</string>
+    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
+    <skip />
+    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
+    <skip />
 </resources>
