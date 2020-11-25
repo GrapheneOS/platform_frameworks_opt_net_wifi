@@ -27,7 +27,7 @@
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"Yoqilmagan"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"Internet kirish nuqtasi vaqtinchalik to‘lgan"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"Ulanmagan"</string>
-    <string name="wifi_remembered" msgid="5126903736498678708">"Saqlandi"</string>
+    <string name="wifi_remembered" msgid="5126903736498678708">"Saqlangan"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"Trafik hisoblanadigan tarmoq"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"Trafik hisobi yuritilmaydigan tarmoq"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> orqali ulandi"</string>

@@ -45,7 +45,7 @@
     <string name="osu_opening_provider" msgid="5633521771769175139">"Се отвора <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
     <string name="osu_connect_failed" msgid="8503501619299851793">"Не може да се поврзе"</string>
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"Се завршува регистрацијата…"</string>
-    <string name="osu_sign_up_failed" msgid="2725057866968590279">"Не можеше да се заврши регистрацијата. Допрете за да се обидете повторно."</string>
+    <string name="osu_sign_up_failed" msgid="2725057866968590279">"Не може да се заврши регистрацијата. Допрете за да се обидете повторно."</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"Регистрацијата е завршена. Се поврзува…"</string>
     <string name="imsi_protection_warning" msgid="5231726821588271569">"Мрежава прима ID на SIM-картичка што може да се користи за следење на локацијата на уредот. "<annotation id="url">"Дознајте повеќе"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Многу бавна"</string>
