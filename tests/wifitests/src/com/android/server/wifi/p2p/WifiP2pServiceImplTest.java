@@ -54,6 +54,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.InetAddresses;
 import android.net.NetworkInfo;
 import android.net.TetheringManager;
 import android.net.wifi.WifiConfiguration;
@@ -94,8 +95,6 @@ import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
-
-import libcore.net.InetAddressUtils;
 
 import org.junit.After;
 import org.junit.Before;
@@ -859,7 +858,7 @@ public class WifiP2pServiceImplTest extends WifiBaseTest {
         lenient().when(NetworkInterface.getByName(eq(IFACE_NAME_P2P)))
                 .thenReturn(mP2pNetworkInterface);
         ArrayList<InetAddress> p2pInetAddresses = new ArrayList<>();
-        p2pInetAddresses.add(InetAddressUtils.parseNumericAddress(P2P_GO_IP));
+        p2pInetAddresses.add(InetAddresses.parseNumericAddress(P2P_GO_IP));
         when(mP2pNetworkInterface.getInetAddresses())
                 .thenReturn(Collections.enumeration(p2pInetAddresses));
 
