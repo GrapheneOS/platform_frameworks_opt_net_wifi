@@ -1873,7 +1873,6 @@ public class WifiNative {
         return mWifiVendorHal.getStaFactoryMacAddress(interfaceName);
     }
 
-
     /**
      * Get the factory MAC address of the given interface
      * @param interfaceName Name of the interface.
@@ -1882,6 +1881,17 @@ public class WifiNative {
     public MacAddress getApFactoryMacAddress(@NonNull String interfaceName) {
         return mWifiVendorHal.getApFactoryMacAddress(interfaceName);
     }
+
+    /**
+     * Reset MAC address to factory MAC address on the given interface
+     *
+     * @param interfaceName Name of the interface
+     * @return true for success
+     */
+    public boolean resetApMacToFactoryMacAddress(@NonNull String interfaceName) {
+        return mWifiVendorHal.resetApMacToFactoryMacAddress(interfaceName);
+    }
+
 
     /********************************************************
      * Hostapd operations

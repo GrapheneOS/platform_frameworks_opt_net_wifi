@@ -1514,12 +1514,9 @@ public class SoftApManagerTest extends WifiBaseTest {
         SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(), mTestSoftApCapability);
         ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
-        when(mWifiNative.getApFactoryMacAddress(TEST_INTERFACE_NAME)).thenReturn(TEST_MAC_ADDRESS);
-        when(mWifiNative.setApMacAddress(eq(TEST_INTERFACE_NAME), mac.capture())).thenReturn(true);
 
         startSoftApAndVerifyEnabled(apConfig);
-
-        assertThat(mac.getValue()).isEqualTo(TEST_MAC_ADDRESS);
+        verify(mWifiNative).resetApMacToFactoryMacAddress(eq(TEST_INTERFACE_NAME));
     }
 
     @Test
@@ -1536,12 +1533,9 @@ public class SoftApManagerTest extends WifiBaseTest {
         SoftApModeConfiguration apConfig = new SoftApModeConfiguration(
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(), testSoftApCapability);
         ArgumentCaptor<MacAddress> mac = ArgumentCaptor.forClass(MacAddress.class);
-        when(mWifiNative.getApFactoryMacAddress(TEST_INTERFACE_NAME)).thenReturn(TEST_MAC_ADDRESS);
-        when(mWifiNative.setApMacAddress(eq(TEST_INTERFACE_NAME), mac.capture())).thenReturn(true);
 
         startSoftApAndVerifyEnabled(apConfig);
-
-        assertThat(mac.getValue()).isEqualTo(TEST_MAC_ADDRESS);
+        verify(mWifiNative).resetApMacToFactoryMacAddress(eq(TEST_INTERFACE_NAME));
         verify(mWifiApConfigStore, never()).randomizeBssidIfUnset(any(), any());
     }
 

@@ -144,6 +144,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Mock
     private android.hardware.wifi.V1_4.IWifiApIface mIWifiApIfaceV14;
     @Mock
+    private android.hardware.wifi.V1_5.IWifiApIface mIWifiApIfaceV15;
+    @Mock
     private IWifiChip mIWifiChip;
     @Mock
     private android.hardware.wifi.V1_1.IWifiChip mIWifiChipV11;
@@ -2728,6 +2730,55 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         assertFalse(mWifiVendorHal.setStaMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
         assertFalse(mWifiVendorHal.setApMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress resetToFactoryMacAddress() success.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressSuccess() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_5Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV15);
+        when(mIWifiApIfaceV15.resetToFactoryMacAddress()).thenReturn(mWifiStatusSuccess);
+
+        assertTrue(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME_1));
+        verify(mIWifiApIfaceV15).resetToFactoryMacAddress();
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress() can handle failure status.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressFailDueToStatusFailure() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_5Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV15);
+        when(mIWifiApIfaceV15.resetToFactoryMacAddress()).thenReturn(mWifiStatusFailure);
+
+        assertFalse(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME_1));
+        verify(mIWifiApIfaceV15).resetToFactoryMacAddress();
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress() can handle RemoteException.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressFailDueToRemoteException() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_5Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV15);
+        doThrow(new RemoteException()).when(mIWifiApIfaceV15).resetToFactoryMacAddress();
+        assertFalse(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME_1));
+        verify(mIWifiApIfaceV15).resetToFactoryMacAddress();
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress() does not crash with older HALs.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressDoesNotCrashOnOlderHal() throws Exception {
+        assertFalse(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME));
     }
 
     /**

@@ -2661,7 +2661,12 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                 doAnswer(new GetTypeAnswer(IfaceType.AP)).when(iface).getType(
                         any(IWifiIface.getTypeCallback.class));
                 if (mWifiChipV15 != null && ifaceTypeToCreate == HDM_CREATE_IFACE_AP_BRIDGE) {
-                    doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, iface)).when(
+                    IWifiIface ifaceApV15 = mock(android.hardware.wifi.V1_5.IWifiApIface.class);
+                    doAnswer(new GetNameAnswer(ifaceName)).when(ifaceApV15).getName(
+                            any(IWifiIface.getNameCallback.class));
+                    doAnswer(new GetTypeAnswer(IfaceType.AP)).when(ifaceApV15).getType(
+                            any(IWifiIface.getTypeCallback.class));
+                    doAnswer(new CreateXxxIfaceAnswer(chipMock, mStatusOk, ifaceApV15)).when(
                             mWifiChipV15).createBridgedApIface(
                             any(android.hardware.wifi.V1_5.IWifiChip
                             .createBridgedApIfaceCallback.class));
@@ -2670,7 +2675,6 @@ public class HalDeviceManagerTest extends WifiBaseTest {
                             chipMock.chip).createApIface(
                             any(IWifiChip.createApIfaceCallback.class));
                 }
-
                 mDut.createApIface(requiredChipCapabilities,
                         destroyedListener, mHandler, requestorWs,
                         ifaceTypeToCreate == HDM_CREATE_IFACE_AP_BRIDGE);
@@ -3016,7 +3020,7 @@ public class HalDeviceManagerTest extends WifiBaseTest {
         }
 
         public void answer(android.hardware.wifi.V1_5.IWifiChip.createBridgedApIfaceCallback cb) {
-            cb.onValues(mStatus, (IWifiApIface) mWifiIface);
+            cb.onValues(mStatus, (android.hardware.wifi.V1_5.IWifiApIface) mWifiIface);
             addInterfaceInfo(IfaceType.AP);
         }
 

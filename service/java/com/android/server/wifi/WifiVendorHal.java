@@ -1442,6 +1442,29 @@ public class WifiVendorHal {
     }
 
     /**
+     * Reset MAC address to factory MAC address on the given interface
+     *
+     * @param ifaceName Name of the interface
+     * @return true for success
+     */
+    public boolean resetApMacToFactoryMacAddress(@NonNull String ifaceName) {
+        synchronized (sLock) {
+            try {
+                android.hardware.wifi.V1_5.IWifiApIface ap15 =
+                        getWifiApIfaceForV1_5Mockable(ifaceName);
+                if (ap15 == null) {
+                    MacAddress mac = getApFactoryMacAddress(ifaceName);
+                    return mac != null && setApMacAddress(ifaceName, mac);
+                }
+                return ok(ap15.resetToFactoryMacAddress());
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return false;
+            }
+        }
+    }
+
+    /**
      * Set Mac address on the given interface
      *
      * @param ifaceName Name of the interface
@@ -2562,6 +2585,13 @@ public class WifiVendorHal {
         IWifiApIface iface = getApIface(ifaceName);
         if (iface == null) return null;
         return android.hardware.wifi.V1_4.IWifiApIface.castFrom(iface);
+    }
+
+    protected android.hardware.wifi.V1_5.IWifiApIface getWifiApIfaceForV1_5Mockable(
+            String ifaceName) {
+        IWifiApIface iface = getApIface(ifaceName);
+        if (iface == null) return null;
+        return android.hardware.wifi.V1_5.IWifiApIface.castFrom(iface);
     }
 
     /**
