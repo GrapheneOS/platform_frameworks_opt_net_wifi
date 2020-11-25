@@ -2370,8 +2370,6 @@ public class WifiConnectivityManager {
         if (mRunning) return;
         retrieveWifiScanner();
         mConnectivityHelper.getFirmwareRoamingInfo();
-        mBssidBlocklistMonitor.clearBssidBlocklist();
-        mConfigManager.enableTemporaryDisabledNetworks();
         mWifiChannelUtilization.init(getPrimaryClientModeManager().getWifiLinkLayerStats());
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiEnablePartialInitialScan)) {
@@ -2422,10 +2420,11 @@ public class WifiConnectivityManager {
 
         localLog("Set WiFi " + (enable ? "enabled" : "disabled"));
 
-        if (mWifiEnabled && !enable) {
+        if (!enable) {
             mNetworkSelector.resetOnDisable();
             mBssidBlocklistMonitor.clearBssidBlocklist();
             mConfigManager.enableTemporaryDisabledNetworks();
+            mConfigManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
         }
         mWifiEnabled = enable;
         updateRunningState();

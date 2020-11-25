@@ -2862,15 +2862,13 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void clearBssidBlocklistWhenExitingWifiClientMode() {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
-        // Verify the BSSID blocklist is cleared at start up.
-        verify(mBssidBlocklistMonitor).clearBssidBlocklist();
-        verify(mWifiConfigManager).enableTemporaryDisabledNetworks();
         // Exit Wifi client mode.
         setWifiEnabled(false);
 
         // Verify the BSSID blocklist is cleared again.
-        verify(mBssidBlocklistMonitor, times(2)).clearBssidBlocklist();
-        verify(mWifiConfigManager, times(2)).enableTemporaryDisabledNetworks();
+        verify(mBssidBlocklistMonitor).clearBssidBlocklist();
+        verify(mWifiConfigManager).enableTemporaryDisabledNetworks();
+        verify(mWifiConfigManager).stopTemporarilyDisablingAllNonCarrierMergedWifi();
         // Verify WifiNetworkSelector is informed of the disable.
         verify(mWifiNS).resetOnDisable();
     }
