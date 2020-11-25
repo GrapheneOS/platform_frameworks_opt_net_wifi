@@ -63,7 +63,6 @@ public class VenueUrlElement extends ANQPElement {
     public static VenueUrlElement parse(ByteBuffer payload)
             throws ProtocolException, BufferUnderflowException {
         Map<Integer, URL> venueUrls = new HashMap<>();
-
         while (payload.remaining() >= 2) {
             int length = payload.get() & 0xFF;
             int venueNumber = payload.get() & 0xFF;
@@ -71,7 +70,7 @@ public class VenueUrlElement extends ANQPElement {
                 // In case no Venue Name Tuple subfield was returned in the Venue Name ANQP-element
                 break;
             }
-            String parsedUrl = ByteBufferReader.readString(payload, length - 2,
+            String parsedUrl = ByteBufferReader.readString(payload, length - 1,
                     StandardCharsets.UTF_8);
             URL url;
             try {

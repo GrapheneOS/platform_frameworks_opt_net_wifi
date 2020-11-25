@@ -58,7 +58,7 @@ public class VenueUrlElementTest extends WifiBaseTest {
     private void appendVenue(ByteArrayOutputStream stream, int venueNumber, String url)
             throws IOException {
         byte[] venueBytes = url.getBytes(StandardCharsets.UTF_8);
-        int length = venueBytes.length + 2;
+        int length = venueBytes.length + 1;
         stream.write((byte) length);
         stream.write((byte) venueNumber);
         stream.write(venueBytes);
