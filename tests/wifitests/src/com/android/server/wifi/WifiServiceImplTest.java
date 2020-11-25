@@ -6346,6 +6346,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.startTemporarilyDisablingAllNonCarrierMergedWifi(1);
         mLooper.dispatchAll();
         verify(mWifiConfigManager).startTemporarilyDisablingAllNonCarrierMergedWifi(1);
+        verify(mClientModeManager).disconnect();
     }
 
     /**

@@ -2652,8 +2652,15 @@ public class WifiServiceImpl extends BaseWifiService {
 
         mLog.info("startTemporarilyDisablingAllNonCarrierMergedWifi=% uid=%").c(subscriptionId)
                 .c(Binder.getCallingUid()).flush();
-        mWifiThreadRunner.post(() -> mWifiConfigManager
-                .startTemporarilyDisablingAllNonCarrierMergedWifi(subscriptionId));
+        mWifiThreadRunner.post(() -> {
+            mWifiConfigManager
+                    .startTemporarilyDisablingAllNonCarrierMergedWifi(subscriptionId);
+            // always disconnect here and rely on auto-join to find the appropriate carrier network
+            // to join. Even if we are currently connected to the carrier-merged wifi, it's still
+            // better to disconnect here because it's possible that carrier wifi offload is
+            // disabled.
+            mActiveModeWarden.getPrimaryClientModeManager().disconnect();
+        });
     }
 
     /**
