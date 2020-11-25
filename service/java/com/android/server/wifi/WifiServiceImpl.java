@@ -2652,7 +2652,8 @@ public class WifiServiceImpl extends BaseWifiService {
 
         mLog.info("startTemporarilyDisablingAllNonCarrierMergedWifi=% uid=%").c(subscriptionId)
                 .c(Binder.getCallingUid()).flush();
-        // TODO: b/173054916 Implement this API
+        mWifiThreadRunner.post(() -> mWifiConfigManager
+                .startTemporarilyDisablingAllNonCarrierMergedWifi(subscriptionId));
     }
 
     /**
@@ -2667,7 +2668,8 @@ public class WifiServiceImpl extends BaseWifiService {
 
         mLog.info("stopTemporarilyDisablingAllNonCarrierMergedWifi uid=%")
                 .c(Binder.getCallingUid()).flush();
-        // TODO: b/173054916 Implement this API
+        mWifiThreadRunner.post(() ->
+                mWifiConfigManager.stopTemporarilyDisablingAllNonCarrierMergedWifi());
     }
 
     /**

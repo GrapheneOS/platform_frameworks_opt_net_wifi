@@ -96,6 +96,7 @@
           <item type="array" name="config_wifi_aggressive_randomization_ssid_allowlist" />
           <item type="array" name="config_wifi_aggressive_randomization_ssid_blocklist" />
           <item type="integer" name="config_wifiRecentFailureReasonExpirationMinutes" />
+          <item type="integer" name="config_wifiAllNonCarrierMergedWifiDisableDurationMinutes" />
           <item type="bool" name="config_wifi_link_probing_supported" />
           <item type="string" name="config_wifi_tcp_buffers" />
           <item type="string" name="wifi_tether_configure_ssid_default" />

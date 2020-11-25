@@ -203,6 +203,8 @@ public class WifiConfigManager {
     @VisibleForTesting
     protected static final String ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG =
             "enhanced_mac_randomization_force_enabled";
+    private static final int NON_CARRIER_MERGED_NETWORKS_SCAN_CACHE_QUERY_DURATION_MS =
+            10 * 60 * 1000; // 10 minutes
 
     /**
      * General sorting algorithm of all networks for scanning purposes:
@@ -270,6 +272,8 @@ public class WifiConfigManager {
      * Also when user manfully select to connect network will unblock that network.
      */
     private final MissingCounterTimerLockList<String> mUserTemporarilyDisabledList;
+    private final NonCarrierMergedNetworksStatusTracker mNonCarrierMergedNetworksStatusTracker;
+
 
     /**
      * Framework keeps a mapping from configKey to the randomized MAC address so that
@@ -371,6 +375,7 @@ public class WifiConfigManager {
         mScanDetailCaches = new HashMap<>(16, 0.75f);
         mUserTemporarilyDisabledList =
                 new MissingCounterTimerLockList<>(SCAN_RESULT_MISSING_COUNT_THRESHOLD, mClock);
+        mNonCarrierMergedNetworksStatusTracker = new NonCarrierMergedNetworksStatusTracker(mClock);
         mRandomizedMacAddressMapping = new HashMap<>();
         mListeners = new ArraySet<>();
 
@@ -2729,6 +2734,17 @@ public class WifiConfigManager {
     }
 
     /**
+     * Check if the provided network should be disabled because it's a non-carrier-merged network.
+     * @param config WifiConfiguration
+     * @return true if the network is a non-carrier-merged network and it should be disabled,
+     * otherwise false.
+     */
+    public boolean isNonCarrierMergedNetworkTemporarilyDisabled(
+            @NonNull WifiConfiguration config) {
+        return mNonCarrierMergedNetworksStatusTracker.isNetworkDisabled(config);
+    }
+
+    /**
      * User temporarily disable a network and will be block to auto-join when network is still
      * nearby.
      *
@@ -2751,6 +2767,46 @@ public class WifiConfigManager {
     }
 
     /**
+     * Temporarily disable visible and configured networks except for carrier merged networks for
+     * the given subscriptionId.
+     * @param subscriptionId
+     */
+    public void startTemporarilyDisablingAllNonCarrierMergedWifi(int subscriptionId) {
+        localLog("startTemporarilyDisablngAllNonCarrierMergedWifi: " + subscriptionId);
+        // do a clear to make sure we start at a clean state.
+        mNonCarrierMergedNetworksStatusTracker.clear();
+        mNonCarrierMergedNetworksStatusTracker.disableAllNonCarrierMergedNetworks(subscriptionId,
+                mContext.getResources().getInteger(R.integer
+                        .config_wifiAllNonCarrierMergedWifiDisableDurationMinutes) * 60 * 1000);
+        for (WifiConfiguration config : getInternalConfiguredNetworks()) {
+            ScanDetailCache scanDetailCache = getScanDetailCacheForNetwork(config.networkId);
+            if (scanDetailCache == null) {
+                continue;
+            }
+            ScanResult scanResult = scanDetailCache.getMostRecentScanResult();
+            if (scanResult == null) {
+                continue;
+            }
+            if (mClock.getWallClockMillis() - scanResult.seen
+                    < NON_CARRIER_MERGED_NETWORKS_SCAN_CACHE_QUERY_DURATION_MS) {
+                // do not disable if this is a carrier-merged-network with the given subscriptionId
+                if (config.carrierMerged && config.subscriptionId == subscriptionId) {
+                    continue;
+                }
+                mNonCarrierMergedNetworksStatusTracker.temporarilyDisableNetwork(config,
+                        USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS);
+            }
+        }
+    }
+
+    /**
+     * Resets the effects of startTemporarilyDisablngAllNonCarrierMergedWifi.
+     */
+    public void stopTemporarilyDisablingAllNonCarrierMergedWifi() {
+        mNonCarrierMergedNetworksStatusTracker.clear();
+    }
+
+    /**
      * Update the user temporarily disabled network list with networks in range.
      * @param networks networks in range in String format, FQDN or SSID. And caller must ensure
      *                 that the SSID passed thru this API matched the WifiConfiguration.SSID rules,
@@ -2758,6 +2814,7 @@ public class WifiConfigManager {
      */
     public void updateUserDisabledList(List<String> networks) {
         mUserTemporarilyDisabledList.update(new HashSet<>(networks));
+        mNonCarrierMergedNetworksStatusTracker.update(new HashSet<>(networks));
     }
 
     private void removeUserChoiceFromDisabledNetwork(
@@ -2983,6 +3040,7 @@ public class WifiConfigManager {
         localLog("clearInternalData: Clearing all internal data");
         mConfiguredNetworks.clear();
         mUserTemporarilyDisabledList.clear();
+        mNonCarrierMergedNetworksStatusTracker.clear();
         mRandomizedMacAddressMapping.clear();
         mScanDetailCaches.clear();
         clearLastSelectedNetwork();
@@ -3020,6 +3078,7 @@ public class WifiConfigManager {
             sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_REMOVED);
         }
         mUserTemporarilyDisabledList.clear();
+        mNonCarrierMergedNetworksStatusTracker.clear();
         mScanDetailCaches.clear();
         clearLastSelectedNetwork();
         return removedNetworkIds;

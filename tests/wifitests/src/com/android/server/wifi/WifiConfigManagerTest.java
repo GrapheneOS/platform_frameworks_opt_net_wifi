@@ -119,6 +119,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             MacAddress.fromString("d2:11:19:34:a5:20");
     private static final int DATA_SUBID = 1;
     private static final String SYSUI_PACKAGE_NAME = "com.android.systemui";
+    private static final int ALL_NON_CARRIER_MERGED_WIFI_DISABLE_DURATION_MINUTES = 30;
 
     @Mock private Context mContext;
     @Mock private Clock mClock;
@@ -193,6 +194,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 R.integer.config_wifiDisableReasonDhcpFailureThreshold,
                 NetworkSelectionStatus.DISABLE_REASON_INFOS
                         .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
+        mResources.setInteger(
+                R.integer.config_wifiAllNonCarrierMergedWifiDisableDurationMinutes,
+                ALL_NON_CARRIER_MERGED_WIFI_DISABLE_DURATION_MINUTES);
         when(mContext.getResources()).thenReturn(mResources);
 
         // Setup UserManager profiles for the default user.
@@ -4994,6 +4998,146 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 + WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS + 1;
         when(mClock.getWallClockMillis()).thenReturn(currentTimeMs);
         assertFalse(mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network));
+    }
+
+    /**
+     * Verify that when startTemporarilyDisablingAllNonCarrierMergedWifi is called, all
+     * non-carrier-merged networks are disabled for a duration, and non-carrier-merged networks
+     * visible at the time of API call are disabled a longer duration, until they disappear from
+     * scan results for sufficiently long.
+     */
+    @Test
+    public void testStartTemporarilyDisablingAllNonCarrierMergedWifi() {
+        verifyAddNetworkToWifiConfigManager(WifiConfigurationTestUtil.createOpenNetwork());
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfiguration visibleNetwork = retrievedNetworks.get(0);
+        ScanDetail scanDetail = createScanDetailForNetwork(visibleNetwork, TEST_BSSID,
+                TEST_RSSI, TEST_FREQUENCY_1);
+        mWifiConfigManager.updateScanDetailCacheFromScanDetail(scanDetail);
+        WifiConfiguration otherNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+
+        // verify both networks are disabled at the start
+        when(mClock.getWallClockMillis()).thenReturn(0L);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
+        mWifiConfigManager.startTemporarilyDisablingAllNonCarrierMergedWifi(5);
+        mWifiConfigManager.updateUserDisabledList(new ArrayList<String>());
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(visibleNetwork));
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(otherNetwork));
+
+        // the network visible at the start of the API call should still be disabled, but the
+        // other non-carrier-merged network should now be free to connect
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(
+                ALL_NON_CARRIER_MERGED_WIFI_DISABLE_DURATION_MINUTES * 60 * 1000 + 1L);
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(visibleNetwork));
+        assertFalse(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(otherNetwork));
+
+        // all networks should be clear to connect by now.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(
+                WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS + 1);
+        when(mClock.getWallClockMillis()).thenReturn(
+                WifiConfigManager.USER_DISCONNECT_NETWORK_BLOCK_EXPIRY_MS + 1);
+        assertFalse(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                visibleNetwork));
+        assertFalse(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(otherNetwork));
+    }
+
+    /**
+     * Verify that startTemporarilyDisablingAllNonCarrierMergedWifi disables all passpoint networks
+     * with the same FQDN as the visible passpoint network, even if the SSID is different.
+     */
+    @Test
+    public void testStartTemporarilyDisablingAllNonCarrierMergedWifiPasspointFqdn()
+            throws Exception {
+        int testSubscriptionId = 5;
+        WifiConfiguration passpointNetwork_1 = WifiConfigurationTestUtil.createPasspointNetwork();
+        WifiConfiguration passpointNetwork_2 = WifiConfigurationTestUtil.createPasspointNetwork();
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        // Verify the 2 passpoint network have the same FQDN, but different SSID.
+        assertEquals(passpointNetwork_1.FQDN, passpointNetwork_2.FQDN);
+        assertNotEquals(passpointNetwork_1.SSID, passpointNetwork_2.SSID);
+        verifyAddPasspointNetworkToWifiConfigManager(passpointNetwork_1);
+
+        // Make sure the passpointNetwork_1 is seen in a scan.
+        WifiConfiguration visibleNetwork = mWifiConfigManager.getConfiguredNetworksWithPasswords()
+                .get(0);
+        ScanDetail scanDetail = createScanDetailForNetwork(visibleNetwork, TEST_BSSID,
+                TEST_RSSI, TEST_FREQUENCY_1);
+        mWifiConfigManager.updateScanDetailCacheFromScanDetail(scanDetail);
+
+        // verify all networks are disabled at the start
+        when(mClock.getWallClockMillis()).thenReturn(0L);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
+        mWifiConfigManager.startTemporarilyDisablingAllNonCarrierMergedWifi(5);
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                passpointNetwork_1));
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                passpointNetwork_2));
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(openNetwork));
+
+        // now the open network should be clear to connect because it is not visible at the start
+        // of the API call. But both passpoint network should still be disabled due to the FQDN
+        // of passpointNetwork_1 being disabled.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(
+                ALL_NON_CARRIER_MERGED_WIFI_DISABLE_DURATION_MINUTES * 60 * 1000 + 1L);
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                passpointNetwork_1));
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                passpointNetwork_2));
+        assertFalse(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(openNetwork));
+    }
+
+    /**
+     * Verify that stopTemporarilyDisablingAllNonCarrierMergedWifi cancels the effects of
+     * startTemporarilyDisablingAllNonCarrierMergedWifi.
+     */
+    @Test
+    public void testStopTemporarilyDisablingAllNonCarrierMergedWifi() {
+        verifyAddNetworkToWifiConfigManager(WifiConfigurationTestUtil.createOpenNetwork());
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfiguration visibleNetwork = retrievedNetworks.get(0);
+        ScanDetail scanDetail = createScanDetailForNetwork(visibleNetwork, TEST_BSSID,
+                TEST_RSSI, TEST_FREQUENCY_1);
+        mWifiConfigManager.updateScanDetailCacheFromScanDetail(scanDetail);
+
+        WifiConfiguration otherNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+
+        // verify both networks are disabled at the start
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
+        mWifiConfigManager.startTemporarilyDisablingAllNonCarrierMergedWifi(5);
+        mWifiConfigManager.updateUserDisabledList(new ArrayList<String>());
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(visibleNetwork));
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(otherNetwork));
+
+        mWifiConfigManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+        assertFalse(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(
+                visibleNetwork));
+        assertFalse(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(otherNetwork));
+    }
+
+    /**
+     * Verify that the carrier network with the matching subscription ID is still allowed for
+     * auto connect after startTemporarilyDisablingAllNonCarrierMergedWifi is called.
+     */
+    @Test
+    public void testStartTemporarilyDisablingAllNonCarrierMergedWifiAllowCarrierNetwork() {
+        int testSubscriptionId = 5;
+        WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
+        network.carrierMerged = true;
+        network.subscriptionId = testSubscriptionId;
+        verifyAddNetworkToWifiConfigManager(network);
+        List<WifiConfiguration> retrievedNetworks =
+                mWifiConfigManager.getConfiguredNetworksWithPasswords();
+        WifiConfiguration carrierNetwork = retrievedNetworks.get(0);
+        WifiConfiguration otherNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+
+        // verify that the carrier network is not disabled.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
+        mWifiConfigManager.startTemporarilyDisablingAllNonCarrierMergedWifi(testSubscriptionId);
+        assertFalse(mWifiConfigManager
+                .isNonCarrierMergedNetworkTemporarilyDisabled(carrierNetwork));
+        assertTrue(mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(otherNetwork));
     }
 
     private NetworkUpdateResult verifyAddOrUpdateNetworkWithProxySettingsAndPermissions(
