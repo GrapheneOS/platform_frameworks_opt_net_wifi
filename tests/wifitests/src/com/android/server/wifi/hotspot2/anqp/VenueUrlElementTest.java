@@ -43,6 +43,9 @@ public class VenueUrlElementTest extends WifiBaseTest {
     private static final String TEST_VENUE_URL1 = "https://www.google.com/";
     private static final String TEST_VENUE_URL2 = "https://www.android.com/";
     private static final String TEST_VENUE_URL3 = "https://support.google.com/";
+    private static final String TEST_VENUE_URL_INSECURE = "http://support.google.com/";
+    private static final String TEST_VENUE_URL_CAPS = "HTTPS://SUPPORT.GOOGLE.COM/";
+    private static final String TEST_VENUE_URL_INSECURE_CAPS = "HTTP://SUPPORT.GOOGLE.COM/";
     private static final String TEST_VENUE_URL_INVALID = "htps://invalid.com/";
 
     /**
@@ -55,7 +58,7 @@ public class VenueUrlElementTest extends WifiBaseTest {
     private void appendVenue(ByteArrayOutputStream stream, int venueNumber, String url)
             throws IOException {
         byte[] venueBytes = url.getBytes(StandardCharsets.UTF_8);
-        int length = venueBytes.length + 2;
+        int length = venueBytes.length + 1;
         stream.write((byte) length);
         stream.write((byte) venueNumber);
         stream.write(venueBytes);
@@ -202,6 +205,67 @@ public class VenueUrlElementTest extends WifiBaseTest {
         VenueUrlElement expectedElement = new VenueUrlElement(urlList);
 
         ByteBuffer buffer = ByteBuffer.wrap(getTestData(urlList));
+        assertEquals(expectedElement, VenueUrlElement.parse(buffer));
+    }
+
+    /**
+     * Verify that an expected VenueUrlElement will be returned when parsing a buffer contained
+     * valid Venue URL data.
+     */
+    @Test
+    public void parseBufferWithValidVenueUrlsAndCapsUrls() throws Exception {
+        // Setup expected element.
+        Map<Integer, URL> urlList = new HashMap<>();
+        urlList.put(Integer.valueOf(1), createUrlFromString(TEST_VENUE_URL1));
+        urlList.put(Integer.valueOf(2), createUrlFromString(TEST_VENUE_URL2));
+        urlList.put(Integer.valueOf(3), createUrlFromString(TEST_VENUE_URL_CAPS));
+        urlList.put(Integer.valueOf(4), createUrlFromString(TEST_VENUE_URL3));
+        VenueUrlElement expectedElement = new VenueUrlElement(urlList);
+
+        ByteBuffer buffer = ByteBuffer.wrap(getTestData(urlList));
+        assertEquals(expectedElement, VenueUrlElement.parse(buffer));
+    }
+
+    /**
+     * Verify that a VenueUrlElement with empty URL list will be returned when parsing a buffer
+     * with an insecure (Non-HTTPS) URL.
+     */
+    @Test
+    public void parseBufferWithInsecureUrlData() throws Exception {
+        ByteBuffer buffer = ByteBuffer.wrap(getTestData(1, TEST_VENUE_URL_INSECURE));
+        assertTrue(VenueUrlElement.parse(buffer).getVenueUrls().isEmpty());
+    }
+
+    /**
+     * Verify that a VenueUrlElement with empty URL list will be returned when parsing a buffer
+     * with an insecure (Non-HTTPS) URL (letters capitalized).
+     */
+    @Test
+    public void parseBufferWithInsecureCapsUrlData() throws Exception {
+        ByteBuffer buffer = ByteBuffer.wrap(getTestData(1, TEST_VENUE_URL_INSECURE_CAPS));
+        assertTrue(VenueUrlElement.parse(buffer).getVenueUrls().isEmpty());
+    }
+
+    /**
+     * Verify that an expected VenueUrlElement will be returned when parsing a buffer contained
+     * valid Venue URL data and a single insecure URL which will be dropped.
+     */
+    @Test
+    public void parseBufferWithValidVenueUrlsAndOneInsecureUrl() throws Exception {
+        // Setup expected element.
+        Map<Integer, URL> urlList = new HashMap<>();
+        urlList.put(Integer.valueOf(1), createUrlFromString(TEST_VENUE_URL1));
+        urlList.put(Integer.valueOf(2), createUrlFromString(TEST_VENUE_URL2));
+        urlList.put(Integer.valueOf(3), createUrlFromString(TEST_VENUE_URL_INSECURE));
+        urlList.put(Integer.valueOf(4), createUrlFromString(TEST_VENUE_URL3));
+
+        // Create a buffer with a single insecure URL
+        ByteBuffer buffer = ByteBuffer.wrap(getTestData(urlList));
+
+        // Create the expected result
+        urlList.remove(Integer.valueOf(3));
+        VenueUrlElement expectedElement = new VenueUrlElement(urlList);
+
         assertEquals(expectedElement, VenueUrlElement.parse(buffer));
     }
 }

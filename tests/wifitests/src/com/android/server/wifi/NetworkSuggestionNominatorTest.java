@@ -545,6 +545,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         verify(mWifiConfigManager)
                 .getConfiguredNetwork(suggestions[0]
                         .createInternalWifiConfiguration().getProfileKey());
+        verify(mWifiConfigManager).isNonCarrierMergedNetworkTemporarilyDisabled(any());
         // Verify we did not try to add any new networks or other interactions with
         // WifiConfigManager.
         verifyNoMoreInteractions(mWifiConfigManager);
@@ -720,6 +721,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 suggestions[0].createInternalWifiConfiguration().getProfileKey()));
         verify(mWifiConfigManager).tryEnableNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.networkId));
+        verify(mWifiConfigManager).isNonCarrierMergedNetworkTemporarilyDisabled(any());
         // Verify we did not try to add any new networks or other interactions with
         // WifiConfigManager.
         verifyNoMoreInteractions(mWifiConfigManager);

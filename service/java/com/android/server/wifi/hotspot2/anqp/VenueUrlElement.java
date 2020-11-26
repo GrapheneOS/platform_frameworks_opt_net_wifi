@@ -16,6 +16,7 @@
 
 package com.android.server.wifi.hotspot2.anqp;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -62,7 +63,6 @@ public class VenueUrlElement extends ANQPElement {
     public static VenueUrlElement parse(ByteBuffer payload)
             throws ProtocolException, BufferUnderflowException {
         Map<Integer, URL> venueUrls = new HashMap<>();
-
         while (payload.remaining() >= 2) {
             int length = payload.get() & 0xFF;
             int venueNumber = payload.get() & 0xFF;
@@ -70,7 +70,7 @@ public class VenueUrlElement extends ANQPElement {
                 // In case no Venue Name Tuple subfield was returned in the Venue Name ANQP-element
                 break;
             }
-            String parsedUrl = ByteBufferReader.readString(payload, length - 2,
+            String parsedUrl = ByteBufferReader.readString(payload, length - 1,
                     StandardCharsets.UTF_8);
             URL url;
             try {
@@ -80,7 +80,13 @@ public class VenueUrlElement extends ANQPElement {
                 throw new ProtocolException("Malformed venue URL: " + parsedUrl + " at index "
                         + venueNumber);
             }
-            venueUrls.put(Integer.valueOf(venueNumber), url);
+            // Reject URLs that are not HTTPS
+            String protocol = url.getProtocol();
+            if (!TextUtils.equals(protocol, "https")) {
+                Log.w(TAG, "Non-HTTPS Venue URL dropped: " + url);
+            } else {
+                venueUrls.put(Integer.valueOf(venueNumber), url);
+            }
         }
 
         return new VenueUrlElement(venueUrls);

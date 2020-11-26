@@ -253,11 +253,10 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         if (!config.allowAutojoin || !isSimBasedNetworkAvailableToAutoConnect(config)) {
             return false;
         }
-        String network;
-        if (config.isPasspoint()) {
-            network = config.FQDN;
-        } else {
-            network = config.SSID;
+        String network = config.isPasspoint() ? config.FQDN : config.SSID;
+        if (mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(config)) {
+            mLocalLog.log("Ignoring non-carrier-merged network: " + network);
+            return false;
         }
         if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network)) {
             mLocalLog.log("Ignoring user disabled network: " + network);

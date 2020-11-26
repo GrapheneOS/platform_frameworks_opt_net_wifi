@@ -6317,6 +6317,71 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify startTemporarilyDisablingAllNonCarrierMergedWifi is guarded by NETWORK_SETTINGS
+     * permission.
+     */
+    @Test
+    public void testStartTemporarilyDisablingAllNonCarrierMergedWifiPermission() {
+        assumeTrue(SdkLevel.isAtLeastS());
+        doThrow(new SecurityException()).when(mContext)
+                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
+                        eq("WifiService"));
+        try {
+            mWifiServiceImpl.startTemporarilyDisablingAllNonCarrierMergedWifi(1);
+            fail();
+        } catch (SecurityException e) {
+            // pass
+        }
+    }
+
+    /**
+     * Verify startTemporarilyDisablingAllNonCarrierMergedWifi works properly with permission.
+     */
+    @Test
+    public void testStartTemporarilyDisablingAllNonCarrierMergedWifi() {
+        assumeTrue(SdkLevel.isAtLeastS());
+        doNothing().when(mContext)
+                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
+                        eq("WifiService"));
+        mWifiServiceImpl.startTemporarilyDisablingAllNonCarrierMergedWifi(1);
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).startTemporarilyDisablingAllNonCarrierMergedWifi(1);
+        verify(mClientModeManager).disconnect();
+    }
+
+    /**
+     * Verify stopTemporarilyDisablingAllNonCarrierMergedWifi is guarded by NETWORK_SETTINGS
+     * permission.
+     */
+    @Test
+    public void testStopTemporarilyDisablingAllNonCarrierMergedWifiPermission() {
+        assumeTrue(SdkLevel.isAtLeastS());
+        doThrow(new SecurityException()).when(mContext)
+                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
+                        eq("WifiService"));
+        try {
+            mWifiServiceImpl.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+            fail();
+        } catch (SecurityException e) {
+            // pass
+        }
+    }
+
+    /**
+     * Verify stopTemporarilyDisablingAllNonCarrierMergedWifi works properly with permission.
+     */
+    @Test
+    public void testStopTemporarilyDisablingAllNonCarrierMergedWifi() {
+        assumeTrue(SdkLevel.isAtLeastS());
+        doNothing().when(mContext)
+                .enforceCallingOrSelfPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
+                        eq("WifiService"));
+        mWifiServiceImpl.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).stopTemporarilyDisablingAllNonCarrierMergedWifi();
+    }
+
+    /**
      * Verifies that syncGetSupportedFeatures() adds capabilities based on interface
      * combination.
      */

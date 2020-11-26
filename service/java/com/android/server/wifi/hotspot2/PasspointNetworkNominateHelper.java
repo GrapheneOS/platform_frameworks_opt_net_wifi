@@ -169,6 +169,10 @@ public class PasspointNetworkNominateHelper {
                 if (config == null) {
                     continue;
                 }
+                if (mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(config)) {
+                    mLocalLog.log("Ignoring non-carrier-merged SSID: " + config.FQDN);
+                    continue;
+                }
                 if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(config.FQDN)) {
                     mLocalLog.log("Ignoring user disabled FQDN: " + config.FQDN);
                     continue;

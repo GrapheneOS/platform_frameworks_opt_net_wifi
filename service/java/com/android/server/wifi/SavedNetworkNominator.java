@@ -129,6 +129,10 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
                     network.getNetworkSelectionStatus();
             status.setSeenInLastQualifiedNetworkSelection(true);
 
+            if (mWifiConfigManager.isNonCarrierMergedNetworkTemporarilyDisabled(network)) {
+                localLog("Ignoring non-carrier-merged SSID: " + network.SSID);
+                continue;
+            }
             if (mWifiConfigManager.isNetworkTemporarilyDisabledByUser(network.SSID)) {
                 localLog("Ignoring user disabled SSID: " + network.SSID);
                 continue;

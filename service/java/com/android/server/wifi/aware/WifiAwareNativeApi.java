@@ -715,7 +715,7 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
         req.baseConfigs.useRssiThreshold = false;
         req.baseConfigs.disableDiscoveryTerminationIndication =
                 !publishConfig.mEnableTerminateNotification;
-        req.baseConfigs.disableMatchExpirationIndication = false;
+        req.baseConfigs.disableMatchExpirationIndication = true;
         req.baseConfigs.disableFollowupReceivedIndication = false;
 
         req.autoAcceptDataPathRequests = false;
@@ -781,7 +781,7 @@ public class WifiAwareNativeApi implements WifiAwareShellCommand.DelegatedShellC
         req.baseConfigs.useRssiThreshold = false;
         req.baseConfigs.disableDiscoveryTerminationIndication =
                 !subscribeConfig.mEnableTerminateNotification;
-        req.baseConfigs.disableMatchExpirationIndication = true;
+        req.baseConfigs.disableMatchExpirationIndication = false;
         req.baseConfigs.disableFollowupReceivedIndication = false;
 
         req.baseConfigs.rangingRequired =
