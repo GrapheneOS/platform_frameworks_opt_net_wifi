@@ -2645,6 +2645,57 @@ public class WifiNative {
     }
 
     /**
+     * Class to get generated bootstrap info for DPP responder operation.
+     */
+    public static class DppBootstrapQrCodeInfo {
+        public int bootstrapId;
+        public int listenChannel;
+        public String uri = new String();
+        DppBootstrapQrCodeInfo() {
+            bootstrapId = -1;
+            listenChannel = -1;
+        }
+    }
+
+    /**
+     * Generate DPP bootstrap Information:Bootstrap ID, DPP URI and the listen channel.
+     *
+     * @param ifaceName Interface name
+     * @param deviceInfo Device specific info to attach in DPP URI.
+     * @param dppCurve Elliptic curve cryptography type used to generate DPP
+     *                 public/private key pair.
+     * @return ID, or -1 for failure
+     */
+    public DppBootstrapQrCodeInfo generateDppBootstrapInfoForResponder(@NonNull String ifaceName,
+            String deviceInfo, int dppCurve) {
+        return mSupplicantStaIfaceHal.generateDppBootstrapInfoForResponder(ifaceName,
+                getMacAddress(ifaceName), deviceInfo, dppCurve);
+    }
+
+    /**
+     * start DPP Enrollee responder mode.
+     *
+     * @param ifaceName Interface name
+     * @param listenChannel Listen channel to wait for DPP authentication request.
+     * @return ID, or -1 for failure
+     */
+    public boolean startDppEnrolleeResponder(@NonNull String ifaceName, int listenChannel) {
+        return mSupplicantStaIfaceHal.startDppEnrolleeResponder(ifaceName, listenChannel);
+    }
+
+    /**
+     * Stops/aborts DPP Responder request
+     *
+     * @param ifaceName Interface name
+     * @param ownBootstrapId Bootstrap (URI) ID
+     * @return true when operation is successful, or false for failure
+     */
+    public boolean stopDppResponder(@NonNull String ifaceName, int ownBootstrapId)  {
+        return mSupplicantStaIfaceHal.stopDppResponder(ifaceName, ownBootstrapId);
+    }
+
+
+    /**
      * Registers DPP event callbacks.
      *
      * @param dppEventCallback Callback object.

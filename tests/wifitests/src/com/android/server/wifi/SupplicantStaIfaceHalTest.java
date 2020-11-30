@@ -68,6 +68,7 @@ import android.hardware.wifi.supplicant.V1_0.WpsConfigMethods;
 import android.hardware.wifi.supplicant.V1_3.ISupplicantStaIfaceCallback.BssTmData;
 import android.hardware.wifi.supplicant.V1_3.WifiTechnology;
 import android.hardware.wifi.supplicant.V1_4.ConnectionCapabilities;
+import android.hardware.wifi.supplicant.V1_4.DppCurve;
 import android.hardware.wifi.supplicant.V1_4.LegacyMode;
 import android.hidl.manager.V1_0.IServiceManager;
 import android.hidl.manager.V1_0.IServiceNotification;
@@ -1902,6 +1903,11 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
                 1, 2, "Buckle", "My", "Shoe",
                 3, 4));
         assertFalse(mDut.startDppEnrolleeInitiator(WLAN0_IFACE_NAME, 3, 14));
+        WifiNative.DppBootstrapQrCodeInfo bootstrapInfo =
+                mDut.generateDppBootstrapInfoForResponder(WLAN0_IFACE_NAME, "00:11:22:33:44:55",
+                        "PRODUCT_INFO", DppCurve.PRIME256V1);
+        assertEquals(-1, bootstrapInfo.bootstrapId);
+        assertFalse(mDut.startDppEnrolleeResponder(WLAN0_IFACE_NAME, 6));
     }
 
     /**

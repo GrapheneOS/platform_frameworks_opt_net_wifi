@@ -18,12 +18,14 @@ package com.android.server.wifi;
 
 import static android.net.wifi.WifiManager.EASY_CONNECT_NETWORK_ROLE_AP;
 
+import android.annotation.Nullable;
 import android.content.Context;
 import android.hardware.wifi.supplicant.V1_2.DppAkm;
 import android.hardware.wifi.supplicant.V1_2.DppNetRole;
-import android.hardware.wifi.supplicant.V1_3.DppFailureCode;
 import android.hardware.wifi.supplicant.V1_3.DppProgressCode;
 import android.hardware.wifi.supplicant.V1_3.DppSuccessCode;
+import android.hardware.wifi.supplicant.V1_4.DppCurve;
+import android.hardware.wifi.supplicant.V1_4.DppFailureCode;
 import android.net.wifi.EasyConnectStatusCallback;
 import android.net.wifi.IDppCallback;
 import android.net.wifi.ScanResult;
@@ -61,6 +63,10 @@ public class DppManager {
     private final Clock mClock;
     private static final String DPP_TIMEOUT_TAG = TAG + " Request Timeout";
     private static final int DPP_TIMEOUT_MS = 40_000; // 40 seconds
+    private static final int DPP_RESPONDER_TIMEOUT_MS = 300_000; // 5 minutes
+    public static final int DPP_AUTH_ROLE_INACTIVE = -1;
+    public static final int DPP_AUTH_ROLE_INITIATOR = 0;
+    public static final int DPP_AUTH_ROLE_RESPONDER = 1;
     private final DppMetrics mDppMetrics;
     private final ScanRequestProxy mScanRequestProxy;
 
@@ -246,6 +252,7 @@ public class DppManager {
         mDppRequestInfo.uid = uid;
         mDppRequestInfo.binder = binder;
         mDppRequestInfo.callback = callback;
+        mDppRequestInfo.authRole = DPP_AUTH_ROLE_INITIATOR;
 
         if (!linkToDeath(mDppRequestInfo)) {
             // Notify failure and clean up
@@ -329,6 +336,7 @@ public class DppManager {
         mDppRequestInfo.uid = uid;
         mDppRequestInfo.binder = binder;
         mDppRequestInfo.callback = callback;
+        mDppRequestInfo.authRole = DPP_AUTH_ROLE_INITIATOR;
 
         if (!linkToDeath(mDppRequestInfo)) {
             // Notify failure and clean up
@@ -369,6 +377,91 @@ public class DppManager {
     }
 
     /**
+     * Start DPP request in Enrollee-Responder mode. The goal of this call is to receive a
+     * Wi-Fi configuration object from the peer configurator by showing a QR code and being scanned
+     * by the peer configurator.
+     *
+     * @param uid             User ID
+     * @param binder          Binder object
+     * @param deviceInfo      The Device specific info to attach to the generated URI
+     * @param curve           Elliptic curve cryptography type used to generate DPP
+     *                        public/private key pair.
+     * @param callback        DPP Callback object
+     */
+    public void startDppAsEnrolleeResponder(int uid, IBinder binder,
+            @Nullable String deviceInfo, @WifiManager.EasyConnectCryptographyCurve int curve,
+            IDppCallback callback) {
+        if (mDppRequestInfo != null) {
+            try {
+                Log.e(TAG, "DPP request already in progress");
+                Log.e(TAG, "Ongoing request UID: " + mDppRequestInfo.uid + ", new UID: "
+                        + uid);
+
+                mDppMetrics.updateDppFailure(EasyConnectStatusCallback
+                        .EASY_CONNECT_EVENT_FAILURE_BUSY);
+                // On going DPP. Call the failure callback directly
+                callback.onFailure(EasyConnectStatusCallback.EASY_CONNECT_EVENT_FAILURE_BUSY,
+                        null, null, new int[0]);
+            } catch (RemoteException e) {
+                // Empty
+            }
+            return;
+        }
+
+        mDppRequestInfo = new DppRequestInfo();
+        mDppRequestInfo.uid = uid;
+        mDppRequestInfo.binder = binder;
+        mDppRequestInfo.callback = callback;
+        mDppRequestInfo.authRole = DPP_AUTH_ROLE_RESPONDER;
+
+        if (!linkToDeath(mDppRequestInfo)) {
+            // Notify failure and clean up
+            onFailure(DppFailureCode.FAILURE);
+            return;
+        }
+
+        mDppRequestInfo.startTime = mClock.getElapsedSinceBootMillis();
+        mDppTimeoutMessage.schedule(mDppRequestInfo.startTime + DPP_RESPONDER_TIMEOUT_MS);
+
+        mClientIfaceName = mWifiNative.getClientInterfaceName();
+        logd("Interface " + mClientIfaceName + " Product Info: " + deviceInfo
+                + " Curve: " + curve);
+
+        String info = deviceInfo == null ? "" : deviceInfo;
+        // Generate a QR code based bootstrap info
+        WifiNative.DppBootstrapQrCodeInfo bootstrapInfo =
+                mWifiNative.generateDppBootstrapInfoForResponder(mClientIfaceName, deviceInfo,
+                convertEasyConnectCryptographyCurveToHidlDppCurve(curve));
+
+        if (bootstrapInfo.bootstrapId < 0 || bootstrapInfo.uri == null) {
+            Log.e(TAG, "DPP request to generate URI failed");
+            onFailure(DppFailureCode.URI_GENERATION);
+            return;
+        }
+
+        mDppRequestInfo.bootstrapId = bootstrapInfo.bootstrapId;
+        logd("BootstrapId:" + mDppRequestInfo.bootstrapId + " URI: " + bootstrapInfo.uri);
+
+        if (!mWifiNative.startDppEnrolleeResponder(mClientIfaceName, bootstrapInfo.listenChannel)) {
+            Log.e(TAG, "DPP Start Enrollee Responder failure");
+            // Notify failure and clean up
+            onFailure(DppFailureCode.FAILURE);
+            return;
+        }
+
+        logd("Success: Started DPP Enrollee Responder on listen channel "
+                + bootstrapInfo.listenChannel);
+
+        try {
+            mDppRequestInfo.callback.onBootstrapUriGenerated(bootstrapInfo.uri);
+        } catch (RemoteException e) {
+            Log.e(TAG, " onBootstrapUriGenerated Callback failure");
+            onFailure(DppFailureCode.FAILURE);
+            return;
+        }
+    }
+
+    /**
      * Stop a current DPP session
      *
      * @param uid User ID
@@ -386,13 +479,15 @@ public class DppManager {
         }
 
         // Clean up supplicant resources
-        if (!mWifiNative.stopDppInitiator(mClientIfaceName)) {
-            Log.e(TAG, "Failed to stop DPP Initiator");
+        if (mDppRequestInfo.authRole == DPP_AUTH_ROLE_INITIATOR) {
+            if (!mWifiNative.stopDppInitiator(mClientIfaceName)) {
+                Log.e(TAG, "Failed to stop DPP Initiator");
+            }
         }
 
         cleanupDppResources();
 
-        logd("Success: Stopped DPP Initiator");
+        logd("Success: Stopped DPP Session");
     }
 
     private void cleanupDppResources() {
@@ -405,8 +500,14 @@ public class DppManager {
         mDppTimeoutMessage.cancel();
 
         // Remove the URI from the supplicant list
-        if (!mWifiNative.removeDppUri(mClientIfaceName, mDppRequestInfo.peerId)) {
-            Log.e(TAG, "Failed to remove DPP URI ID " + mDppRequestInfo.peerId);
+        if (mDppRequestInfo.authRole == DPP_AUTH_ROLE_INITIATOR) {
+            if (!mWifiNative.removeDppUri(mClientIfaceName, mDppRequestInfo.peerId)) {
+                Log.e(TAG, "Failed to remove DPP URI ID " + mDppRequestInfo.peerId);
+            }
+        } else if (mDppRequestInfo.authRole == DPP_AUTH_ROLE_RESPONDER) {
+            if (!mWifiNative.stopDppResponder(mClientIfaceName, mDppRequestInfo.bootstrapId)) {
+                Log.e(TAG, "Failed to stop DPP Responder");
+            }
         }
 
         mDppRequestInfo.binder.unlinkToDeath(mDppRequestInfo.dr, 0);
@@ -421,13 +522,17 @@ public class DppManager {
         public int peerId;
         public IDppCallback callback;
         public long startTime;
+        public int authRole = DPP_AUTH_ROLE_INACTIVE;
+        public int bootstrapId;
 
         @Override
         public String toString() {
             return new StringBuilder("DppRequestInfo: uid=").append(uid).append(", binder=").append(
                     binder).append(", dr=").append(dr)
                     .append(", callback=").append(callback)
-                    .append(", peerId=").append(peerId).toString();
+                    .append(", peerId=").append(peerId)
+                    .append(", authRole=").append(authRole)
+                    .append(", bootstrapId=").append(bootstrapId).toString();
         }
     }
 
@@ -723,6 +828,11 @@ public class DppManager {
                             .EASY_CONNECT_EVENT_FAILURE_ENROLLEE_REJECTED_CONFIGURATION;
                     break;
 
+                case DppFailureCode.URI_GENERATION:
+                    dppFailureCode = EasyConnectStatusCallback
+                            .EASY_CONNECT_EVENT_FAILURE_URI_GENERATION;
+                    break;
+
                 case DppFailureCode.FAILURE:
                 default:
                     dppFailureCode = EasyConnectStatusCallback.EASY_CONNECT_EVENT_FAILURE_GENERIC;
@@ -775,5 +885,24 @@ public class DppManager {
         }
 
         return true;
+    }
+
+    private int convertEasyConnectCryptographyCurveToHidlDppCurve(
+            @WifiManager.EasyConnectCryptographyCurve int curve) {
+        switch (curve) {
+            case WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_SECP384R1:
+                return DppCurve.SECP384R1;
+            case WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_SECP521R1:
+                return DppCurve.SECP521R1;
+            case WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_BRAINPOOLP256R1:
+                return DppCurve.BRAINPOOLP256R1;
+            case WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_BRAINPOOLP384R1:
+                return DppCurve.BRAINPOOLP384R1;
+            case WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_BRAINPOOLP512R1:
+                return DppCurve.BRAINPOOLP512R1;
+            case WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_PRIME256V1:
+            default:
+                return DppCurve.PRIME256V1;
+        }
     }
 }

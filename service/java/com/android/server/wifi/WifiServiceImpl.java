@@ -4177,6 +4177,57 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * Start DPP in Enrollee-Responder role. The current device will generate the
+     * bootstrap code and wait for the peer device to start the DPP authentication process.
+     *
+     * @param binder Caller's binder context
+     * @param deviceInfo Device specific info to display in QR code(e.g. Easy_connect_demo)
+     * @param curve Elliptic curve cryptography type used to generate DPP public/private key pair.
+     * @param callback Callback for status updates
+     */
+    @Override
+    public void startDppAsEnrolleeResponder(IBinder binder, @Nullable String deviceInfo,
+            @WifiManager.EasyConnectCryptographyCurve int curve, IDppCallback callback) {
+        if (!SdkLevel.isAtLeastS()) {
+            throw new UnsupportedOperationException();
+        }
+        // verify arguments
+        if (binder == null) {
+            throw new IllegalArgumentException("Binder must not be null");
+        }
+        if (callback == null) {
+            throw new IllegalArgumentException("Callback must not be null");
+        }
+
+        final int uid = getMockableCallingUid();
+
+        if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
+            throw new SecurityException(TAG + ": Permission denied");
+        }
+
+        if (deviceInfo != null) {
+            int deviceInfoLen = deviceInfo.length();
+            if (deviceInfoLen > WifiManager.EASY_CONNECT_DEVICE_INFO_MAXIMUM_LENGTH) {
+                throw new IllegalArgumentException("Device info length: " + deviceInfoLen
+                        + " must be less than "
+                        + WifiManager.EASY_CONNECT_DEVICE_INFO_MAXIMUM_LENGTH);
+            }
+            char c;
+            for (int i = 0; i < deviceInfoLen; i++) {
+                c = deviceInfo.charAt(i);
+                if (c < '!' || c > '~' || c == ';') {
+                    throw new IllegalArgumentException("Allowed Range of ASCII characters in"
+                            + "deviceInfo - %x20-7E; semicolon and space are not allowed!"
+                            + "Found c: " + c);
+                }
+            }
+        }
+
+        mWifiThreadRunner.post(() ->
+                mDppManager.startDppAsEnrolleeResponder(uid, binder, deviceInfo, curve, callback));
+    }
+
+    /**
      * Stop or abort a current DPP session.
      */
     @Override

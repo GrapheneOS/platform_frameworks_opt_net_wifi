@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static android.Manifest.permission.ACCESS_WIFI_STATE;
 import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
 import static android.net.wifi.WifiManager.DEVICE_MOBILITY_STATE_STATIONARY;
+import static android.net.wifi.WifiManager.EASY_CONNECT_CRYPTOGRAPHY_CURVE_PRIME256V1;
 import static android.net.wifi.WifiManager.IFACE_IP_MODE_CONFIGURATION_ERROR;
 import static android.net.wifi.WifiManager.IFACE_IP_MODE_LOCAL_ONLY;
 import static android.net.wifi.WifiManager.IFACE_IP_MODE_TETHERED;
@@ -162,6 +163,8 @@ import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
 import com.android.wifi.resources.R;
 
+import com.google.common.base.Strings;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -254,6 +257,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private ApplicationInfo mApplicationInfo;
     private List<ClientModeManager> mClientModeManagers;
     private static final String DPP_URI = "DPP:some_dpp_uri";
+    private static final String DPP_PRODUCT_INFO = "DPP:some_dpp_uri_info";
 
     private final ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
@@ -468,6 +472,11 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
             @Override
             public void onProgress(int status) throws RemoteException {
+
+            }
+
+            @Override
+            public void onBootstrapUriGenerated(String uri) throws RemoteException {
 
             }
 
@@ -5426,6 +5435,49 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test(expected = SecurityException.class)
     public void testStartDppAsEnrolleeInitiatorWithoutPermissions() {
         mWifiServiceImpl.startDppAsEnrolleeInitiator(mAppBinder, DPP_URI, mDppCallback);
+    }
+
+    /**
+     * Verify that the call to startDppAsEnrolleeResponder throws a security exception when the
+     * caller doesn't have NETWORK_SETTINGS permissions or NETWORK_SETUP_WIZARD.
+     */
+    @Test(expected = SecurityException.class)
+    public void testStartDppAsEnrolleeResponderWithoutPermissions() {
+        mWifiServiceImpl.startDppAsEnrolleeResponder(mAppBinder, DPP_PRODUCT_INFO,
+                EASY_CONNECT_CRYPTOGRAPHY_CURVE_PRIME256V1, mDppCallback);
+    }
+
+    /**
+     * Verify that a call to StartDppAsEnrolleeResponder throws an IllegalArgumentException
+     * if the deviceInfo length exceeds the max allowed length.
+     */
+    @Test(expected = SecurityException.class)
+    public void testStartDppAsEnrolleeResponderThrowsIllegalArgumentExceptionOnDeviceInfoMaxLen() {
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(Strings.repeat("a",
+                    WifiManager.EASY_CONNECT_DEVICE_INFO_MAXIMUM_LENGTH + 2));
+            String deviceInfo = sb.toString();
+            mWifiServiceImpl.startDppAsEnrolleeResponder(mAppBinder, deviceInfo,
+                    EASY_CONNECT_CRYPTOGRAPHY_CURVE_PRIME256V1, mDppCallback);
+            fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+    }
+
+    /**
+     * Verify that a call to StartDppAsEnrolleeResponder throws an IllegalArgumentException
+     * if the deviceInfo contains characters which are not allowed as per spec (For example
+     * semicolon)
+     */
+    @Test(expected = SecurityException.class)
+    public void testStartDppAsEnrolleeResponderThrowsIllegalArgumentExceptionOnWrongDeviceInfo() {
+        try {
+            mWifiServiceImpl.startDppAsEnrolleeResponder(mAppBinder, "DPP;TESTER",
+                    EASY_CONNECT_CRYPTOGRAPHY_CURVE_PRIME256V1, mDppCallback);
+            fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
     }
 
     /**
