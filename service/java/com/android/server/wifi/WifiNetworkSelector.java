@@ -612,6 +612,7 @@ public class WifiNetworkSelector {
 
         while (tempConfig.getNetworkSelectionStatus().getConnectChoice() != null) {
             String key = tempConfig.getNetworkSelectionStatus().getConnectChoice();
+            int userSelectedRssi = tempConfig.getNetworkSelectionStatus().getConnectChoiceRssi();
             tempConfig = mWifiConfigManager.getConfiguredNetwork(key);
 
             if (tempConfig != null) {
@@ -620,7 +621,9 @@ public class WifiNetworkSelector {
                 boolean noInternetButInternetIsExpected = !tempConfig.isNoInternetAccessExpected()
                         && tempConfig.hasNoInternetAccess();
                 if (tempStatus.getCandidate() != null && tempStatus.isNetworkEnabled()
-                        && !noInternetButInternetIsExpected) {
+                        && !noInternetButInternetIsExpected
+                        && isUserChoiceRssiCloseToOrGreaterThanExpectedValue(
+                                tempStatus.getCandidate().level, userSelectedRssi)) {
                     scanResultCandidate = tempStatus.getCandidate();
                     candidate = tempConfig;
                 }
@@ -638,6 +641,16 @@ public class WifiNetworkSelector {
                     WifiMetricsProto.ConnectionEvent.NOMINATOR_SAVED_USER_CONNECT_CHOICE);
         }
         return candidate;
+    }
+
+    private boolean isUserChoiceRssiCloseToOrGreaterThanExpectedValue(int observedRssi,
+            int expectedRssi) {
+        // The expectedRssi may be 0 for newly upgraded devices which do not have this information,
+        // pass the test for those devices to avoid regression.
+        if (expectedRssi == 0) {
+            return true;
+        }
+        return observedRssi >= expectedRssi - mScoringParams.getEstimateRssiErrorMargin();
     }
 
 

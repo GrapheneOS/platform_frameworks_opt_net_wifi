@@ -93,6 +93,7 @@ public class ScoringParams {
         public int currentNetworkBonusPercent = 20;
         public int secureNetworkBonus = 40;
         public int lastSelectionMinutes = 480;
+        public int estimateRssiErrorMargin = 5;
         public static final int MIN_MINUTES = 1;
         public static final int MAX_MINUTES = Integer.MAX_VALUE / (60 * 1000);
 
@@ -281,6 +282,8 @@ public class ScoringParams {
                 R.integer.config_wifiFrameworkSecureNetworkBonus);
         mVal.lastSelectionMinutes = context.getResources().getInteger(
                 R.integer.config_wifiFrameworkLastSelectionMinutes);
+        mVal.estimateRssiErrorMargin = context.getResources().getInteger(
+                R.integer.config_wifiEstimateRssiErrorMarginDb);
         mVal.pps[ACTIVE_TRAFFIC] = context.getResources().getInteger(
                 R.integer.config_wifiFrameworkMinPacketPerSecondActiveTraffic);
         mVal.pps[HIGH_TRAFFIC] = context.getResources().getInteger(
@@ -403,6 +406,15 @@ public class ScoringParams {
     public int getNudKnob() {
         loadResources(mContext);
         return mVal.nud;
+    }
+
+    /**
+     * Returns the estimate rssi error margin to account minor differences in the environment
+     * and the device's orientation.
+     *
+     */
+    public int getEstimateRssiErrorMargin() {
+        return mVal.estimateRssiErrorMargin;
     }
 
     /**

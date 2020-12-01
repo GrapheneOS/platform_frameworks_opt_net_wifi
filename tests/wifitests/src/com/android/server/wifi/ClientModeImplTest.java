@@ -880,7 +880,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertNull(wifiInfo.getPasspointProviderFriendlyName());
         // Ensure the connection stats for the network is updated.
         verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID),
-                anyBoolean());
+                anyBoolean(), anyInt());
         verify(mWifiConfigManager).updateRandomizedMacExpireTime(any(), anyLong());
         verify(mContext).sendStickyBroadcastAsUser(
                 argThat(new NetworkStateChangedIntentMatcher(CONNECTED)), any());
@@ -1910,7 +1910,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void setHasEverConnectedTrueOnConnect() throws Exception {
         connect();
-        verify(mWifiConfigManager, atLeastOnce()).updateNetworkAfterConnect(0, false);
+        verify(mWifiConfigManager, atLeastOnce()).updateNetworkAfterConnect(eq(0), eq(false),
+                anyInt());
     }
 
     /**
@@ -1922,7 +1923,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Test
     public void connectionFailureDoesNotSetHasEverConnectedTrue() throws Exception {
         testDhcpFailure();
-        verify(mWifiConfigManager, never()).updateNetworkAfterConnect(0, false);
+        verify(mWifiConfigManager, never()).updateNetworkAfterConnect(eq(0), eq(false), anyInt());
     }
 
     @Test
@@ -3497,7 +3498,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(false);
         connect();
         verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
-        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID, false);
+        verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID), eq(false),
+                anyInt());
     }
 
     /**
@@ -3508,7 +3510,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         connect();
         verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
-        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID, false);
+        verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID), eq(false),
+                anyInt());
     }
 
     /**
@@ -3520,7 +3523,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mTestNetworkParams.hasEverConnected = true;
         connect();
         verify(mBssidBlocklistMonitor).handleBssidConnectionSuccess(sBSSID, sSSID);
-        verify(mWifiConfigManager).updateNetworkAfterConnect(FRAMEWORK_NETWORK_ID, true);
+        verify(mWifiConfigManager).updateNetworkAfterConnect(eq(FRAMEWORK_NETWORK_ID), eq(true),
+                anyInt());
     }
 
     /**
