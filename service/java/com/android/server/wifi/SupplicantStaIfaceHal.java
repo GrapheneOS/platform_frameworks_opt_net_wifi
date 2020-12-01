@@ -3504,6 +3504,132 @@ public class SupplicantStaIfaceHal {
     }
 
     /**
+     * Generate a DPP QR code based boot strap info
+     *
+     *  This is a v1.4+ HAL feature.
+     *  Returns DppResponderBootstrapInfo;
+     */
+    public WifiNative.DppBootstrapQrCodeInfo generateDppBootstrapInfoForResponder(
+            @NonNull String ifaceName, String macAddress, @NonNull String deviceInfo,
+            int dppCurve) {
+        final String methodStr = "generateDppBootstrapInfoForResponder";
+        MutableBoolean status = new MutableBoolean(false);
+        WifiNative.DppBootstrapQrCodeInfo bootstrapInfoOut =
+                new WifiNative.DppBootstrapQrCodeInfo();
+
+        ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+        if (iface == null) {
+            return bootstrapInfoOut;
+        }
+
+        // Get a v1.4 supplicant STA Interface
+        android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface staIfaceV14 =
+                getStaIfaceMockableV1_4(iface);
+
+        if (staIfaceV14 == null) {
+            Log.e(TAG, methodStr + ": SupplicantStaIface V1.4 is null");
+            return bootstrapInfoOut;
+        }
+
+        try {
+            // Support for DPP Responder
+            // Requires HAL v1.4 or higher
+            staIfaceV14.generateDppBootstrapInfoForResponder(
+                    NativeUtil.macAddressToByteArray(macAddress), deviceInfo, dppCurve,
+                    (android.hardware.wifi.supplicant.V1_4.SupplicantStatus statusInternal,
+                            android.hardware.wifi.supplicant.V1_4
+                            .DppResponderBootstrapInfo info) -> {
+                        if (statusInternal.code == SupplicantStatusCode.SUCCESS) {
+                            bootstrapInfoOut.bootstrapId = info.bootstrapId;
+                            bootstrapInfoOut.listenChannel = info.listenChannel;
+                            bootstrapInfoOut.uri = info.uri;
+                        }
+                        checkStatusAndLogFailure(statusInternal, methodStr);
+                    });
+        } catch (RemoteException e) {
+            handleRemoteException(e, methodStr);
+            return bootstrapInfoOut;
+        }
+
+        return bootstrapInfoOut;
+    }
+
+    /**
+     * Starts DPP Enrollee-Responder request
+     *
+     *  This is a v1.4+ HAL feature.
+     *  Returns true when operation is successful
+     *  On error, or if these features are not supported, false is returned.
+     */
+    public boolean startDppEnrolleeResponder(@NonNull String ifaceName, int listenChannel) {
+        final String methodStr = "startDppEnrolleeResponder";
+
+        ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+        if (iface == null) {
+            return false;
+        }
+
+        // Get a v1.4 supplicant STA Interface
+        android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface staIfaceV14 =
+                getStaIfaceMockableV1_4(iface);
+
+        if (staIfaceV14 == null) {
+            Log.e(TAG, methodStr + ": ISupplicantStaIface V1.4 is null");
+            return false;
+        }
+
+        try {
+            // Support for DPP Responder
+            // Requires HAL v1.4 or higher
+            android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                    staIfaceV14.startDppEnrolleeResponder(listenChannel);
+            return checkStatusAndLogFailure(status, methodStr);
+        } catch (RemoteException e) {
+            handleRemoteException(e, methodStr);
+        }
+
+        return false;
+    }
+
+    /**
+     * Stops/aborts DPP Responder request.
+     *
+     *  This is a v1.4+ HAL feature.
+     *  Returns true when operation is successful
+     *  On error, or if these features are not supported, false is returned.
+     */
+    public boolean stopDppResponder(@NonNull String ifaceName, int ownBootstrapId)  {
+        final String methodStr = "stopDppResponder";
+
+        ISupplicantStaIface iface = checkSupplicantStaIfaceAndLogFailure(ifaceName, methodStr);
+        if (iface == null) {
+            return false;
+        }
+
+        // Get a v1.4 supplicant STA Interface
+        android.hardware.wifi.supplicant.V1_4.ISupplicantStaIface staIfaceV14 =
+                getStaIfaceMockableV1_4(iface);
+
+        if (staIfaceV14 == null) {
+            Log.e(TAG, methodStr + ": ISupplicantStaIface V1.4 is null");
+            return false;
+        }
+
+        try {
+            // Support for DPP Responder
+            // Requires HAL v1.4 or higher
+            android.hardware.wifi.supplicant.V1_4.SupplicantStatus status =
+                    staIfaceV14.stopDppResponder(ownBootstrapId);
+            return checkStatusAndLogFailure(status, methodStr);
+        } catch (RemoteException e) {
+            handleRemoteException(e, methodStr);
+        }
+
+        return false;
+    }
+
+
+    /**
      * Register callbacks for DPP events.
      *
      * @param dppCallback DPP callback object.
