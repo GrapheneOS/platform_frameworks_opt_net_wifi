@@ -342,6 +342,10 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertThat(mActiveModeWarden.isInEmergencyMode()).isTrue();
     }
 
+    private void assertNotInEmergencyMode() {
+        assertThat(mActiveModeWarden.isInEmergencyMode()).isFalse();
+    }
+
     /**
      * Counts the number of times a void method was called on a mock.
      *
@@ -1644,7 +1648,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     /**
-     * Toggling wifi when in ECM does not exit ecm mode and enable wifi
+     * Toggling wifi on when in ECM does not exit ecm mode and enable wifi
      */
     @Test
     public void testWifiDoesNotToggleOnWhenInEcm() throws Exception {
@@ -1664,6 +1668,57 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mClientModeManager, never()).start();
+        assertInDisabledState();
+        assertInEmergencyMode();
+
+        // now we will exit ECM
+        mActiveModeWarden.emergencyCallbackModeChanged(false);
+        mLooper.dispatchAll();
+        assertNotInEmergencyMode();
+
+        // Wifi toggle on now takes effect
+        verify(mClientModeManager).start();
+        assertInEnabledState();
+    }
+
+    /**
+     * Toggling wifi off when in ECM does not disable wifi when getConfigWiFiDisableInECBM is
+     * disabled.
+     */
+    @Test
+    public void testWifiDoesNotToggleOffWhenInEcmAndConfigDisabled() throws Exception {
+        enableWifi();
+        assertInEnabledState();
+        verify(mClientModeManager).start();
+
+        // Test with WifiDisableInECBM turned off
+        when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(false);
+        // test ecm changed
+        assertEnteredEcmMode(() -> {
+            mActiveModeWarden.emergencyCallbackModeChanged(true);
+            mLooper.dispatchAll();
+        });
+
+        // now toggle wifi and verify we do not start wifi
+        when(mSettingsStore.isWifiToggleEnabled()).thenReturn(false);
+        mActiveModeWarden.wifiToggled();
+        mLooper.dispatchAll();
+
+        // still only called once
+        verify(mClientModeManager).start();
+        verify(mClientModeManager, never()).stop();
+        assertInEnabledState();
+        assertInEmergencyMode();
+
+        // now we will exit ECM
+        mActiveModeWarden.emergencyCallbackModeChanged(false);
+        mLooper.dispatchAll();
+        assertNotInEmergencyMode();
+
+        // Wifi toggle off now takes effect
+        verify(mClientModeManager).stop();
+        mClientListener.onStopped();
+        mLooper.dispatchAll();
         assertInDisabledState();
     }
 
@@ -2131,12 +2186,43 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInEnabledState();
         verify(mClientModeManager).stop();
 
+        mClientListener.onStopped();
+        mLooper.dispatchAll();
+        assertInDisabledState();
+
         mActiveModeWarden.emergencyCallbackModeChanged(false);
         mLooper.dispatchAll();
 
-        assertThat(mActiveModeWarden.isInEmergencyMode()).isFalse();
+        assertNotInEmergencyMode();
         // client mode restarted
         verify(mClientModeManager, times(2)).start();
+        assertInEnabledState();
+    }
+
+    /**
+     * Tests that if the carrier config to disable Wifi is not enabled during ECM, Wifi remains on
+     * during ECM, and nothing happens after exiting ECM.
+     */
+    @Test
+    public void ecmDoesNotDisableWifi_exitEcm_noOp() throws Exception {
+        enterClientModeActiveState();
+
+        verify(mClientModeManager).start();
+
+        when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(false);
+        assertEnteredEcmMode(() -> {
+            mActiveModeWarden.emergencyCallbackModeChanged(true);
+            mLooper.dispatchAll();
+        });
+        assertInEnabledState();
+        verify(mClientModeManager, never()).stop();
+
+        mActiveModeWarden.emergencyCallbackModeChanged(false);
+        mLooper.dispatchAll();
+
+        assertNotInEmergencyMode();
+        // client mode manager not started again
+        verify(mClientModeManager).start();
         assertInEnabledState();
     }
 
