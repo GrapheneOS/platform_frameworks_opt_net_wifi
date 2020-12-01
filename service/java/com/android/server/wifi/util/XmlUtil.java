@@ -1033,6 +1033,7 @@ public class XmlUtil {
         public static final String XML_TAG_HAS_EVER_CONNECTED = "HasEverConnected";
         public static final String XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED =
                 "CaptivePortalNeverDetected";
+        public static final String XML_TAG_CONNECT_CHOICE_RSSI = "ConnectChoiceRssi";
 
         /**
          * Write the NetworkSelectionStatus data elements from the provided status to the XML
@@ -1049,6 +1050,8 @@ public class XmlUtil {
                     out, XML_TAG_DISABLE_REASON,
                     selectionStatus.getNetworkSelectionDisableReasonString());
             XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE, selectionStatus.getConnectChoice());
+            XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE_RSSI,
+                    selectionStatus.getConnectChoiceRssi());
             XmlUtil.writeNextValue(
                     out, XML_TAG_HAS_EVER_CONNECTED, selectionStatus.hasEverConnected());
             XmlUtil.writeNextValue(out, XML_TAG_IS_CAPTIVE_PORTAL_NEVER_DETECTED,
@@ -1088,6 +1091,9 @@ public class XmlUtil {
                         break;
                     case XML_TAG_CONNECT_CHOICE:
                         selectionStatus.setConnectChoice((String) value);
+                        break;
+                    case XML_TAG_CONNECT_CHOICE_RSSI:
+                        selectionStatus.setConnectChoiceRssi((int) value);
                         break;
                     case XML_TAG_HAS_EVER_CONNECTED:
                         selectionStatus.setHasEverConnected((boolean) value);
