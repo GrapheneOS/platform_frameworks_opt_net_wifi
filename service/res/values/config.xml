@@ -375,6 +375,7 @@
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorAuthenticationFailureThreshold"> 3 </integer>
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorDhcpFailureThreshold"> 2 </integer>
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorAbnormalDisconnectThreshold"> 3 </integer>
+    <integer translatable="false" name="config_wifiBssidBlocklistMonitorNonlocalDisconnectConnectingThreshold"> 2 </integer>
 
     <!-- Base duration to block a BSSID after consecutive failures happen. (default = 5 mins)
     The blocklist duration is increased exponentially for a BSSID that consecutively gets added to the blocklist.

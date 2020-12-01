@@ -72,6 +72,7 @@ public class DeviceConfigFacade {
     // Default high threshold values for various connection/disconnection cases
     // All of them are in percent with respect to connection attempts
     static final int DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT = 40;
+    static final int DEFAULT_CONNECTION_FAILURE_DISCONNECTION_HIGH_THR_PERCENT = 30;
     static final int DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT = 30;
     static final int DEFAULT_ASSOC_TIMEOUT_HIGH_THR_PERCENT = 30;
     static final int DEFAULT_AUTH_FAILURE_HIGH_THR_PERCENT = 30;
@@ -79,6 +80,7 @@ public class DeviceConfigFacade {
     static final int DEFAULT_DISCONNECTION_NONLOCAL_HIGH_THR_PERCENT = 25;
     // Default health monitor abnormal count minimum for various cases
     static final int DEFAULT_CONNECTION_FAILURE_COUNT_MIN = 6;
+    static final int DEFAULT_CONNECTION_FAILURE_DISCONNECTION_COUNT_MIN = 5;
     static final int DEFAULT_ASSOC_REJECTION_COUNT_MIN  = 3;
     static final int DEFAULT_ASSOC_TIMEOUT_COUNT_MIN  = 3;
     static final int DEFAULT_AUTH_FAILURE_COUNT_MIN  = 3;
@@ -160,6 +162,8 @@ public class DeviceConfigFacade {
     private int mRxPktPerSecondThr;
     private int mConnectionFailureHighThrPercent;
     private int mConnectionFailureCountMin;
+    private int mConnectionFailureDisconnectionHighThrPercent;
+    private int mConnectionFailureDisconnectionCountMin;
     private int mAssocRejectionHighThrPercent;
     private int mAssocRejectionCountMin;
     private int mAssocTimeoutHighThrPercent;
@@ -255,6 +259,12 @@ public class DeviceConfigFacade {
         mConnectionFailureCountMin = DeviceConfig.getInt(NAMESPACE,
                 "connection_failure_count_min",
                 DEFAULT_CONNECTION_FAILURE_COUNT_MIN);
+        mConnectionFailureDisconnectionHighThrPercent = DeviceConfig.getInt(NAMESPACE,
+                "connection_failure_disconnection_high_thr_percent",
+                DEFAULT_CONNECTION_FAILURE_DISCONNECTION_HIGH_THR_PERCENT);
+        mConnectionFailureDisconnectionCountMin = DeviceConfig.getInt(NAMESPACE,
+                "connection_failure_disconnection_count_min",
+                DEFAULT_CONNECTION_FAILURE_DISCONNECTION_COUNT_MIN);
         mAssocRejectionHighThrPercent = DeviceConfig.getInt(NAMESPACE,
                 "assoc_rejection_high_thr_percent",
                 DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT);
@@ -484,6 +494,20 @@ public class DeviceConfigFacade {
      */
     public int getConnectionFailureHighThrPercent() {
         return mConnectionFailureHighThrPercent;
+    }
+
+    /**
+     * Gets connection-failure-due-to-disconnection min count
+     */
+    public int getConnectionFailureDisconnectionCountMin() {
+        return mConnectionFailureDisconnectionCountMin;
+    }
+
+    /**
+     * Gets the high threshold of connection-failure-due-to-disconnection rate in percent
+     */
+    public int getConnectionFailureDisconnectionHighThrPercent() {
+        return mConnectionFailureDisconnectionHighThrPercent;
     }
 
     /**

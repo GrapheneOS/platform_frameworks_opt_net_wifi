@@ -464,6 +464,8 @@ public class WifiHealthMonitor {
         stats.cntAssocTimeout = failureStats.getCount(REASON_ASSOC_TIMEOUT);
         stats.cntAuthFailure = failureStats.getCount(REASON_AUTH_FAILURE);
         stats.cntConnectionFailure = failureStats.getCount(REASON_CONNECTION_FAILURE);
+        stats.cntDisconnectionNonlocalConnecting =
+                failureStats.getCount(REASON_CONNECTION_FAILURE_DISCONNECTION);
         stats.cntDisconnectionNonlocal =
                 failureStats.getCount(REASON_DISCONNECTION_NONLOCAL);
         stats.cntShortConnectionNonlocal =
@@ -582,14 +584,16 @@ public class WifiHealthMonitor {
     public static final int REASON_CONNECTION_FAILURE = 3;
     public static final int REASON_DISCONNECTION_NONLOCAL = 4;
     public static final int REASON_SHORT_CONNECTION_NONLOCAL = 5;
-    public static final int NUMBER_FAILURE_REASON_CODE = 6;
+    public static final int REASON_CONNECTION_FAILURE_DISCONNECTION = 6;
+    public static final int NUMBER_FAILURE_REASON_CODE = 7;
     public static final String[] FAILURE_REASON_NAME = {
             "association rejection failure",
             "association timeout failure",
             "authentication failure",
             "connection failure",
             "disconnection",
-            "short connection"
+            "short connection",
+            "connection failure disconnection",
     };
     @IntDef(prefix = { "REASON_" }, value = {
         REASON_NO_FAILURE,
@@ -598,7 +602,8 @@ public class WifiHealthMonitor {
         REASON_AUTH_FAILURE,
         REASON_CONNECTION_FAILURE,
         REASON_DISCONNECTION_NONLOCAL,
-        REASON_SHORT_CONNECTION_NONLOCAL
+        REASON_SHORT_CONNECTION_NONLOCAL,
+        REASON_CONNECTION_FAILURE_DISCONNECTION
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface FailureReasonCode {}

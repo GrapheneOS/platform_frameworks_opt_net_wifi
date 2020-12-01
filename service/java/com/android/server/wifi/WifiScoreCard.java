@@ -26,6 +26,7 @@ import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_REJECTION;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_ASSOC_TIMEOUT;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_AUTH_FAILURE;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_CONNECTION_FAILURE;
+import static com.android.server.wifi.WifiHealthMonitor.REASON_CONNECTION_FAILURE_DISCONNECTION;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_DISCONNECTION_NONLOCAL;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_NO_FAILURE;
 import static com.android.server.wifi.WifiHealthMonitor.REASON_SHORT_CONNECTION_NONLOCAL;
@@ -634,6 +635,12 @@ public class WifiScoreCard {
                     mDeviceConfigFacade.getAssocTimeoutHighThrPercent(),
                     mDeviceConfigFacade.getAssocTimeoutCountMin(),
                     CNT_CONNECTION_ATTEMPT);
+        } else if (recentCountCode == CNT_DISCONNECTION_NONLOCAL_CONNECTING) {
+            return detectAbnormalFailureReason(recentStats, CNT_DISCONNECTION_NONLOCAL_CONNECTING,
+                    REASON_CONNECTION_FAILURE_DISCONNECTION,
+                    mDeviceConfigFacade.getConnectionFailureDisconnectionHighThrPercent(),
+                    mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
         } else if (recentCountCode == CNT_CONNECTION_FAILURE) {
             return detectAbnormalFailureReason(recentStats, CNT_CONNECTION_FAILURE,
                     REASON_CONNECTION_FAILURE,
@@ -911,6 +918,9 @@ public class WifiScoreCard {
                             case BssidBlocklistMonitor.REASON_EAP_FAILURE:
                                 mRecentStats.incrementCount(CNT_AUTHENTICATION_FAILURE);
                                 break;
+                            case BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING:
+                                mRecentStats.incrementCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING);
+                                break;
                             case BssidBlocklistMonitor.REASON_WRONG_PASSWORD:
                             case BssidBlocklistMonitor.REASON_DHCP_FAILURE:
                             default:
@@ -926,7 +936,12 @@ public class WifiScoreCard {
                     break;
                 case WIFI_DISABLED:
                 case DISCONNECTION:
-                    handleDisconnection();
+                    if (mConnectionSessionStartTimeMs <= TS_NONE) {
+                        return;
+                    }
+                    handleDisconnectionAfterConnection();
+                    mConnectionSessionStartTimeMs = TS_NONE;
+                    mLastRssiPollTimeMs = TS_NONE;
                     changed = true;
                     break;
                 default:
@@ -950,41 +965,39 @@ public class WifiScoreCard {
             sb.append(" StatsPrev: ").append(mStatsPrevBuild);
             return sb.toString();
         }
-        private void handleDisconnection() {
-            if (mConnectionSessionStartTimeMs > TS_NONE) {
-                long currTimeMs = mClock.getElapsedSinceBootMillis();
-                int currSessionDurationMs = (int) (currTimeMs - mConnectionSessionStartTimeMs);
-                int currSessionDurationSec = currSessionDurationMs / 1000;
-                mRecentStats.accumulate(CNT_CONNECTION_DURATION_SEC, currSessionDurationSec);
-                long timeSinceLastRssiPollMs = currTimeMs - mLastRssiPollTimeMs;
-                boolean hasRecentRssiPoll = mLastRssiPollTimeMs > TS_NONE
-                        && timeSinceLastRssiPollMs <= mDeviceConfigFacade
-                        .getHealthMonitorRssiPollValidTimeMs();
-                if (hasRecentRssiPoll) {
-                    mRecentStats.incrementCount(CNT_DISCONNECTION);
-                }
-                int fwAlertValidTimeMs = mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs();
-                long timeSinceLastFirmAlert = currTimeMs - mFirmwareAlertTimeMs;
-                boolean isInvalidFwAlertTime = mFirmwareAlertTimeMs == TS_NONE;
-                boolean disableFwAlertCheck = fwAlertValidTimeMs == -1;
-                boolean passFirmwareAlertCheck = disableFwAlertCheck ? true : (isInvalidFwAlertTime
-                        ? false : timeSinceLastFirmAlert < fwAlertValidTimeMs);
-                boolean hasHighRssiOrHighTxSpeed =
-                        mLastRssiPoll >= mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()
-                        || mLastTxSpeedPoll >= HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS;
-                if (mNonlocalDisconnection && hasRecentRssiPoll
-                        && isAbnormalDisconnectionReason(mDisconnectionReason)
-                        && passFirmwareAlertCheck
-                        && hasHighRssiOrHighTxSpeed) {
-                    mRecentStats.incrementCount(CNT_DISCONNECTION_NONLOCAL);
-                    if (currSessionDurationMs <= mDeviceConfigFacade
-                            .getHealthMonitorShortConnectionDurationThrMs()) {
-                        mRecentStats.incrementCount(CNT_SHORT_CONNECTION_NONLOCAL);
-                    }
+
+        private void handleDisconnectionAfterConnection() {
+            long currTimeMs = mClock.getElapsedSinceBootMillis();
+            int currSessionDurationMs = (int) (currTimeMs - mConnectionSessionStartTimeMs);
+            int currSessionDurationSec = currSessionDurationMs / 1000;
+            mRecentStats.accumulate(CNT_CONNECTION_DURATION_SEC, currSessionDurationSec);
+            long timeSinceLastRssiPollMs = currTimeMs - mLastRssiPollTimeMs;
+            boolean hasRecentRssiPoll = mLastRssiPollTimeMs > TS_NONE
+                    && timeSinceLastRssiPollMs <= mDeviceConfigFacade
+                    .getHealthMonitorRssiPollValidTimeMs();
+            if (hasRecentRssiPoll) {
+                mRecentStats.incrementCount(CNT_DISCONNECTION);
+            }
+            int fwAlertValidTimeMs = mDeviceConfigFacade.getHealthMonitorFwAlertValidTimeMs();
+            long timeSinceLastFirmAlert = currTimeMs - mFirmwareAlertTimeMs;
+            boolean isInvalidFwAlertTime = mFirmwareAlertTimeMs == TS_NONE;
+            boolean disableFwAlertCheck = fwAlertValidTimeMs == -1;
+            boolean passFirmwareAlertCheck = disableFwAlertCheck ? true : (isInvalidFwAlertTime
+                    ? false : timeSinceLastFirmAlert < fwAlertValidTimeMs);
+            boolean hasHighRssiOrHighTxSpeed =
+                    mLastRssiPoll >= mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()
+                    || mLastTxSpeedPoll >= HEALTH_MONITOR_COUNT_TX_SPEED_MIN_MBPS;
+            if (mNonlocalDisconnection && hasRecentRssiPoll
+                    && isAbnormalDisconnectionReason(mDisconnectionReason)
+                    && passFirmwareAlertCheck
+                    && hasHighRssiOrHighTxSpeed) {
+                mRecentStats.incrementCount(CNT_DISCONNECTION_NONLOCAL);
+                if (currSessionDurationMs <= mDeviceConfigFacade
+                        .getHealthMonitorShortConnectionDurationThrMs()) {
+                    mRecentStats.incrementCount(CNT_SHORT_CONNECTION_NONLOCAL);
                 }
             }
-            mConnectionSessionStartTimeMs = TS_NONE;
-            mLastRssiPollTimeMs = TS_NONE;
+
         }
 
         private boolean isAbnormalDisconnectionReason(int disconnectionReason) {
@@ -1080,6 +1093,10 @@ public class WifiScoreCard {
                     REASON_CONNECTION_FAILURE,
                     mDeviceConfigFacade.getConnectionFailureCountMin(),
                     CNT_CONNECTION_ATTEMPT);
+            statsDeltaDetection(statsDec, statsInc, CNT_DISCONNECTION_NONLOCAL_CONNECTING,
+                    REASON_CONNECTION_FAILURE_DISCONNECTION,
+                    mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
             statsDeltaDetection(statsDec, statsInc, CNT_AUTHENTICATION_FAILURE,
                     REASON_AUTH_FAILURE,
                     mDeviceConfigFacade.getAuthFailureCountMin(),
@@ -1099,6 +1116,11 @@ public class WifiScoreCard {
                     REASON_CONNECTION_FAILURE,
                     mDeviceConfigFacade.getConnectionFailureHighThrPercent(),
                     mDeviceConfigFacade.getConnectionFailureCountMin(),
+                    CNT_CONNECTION_ATTEMPT);
+            recentStatsHighDetection(statsHigh, CNT_DISCONNECTION_NONLOCAL_CONNECTING,
+                    REASON_CONNECTION_FAILURE_DISCONNECTION,
+                    mDeviceConfigFacade.getConnectionFailureDisconnectionHighThrPercent(),
+                    mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin(),
                     CNT_CONNECTION_ATTEMPT);
             recentStatsHighDetection(statsHigh, CNT_AUTHENTICATION_FAILURE,
                     REASON_AUTH_FAILURE,
@@ -1229,6 +1251,8 @@ public class WifiScoreCard {
             builder.setNumAssociationRejection(stats.getCount(CNT_ASSOCIATION_REJECTION));
             builder.setNumAssociationTimeout(stats.getCount(CNT_ASSOCIATION_TIMEOUT));
             builder.setNumAuthenticationFailure(stats.getCount(CNT_AUTHENTICATION_FAILURE));
+            builder.setNumDisconnectionNonlocalConnecting(
+                    stats.getCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING));
             return builder.build();
         }
 
@@ -1282,7 +1306,7 @@ public class WifiScoreCard {
                 target.accumulate(CNT_CONNECTION_ATTEMPT, source.getNumConnectionAttempt());
             }
             if (source.hasNumConnectionFailure()) {
-                target.accumulate(CNT_CONNECTION_ATTEMPT, source.getNumConnectionFailure());
+                target.accumulate(CNT_CONNECTION_FAILURE, source.getNumConnectionFailure());
             }
             if (source.hasConnectionDurationSec()) {
                 target.accumulate(CNT_CONNECTION_DURATION_SEC, source.getConnectionDurationSec());
@@ -1306,6 +1330,10 @@ public class WifiScoreCard {
             if (source.hasNumAuthenticationFailure()) {
                 target.accumulate(CNT_AUTHENTICATION_FAILURE, source.getNumAuthenticationFailure());
             }
+            if (source.hasNumDisconnectionNonlocalConnecting()) {
+                target.accumulate(CNT_DISCONNECTION_NONLOCAL_CONNECTING,
+                        source.getNumDisconnectionNonlocalConnecting());
+            }
         }
     }
 
@@ -1321,8 +1349,9 @@ public class WifiScoreCard {
     public static final int CNT_DISCONNECTION_NONLOCAL = 7;
     public static final int CNT_DISCONNECTION = 8;
     public static final int CNT_CONSECUTIVE_CONNECTION_FAILURE = 9;
+    public static final int CNT_DISCONNECTION_NONLOCAL_CONNECTING = 10;
     // Constant being used to keep track of how many counter there are.
-    public static final int NUMBER_CONNECTION_CNT_CODE = 10;
+    public static final int NUMBER_CONNECTION_CNT_CODE = 11;
     private static final String[] CONNECTION_CNT_NAME = {
         " ConnectAttempt: ",
         " ConnectFailure: ",
@@ -1333,7 +1362,8 @@ public class WifiScoreCard {
         " ShortDiscNonlocal: ",
         " DisconnectNonlocal: ",
         " Disconnect: ",
-        " ConsecutiveConnectFailure: "
+        " ConsecutiveConnectFailure: ",
+        " ConnectFailureDiscon: "
     };
 
     @IntDef(prefix = { "CNT_" }, value = {
@@ -1346,7 +1376,8 @@ public class WifiScoreCard {
         CNT_SHORT_CONNECTION_NONLOCAL,
         CNT_DISCONNECTION_NONLOCAL,
         CNT_DISCONNECTION,
-        CNT_CONSECUTIVE_CONNECTION_FAILURE
+        CNT_CONSECUTIVE_CONNECTION_FAILURE,
+        CNT_DISCONNECTION_NONLOCAL_CONNECTING
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ConnectionCountCode {}

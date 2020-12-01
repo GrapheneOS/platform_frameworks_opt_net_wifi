@@ -980,6 +980,9 @@ message ConnectionEvent {
 
     // The reason code if the AP can no longer accept new clients.
     ASSOCIATION_REJECTION_AP_UNABLE_TO_HANDLE_NEW_STA = 5;
+
+    // The reason code if AP disconnects STA during the connecting state.
+    DISCONNECTION_NON_LOCAL = 6;
   }
 
   // Entity that recommended connecting to this network.
@@ -3308,6 +3311,8 @@ message HealthMonitorFailureStats {
   optional int32 cnt_disconnection_nonlocal = 5;
   // Number of networks with a large change of (or high) short disconnection rate
   optional int32 cnt_short_connection_nonlocal = 6;
+  // Number of networks with a large change of (or high) disconnection-during-connecting rate
+  optional int32 cnt_disconnection_nonlocal_connecting = 7;
 }
 
 // Metrics collected by health monitor

@@ -31,6 +31,7 @@ import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_DURATION_SEC;
 import static com.android.server.wifi.WifiScoreCard.CNT_CONNECTION_FAILURE;
 import static com.android.server.wifi.WifiScoreCard.CNT_CONSECUTIVE_CONNECTION_FAILURE;
 import static com.android.server.wifi.WifiScoreCard.CNT_DISCONNECTION_NONLOCAL;
+import static com.android.server.wifi.WifiScoreCard.CNT_DISCONNECTION_NONLOCAL_CONNECTING;
 import static com.android.server.wifi.WifiScoreCard.CNT_SHORT_CONNECTION_NONLOCAL;
 import static com.android.server.wifi.util.NativeUtil.hexStringFromByteArray;
 
@@ -130,6 +131,10 @@ public class WifiScoreCardTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT);
         when(mDeviceConfigFacade.getConnectionFailureCountMin()).thenReturn(
                 DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_COUNT_MIN);
+        when(mDeviceConfigFacade.getConnectionFailureDisconnectionHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_DISCONNECTION_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_DISCONNECTION_COUNT_MIN);
         when(mDeviceConfigFacade.getAssocRejectionHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT);
         when(mDeviceConfigFacade.getAssocRejectionCountMin()).thenReturn(
@@ -925,6 +930,50 @@ public class WifiScoreCardTest extends WifiBaseTest {
         assertEquals(0, dailyStats.getCount(CNT_CONSECUTIVE_CONNECTION_FAILURE));
     }
 
+    private void makeDisconnectionConnectingExample(boolean nonlocal) {
+        mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
+        millisecondsPass(500);
+        int disconnectionReason = 3;
+        if (nonlocal) {
+            mWifiScoreCard.noteNonlocalDisconnect(disconnectionReason);
+        }
+        mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
+                BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING);
+        millisecondsPass(500);
+    }
+
+    /**
+     * Check network stats after nonlocal disconnection in middle of connection
+     */
+    @Test
+    public void testDisconnectionConnecting() throws Exception {
+        makeDisconnectionConnectingExample(true);
+        PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
+
+        assertEquals(1, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
+        assertEquals(1, dailyStats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(1, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING));
+        assertEquals(0, dailyStats.getCount(CNT_CONNECTION_DURATION_SEC));
+        assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
+        assertEquals(0, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
+        assertEquals(0, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
+    }
+
+    /**
+     * Check network stats after local disconnection in middle of connection
+     */
+    @Test
+    public void testLocalDisconnectionConnecting() throws Exception {
+        makeDisconnectionConnectingExample(false);
+        PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
+        NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
+
+        assertEquals(1, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
+        assertEquals(1, dailyStats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(1, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING));
+    }
+
     /**
      * Check network stats when a new connection attempt for SSID2 is issued
      * before disconnection of SSID1
@@ -1004,6 +1053,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
     private void checkShortConnectionExample(NetworkConnectionStats stats, int scale) {
         assertEquals(1 * scale, stats.getCount(CNT_CONNECTION_ATTEMPT));
         assertEquals(0, stats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(0, stats.getCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING));
         assertEquals(9 * scale, stats.getCount(CNT_CONNECTION_DURATION_SEC));
         assertEquals(0, stats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(0, stats.getCount(CNT_ASSOCIATION_TIMEOUT));
@@ -1029,6 +1079,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
     private void checkShortConnectionOldPollingExample(NetworkConnectionStats stats) {
         assertEquals(1, stats.getCount(CNT_CONNECTION_ATTEMPT));
         assertEquals(0, stats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(0, stats.getCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING));
         assertEquals(33, stats.getCount(CNT_CONNECTION_DURATION_SEC));
         assertEquals(0, stats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(0, stats.getCount(CNT_ASSOCIATION_TIMEOUT));
@@ -1102,8 +1153,8 @@ public class WifiScoreCardTest extends WifiBaseTest {
      * Constructs a protobuf form of Network example.
      */
     private byte[] makeSerializedNetworkExample() {
-        makeNormalConnectionExample();
-
+        makeDisconnectionConnectingExample(true);
+        makeShortConnectionExample(true);
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         checkSerializationNetworkExample("before serialization", perNetwork);
         // Now convert to protobuf form
@@ -1116,11 +1167,13 @@ public class WifiScoreCardTest extends WifiBaseTest {
      */
     private void checkSerializationNetworkExample(String diag, PerNetwork perNetwork) {
         NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
-        assertEquals(diag, 1, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
-        assertEquals(diag, 0, dailyStats.getCount(CNT_CONNECTION_FAILURE));
-        assertEquals(diag, 11, dailyStats.getCount(CNT_CONNECTION_DURATION_SEC));
-        assertEquals(diag, 0, dailyStats.getCount(CNT_SHORT_CONNECTION_NONLOCAL));
-        assertEquals(diag, 0, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL));
+
+        assertEquals(diag, 2, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
+        assertEquals(diag, 1, dailyStats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(diag, 1, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING));
+        assertEquals(diag, 9, dailyStats.getCount(CNT_CONNECTION_DURATION_SEC));
+        assertEquals(diag, 1, dailyStats.getCount(CNT_SHORT_CONNECTION_NONLOCAL));
+        assertEquals(diag, 1, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL));
         assertEquals(diag, 0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(diag, 0, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
         assertEquals(diag, 0, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
@@ -1136,11 +1189,12 @@ public class WifiScoreCardTest extends WifiBaseTest {
         // Verify by parsing it and checking that we see the expected results
         NetworkStats ns = NetworkStats.parseFrom(serialized);
         ConnectionStats dailyStats = ns.getRecentStats();
-        assertEquals(1, dailyStats.getNumConnectionAttempt());
-        assertEquals(0, dailyStats.getNumConnectionFailure());
-        assertEquals(11, dailyStats.getConnectionDurationSec());
-        assertEquals(0, dailyStats.getNumDisconnectionNonlocal());
-        assertEquals(0, dailyStats.getNumShortConnectionNonlocal());
+        assertEquals(2, dailyStats.getNumConnectionAttempt());
+        assertEquals(1, dailyStats.getNumConnectionFailure());
+        assertEquals(1, dailyStats.getNumDisconnectionNonlocalConnecting());
+        assertEquals(9, dailyStats.getConnectionDurationSec());
+        assertEquals(1, dailyStats.getNumDisconnectionNonlocal());
+        assertEquals(1, dailyStats.getNumShortConnectionNonlocal());
         assertEquals(0, dailyStats.getNumAssociationRejection());
         assertEquals(0, dailyStats.getNumAssociationTimeout());
         assertEquals(0, dailyStats.getNumAuthenticationFailure());
