@@ -2333,9 +2333,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (mIpClient != null) {
             Pair<String, String> p = mWifiScoreCard.getL2KeyAndGroupHint(mWifiInfo);
             if (!p.equals(mLastL2KeyAndGroupHint)) {
-                final MacAddress lastBssid = getCurrentBssidInternalMacAddress();
+                final MacAddress currentBssid = getMacAddressFromBssidString(mWifiInfo.getBSSID());
                 final Layer2Information l2Information = new Layer2Information(
-                        p.first, p.second, lastBssid);
+                        p.first, p.second, currentBssid);
                 // Update current BSSID on IpClient side whenever l2Key and groupHint
                 // pair changes (i.e. the initial connection establishment or L2 roaming
                 // happened). If we have COMPLETED the roaming to a different BSSID, start
@@ -2903,8 +2903,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             return;
         }
         String currentMacString = mWifiNative.getMacAddress(mInterfaceName);
-        MacAddress currentMac = currentMacString == null ? null :
-                MacAddress.fromString(currentMacString);
+        MacAddress currentMac = getMacAddressFromBssidString(currentMacString);
         MacAddress newMac = mWifiConfigManager.getRandomizedMacAndUpdateIfNeeded(config);
         if (!WifiConfiguration.isValidMacAddressForRandomization(newMac)) {
             Log.wtf(getTag(), "Config generated an invalid MAC address");
@@ -3171,14 +3170,17 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return scanDetailCache.getScanResult(bssid);
     }
 
-    private MacAddress getCurrentBssidInternalMacAddress() {
-        MacAddress bssid = null;
+    private MacAddress getMacAddressFromBssidString(@Nullable String bssidStr) {
         try {
-            bssid = (mLastBssid != null) ? MacAddress.fromString(mLastBssid) : null;
+            return (bssidStr != null) ? MacAddress.fromString(bssidStr) : null;
         } catch (IllegalArgumentException e) {
-            Log.e(getTag(), "Invalid BSSID format: " + mLastBssid);
+            Log.e(getTag(), "Invalid BSSID format: " + bssidStr);
+            return null;
         }
-        return bssid;
+    }
+
+    private MacAddress getCurrentBssidInternalMacAddress() {
+        return getMacAddressFromBssidString(mLastBssid);
     }
 
     void connectToNetwork(WifiConfiguration config) {
