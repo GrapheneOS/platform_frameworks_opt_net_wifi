@@ -300,9 +300,10 @@ public class HalDeviceManager {
     public IWifiApIface createApIface(
             long requiredChipCapabilities,
             @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler,
-            @NonNull WorkSource requestorWs) {
-        return (IWifiApIface) createIface(HDM_CREATE_IFACE_AP, requiredChipCapabilities,
-                destroyedListener, handler, requestorWs);
+            @NonNull WorkSource requestorWs, boolean isBridged) {
+        return (IWifiApIface) createIface(isBridged ? HDM_CREATE_IFACE_AP_BRIDGE
+                : HDM_CREATE_IFACE_AP, requiredChipCapabilities, destroyedListener,
+                handler, requestorWs);
     }
 
     /**
@@ -310,9 +311,9 @@ public class HalDeviceManager {
      */
     public IWifiApIface createApIface(
             @Nullable InterfaceDestroyedListener destroyedListener, @Nullable Handler handler,
-            @NonNull WorkSource requestorWs) {
+            @NonNull WorkSource requestorWs, boolean isBridged) {
         return (IWifiApIface) createApIface(CHIP_CAPABILITY_ANY,
-                destroyedListener, handler, requestorWs);
+                destroyedListener, handler, requestorWs, isBridged);
     }
 
     /**
@@ -2154,6 +2155,20 @@ public class HalDeviceManager {
                                     statusResp.value = status;
                                     ifaceResp.value = iface;
                                 });
+                        break;
+                    case HDM_CREATE_IFACE_AP_BRIDGE:
+                        android.hardware.wifi.V1_5.IWifiChip chip15 =
+                                getWifiChipForV1_5Mockable(ifaceCreationData.chipInfo.chip);
+                        if (chip15 != null) {
+                            chip15.createBridgedApIface(
+                                    (WifiStatus status, IWifiApIface iface) -> {
+                                        statusResp.value = status;
+                                        ifaceResp.value = iface;
+                                    });
+                        } else {
+                            Log.e(TAG, "Hal doesn't support to create AP bridge mode");
+                            statusResp.value.code = WifiStatusCode.ERROR_NOT_SUPPORTED;
+                        }
                         break;
                     case HDM_CREATE_IFACE_AP:
                         ifaceCreationData.chipInfo.chip.createApIface(
