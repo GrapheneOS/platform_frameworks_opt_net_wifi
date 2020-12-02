@@ -1909,6 +1909,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             mLooper.dispatchAll();
         });
 
+        // try to start Soft AP
         mActiveModeWarden.startSoftAp(
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mSoftApCapability), TEST_WORKSOURCE);
@@ -1917,6 +1918,24 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mWifiInjector, never())
                 .makeSoftApManager(any(), any(), any(), eq(TEST_WORKSOURCE), any(), anyBoolean());
         assertInDisabledState();
+
+        // verify triggered Soft AP failure callback
+        verify(mSoftApStateMachineCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_GENERAL);
+
+        // try to start LOHS
+        mActiveModeWarden.startSoftAp(
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_LOCAL_ONLY, null,
+                mSoftApCapability), TEST_WORKSOURCE);
+        mLooper.dispatchAll();
+
+        verify(mWifiInjector, never())
+                .makeSoftApManager(any(), any(), any(), eq(TEST_WORKSOURCE), any(), anyBoolean());
+        assertInDisabledState();
+
+        // verify triggered LOHS failure callback
+        verify(mLohsStateMachineCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_GENERAL);
     }
 
     /**
