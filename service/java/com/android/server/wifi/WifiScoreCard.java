@@ -1280,7 +1280,7 @@ public class WifiScoreCard {
                 target.accumulate(CNT_CONNECTION_ATTEMPT, source.getNumConnectionAttempt());
             }
             if (source.hasNumConnectionFailure()) {
-                target.accumulate(CNT_CONNECTION_ATTEMPT, source.getNumConnectionFailure());
+                target.accumulate(CNT_CONNECTION_FAILURE, source.getNumConnectionFailure());
             }
             if (source.hasConnectionDurationSec()) {
                 target.accumulate(CNT_CONNECTION_DURATION_SEC, source.getConnectionDurationSec());

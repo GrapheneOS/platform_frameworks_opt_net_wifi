@@ -1079,7 +1079,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
      * Constructs a protobuf form of Network example.
      */
     private byte[] makeSerializedNetworkExample() {
-        makeNormalConnectionExample();
+        makeAuthFailureAndWrongPassword();
 
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         checkSerializationNetworkExample("before serialization", perNetwork);
@@ -1093,14 +1093,14 @@ public class WifiScoreCardTest extends WifiBaseTest {
      */
     private void checkSerializationNetworkExample(String diag, PerNetwork perNetwork) {
         NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
-        assertEquals(diag, 1, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
-        assertEquals(diag, 0, dailyStats.getCount(CNT_CONNECTION_FAILURE));
-        assertEquals(diag, 11, dailyStats.getCount(CNT_CONNECTION_DURATION_SEC));
+        assertEquals(diag, 2, dailyStats.getCount(CNT_CONNECTION_ATTEMPT));
+        assertEquals(diag, 1, dailyStats.getCount(CNT_CONNECTION_FAILURE));
+        assertEquals(diag, 0, dailyStats.getCount(CNT_CONNECTION_DURATION_SEC));
         assertEquals(diag, 0, dailyStats.getCount(CNT_SHORT_CONNECTION_NONLOCAL));
         assertEquals(diag, 0, dailyStats.getCount(CNT_DISCONNECTION_NONLOCAL));
         assertEquals(diag, 0, dailyStats.getCount(CNT_ASSOCIATION_REJECTION));
         assertEquals(diag, 0, dailyStats.getCount(CNT_ASSOCIATION_TIMEOUT));
-        assertEquals(diag, 0, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
+        assertEquals(diag, 1, dailyStats.getCount(CNT_AUTHENTICATION_FAILURE));
     }
 
     /**
@@ -1113,14 +1113,14 @@ public class WifiScoreCardTest extends WifiBaseTest {
         // Verify by parsing it and checking that we see the expected results
         NetworkStats ns = NetworkStats.parseFrom(serialized);
         ConnectionStats dailyStats = ns.getRecentStats();
-        assertEquals(1, dailyStats.getNumConnectionAttempt());
-        assertEquals(0, dailyStats.getNumConnectionFailure());
-        assertEquals(11, dailyStats.getConnectionDurationSec());
+        assertEquals(2, dailyStats.getNumConnectionAttempt());
+        assertEquals(1, dailyStats.getNumConnectionFailure());
+        assertEquals(0, dailyStats.getConnectionDurationSec());
         assertEquals(0, dailyStats.getNumDisconnectionNonlocal());
         assertEquals(0, dailyStats.getNumShortConnectionNonlocal());
         assertEquals(0, dailyStats.getNumAssociationRejection());
         assertEquals(0, dailyStats.getNumAssociationTimeout());
-        assertEquals(0, dailyStats.getNumAuthenticationFailure());
+        assertEquals(1, dailyStats.getNumAuthenticationFailure());
     }
 
     /**
