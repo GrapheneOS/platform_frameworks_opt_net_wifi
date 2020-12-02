@@ -494,6 +494,45 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     /**
+     * Test that ActiveModeWarden properly starts scan only mode when SAP is active on a device
+     * which does support STA + AP concurrency.
+     */
+    @Test
+    public void testEnterScanOnlyModeWhenSoftApModeActiveWhenStaApConcurrencyNotSupported()
+            throws Exception {
+        when(mWifiNative.isStaApConcurrencySupported()).thenReturn(false);
+        enterSoftApActiveMode();
+        assertInEnabledState();
+
+        when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
+        mActiveModeWarden.scanAlwaysModeChanged();
+        mLooper.dispatchAll();
+        // Scan only mode is not started.
+        verify(mClientModeManager, never()).start();
+        verify(mClientModeManager, never()).setRole(ROLE_CLIENT_SCAN_ONLY);
+    }
+
+
+    /**
+     * Test that ActiveModeWarden properly does not start scan only mode when SAP is active on a
+     * device which does not support STA + AP concurrency.
+     */
+    @Test
+    public void testEnterScanOnlyModeWhenSoftApModeActiveWhenStaApConcurrencySupported()
+            throws Exception {
+        when(mWifiNative.isStaApConcurrencySupported()).thenReturn(true);
+        enterSoftApActiveMode();
+        assertInEnabledState();
+
+        when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(true);
+        mActiveModeWarden.scanAlwaysModeChanged();
+        mLooper.dispatchAll();
+        verify(mClientModeManager).start();
+        verify(mClientModeManager).setRole(ROLE_CLIENT_SCAN_ONLY);
+    }
+
+
+    /**
      * Test that ActiveModeWarden properly starts the SoftApManager from the
      * DisabledState state.
      */
