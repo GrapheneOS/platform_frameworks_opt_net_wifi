@@ -1990,7 +1990,7 @@ public class WifiServiceImpl extends BaseWifiService {
         if (mVerboseLoggingEnabled) {
             mLog.info("isScanAlwaysAvailable uid=%").c(Binder.getCallingUid()).flush();
         }
-        return mSettingsStore.isScanAlwaysAvailable();
+        return mSettingsStore.isScanAlwaysAvailableToggleEnabled();
     }
 
     /**
@@ -3240,7 +3240,8 @@ public class WifiServiceImpl extends BaseWifiService {
                 WifiConfigManager.ENHANCED_MAC_RANDOMIZATION_FEATURE_FORCE_ENABLE_FLAG, 0) == 1
                 ? true : false;
         mWifiMetrics.setEnhancedMacRandomizationForceEnabled(isEnhancedMacRandEnabled);
-        mWifiMetrics.setIsScanningAlwaysEnabled(mSettingsStore.isScanAlwaysAvailable());
+        mWifiMetrics.setIsScanningAlwaysEnabled(
+                mSettingsStore.isScanAlwaysAvailableToggleEnabled());
         mWifiMetrics.setVerboseLoggingEnabled(mVerboseLoggingEnabled);
         mWifiMetrics.setWifiWakeEnabled(mWifiInjector.getWakeupController().isEnabled());
     }
