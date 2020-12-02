@@ -28,8 +28,6 @@ import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.util.FileUtils;
 
-import libcore.io.IoUtils;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,8 +35,11 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 /**
  * Unit tests for {@link LastMileLogger}.
@@ -63,6 +64,10 @@ public class LastMileLoggerTest extends WifiBaseTest {
                 mTraceEnableFile.getPath(),  mTraceReleaseFile.getPath());
     }
 
+    private static String readFileAsString(File file) throws IOException {
+        return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+    }
+
     @Test
     public void ctorDoesNotCrash() throws Exception {
         new LastMileLogger(mWifiInjector, mTraceDataFile.getPath(), mTraceEnableFile.getPath(),
@@ -73,7 +78,7 @@ public class LastMileLoggerTest extends WifiBaseTest {
     @Test
     public void connectionEventStartedEnablesTracing() throws Exception {
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
-        assertEquals("1", IoUtils.readFileAsString(mTraceEnableFile.getPath()));
+        assertEquals("1", readFileAsString(mTraceEnableFile));
     }
 
     @Test
@@ -88,7 +93,7 @@ public class LastMileLoggerTest extends WifiBaseTest {
             throws Exception {
         mTraceReleaseFile.delete();
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
-        assertEquals("0", IoUtils.readFileAsString(mTraceEnableFile.getPath()));
+        assertEquals("0", readFileAsString(mTraceEnableFile));
     }
 
     @Test
@@ -123,7 +128,7 @@ public class LastMileLoggerTest extends WifiBaseTest {
     @Test
     public void connectionEventSucceededDisablesTracing() throws Exception {
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_SUCCEEDED);
-        assertEquals("0", IoUtils.readFileAsString(mTraceEnableFile.getPath()));
+        assertEquals("0", readFileAsString(mTraceEnableFile));
     }
 
     @Test
@@ -142,7 +147,7 @@ public class LastMileLoggerTest extends WifiBaseTest {
     public void connectionEventFailedDisablesTracingWhenPendingFails() throws Exception {
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        assertEquals("0", IoUtils.readFileAsString(mTraceEnableFile.getPath()));
+        assertEquals("0", readFileAsString(mTraceEnableFile));
     }
 
     @Test
@@ -150,7 +155,7 @@ public class LastMileLoggerTest extends WifiBaseTest {
             throws Exception {
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_STARTED);
         mLastMileLogger.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_TIMEOUT);
-        assertEquals("0", IoUtils.readFileAsString(mTraceEnableFile.getPath()));
+        assertEquals("0", readFileAsString(mTraceEnableFile));
     }
 
     @Test

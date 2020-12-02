@@ -79,6 +79,7 @@ import android.hardware.wifi.V1_2.IWifiChipEventCallback.IfaceInfo;
 import android.hardware.wifi.V1_2.IWifiChipEventCallback.RadioModeInfo;
 import android.hardware.wifi.V1_3.WifiChannelStats;
 import android.hardware.wifi.V1_5.IWifiChip.MultiStaUseCase;
+import android.net.InetAddresses;
 import android.net.KeepalivePacketData;
 import android.net.MacAddress;
 import android.net.NattKeepalivePacketData;
@@ -1344,8 +1345,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
     public void testStartSendingOffloadedPacket() throws Exception {
         byte[] srcMac = NativeUtil.macAddressToByteArray("4007b2088c81");
         byte[] dstMac = NativeUtil.macAddressToByteArray("4007b8675309");
-        InetAddress src = InetAddress.parseNumericAddress("192.168.13.13");
-        InetAddress dst = InetAddress.parseNumericAddress("93.184.216.34");
+        InetAddress src = InetAddresses.parseNumericAddress("192.168.13.13");
+        InetAddress dst = InetAddresses.parseNumericAddress("93.184.216.34");
         int slot = 13;
         int millis = 16000;
 
