@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static android.app.Notification.VISIBILITY_SECRET;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -23,6 +25,7 @@ import android.graphics.drawable.Icon;
 import android.net.wifi.ScanResult;
 import android.util.Log;
 
+import com.android.modules.utils.build.SdkLevel;
 import com.android.wifi.resources.R;
 
 /**
@@ -85,17 +88,29 @@ public class ConnectToNetworkNotificationBuilder {
                         + notifierTag);
                 return null;
         }
-        Notification.Action connectAction = new Notification.Action.Builder(null /* icon */,
+        Notification.Action.Builder connectActionBuilder =
+                new Notification.Action.Builder(null /* icon */,
                 mContext.getResources().getText(R.string.wifi_available_action_connect),
-                getPrivateBroadcast(ACTION_CONNECT_TO_NETWORK, notifierTag)).build();
+                getPrivateBroadcast(ACTION_CONNECT_TO_NETWORK, notifierTag));
+        // >= Android 12: Want the user to unlock before triggering connection.
+        if (SdkLevel.isAtLeastS()) {
+            connectActionBuilder.setAuthenticationRequired(true);
+        }
+        Notification.Action connectAction = connectActionBuilder.build();
         Notification.Action allNetworksAction = new Notification.Action.Builder(null /* icon */,
                 mContext.getResources().getText(R.string.wifi_available_action_all_networks),
                 getPrivateBroadcast(ACTION_PICK_WIFI_NETWORK, notifierTag)).build();
-        return createNotificationBuilder(title, network.SSID, notifierTag)
+        Notification.Builder notificationBuilder =
+                createNotificationBuilder(title, network.SSID, notifierTag)
                 .setContentIntent(getPrivateBroadcast(ACTION_PICK_WIFI_NETWORK, notifierTag))
                 .addAction(connectAction)
-                .addAction(allNetworksAction)
-                .build();
+                .addAction(allNetworksAction);
+        // < Android 12: Hide the notification in lock screen since (setAuthenticationRequired) is
+        // not available.
+        if (!SdkLevel.isAtLeastS()) {
+            notificationBuilder.setVisibility(VISIBILITY_SECRET);
+        }
+        return notificationBuilder.build();
     }
 
     /**
