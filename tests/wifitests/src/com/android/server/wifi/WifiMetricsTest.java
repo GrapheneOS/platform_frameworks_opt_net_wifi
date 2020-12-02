@@ -478,6 +478,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     private static final int NUM_ENABLE_NETWORK_CALLS = 6;
     private static final long NUM_IP_RENEWAL_FAILURE = 7;
     private static final int NUM_NETWORK_ABNORMAL_ASSOC_REJECTION = 2;
+    private static final int NUM_NETWORK_ABNORMAL_CONNECTION_FAILURE_DISCONNECTION = 5;
     private static final int NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY = 4;
     private static final int NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS = 5;
     private static final int NUM_BSSID_SELECTION_DIFFERENT_BETWEEN_FRAMEWORK_FIRMWARE = 3;
@@ -1052,6 +1053,8 @@ public class WifiMetricsTest extends WifiBaseTest {
         metrics.failureStatsDecrease = new HealthMonitorFailureStats();
         metrics.failureStatsHigh = new HealthMonitorFailureStats();
         metrics.failureStatsIncrease.cntAssocRejection = NUM_NETWORK_ABNORMAL_ASSOC_REJECTION;
+        metrics.failureStatsDecrease.cntDisconnectionNonlocalConnecting =
+                NUM_NETWORK_ABNORMAL_CONNECTION_FAILURE_DISCONNECTION;
         metrics.numNetworkSufficientRecentStatsOnly = NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY;
         metrics.numNetworkSufficientRecentPrevStats = NUM_NETWORK_SUFFICIENT_RECENT_PREV_STATS;
         when(mWifiHealthMonitor.buildProto()).thenReturn(metrics);
@@ -1444,6 +1447,9 @@ public class WifiMetricsTest extends WifiBaseTest {
         assertEquals(NUM_IP_RENEWAL_FAILURE, mDecodedProto.numIpRenewalFailure);
         assertEquals(NUM_NETWORK_ABNORMAL_ASSOC_REJECTION,
                 mDecodedProto.healthMonitorMetrics.failureStatsIncrease.cntAssocRejection);
+        assertEquals(NUM_NETWORK_ABNORMAL_CONNECTION_FAILURE_DISCONNECTION,
+                mDecodedProto.healthMonitorMetrics.failureStatsDecrease
+                        .cntDisconnectionNonlocalConnecting);
         assertEquals(0,
                 mDecodedProto.healthMonitorMetrics.failureStatsIncrease.cntAssocTimeout);
         assertEquals(NUM_NETWORK_SUFFICIENT_RECENT_STATS_ONLY,

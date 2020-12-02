@@ -176,7 +176,8 @@ public class SoftApManagerTest extends WifiBaseTest {
         when(mWifiNative.setApMacAddress(any(), any())).thenReturn(true);
         when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(), anyBoolean(),
                 any(WifiNative.SoftApListener.class))).thenReturn(true);
-
+        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyBoolean()))
+                .thenReturn(TEST_INTERFACE_NAME);
         when(mFrameworkFacade.getIntegerSetting(
                 mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(1);
         mAlarmManager = new TestAlarmManager();
@@ -297,8 +298,6 @@ public class SoftApManagerTest extends WifiBaseTest {
     /** Tests softap startup if default config fails to load. **/
     @Test
     public void startSoftApDefaultConfigFailedToLoad() throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
-
         when(mWifiApConfigStore.getApConfiguration()).thenReturn(null);
         SoftApModeConfiguration nullApConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
@@ -308,15 +307,12 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WifiManager.SAP_START_FAILURE_GENERAL);
         verify(mListener).onStartFailure(mSoftApManager);
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        verify(mContext, times(2)).sendStickyBroadcastAsUser(intentCaptor.capture(),
+        verify(mContext).sendStickyBroadcastAsUser(intentCaptor.capture(),
                 eq(UserHandle.ALL));
 
         List<Intent> capturedIntents = intentCaptor.getAllValues();
-        checkApStateChangedBroadcast(capturedIntents.get(0), WIFI_AP_STATE_ENABLING,
-                WIFI_AP_STATE_DISABLED, HOTSPOT_NO_ERROR, TEST_INTERFACE_NAME,
-                nullApConfig.getTargetMode());
-        checkApStateChangedBroadcast(capturedIntents.get(1), WIFI_AP_STATE_FAILED,
-                WIFI_AP_STATE_ENABLING, WifiManager.SAP_START_FAILURE_GENERAL, TEST_INTERFACE_NAME,
+        checkApStateChangedBroadcast(capturedIntents.get(0), WIFI_AP_STATE_FAILED,
+                WIFI_AP_STATE_DISABLED, WifiManager.SAP_START_FAILURE_GENERAL, null,
                 nullApConfig.getTargetMode());
     }
 
@@ -327,7 +323,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void testSetupForSoftApModeNullApInterfaceNameFailureIncrementsMetrics()
             throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(null);
+        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyBoolean())).thenReturn(null);
         when(mWifiApConfigStore.getApConfiguration()).thenReturn(null);
         SoftApModeConfiguration nullApConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
@@ -355,8 +351,7 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void testSetupForSoftApModeEmptyInterfaceNameFailureIncrementsMetrics()
             throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn("");
-        when(mWifiApConfigStore.getApConfiguration()).thenReturn(null);
+        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyBoolean())).thenReturn("");
         SoftApModeConfiguration nullApConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
@@ -389,8 +384,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
                 mTestSoftApCapability);
 
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
-
         mSoftApManager = createSoftApManager(softApConfig, null, ROLE_SOFTAP_TETHERED);
 
         verify(mWifiNative, never()).setCountryCodeHal(eq(TEST_INTERFACE_NAME), any());
@@ -421,7 +414,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
                 mTestSoftApCapability);
 
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         when(mWifiNative.setCountryCodeHal(
                 TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT)))
                 .thenReturn(false);
@@ -535,7 +527,6 @@ public class SoftApManagerTest extends WifiBaseTest {
 
         when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_5_GHZ))
                 .thenReturn(EMPTY_CHANNEL_ARRAY);
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         when(mWifiNative.isHalStarted()).thenReturn(true);
 
         mSoftApManager = createSoftApManager(softApConfig, TEST_COUNTRY_CODE, ROLE_SOFTAP_TETHERED);
@@ -558,7 +549,6 @@ public class SoftApManagerTest extends WifiBaseTest {
      */
     @Test
     public void startSoftApApInterfaceFailedToStart() throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(), anyBoolean(),
                 any(WifiNative.SoftApListener.class))).thenReturn(false);
 
@@ -1573,7 +1563,6 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     @Test
     public void setsCustomMacWhenSetMacNotSupport() throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         when(mWifiNative.isApSetMacAddressSupported(any())).thenReturn(false);
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
@@ -1593,7 +1582,6 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     @Test
     public void setMacFailureWhenCustomMac() throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         Builder configBuilder = new SoftApConfiguration.Builder();
         configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
         configBuilder.setSsid(TEST_SSID);
@@ -1613,7 +1601,6 @@ public class SoftApManagerTest extends WifiBaseTest {
 
     @Test
     public void setMacFailureWhenRandomMac() throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         SoftApConfiguration randomizedBssidConfig =
                 new SoftApConfiguration.Builder(mDefaultApConfig)
                 .setBssid(TEST_MAC_ADDRESS).build();
@@ -1791,8 +1778,6 @@ public class SoftApManagerTest extends WifiBaseTest {
                 .setChannel(DEFAULT_AP_CHANNEL, SoftApConfiguration.BAND_2GHZ)
                 .build();
         }
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any()))
-                .thenReturn(TEST_INTERFACE_NAME);
         mSoftApManager = createSoftApManager(softApConfig, countryCode,
                 softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
                         ? ROLE_SOFTAP_LOCAL_ONLY : ROLE_SOFTAP_TETHERED);
@@ -1801,7 +1786,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(mFakeSoftApNotifier).dismissSoftApShutDownTimeoutExpiredNotification();
         order.verify(mWifiNative).setupInterfaceForSoftApMode(
-                mWifiNativeInterfaceCallbackCaptor.capture(), eq(TEST_WORKSOURCE));
+                mWifiNativeInterfaceCallbackCaptor.capture(), eq(TEST_WORKSOURCE), eq(false));
         ArgumentCaptor<SoftApConfiguration> configCaptor =
                 ArgumentCaptor.forClass(SoftApConfiguration.class);
         order.verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
@@ -1889,7 +1874,6 @@ public class SoftApManagerTest extends WifiBaseTest {
     public void testSoftApEnableFailureBecauseSetMaxClientWhenNotSupport() throws Exception {
         long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_WPA3_SAE
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD;
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         SoftApCapability noClientControlCapability = new SoftApCapability(testSoftApFeature);
         noClientControlCapability.setMaxSupportedClients(1);
         SoftApConfiguration softApConfig = new SoftApConfiguration.Builder(
@@ -1913,7 +1897,6 @@ public class SoftApManagerTest extends WifiBaseTest {
             throws Exception {
         long testSoftApFeature = SoftApCapability.SOFTAP_FEATURE_CLIENT_FORCE_DISCONNECT
                 | SoftApCapability.SOFTAP_FEATURE_ACS_OFFLOAD;
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any())).thenReturn(TEST_INTERFACE_NAME);
         SoftApCapability noSaeCapability = new SoftApCapability(testSoftApFeature);
         SoftApConfiguration softApConfig = new SoftApConfiguration.Builder(
                 mDefaultApConfig).setPassphrase(TEST_PASSWORD,
@@ -2238,5 +2221,24 @@ public class SoftApManagerTest extends WifiBaseTest {
         mLooper.moveTimeForward(mSoftApManager.SOFT_AP_PENDING_DISCONNECTION_CHECK_DELAY_MS);
         mLooper.dispatchAll();
         verify(mWifiNative, never()).forceClientDisconnect(any(), any(), anyInt());
+    }
+
+    /**
+     * Test that dual interfaces will be setup when dual band config.
+     */
+    @Test
+    public void testSetupDualBandForSoftApModeApInterfaceName()
+            throws Exception {
+        int[] dual_bands = new int[] {
+                SoftApConfiguration.BAND_2GHZ, SoftApConfiguration.BAND_5GHZ};
+        Builder configBuilder = new SoftApConfiguration.Builder();
+        configBuilder.setBands(dual_bands);
+        configBuilder.setSsid(TEST_SSID);
+        SoftApModeConfiguration dualBandConfig = new SoftApModeConfiguration(
+                WifiManager.IFACE_IP_MODE_TETHERED, configBuilder.build(),
+                mTestSoftApCapability);
+        mSoftApManager = createSoftApManager(dualBandConfig,
+                TEST_COUNTRY_CODE, ROLE_SOFTAP_TETHERED);
+        verify(mWifiNative).setupInterfaceForSoftApMode(any(), any(), eq(true));
     }
 }

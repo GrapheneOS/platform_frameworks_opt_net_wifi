@@ -2942,7 +2942,7 @@ public class WifiConfigManager {
      * - Write the store files to move any user specific private networks from shared store to user
      *   store.
      *
-     * Need to be called when {@link com.android.server.SystemService#onSwitchUser(int)} is invoked.
+     * Need to be called when {@link com.android.server.SystemService#onUserSwitching} is invoked.
      *
      * @param userId The identifier of the new foreground user, after the switch.
      * @return List of network ID's of all the private networks of the old user which will be
@@ -2988,7 +2988,7 @@ public class WifiConfigManager {
      * Handles the unlock of foreground user. This maybe needed to read the store file if the user's
      * CE storage is not visible when {@link #handleUserSwitch(int)} is invoked.
      *
-     * Need to be called when {@link com.android.server.SystemService#onUnlockUser(int)} is invoked.
+     * Need to be called when {@link com.android.server.SystemService#onUserUnlocking} is invoked.
      *
      * @param userId The identifier of the user that unlocked.
      */
@@ -3014,7 +3014,7 @@ public class WifiConfigManager {
      * Handles the stop of foreground user. This is needed to write the store file to flush
      * out any pending data before the user's CE store storage is unavailable.
      *
-     * Need to be called when {@link com.android.server.SystemService#onStopUser(int)} is invoked.
+     * Need to be called when {@link com.android.server.SystemService#onUserStopping} is invoked.
      *
      * @param userId The identifier of the user that stopped.
      */

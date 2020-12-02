@@ -19,7 +19,9 @@ package com.android.server.wifi;
 import android.content.pm.ParceledListSlice;
 import android.net.DhcpInfo;
 import android.net.Network;
+import android.net.wifi.CoexUnsafeChannel;
 import android.net.wifi.IActionListener;
+import android.net.wifi.ICoexCallback;
 import android.net.wifi.IDppCallback;
 import android.net.wifi.ILocalOnlyHotspotCallback;
 import android.net.wifi.INetworkRequestMatchCallback;
@@ -302,6 +304,31 @@ public class BaseWifiService extends IWifiManager.Stub {
 
     @Override
     public void updateInterfaceIpState(String ifaceName, int mode) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setCoexUnsafeChannels(List<CoexUnsafeChannel> unsafeChannels, int restrictions) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<CoexUnsafeChannel> getCoexUnsafeChannels() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getCoexRestrictions() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void registerCoexCallback(ICoexCallback callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void unregisterCoexCallback(ICoexCallback callback) {
         throw new UnsupportedOperationException();
     }
 

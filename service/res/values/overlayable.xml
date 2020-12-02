@@ -122,6 +122,7 @@
           <item type="integer" name="config_wifiBssidBlocklistMonitorAuthenticationFailureThreshold" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorDhcpFailureThreshold" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorAbnormalDisconnectThreshold" />
+          <item type="integer" name="config_wifiBssidBlocklistMonitorNonlocalDisconnectConnectingThreshold" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorBaseBlockDurationMs" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorConnectedScoreBaseBlockDurationMs" />
           <item type="integer" name="config_wifiBssidBlocklistMonitorFailureStreakCap" />

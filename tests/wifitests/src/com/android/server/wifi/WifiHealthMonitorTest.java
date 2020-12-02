@@ -178,6 +178,10 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
                 DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_HIGH_THR_PERCENT);
         when(mDeviceConfigFacade.getConnectionFailureCountMin()).thenReturn(
                 DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_COUNT_MIN);
+        when(mDeviceConfigFacade.getConnectionFailureDisconnectionHighThrPercent()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_DISCONNECTION_HIGH_THR_PERCENT);
+        when(mDeviceConfigFacade.getConnectionFailureDisconnectionCountMin()).thenReturn(
+                DeviceConfigFacade.DEFAULT_CONNECTION_FAILURE_DISCONNECTION_COUNT_MIN);
         when(mDeviceConfigFacade.getAssocRejectionHighThrPercent()).thenReturn(
                 DeviceConfigFacade.DEFAULT_ASSOC_REJECTION_HIGH_THR_PERCENT);
         when(mDeviceConfigFacade.getAssocRejectionCountMin()).thenReturn(
@@ -306,6 +310,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(5000);
         mWifiInfo.setRssi(-55);
+        mWifiScoreCard.noteIpConfiguration(mWifiInfo);
         mWifiScoreCard.noteValidationSuccess(mWifiInfo);
         millisecondsPass(1000);
         mWifiScoreCard.noteSignalPoll(mWifiInfo);
@@ -522,6 +527,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         assertEquals(0, healthMetrics.failureStatsIncrease.cntAssocTimeout);
         assertEquals(0, healthMetrics.failureStatsIncrease.cntAuthFailure);
         assertEquals(0, healthMetrics.failureStatsIncrease.cntConnectionFailure);
+        assertEquals(0, healthMetrics.failureStatsIncrease.cntDisconnectionNonlocalConnecting);
         assertEquals(0, healthMetrics.failureStatsIncrease.cntDisconnectionNonlocal);
         assertEquals(0, healthMetrics.failureStatsIncrease.cntShortConnectionNonlocal);
         assertEquals(0, healthMetrics.failureStatsHigh.cntAssocRejection);

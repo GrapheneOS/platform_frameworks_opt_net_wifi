@@ -2599,8 +2599,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, mLastScanRssi, ssid,
                         blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
-                mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, blocklistReason,
-                        mLastScanRssi);
+                // TODO: handle REASON_NONLOCAL_DISCONNECT_CONNECTING properly, b/170431034
+                if (blocklistReason != BssidBlocklistMonitor
+                        .REASON_NONLOCAL_DISCONNECT_CONNECTING) {
+                    mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid,
+                            blocklistReason, mLastScanRssi);
+                }
             }
         }
 
@@ -2708,6 +2712,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 return BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
             case WifiMetrics.ConnectionEvent.FAILURE_DHCP:
                 return BssidBlocklistMonitor.REASON_DHCP_FAILURE;
+            case WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION:
+                if (failureReason == WifiMetricsProto.ConnectionEvent.DISCONNECTION_NON_LOCAL) {
+                    return BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING;
+                }
+                return -1;
             default:
                 return -1;
         }
@@ -4071,12 +4080,19 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     // If network is removed while connecting, targetSsid can be null.
                     boolean newConnectionInProgress =
                             targetSsid != null && !eventInfo.ssid.equals(targetSsid);
-                    handleNetworkDisconnect(newConnectionInProgress, eventInfo.reasonCode);
                     if (!newConnectionInProgress) {
+                        int level2FailureReason = eventInfo.locallyGenerated
+                                ? WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN :
+                                WifiMetricsProto.ConnectionEvent.DISCONNECTION_NON_LOCAL;
+                        if (!eventInfo.locallyGenerated) {
+                            mWifiScoreCard.noteNonlocalDisconnect(eventInfo.reasonCode);
+                        }
                         reportConnectionAttemptEnd(
                                 WifiMetrics.ConnectionEvent.FAILURE_NETWORK_DISCONNECTION,
-                                WifiMetricsProto.ConnectionEvent.HLF_NONE,
-                                WifiMetricsProto.ConnectionEvent.FAILURE_REASON_UNKNOWN);
+                                WifiMetricsProto.ConnectionEvent.HLF_NONE, level2FailureReason);
+                    }
+                    handleNetworkDisconnect(newConnectionInProgress, eventInfo.reasonCode);
+                    if (!newConnectionInProgress) {
                         transitionTo(mDisconnectedState);
                     }
                     break;
