@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.gt;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.anyInt;
@@ -56,6 +55,8 @@ import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -337,8 +338,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
     }
 
     /**
@@ -350,8 +351,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
     }
 
     @Test
@@ -399,12 +400,12 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Test
     public void loggerFetchesTxFatesEvenIfFetchingRxFatesFails() {
         final boolean verbosityToggle = true;
-        when(mClientModeManager.getRxPktFates(isNotNull())).thenReturn(false);
+        when(mClientModeManager.getRxPktFates()).thenReturn(new ArrayList<>());
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
     }
 
     /**
@@ -413,12 +414,12 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
     @Test
     public void loggerFetchesRxFatesEvenIfFetchingTxFatesFails() {
         final boolean verbosityToggle = true;
-        when(mClientModeManager.getTxPktFates(isNotNull())).thenReturn(false);
+        when(mClientModeManager.getTxPktFates()).thenReturn(new ArrayList<>());
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
     }
 
     /** Verifies that dump() fetches the latest fates. */
@@ -430,8 +431,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.dump(new FileDescriptor(), pw, new String[]{"bogus", "args"});
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
     }
 
     /**
@@ -461,8 +462,8 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
 
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -480,32 +481,24 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
         mWifiDiagnostics.startLogging(STA_IF_NAME);
         mWifiNative.enableVerboseLogging(verbose);
-        when(mClientModeManager.getTxPktFates(isNotNull())).then(new AnswerWithArguments() {
-            public boolean answer(WifiNative.TxFateReport[] fates) {
-                fates[0] = new WifiNative.TxFateReport(
+        when(mClientModeManager.getTxPktFates()).thenReturn(Arrays.asList(
+                new WifiNative.TxFateReport(
                         WifiLoggerHal.TX_PKT_FATE_ACKED, 2, WifiLoggerHal.FRAME_TYPE_ETHERNET_II,
                         new byte[0]
-                );
-                fates[1] = new WifiNative.TxFateReport(
+                ),
+                new WifiNative.TxFateReport(
                         WifiLoggerHal.TX_PKT_FATE_ACKED, 0, WifiLoggerHal.FRAME_TYPE_ETHERNET_II,
                         new byte[0]
-                );
-                return true;
-            }
-        });
-        when(mClientModeManager.getRxPktFates(isNotNull())).then(new AnswerWithArguments() {
-            public boolean answer(WifiNative.RxFateReport[] fates) {
-                fates[0] = new WifiNative.RxFateReport(
+                )));
+        when(mClientModeManager.getRxPktFates()).thenReturn(Arrays.asList(
+                new WifiNative.RxFateReport(
                         WifiLoggerHal.RX_PKT_FATE_SUCCESS, 3, WifiLoggerHal.FRAME_TYPE_ETHERNET_II,
                         new byte[0]
-                );
-                fates[1] = new WifiNative.RxFateReport(
+                ),
+                new WifiNative.RxFateReport(
                         WifiLoggerHal.RX_PKT_FATE_SUCCESS, 1, WifiLoggerHal.FRAME_TYPE_ETHERNET_II,
                         new byte[0]
-                );
-                return true;
-            }
-        });
+                )));
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
 
         StringWriter sw = new StringWriter();
@@ -614,27 +607,19 @@ public class WifiDiagnosticsTest extends WifiBaseTest {
         final boolean verbosityToggle = true;
         mWifiDiagnostics.enableVerboseLogging(verbosityToggle);
         mWifiDiagnostics.startPktFateMonitoring(STA_IF_NAME);
-        when(mClientModeManager.getTxPktFates(isNotNull())).then(new AnswerWithArguments() {
-            public boolean answer(WifiNative.TxFateReport[] fates) {
-                fates[0] = new WifiNative.TxFateReport(
+        when(mClientModeManager.getTxPktFates()).thenReturn(Arrays.asList(
+                new WifiNative.TxFateReport(
                         WifiLoggerHal.TX_PKT_FATE_ACKED, 0, WifiLoggerHal.FRAME_TYPE_ETHERNET_II,
                         new byte[0]
-                );
-                return true;
-            }
-        });
-        when(mClientModeManager.getRxPktFates(isNotNull())).then(new AnswerWithArguments() {
-            public boolean answer(WifiNative.RxFateReport[] fates) {
-                fates[0] = new WifiNative.RxFateReport(
+                )));
+        when(mClientModeManager.getRxPktFates()).thenReturn(Arrays.asList(
+                new WifiNative.RxFateReport(
                         WifiLoggerHal.RX_PKT_FATE_SUCCESS, 1, WifiLoggerHal.FRAME_TYPE_ETHERNET_II,
                         new byte[0]
-                );
-                return true;
-            }
-        });
+                )));
         mWifiDiagnostics.reportConnectionEvent(WifiDiagnostics.CONNECTION_EVENT_FAILED);
-        verify(mClientModeManager).getTxPktFates(isNotNull());
-        verify(mClientModeManager).getRxPktFates(isNotNull());
+        verify(mClientModeManager).getTxPktFates();
+        verify(mClientModeManager).getRxPktFates();
 
         final boolean newVerbosityToggle = false;
         mWifiDiagnostics.enableVerboseLogging(newVerbosityToggle);

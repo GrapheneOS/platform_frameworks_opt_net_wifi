@@ -30,10 +30,14 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.WorkSource;
 
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.ActionListenerWrapper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -234,8 +238,8 @@ public class ScanOnlyModeImpl implements ClientMode {
     public void setMboCellularDataStatus(boolean available) { }
 
     @Override
-    public boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities) {
-        return false;
+    public WifiNative.RoamingCapabilities getRoamingCapabilities() {
+        return null;
     }
 
     @Override
@@ -249,13 +253,13 @@ public class ScanOnlyModeImpl implements ClientMode {
     }
 
     @Override
-    public boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs) {
-        return false;
+    public List<TxFateReport> getTxPktFates() {
+        return new ArrayList<>();
     }
 
     @Override
-    public boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs) {
-        return false;
+    public List<RxFateReport> getRxPktFates() {
+        return new ArrayList<>();
     }
 
     @Override

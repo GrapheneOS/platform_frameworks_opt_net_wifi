@@ -101,6 +101,8 @@ import com.android.net.module.util.NetUtils;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.hotspot2.AnqpEvent;
 import com.android.server.wifi.hotspot2.IconEvent;
 import com.android.server.wifi.hotspot2.NetworkDetail;
@@ -5918,8 +5920,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     }
 
     @Override
-    public boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities) {
-        return mWifiNative.getRoamingCapabilities(mInterfaceName, capabilities);
+    public WifiNative.RoamingCapabilities getRoamingCapabilities() {
+        return mWifiNative.getRoamingCapabilities(mInterfaceName);
     }
 
     @Override
@@ -5933,12 +5935,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     }
 
     @Override
-    public boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs) {
-        return mWifiNative.getTxPktFates(mInterfaceName, reportBufs);
+    public List<TxFateReport> getTxPktFates() {
+        return mWifiNative.getTxPktFates(mInterfaceName);
     }
 
     @Override
-    public boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs) {
-        return mWifiNative.getRxPktFates(mInterfaceName, reportBufs);
+    public List<RxFateReport> getRxPktFates() {
+        return mWifiNative.getRxPktFates(mInterfaceName);
     }
 }

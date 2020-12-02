@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.IntDef;
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
@@ -32,12 +33,15 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.WorkSource;
 
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.ActionListenerWrapper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -198,10 +202,10 @@ public interface ClientMode {
 
     /**
      * Query the firmware roaming capabilities.
-     * @param capabilities object to be filled in
-     * @return true for success, false otherwise.
+     * @return Roaming Capabilities on success, null on failure.
      */
-    boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities);
+    @Nullable
+    WifiNative.RoamingCapabilities getRoamingCapabilities();
 
     /** Set firmware roaming configurations. */
     boolean configureRoaming(WifiNative.RoamingConfig config);
@@ -216,17 +220,17 @@ public interface ClientMode {
 
     /**
      * Fetch the most recent TX packet fates from the HAL. Fails unless HAL is started.
-     * @param reportBufs output param
-     * @return true for success, false otherwise.
+     * @return TxFateReport list on success, empty list on failure. Never returns null.
      */
-    boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs);
+    @NonNull
+    List<TxFateReport> getTxPktFates();
 
     /**
      * Fetch the most recent RX packet fates from the HAL. Fails unless HAL is started.
-     * @param reportBufs output param
-     * @return true for success, false otherwise
+     * @return RxFateReport list on success, empty list on failure. Never returns null.
      */
-    boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs);
+    @NonNull
+    List<RxFateReport> getRxPktFates();
 
     /**
      * Get the Wiphy capabilities of a device for a given interface

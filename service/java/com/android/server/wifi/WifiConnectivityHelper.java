@@ -69,8 +69,8 @@ public class WifiConnectivityHelper {
             return true;
         }
 
-        WifiNative.RoamingCapabilities roamingCap = new WifiNative.RoamingCapabilities();
-        if (primaryManager.getRoamingCapabilities(roamingCap)) {
+        WifiNative.RoamingCapabilities roamingCap = primaryManager.getRoamingCapabilities();
+        if (roamingCap != null) {
             if (roamingCap.maxBlocklistSize < 0 || roamingCap.maxAllowlistSize < 0) {
                 Log.e(TAG, "Invalid firmware roaming capabilities: max num blocklist bssid="
                         + roamingCap.maxBlocklistSize + " max num allowlist ssid="

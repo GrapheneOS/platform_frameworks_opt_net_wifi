@@ -20,6 +20,7 @@ import static android.net.wifi.WifiManager.WIFI_FEATURE_OWE;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.net.MacAddress;
 import android.net.TrafficStats;
 import android.net.apf.ApfCapabilities;
@@ -3486,18 +3487,21 @@ public class WifiNative {
      * Fetch the most recent TX packet fates from the HAL. Fails unless HAL is started.
      *
      * @param ifaceName Name of the interface.
-     * @return true for success, false otherwise.
+     * @return TxFateReport list on success, empty list on failure. Never returns null.
      */
-    public boolean getTxPktFates(@NonNull String ifaceName, TxFateReport[] reportBufs) {
-        return mWifiVendorHal.getTxPktFates(ifaceName, reportBufs);
+    @NonNull
+    public List<TxFateReport> getTxPktFates(@NonNull String ifaceName) {
+        return mWifiVendorHal.getTxPktFates(ifaceName);
     }
 
     /**
      * Fetch the most recent RX packet fates from the HAL. Fails unless HAL is started.
      * @param ifaceName Name of the interface.
+     * @return RxFateReport list on success, empty list on failure. Never returns null.
      */
-    public boolean getRxPktFates(@NonNull String ifaceName, RxFateReport[] reportBufs) {
-        return mWifiVendorHal.getRxPktFates(ifaceName, reportBufs);
+    @NonNull
+    public List<RxFateReport> getRxPktFates(@NonNull String ifaceName) {
+        return mWifiVendorHal.getRxPktFates(ifaceName);
     }
 
     /**
@@ -3612,12 +3616,11 @@ public class WifiNative {
     /**
      * Query the firmware roaming capabilities.
      * @param ifaceName Name of the interface.
-     * @param capabilities object to be filled in
-     * @return true for success, false otherwise.
+     * @return capabilities object on success, null otherwise.
      */
-    public boolean getRoamingCapabilities(
-            @NonNull String ifaceName, RoamingCapabilities capabilities) {
-        return mWifiVendorHal.getRoamingCapabilities(ifaceName, capabilities);
+    @Nullable
+    public RoamingCapabilities getRoamingCapabilities(@NonNull String ifaceName) {
+        return mWifiVendorHal.getRoamingCapabilities(ifaceName);
     }
 
     /**

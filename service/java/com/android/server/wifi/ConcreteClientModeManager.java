@@ -66,6 +66,8 @@ import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.StateMachineObituary;
 import com.android.server.wifi.util.WifiHandler;
@@ -1142,8 +1144,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public boolean getRoamingCapabilities(WifiNative.RoamingCapabilities capabilities) {
-        return getClientMode().getRoamingCapabilities(capabilities);
+    public WifiNative.RoamingCapabilities getRoamingCapabilities() {
+        return getClientMode().getRoamingCapabilities();
     }
 
     @Override
@@ -1157,13 +1159,13 @@ public class ConcreteClientModeManager implements ClientModeManager {
     }
 
     @Override
-    public boolean getTxPktFates(WifiNative.TxFateReport[] reportBufs) {
-        return getClientMode().getTxPktFates(reportBufs);
+    public List<TxFateReport> getTxPktFates() {
+        return getClientMode().getTxPktFates();
     }
 
     @Override
-    public boolean getRxPktFates(WifiNative.RxFateReport[] reportBufs) {
-        return getClientMode().getRxPktFates(reportBufs);
+    public List<RxFateReport> getRxPktFates() {
+        return getClientMode().getRxPktFates();
     }
 
     @Override
