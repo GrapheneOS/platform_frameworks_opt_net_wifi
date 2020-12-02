@@ -54,6 +54,7 @@ import android.os.UserHandle;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.ArraySet;
 import android.util.Log;
 import android.util.Pair;
 import android.view.WindowManager;
@@ -396,6 +397,11 @@ public class WifiNetworkSuggestionsManager {
     private boolean mIsLastUserApprovalUiDialog = false;
 
     private boolean mUserDataLoaded = false;
+
+    /**
+     * Keep a set of packageNames which is treated as carrier provider.
+     */
+    private final Set<String> mCrossCarrierProvidersSet = new ArraySet<>();
 
     /**
      * Listener for app-ops changes for active suggestor apps.
@@ -860,7 +866,7 @@ public class WifiNetworkSuggestionsManager {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Adding " + networkSuggestions.size() + " networks from " + packageName);
         }
-        if (!validateNetworkSuggestions(networkSuggestions)) {
+        if (!validateNetworkSuggestions(networkSuggestions, packageName)) {
             Log.e(TAG, "Invalid suggestion add from app: " + packageName);
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID;
         }
@@ -876,7 +882,8 @@ public class WifiNetworkSuggestionsManager {
         if (perAppInfo == null) {
             perAppInfo = new PerAppInfo(uid, packageName, featureId);
             mActiveNetworkSuggestionsPerApp.put(packageName, perAppInfo);
-            if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)) {
+            if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)
+                    || isAppWorkingAsCrossCarrierProvider(packageName)) {
                 Log.i(TAG, "Setting the carrier provisioning app approved");
                 perAppInfo.hasUserApproved = true;
                 mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
@@ -999,7 +1006,8 @@ public class WifiNetworkSuggestionsManager {
         }
     }
 
-    private boolean validateNetworkSuggestions(List<WifiNetworkSuggestion> networkSuggestions) {
+    private boolean validateNetworkSuggestions(List<WifiNetworkSuggestion> networkSuggestions,
+            String packageName) {
         for (WifiNetworkSuggestion wns : networkSuggestions) {
             if (wns == null || wns.wifiConfiguration == null) {
                 return false;
@@ -1020,7 +1028,8 @@ public class WifiNetworkSuggestionsManager {
                     return false;
                 }
             }
-            if (!isValidCarrierMergedNetworkSuggestion(wns)) {
+            if (!isAppWorkingAsCrossCarrierProvider(packageName)
+                    && !isValidCarrierMergedNetworkSuggestion(wns)) {
                 Log.e(TAG, "Merged carrier network must be a metered, enterprise config with a "
                         + "valid subscription Id");
                 return false;
@@ -1074,7 +1083,8 @@ public class WifiNetworkSuggestionsManager {
     private boolean validateCarrierNetworkSuggestions(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName) {
         boolean isCrossCarrierProvisioner = mWifiPermissionsUtil
-                .checkNetworkCarrierProvisioningPermission(uid);
+                .checkNetworkCarrierProvisioningPermission(uid)
+                || isAppWorkingAsCrossCarrierProvider(packageName);
         int provisionerCarrierId = mWifiCarrierInfoManager
                 .getCarrierIdForPackageWithCarrierPrivileges(packageName);
 
@@ -1209,7 +1219,7 @@ public class WifiNetworkSuggestionsManager {
             Log.v(TAG, "Removing " + networkSuggestions.size() + " networks from " + packageName);
         }
 
-        if (!validateNetworkSuggestions(networkSuggestions)) {
+        if (!validateNetworkSuggestions(networkSuggestions, packageName)) {
             Log.e(TAG, "Invalid suggestion remove from app: " + packageName);
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_REMOVE_INVALID;
         }
@@ -2322,6 +2332,28 @@ public class WifiNetworkSuggestionsManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Set the app treated as cross carrier provider. That can suggest for any carrier
+     * @param packageName App name to set.
+     * @param enabled True to set app treated as cross carrier provider, false otherwise.
+     */
+    public void setAppWorkingAsCrossCarrierProvider(String packageName, boolean enabled) {
+        if (enabled) {
+            mCrossCarrierProvidersSet.add(packageName);
+        } else {
+            mCrossCarrierProvidersSet.remove(packageName);
+        }
+    }
+
+    /**
+     * Check whether the app is treated as a cross carrier provider or not.
+     * @param packageName App name to check
+     * @return True for app is treated as a carrier provider, false otherwise.
+     */
+    public boolean isAppWorkingAsCrossCarrierProvider(String packageName) {
+        return mCrossCarrierProvidersSet.contains(packageName);
     }
 
     private boolean isOpenSuggestion(ExtendedWifiNetworkSuggestion extendedWifiNetworkSuggestion) {
