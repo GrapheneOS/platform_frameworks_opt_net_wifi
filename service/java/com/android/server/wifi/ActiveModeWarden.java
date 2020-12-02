@@ -500,13 +500,13 @@ public class ActiveModeWarden {
     }
 
     /** Emergency Callback Mode has changed. */
-    private void emergencyCallbackModeChanged(boolean isInEmergencyCallbackMode) {
+    public void emergencyCallbackModeChanged(boolean isInEmergencyCallbackMode) {
         mWifiController.sendMessage(
                 WifiController.CMD_EMERGENCY_MODE_CHANGED, isInEmergencyCallbackMode ? 1 : 0);
     }
 
     /** Emergency Call state has changed. */
-    private void emergencyCallStateChanged(boolean isInEmergencyCall) {
+    public void emergencyCallStateChanged(boolean isInEmergencyCall) {
         mWifiController.sendMessage(
                 WifiController.CMD_EMERGENCY_CALL_STATE_CHANGED, isInEmergencyCall ? 1 : 0);
     }
