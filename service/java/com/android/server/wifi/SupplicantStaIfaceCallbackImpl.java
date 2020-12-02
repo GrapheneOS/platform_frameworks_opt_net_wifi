@@ -313,6 +313,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
                     .broadcastAssociationRejectionEvent(
                             mIfaceName, statusCode, timedOut,
                             NativeUtil.macAddressFromByteArray(bssid));
+            mStateBeforeDisconnect = State.INACTIVE;
         }
     }
 
@@ -322,6 +323,7 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
             mStaIfaceHal.logCallback("onAuthenticationTimeout");
             mWifiMonitor.broadcastAuthenticationFailureEvent(
                     mIfaceName, WifiManager.ERROR_AUTH_FAILURE_TIMEOUT, -1);
+            mStateBeforeDisconnect = State.INACTIVE;
         }
     }
 
@@ -339,13 +341,19 @@ abstract class SupplicantStaIfaceCallbackImpl extends ISupplicantStaIfaceCallbac
         }
     }
 
-    @Override
-    public void onEapFailure() {
+    public void onEapFailure(int errorCode) {
         synchronized (mLock) {
             mStaIfaceHal.logCallback("onEapFailure");
             mWifiMonitor.broadcastAuthenticationFailureEvent(
-                    mIfaceName, WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE, -1);
+                    mIfaceName, WifiManager.ERROR_AUTH_FAILURE_EAP_FAILURE, errorCode);
+            mStateBeforeDisconnect = State.INACTIVE;
         }
+    }
+
+
+    @Override
+    public void onEapFailure() {
+        onEapFailure(-1);
     }
 
     @Override
