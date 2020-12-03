@@ -30,6 +30,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiNative;
 import com.android.wifi.resources.R;
 
@@ -542,7 +543,9 @@ public class ApConfigUtil {
                 || !Objects.equals(currentConfig.getPassphrase(), newConfig.getPassphrase())
                 || currentConfig.isHiddenSsid() != newConfig.isHiddenSsid()
                 || currentConfig.getBand() != newConfig.getBand()
-                || currentConfig.getChannel() != newConfig.getChannel();
+                || currentConfig.getChannel() != newConfig.getChannel()
+                || (SdkLevel.isAtLeastS() && !currentConfig.getChannels().toString()
+                        .equals(newConfig.getChannels().toString()));
     }
 
 

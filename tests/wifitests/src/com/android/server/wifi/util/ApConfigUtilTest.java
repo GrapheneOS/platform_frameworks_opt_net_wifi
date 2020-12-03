@@ -31,6 +31,7 @@ import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.SoftApConfiguration.Builder;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiScanner;
+import android.util.SparseIntArray;
 
 import androidx.test.filters.SmallTest;
 
@@ -538,6 +539,22 @@ public class ApConfigUtilTest extends WifiBaseTest {
                 .setBand(SoftApConfiguration.BAND_5GHZ).build();
         assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
                 newConfig_bandChanged));
+        // Test Bands Changed
+        int[] bands = {SoftApConfiguration.BAND_2GHZ , SoftApConfiguration.BAND_5GHZ};
+        SoftApConfiguration newConfig_bandsChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setBands(bands).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_bandsChanged));
+        // Test Channels Changed
+        SparseIntArray dual_channels = new SparseIntArray(2);
+        dual_channels.put(SoftApConfiguration.BAND_5GHZ, 149);
+        dual_channels.put(SoftApConfiguration.BAND_2GHZ, 0);
+        SoftApConfiguration newConfig_channelsChanged = new SoftApConfiguration
+                .Builder(newConfig_noChange)
+                .setChannels(dual_channels).build();
+        assertTrue(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
+                newConfig_channelsChanged));
         // Test isHidden Changed
         SoftApConfiguration newConfig_hiddenChanged = new SoftApConfiguration
                 .Builder(newConfig_noChange)
@@ -556,5 +573,6 @@ public class ApConfigUtilTest extends WifiBaseTest {
                 .build();
         assertFalse(ApConfigUtil.checkConfigurationChangeNeedToRestart(currentConfig,
                 newConfig_nonRevalentChanged));
+
     }
 }
