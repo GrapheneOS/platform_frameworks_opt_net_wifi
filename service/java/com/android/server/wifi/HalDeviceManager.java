@@ -2161,7 +2161,8 @@ public class HalDeviceManager {
                                 getWifiChipForV1_5Mockable(ifaceCreationData.chipInfo.chip);
                         if (chip15 != null) {
                             chip15.createBridgedApIface(
-                                    (WifiStatus status, IWifiApIface iface) -> {
+                                    (WifiStatus status,
+                                    android.hardware.wifi.V1_5.IWifiApIface iface) -> {
                                         statusResp.value = status;
                                         ifaceResp.value = iface;
                                     });

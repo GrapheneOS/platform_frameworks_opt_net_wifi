@@ -877,6 +877,15 @@ public class WifiNativeTest extends WifiBaseTest {
     }
 
     /**
+     * Verifies that resetApMacToFactoryMacAddress() calls underlying WifiVendorHal.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddress() throws Exception {
+        mWifiNative.resetApMacToFactoryMacAddress(WIFI_IFACE_NAME);
+        verify(mWifiVendorHal).resetApMacToFactoryMacAddress(WIFI_IFACE_NAME);
+    }
+
+    /**
      * Verifies that isSetMacAddressSupported() calls underlying WifiVendorHal.
      */
     @Test
