@@ -41,7 +41,7 @@ android_test {
 
     jarjar_rules: ":wifi-jarjar-rules",
 
-    sdk_version: "core_platform", // tests can use @CorePlatformApi's
+    sdk_version: "core_current",
     libs: [
         // order matters: classes in framework-wifi are resolved before framework, meaning
         // @hide APIs in framework-wifi are resolved before @SystemApi stubs in framework
@@ -58,24 +58,15 @@ android_test {
         "ServiceWifiResources",
     ],
 
-    // These must be explicitly included because they are not normally accessible
-    // from apps.
+    // these are needed for Extended Mockito
     jni_libs: [
-        "libbase",
-        "libc++",
-        "ld-android",
-        "libdl_android",
-        "libcgrouprc",
-        "libcutils",
-        "libprocessgroup",
-        "libutils",
-        "libvndksupport",
         "libdexmakerjvmtiagent",
         "libstaticjvmtiagent",
     ],
     compile_multilib: "both",
 
-    min_sdk_version: "29",
+    min_sdk_version: "30",
+    target_sdk_version: "30",
     privileged: true,
     test_suites: [
         "general-tests",

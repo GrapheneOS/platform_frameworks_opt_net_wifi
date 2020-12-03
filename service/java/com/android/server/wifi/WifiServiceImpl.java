@@ -32,6 +32,7 @@ import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_INSERT
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 
+import android.Manifest;
 import android.annotation.CheckResult;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -54,7 +55,9 @@ import android.net.Network;
 import android.net.NetworkStack;
 import android.net.Uri;
 import android.net.ip.IpClientUtil;
+import android.net.wifi.CoexUnsafeChannel;
 import android.net.wifi.IActionListener;
+import android.net.wifi.ICoexCallback;
 import android.net.wifi.IDppCallback;
 import android.net.wifi.ILocalOnlyHotspotCallback;
 import android.net.wifi.INetworkRequestMatchCallback;
@@ -74,6 +77,7 @@ import android.net.wifi.WifiClient;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.CoexRestriction;
 import android.net.wifi.WifiManager.DeviceMobilityState;
 import android.net.wifi.WifiManager.LocalOnlyHotspotCallback;
 import android.net.wifi.WifiManager.SuggestionConnectionStatusListener;
@@ -112,6 +116,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.build.SdkLevel;
 import com.android.net.module.util.Inet4AddressUtils;
+import com.android.server.wifi.coex.CoexManager;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvider;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
@@ -142,10 +147,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -184,6 +191,7 @@ public class WifiServiceImpl extends BaseWifiService {
     /** Backup/Restore Module */
     private final WifiBackupRestore mWifiBackupRestore;
     private final SoftApBackupRestore mSoftApBackupRestore;
+    private final CoexManager mCoexManager;
     private final WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     private final WifiConfigManager mWifiConfigManager;
     private final PasspointManager mPasspointManager;
@@ -288,6 +296,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiConnectivityManager = wifiInjector.getWifiConnectivityManager();
         mWifiDataStall = wifiInjector.getWifiDataStall();
         mWifiNative = wifiInjector.getWifiNative();
+        mCoexManager = wifiInjector.getCoexManager();
         mConnectHelper = wifiInjector.getConnectHelper();
         mWifiGlobals = wifiInjector.getWifiGlobals();
         mSimRequiredNotifier = wifiInjector.getSimRequiredNotifier();
@@ -871,6 +880,81 @@ public class WifiServiceImpl extends BaseWifiService {
 
         // hand off the work to our handler thread
         mWifiThreadRunner.post(() -> mLohsSoftApTracker.updateInterfaceIpState(ifaceName, mode));
+    }
+
+    /**
+     * see {@link android.net.wifi.WifiManager#setCoexUnsafeChannels(Set, int)}
+     * @param unsafeChannels List of {@link CoexUnsafeChannel} to avoid.
+     * @param restrictions Bitmap of {@link CoexRestriction} specifying the mandatory
+     *                     uses of the specified channels.
+     */
+    @Override
+    public void setCoexUnsafeChannels(
+            @NonNull List<CoexUnsafeChannel> unsafeChannels, int restrictions) {
+        mContext.enforceCallingOrSelfPermission(
+                Manifest.permission.WIFI_UPDATE_COEX_UNSAFE_CHANNELS, "WifiService");
+        if (unsafeChannels == null) {
+            throw new IllegalArgumentException("unsafeChannels cannot be null");
+        }
+        if (mContext.getResources().getBoolean(R.bool.config_wifiDefaultCoexAlgorithmEnabled)) {
+            Log.e(TAG, "setCoexUnsafeChannels called but default coex algorithm is enabled");
+            return;
+        }
+        mWifiThreadRunner.post(() -> mCoexManager.setCoexUnsafeChannels(
+                new HashSet<>(unsafeChannels), restrictions));
+    }
+
+    /**
+     * see {@link android.net.wifi.WifiManager#getCoexUnsafeChannels()}
+     * @return List of current CoexUnsafeChannels.
+     */
+    @Override
+    public List<CoexUnsafeChannel> getCoexUnsafeChannels() {
+        mContext.enforceCallingOrSelfPermission(
+                Manifest.permission.WIFI_ACCESS_COEX_UNSAFE_CHANNELS, "WifiService");
+        return mWifiThreadRunner.call(() -> new ArrayList<>(mCoexManager.getCoexUnsafeChannels()),
+                Collections.emptyList());
+    }
+
+    /**
+     * see {@link android.net.wifi.WifiManager#getCoexRestrictions()}
+     * @return Bitmask of current coex restrictions.
+     */
+    @Override
+    public int getCoexRestrictions() {
+        mContext.enforceCallingOrSelfPermission(
+                Manifest.permission.WIFI_ACCESS_COEX_UNSAFE_CHANNELS, "WifiService");
+        return mWifiThreadRunner.call(mCoexManager::getCoexRestrictions, 0);
+    }
+
+    /**
+     * See {@link WifiManager#registerCoexCallback(WifiManager.CoexCallback)}
+     */
+    public void registerCoexCallback(@NonNull ICoexCallback callback) {
+        mContext.enforceCallingOrSelfPermission(
+                Manifest.permission.WIFI_ACCESS_COEX_UNSAFE_CHANNELS, "WifiService");
+        if (callback == null) {
+            throw new IllegalArgumentException("callback must not be null");
+        }
+        if (mVerboseLoggingEnabled) {
+            mLog.info("registerCoexCallback uid=%").c(Binder.getCallingUid()).flush();
+        }
+        mWifiThreadRunner.post(() -> mCoexManager.registerRemoteCoexCallback(callback));
+    }
+
+    /**
+     * See {@link WifiManager#unregisterCoexCallback(WifiManager.CoexCallback)}
+     */
+    public void unregisterCoexCallback(@NonNull ICoexCallback callback) {
+        mContext.enforceCallingOrSelfPermission(
+                Manifest.permission.WIFI_ACCESS_COEX_UNSAFE_CHANNELS, "WifiService");
+        if (callback == null) {
+            throw new IllegalArgumentException("callback must not be null");
+        }
+        if (mVerboseLoggingEnabled) {
+            mLog.info("unregisterCoexCallback uid=%").c(Binder.getCallingUid()).flush();
+        }
+        mWifiThreadRunner.post(() -> mCoexManager.unregisterRemoteCoexCallback(callback));
     }
 
     /**
@@ -1799,7 +1883,7 @@ public class WifiServiceImpl extends BaseWifiService {
 
         mLog.info("start uid=% pid=%").c(uid).c(pid).flush();
 
-        WorkSource requestorWs;
+        final WorkSource requestorWs;
         // Permission requirements are different with/without custom config.
         if (customConfig == null) {
             if (enforceChangePermission(packageName) != MODE_ALLOWED) {
@@ -1812,20 +1896,20 @@ public class WifiServiceImpl extends BaseWifiService {
                 if (!mWifiPermissionsUtil.isLocationModeEnabled()) {
                     throw new SecurityException("Location mode is not enabled.");
                 }
+                // TODO(b/162344695): Exception added for LOHS. This exception is need to avoid
+                // breaking existing LOHS behavior: LOHS AP iface is allowed to delete STA iface
+                // (even if LOHS app has lower priority than user toggled on STA iface). This does
+                // not fit in with the new context based concurrency priority in HalDeviceManager,
+                // but we cannot break existing API's. So, we artificially boost the priority of
+                // the request by "faking" the requestor context as settings app.
+                // We probably need some UI dialog to allow the user to grant the app's LOHS
+                // request. Once that UI dialog is added, we can get rid of this hack and use the UI
+                // to elevate the priority of LOHS request only if user approves the request to
+                // toggle wifi off for LOHS.
+                requestorWs = mFrameworkFacade.getSettingsWorkSource(mContext);
             } finally {
                 Binder.restoreCallingIdentity(ident);
             }
-            // TODO(b/162344695): Exception added for LOHS. This exception is need to avoid breaking
-            // existing LOHS behavior: LOHS AP iface is allowed to delete STA iface (even if LOHS
-            // app has lower priority than user toggled on STA iface). This does not
-            // fit in with the new context based concurrency priority in HalDeviceManager, but we
-            // cannot break existing API's. So, we artificially boost the priority of the
-            // request by "faking" the requestor context as settings app.
-            // We probably need some UI dialog to allow the user to grant the app's LOHS request.
-            // Once that UI dialog is added, we can get rid of this hack and use the UI to elevate
-            // the priority of LOHS request only if user approves the request to toggle wifi off for
-            // LOHS.
-            requestorWs = mFrameworkFacade.getSettingsWorkSource(mContext);
         } else {
             if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
                 throw new SecurityException(TAG + ": Permission denied");
