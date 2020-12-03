@@ -340,6 +340,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             // We should not be able to call connect() if mWifiConfig is null
             new ConnectActionListener().onFailure(0);
         }
+        mWifiManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
         mWifiManager.connect(mWifiConfig, new ConnectActionListener());
     }
 
