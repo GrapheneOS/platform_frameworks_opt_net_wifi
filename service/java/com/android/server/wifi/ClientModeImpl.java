@@ -102,6 +102,8 @@ import com.android.net.module.util.NetUtils;
 import com.android.server.wifi.MboOceController.BtmFrameData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthRequestData;
 import com.android.server.wifi.WifiCarrierInfoManager.SimAuthResponseData;
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.hotspot2.AnqpEvent;
 import com.android.server.wifi.hotspot2.IconEvent;
 import com.android.server.wifi.hotspot2.NetworkDetail;
@@ -137,6 +139,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Implementation of ClientMode.  Event handling for Client mode logic is done here,
@@ -287,7 +290,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     // the state actually changed, and to deduce the state of the agent from the state of the
     // machine when generating the NetworkInfo for the broadcast.
     private DetailedState mNetworkAgentState;
-    private SupplicantStateTracker mSupplicantStateTracker;
+    private final SupplicantStateTracker mSupplicantStateTracker;
 
     // Indicates that framework is attempting to roam, set true on CMD_START_ROAM, set false when
     // wifi connects or fails to connect
@@ -422,10 +425,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     static final int RESET_SIM_REASON_SIM_REMOVED              = 0;
     static final int RESET_SIM_REASON_SIM_INSERTED             = 1;
     static final int RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED = 2;
-
-    /* Commands from/to the SupplicantStateTracker */
-    /* Reset the supplicant state tracker */
-    static final int CMD_RESET_SUPPLICANT_STATE                         = BASE + 111;
 
     /** Connecting watchdog timeout counter */
     private int mConnectingWatchdogCount = 0;
@@ -698,7 +697,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mInterfaceName = ifaceName;
         mClientModeManager = clientModeManager;
-        updateInterfaceCapabilities(ifaceName);
+        updateInterfaceCapabilities();
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
@@ -758,7 +757,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mWifiMetrics.registerForWifiMonitorEvents(mInterfaceName);
         mWifiLastResortWatchdog.registerForWifiMonitorEvents(mInterfaceName);
-        mSupplicantStateTracker.registerForWifiMonitorEvents(mInterfaceName);
     }
 
     private void deregisterForWifiMonitorEvents()  {
@@ -768,7 +766,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mWifiMetrics.deregisterForWifiMonitorEvents(mInterfaceName);
         mWifiLastResortWatchdog.deregisterForWifiMonitorEvents(mInterfaceName);
-        mSupplicantStateTracker.deregisterForWifiMonitorEvents(mInterfaceName);
     }
 
     private static boolean isValidBssid(String bssidStr) {
@@ -1016,6 +1013,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
 
         mWifiScoreReport.enableVerboseLogging(mVerboseLoggingEnabled);
+        mSupplicantStateTracker.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
     /**
@@ -1135,8 +1133,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      *
      * @param ifaceName name of interface to update
      */
-    private void updateInterfaceCapabilities(@NonNull String ifaceName) {
-        DeviceWiphyCapabilities cap = mWifiNative.getDeviceWiphyCapabilities(ifaceName);
+    private void updateInterfaceCapabilities() {
+        DeviceWiphyCapabilities cap = getDeviceWiphyCapabilities();
         if (cap != null) {
             // Some devices don't have support of 11ax indicated by the chip,
             // so an override config value is used
@@ -1144,8 +1142,13 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 cap.setWifiStandardSupport(ScanResult.WIFI_STANDARD_11AX, true);
             }
 
-            mWifiNative.setDeviceWiphyCapabilities(ifaceName, cap);
+            mWifiNative.setDeviceWiphyCapabilities(mInterfaceName, cap);
         }
+    }
+
+    @Override
+    public DeviceWiphyCapabilities getDeviceWiphyCapabilities() {
+        return mWifiNative.getDeviceWiphyCapabilities(mInterfaceName);
     }
 
     /**
@@ -1305,9 +1308,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 WifiStatsLog.WIFI_DISCONNECT_REPORTED__FAILURE_CODE__IFACE_DESTROYED);
     }
 
-    /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped.
-     */
+    /** Stop this ClientModeImpl. Do not interact with ClientModeImpl after it has been stopped. */
     public void stop() {
+        mSupplicantStateTracker.stop();
         mWifiScoreCard.noteWifiDisabled(mWifiInfo);
         // capture StateMachine LogRecs since we will lose them after we call quitNow()
         // This is used for debugging.
@@ -1363,6 +1366,21 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     public boolean syncQueryPasspointIcon(long bssid, String fileName) {
         return mWifiThreadRunner.call(
                 () -> mPasspointManager.queryPasspointIcon(bssid, fileName), false);
+    }
+
+    @Override
+    public boolean requestAnqp(String bssid, Set<Integer> anqpIds, Set<Integer> hs20Subtypes) {
+        return mWifiNative.requestAnqp(mInterfaceName, bssid, anqpIds, hs20Subtypes);
+    }
+
+    @Override
+    public boolean requestVenueUrlAnqp(String bssid) {
+        return mWifiNative.requestVenueUrlAnqp(mInterfaceName, bssid);
+    }
+
+    @Override
+    public boolean requestIcon(String bssid, String fileName) {
+        return mWifiNative.requestIcon(mInterfaceName, bssid, fileName);
     }
 
     /**
@@ -1879,8 +1897,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 return "CMD_REMOVE_KEEPALIVE_PACKET_FILTER_FROM_APF";
             case CMD_RESET_SIM_NETWORKS:
                 return "CMD_RESET_SIM_NETWORKS";
-            case CMD_RESET_SUPPLICANT_STATE:
-                return "CMD_RESET_SUPPLICANT_STATE";
             case CMD_ROAM_WATCHDOG_TIMER:
                 return "CMD_ROAM_WATCHDOG_TIMER";
             case CMD_RSSI_POLL:
@@ -2991,8 +3007,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         mWifiLastResortWatchdog.clearAllFailureCounts();
         mWifiNative.setSupplicantLogLevel(mVerboseLoggingEnabled);
 
-        // reset state related to supplicant starting
-        mSupplicantStateTracker.sendMessage(CMD_RESET_SUPPLICANT_STATE);
         // Initialize data structures
         mLastBssid = null;
         mLastNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
@@ -5919,5 +5933,35 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     @Override
     public void dumpWifiScoreReport(FileDescriptor fd, PrintWriter pw, String[] args) {
         mWifiScoreReport.dump(fd, pw, args);
+    }
+
+    @Override
+    public void setMboCellularDataStatus(boolean available) {
+        mWifiNative.setMboCellularDataStatus(mInterfaceName, available);
+    }
+
+    @Override
+    public WifiNative.RoamingCapabilities getRoamingCapabilities() {
+        return mWifiNative.getRoamingCapabilities(mInterfaceName);
+    }
+
+    @Override
+    public boolean configureRoaming(WifiNative.RoamingConfig config) {
+        return mWifiNative.configureRoaming(mInterfaceName, config);
+    }
+
+    @Override
+    public boolean setCountryCode(String countryCode) {
+        return mWifiNative.setCountryCode(mInterfaceName, countryCode);
+    }
+
+    @Override
+    public List<TxFateReport> getTxPktFates() {
+        return mWifiNative.getTxPktFates(mInterfaceName);
+    }
+
+    @Override
+    public List<RxFateReport> getRxPktFates() {
+        return mWifiNative.getRxPktFates(mInterfaceName);
     }
 }

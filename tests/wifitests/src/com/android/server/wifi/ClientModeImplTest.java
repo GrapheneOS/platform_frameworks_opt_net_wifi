@@ -4127,7 +4127,6 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .registerHandler(eq(WIFI_IFACE_NAME), anyInt(), any());
         verify(mWifiMetrics).registerForWifiMonitorEvents(WIFI_IFACE_NAME);
         verify(mWifiLastResortWatchdog).registerForWifiMonitorEvents(WIFI_IFACE_NAME);
-        verify(mSupplicantStateTracker).registerForWifiMonitorEvents(WIFI_IFACE_NAME);
 
         mCmi.stop();
         mLooper.dispatchAll();
@@ -4136,7 +4135,6 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .deregisterHandler(eq(WIFI_IFACE_NAME), anyInt(), any());
         verify(mWifiMetrics).deregisterForWifiMonitorEvents(WIFI_IFACE_NAME);
         verify(mWifiLastResortWatchdog).deregisterForWifiMonitorEvents(WIFI_IFACE_NAME);
-        verify(mSupplicantStateTracker).deregisterForWifiMonitorEvents(WIFI_IFACE_NAME);
     }
 
     @Test
