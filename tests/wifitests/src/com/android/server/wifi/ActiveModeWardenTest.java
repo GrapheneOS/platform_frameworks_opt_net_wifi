@@ -181,6 +181,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         when(mSettingsStore.isAirplaneModeOn()).thenReturn(false);
         when(mSettingsStore.isScanAlwaysAvailable()).thenReturn(false);
         when(mWifiPermissionsUtil.isLocationModeEnabled()).thenReturn(true);
+        when(mFacade.getSettingsWorkSource(mContext)).thenReturn(TEST_WORKSOURCE);
 
         doAnswer(new Answer<ClientModeManager>() {
             public ClientModeManager answer(InvocationOnMock invocation) {
@@ -459,6 +460,10 @@ public class ActiveModeWardenTest extends WifiBaseTest {
      */
     private void assertInEmergencyMode() {
         assertThat(mActiveModeWarden.isInEmergencyMode()).isTrue();
+    }
+
+    private void assertNotInEmergencyMode() {
+        assertThat(mActiveModeWarden.isInEmergencyMode()).isFalse();
     }
 
     /**
@@ -1778,7 +1783,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     }
 
     /**
-     * Toggling wifi when in ECM does not exit ecm mode and enable wifi
+     * Toggling wifi on when in ECM does not exit ecm mode and enable wifi
      */
     @Test
     public void testWifiDoesNotToggleOnWhenInEcm() throws Exception {
@@ -1799,6 +1804,60 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
         verify(mWifiInjector, never()).makeClientModeManager(
                 any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
+        assertInDisabledState();
+        assertInEmergencyMode();
+
+        // now we will exit ECM
+        emergencyCallbackModeChanged(false);
+        mLooper.dispatchAll();
+        assertNotInEmergencyMode();
+
+        // Wifi toggle on now takes effect
+        verify(mWifiInjector).makeClientModeManager(
+                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
+        assertInEnabledState();
+    }
+
+    /**
+     * Toggling wifi off when in ECM does not disable wifi when getConfigWiFiDisableInECBM is
+     * disabled.
+     */
+    @Test
+    public void testWifiDoesNotToggleOffWhenInEcmAndConfigDisabled() throws Exception {
+        enableWifi();
+        assertInEnabledState();
+        verify(mWifiInjector).makeClientModeManager(
+                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
+
+        // Test with WifiDisableInECBM turned off
+        when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(false);
+        // test ecm changed
+        assertEnteredEcmMode(() -> {
+            emergencyCallbackModeChanged(true);
+            mLooper.dispatchAll();
+        });
+
+        // now toggle wifi and verify we do not start wifi
+        when(mSettingsStore.isWifiToggleEnabled()).thenReturn(false);
+        mActiveModeWarden.wifiToggled(TEST_WORKSOURCE);
+        mLooper.dispatchAll();
+
+        // still only called once
+        verify(mWifiInjector).makeClientModeManager(
+                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
+        verify(mClientModeManager, never()).stop();
+        assertInEnabledState();
+        assertInEmergencyMode();
+
+        // now we will exit ECM
+        emergencyCallbackModeChanged(false);
+        mLooper.dispatchAll();
+        assertNotInEmergencyMode();
+
+        // Wifi toggle off now takes effect
+        verify(mClientModeManager).stop();
+        mClientListener.onStopped(mClientModeManager);
+        mLooper.dispatchAll();
         assertInDisabledState();
     }
 
@@ -1850,6 +1909,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             mLooper.dispatchAll();
         });
 
+        // try to start Soft AP
         mActiveModeWarden.startSoftAp(
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mSoftApCapability), TEST_WORKSOURCE);
@@ -1858,6 +1918,24 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mWifiInjector, never())
                 .makeSoftApManager(any(), any(), any(), eq(TEST_WORKSOURCE), any(), anyBoolean());
         assertInDisabledState();
+
+        // verify triggered Soft AP failure callback
+        verify(mSoftApStateMachineCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_GENERAL);
+
+        // try to start LOHS
+        mActiveModeWarden.startSoftAp(
+                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_LOCAL_ONLY, null,
+                mSoftApCapability), TEST_WORKSOURCE);
+        mLooper.dispatchAll();
+
+        verify(mWifiInjector, never())
+                .makeSoftApManager(any(), any(), any(), eq(TEST_WORKSOURCE), any(), anyBoolean());
+        assertInDisabledState();
+
+        // verify triggered LOHS failure callback
+        verify(mLohsStateMachineCallback).onStateChanged(WifiManager.WIFI_AP_STATE_FAILED,
+                WifiManager.SAP_START_FAILURE_GENERAL);
     }
 
     /**
@@ -2347,12 +2425,45 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         assertInEnabledState();
         verify(mClientModeManager).stop();
 
+        mClientListener.onStopped(mClientModeManager);
+        mLooper.dispatchAll();
+        assertInDisabledState();
+
         emergencyCallbackModeChanged(false);
         mLooper.dispatchAll();
 
-        assertThat(mActiveModeWarden.isInEmergencyMode()).isFalse();
+        assertNotInEmergencyMode();
         // client mode restarted
         verify(mWifiInjector, times(2)).makeClientModeManager(any(), any(), any(), anyBoolean());
+        assertInEnabledState();
+    }
+
+    /**
+     * Tests that if the carrier config to disable Wifi is not enabled during ECM, Wifi remains on
+     * during ECM, and nothing happens after exiting ECM.
+     */
+    @Test
+    public void ecmDoesNotDisableWifi_exitEcm_noOp() throws Exception {
+        enterClientModeActiveState();
+
+        verify(mWifiInjector).makeClientModeManager(
+                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
+
+        when(mFacade.getConfigWiFiDisableInECBM(mContext)).thenReturn(false);
+        assertEnteredEcmMode(() -> {
+            emergencyCallbackModeChanged(true);
+            mLooper.dispatchAll();
+        });
+        assertInEnabledState();
+        verify(mClientModeManager, never()).stop();
+
+        emergencyCallbackModeChanged(false);
+        mLooper.dispatchAll();
+
+        assertNotInEmergencyMode();
+        // client mode manager not started again
+        verify(mWifiInjector).makeClientModeManager(
+                any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
         assertInEnabledState();
     }
 
