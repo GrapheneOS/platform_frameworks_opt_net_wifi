@@ -65,6 +65,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
     @Mock Context mContext;
     @Mock ConnectivityManager mConnectivityManager;
     @Mock WifiCarrierInfoManager mWifiCarrierInfoManager;
+    @Mock ActiveModeWarden mActiveModeWarden;
 
     WifiShellCommand mWifiShellCommand;
 
@@ -82,6 +83,7 @@ public class WifiShellCommandTest extends WifiBaseTest {
         when(mWifiInjector.getWifiCountryCode()).thenReturn(mWifiCountryCode);
         when(mWifiInjector.getWifiLastResortWatchdog()).thenReturn(mWifiLastResortWatchdog);
         when(mWifiInjector.getWifiCarrierInfoManager()).thenReturn(mWifiCarrierInfoManager);
+        when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
 
         mWifiShellCommand = new WifiShellCommand(mWifiInjector, mWifiService, mContext);
 
@@ -422,5 +424,65 @@ public class WifiShellCommandTest extends WifiBaseTest {
                 new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
                 new String[]{"stop-softap"});
         verify(mWifiService).stopSoftAp();
+    }
+
+    @Test
+    public void testEnableEmergencyCallbackMode() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-callback-mode", "enabled"});
+        verify(mActiveModeWarden, never()).emergencyCallbackModeChanged(anyBoolean());
+
+        BinderUtil.setUid(Process.ROOT_UID);
+
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-callback-mode", "enabled"});
+        verify(mActiveModeWarden).emergencyCallbackModeChanged(true);
+    }
+
+    @Test
+    public void testDisableEmergencyCallbackMode() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-callback-mode", "disabled"});
+        verify(mActiveModeWarden, never()).emergencyCallbackModeChanged(anyBoolean());
+
+        BinderUtil.setUid(Process.ROOT_UID);
+
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-callback-mode", "disabled"});
+        verify(mActiveModeWarden).emergencyCallbackModeChanged(false);
+    }
+
+    @Test
+    public void testEnableEmergencyCallState() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-call-state", "enabled"});
+        verify(mActiveModeWarden, never()).emergencyCallStateChanged(anyBoolean());
+
+        BinderUtil.setUid(Process.ROOT_UID);
+
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-call-state", "enabled"});
+        verify(mActiveModeWarden).emergencyCallStateChanged(true);
+    }
+
+    @Test
+    public void testDisableEmergencyCallState() {
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-call-state", "disabled"});
+        verify(mActiveModeWarden, never()).emergencyCallStateChanged(anyBoolean());
+
+        BinderUtil.setUid(Process.ROOT_UID);
+
+        mWifiShellCommand.exec(
+                new Binder(), new FileDescriptor(), new FileDescriptor(), new FileDescriptor(),
+                new String[]{"set-emergency-call-state", "disabled"});
+        verify(mActiveModeWarden).emergencyCallStateChanged(false);
     }
 }
