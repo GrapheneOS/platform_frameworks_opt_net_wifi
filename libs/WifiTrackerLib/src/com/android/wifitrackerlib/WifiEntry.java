@@ -54,13 +54,14 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
- * Abstract base class for an entry representing a Wi-Fi network in a Wi-Fi picker/settings.
+ * Base class for an entry representing a Wi-Fi network in a Wi-Fi picker/settings.
+ * Subclasses should override the default methods for their own needs.
  *
  * Clients implementing a Wi-Fi picker/settings should receive WifiEntry objects from classes
  * implementing BaseWifiTracker, and rely on the given API for all user-displayable information and
  * actions on the represented network.
  */
-public abstract class WifiEntry implements Comparable<WifiEntry> {
+public class WifiEntry implements Comparable<WifiEntry> {
     /**
      * Security type based on WifiConfiguration.KeyMgmt
      */
@@ -253,7 +254,10 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     // Info available for all WifiEntries //
 
     /** The unique key defining a WifiEntry */
-    public abstract String getKey();
+    @NonNull
+    public String getKey() {
+        return "";
+    };
 
     /** Returns connection state of the network defined by the CONNECTED_STATE constants */
     @ConnectedState
@@ -279,14 +283,19 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
 
 
     /** Returns the display title. This is most commonly the SSID of a network. */
-    public abstract String getTitle();
+    @NonNull
+    public String getTitle() {
+        return "";
+    }
 
     /** Returns the display summary, it's a concise summary. */
+    @NonNull
     public String getSummary() {
         return getSummary(true /* concise */);
     }
 
     /** Returns the second summary, it's for additional information of the WifiEntry */
+    @NonNull
     public CharSequence getSecondSummary() {
         return "";
     }
@@ -295,7 +304,10 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
      * Returns the display summary.
      * @param concise Whether to show more information. e.g., verbose logging.
      */
-    public abstract String getSummary(boolean concise);
+    @NonNull
+    public String getSummary(boolean concise) {
+        return "";
+    };
 
     /**
      * Returns the signal strength level within [WIFI_LEVEL_MIN, WIFI_LEVEL_MAX].
@@ -322,47 +334,67 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     /**
      * Returns the SSID of the entry, if applicable. Null otherwise.
      */
-    public abstract String getSsid();
+    @Nullable
+    public String getSsid() {
+        return null;
+    }
 
     /** Returns the security type defined by the SECURITY constants */
     @Security
-    public abstract int getSecurity();
+    public int getSecurity() {
+        return SECURITY_NONE;
+    }
 
     /** Returns the MAC address of the connection */
-    public abstract String getMacAddress();
+    @Nullable
+    public String getMacAddress() {
+        return null;
+    }
 
     /**
      * Indicates when a network is metered or the user marked the network as metered.
      */
-    public abstract boolean isMetered();
+    public boolean isMetered() {
+        return false;
+    }
 
     /**
      * Indicates whether or not an entry is for a saved configuration.
      */
-    public abstract boolean isSaved();
+    public boolean isSaved() {
+        return false;
+    }
 
     /**
      * Indicates whether or not an entry is for a saved configuration.
      */
-    public abstract boolean isSuggestion();
+    public boolean isSuggestion() {
+        return false;
+    }
 
     /**
      * Indicates whether or not an entry is for a subscription.
      */
-    public abstract boolean isSubscription();
+    public boolean isSubscription() {
+        return false;
+    }
 
     /**
      * Returns the WifiConfiguration of an entry or null if unavailable. This should be used when
      * information on the WifiConfiguration needs to be modified and saved via
      * {@link WifiManager#save(WifiConfiguration, WifiManager.ActionListener)}.
      */
-    public abstract WifiConfiguration getWifiConfiguration();
+    @Nullable
+    public WifiConfiguration getWifiConfiguration() {
+        return null;
+    }
 
     /**
      * Returns the ConnectedInfo object pertaining to an active connection.
      *
      * Returns null if getConnectedState() != CONNECTED_STATE_CONNECTED.
      */
+    @Nullable
     public ConnectedInfo getConnectedInfo() {
         if (getConnectedState() != CONNECTED_STATE_CONNECTED) {
             return null;
@@ -388,29 +420,54 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     // User actions on a network
 
     /** Returns whether the entry should show a connect option */
-    public abstract boolean canConnect();
+    public boolean canConnect() {
+        return false;
+    }
+
     /** Connects to the network */
-    public abstract void connect(@Nullable ConnectCallback callback);
+    public void connect(@Nullable ConnectCallback callback) {
+        // Do nothing.
+    }
 
     /** Returns whether the entry should show a disconnect option */
-    public abstract boolean canDisconnect();
+    public boolean canDisconnect() {
+        return false;
+    }
+
     /** Disconnects from the network */
-    public abstract void disconnect(@Nullable DisconnectCallback callback);
+    public void disconnect(@Nullable DisconnectCallback callback) {
+        // Do nothing.
+    }
 
     /** Returns whether the entry should show a forget option */
-    public abstract boolean canForget();
+    public boolean canForget() {
+        return false;
+    }
+
     /** Forgets the network */
-    public abstract void forget(@Nullable ForgetCallback callback);
+    public void forget(@Nullable ForgetCallback callback) {
+        // Do nothing.
+    }
 
     /** Returns whether the network can be signed-in to */
-    public abstract boolean canSignIn();
+    public boolean canSignIn() {
+        return false;
+    }
+
     /** Sign-in to the network. For captive portals. */
-    public abstract void signIn(@Nullable SignInCallback callback);
+    public void signIn(@Nullable SignInCallback callback) {
+        // Do nothing.
+    }
 
     /** Returns whether the network can be shared via QR code */
-    public abstract boolean canShare();
+    public boolean canShare() {
+        return false;
+    }
+
     /** Returns whether the user can use Easy Connect to onboard a device to the network */
-    public abstract boolean canEasyConnect();
+    public boolean canEasyConnect() {
+        return false;
+    }
 
     // Modifiable settings
 
@@ -419,33 +476,64 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
      *  defined by the METERED_CHOICE constants
      */
     @MeteredChoice
-    public abstract int getMeteredChoice();
+    public int getMeteredChoice() {
+        return METERED_CHOICE_AUTO;
+    }
+
     /** Returns whether the entry should let the user choose the metered treatment of a network */
-    public abstract boolean canSetMeteredChoice();
+    public boolean canSetMeteredChoice() {
+        return false;
+    }
+
     /**
      * Sets the user's choice for treating a network as metered,
      * defined by the METERED_CHOICE constants
      */
-    public abstract void setMeteredChoice(@MeteredChoice int meteredChoice);
+    public void setMeteredChoice(@MeteredChoice int meteredChoice) {
+        // Do nothing.
+    }
 
     /** Returns whether the entry should let the user choose the MAC randomization setting */
-    public abstract boolean canSetPrivacy();
+    public boolean canSetPrivacy() {
+        return false;
+    }
+
     /** Returns the MAC randomization setting defined by the PRIVACY constants */
     @Privacy
-    public abstract int getPrivacy();
+    public int getPrivacy() {
+        return PRIVACY_UNKNOWN;
+    }
+
     /** Sets the user's choice for MAC randomization defined by the PRIVACY constants */
-    public abstract void setPrivacy(@Privacy int privacy);
+    public void setPrivacy(@Privacy int privacy) {
+        // Do nothing.
+    }
 
     /** Returns whether the network has auto-join enabled */
-    public abstract boolean isAutoJoinEnabled();
+    public boolean isAutoJoinEnabled() {
+        return false;
+    }
+
     /** Returns whether the user can enable/disable auto-join */
-    public abstract boolean canSetAutoJoinEnabled();
+    public boolean canSetAutoJoinEnabled() {
+        return false;
+    }
+
     /** Sets whether a network will be auto-joined or not */
-    public abstract void setAutoJoinEnabled(boolean enabled);
+    public void setAutoJoinEnabled(boolean enabled) {
+        // Do nothing.
+    }
+
     /** Returns the string displayed for @Security */
-    public abstract String getSecurityString(boolean concise);
+    public String getSecurityString(boolean concise) {
+        return "";
+    }
+
     /** Returns whether subscription of the entry is expired */
-    public abstract boolean isExpired();
+    public boolean isExpired() {
+        return false;
+    }
+
 
     /** Returns whether a user can manage their subscription through this WifiEntry */
     public boolean canManageSubscription() {
@@ -469,14 +557,19 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     };
 
     /** Returns the ScanResult information of a WifiEntry */
-    abstract String getScanResultDescription();
+    @NonNull
+    String getScanResultDescription() {
+        return "";
+    }
 
     /** Returns the network selection information of a WifiEntry */
+    @NonNull
     String getNetworkSelectionDescription() {
         return "";
     }
 
     /** Returns the network capability information of a WifiEntry */
+    @NonNull
     String getNetworkCapabilityDescription() {
         final StringBuilder sb = new StringBuilder();
         if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
@@ -623,8 +716,10 @@ public abstract class WifiEntry implements Comparable<WifiEntry> {
     /**
      * Returns whether or not the supplied WifiInfo and NetworkInfo represent this WifiEntry
      */
-    protected abstract boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
-            @NonNull NetworkInfo networkInfo);
+    protected boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
+            @NonNull NetworkInfo networkInfo) {
+        return false;
+    }
 
     /**
      * Updates information regarding the current network connection. If the supplied WifiInfo and
