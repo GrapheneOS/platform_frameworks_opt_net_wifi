@@ -609,4 +609,26 @@ public class WifiPermissionsUtil {
         }
         return false;
     }
+
+    /**
+     * Check if the given UID belongs to the current foreground user. This is
+     * used to prevent apps running in background users from modifying network
+     * configurations.
+     * <p>
+     * UIDs belonging to system internals (such as SystemUI) are always allowed,
+     * since they always run as {@link UserHandle#USER_SYSTEM}.
+     *
+     * @param uid uid of the app.
+     * @return true if the given UID belongs to the current foreground user,
+     *         otherwise false.
+     */
+    public boolean doesUidBelongToCurrentUser(int uid) {
+        if (uid == android.os.Process.SYSTEM_UID
+                // UIDs with the NETWORK_SETTINGS permission are always allowed since they are
+                // acting on behalf of the user.
+                || checkNetworkSettingsPermission(uid)) {
+            return true;
+        }
+        return isCurrentProfile(uid);
+    }
 }
