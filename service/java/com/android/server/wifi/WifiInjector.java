@@ -747,9 +747,9 @@ public class WifiInjector {
     /**
      *
      */
-    public ImsiPrivacyProtectionExemptionStoreData makeImsiProtectionExemptionStoreData(
-            ImsiPrivacyProtectionExemptionStoreData.DataSource dataSource) {
-        return new ImsiPrivacyProtectionExemptionStoreData(dataSource);
+    public WifiCarrierInfoStoreManagerData makeWifiCarrierInfoStoreManagerData(
+            WifiCarrierInfoStoreManagerData.DataSource dataSource) {
+        return new WifiCarrierInfoStoreManagerData(dataSource);
     }
 
     /**

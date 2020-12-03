@@ -58,6 +58,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -184,6 +186,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
     private MockStoreData mSharedStoreData;
     private MockStoreData mUserStoreData;
     private MockitoSession mSession;
+    private @Mock WifiCarrierInfoStoreManagerData.DataSource mDataSource;
 
     /**
      * Test instance of WifiConfigStore.
@@ -628,6 +631,10 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         // Scenario 1: StoreData1 in shared store file.
         when(storeData1.getName()).thenReturn(storeData1Name);
         when(storeData2.getName()).thenReturn(storeData2Name);
+        when(storeData1.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData1Name)));
+        when(storeData2.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData2Name)));
         when(storeData1.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         when(storeData2.getStoreFileId())
@@ -636,7 +643,8 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(null);
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any());
+        verify(storeData1)
+                .deserializeDataForSection(notNull(), anyInt(), anyInt(), any(), anyString());
         verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
         verify(storeData2).deserializeData(eq(null), anyInt(), anyInt(), any());
         reset(storeData1, storeData2);
@@ -644,6 +652,10 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         // Scenario 2: StoreData2 in user store file.
         when(storeData1.getName()).thenReturn(storeData1Name);
         when(storeData2.getName()).thenReturn(storeData2Name);
+        when(storeData1.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData1Name)));
+        when(storeData2.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData2Name)));
         when(storeData1.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_USER_GENERAL);
         when(storeData2.getStoreFileId())
@@ -653,13 +665,18 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         mWifiConfigStore.read();
         verify(storeData1).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any());
+        verify(storeData2)
+                .deserializeDataForSection(notNull(), anyInt(), anyInt(), any(), anyString());
         verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
         reset(storeData1, storeData2);
 
         // Scenario 3: StoreData1 in shared store file & StoreData2 in user store file.
         when(storeData1.getName()).thenReturn(storeData1Name);
         when(storeData2.getName()).thenReturn(storeData2Name);
+        when(storeData1.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData1Name)));
+        when(storeData2.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData2Name)));
         when(storeData1.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         when(storeData2.getStoreFileId())
@@ -668,15 +685,21 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(fileContentsXmlStringWithOnlyStoreData2.getBytes());
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any());
+        verify(storeData1)
+                .deserializeDataForSection(notNull(), anyInt(), anyInt(), any(), anyString());
         verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any());
+        verify(storeData2)
+                .deserializeDataForSection(notNull(), anyInt(), anyInt(), any(), anyString());
         verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
         reset(storeData1, storeData2);
 
         // Scenario 4: StoreData1 & StoreData2 in shared store file.
         when(storeData1.getName()).thenReturn(storeData1Name);
         when(storeData2.getName()).thenReturn(storeData2Name);
+        when(storeData1.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData1Name)));
+        when(storeData2.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(storeData2Name)));
         when(storeData1.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         when(storeData2.getStoreFileId())
@@ -686,9 +709,11 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         mUserStore.storeRawDataToWrite(null);
 
         mWifiConfigStore.read();
-        verify(storeData1).deserializeData(notNull(), anyInt(), anyInt(), any());
+        verify(storeData1)
+                .deserializeDataForSection(notNull(), anyInt(), anyInt(), any(), anyString());
         verify(storeData1, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
-        verify(storeData2).deserializeData(notNull(), anyInt(), anyInt(), any());
+        verify(storeData2)
+                .deserializeDataForSection(notNull(), anyInt(), anyInt(), any(), anyString());
         verify(storeData2, never()).deserializeData(eq(null), anyInt(), anyInt(), any());
         reset(storeData1, storeData2);
     }
@@ -785,10 +810,14 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         when(sharedStoreData.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         when(sharedStoreData.getName()).thenReturn(TEST_SHARE_DATA);
+        when(sharedStoreData.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(TEST_SHARE_DATA)));
         StoreData userStoreData = mock(StoreData.class);
         when(userStoreData.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_USER_GENERAL);
         when(userStoreData.getName()).thenReturn(TEST_USER_DATA);
+        when(userStoreData.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(TEST_USER_DATA)));
         mWifiConfigStore.registerStoreData(sharedStoreData);
         mWifiConfigStore.registerStoreData(userStoreData);
 
@@ -806,12 +835,12 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         // Read and verify the data content in the store file (metadata stripped out) has been sent
         // to the corresponding store data when integrity check passes.
         mWifiConfigStore.read();
-        verify(sharedStoreData, times(1)).deserializeData(
+        verify(sharedStoreData, times(1)).deserializeDataForSection(
                 any(XmlPullParser.class), anyInt(),
-                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any());
-        verify(userStoreData, times(1)).deserializeData(
+                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any(), eq(TEST_SHARE_DATA));
+        verify(userStoreData, times(1)).deserializeDataForSection(
                 any(XmlPullParser.class), anyInt(),
-                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any());
+                eq(WifiConfigStore.INITIAL_CONFIG_STORE_DATA_VERSION), any(), eq(TEST_USER_DATA));
     }
 
     /**
@@ -830,11 +859,15 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         when(sharedStoreData.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         when(sharedStoreData.getName()).thenReturn(TEST_SHARE_DATA);
+        when(sharedStoreData.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(TEST_SHARE_DATA)));
         when(sharedStoreData.hasNewDataToSerialize()).thenReturn(true);
         StoreData userStoreData = mock(StoreData.class);
         when(userStoreData.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_USER_GENERAL);
         when(userStoreData.getName()).thenReturn(TEST_USER_DATA);
+        when(userStoreData.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(TEST_USER_DATA)));
         when(userStoreData.hasNewDataToSerialize()).thenReturn(true);
         mWifiConfigStore.registerStoreData(sharedStoreData);
         mWifiConfigStore.registerStoreData(userStoreData);
@@ -858,11 +891,13 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         // to the corresponding store data.
         mWifiConfigStore.read();
         verify(sharedStoreData, times(1))
-                .deserializeData(any(XmlPullParser.class), anyInt(),
-                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any());
+                .deserializeDataForSection(any(XmlPullParser.class), anyInt(),
+                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any(),
+                        eq(TEST_SHARE_DATA));
         verify(userStoreData, times(1))
-                .deserializeData(any(XmlPullParser.class), anyInt(),
-                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any());
+                .deserializeDataForSection(any(XmlPullParser.class), anyInt(),
+                        eq(WifiConfigStore.INTEGRITY_CONFIG_STORE_DATA_VERSION), any(),
+                        eq(TEST_USER_DATA));
     }
 
     /**
@@ -893,10 +928,14 @@ public class WifiConfigStoreTest extends WifiBaseTest {
         when(sharedStoreData.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_SHARED_GENERAL);
         when(sharedStoreData.getName()).thenReturn(TEST_SHARE_DATA);
+        when(sharedStoreData.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(TEST_SHARE_DATA)));
         StoreData userStoreData = mock(StoreData.class);
         when(userStoreData.getStoreFileId())
                 .thenReturn(WifiConfigStore.STORE_FILE_USER_GENERAL);
         when(userStoreData.getName()).thenReturn(TEST_USER_DATA);
+        when(userStoreData.getSectionsToParse())
+                .thenReturn(new HashSet<>(Collections.singleton(TEST_USER_DATA)));
         mWifiConfigStore.registerStoreData(sharedStoreData);
         mWifiConfigStore.registerStoreData(userStoreData);
 
@@ -977,17 +1016,67 @@ public class WifiConfigStoreTest extends WifiBaseTest {
 
         // Verify that we correctly deserialized the data and sent it to the corresponding sources.
         verify(sharedStoreData, times(1))
-                .deserializeData(any(XmlPullParser.class), anyInt(),
-                        eq(WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION), any());
+                .deserializeDataForSection(any(XmlPullParser.class), anyInt(),
+                        eq(WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION), any(),
+                        eq(TEST_SHARE_DATA));
         verify(userStoreData, times(1))
-                .deserializeData(any(XmlPullParser.class), anyInt(),
-                        eq(WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION), any());
+                .deserializeDataForSection(any(XmlPullParser.class), anyInt(),
+                        eq(WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION), any(),
+                        eq(TEST_USER_DATA));
 
         // Verify we did not read from the real store files.
         verify(sharedStoreFile1, never()).readRawData();
         verify(sharedStoreFile2, never()).readRawData();
         verify(userStoreFile1, never()).readRawData();
         verify(userStoreFile2, never()).readRawData();
+    }
+
+    /**
+     * Verify that Imsi protection date can be loaded after upgrade from R to S.
+     */
+    @Test
+    public void testImsiProtectionDateMigration() throws Exception {
+        // Setup user store.
+        StoreFile userStoreFile = mock(StoreFile.class);
+        when(userStoreFile.getFileId())
+                .thenReturn(WifiConfigStore.STORE_FILE_USER_GENERAL);
+        mWifiConfigStore = new WifiConfigStore(mContext, new Handler(mLooper.getLooper()), mClock,
+                mWifiMetrics, Collections.emptyList());
+        mWifiConfigStore.setUserStores(Collections.singletonList(userStoreFile));
+        WifiCarrierInfoStoreManagerData wifiCarrierInfoStoreManagerData =
+                new WifiCarrierInfoStoreManagerData(mDataSource);
+        mWifiConfigStore.registerStoreData(wifiCarrierInfoStoreManagerData);
+        InputStream userStream = mock(InputStream.class);
+        when(WifiMigration.convertAndRetrieveUserConfigStoreFile(
+                eq(WifiMigration.STORE_FILE_USER_GENERAL), any()))
+                .thenReturn(userStream);
+
+        // User R section header tag in store file.
+        byte[] userStoreXmlBytes =
+                String.format(TEST_DATA_XML_STRING_FORMAT_V3_WITH_ONE_DATA_SOURCE,
+                        wifiCarrierInfoStoreManagerData.XML_TAG_SECTION_HEADER_PRE_S).getBytes();
+
+        when(userStream.available())
+                .thenReturn(userStoreXmlBytes.length) // first time return file contents, then 0.
+                .thenReturn(0);
+
+        Answer userStreamReadAnswer = new MockAnswerUtil.AnswerWithArguments() {
+            public int answer(byte[] b, int off, int len) {
+                System.arraycopy(userStoreXmlBytes, 0, b, 0, userStoreXmlBytes.length);
+                return userStoreXmlBytes.length;
+            }
+        };
+
+        when(userStream.read(any(byte[].class), anyInt(), anyInt()))
+                .thenAnswer(userStreamReadAnswer) // first time return file contents, then 0.
+                .thenReturn(0);
+
+        mWifiConfigStore.read();
+        verify(userStream, times(2)).available();
+        verify(userStream, times(2)).read(any(), anyInt(), anyInt());
+        // Verify data source is loaded and deserializeComplete.
+        verify(mDataSource, atLeast(1)).reset();
+        verify(mDataSource).deserializeComplete();
     }
 
     /**
