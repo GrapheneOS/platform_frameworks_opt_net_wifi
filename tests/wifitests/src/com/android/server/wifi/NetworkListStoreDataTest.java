@@ -200,6 +200,8 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<string name=\"Realm\"></string>\n"
                     + "<int name=\"Ocsp\" value=\"0\" />\n"
                     + "<string name=\"WapiCertSuite\"></string>\n"
+                    + "<boolean name=\"AppInstalledRootCaCert\" value=\"false\" />\n"
+                    + "<boolean name=\"AppInstalledPrivateKey\" value=\"false\" />\n"
                     + "</WifiEnterpriseConfiguration>\n"
                     + "</Network>\n";
 

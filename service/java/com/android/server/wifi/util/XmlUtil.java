@@ -1152,6 +1152,8 @@ public class XmlUtil {
         public static final String XML_TAG_REALM = "Realm";
         public static final String XML_TAG_OCSP = "Ocsp";
         public static final String XML_TAG_WAPI_CERT_SUITE = "WapiCertSuite";
+        public static final String XML_TAG_APP_INSTALLED_ROOT_CA_CERT = "AppInstalledRootCaCert";
+        public static final String XML_TAG_APP_INSTALLED_PRIVATE_KEY = "AppInstalledPrivateKey";
 
         /**
          * Write password key to the XML stream.
@@ -1225,6 +1227,10 @@ public class XmlUtil {
             XmlUtil.writeNextValue(out, XML_TAG_OCSP, enterpriseConfig.getOcsp());
             XmlUtil.writeNextValue(out,
                     XML_TAG_WAPI_CERT_SUITE, enterpriseConfig.getWapiCertSuite());
+            XmlUtil.writeNextValue(out, XML_TAG_APP_INSTALLED_ROOT_CA_CERT,
+                    enterpriseConfig.isAppInstalledCaCert());
+            XmlUtil.writeNextValue(out, XML_TAG_APP_INSTALLED_PRIVATE_KEY,
+                    enterpriseConfig.isAppInstalledDeviceKeyAndCert());
         }
 
         /**
@@ -1324,6 +1330,12 @@ public class XmlUtil {
                             break;
                         case XML_TAG_WAPI_CERT_SUITE:
                             enterpriseConfig.setWapiCertSuite((String) value);
+                            break;
+                        case XML_TAG_APP_INSTALLED_ROOT_CA_CERT:
+                            enterpriseConfig.initIsAppInstalledCaCert((boolean) value);
+                            break;
+                        case XML_TAG_APP_INSTALLED_PRIVATE_KEY:
+                            enterpriseConfig.initIsAppInstalledDeviceKeyAndCert((boolean) value);
                             break;
                         default:
                             Log.w(TAG, "Ignoring unknown value name found: " + valueName[0]);
