@@ -353,7 +353,8 @@ public class WifiInjector {
                 new SimRequiredNotifier(mContext, mFrameworkFacade));
         mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
                 mWifiNative, new DefaultModeManager(mContext), mBatteryStats, mWifiDiagnostics,
-                mContext, mClientModeImpl, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil);
+                mContext, mClientModeImpl, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil,
+                mWifiMetrics);
         mWifiScanAlwaysAvailableSettingsCompatibility =
                 new WifiScanAlwaysAvailableSettingsCompatibility(mContext, wifiHandler,
                         mSettingsStore, mActiveModeWarden, mFrameworkFacade);

@@ -1033,6 +1033,8 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
 
+        verify(mWifiMetrics).noteFirstL2ConnectionAfterBoot(true);
+
         mCmi.sendMessage(WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT, 0, 0,
                 new StateChangeResult(0, sWifiSsid, sBSSID, SupplicantState.COMPLETED));
         mLooper.dispatchAll();
@@ -1079,6 +1081,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiMetrics).setConnectionMaxSupportedLinkSpeedMbps(90, 80);
         verify(mWifiDataStall).setConnectionCapabilities(any());
         assertEquals(90, wifiInfo.getMaxSupportedTxLinkSpeedMbps());
+        verify(mWifiMetrics).noteFirstL3ConnectionAfterBoot(true);
     }
 
     private void setupEapSimConnection() throws Exception {

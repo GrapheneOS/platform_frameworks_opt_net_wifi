@@ -73,6 +73,7 @@ public class ActiveModeWarden {
     private final ScanRequestProxy mScanRequestProxy;
     private final WifiNative mWifiNative;
     private final WifiController mWifiController;
+    private final WifiMetrics mWifiMetrics;
 
     private WifiManager.SoftApCallback mSoftApCallback;
     private WifiManager.SoftApCallback mLohsCallback;
@@ -106,7 +107,8 @@ public class ActiveModeWarden {
                      ClientModeImpl clientModeImpl,
                      WifiSettingsStore settingsStore,
                      FrameworkFacade facade,
-                     WifiPermissionsUtil wifiPermissionsUtil) {
+                     WifiPermissionsUtil wifiPermissionsUtil,
+                     WifiMetrics wifiMetrics) {
         mWifiInjector = wifiInjector;
         mLooper = looper;
         mHandler = new Handler(looper);
@@ -120,6 +122,7 @@ public class ActiveModeWarden {
         mBatteryStatsManager = batteryStatsManager;
         mScanRequestProxy = wifiInjector.getScanRequestProxy();
         mWifiNative = wifiNative;
+        mWifiMetrics = wifiMetrics;
         mWifiController = new WifiController();
 
         wifiNative.registerStatusListener(isReady -> {
@@ -660,6 +663,7 @@ public class ActiveModeWarden {
             } else {
                 setInitialState(mDisabledState);
             }
+            mWifiMetrics.noteWifiEnabledDuringBoot(mSettingsStore.isWifiToggleEnabled());
             mContext.registerReceiver(new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {

@@ -330,6 +330,7 @@ public class WifiConnectivityManager {
         }
 
         WifiConfiguration candidate = mNetworkSelector.selectNetwork(candidates);
+        mWifiMetrics.noteFirstNetworkSelectionAfterBoot(candidate != null);
         mLastNetworkSelectionTimeStamp = mClock.getElapsedSinceBootMillis();
         mWifiLastResortWatchdog.updateAvailableNetworks(
                 mNetworkSelector.getConnectableScanDetails());
