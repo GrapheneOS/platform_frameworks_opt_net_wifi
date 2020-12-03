@@ -1704,6 +1704,10 @@ public class WifiNetworkSuggestionsManager {
                 }
                 WifiConfiguration config = ewns.createInternalWifiConfiguration();
                 config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+                if (config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID
+                        && !mWifiCarrierInfoManager.isSimPresent(config.subscriptionId)) {
+                    continue;
+                }
                 WifiConfiguration wCmWifiConfig = mWifiConfigManager
                         .getConfiguredNetwork(config.getProfileKey());
                 if (wCmWifiConfig == null) {
@@ -1724,6 +1728,12 @@ public class WifiNetworkSuggestionsManager {
         if (WifiConfiguration.isMetered(config, null)
                 && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
             return false;
+        }
+        if (config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+            int subId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+            if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
+                return false;
+            }
         }
         Set<ExtendedWifiNetworkSuggestion> extendedWifiNetworkSuggestions =
                 getNetworkSuggestionsForFqdnMatch(config.FQDN);
