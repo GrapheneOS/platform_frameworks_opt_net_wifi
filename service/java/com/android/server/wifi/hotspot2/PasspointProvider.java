@@ -508,6 +508,9 @@ public class PasspointProvider {
                 mConfig.getSubscriptionId() == SubscriptionManager.INVALID_SUBSCRIPTION_ID
                         ? mWifiCarrierInfoManager.getMatchingSubId(carrierId)
                         : mConfig.getSubscriptionId();
+        wifiConfig.carrierMerged = mConfig.isCarrierMerged();
+        wifiConfig.oemPaid = mConfig.isOemPaid();
+        wifiConfig.oemPrivate = mConfig.isOemPrivate();
 
         // Set RSN only to tell wpa_supplicant that this network is for Passpoint.
         wifiConfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);

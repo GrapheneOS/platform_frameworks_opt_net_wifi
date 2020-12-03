@@ -53,6 +53,9 @@ import java.util.Map;
 @SmallTest
 public class PasspointXmlUtilsTest extends WifiBaseTest {
 
+    private static final int TEST_CARRIER_ID = 129;
+    private static final int TEST_SUBSCRIPTION_ID = 1;
+
     /**
      * Helper function for generating a {@link PasspointConfiguration} for testing the XML
      * serialization/deserialization logic.
@@ -172,6 +175,13 @@ public class PasspointXmlUtilsTest extends WifiBaseTest {
         policyUpdate.setTrustRootCertSha256Fingerprint(certFingerprint);
         policy.setPolicyUpdate(policyUpdate);
         config.setPolicy(policy);
+
+        //Set suggestion related flag
+        config.setCarrierMerged(true);
+        config.setOemPaid(true);
+        config.setOemPrivate(true);
+        config.setCarrierId(TEST_CARRIER_ID);
+        config.setSubscriptionId(TEST_SUBSCRIPTION_ID);
         return config;
     }
 
