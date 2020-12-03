@@ -849,10 +849,10 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     // Should never happen, but fallback to primary to avoid a crash.
                     mConnectRoleToSetOnTransition = ROLE_CLIENT_PRIMARY;
                 }
-                updateConnectModeState(mConnectRoleToSetOnTransition,
-                        WIFI_STATE_ENABLED, WIFI_STATE_ENABLING);
                 // Could be any one of possible connect mode roles.
                 setRoleInternalAndInvokeCallback(mConnectRoleToSetOnTransition);
+                updateConnectModeState(mConnectRoleToSetOnTransition,
+                        WIFI_STATE_ENABLED, WIFI_STATE_ENABLING);
             }
 
             @Override
