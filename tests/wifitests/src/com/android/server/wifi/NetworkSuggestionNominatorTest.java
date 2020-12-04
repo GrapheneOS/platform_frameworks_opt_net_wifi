@@ -43,7 +43,6 @@ import com.android.server.wifi.hotspot2.PasspointNetworkNominateHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -822,7 +821,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
     }
 
     @Test
-    public void testSelectNetworkSuggestionForOneMatchSimBasedWithNoSim() {
+    public void testSelectNetworkSuggestionForOneMatchCarrierNetworkWithNoSim() {
         String[] scanSsids = {"test1"};
         String[] bssids = {"6c:f3:7f:ae:8c:f3"};
         int[] freqs = {2470};
@@ -844,11 +843,9 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
                 packageNames, autojoin, shareWithUser, priorityGroup);
-        WifiConfiguration eapSimConfig = suggestions[0].wns.wifiConfiguration;
-        eapSimConfig.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.SIM);
-        eapSimConfig.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
-        eapSimConfig.carrierId = TEST_CARRIER_ID;
-        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(eapSimConfig))
+        suggestions[0].wns.wifiConfiguration.carrierId = TEST_CARRIER_ID;
+        when(mWifiCarrierInfoManager
+                .getBestMatchSubscriptionId(suggestions[0].wns.wifiConfiguration))
                 .thenReturn(TEST_SUB_ID);
         when(mWifiCarrierInfoManager.isSimPresent(TEST_SUB_ID)).thenReturn(false);
         // Link the scan result with suggestions.
@@ -1426,25 +1423,6 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
             when(mWifiConfigManager.getConfiguredNetwork(candidate.getProfileKey()))
                     .thenReturn(candidate);
         }
-    }
-
-    class WifiConfigMatcher implements ArgumentMatcher<WifiConfiguration> {
-        private final WifiConfiguration mConfig;
-
-        WifiConfigMatcher(WifiConfiguration config) {
-            assertNotNull(config);
-            mConfig = config;
-        }
-
-        @Override
-        public boolean matches(WifiConfiguration otherConfig) {
-            if (otherConfig == null) return false;
-            return mConfig.getProfileKey().equals(otherConfig.getProfileKey());
-        }
-    }
-
-    private void verifyAddToWifiConfigManager(WifiConfiguration...candidates) {
-        verifyAddToWifiConfigManager(true, false, false, candidates);
     }
 
     private void verifyAddToWifiConfigManager(

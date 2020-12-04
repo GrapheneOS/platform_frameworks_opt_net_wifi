@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.net.wifi.WifiConfiguration;
+import android.telephony.TelephonyManager;
 import android.util.LocalLog;
 import android.util.Log;
 import android.util.Pair;
@@ -239,18 +240,17 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             boolean oemPrivateNetworkAllowed) {
         // Ignore insecure enterprise config.
         if (config.isEnterprise() && config.enterpriseConfig.isInsecure()) {
+            mLocalLog.log("Ignoring insecure enterprise network: " + config);
             return false;
         }
         // If oem paid network is not allowed, ignore oem paid suggestion.
         if (shouldIgnoreBasedOnChecksForTrustedOrOemPaidOrOemPrivate(config,
                 untrustedNetworkAllowed, oemPaidNetworkAllowed, oemPrivateNetworkAllowed)) {
+            mLocalLog.log("Ignoring network since it needs corresponding NetworkRequest: "
+                    + config);
             return false;
         }
-        if (WifiConfiguration.isMetered(config, null)
-                && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
-            return false;
-        }
-        if (!config.allowAutojoin || !isSimBasedNetworkAvailableToAutoConnect(config)) {
+        if (!isCarrierNetworkAvailableToAutoConnect(config)) {
             return false;
         }
         String network = config.isPasspoint() ? config.FQDN : config.SSID;
@@ -262,7 +262,24 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             mLocalLog.log("Ignoring user disabled network: " + network);
             return false;
         }
-        return true;
+        return config.allowAutojoin;
+    }
+
+    private boolean isCarrierNetworkAvailableToAutoConnect(WifiConfiguration config) {
+        if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            return true;
+        }
+
+        if (!mWifiCarrierInfoManager.isSimPresent(config.subscriptionId)) {
+            mLocalLog.log("SIM is not present for subId: " + config.subscriptionId);
+            return false;
+        }
+        if (WifiConfiguration.isMetered(config, null)
+                && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
+            mLocalLog.log("Ignoring carrier network from non default data SIM, network: " + config);
+            return false;
+        }
+        return isSimBasedNetworkAvailableToAutoConnect(config);
     }
 
     private boolean isSimBasedNetworkAvailableToAutoConnect(WifiConfiguration config) {
@@ -270,39 +287,14 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 || !config.enterpriseConfig.isAuthenticationSimBased()) {
             return true;
         }
-        int subId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
-        if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
-            mLocalLog.log("SIM is not present for subId: " + subId);
+        int subId = config.subscriptionId;
+        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)
+                && !mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(subId)) {
+            mLocalLog.log("Ignoring SIM based network IMSI encryption info not Available, subId: "
+                    + subId);
             return false;
         }
-        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)) {
-            return mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(subId);
-        }
         return true;
-    }
-
-    // Add and enable this network to the central database (i.e WifiConfigManager).
-    // Returns the copy of WifiConfiguration with the allocated network ID filled in.
-    private WifiConfiguration addCandidateToWifiConfigManager(
-            @NonNull ExtendedWifiNetworkSuggestion ewns) {
-        WifiConfiguration wifiConfiguration = ewns.createInternalWifiConfiguration();
-        wifiConfiguration.subscriptionId =
-                mWifiCarrierInfoManager.getBestMatchSubscriptionId(ewns.wns.getWifiConfiguration());
-        NetworkUpdateResult result =
-                mWifiConfigManager.addOrUpdateNetwork(wifiConfiguration, ewns.perAppInfo.uid,
-                        ewns.perAppInfo.packageName);
-        if (!result.isSuccess()) {
-            mLocalLog.log("Failed to add network suggestion");
-            return null;
-        }
-        mWifiConfigManager.allowAutojoin(result.getNetworkId(), wifiConfiguration.allowAutojoin);
-        if (!mWifiConfigManager.updateNetworkSelectionStatus(result.getNetworkId(),
-                WifiConfiguration.NetworkSelectionStatus.DISABLED_NONE)) {
-            mLocalLog.log("Failed to make network suggestion selectable");
-            return null;
-        }
-        int candidateNetworkId = result.getNetworkId();
-        return mWifiConfigManager.getConfiguredNetwork(candidateNetworkId);
     }
 
     @Override

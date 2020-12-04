@@ -1415,7 +1415,7 @@ public class WifiCarrierInfoManager {
         if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
             return false;
         }
-        int subId = getMatchingSubId(config.carrierId);
+        int subId = getBestMatchSubscriptionId(config);
         return subId != SubscriptionManager.getDefaultDataSubscriptionId();
     }
 
