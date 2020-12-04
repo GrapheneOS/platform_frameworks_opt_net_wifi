@@ -16,6 +16,8 @@
 
 package com.android.server.wifi;
 
+import static android.app.Notification.VISIBILITY_SECRET;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -95,6 +97,7 @@ public class ConnectToNetworkNotificationBuilder {
                 .setContentIntent(getPrivateBroadcast(ACTION_PICK_WIFI_NETWORK, notifierTag))
                 .addAction(connectAction)
                 .addAction(allNetworksAction)
+                .setVisibility(VISIBILITY_SECRET)
                 .build();
     }
 
