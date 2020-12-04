@@ -114,6 +114,9 @@ public class PasspointXmlUtils {
     private static final String XML_TAG_IS_AUTO_JOIN = "AutoJoinEnabled";
     private static final String XML_TAG_IS_MAC_RANDOMIZATION_ENABLED = "IsMacRandomizationEnabled";
     private static final String XML_TAG_METERED_OVERRIDE = "MeteredOverride";
+    private static final String XML_TAG_IS_CARRIER_MERGED = "IsCarrierMerged";
+    private static final String XML_TAG_IS_OEM_PAID = "IsOemPaid";
+    private static final String XML_TAG_IS_OEM_PRIVATE = "IsOemPrivate";
 
     /**
      * Serialize a {@link PasspointConfiguration} to the output stream as a XML block.
@@ -156,6 +159,9 @@ public class PasspointXmlUtils {
         XmlUtil.writeNextValue(out, XML_TAG_IS_MAC_RANDOMIZATION_ENABLED,
                 config.isMacRandomizationEnabled());
         XmlUtil.writeNextValue(out, XML_TAG_METERED_OVERRIDE, config.getMeteredOverride());
+        XmlUtil.writeNextValue(out, XML_TAG_IS_CARRIER_MERGED, config.isCarrierMerged());
+        XmlUtil.writeNextValue(out, XML_TAG_IS_OEM_PAID, config.isOemPaid());
+        XmlUtil.writeNextValue(out, XML_TAG_IS_OEM_PRIVATE, config.isOemPrivate());
     }
 
     /**
@@ -223,6 +229,15 @@ public class PasspointXmlUtils {
                         break;
                     case XML_TAG_METERED_OVERRIDE:
                         config.setMeteredOverride((int) value);
+                        break;
+                    case XML_TAG_IS_CARRIER_MERGED:
+                        config.setCarrierMerged((boolean) value);
+                        break;
+                    case XML_TAG_IS_OEM_PAID:
+                        config.setOemPaid((boolean) value);
+                        break;
+                    case XML_TAG_IS_OEM_PRIVATE:
+                        config.setOemPrivate((boolean) value);
                         break;
                     default:
                         throw new XmlPullParserException("Unknown value under "
