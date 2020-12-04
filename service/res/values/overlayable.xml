@@ -93,6 +93,8 @@
           <item type="bool" name="config_wifiAllowEnhancedMacRandomizationOnOpenSsids" />
           <item type="bool" name="config_wifi_p2p_mac_randomization_supported" />
           <item type="bool" name="config_wifi_ap_mac_randomization_supported" />
+          <item type="bool" name="config_wifiBridgedSoftApSupported" />
+          <item type="bool" name="config_wifiStaWithBridgedSoftApConcurrencySupported" />
           <item type="array" name="config_wifi_aggressive_randomization_ssid_allowlist" />
           <item type="array" name="config_wifi_aggressive_randomization_ssid_blocklist" />
           <item type="integer" name="config_wifiRecentFailureReasonExpirationMinutes" />
