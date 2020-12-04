@@ -419,6 +419,9 @@ public class XmlUtilTest extends WifiBaseTest {
         config.setFieldValue(WifiEnterpriseConfig.CA_PATH_KEY, TEST_CA_PATH);
         config.setEapMethod(TEST_EAP_METHOD);
         config.setPhase2Method(TEST_PHASE2_METHOD);
+        config.initIsAppInstalledDeviceKeyAndCert(true);
+        config.initIsAppInstalledCaCert(true);
+
         serializeDeserializeWifiEnterpriseConfig(config);
     }
 
@@ -443,6 +446,8 @@ public class XmlUtilTest extends WifiBaseTest {
         config.setFieldValue(WifiEnterpriseConfig.CA_PATH_KEY, TEST_CA_PATH);
         config.setEapMethod(TEST_EAP_METHOD);
         config.setPhase2Method(TEST_PHASE2_METHOD);
+        config.initIsAppInstalledDeviceKeyAndCert(true);
+        config.initIsAppInstalledCaCert(true);
 
         mWifiConfigStoreEncryptionUtil = mock(WifiConfigStoreEncryptionUtil.class);
         EncryptedData encryptedData = new EncryptedData(new byte[0], new byte[0]);
@@ -477,6 +482,8 @@ public class XmlUtilTest extends WifiBaseTest {
         config.setFieldValue(WifiEnterpriseConfig.CA_PATH_KEY, TEST_CA_PATH);
         config.setEapMethod(TEST_EAP_METHOD);
         config.setPhase2Method(TEST_PHASE2_METHOD);
+        config.initIsAppInstalledDeviceKeyAndCert(true);
+        config.initIsAppInstalledCaCert(true);
         String xmlString = new String(serializeWifiEnterpriseConfig(config));
         // Manipulate the XML data to set the EAP method to None, this should raise an Illegal
         // argument exception in WifiEnterpriseConfig.setEapMethod().

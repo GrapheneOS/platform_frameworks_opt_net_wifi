@@ -17,7 +17,6 @@
 package com.android.server.wifi;
 
 import android.content.Context;
-import android.os.Handler;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -41,7 +40,7 @@ public class WifiCountryCode {
     private static final String TAG = "WifiCountryCode";
     private final Context mContext;
     private final TelephonyManager mTelephonyManager;
-    private final WifiNative mWifiNative;
+    private final ActiveModeWarden mActiveModeWarden;
     private boolean DBG = false;
     private boolean mReady = false;
     private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("MM-dd HH:mm:ss.SSS");
@@ -56,12 +55,11 @@ public class WifiCountryCode {
 
     public WifiCountryCode(
             Context context,
-            Handler handler,
-            WifiNative wifiNative,
+            ActiveModeWarden activeModeWarden,
             String oemDefaultCountryCode) {
         mContext = context;
         mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        mWifiNative = wifiNative;
+        mActiveModeWarden = activeModeWarden;
 
         if (!TextUtils.isEmpty(oemDefaultCountryCode)) {
             mDefaultCountryCode = oemDefaultCountryCode.toUpperCase(Locale.US);
@@ -256,7 +254,7 @@ public class WifiCountryCode {
 
     private boolean setCountryCodeNative(String country) {
         mDriverCountryTimestamp = FORMATTER.format(new Date(System.currentTimeMillis()));
-        if (mWifiNative.setCountryCode(mWifiNative.getClientInterfaceName(), country)) {
+        if (mActiveModeWarden.getPrimaryClientModeManager().setCountryCode(country)) {
             Log.d(TAG, "Succeeded to set country code to: " + country);
             mDriverCountryCode = country;
             return true;

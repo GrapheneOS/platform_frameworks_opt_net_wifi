@@ -42,7 +42,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -154,9 +153,10 @@ public class WifiDiagnostics {
     /** Interfaces started logging */
     private final Set<String> mActiveInterfaces = new ArraySet<>();
 
-    public WifiDiagnostics(Context context, WifiInjector wifiInjector,
-                           WifiNative wifiNative, BuildProperties buildProperties,
-                           LastMileLogger lastMileLogger, Clock clock, Looper workerLooper) {
+    public WifiDiagnostics(
+            Context context, WifiInjector wifiInjector,
+            WifiNative wifiNative, BuildProperties buildProperties,
+            LastMileLogger lastMileLogger, Clock clock, Looper workerLooper) {
         mContext = context;
         mWifiNative = wifiNative;
         mBuildProperties = buildProperties;
@@ -808,30 +808,13 @@ public class WifiDiagnostics {
     private ArrayList<WifiNative.FateReport> mPacketFatesForLastFailure;
 
     private ArrayList<WifiNative.FateReport> fetchPacketFates() {
-        ArrayList<WifiNative.FateReport> mergedFates = new ArrayList<WifiNative.FateReport>();
-        WifiNative.TxFateReport[] txFates =
-                new WifiNative.TxFateReport[WifiLoggerHal.MAX_FATE_LOG_LEN];
-        if (mWifiNative.getTxPktFates(mWifiNative.getClientInterfaceName(), txFates)) {
-            for (int i = 0; i < txFates.length && txFates[i] != null; i++) {
-                mergedFates.add(txFates[i]);
-            }
-        }
-
-        WifiNative.RxFateReport[] rxFates =
-                new WifiNative.RxFateReport[WifiLoggerHal.MAX_FATE_LOG_LEN];
-        if (mWifiNative.getRxPktFates(mWifiNative.getClientInterfaceName(), rxFates)) {
-            for (int i = 0; i < rxFates.length && rxFates[i] != null; i++) {
-                mergedFates.add(rxFates[i]);
-            }
-        }
-
-        Collections.sort(mergedFates, new Comparator<WifiNative.FateReport>() {
-            @Override
-            public int compare(WifiNative.FateReport lhs, WifiNative.FateReport rhs) {
-                return Long.compare(lhs.mDriverTimestampUSec, rhs.mDriverTimestampUSec);
-            }
-        });
-
+        // TODO(b/159944009): this may need to monitor all client ifaces, not just the primary one
+        ClientModeManager primaryManager =
+                mWifiInjector.getActiveModeWarden().getPrimaryClientModeManager();
+        ArrayList<WifiNative.FateReport> mergedFates = new ArrayList<>();
+        mergedFates.addAll(primaryManager.getTxPktFates());
+        mergedFates.addAll(primaryManager.getRxPktFates());
+        mergedFates.sort(Comparator.comparing(fateReport -> fateReport.mDriverTimestampUSec));
         return mergedFates;
     }
 

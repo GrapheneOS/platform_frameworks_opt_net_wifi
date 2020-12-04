@@ -35,28 +35,29 @@ public class MboOceController {
     private boolean mIsOceSupported = false;
     private boolean mVerboseLoggingEnabled = false;
 
-    private final WifiNative mWifiNative;
     private final TelephonyManager mTelephonyManager;
+    private final ActiveModeWarden mActiveModeWarden;
 
     /**
      * Create new instance of MboOceController.
      */
-    public MboOceController(TelephonyManager telephonyManager,
-                            WifiNative wifiNative) {
+    public MboOceController(TelephonyManager telephonyManager, ActiveModeWarden activeModeWarden) {
         mTelephonyManager = telephonyManager;
-        mWifiNative = wifiNative;
+        mActiveModeWarden = activeModeWarden;
     }
 
     /**
      * Enable MBO and OCE functionality.
      */
     public void enable() {
-        String iface = mWifiNative.getClientInterfaceName();
-        if (iface == null) {
+        ClientModeManager clientModeManager =
+                mActiveModeWarden.getPrimaryClientModeManagerNullable();
+        if (clientModeManager == null) {
             return;
         }
-        mIsMboSupported = (mWifiNative.getSupportedFeatureSet(iface) & WIFI_FEATURE_MBO) != 0;
-        mIsOceSupported = (mWifiNative.getSupportedFeatureSet(iface) & WIFI_FEATURE_OCE) != 0;
+        long supportedFeatures = clientModeManager.getSupportedFeatures();
+        mIsMboSupported = (supportedFeatures & WIFI_FEATURE_MBO) != 0;
+        mIsOceSupported = (supportedFeatures & WIFI_FEATURE_OCE) != 0;
         mEnabled = true;
         if (mVerboseLoggingEnabled) {
             Log.d(TAG, "Enable MBO-OCE MBO support: " + mIsMboSupported
@@ -99,8 +100,9 @@ public class MboOceController {
         public void onDataConnectionStateChanged(int state, int networkType) {
             boolean dataAvailable;
 
-            String iface = mWifiNative.getClientInterfaceName();
-            if (iface == null) {
+            ClientModeManager clientModeManager =
+                    mActiveModeWarden.getPrimaryClientModeManagerNullable();
+            if (clientModeManager == null) {
                 return;
             }
             if (!mEnabled) {
@@ -118,7 +120,7 @@ public class MboOceController {
             if (mVerboseLoggingEnabled) {
                 Log.d(TAG, "Cell Data: " + dataAvailable);
             }
-            mWifiNative.setMboCellularDataStatus(iface, dataAvailable);
+            clientModeManager.setMboCellularDataStatus(dataAvailable);
         }
     };
 

@@ -227,7 +227,7 @@ public class PasspointManagerTest extends WifiBaseTest {
                 mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager, mMacAddressUtil);
         ArgumentCaptor<PasspointEventHandler.Callbacks> callbacks =
                 ArgumentCaptor.forClass(PasspointEventHandler.Callbacks.class);
-        verify(mObjectFactory).makePasspointEventHandler(any(WifiNative.class),
+        verify(mObjectFactory).makePasspointEventHandler(any(WifiInjector.class),
                                                          callbacks.capture());
         ArgumentCaptor<PasspointConfigSharedStoreData.DataSource> sharedDataSource =
                 ArgumentCaptor.forClass(PasspointConfigSharedStoreData.DataSource.class);

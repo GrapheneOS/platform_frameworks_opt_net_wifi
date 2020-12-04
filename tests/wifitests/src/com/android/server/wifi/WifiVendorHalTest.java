@@ -99,6 +99,9 @@ import androidx.test.filters.SmallTest;
 
 import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
 import com.android.server.wifi.WifiLinkLayerStats.ChannelStats;
+import com.android.server.wifi.WifiNative.RoamingCapabilities;
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.NativeUtil;
 
 import org.junit.Before;
@@ -111,6 +114,7 @@ import org.mockito.stubbing.Answer;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -144,6 +148,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
     private IWifiApIface mIWifiApIface;
     @Mock
     private android.hardware.wifi.V1_4.IWifiApIface mIWifiApIfaceV14;
+    @Mock
+    private android.hardware.wifi.V1_5.IWifiApIface mIWifiApIfaceV15;
     @Mock
     private IWifiChip mIWifiChip;
     @Mock
@@ -936,7 +942,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
     }
 
-   /**
+    /**
      * Test |getFactoryMacAddress| gets called when the hal version is V1_3
      * @throws Exception
      */
@@ -1694,32 +1700,31 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
         doAnswer(new AnswerWithArguments() {
             public void answer(IWifiStaIface.getDebugTxPacketFatesCallback cb) {
-                cb.onValues(mWifiStatusSuccess,
-                        new ArrayList<WifiDebugTxPacketFateReport>(Arrays.asList(fateReport)));
+                cb.onValues(mWifiStatusSuccess, new ArrayList<>(Arrays.asList(fateReport)));
             }
         }).when(mIWifiStaIface)
                 .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
 
-        WifiNative.TxFateReport[] retrievedFates = new WifiNative.TxFateReport[1];
-        assertFalse(mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME, retrievedFates));
+        assertEquals(0, mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME).size());
         verify(mIWifiStaIface, never())
                 .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
 
         assertTrue(mWifiVendorHal.startVendorHalSta());
 
-        assertTrue(mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME, retrievedFates));
+        List<TxFateReport> retrievedFates = mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME);
+        assertEquals(1, retrievedFates.size());
+        TxFateReport retrievedFate = retrievedFates.get(0);
         verify(mIWifiStaIface)
                 .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
-        assertEquals(WifiLoggerHal.TX_PKT_FATE_DRV_QUEUED, retrievedFates[0].mFate);
-        assertEquals(fateReport.frameInfo.driverTimestampUsec,
-                retrievedFates[0].mDriverTimestampUSec);
-        assertEquals(WifiLoggerHal.FRAME_TYPE_ETHERNET_II, retrievedFates[0].mFrameType);
-        assertArrayEquals(frameContentBytes, retrievedFates[0].mFrameBytes);
+        assertEquals(WifiLoggerHal.TX_PKT_FATE_DRV_QUEUED, retrievedFate.mFate);
+        assertEquals(fateReport.frameInfo.driverTimestampUsec, retrievedFate.mDriverTimestampUSec);
+        assertEquals(WifiLoggerHal.FRAME_TYPE_ETHERNET_II, retrievedFate.mFrameType);
+        assertArrayEquals(frameContentBytes, retrievedFate.mFrameBytes);
     }
 
     /**
      * Tests the retrieval of tx packet fates when the number of fates retrieved exceeds the
-     * input array.
+     * maximum number of packet fates fetched ({@link WifiLoggerHal#MAX_FATE_LOG_LEN}).
      *
      * Try once before hal start, and once after.
      */
@@ -1736,28 +1741,29 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
         doAnswer(new AnswerWithArguments() {
             public void answer(IWifiStaIface.getDebugTxPacketFatesCallback cb) {
-                cb.onValues(mWifiStatusSuccess,
-                        new ArrayList<WifiDebugTxPacketFateReport>(Arrays.asList(
-                                fateReport, fateReport)));
+                cb.onValues(mWifiStatusSuccess, new ArrayList<>(
+                        // create twice as many as the max size
+                        Collections.nCopies(WifiLoggerHal.MAX_FATE_LOG_LEN * 2, fateReport)));
             }
         }).when(mIWifiStaIface)
                 .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
 
-        WifiNative.TxFateReport[] retrievedFates = new WifiNative.TxFateReport[1];
-        assertFalse(mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME, retrievedFates));
+        assertEquals(0, mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME).size());
         verify(mIWifiStaIface, never())
                 .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
 
         assertTrue(mWifiVendorHal.startVendorHalSta());
 
-        assertTrue(mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME, retrievedFates));
+        List<TxFateReport> retrievedFates = mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME);
+        // assert that at most WifiLoggerHal.MAX_FATE_LOG_LEN is retrieved
+        assertEquals(WifiLoggerHal.MAX_FATE_LOG_LEN, retrievedFates.size());
+        TxFateReport retrievedFate = retrievedFates.get(0);
         verify(mIWifiStaIface)
                 .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
-        assertEquals(WifiLoggerHal.TX_PKT_FATE_FW_DROP_OTHER, retrievedFates[0].mFate);
-        assertEquals(fateReport.frameInfo.driverTimestampUsec,
-                retrievedFates[0].mDriverTimestampUSec);
-        assertEquals(WifiLoggerHal.FRAME_TYPE_80211_MGMT, retrievedFates[0].mFrameType);
-        assertArrayEquals(frameContentBytes, retrievedFates[0].mFrameBytes);
+        assertEquals(WifiLoggerHal.TX_PKT_FATE_FW_DROP_OTHER, retrievedFate.mFate);
+        assertEquals(fateReport.frameInfo.driverTimestampUsec, retrievedFate.mDriverTimestampUSec);
+        assertEquals(WifiLoggerHal.FRAME_TYPE_80211_MGMT, retrievedFate.mFrameType);
+        assertArrayEquals(frameContentBytes, retrievedFate.mFrameBytes);
     }
 
     /**
@@ -1778,27 +1784,26 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
         doAnswer(new AnswerWithArguments() {
             public void answer(IWifiStaIface.getDebugRxPacketFatesCallback cb) {
-                cb.onValues(mWifiStatusSuccess,
-                        new ArrayList<WifiDebugRxPacketFateReport>(Arrays.asList(fateReport)));
+                cb.onValues(mWifiStatusSuccess, new ArrayList<>(Arrays.asList(fateReport)));
             }
         }).when(mIWifiStaIface)
                 .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
 
-        WifiNative.RxFateReport[] retrievedFates = new WifiNative.RxFateReport[1];
-        assertFalse(mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME, retrievedFates));
+        assertEquals(0, mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME).size());
         verify(mIWifiStaIface, never())
                 .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
 
         assertTrue(mWifiVendorHal.startVendorHalSta());
 
-        assertTrue(mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME, retrievedFates));
+        List<RxFateReport> retrievedFates = mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME);
+        assertEquals(1, retrievedFates.size());
+        RxFateReport retrievedFate = retrievedFates.get(0);
         verify(mIWifiStaIface)
                 .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
-        assertEquals(WifiLoggerHal.RX_PKT_FATE_SUCCESS, retrievedFates[0].mFate);
-        assertEquals(fateReport.frameInfo.driverTimestampUsec,
-                retrievedFates[0].mDriverTimestampUSec);
-        assertEquals(WifiLoggerHal.FRAME_TYPE_ETHERNET_II, retrievedFates[0].mFrameType);
-        assertArrayEquals(frameContentBytes, retrievedFates[0].mFrameBytes);
+        assertEquals(WifiLoggerHal.RX_PKT_FATE_SUCCESS, retrievedFate.mFate);
+        assertEquals(fateReport.frameInfo.driverTimestampUsec, retrievedFate.mDriverTimestampUSec);
+        assertEquals(WifiLoggerHal.FRAME_TYPE_ETHERNET_II, retrievedFate.mFrameType);
+        assertArrayEquals(frameContentBytes, retrievedFate.mFrameBytes);
     }
 
     /**
@@ -1820,50 +1825,28 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
         doAnswer(new AnswerWithArguments() {
             public void answer(IWifiStaIface.getDebugRxPacketFatesCallback cb) {
-                cb.onValues(mWifiStatusSuccess,
-                        new ArrayList<WifiDebugRxPacketFateReport>(Arrays.asList(
-                                fateReport, fateReport)));
+                cb.onValues(mWifiStatusSuccess, new ArrayList<>(
+                        // create twice as many as the max size
+                        Collections.nCopies(WifiLoggerHal.MAX_FATE_LOG_LEN * 2, fateReport)));
             }
         }).when(mIWifiStaIface)
                 .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
 
-        WifiNative.RxFateReport[] retrievedFates = new WifiNative.RxFateReport[1];
-        assertFalse(mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME, retrievedFates));
+        assertEquals(0, mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME).size());
         verify(mIWifiStaIface, never())
                 .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
 
         assertTrue(mWifiVendorHal.startVendorHalSta());
 
-        assertTrue(mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME, retrievedFates));
+        List<RxFateReport> retrievedFates = mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME);
+        assertEquals(WifiLoggerHal.MAX_FATE_LOG_LEN, retrievedFates.size());
         verify(mIWifiStaIface)
                 .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
-        assertEquals(WifiLoggerHal.RX_PKT_FATE_FW_DROP_FILTER, retrievedFates[0].mFate);
-        assertEquals(fateReport.frameInfo.driverTimestampUsec,
-                retrievedFates[0].mDriverTimestampUSec);
-        assertEquals(WifiLoggerHal.FRAME_TYPE_80211_MGMT, retrievedFates[0].mFrameType);
-        assertArrayEquals(frameContentBytes, retrievedFates[0].mFrameBytes);
-    }
-
-    /**
-     * Tests the failure to retrieve tx packet fates when the input array is empty.
-     */
-    @Test
-    public void testGetTxPktFatesEmptyInputArray() throws Exception {
-        assertTrue(mWifiVendorHal.startVendorHalSta());
-        assertFalse(mWifiVendorHal.getTxPktFates(TEST_IFACE_NAME, new WifiNative.TxFateReport[0]));
-        verify(mIWifiStaIface, never())
-                .getDebugTxPacketFates(any(IWifiStaIface.getDebugTxPacketFatesCallback.class));
-    }
-
-    /**
-     * Tests the failure to retrieve rx packet fates when the input array is empty.
-     */
-    @Test
-    public void testGetRxPktFatesEmptyInputArray() throws Exception {
-        assertTrue(mWifiVendorHal.startVendorHalSta());
-        assertFalse(mWifiVendorHal.getRxPktFates(TEST_IFACE_NAME, new WifiNative.RxFateReport[0]));
-        verify(mIWifiStaIface, never())
-                .getDebugRxPacketFates(any(IWifiStaIface.getDebugRxPacketFatesCallback.class));
+        RxFateReport retrievedFate = retrievedFates.get(0);
+        assertEquals(WifiLoggerHal.RX_PKT_FATE_FW_DROP_FILTER, retrievedFate.mFate);
+        assertEquals(fateReport.frameInfo.driverTimestampUsec, retrievedFate.mDriverTimestampUSec);
+        assertEquals(WifiLoggerHal.FRAME_TYPE_80211_MGMT, retrievedFate.mFrameType);
+        assertArrayEquals(frameContentBytes, retrievedFate.mFrameBytes);
     }
 
     /**
@@ -1919,7 +1902,6 @@ public class WifiVendorHalTest extends WifiBaseTest {
      */
     @Test
     public void testFirmwareRoamingCapabilityRetrieval() throws Exception {
-        WifiNative.RoamingCapabilities roamingCapabilities = new WifiNative.RoamingCapabilities();
         assertTrue(mWifiVendorHal.startVendorHalSta());
         for (int i = 0; i < 4; i++) {
             int blocklistSize = i + 10;
@@ -1930,9 +1912,10 @@ public class WifiVendorHalTest extends WifiBaseTest {
             doAnswer(new GetRoamingCapabilitiesAnswer(mWifiStatusSuccess, caps))
                     .when(mIWifiStaIface).getRoamingCapabilities(
                             any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
-            assertTrue(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
-            assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
-            assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
+            RoamingCapabilities roamCap = mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME);
+            assertNotNull(roamCap);
+            assertEquals(blocklistSize, roamCap.maxBlocklistSize);
+            assertEquals(allowlistSize, roamCap.maxAllowlistSize);
         }
     }
 
@@ -1942,41 +1925,27 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testUnsuccessfulFirmwareRoamingCapabilityRetrieval() throws Exception {
         assertTrue(mWifiVendorHal.startVendorHalSta());
-        int blocklistSize = 42;
-        int allowlistSize = 17;
-        WifiNative.RoamingCapabilities roamingCapabilities = new WifiNative.RoamingCapabilities();
-        roamingCapabilities.maxBlocklistSize = blocklistSize;
-        roamingCapabilities.maxAllowlistSize = allowlistSize;
         StaRoamingCapabilities caps = new StaRoamingCapabilities();
-        caps.maxBlacklistSize = blocklistSize + 1; // different value here
-        caps.maxWhitelistSize = allowlistSize + 1;
+        caps.maxBlacklistSize = 43;
+        caps.maxWhitelistSize = 18;
 
         // hal returns a failure status
         doAnswer(new GetRoamingCapabilitiesAnswer(mWifiStatusFailure, null))
                 .when(mIWifiStaIface).getRoamingCapabilities(
                         any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
-        assertFalse(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
-        // in failure cases, result container should not be changed
-        assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
-        assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
+        assertNull(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME));
 
         // hal returns failure status, but supplies caps anyway
         doAnswer(new GetRoamingCapabilitiesAnswer(mWifiStatusFailure, caps))
                 .when(mIWifiStaIface).getRoamingCapabilities(
-                        any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
-        assertFalse(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
-        // in failure cases, result container should not be changed
-        assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
-        assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
+                any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
+        assertNull(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME));
 
         // lost connection
         doThrow(new RemoteException())
                 .when(mIWifiStaIface).getRoamingCapabilities(
                         any(IWifiStaIface.getRoamingCapabilitiesCallback.class));
-        assertFalse(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME, roamingCapabilities));
-        // in failure cases, result container should not be changed
-        assertEquals(blocklistSize, roamingCapabilities.maxBlocklistSize);
-        assertEquals(allowlistSize, roamingCapabilities.maxAllowlistSize);
+        assertNull(mWifiVendorHal.getRoamingCapabilities(TEST_IFACE_NAME));
     }
 
     /**
@@ -2729,6 +2698,55 @@ public class WifiVendorHalTest extends WifiBaseTest {
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         assertFalse(mWifiVendorHal.setStaMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
         assertFalse(mWifiVendorHal.setApMacAddress(TEST_IFACE_NAME, TEST_MAC_ADDRESS));
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress resetToFactoryMacAddress() success.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressSuccess() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_5Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV15);
+        when(mIWifiApIfaceV15.resetToFactoryMacAddress()).thenReturn(mWifiStatusSuccess);
+
+        assertTrue(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME_1));
+        verify(mIWifiApIfaceV15).resetToFactoryMacAddress();
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress() can handle failure status.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressFailDueToStatusFailure() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_5Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV15);
+        when(mIWifiApIfaceV15.resetToFactoryMacAddress()).thenReturn(mWifiStatusFailure);
+
+        assertFalse(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME_1));
+        verify(mIWifiApIfaceV15).resetToFactoryMacAddress();
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress() can handle RemoteException.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressFailDueToRemoteException() throws Exception {
+        mWifiVendorHal = spy(mWifiVendorHal);
+        when(mWifiVendorHal.getWifiApIfaceForV1_5Mockable(TEST_IFACE_NAME_1))
+                .thenReturn(mIWifiApIfaceV15);
+        doThrow(new RemoteException()).when(mIWifiApIfaceV15).resetToFactoryMacAddress();
+        assertFalse(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME_1));
+        verify(mIWifiApIfaceV15).resetToFactoryMacAddress();
+    }
+
+    /**
+     * Verifies resetApMacToFactoryMacAddress() does not crash with older HALs.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddressDoesNotCrashOnOlderHal() throws Exception {
+        assertFalse(mWifiVendorHal.resetApMacToFactoryMacAddress(TEST_IFACE_NAME));
     }
 
     /**

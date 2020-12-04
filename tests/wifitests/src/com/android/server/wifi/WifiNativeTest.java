@@ -561,9 +561,8 @@ public class WifiNativeTest extends WifiBaseTest {
      */
     @Test
     public void testGetTxPktFatesReturnsErrorWhenHalIsNotStarted() {
-        WifiNative.TxFateReport[] fateReports = null;
         assertFalse(mWifiNative.isHalStarted());
-        assertFalse(mWifiNative.getTxPktFates(WIFI_IFACE_NAME, fateReports));
+        assertEquals(0, mWifiNative.getTxPktFates(WIFI_IFACE_NAME).size());
     }
 
     /**
@@ -571,9 +570,8 @@ public class WifiNativeTest extends WifiBaseTest {
      */
     @Test
     public void testGetRxPktFatesReturnsErrorWhenHalIsNotStarted() {
-        WifiNative.RxFateReport[] fateReports = null;
         assertFalse(mWifiNative.isHalStarted());
-        assertFalse(mWifiNative.getRxPktFates(WIFI_IFACE_NAME, fateReports));
+        assertEquals(0, mWifiNative.getRxPktFates(WIFI_IFACE_NAME).size());
     }
 
     // TODO(quiche): Add tests for the success cases (when HAL has been started). Specifically:
@@ -874,6 +872,15 @@ public class WifiNativeTest extends WifiBaseTest {
     public void testApSetMacAddress() throws Exception {
         mWifiNative.setApMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
         verify(mWifiVendorHal).setApMacAddress(WIFI_IFACE_NAME, TEST_MAC_ADDRESS);
+    }
+
+    /**
+     * Verifies that resetApMacToFactoryMacAddress() calls underlying WifiVendorHal.
+     */
+    @Test
+    public void testResetApMacToFactoryMacAddress() throws Exception {
+        mWifiNative.resetApMacToFactoryMacAddress(WIFI_IFACE_NAME);
+        verify(mWifiVendorHal).resetApMacToFactoryMacAddress(WIFI_IFACE_NAME);
     }
 
     /**

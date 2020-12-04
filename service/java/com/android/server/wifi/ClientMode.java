@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import android.annotation.IntDef;
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.net.DhcpResultsParcelable;
 import android.net.Network;
@@ -26,17 +27,22 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
+import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.WorkSource;
 
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.ActionListenerWrapper;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This interface is used to respond to calls independent of a STA's current mode.
@@ -187,4 +193,79 @@ public interface ClientMode {
 
     /** Unique ID for this ClientMode instance, used for debugging. */
     long getId();
+
+    /**
+     * Set MBO cellular data status
+     * @param available cellular data status, true means cellular data available, false otherwise.
+     */
+    void setMboCellularDataStatus(boolean available);
+
+    /**
+     * Query the firmware roaming capabilities.
+     * @return Roaming Capabilities on success, null on failure.
+     */
+    @Nullable
+    WifiNative.RoamingCapabilities getRoamingCapabilities();
+
+    /** Set firmware roaming configurations. */
+    boolean configureRoaming(WifiNative.RoamingConfig config);
+
+    /**
+     * Set country code.
+     *
+     * @param countryCode 2 byte ASCII string. For ex: US, CA.
+     * @return true if request is sent successfully, false otherwise.
+     */
+    boolean setCountryCode(String countryCode);
+
+    /**
+     * Fetch the most recent TX packet fates from the HAL. Fails unless HAL is started.
+     * @return TxFateReport list on success, empty list on failure. Never returns null.
+     */
+    @NonNull
+    List<TxFateReport> getTxPktFates();
+
+    /**
+     * Fetch the most recent RX packet fates from the HAL. Fails unless HAL is started.
+     * @return RxFateReport list on success, empty list on failure. Never returns null.
+     */
+    @NonNull
+    List<RxFateReport> getRxPktFates();
+
+    /**
+     * Get the Wiphy capabilities of a device for a given interface
+     * If the interface is not associated with one,
+     * it will be read from the device through wificond
+     *
+     * @return the device capabilities for this interface, or null if not available
+     */
+    @Nullable
+    DeviceWiphyCapabilities getDeviceWiphyCapabilities();
+
+    /**
+     * Initiate ANQP query.
+     *
+     * @param bssid BSSID of the AP to be queried
+     * @param anqpIds Set of anqp IDs.
+     * @param hs20Subtypes Set of HS20 subtypes.
+     * @return true on success, false otherwise.
+     */
+    boolean requestAnqp(String bssid, Set<Integer> anqpIds, Set<Integer> hs20Subtypes);
+
+    /**
+     * Initiate Venue URL ANQP query.
+     *
+     * @param bssid BSSID of the AP to be queried
+     * @return true on success, false otherwise.
+     */
+    boolean requestVenueUrlAnqp(String bssid);
+
+    /**
+     * Request a passpoint icon file |filename| from the specified AP |bssid|.
+     *
+     * @param bssid BSSID of the AP
+     * @param fileName name of the icon file
+     * @return true if request is sent successfully, false otherwise
+     */
+    boolean requestIcon(String  bssid, String fileName);
 }

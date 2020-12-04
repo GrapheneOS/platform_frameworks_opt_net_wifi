@@ -101,7 +101,7 @@ public class WifiNetworkSelector {
     private List<ScanDetail> mFilteredNetworks = new ArrayList<>();
     private final WifiScoreCard mWifiScoreCard;
     private final ScoringParams mScoringParams;
-    private final WifiNative mWifiNative;
+    private final WifiInjector mWifiInjector;
     private final ThroughputPredictor mThroughputPredictor;
     private final WifiChannelUtilization mWifiChannelUtilization;
     private final WifiGlobals mWifiGlobals;
@@ -495,8 +495,9 @@ public class WifiNetworkSelector {
         }
 
         mIsEnhancedOpenSupportedInitialized = true;
-        mIsEnhancedOpenSupported = (mWifiNative.getSupportedFeatureSet(
-                mWifiNative.getClientInterfaceName()) & WIFI_FEATURE_OWE) != 0;
+        ClientModeManager primaryManager =
+                mWifiInjector.getActiveModeWarden().getPrimaryClientModeManager();
+        mIsEnhancedOpenSupported = (primaryManager.getSupportedFeatures() & WIFI_FEATURE_OWE) != 0;
         return mIsEnhancedOpenSupported;
     }
 
@@ -989,8 +990,10 @@ public class WifiNetworkSelector {
                     mWifiChannelUtilization.getUtilizationRatio(
                             scanDetail.getScanResult().frequency);
         }
+        ClientModeManager primaryManager =
+                mWifiInjector.getActiveModeWarden().getPrimaryClientModeManager();
         return mThroughputPredictor.predictThroughput(
-                mWifiNative.getDeviceWiphyCapabilities(mWifiNative.getClientInterfaceName()),
+                primaryManager.getDeviceWiphyCapabilities(),
                 scanDetail.getScanResult().getWifiStandard(),
                 scanDetail.getScanResult().channelWidth,
                 scanDetail.getScanResult().level,
@@ -1069,7 +1072,7 @@ public class WifiNetworkSelector {
             Clock clock,
             LocalLog localLog,
             WifiMetrics wifiMetrics,
-            WifiNative wifiNative,
+            WifiInjector wifiInjector,
             ThroughputPredictor throughputPredictor,
             WifiChannelUtilization wifiChannelUtilization,
             WifiGlobals wifiGlobals) {
@@ -1080,7 +1083,7 @@ public class WifiNetworkSelector {
         mClock = clock;
         mLocalLog = localLog;
         mWifiMetrics = wifiMetrics;
-        mWifiNative = wifiNative;
+        mWifiInjector = wifiInjector;
         mThroughputPredictor = throughputPredictor;
         mWifiChannelUtilization = wifiChannelUtilization;
         mWifiGlobals = wifiGlobals;

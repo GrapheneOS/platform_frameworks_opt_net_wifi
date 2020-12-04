@@ -39,6 +39,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
+import android.net.wifi.nl80211.DeviceWiphyCapabilities;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.IBinder;
@@ -65,6 +66,8 @@ import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.ActionListenerWrapper;
 import com.android.server.wifi.util.StateMachineObituary;
 import com.android.server.wifi.util.WifiHandler;
@@ -74,6 +77,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -1132,6 +1136,56 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Override
     public long getId() {
         return mId;
+    }
+
+    @Override
+    public void setMboCellularDataStatus(boolean available) {
+        getClientMode().setMboCellularDataStatus(available);
+    }
+
+    @Override
+    public WifiNative.RoamingCapabilities getRoamingCapabilities() {
+        return getClientMode().getRoamingCapabilities();
+    }
+
+    @Override
+    public boolean configureRoaming(WifiNative.RoamingConfig config) {
+        return getClientMode().configureRoaming(config);
+    }
+
+    @Override
+    public boolean setCountryCode(String countryCode) {
+        return getClientMode().setCountryCode(countryCode);
+    }
+
+    @Override
+    public List<TxFateReport> getTxPktFates() {
+        return getClientMode().getTxPktFates();
+    }
+
+    @Override
+    public List<RxFateReport> getRxPktFates() {
+        return getClientMode().getRxPktFates();
+    }
+
+    @Override
+    public DeviceWiphyCapabilities getDeviceWiphyCapabilities() {
+        return getClientMode().getDeviceWiphyCapabilities();
+    }
+
+    @Override
+    public boolean requestAnqp(String bssid, Set<Integer> anqpIds, Set<Integer> hs20Subtypes) {
+        return getClientMode().requestAnqp(bssid, anqpIds, hs20Subtypes);
+    }
+
+    @Override
+    public boolean requestVenueUrlAnqp(String bssid) {
+        return getClientMode().requestVenueUrlAnqp(bssid);
+    }
+
+    @Override
+    public boolean requestIcon(String bssid, String fileName) {
+        return getClientMode().requestIcon(bssid, fileName);
     }
 
     @Override

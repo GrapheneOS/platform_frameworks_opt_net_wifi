@@ -164,6 +164,8 @@ public class WifiCarrierInfoManager {
     private SparseBooleanArray mImsiEncryptionInfoAvailable = new SparseBooleanArray();
     private SparseBooleanArray mEapMethodPrefixEnable = new SparseBooleanArray();
     private final Map<Integer, Boolean> mImsiPrivacyProtectionExemptionMap = new HashMap<>();
+    private final Map<Integer, Boolean> mMergedCarrierNetworkOffloadMap = new HashMap<>();
+    private final Map<Integer, Boolean> mUnmergedCarrierNetworkOffloadMap = new HashMap<>();
     private final List<OnUserApproveCarrierListener>
             mOnUserApproveCarrierListeners =
             new ArrayList<>();
@@ -187,20 +189,52 @@ public class WifiCarrierInfoManager {
     /**
      * Module to interact with the wifi config store.
      */
-    private class ImsiProtectionExemptionDataSource implements
-            ImsiPrivacyProtectionExemptionStoreData.DataSource {
+    private class WifiCarrierInfoStoreManagerDataSource implements
+            WifiCarrierInfoStoreManagerData.DataSource {
         @Override
-        public Map<Integer, Boolean> toSerialize() {
-            // Clear the flag after writing to disk.
-            // TODO(b/115504887): Don't reset the flag on write failure.
-            mHasNewDataToSerialize = false;
+        public Map<Integer, Boolean> toSerializeImsiMap() {
             return mImsiPrivacyProtectionExemptionMap;
         }
 
         @Override
-        public void fromDeserialized(Map<Integer, Boolean> imsiProtectionExemptionMap) {
+        public Map<Integer, Boolean> toSerializeMergedCarrierNetworkOffloadMap() {
+            return mMergedCarrierNetworkOffloadMap;
+        }
+
+        @Override
+        public Map<Integer, Boolean> toSerializeUnmergedCarrierNetworkOffloadMap() {
+            return mUnmergedCarrierNetworkOffloadMap;
+        }
+
+        @Override
+        public void serializeComplete() {
+            mHasNewDataToSerialize = false;
+        }
+
+
+        @Override
+        public void fromMergedCarrierNetworkOffloadMapDeserialized(
+                Map<Integer, Boolean> carrierOffloadMap) {
+            mMergedCarrierNetworkOffloadMap.clear();
+            mMergedCarrierNetworkOffloadMap.putAll(carrierOffloadMap);
+        }
+
+        @Override
+        public void fromUnmergedCarrierNetworkOffloadMapDeserialized(
+                Map<Integer, Boolean> subscriptionOffloadMap) {
+            mUnmergedCarrierNetworkOffloadMap.clear();
+            mUnmergedCarrierNetworkOffloadMap.putAll(subscriptionOffloadMap);
+        }
+
+
+        @Override
+        public void fromImsiMapDeserialized(Map<Integer, Boolean> persistMap) {
             mImsiPrivacyProtectionExemptionMap.clear();
-            mImsiPrivacyProtectionExemptionMap.putAll(imsiProtectionExemptionMap);
+            mImsiPrivacyProtectionExemptionMap.putAll(persistMap);
+        }
+
+        @Override
+        public void deserializeComplete() {
             mUserDataLoaded = true;
         }
 
@@ -208,6 +242,8 @@ public class WifiCarrierInfoManager {
         public void reset() {
             mUserDataLoaded = false;
             mImsiPrivacyProtectionExemptionMap.clear();
+            mMergedCarrierNetworkOffloadMap.clear();
+            mUnmergedCarrierNetworkOffloadMap.clear();
         }
 
         @Override
@@ -279,7 +315,7 @@ public class WifiCarrierInfoManager {
      * Gets the instance of WifiCarrierInfoManager.
      * @param telephonyManager Instance of {@link TelephonyManager}
      * @param subscriptionManager Instance of {@link SubscriptionManager}
-     * @param WifiInjector Instance of {@link WifiInjector}
+     * @param wifiInjector Instance of {@link WifiInjector}
      * @return The instance of WifiCarrierInfoManager
      */
     public WifiCarrierInfoManager(@NonNull TelephonyManager telephonyManager,
@@ -308,8 +344,8 @@ public class WifiCarrierInfoManager {
         mIntentFilter.addAction(NOTIFICATION_USER_CLICKED_INTENT_ACTION);
 
         mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, NETWORK_SETTINGS, handler);
-        configStore.registerStoreData(wifiInjector.makeImsiProtectionExemptionStoreData(
-                new ImsiProtectionExemptionDataSource()));
+        configStore.registerStoreData(wifiInjector.makeWifiCarrierInfoStoreManagerData(
+                new WifiCarrierInfoStoreManagerDataSource()));
 
         updateImsiEncryptionInfo(context);
 
@@ -525,6 +561,10 @@ public class WifiCarrierInfoManager {
         if (identity == null) {
             Log.e(TAG, "Failed to build the identity");
             return null;
+        }
+
+        if (!requiresImsiEncryption(subId)) {
+            return Pair.create(identity, "");
         }
 
         ImsiEncryptionInfo imsiEncryptionInfo;
@@ -1573,6 +1613,36 @@ public class WifiCarrierInfoManager {
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    /**
+     * Set carrier network offload enabled/disabled.
+     * @param subscriptionId Subscription Id to change carrier offload
+     * @param merged True for carrier merged network, false otherwise.
+     * @param enabled True for enabled carrier offload, false otherwise.
+     */
+    public void setCarrierNetworkOffloadEnabled(int subscriptionId, boolean merged,
+            boolean enabled) {
+        if (merged) {
+            mMergedCarrierNetworkOffloadMap.put(subscriptionId, enabled);
+        } else {
+            mUnmergedCarrierNetworkOffloadMap.put(subscriptionId, enabled);
+        }
+        saveToStore();
+    }
+
+    /**
+     * Check if carrier network offload is enabled/disabled.
+     * @param subId Subscription Id to check offload state.
+     * @param merged True for carrier merged network, false otherwise.
+     * @return True to indicate carrier offload is enabled, false otherwise.
+     */
+    public boolean isCarrierNetworkOffloadEnabled(int subId, boolean merged) {
+        if (merged) {
+            return mMergedCarrierNetworkOffloadMap.getOrDefault(subId, true);
+        } else {
+            return mUnmergedCarrierNetworkOffloadMap.getOrDefault(subId, true);
+        }
+    }
+
     private void saveToStore() {
         // Set the flag to let WifiConfigStore that we have new data to write.
         mHasNewDataToSerialize = true;
@@ -1586,6 +1656,8 @@ public class WifiCarrierInfoManager {
      */
     public void clear() {
         mImsiPrivacyProtectionExemptionMap.clear();
+        mMergedCarrierNetworkOffloadMap.clear();
+        mUnmergedCarrierNetworkOffloadMap.clear();
         saveToStore();
     }
 }

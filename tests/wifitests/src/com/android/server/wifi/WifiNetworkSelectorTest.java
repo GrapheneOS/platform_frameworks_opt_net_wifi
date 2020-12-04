@@ -87,7 +87,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
                 mWifiConfigManager, mClock,
                 mLocalLog,
                 mWifiMetrics,
-                mWifiNative,
+                mWifiInjector,
                 mThroughputPredictor,
                 mWifiChannelUtilization,
                 mWifiGlobals);
@@ -99,7 +99,8 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         mCompatibilityScorer = new CompatibilityScorer(mScoringParams);
         mScoreCardBasedScorer = new ScoreCardBasedScorer(mScoringParams);
         mThroughputScorer = new ThroughputScorer(mScoringParams);
-        when(mWifiNative.getClientInterfaceName()).thenReturn("wlan0");
+        when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
+        when(mActiveModeWarden.getPrimaryClientModeManager()).thenReturn(mClientModeManager);
         if (WifiNetworkSelector.PRESET_CANDIDATE_SCORER_NAME.equals(
                 mThroughputScorer.getIdentifier())) {
             mWifiNetworkSelector.registerCandidateScorer(mThroughputScorer);
@@ -240,7 +241,9 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
     @Mock private WifiScoreCard.PerBssid mPerBssid;
     @Mock private WifiCandidates.CandidateScorer mCandidateScorer;
     @Mock private WifiMetrics mWifiMetrics;
-    @Mock private WifiNative mWifiNative;
+    @Mock private WifiInjector mWifiInjector;
+    @Mock private ActiveModeWarden mActiveModeWarden;
+    @Mock private ClientModeManager mClientModeManager;
     @Mock private WifiNetworkSelector.NetworkNominator mNetworkNominator;
 
     // For simulating the resources, we use a Spy on a MockResource
@@ -1381,8 +1384,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         int[] levels = {mThresholdMinimumRssi2G, mThresholdMinimumRssi5G + RSSI_BUMP,
                 mThresholdMinimumRssi2G + RSSI_BUMP};
         mPlaceholderNominator.setNominatorToSelectCandidate(false);
-        when(mWifiNative.getSupportedFeatureSet(anyString()))
-                .thenReturn(new Long(WIFI_FEATURE_OWE));
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(WIFI_FEATURE_OWE);
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);
@@ -1415,8 +1417,7 @@ public class WifiNetworkSelectorTest extends WifiBaseTest {
         int[] levels = {mThresholdMinimumRssi2G, mThresholdMinimumRssi5G + RSSI_BUMP,
                 mThresholdMinimumRssi2G + RSSI_BUMP};
         mPlaceholderNominator.setNominatorToSelectCandidate(false);
-        when(mWifiNative.getSupportedFeatureSet(anyString()))
-                .thenReturn(new Long(~WIFI_FEATURE_OWE));
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(~WIFI_FEATURE_OWE);
 
         List<ScanDetail> scanDetails = WifiNetworkSelectorTestUtil.buildScanDetails(
                 ssids, bssids, freqs, caps, levels, mClock);

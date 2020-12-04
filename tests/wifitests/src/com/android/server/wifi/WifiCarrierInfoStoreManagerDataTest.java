@@ -17,8 +17,9 @@
 package com.android.server.wifi;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.util.Xml;
@@ -28,6 +29,7 @@ import com.android.internal.util.FastXmlSerializer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.xmlpull.v1.XmlPullParser;
@@ -39,17 +41,22 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ImsiPrivacyProtectionExemptionStoreDataTest {
+public class WifiCarrierInfoStoreManagerDataTest {
     private static final int TEST_CARRIER_ID = 1911;
+    private static final int TEST_SUB_ID = 3;
 
-    private @Mock ImsiPrivacyProtectionExemptionStoreData.DataSource mDataSource;
-    private ImsiPrivacyProtectionExemptionStoreData mImsiPrivacyProtectionExemptionStoreData;
+    private @Mock WifiCarrierInfoStoreManagerData.DataSource mDataSource;
+    private WifiCarrierInfoStoreManagerData mWifiCarrierInfoStoreManagerData;
+
+    private final Map<Integer, Boolean> mImsiPrivacyProtectionExemptionMap = new HashMap<>();
+    private final Map<Integer, Boolean> mMergedCarrierOffloadMap = new HashMap<>();
+    private final Map<Integer, Boolean> mUnmergedCarrierOffloadMap = new HashMap<>();
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mImsiPrivacyProtectionExemptionStoreData =
-                new ImsiPrivacyProtectionExemptionStoreData(mDataSource);
+        mWifiCarrierInfoStoreManagerData =
+                new WifiCarrierInfoStoreManagerData(mDataSource);
     }
 
     /**
@@ -59,7 +66,7 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
         final XmlSerializer out = new FastXmlSerializer();
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         out.setOutput(outputStream, StandardCharsets.UTF_8.name());
-        mImsiPrivacyProtectionExemptionStoreData.serializeData(out, null);
+        mWifiCarrierInfoStoreManagerData.serializeData(out, null);
         out.flush();
         return outputStream.toByteArray();
     }
@@ -71,7 +78,7 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
         final XmlPullParser in = Xml.newPullParser();
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
         in.setInput(inputStream, StandardCharsets.UTF_8.name());
-        mImsiPrivacyProtectionExemptionStoreData.deserializeData(in, in.getDepth(),
+        mWifiCarrierInfoStoreManagerData.deserializeData(in, in.getDepth(),
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
     }
 
@@ -81,7 +88,7 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
     @Test
     public void verifyStoreFileId() throws Exception {
         assertEquals(WifiConfigStore.STORE_FILE_USER_GENERAL,
-                mImsiPrivacyProtectionExemptionStoreData.getStoreFileId());
+                mWifiCarrierInfoStoreManagerData.getStoreFileId());
     }
 
     /**
@@ -89,9 +96,10 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
      */
     @Test
     public void testSerializeDeserialize() throws Exception {
-        Map<Integer, Boolean> imsiPrivacyProtectionExemptionMap = new HashMap<>();
-        imsiPrivacyProtectionExemptionMap.put(TEST_CARRIER_ID, true);
-        assertSerializeDeserialize(imsiPrivacyProtectionExemptionMap);
+        mImsiPrivacyProtectionExemptionMap.put(TEST_CARRIER_ID, true);
+        mMergedCarrierOffloadMap.put(TEST_SUB_ID, true);
+        mUnmergedCarrierOffloadMap.put(TEST_SUB_ID, false);
+        assertSerializeDeserialize();
     }
 
     /**
@@ -99,35 +107,52 @@ public class ImsiPrivacyProtectionExemptionStoreDataTest {
      */
     @Test
     public void testSerializeDeserializeEmpty() throws Exception {
-        Map<Integer, Boolean> imsiPrivacyProtectionExemptionMap = new HashMap<>();
-        assertSerializeDeserialize(imsiPrivacyProtectionExemptionMap);
+        mImsiPrivacyProtectionExemptionMap.clear();
+        mMergedCarrierOffloadMap.clear();
+        mUnmergedCarrierOffloadMap.clear();
+        assertSerializeDeserialize();
     }
 
     @Test
     public void testDeserializeOnNewDeviceOrNewUser() throws Exception {
-        ArgumentCaptor<Map> deserializedNetworkSuggestionsMap =
-                ArgumentCaptor.forClass(Map.class);
-        mImsiPrivacyProtectionExemptionStoreData.deserializeData(null, 0,
+        InOrder inOrder = inOrder(mDataSource);
+        mWifiCarrierInfoStoreManagerData.deserializeData(null, 0,
                 WifiConfigStore.ENCRYPT_CREDENTIALS_CONFIG_STORE_DATA_VERSION, null);
-        verify(mDataSource).fromDeserialized(deserializedNetworkSuggestionsMap.capture());
-        assertTrue(deserializedNetworkSuggestionsMap.getValue().isEmpty());
+        inOrder.verify(mDataSource).reset();
+        inOrder.verify(mDataSource).deserializeComplete();
+        verifyNoMoreInteractions(mDataSource);
     }
 
 
-    private Map<Integer, Boolean> assertSerializeDeserialize(
-            Map<Integer, Boolean> mImsiPrivacyProtectionExemptionMap) throws Exception {
+    private void assertSerializeDeserialize() throws Exception {
+        InOrder inOrder = inOrder(mDataSource);
         // Setup the data to serialize.
-        when(mDataSource.toSerialize()).thenReturn(mImsiPrivacyProtectionExemptionMap);
+        when(mDataSource.toSerializeImsiMap()).thenReturn(mImsiPrivacyProtectionExemptionMap);
+        when(mDataSource.toSerializeMergedCarrierNetworkOffloadMap()).thenReturn(
+                mMergedCarrierOffloadMap);
+        when(mDataSource.toSerializeUnmergedCarrierNetworkOffloadMap())
+                .thenReturn(mUnmergedCarrierOffloadMap);
 
         // Serialize/deserialize data.
         deserializeData(serializeData());
-
+        inOrder.verify(mDataSource).serializeComplete();
         // Verify the deserialized data.
-        ArgumentCaptor<HashMap> deserializedNetworkSuggestionsMap =
+        ArgumentCaptor<HashMap> deserializedMap =
                 ArgumentCaptor.forClass(HashMap.class);
-        verify(mDataSource).fromDeserialized(deserializedNetworkSuggestionsMap.capture());
+        verify(mDataSource).fromImsiMapDeserialized(deserializedMap.capture());
         assertEquals(mImsiPrivacyProtectionExemptionMap,
-                deserializedNetworkSuggestionsMap.getValue());
-        return deserializedNetworkSuggestionsMap.getValue();
+                deserializedMap.getValue());
+
+        verify(mDataSource)
+                .fromMergedCarrierNetworkOffloadMapDeserialized(deserializedMap.capture());
+        assertEquals(mMergedCarrierOffloadMap,
+                deserializedMap.getValue());
+
+        verify(mDataSource)
+                .fromUnmergedCarrierNetworkOffloadMapDeserialized(deserializedMap.capture());
+        assertEquals(mUnmergedCarrierOffloadMap,
+                deserializedMap.getValue());
+
+        verify(mDataSource).deserializeComplete();
     }
 }

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 import android.net.wifi.WifiManager;
-import android.os.test.TestLooper;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
@@ -43,9 +42,9 @@ public class MboOceControllerTest extends WifiBaseTest {
     private static final String INTERFACE_NAME = "wlan0";
 
     private MboOceController mMboOceController;
-    private TestLooper mLooper;
-    @Mock WifiNative mWifiNative;
+    @Mock ConcreteClientModeManager mClientModeManager;
     @Mock TelephonyManager mTelephonyManager;
+    @Mock ActiveModeWarden mActiveModeWarden;
 
     /**
      * Initializes common state (e.g. mocks) needed by test cases.
@@ -53,12 +52,14 @@ public class MboOceControllerTest extends WifiBaseTest {
     @Before
     public void setUp() throws Exception {
         /* Ensure Looper exists */
-        mLooper = new TestLooper();
         MockitoAnnotations.initMocks(this);
 
-        mMboOceController = new MboOceController(mTelephonyManager, mWifiNative);
+        when(mActiveModeWarden.getPrimaryClientModeManager())
+                .thenReturn(mClientModeManager);
+        when(mActiveModeWarden.getPrimaryClientModeManagerNullable())
+                .thenReturn(mClientModeManager);
 
-        when(mWifiNative.getClientInterfaceName()).thenReturn(INTERFACE_NAME);
+        mMboOceController = new MboOceController(mTelephonyManager, mActiveModeWarden);
     }
 
     /**
@@ -74,8 +75,7 @@ public class MboOceControllerTest extends WifiBaseTest {
         if (isOceEnabled) {
             featureSet |= WifiManager.WIFI_FEATURE_OCE;
         }
-        when(mWifiNative.getSupportedFeatureSet(INTERFACE_NAME))
-                .thenReturn((long) featureSet);
+        when(mClientModeManager.getSupportedFeatures()).thenReturn(featureSet);
 
         mMboOceController.enable();
 
@@ -110,15 +110,15 @@ public class MboOceControllerTest extends WifiBaseTest {
      */
     @Test
     public void testMboEnabledUpdateCellularDataStateChangeEvents() throws Exception {
-        InOrder inOrder = inOrder(mWifiNative);
+        InOrder inOrder = inOrder(mClientModeManager);
         PhoneStateListener dataConnectionStateListener;
         dataConnectionStateListener = enableMboOceController(true, false);
         dataConnectionStateListener.onDataConnectionStateChanged(TelephonyManager.DATA_CONNECTED,
                 TelephonyManager.NETWORK_TYPE_LTE);
-        verify(mWifiNative).setMboCellularDataStatus(eq(INTERFACE_NAME), eq(true));
+        verify(mClientModeManager).setMboCellularDataStatus(true);
         dataConnectionStateListener.onDataConnectionStateChanged(
                 TelephonyManager.DATA_DISCONNECTED, TelephonyManager.NETWORK_TYPE_LTE);
-        verify(mWifiNative).setMboCellularDataStatus(eq(INTERFACE_NAME), eq(false));
+        verify(mClientModeManager).setMboCellularDataStatus(false);
     }
 
     /**

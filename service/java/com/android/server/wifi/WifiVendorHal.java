@@ -68,7 +68,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.HexDump;
 import com.android.server.wifi.HalDeviceManager.InterfaceDestroyedListener;
 import com.android.server.wifi.WifiLinkLayerStats.ChannelStats;
-import com.android.server.wifi.util.ArrayUtils;
+import com.android.server.wifi.WifiNative.RxFateReport;
+import com.android.server.wifi.WifiNative.TxFateReport;
 import com.android.server.wifi.util.BitMask;
 import com.android.server.wifi.util.NativeUtil;
 
@@ -158,13 +159,8 @@ public class WifiVendorHal {
         return result;
     }
 
-    /**
-     * Logs the argument along with the method name.
-     *
-     * Always returns its argument.
-     */
-    private String stringResult(String result) {
-        if (mVerboseLog == sNoLog) return result;
+    private <T> T objResult(T obj) {
+        if (mVerboseLog == sNoLog) return obj;
         // Currently only seen if verbose logging is on
 
         Thread cur = Thread.currentThread();
@@ -172,10 +168,30 @@ public class WifiVendorHal {
 
         mVerboseLog.err("% returns %")
                 .c(niceMethodName(trace, 3))
-                .c(result)
+                .c(String.valueOf(obj))
                 .flush();
 
-        return result;
+        return obj;
+    }
+
+    /**
+     * Logs the argument along with the method name.
+     *
+     * Always returns its argument.
+     */
+    private <T> T nullResult() {
+        if (mVerboseLog == sNoLog) return null;
+        // Currently only seen if verbose logging is on
+
+        Thread cur = Thread.currentThread();
+        StackTraceElement[] trace = cur.getStackTrace();
+
+        mVerboseLog.err("% returns %")
+                .c(niceMethodName(trace, 3))
+                .c(null)
+                .flush();
+
+        return null;
     }
 
     /**
@@ -415,20 +431,20 @@ public class WifiVendorHal {
                     requestorWs);
             if (iface == null) {
                 mLog.err("Failed to create STA iface").flush();
-                return stringResult(null);
+                return nullResult();
             }
             String ifaceName = mHalDeviceManager.getName((IWifiIface) iface);
             if (TextUtils.isEmpty(ifaceName)) {
                 mLog.err("Failed to get iface name").flush();
-                return stringResult(null);
+                return nullResult();
             }
             if (!registerStaIfaceCallback(iface)) {
                 mLog.err("Failed to register STA iface callback").flush();
-                return stringResult(null);
+                return nullResult();
             }
             if (!retrieveWifiChip((IWifiIface) iface)) {
                 mLog.err("Failed to get wifi chip").flush();
-                return stringResult(null);
+                return nullResult();
             }
             enableLinkLayerStats(iface);
             mIWifiStaIfaces.put(ifaceName, iface);
@@ -518,16 +534,16 @@ public class WifiVendorHal {
                     requestorWs, isBridged);
             if (iface == null) {
                 mLog.err("Failed to create AP iface").flush();
-                return stringResult(null);
+                return nullResult();
             }
             String ifaceName = mHalDeviceManager.getName((IWifiIface) iface);
             if (TextUtils.isEmpty(ifaceName)) {
                 mLog.err("Failed to get iface name").flush();
-                return stringResult(null);
+                return nullResult();
             }
             if (!retrieveWifiChip((IWifiIface) iface)) {
                 mLog.err("Failed to get wifi chip").flush();
-                return stringResult(null);
+                return nullResult();
             }
             mIWifiApIfaces.put(ifaceName, iface);
             return ifaceName;
@@ -1442,6 +1458,29 @@ public class WifiVendorHal {
     }
 
     /**
+     * Reset MAC address to factory MAC address on the given interface
+     *
+     * @param ifaceName Name of the interface
+     * @return true for success
+     */
+    public boolean resetApMacToFactoryMacAddress(@NonNull String ifaceName) {
+        synchronized (sLock) {
+            try {
+                android.hardware.wifi.V1_5.IWifiApIface ap15 =
+                        getWifiApIfaceForV1_5Mockable(ifaceName);
+                if (ap15 == null) {
+                    MacAddress mac = getApFactoryMacAddress(ifaceName);
+                    return mac != null && setApMacAddress(ifaceName, mac);
+                }
+                return ok(ap15.resetToFactoryMacAddress());
+            } catch (RemoteException e) {
+                handleRemoteException(e);
+                return false;
+            }
+        }
+    }
+
+    /**
      * Set Mac address on the given interface
      *
      * @param ifaceName Name of the interface
@@ -2053,38 +2092,31 @@ public class WifiVendorHal {
      * Reports the outbound frames for the most recent association (space allowing).
      *
      * @param ifaceName Name of the interface.
-     * @param reportBufs
-     * @return true for success
+     * @return list of TxFateReports up to size {@link WifiLoggerHal#MAX_FATE_LOG_LEN}, or empty
+     * list on failure.
      */
-    public boolean getTxPktFates(@NonNull String ifaceName, WifiNative.TxFateReport[] reportBufs) {
-        if (ArrayUtils.isEmpty(reportBufs)) return boolResult(false);
+    public List<TxFateReport> getTxPktFates(@NonNull String ifaceName) {
         synchronized (sLock) {
             IWifiStaIface iface = getStaIface(ifaceName);
-            if (iface == null) return boolResult(false);
+            if (iface == null) return objResult(new ArrayList<>());
             try {
-                MutableBoolean ok = new MutableBoolean(false);
+                List<TxFateReport> reportBufs = new ArrayList<>();
                 iface.getDebugTxPacketFates((status, fates) -> {
-                            if (!ok(status)) return;
-                            int i = 0;
-                            for (WifiDebugTxPacketFateReport fate : fates) {
-                                if (i >= reportBufs.length) break;
-                                byte code = halToFrameworkTxPktFate(fate.fate);
-                                long us = fate.frameInfo.driverTimestampUsec;
-                                byte type =
-                                        halToFrameworkPktFateFrameType(fate.frameInfo.frameType);
-                                byte[] frame =
-                                        NativeUtil.byteArrayFromArrayList(
-                                                fate.frameInfo.frameContent);
-                                reportBufs[i++] =
-                                        new WifiNative.TxFateReport(code, us, type, frame);
-                            }
-                            ok.value = true;
-                        }
-                );
-                return ok.value;
+                    if (!ok(status)) return;
+                    for (WifiDebugTxPacketFateReport fate : fates) {
+                        if (reportBufs.size() >= WifiLoggerHal.MAX_FATE_LOG_LEN) break;
+                        byte code = halToFrameworkTxPktFate(fate.fate);
+                        long us = fate.frameInfo.driverTimestampUsec;
+                        byte type = halToFrameworkPktFateFrameType(fate.frameInfo.frameType);
+                        byte[] frame = NativeUtil.byteArrayFromArrayList(
+                                fate.frameInfo.frameContent);
+                        reportBufs.add(new TxFateReport(code, us, type, frame));
+                    }
+                });
+                return reportBufs;
             } catch (RemoteException e) {
                 handleRemoteException(e);
-                return false;
+                return new ArrayList<>();
             }
         }
     }
@@ -2095,38 +2127,31 @@ public class WifiVendorHal {
      * Reports the inbound frames for the most recent association (space allowing).
      *
      * @param ifaceName Name of the interface.
-     * @param reportBufs
-     * @return true for success
+     * @return list of RxFateReports up to size {@link WifiLoggerHal#MAX_FATE_LOG_LEN}, or empty
+     * list on failure.
      */
-    public boolean getRxPktFates(@NonNull String ifaceName, WifiNative.RxFateReport[] reportBufs) {
-        if (ArrayUtils.isEmpty(reportBufs)) return boolResult(false);
+    public List<RxFateReport> getRxPktFates(@NonNull String ifaceName) {
         synchronized (sLock) {
             IWifiStaIface iface = getStaIface(ifaceName);
-            if (iface == null) return boolResult(false);
+            if (iface == null) return objResult(new ArrayList<>());
             try {
-                MutableBoolean ok = new MutableBoolean(false);
+                List<RxFateReport> reportBufs = new ArrayList<>();
                 iface.getDebugRxPacketFates((status, fates) -> {
-                            if (!ok(status)) return;
-                            int i = 0;
-                            for (WifiDebugRxPacketFateReport fate : fates) {
-                                if (i >= reportBufs.length) break;
-                                byte code = halToFrameworkRxPktFate(fate.fate);
-                                long us = fate.frameInfo.driverTimestampUsec;
-                                byte type =
-                                        halToFrameworkPktFateFrameType(fate.frameInfo.frameType);
-                                byte[] frame =
-                                        NativeUtil.byteArrayFromArrayList(
-                                                fate.frameInfo.frameContent);
-                                reportBufs[i++] =
-                                        new WifiNative.RxFateReport(code, us, type, frame);
-                            }
-                            ok.value = true;
-                        }
-                );
-                return ok.value;
+                    if (!ok(status)) return;
+                    for (WifiDebugRxPacketFateReport fate : fates) {
+                        if (reportBufs.size() >= WifiLoggerHal.MAX_FATE_LOG_LEN) break;
+                        byte code = halToFrameworkRxPktFate(fate.fate);
+                        long us = fate.frameInfo.driverTimestampUsec;
+                        byte type = halToFrameworkPktFateFrameType(fate.frameInfo.frameType);
+                        byte[] frame = NativeUtil.byteArrayFromArrayList(
+                                fate.frameInfo.frameContent);
+                        reportBufs.add(new RxFateReport(code, us, type, frame));
+                    }
+                });
+                return reportBufs;
             } catch (RemoteException e) {
                 handleRemoteException(e);
-                return false;
+                return new ArrayList<>();
             }
         }
     }
@@ -2351,27 +2376,30 @@ public class WifiVendorHal {
      * Query the firmware roaming capabilities.
      *
      * @param ifaceName Name of the interface.
-     * @param capabilities object to be filled in
-     * @return true for success; false for failure
+     * @return capabilities object on success, null otherwise.
      */
-    public boolean getRoamingCapabilities(@NonNull String ifaceName,
-                                          WifiNative.RoamingCapabilities capabilities) {
+    @Nullable
+    public WifiNative.RoamingCapabilities getRoamingCapabilities(@NonNull String ifaceName) {
         synchronized (sLock) {
             IWifiStaIface iface = getStaIface(ifaceName);
-            if (iface == null) return boolResult(false);
+            if (iface == null) return nullResult();
             try {
                 MutableBoolean ok = new MutableBoolean(false);
-                WifiNative.RoamingCapabilities out = capabilities;
+                WifiNative.RoamingCapabilities out = new WifiNative.RoamingCapabilities();
                 iface.getRoamingCapabilities((status, cap) -> {
                     if (!ok(status)) return;
                     out.maxBlocklistSize = cap.maxBlacklistSize;
                     out.maxAllowlistSize = cap.maxWhitelistSize;
                     ok.value = true;
                 });
-                return ok.value;
+                if (ok.value) {
+                    return out;
+                } else {
+                    return null;
+                }
             } catch (RemoteException e) {
                 handleRemoteException(e);
-                return false;
+                return null;
             }
         }
     }
@@ -2562,6 +2590,13 @@ public class WifiVendorHal {
         IWifiApIface iface = getApIface(ifaceName);
         if (iface == null) return null;
         return android.hardware.wifi.V1_4.IWifiApIface.castFrom(iface);
+    }
+
+    protected android.hardware.wifi.V1_5.IWifiApIface getWifiApIfaceForV1_5Mockable(
+            String ifaceName) {
+        IWifiApIface iface = getApIface(ifaceName);
+        if (iface == null) return null;
+        return android.hardware.wifi.V1_5.IWifiApIface.castFrom(iface);
     }
 
     /**
