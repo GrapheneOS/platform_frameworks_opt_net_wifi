@@ -22,9 +22,6 @@
   ],
   "mainline-presubmit": [
     {
-      "name": "FrameworksWifiTests[com.google.android.wifi.apex]"
-    },
-    {
       "name": "CtsWifiTestCases[com.google.android.wifi.apex]",
       "options": [
         {
