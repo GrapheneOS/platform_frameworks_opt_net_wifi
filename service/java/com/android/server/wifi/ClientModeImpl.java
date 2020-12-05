@@ -2615,12 +2615,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, mLastScanRssi, ssid,
                         blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
-                // TODO: handle REASON_NONLOCAL_DISCONNECT_CONNECTING properly, b/170431034
-                if (blocklistReason != BssidBlocklistMonitor
-                        .REASON_NONLOCAL_DISCONNECT_CONNECTING) {
-                    mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid,
-                            blocklistReason, mLastScanRssi);
-                }
+                mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid,
+                        blocklistReason, mLastScanRssi);
             }
         }
 
