@@ -761,8 +761,10 @@ public class WifiNetworkSuggestionsManager {
                 || mActiveNetworkSuggestionsMatchingConnection.isEmpty()) {
             return;
         }
-        WifiConfiguration activeWifiConfiguration =
-                mActiveNetworkSuggestionsMatchingConnection.iterator().next().wns.wifiConfiguration;
+        WifiConfiguration activeWifiConfiguration = mActiveNetworkSuggestionsMatchingConnection
+                .iterator().next().createInternalWifiConfiguration();
+        activeWifiConfiguration.subscriptionId =
+                mWifiCarrierInfoManager.getBestMatchSubscriptionId(activeWifiConfiguration);
         if (mActiveNetworkSuggestionsMatchingConnection.removeAll(extNetworkSuggestionsRemoved)) {
             if (mActiveNetworkSuggestionsMatchingConnection.isEmpty()) {
                 Log.i(TAG, "Only network suggestion matching the connected network removed. "
@@ -1832,42 +1834,40 @@ public class WifiNetworkSuggestionsManager {
         if (matchingExtNetworkSuggestions == null
                 || matchingExtNetworkSuggestions.isEmpty()) return;
 
+        Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsFromTargetApp;
         if (connectedNetwork.fromWifiNetworkSuggestion) {
-            // Find subset of network suggestions from app suggested the connected network.
-            matchingExtNetworkSuggestions =
-                    matchingExtNetworkSuggestions.stream()
-                            .filter(x -> x.perAppInfo.uid == connectedNetwork.creatorUid)
-                            .collect(Collectors.toSet());
-            if (matchingExtNetworkSuggestions.isEmpty()) {
+            matchingExtNetworkSuggestionsFromTargetApp =
+                    getMatchedSuggestionsWithSameProfileKey(matchingExtNetworkSuggestions,
+                            connectedNetwork);
+            if (matchingExtNetworkSuggestionsFromTargetApp.isEmpty()) {
                 Log.wtf(TAG, "Current connected network suggestion is missing!");
                 return;
             }
             // Store the set of matching network suggestions.
             mActiveNetworkSuggestionsMatchingConnection =
-                    new HashSet<>(matchingExtNetworkSuggestions);
+                    new HashSet<>(matchingExtNetworkSuggestionsFromTargetApp);
         } else {
-            if (connectedNetwork.isOpenNetwork()) {
-                // For saved open network, found the matching suggestion from carrier privileged
-                // apps. As we only expect one suggestor app to take action on post connection, if
-                // multiple apps suggested matched suggestions, framework will randomly pick one.
-                matchingExtNetworkSuggestions = matchingExtNetworkSuggestions.stream()
-                        .filter(x -> x.perAppInfo.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID
-                                || mWifiPermissionsUtil
-                                .checkNetworkCarrierProvisioningPermission(x.perAppInfo.uid))
-                        .limit(1).collect(Collectors.toSet());
-                if (matchingExtNetworkSuggestions.isEmpty()) {
-                    if (mVerboseLoggingEnabled) {
-                        Log.v(TAG, "No suggestion matched connected user saved open network.");
-                    }
-                    return;
+            // If not suggestion, the connected network is open network.
+            // For saved open network, found the matching suggestion from carrier privileged
+            // apps. As we only expect one suggestor app to take action on post connection, if
+            // multiple apps suggested matched suggestions, framework will randomly pick one.
+            matchingExtNetworkSuggestionsFromTargetApp = matchingExtNetworkSuggestions.stream()
+                    .filter(x -> x.perAppInfo.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID
+                            || mWifiPermissionsUtil
+                            .checkNetworkCarrierProvisioningPermission(x.perAppInfo.uid))
+                    .limit(1).collect(Collectors.toSet());
+            if (matchingExtNetworkSuggestionsFromTargetApp.isEmpty()) {
+                if (mVerboseLoggingEnabled) {
+                    Log.v(TAG, "No suggestion matched connected user saved open network.");
                 }
+                return;
             }
         }
 
         mWifiMetrics.incrementNetworkSuggestionApiNumConnectSuccess();
         // Find subset of network suggestions have set |isAppInteractionRequired|.
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsWithReqAppInteraction =
-                matchingExtNetworkSuggestions.stream()
+                matchingExtNetworkSuggestionsFromTargetApp.stream()
                         .filter(x -> x.wns.isAppInteractionRequired)
                         .collect(Collectors.toSet());
         if (matchingExtNetworkSuggestionsWithReqAppInteraction.isEmpty()) return;
@@ -1911,9 +1911,7 @@ public class WifiNetworkSuggestionsManager {
 
         // Find subset of network suggestions which suggested the connection failure network.
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsFromTargetApp =
-                matchingExtNetworkSuggestions.stream()
-                        .filter(x -> x.perAppInfo.uid == network.creatorUid)
-                        .collect(Collectors.toSet());
+                getMatchedSuggestionsWithSameProfileKey(matchingExtNetworkSuggestions, network);
         if (matchingExtNetworkSuggestionsFromTargetApp.isEmpty()) {
             Log.wtf(TAG, "Current connection failure network suggestion is missing!");
             return;
@@ -1926,6 +1924,20 @@ public class WifiNetworkSuggestionsManager {
                     matchingExtNetworkSuggestion.perAppInfo.uid,
                     matchingExtNetworkSuggestion.wns, failureCode);
         }
+    }
+
+    private Set<ExtendedWifiNetworkSuggestion> getMatchedSuggestionsWithSameProfileKey(
+            Set<ExtendedWifiNetworkSuggestion> matchingSuggestions, WifiConfiguration network) {
+        Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsWithSameProfileKey =
+                new HashSet<>();
+        for (ExtendedWifiNetworkSuggestion ewns : matchingSuggestions) {
+            WifiConfiguration config = ewns.createInternalWifiConfiguration();
+            config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+            if (config.getProfileKey().equals(network.getProfileKey())) {
+                matchingExtNetworkSuggestionsWithSameProfileKey.add(ewns);
+            }
+        }
+        return matchingExtNetworkSuggestionsWithSameProfileKey;
     }
 
     private void resetConnectionState() {
