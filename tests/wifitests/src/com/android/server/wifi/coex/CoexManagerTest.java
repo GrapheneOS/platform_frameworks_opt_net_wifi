@@ -22,7 +22,6 @@ import static android.net.wifi.WifiManager.COEX_RESTRICTION_WIFI_AWARE;
 import static android.net.wifi.WifiManager.COEX_RESTRICTION_WIFI_DIRECT;
 import static android.net.wifi.WifiScanner.WIFI_BAND_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
-import static android.telephony.PhoneStateListener.LISTEN_PHYSICAL_CHANNEL_CONFIGURATION;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -56,6 +55,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 
 /**
@@ -254,7 +254,7 @@ public class CoexManagerTest extends WifiBaseTest {
         createCoexManager();
 
         verify(mMockTelephonyManager, times(1))
-                .listen(eq(LISTEN_PHYSICAL_CHANNEL_CONFIGURATION), any(PhoneStateListener.class));
+                .registerPhoneStateListener(any(Executor.class), any(PhoneStateListener.class));
     }
 
     /**
@@ -268,6 +268,6 @@ public class CoexManagerTest extends WifiBaseTest {
         createCoexManager();
 
         verify(mMockTelephonyManager, times(0))
-                .listen(eq(LISTEN_PHYSICAL_CHANNEL_CONFIGURATION), any(PhoneStateListener.class));
+                .registerPhoneStateListener(any(Executor.class), any(PhoneStateListener.class));
     }
 }
