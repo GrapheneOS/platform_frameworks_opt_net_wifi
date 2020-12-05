@@ -121,6 +121,7 @@ public class PasspointProviderTest extends WifiBaseTest {
     private static final long TEST_HESSID = 0x5678L;
     private static final int TEST_ANQP_DOMAIN_ID = 0;
     private static final long TEST_ELAPSED_TIME_SINCE_BOOT = 100000L;
+    private static final String TEST_ANONYMOUS_IDENTITY = "AnonymousIdentity";
 
     private enum CredentialType {
         USER,
@@ -1892,5 +1893,17 @@ public class PasspointProviderTest extends WifiBaseTest {
         mProvider.blockBssOrEss(0, false, 300 /* Seconds */);
         assertEquals(PasspointMatch.HomeProvider,
                 mProvider.match(anqpElementMap, mRoamingConsortium, scanResult));
+    }
+
+    /**
+     * Verify set and get Anonymous Identity on passpoint provider.
+     */
+    @Test
+    public void testSetAnonymousIdentity() throws Exception {
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.SIM, false);
+        mProvider = createProvider(config);
+        mProvider.setAnonymousIdentity(TEST_ANONYMOUS_IDENTITY);
+        assertEquals(TEST_ANONYMOUS_IDENTITY, mProvider.getAnonymousIdentity());
     }
 }
