@@ -478,6 +478,7 @@ public class PasspointNetworkNominateHelperTest {
         when(mPasspointManager.getANQPElements(any(ScanResult.class)))
                 .thenReturn(anqpElements);
         when(wm.getStatus()).thenReturn(HSWanMetricsElement.LINK_STATUS_DOWN);
+        when(wm.isElementInitialized()).thenReturn(true);
 
         List<Pair<ScanDetail, WifiConfiguration>> candidates = mNominateHelper
                 .getPasspointNetworkCandidates(scanDetails, false);

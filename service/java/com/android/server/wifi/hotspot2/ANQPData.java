@@ -20,6 +20,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.hotspot2.anqp.ANQPElement;
 import com.android.server.wifi.hotspot2.anqp.Constants;
+import com.android.server.wifi.hotspot2.anqp.HSWanMetricsElement;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +34,8 @@ public class ANQPData {
      * Entry lifetime.
      */
     @VisibleForTesting
-    public static final long DATA_LIFETIME_MILLISECONDS = 3600000L;
+    public static final long DATA_LIFETIME_MILLISECONDS = 3_600_000L; // One hour
+    public static final long DATA_SHORT_LIFETIME_MILLISECONDS = 600_000L; // Ten minutes
 
     private final Clock mClock;
     private final Map<Constants.ANQPElementType, ANQPElement> mANQPElements;
@@ -42,10 +44,26 @@ public class ANQPData {
     public ANQPData(Clock clock, Map<Constants.ANQPElementType, ANQPElement> anqpElements) {
         mClock = clock;
         mANQPElements = new HashMap<>();
+        long dataLifetime = DATA_LIFETIME_MILLISECONDS;
+
         if (anqpElements != null) {
             mANQPElements.putAll(anqpElements);
+
+            HSWanMetricsElement hsWanMetricsElement =
+                    (HSWanMetricsElement) anqpElements.get(Constants.ANQPElementType.HSWANMetrics);
+
+            if (hsWanMetricsElement != null) {
+                // If the WAN Metrics ANQP-element is initialized, and signals that the AP is at
+                // capacity or its link status is down, then send a new ANQP-request sooner, because
+                // its status may change.
+                if (hsWanMetricsElement.isElementInitialized()
+                        && (hsWanMetricsElement.getStatus() != HSWanMetricsElement.LINK_STATUS_UP
+                        || hsWanMetricsElement.isAtCapacity())) {
+                    dataLifetime = DATA_SHORT_LIFETIME_MILLISECONDS;
+                }
+            }
         }
-        mExpiryTime = mClock.getElapsedSinceBootMillis() + DATA_LIFETIME_MILLISECONDS;
+        mExpiryTime = mClock.getElapsedSinceBootMillis() + dataLifetime;
     }
 
     /**
