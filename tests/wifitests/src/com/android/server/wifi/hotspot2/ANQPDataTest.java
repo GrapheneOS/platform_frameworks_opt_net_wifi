@@ -27,8 +27,11 @@ import androidx.test.filters.SmallTest;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.hotspot2.anqp.ANQPElement;
+import com.android.server.wifi.hotspot2.anqp.CellularNetwork;
 import com.android.server.wifi.hotspot2.anqp.Constants;
+import com.android.server.wifi.hotspot2.anqp.HSWanMetricsElement;
 import com.android.server.wifi.hotspot2.anqp.I18Name;
+import com.android.server.wifi.hotspot2.anqp.ThreeGPPNetworkElement;
 import com.android.server.wifi.hotspot2.anqp.VenueNameElement;
 import com.android.server.wifi.hotspot2.anqp.VenueUrlElement;
 
@@ -37,7 +40,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -57,6 +62,7 @@ public class ANQPDataTest extends WifiBaseTest {
     private static final String TEST_VENUE_NAME1 = "Venue1";
     private static final String TEST_VENUE_NAME2 = "Venue2";
     private static final String TEST_VENUE_URL1 = "https://www.google.com/";
+    private static final long TEST_CLOCK_MILLISEOCONDS = 10000L;
 
     /**
      * Sets up test.
@@ -140,5 +146,81 @@ public class ANQPDataTest extends WifiBaseTest {
                 .equals(venueNameElement));
         assertTrue(data.getElements().get(Constants.ANQPElementType.ANQPVenueUrl)
                 .equals(venueUrlElement));
+    }
+
+    /**
+     * Verify the correct data lifetime of an ANQP entry
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDataLifetime() throws Exception {
+        Map<Constants.ANQPElementType, ANQPElement> anqpList = new HashMap<>();
+        List<I18Name> nameList = new ArrayList<>();
+        nameList.add(new I18Name(TEST_LANGUAGE, TEST_LOCALE, TEST_VENUE_NAME1));
+        VenueNameElement venueNameElement = new VenueNameElement(nameList);
+        CellularNetwork cellularNetwork =
+                new CellularNetwork(Arrays.asList(new String[]{"123456"}));
+        ThreeGPPNetworkElement threeGPPNetworkElement =
+                new ThreeGPPNetworkElement(Arrays.asList(new CellularNetwork[]{cellularNetwork}));
+        // Setup an uninitialized WAN Metrics element (or initialized with 0's)
+        ByteBuffer buffer = ByteBuffer.allocate(HSWanMetricsElement.EXPECTED_BUFFER_SIZE);
+        buffer.put(new byte[HSWanMetricsElement.EXPECTED_BUFFER_SIZE]);
+        buffer.position(0);
+        HSWanMetricsElement wanMetricsElement = HSWanMetricsElement.parse(buffer);
+
+        // Add ANQP elements
+        anqpList.put(Constants.ANQPElementType.ANQPVenueName, venueNameElement);
+        anqpList.put(Constants.ANQPElementType.ANQP3GPPNetwork, threeGPPNetworkElement);
+        anqpList.put(Constants.ANQPElementType.HSWANMetrics, wanMetricsElement);
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(10000L);
+
+        // Data life should be DATA_LIFETIME_MILLISECONDS
+        ANQPData data = new ANQPData(mClock, anqpList);
+        assertNotNull(data);
+        assertFalse(data.getElements().isEmpty());
+        assertFalse(
+                data.expired(TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_LIFETIME_MILLISECONDS - 1));
+        assertTrue(data.expired(TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_LIFETIME_MILLISECONDS));
+
+        wanMetricsElement = new HSWanMetricsElement(HSWanMetricsElement.LINK_STATUS_UP, true, false,
+                10000, 10000, 50, 50, 0);
+        anqpList.put(Constants.ANQPElementType.HSWANMetrics, wanMetricsElement);
+
+        // Data life should be DATA_LIFETIME_MILLISECONDS
+        data = new ANQPData(mClock, anqpList);
+        assertNotNull(data);
+        assertFalse(data.getElements().isEmpty());
+        assertFalse(
+                data.expired(TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_LIFETIME_MILLISECONDS - 1));
+        assertTrue(data.expired(TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_LIFETIME_MILLISECONDS));
+
+        // The following checks should result in a short data lifetime
+        wanMetricsElement = new HSWanMetricsElement(HSWanMetricsElement.LINK_STATUS_DOWN, true,
+                false, 10000, 10000, 50, 50, 0);
+        anqpList.put(Constants.ANQPElementType.HSWANMetrics, wanMetricsElement);
+
+        // Data life should be DATA_SHORT_LIFETIME_MILLISECONDS
+        data = new ANQPData(mClock, anqpList);
+        assertNotNull(data);
+        assertFalse(data.getElements().isEmpty());
+        assertFalse(data.expired(
+                TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_SHORT_LIFETIME_MILLISECONDS - 1));
+        assertTrue(
+                data.expired(TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_SHORT_LIFETIME_MILLISECONDS));
+
+        // The following checks should result in a short data lifetime
+        wanMetricsElement = new HSWanMetricsElement(HSWanMetricsElement.LINK_STATUS_UP, true, true,
+                10000, 10000, 50, 50, 0);
+        anqpList.put(Constants.ANQPElementType.HSWANMetrics, wanMetricsElement);
+
+        // Data life should be DATA_SHORT_LIFETIME_MILLISECONDS
+        data = new ANQPData(mClock, anqpList);
+        assertNotNull(data);
+        assertFalse(data.getElements().isEmpty());
+        assertFalse(data.expired(
+                TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_SHORT_LIFETIME_MILLISECONDS - 1));
+        assertTrue(
+                data.expired(TEST_CLOCK_MILLISEOCONDS + ANQPData.DATA_SHORT_LIFETIME_MILLISECONDS));
     }
 }
