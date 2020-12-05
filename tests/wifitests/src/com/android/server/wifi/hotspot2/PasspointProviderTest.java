@@ -1271,7 +1271,7 @@ public class PasspointProviderTest extends WifiBaseTest {
     }
 
     @Test
-    public void getWifiConfigWithWithAutojoinDisable() throws Exception {
+    public void getWifiConfigWithAutojoinDisable() throws Exception {
         PasspointConfiguration config = generateTestPasspointConfiguration(
                 CredentialType.USER, false);
         mProvider = createProvider(config);
@@ -1279,6 +1279,33 @@ public class PasspointProviderTest extends WifiBaseTest {
         assertTrue(mProvider.getWifiConfig().allowAutojoin);
         mProvider.setAutojoinEnabled(false);
         assertFalse(mProvider.getWifiConfig().allowAutojoin);
+    }
+
+    @Test
+    public void getWifiConfigWithCarrierMerged() throws Exception {
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        config.setCarrierMerged(true);
+        mProvider = createProvider(config);
+        assertTrue(mProvider.getWifiConfig().carrierMerged);
+    }
+
+    @Test
+    public void getWifiConfigWithOemPaid() throws Exception {
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        config.setOemPaid(true);
+        mProvider = createProvider(config);
+        assertTrue(mProvider.getWifiConfig().oemPaid);
+    }
+
+    @Test
+    public void getWifiConfigWithOemPrivate() throws Exception {
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.USER, false);
+        config.setOemPrivate(true);
+        mProvider = createProvider(config);
+        assertTrue(mProvider.getWifiConfig().oemPrivate);
     }
 
     /**

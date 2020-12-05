@@ -10,7 +10,9 @@
           "include-filter": "android.cts.backup.OtherSoundsSettingsHostSideTest"
         }
       ]
-    },
+    }
+  ],
+  "presubmit-large": [
     {
       "name": "CtsWifiTestCases",
       "options": [
@@ -21,9 +23,6 @@
     }
   ],
   "mainline-presubmit": [
-    {
-      "name": "FrameworksWifiTests[com.google.android.wifi.apex]"
-    },
     {
       "name": "CtsWifiTestCases[com.google.android.wifi.apex]",
       "options": [

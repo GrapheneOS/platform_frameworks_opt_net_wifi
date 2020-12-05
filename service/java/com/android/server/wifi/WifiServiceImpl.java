@@ -3968,6 +3968,20 @@ public class WifiServiceImpl extends BaseWifiService {
             // no corresponding flags in vendor HAL, set if overlay enables it.
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_RAND_MAC;
         }
+        if (SdkLevel.isAtLeastS()) {
+            if (mContext.getResources().getBoolean(
+                    R.bool.config_wifiBridgedSoftApSupported)) {
+                // The bridged mode requires the kernel network modules support.
+                // It doesn't relate the vendor HAL, set if overlay enables it.
+                supportedFeatureSet |= WifiManager.WIFI_FEATURE_BRIDGED_AP;
+            }
+            if (mContext.getResources().getBoolean(
+                    R.bool.config_wifiStaWithBridgedSoftApConcurrencySupported)) {
+                // The bridged mode requires the kernel network modules support.
+                // It doesn't relate the vendor HAL, set if overlay enables it.
+                supportedFeatureSet |= WifiManager.WIFI_FEATURE_STA_BRIDGED_AP;
+            }
+        }
         supportedFeatureSet |= mWifiThreadRunner.call(
                 () -> {
                     long concurrencyFeatureSet = 0L;

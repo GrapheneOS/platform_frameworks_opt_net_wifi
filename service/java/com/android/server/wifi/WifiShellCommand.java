@@ -937,7 +937,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
             } else if (option.equals("-b")) {
                 suggestionBuilder.setBssid(MacAddress.fromString(getNextArgRequired()));
             } else if (option.equals("-e")) {
-                suggestionBuilder.setIsEnhancedMacRandomizationEnabled(false);
+                if (SdkLevel.isAtLeastS()) {
+                    suggestionBuilder.setIsEnhancedMacRandomizationEnabled(false);
+                } else {
+                    pw.println("-e option is not supported before S");
+                }
             } else {
                 pw.println("Ignoring unknown option " + option);
             }

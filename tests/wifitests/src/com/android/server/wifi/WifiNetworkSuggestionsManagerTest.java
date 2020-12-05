@@ -87,6 +87,7 @@ import com.android.wifi.resources.R;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -250,6 +251,8 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.isSubIdMatchingCarrierId(anyInt(), anyInt())).thenReturn(true);
         when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(any())).thenReturn(
                 SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+        when(mWifiCarrierInfoManager.isSimPresent(SubscriptionManager.INVALID_SUBSCRIPTION_ID))
+                .thenReturn(false);
 
         when(mWifiKeyStore.updateNetworkKeys(any(), any())).thenReturn(true);
 
@@ -3295,6 +3298,19 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         assertTrue(mWifiNetworkSuggestionsManager
                 .isPasspointSuggestionSharedWithUser(placeholderConfig));
+
+        placeholderConfig.carrierId = TEST_CARRIER_ID;
+        placeholderConfig.subscriptionId = TEST_SUBID;
+        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(placeholderConfig))
+                .thenReturn(TEST_SUBID);
+        when(mWifiCarrierInfoManager.isSimPresent(TEST_SUBID)).thenReturn(false);
+        assertFalse(mWifiNetworkSuggestionsManager
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
+
+        when(mWifiCarrierInfoManager.isSimPresent(TEST_SUBID)).thenReturn(true);
+        assertTrue(mWifiNetworkSuggestionsManager
+                .isPasspointSuggestionSharedWithUser(placeholderConfig));
+
         placeholderConfig.meteredHint = true;
         when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(placeholderConfig))
                 .thenReturn(true);
@@ -3389,6 +3405,73 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 .getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(scanResults);
         assertEquals(1, wifiConfigurationList.size());
         assertEquals(networkSuggestion3.wifiConfiguration, wifiConfigurationList.get(0));
+    }
+
+    /**
+     * test getWifiConfigForMatchedNetworkSuggestionsSharedWithUser on carrier network.
+     *  - SIM is not present will not be return
+     */
+    @Test
+    public void testGetWifiConfigForMatchedCarrierNetworkSuggestionsSharedWithUser() {
+        when(mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(TEST_UID_1))
+                .thenReturn(true);
+        WifiNetworkSuggestion networkSuggestion1 = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
+        WifiNetworkSuggestion networkSuggestion2 = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createPskNetwork(), null, false, false, true, true,
+                DEFAULT_PRIORITY_GROUP);
+        networkSuggestion1.wifiConfiguration.carrierId = TEST_CARRIER_ID;
+        networkSuggestion2.wifiConfiguration.carrierId = TEST_CARRIER_ID;
+        WifiConfiguration configuration = networkSuggestion1.wifiConfiguration;
+
+        // Suggestion das SIM present, suggestion has SIM absent
+        when(mWifiCarrierInfoManager
+                .getBestMatchSubscriptionId(argThat(new WifiConfigMatcher(configuration))))
+                .thenReturn(TEST_SUBID);
+        when(mWifiCarrierInfoManager.isSimPresent(TEST_SUBID)).thenReturn(true);
+        List<ScanResult> scanResults = new ArrayList<>();
+        scanResults.add(
+                createScanDetailForNetwork(networkSuggestion1.wifiConfiguration).getScanResult());
+        scanResults.add(
+                createScanDetailForNetwork(networkSuggestion2.wifiConfiguration).getScanResult());
+
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion1);
+                    add(networkSuggestion2);
+                }};
+
+        networkSuggestion1.wifiConfiguration.fromWifiNetworkSuggestion = true;
+        networkSuggestion2.wifiConfiguration.fromWifiNetworkSuggestion = true;
+        networkSuggestion1.wifiConfiguration.creatorName = TEST_PACKAGE_1;
+        networkSuggestion2.wifiConfiguration.creatorName = TEST_PACKAGE_1;
+        networkSuggestion1.wifiConfiguration.subscriptionId = TEST_SUBID;
+
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+        setupGetConfiguredNetworksFromWcm(networkSuggestion1.wifiConfiguration,
+                networkSuggestion2.wifiConfiguration);
+        List<WifiConfiguration> wifiConfigurationList = mWifiNetworkSuggestionsManager
+                .getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(scanResults);
+        assertEquals(1, wifiConfigurationList.size());
+        assertEquals(networkSuggestion1.wifiConfiguration, wifiConfigurationList.get(0));
+    }
+
+    class WifiConfigMatcher implements ArgumentMatcher<WifiConfiguration> {
+        private final WifiConfiguration mConfig;
+
+        WifiConfigMatcher(WifiConfiguration config) {
+            assertNotNull(config);
+            mConfig = config;
+        }
+
+        @Override
+        public boolean matches(WifiConfiguration otherConfig) {
+            if (otherConfig == null) return false;
+            return mConfig.SSID.equals(otherConfig.SSID);
+        }
     }
 
     private void assertSuggestionsEquals(Set<WifiNetworkSuggestion> expectedSuggestions,
