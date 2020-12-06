@@ -2407,6 +2407,14 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             stopDhcpSetup();
         }
 
+        // DISASSOC_AP_BUSY could be received in both after L3 connection is successful or right
+        // after BSSID association if the AP can't accept more stations.
+        if (disconnectReason == ReasonCode.DISASSOC_AP_BUSY) {
+            mWifiConfigManager.setRecentFailureAssociationStatus(
+                    mWifiInfo.getNetworkId(),
+                    WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY);
+        }
+
         mWifiScoreReport.stopConnectedNetworkScorer();
         /* Reset data structures */
         mWifiScoreReport.reset();
@@ -2615,12 +2623,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, mLastScanRssi, ssid,
                         blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
-                // TODO: handle REASON_NONLOCAL_DISCONNECT_CONNECTING properly, b/170431034
-                if (blocklistReason != BssidBlocklistMonitor
-                        .REASON_NONLOCAL_DISCONNECT_CONNECTING) {
-                    mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid,
-                            blocklistReason, mLastScanRssi);
-                }
+                mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid,
+                        blocklistReason, mLastScanRssi);
             }
         }
 
@@ -5189,11 +5193,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                                 WifiDiagnostics.REPORT_REASON_UNEXPECTED_DISCONNECT);
                     }
 
-                    if (eventInfo.reasonCode == ReasonCode.DISASSOC_AP_BUSY) {
-                        mWifiConfigManager.setRecentFailureAssociationStatus(
-                                mWifiInfo.getNetworkId(),
-                                WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY);
-                    }
                     if (!eventInfo.locallyGenerated) {
                         // ignore disconnects initiated by wpa_supplicant.
                         mWifiScoreCard.noteNonlocalDisconnect(eventInfo.reasonCode);

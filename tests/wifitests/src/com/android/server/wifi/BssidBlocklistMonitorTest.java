@@ -77,7 +77,8 @@ public class BssidBlocklistMonitorTest {
                     Map.entry(BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, 3),
                     Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 1),
                     Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE, 1)
+                    Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE, 1),
+                    Map.entry(BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING, 2)
             );
     private static final int NUM_FAILURES_TO_BLOCKLIST =
             BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(TEST_L2_FAILURE);
@@ -144,6 +145,10 @@ public class BssidBlocklistMonitorTest {
                 R.integer.config_wifiBssidBlocklistMonitorAbnormalDisconnectThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
                         BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
+        mResources.setInteger(
+                R.integer.config_wifiBssidBlocklistMonitorNonlocalDisconnectConnectingThreshold,
+                BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
+                        BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING));
 
         when(mContext.getResources()).thenReturn(mResources);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
@@ -492,6 +497,8 @@ public class BssidBlocklistMonitorTest {
                 BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
                 BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
+        verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
+                BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING);
     }
 
     /**
@@ -571,6 +578,10 @@ public class BssidBlocklistMonitorTest {
             int threshold = entry.getValue();
             when(mClock.getWallClockMillis()).thenReturn(0L);
             handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1, reason, threshold);
+
+            // verify the BSSID is blocked
+            assertEquals(1, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(
+                    TEST_SSID_1));
 
             // verify that the blocklist streak is incremented
             verify(mWifiScoreCard).incrementBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1, reason);

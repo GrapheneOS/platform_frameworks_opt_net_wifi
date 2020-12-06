@@ -3062,6 +3062,26 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the recent failure association status is updated properly when a disconnection
+     * with reason code DISASSOC_AP_BUSY occurs.
+     */
+    @Test
+    public void testMidConnectionDisconnectionApBusyUpdatesRecentAssociationFailureStatus()
+            throws Exception {
+        initializeAndAddNetworkAndVerifySuccess();
+        startConnectSuccess();
+        assertEquals("L2ConnectingState", getCurrentState().getName());
+
+        // Disconnection with reason = DISASSOC_AP_BUSY
+        DisconnectEventInfo disconnectEventInfo =
+                new DisconnectEventInfo(sSSID, sBSSID, 5, false);
+        mCmi.sendMessage(WifiMonitor.NETWORK_DISCONNECTION_EVENT, disconnectEventInfo);
+        mLooper.dispatchAll();
+        verify(mWifiConfigManager).setRecentFailureAssociationStatus(anyInt(),
+                eq(WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY));
+    }
+
+    /**
      * Verifies that the BssidBlocklistMonitor is notified, but the WifiLastResortWatchdog is
      * not notified of association rejections of type REASON_CODE_AP_UNABLE_TO_HANDLE_NEW_STA.
      * @throws Exception

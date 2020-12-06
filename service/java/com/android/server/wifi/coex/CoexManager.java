@@ -19,7 +19,6 @@ package com.android.server.wifi.coex;
 import static android.net.wifi.WifiManager.COEX_RESTRICTION_SOFTAP;
 import static android.net.wifi.WifiManager.COEX_RESTRICTION_WIFI_AWARE;
 import static android.net.wifi.WifiManager.COEX_RESTRICTION_WIFI_DIRECT;
-import static android.telephony.PhoneStateListener.LISTEN_PHYSICAL_CHANNEL_CONFIGURATION;
 
 import android.annotation.NonNull;
 import android.content.Context;
@@ -74,14 +73,17 @@ public class CoexManager {
     private final RemoteCallbackList<ICoexCallback> mRemoteCallbackList =
             new RemoteCallbackList<ICoexCallback>();
 
+    private CoexPhoneStateListener mCoexPhoneStateListener;
+
     public CoexManager(@NonNull Context context, @NonNull TelephonyManager telephonyManager,
             @NonNull Handler handler) {
         mContext = context;
         mTelephonyManager = telephonyManager;
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiDefaultCoexAlgorithmEnabled)) {
-            mTelephonyManager.listen(LISTEN_PHYSICAL_CHANNEL_CONFIGURATION,
-                    new CoexPhoneStateListener(new HandlerExecutor(handler)));
+            mCoexPhoneStateListener = new CoexPhoneStateListener(new HandlerExecutor(handler));
+            mTelephonyManager.registerPhoneStateListener(new HandlerExecutor(handler),
+                    mCoexPhoneStateListener);
         }
     }
 
@@ -215,13 +217,14 @@ public class CoexManager {
         void onCoexUnsafeChannelsChanged();
     }
 
-    private class CoexPhoneStateListener extends PhoneStateListener {
+    private class CoexPhoneStateListener extends PhoneStateListener
+            implements PhoneStateListener.PhysicalChannelConfigChangedListener {
         private CoexPhoneStateListener(Executor executor) {
             super(executor);
         }
 
         @java.lang.Override
-        public void onPhysicalChannelConfigurationChanged(
+        public void onPhysicalChannelConfigChanged(
                 @NonNull List<PhysicalChannelConfig> configs) {
             // TODO(b/153651001): Extract cell band and channel info here and run through the
             //                    channel avoidance algorithm to update mCurrentCoexUnsafeChannels
