@@ -103,10 +103,6 @@ public class WifiConnectivityManager {
     // Number of milli-seconds to delay before retry starting
     // a previously failed scan
     private static final int RESTART_SCAN_DELAY_MS = 2 * 1000; // 2 seconds
-    // When in disconnected mode, a watchdog timer will be fired
-    // every WATCHDOG_INTERVAL_MS to start a single scan. This is
-    // to prevent caveat from things like PNO scan.
-    private static final int WATCHDOG_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
     // Restricted channel list age out value.
     private static final long CHANNEL_LIST_AGE_MS = 60 * 60 * 1000; // 1 hour
     // This is the time interval for the connection attempt rate calculation. Connection attempt
@@ -256,8 +252,8 @@ public class WifiConnectivityManager {
         }
     }
 
-    // As a watchdog mechanism, a single scan will be scheduled every WATCHDOG_INTERVAL_MS
-    // if it is in the WIFI_STATE_DISCONNECTED state.
+    // As a watchdog mechanism, a single scan will be scheduled every
+    // config_wifiPnoWatchdogIntervalMinutes if it is in the WIFI_STATE_DISCONNECTED state.
     private final AlarmManager.OnAlarmListener mWatchdogListener =
             new AlarmManager.OnAlarmListener() {
                 public void onAlarm() {
@@ -1926,7 +1922,8 @@ public class WifiConnectivityManager {
         localLog("scheduleWatchdogTimer");
 
         mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                            mClock.getElapsedSinceBootMillis() + WATCHDOG_INTERVAL_MS,
+                            mClock.getElapsedSinceBootMillis() + mContext.getResources().getInteger(
+                                    R.integer.config_wifiPnoWatchdogIntervalMs),
                             WATCHDOG_TIMER_TAG,
                             mWatchdogListener, mEventHandler);
     }
