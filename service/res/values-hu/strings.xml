@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"A(z) <xliff:g id="NAME">%s</xliff:g> hálózatokat javasolt. Az eszköz automatikusan csatlakozhat hozzájuk."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Engedélyezés"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Nem, köszönöm"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Adatvédelmi figyelmeztetés az IMSI-védelemről"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"A szolgáltató (<xliff:g id="CARRIERNAME">%s</xliff:g>) a SIM-kártya adatainak felhasználásával javasolt adatvédelem nélküli hálózatokat. Engedélyezi a hálózatra való automatikus csatlakozást?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Engedélyezés"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Tiltás"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"A(z) <xliff:g id="CARRIERNAME">%s</xliff:g> automatikusan csatlakozni szeretne"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Ezek a hálózatok egyedi azonosítót kapnak, amelyek az eszköz helyadatainak követésére használhatók"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Csatlakozás mindenképp"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Ne csatlakozzon"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Biztosan csatlakozik?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Ha csatlakozik, a(z) <xliff:g id="CARRIERNAME">%s</xliff:g> Wi‑Fi-hálózatai hozzáférhetnek a SIM-hez társított egyedi azonosítóhoz, amelyet meg is oszthatnak. Ez lehetővé teheti eszköze helyadatainak követését."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Csatlakozás"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Ne csatlakozzon"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"A Wi-Fi automatikusan bekapcsol"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Amikor jó minőségű mentett hálózat közelében tartózkodik"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Ne kapcsolódjon vissza"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Nem lehet csatlakozni a következőhöz: <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Koppintson az adatvédelmi beállítások módosításához, majd próbálja újra"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Módosítja az adatvédelmi beállítást?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"Lehet, hogy a(z) <xliff:g id="SSID_0">%1$s</xliff:g> az eszköz egyedi azonosítójaként szolgáló MAC-címmel próbál kapcsolatot létrehozni. Így más közeli eszközök megfigyelhetik saját eszköze helyzetét. \n\nHa továbblép, a(z) <xliff:g id="SSID_1">%1$s</xliff:g> módosítja a vonatkozó adatvédelmi beállítást, majd ismét megkísérli a kapcsolódást."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"A kapcsolódáshoz a(z) <xliff:g id="SSID">%1$s</xliff:g> számára szükséges az eszköz egyedi azonosítójaként szolgáló MAC-cím használata. Jelenleg az adatvédelmi beállításnak megfelelően a rendszer ehhez a hálózathoz véletlenszerű azonosítót használ. \n\nEz a módosítás lehetővé teheti, hogy más közeli eszközök megfigyelhessék az Ön eszközének helyzetét."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Beállítás módosítása"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Beállítás frissítve. Próbáljon ismét kapcsolódni."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Beállítás frissítve. Próbáljon ismét csatlakozni."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Nem lehet módosítani az adatvédelmi beállítást"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"A hálózat nem található"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : EAP hitelesítési hiba 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : EAP hitelesítési hiba 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : EAP hitelesítési hiba 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : EAP hitelesítési hiba 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Mobil hotspot letiltva"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"A mobil hotspot le lett tiltva"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"A mobil hotspot le lett tiltva, mert lejárt az inaktivitási időkorlát."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Hotspot kikapcsolva"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Nincsenek csatlakoztatott eszközök. Koppintson a módosításhoz."</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Nincs Wi-Fi-kapcsolat"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"A(z) <xliff:g id="SSID">%1$s</xliff:g> csatlakoztatásához helyezzen be <xliff:g id="CARRIER_NAME">%2$s</xliff:g> szolgáltatóhoz tartozó SIM-kártyát"</string>
 </resources>
