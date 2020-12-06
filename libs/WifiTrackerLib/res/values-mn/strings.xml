@@ -21,7 +21,7 @@
     <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g> хадгалсан"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"Автоматаар холбогдохгүй"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"Интернэт хандалт байхгүй байна"</string>
-    <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"Нотолгооны асуудал"</string>
+    <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"Баталгаажуулалтын асуудал"</string>
     <string name="wifi_check_password_try_again" msgid="2643230209986217827">"Нууц үгийг шалгаад дахин оролдоно уу"</string>
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"IP тохируулга амжилтгүй боллоо"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"Идэвхгүйжүүлсэн"</string>

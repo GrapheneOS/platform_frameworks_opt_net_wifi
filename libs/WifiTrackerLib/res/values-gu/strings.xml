@@ -33,7 +33,7 @@
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> દ્વારા કનેક્ટ થયેલ"</string>
     <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> મારફતે ઉપલબ્ધ"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> મારફતે ઑટોમૅટિક રીતે કનેક્ટ કર્યું છે"</string>
-    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"નેટવર્ક રેટિંગ પ્રદાતા દ્વારા આપમેળે કનેક્ટ થયું"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"નેટવર્ક રેટિંગ પ્રદાતા દ્વારા ઑટોમૅટિક રીતે કનેક્ટ થયું"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"મર્યાદિત કનેક્શન"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"ખાનગી DNS સર્વર ઍક્સેસ કરી શકાતા નથી"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"કોઈ ઇન્ટરનેટ નથી"</string>
