@@ -20,7 +20,7 @@
     <string name="wifi_available_title" msgid="2844963247498642107">"Поврзете се на отворена Wi‑Fi-мрежа"</string>
     <string name="wifi_available_title_connecting" msgid="4308431577637294026">"Поврзување со Wi-Fi мрежа"</string>
     <string name="wifi_available_title_connected" msgid="922603556292157664">"Се поврзавте на Wi‑Fi-мрежа"</string>
-    <string name="wifi_available_title_failed_to_connect" msgid="2304443371893419545">"Не можеше да се поврзе на Wi‑Fi-мрежа"</string>
+    <string name="wifi_available_title_failed_to_connect" msgid="2304443371893419545">"Не може да се поврзе на Wi‑Fi-мрежа"</string>
     <string name="wifi_available_content_failed_to_connect" msgid="3171283790496729136">"Допрете за да ги видите сите мрежи"</string>
     <string name="wifi_available_action_connect" msgid="7989951293406720158">"Поврзете се"</string>
     <string name="wifi_available_action_all_networks" msgid="2616926772813472478">"Сите мрежи"</string>
@@ -44,7 +44,7 @@
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Не вклучувај повторно"</string>
     <string name="wifi_wakeup_enabled_title" msgid="7758584632765597662">"Wi‑Fi се вклучи автоматски"</string>
     <string name="wifi_wakeup_enabled_content" msgid="4713038331224656338">"Близу сте до зачувана мрежа: <xliff:g id="NETWORK_SSID">%1$s</xliff:g>"</string>
-    <string name="wifi_watchdog_network_disabled" msgid="688248897654073438">"Не можеше да се поврзе со Wi-Fi"</string>
+    <string name="wifi_watchdog_network_disabled" msgid="688248897654073438">"Не може да се поврзе на Wi-Fi"</string>
     <string name="wifi_watchdog_network_disabled_detailed" msgid="2946200607682633112">" има слаба интернет-врска."</string>
     <string name="wifi_connect_alert_title" msgid="6144470472092017636">"Дозволете поврзување?"</string>
     <string name="wifi_connect_alert_message" msgid="3123801378559831220">"Апликацијата %1$s сака да се поврзе со Wifi-мрежата %2$s"</string>

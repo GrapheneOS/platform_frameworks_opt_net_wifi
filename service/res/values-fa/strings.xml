@@ -70,13 +70,13 @@
     <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"تنظیم به‌روزرسانی شد. دوباره متصل شوید."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"تنظیم حریم‌خصوصی تغییر نکرد"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"شبکه‌ای پیدا نشد"</string>
-    <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۰ احراز هویت EAP"</string>
-    <string name="wifi_eap_error_message_code_32761" msgid="3110197168451423384">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۱ احراز هویت EAP"</string>
-    <string name="wifi_eap_error_message_code_32762" msgid="3515553222282833794">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۲ احراز هویت EAP"</string>
-    <string name="wifi_eap_error_message_code_32763" msgid="3790937365887990781">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۳ احراز هویت EAP"</string>
-    <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۴ احراز هویت EAP"</string>
-    <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۵ احراز هویت EAP"</string>
-    <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۶ احراز هویت EAP"</string>
+    <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۰ اصالت‌سنجی EAP"</string>
+    <string name="wifi_eap_error_message_code_32761" msgid="3110197168451423384">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۱ اصالت‌سنجی EAP"</string>
+    <string name="wifi_eap_error_message_code_32762" msgid="3515553222282833794">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۲ اصالت‌سنجی EAP"</string>
+    <string name="wifi_eap_error_message_code_32763" msgid="3790937365887990781">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۳ اصالت‌سنجی EAP"</string>
+    <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۴ اصالت‌سنجی EAP"</string>
+    <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۵ اصالت‌سنجی EAP"</string>
+    <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"‏<xliff:g id="SSID">%1$s</xliff:g> : خطای ۳۲۷۶۶ اصالت‌سنجی EAP"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"نقطه اتصال خاموش شد"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"هیچ دستگاهی متصل نیست. برای اصلاح ضربه بزنید."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"‏Wi-Fi قطع شد."</string>
