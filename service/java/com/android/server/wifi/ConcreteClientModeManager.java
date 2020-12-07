@@ -207,6 +207,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
         private int mMaximumDeferringTimeMillis = 0;
         private long mDeferringStartTimeMillis = 0;
         private ConnectivityManager mConnectivityManager = null;
+        private boolean mIsImsNetworkLost = false;
+        private boolean mIsImsNetworkUnregistered = false;
 
         private final RegistrationManager.RegistrationCallback mImsRegistrationCallback =
                 new RegistrationManager.RegistrationCallback() {
@@ -223,7 +225,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     @Override
                     public void onUnregistered(ImsReasonInfo imsReasonInfo) {
                         Log.d(getTag(), "on IMS unregistered");
-                        // Wait for onLost in NetworkCallback
+                        mIsImsNetworkUnregistered = true;
+                        checkAndContinueToStopWifi();
                     }
                 };
 
@@ -247,12 +250,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     mRegisteredImsNetworkCount--;
                     if (mIsDeferring && mRegisteredImsNetworkCount <= 0) {
                         mRegisteredImsNetworkCount = 0;
-                        // Add delay for targets where IMS PDN down at modem takes additional delay.
-                        int delay = mContext.getResources()
-                                .getInteger(R.integer.config_wifiDelayDisconnectOnImsLostMs);
-                        if (delay == 0 || !postDelayed(mRunnable, delay)) {
-                            continueToStopWifi();
-                        }
+                        mIsImsNetworkLost = true;
+                        checkAndContinueToStopWifi();
                     }
                 }
             }
@@ -306,6 +305,17 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     new Handler(mLooper));
         }
 
+        private void checkAndContinueToStopWifi() {
+            if (mIsImsNetworkLost && mIsImsNetworkUnregistered) {
+                // Add delay for targets where IMS PDN down at modem takes additional delay.
+                int delay = mContext.getResources()
+                        .getInteger(R.integer.config_wifiDelayDisconnectOnImsLostMs);
+                if (delay == 0 || !postDelayed(mRunnable, delay)) {
+                    continueToStopWifi();
+                }
+            }
+        }
+
         private void continueToStopWifi() {
             Log.d(getTag(), "The target role " + mTargetRole);
 
@@ -348,6 +358,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
             }
 
             mIsDeferring = false;
+            mIsImsNetworkLost = false;
+            mIsImsNetworkUnregistered = false;
         }
     }
 
