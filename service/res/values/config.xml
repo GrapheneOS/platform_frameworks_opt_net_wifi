@@ -433,6 +433,10 @@
     <!-- Maximum number of SSIDs that can be PNO scanned concurrently-->
     <integer translatable="false" name="config_wifiMaxPnoSsidCount">16</integer>
 
+    <!-- When disconnected and PNO scan is enabled, wake up to do a single scan every
+    config_wifiPnoWatchdogIntervalMs in case PNO scan failed. (default = 20 minutes)-->
+    <integer translatable="false" name="config_wifiPnoWatchdogIntervalMs">1200000</integer>
+
     <!-- Suspend optimization. -->
     <bool translatable="false" name="config_wifiSuspendOptimizationsEnabled">true</bool>
 
