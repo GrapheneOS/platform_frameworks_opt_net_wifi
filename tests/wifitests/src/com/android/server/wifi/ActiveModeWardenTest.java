@@ -2102,7 +2102,11 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testRestartWifiStackInEnabledStateTriggersBugReport() throws Exception {
         enableWifi();
-        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+
+        // note: using a reason that will typical not start a bug report on purpose to guarantee
+        // that it is the flag and not the reason which controls it.
+        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG, "some text",
+                true);
         mLooper.dispatchAll();
         verify(mWifiDiagnostics).takeBugReport(anyString(), anyString());
     }
@@ -2110,7 +2114,10 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     @Test
     public void testRestartWifiWatchdogDoesNotTriggerBugReport() throws Exception {
         enableWifi();
-        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+        // note: using a reason that will typical start a bug report on purpose to guarantee that
+        // it is the flag and not the reason which controls it.
+        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                "anything", false);
         mLooper.dispatchAll();
         verify(mWifiDiagnostics, never()).takeBugReport(anyString(), anyString());
     }
@@ -2161,7 +2168,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
     public void testRestartWifiStackInDisabledState() throws Exception {
         assertInDisabledState();
 
-        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         mLooper.dispatchAll();
 
         assertInDisabledState();
@@ -2191,7 +2199,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 any(), eq(new WorkSource(Process.WIFI_UID)), eq(ROLE_CLIENT_SCAN_ONLY),
                 anyBoolean());
 
-        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         mLooper.dispatchAll();
 
         verify(mClientModeManager).stop();
@@ -2225,7 +2234,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 any(), eq(TEST_WORKSOURCE), eq(ROLE_CLIENT_PRIMARY), anyBoolean());
 
         assertWifiShutDown(() -> {
-            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                    SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
             mLooper.dispatchAll();
             // Complete the stop
             mClientListener.onStopped(mClientModeManager);
@@ -2274,7 +2284,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         verify(mClientModeManager).clearWifiConnectedNetworkScorer();
         verify(mModeChangeCallback).onActiveModeManagerRemoved(mClientModeManager);
 
-        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+        mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_LAST_RESORT_WATCHDOG], false);
         mLooper.dispatchAll();
 
         // wasn't called again
@@ -2296,7 +2307,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 any(), any(), any(), eq(TEST_WORKSOURCE), eq(ROLE_SOFTAP_TETHERED), anyBoolean());
 
         assertWifiShutDown(() -> {
-            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                    SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
             mLooper.dispatchAll();
             // Complete the stop
             mSoftApListener.onStopped(mSoftApManager);
@@ -2333,7 +2345,8 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 any(), any(), any(), eq(TEST_WORKSOURCE), eq(ROLE_SOFTAP_TETHERED), anyBoolean());
 
         assertWifiShutDown(() -> {
-            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+            mActiveModeWarden.recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                    SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
             mLooper.dispatchAll();
             // Complete the stop
             mClientListener.onStopped(mClientModeManager);

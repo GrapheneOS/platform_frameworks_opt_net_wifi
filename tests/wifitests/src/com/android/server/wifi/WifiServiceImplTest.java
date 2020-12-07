@@ -45,6 +45,7 @@ import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.server.wifi.LocalOnlyHotspotRequestInfo.HOTSPOT_NO_ERROR;
+import static com.android.server.wifi.SelfRecovery.REASON_API_CALL;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -1058,6 +1059,37 @@ public class WifiServiceImplTest extends WifiBaseTest {
             mWifiServiceImpl.setWifiEnabled(TEST_PACKAGE_NAME, false);
             fail();
         } catch (SecurityException e) { }
+    }
+
+    /**
+     * Verify that the restartWifiSubsystem fails w/o the NETWORK_AIRPLANE_MODE permission.
+     */
+    @Test public void testRestartWifiSubsystemWithoutPermission() {
+        doThrow(new SecurityException()).when(mContext).enforceCallingOrSelfPermission(
+                eq(android.Manifest.permission.NETWORK_AIRPLANE_MODE), eq("WifiService"));
+
+        try {
+            mWifiServiceImpl.restartWifiSubsystem("doesn't matter");
+            fail("restartWifiSubsystem should fail w/o the APM permission!");
+        } catch (SecurityException e) {
+            // empty clause
+        }
+    }
+
+    /**
+     * Verify that the restartWifiSubsystem succeeds and passes correct parameters.
+     */
+    @Test public void testRestartWifiSubsystemWithReason() {
+        when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_AIRPLANE_MODE),
+                anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+
+        String reason = "Something is failing";
+        mWifiServiceImpl.restartWifiSubsystem(reason);
+        verify(mActiveModeWarden).recoveryRestartWifi(REASON_API_CALL, reason, true);
+        mWifiServiceImpl.restartWifiSubsystem("");
+        verify(mActiveModeWarden).recoveryRestartWifi(REASON_API_CALL, "", false);
+        mWifiServiceImpl.restartWifiSubsystem(null);
+        verify(mActiveModeWarden).recoveryRestartWifi(REASON_API_CALL, null, false);
     }
 
     /**
