@@ -3022,8 +3022,10 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiScoreCard).noteConnectionFailure(any(), anyInt(), anyString(), anyInt());
         verify(mWifiScoreCard).resetConnectionState();
-        verify(mBssidBlocklistMonitor, never()).handleBssidConnectionFailure(anyString(),
-                anyString(), anyInt(), anyInt());
+        // Verify that the BssidBlocklistMonitor is notified of a non-locally generated disconnect
+        // that occurred mid connection attempt.
+        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(anyString(), anyString(),
+                eq(BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING), anyInt());
     }
 
     /**
