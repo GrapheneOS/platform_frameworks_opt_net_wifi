@@ -2373,7 +2373,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * using the interface, stopping DHCP & disabling interface
      *
      * @param disconnectReason must be one of WifiDisconnectReported.FailureReason values
-     *                         defined in /frameworks/base/cmds/statsd/src/atoms.proto
+     *                         defined in /frameworks/proto_logging/stats/atoms.proto
      */
     private void handleNetworkDisconnect(boolean newConnectionInProgress, int disconnectReason) {
         mWifiMetrics.reportNetworkDisconnect(disconnectReason,
