@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"Các mạng do <xliff:g id="NAME">%s</xliff:g> đề xuất. Thiết bị có thể kết nối tự động."</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"Cho phép"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"Không, cảm ơn"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"Cảnh báo về quyền riêng tư đối với tính năng bảo vệ IMSI"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"<xliff:g id="CARRIERNAME">%s</xliff:g> đề xuất các mạng dùng thông tin thẻ SIM của bạn mà không có tính năng bảo vệ quyền riêng tư. Bạn có muốn cho phép mạng tự động kết nối không?"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"Cho phép"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"Không cho phép"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"<xliff:g id="CARRIERNAME">%s</xliff:g> muốn kết nối tự động"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"Các mạng này nhận được một mã nhận dạng duy nhất dùng để theo dõi vị trí của thiết bị"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"Vẫn kết nối"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"Không kết nối"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"Xác nhận kết nối?"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"Nếu bạn kết nối, các mạng Wi-Fi của <xliff:g id="CARRIERNAME">%s</xliff:g> có thể truy cập hoặc chia sẻ mã nhận dạng duy nhất liên kết với SIM của bạn. Từ đó, các mạng này có thể theo dõi vị trí thiết bị của bạn."</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"Kết nối"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"Không kết nối"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi-Fi sẽ tự động bật"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"Khi bạn ở gần mạng đã lưu chất lượng cao"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"Không bật lại"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Không thể kết nối với <xliff:g id="SSID">%1$s</xliff:g>"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Nhấn để thay đổi các tùy chọn cài đặt quyền riêng tư rồi thử lại"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Thay đổi tùy chọn cài đặt quyền riêng tư?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"<xliff:g id="SSID_0">%1$s</xliff:g> có thể muốn kết nối bằng địa chỉ MAC (một mã nhận dạng duy nhất) của thiết bị. Nhờ đó, các thiết bị ở gần có thể theo dõi vị trí thiết bị của bạn. \n\nNếu bạn tiếp tục, <xliff:g id="SSID_1">%1$s</xliff:g> sẽ thay đổi tùy chọn cài đặt quyền riêng tư của bạn rồi tìm cách kết nối lại."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Để kết nối, <xliff:g id="SSID">%1$s</xliff:g> cần phải dùng địa chỉ MAC (mã nhận dạng duy nhất) của thiết bị. Hiện tại, tùy chọn cài đặt quyền riêng tư của mạng này đang dùng mã nhận dạng ngẫu nhiên. \n\nVới sự thay đổi này, các thiết bị ở gần có thể theo dõi vị trí thiết bị của bạn."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Thay đổi tùy chọn cài đặt"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"Đã cập nhật tùy chọn cài đặt. Hãy thử kết nối lại."</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Đã cập nhật tùy chọn cài đặt. Hãy thử kết nối lại."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Không thể thay đổi tùy chọn cài đặt quyền riêng tư"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"Không tìm thấy mạng"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g> : Lỗi xác thực EAP 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g> : Lỗi xác thực EAP 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g> : Lỗi xác thực EAP 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g> : Lỗi xác thực EAP 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"Đã tắt điểm phát sóng di động"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"Đã tắt điểm phát sóng di động"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"Đã tắt điểm phát sóng di động do hết thời gian chờ không hoạt động."</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Đã tắt điểm phát sóng"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Chưa kết nối thiết bị nào. Hãy nhấn để chỉnh sửa."</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Đã ngắt kết nối Wi-Fi"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Để kết nối với <xliff:g id="SSID">%1$s</xliff:g>, hãy lắp một thẻ SIM <xliff:g id="CARRIER_NAME">%2$s</xliff:g>"</string>
 </resources>

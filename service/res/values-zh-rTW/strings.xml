@@ -31,10 +31,14 @@
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"「<xliff:g id="NAME">%s</xliff:g>」建議的網路。裝置可能會自動連線到這些網路。"</string>
     <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"允許"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"不用了，謝謝"</string>
-    <string name="wifi_suggestion_imsi_privacy_title" msgid="5072368033308094465">"IMSI 保護措施的隱私權警告"</string>
-    <string name="wifi_suggestion_imsi_privacy_content" msgid="5050532382656368119">"「<xliff:g id="CARRIERNAME">%s</xliff:g>」建議的網路，該網路使用 SIM 卡資訊，且並未採用隱私保護服務。要允許系統自動連線到這個網路嗎？"</string>
-    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="5500037364868978935">"允許"</string>
-    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="7020127735591720299">"禁止"</string>
+    <string name="wifi_suggestion_imsi_privacy_title" msgid="2915915091404141470">"「<xliff:g id="CARRIERNAME">%s</xliff:g>」要求自動連線"</string>
+    <string name="wifi_suggestion_imsi_privacy_content" msgid="2964867545127220548">"這些網路會收到可用於追蹤裝置位置資訊的唯一 ID"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_carrier" msgid="4510014692570591616">"繼續連線"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_carrier" msgid="1466870675651864648">"不要連線"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_title" msgid="3252889810011175876">"確定要連線嗎？"</string>
+    <string name="wifi_suggestion_imsi_privacy_exemption_confirmation_content" msgid="1665277613133133730">"連線後，「<xliff:g id="CARRIERNAME">%s</xliff:g>」的 Wi‑Fi 網路可能會存取或分享與 SIM 卡相關的唯一 ID，有心人士或許可藉此追蹤你的裝置所在位置。"</string>
+    <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"連線"</string>
+    <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"不要連線"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi 將自動開啟"</string>
     <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"當你位於已儲存的高品質網路範圍內時"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"不要重新開啟"</string>
@@ -61,9 +65,9 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"無法連線至「<xliff:g id="SSID">%1$s</xliff:g>」"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"輕觸即可變更隱私權設定並重試"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"要變更隱私權設定嗎？"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="4240415044701814187">"「<xliff:g id="SSID_0">%1$s</xliff:g>」可能會要求使用裝置 MAC 位址 (即專屬 ID) 進行連線。如果你允許，附近的裝置或許將可追蹤你的裝置所在位置。\n\n如要繼續，「<xliff:g id="SSID_1">%1$s</xliff:g>」將變更你的隱私權設定並嘗試重新連線。"</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"「<xliff:g id="SSID">%1$s</xliff:g>」要求使用裝置 MAC 位址 (即專屬 ID) 進行連線。你目前的網路隱私權設定使用的是隨機 ID，\n\n如果進行這項變更，附近的裝置或許可以追蹤你的裝置所在位置。"</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"變更設定"</string>
-    <string name="wifi_disable_mac_randomization_dialog_success" msgid="8233753657756785734">"設定已更新，請再次嘗試連線。"</string>
+    <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"設定已更新，請再次嘗試連線。"</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"無法變更隱私權設定"</string>
     <string name="wifi_disable_mac_randomization_dialog_network_not_found" msgid="2352188098110676023">"找不到網路"</string>
     <string name="wifi_eap_error_message_code_32760" msgid="2272296327034079386">"<xliff:g id="SSID">%1$s</xliff:g>：EAP 驗證錯誤 32760"</string>
@@ -73,11 +77,8 @@
     <string name="wifi_eap_error_message_code_32764" msgid="6883041845648321423">"<xliff:g id="SSID">%1$s</xliff:g>：EAP 驗證錯誤 32764"</string>
     <string name="wifi_eap_error_message_code_32765" msgid="3134805513440435314">"<xliff:g id="SSID">%1$s</xliff:g>：EAP 驗證錯誤 32765"</string>
     <string name="wifi_eap_error_message_code_32766" msgid="6907401733158262194">"<xliff:g id="SSID">%1$s</xliff:g>：EAP 驗證錯誤 32766"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="6772994319428197481">"已停用可攜式無線基地台"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="2784340491027490290">"可攜式無線基地台已停用"</string>
-    <string name="wifi_softap_auto_shutdown_timeout_expired_detail" msgid="7203939001058203709">"可攜式無線基地台閒置逾時，因此已經停用。"</string>
-    <!-- no translation found for wifi_sim_required_title (8362843050699015640) -->
-    <skip />
-    <!-- no translation found for wifi_sim_required_message (8337512370882674437) -->
-    <skip />
+    <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"無線基地台已關閉"</string>
+    <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"未連線到任何裝置，輕觸即可修改。"</string>
+    <string name="wifi_sim_required_title" msgid="8362843050699015640">"Wi-Fi 連線中斷"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"如要連線到「<xliff:g id="SSID">%1$s</xliff:g>」，請插入「<xliff:g id="CARRIER_NAME">%2$s</xliff:g>」的 SIM 卡"</string>
 </resources>
