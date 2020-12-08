@@ -50,10 +50,10 @@ public class CoexUtils {
     @VisibleForTesting
     /* package */ static final int INVALID_FREQ = -1;
 
-    private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_20_MHZ = create5g20MhzChannels();
-    private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_40_MHZ = create5g40MhzChannels();
-    private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_80_MHZ = create5g80MhzChannels();
-    private static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_160_MHZ = create5g160MhzChannels();
+    public static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_20_MHZ = create5g20MhzChannels();
+    public static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_40_MHZ = create5g40MhzChannels();
+    public static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_80_MHZ = create5g80MhzChannels();
+    public static final NavigableSet<Integer> CHANNEL_SET_5_GHZ_160_MHZ = create5g160MhzChannels();
     private static final SparseIntArray DEPENDENT_MAP_5_GHZ = create5gDependentChannelMap();
     private static final Set<LteBandInfo> LTE_BAND_INFO_SET = createLteBandInfoSet();
     private static final NavigableMap<Integer, LteBandInfo> EARFCN_OFFSET_TO_LTE_BAND_INFO =
