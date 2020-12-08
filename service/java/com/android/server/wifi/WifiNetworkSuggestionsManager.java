@@ -1256,7 +1256,7 @@ public class WifiNetworkSuggestionsManager {
     public void removeApp(@NonNull String packageName) {
         PerAppInfo perAppInfo = mActiveNetworkSuggestionsPerApp.get(packageName);
         if (perAppInfo == null) return;
-        removeInternal(Collections.EMPTY_LIST, packageName, perAppInfo);
+        removeInternal(Collections.emptyList(), packageName, perAppInfo);
         // Remove the package fully from the internal database.
         mActiveNetworkSuggestionsPerApp.remove(packageName);
         ExternalCallbackTracker<ISuggestionConnectionStatusListener> listenerTracker =
@@ -1297,7 +1297,7 @@ public class WifiNetworkSuggestionsManager {
                 mActiveNetworkSuggestionsPerApp.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<String, PerAppInfo> entry = iter.next();
-            removeInternal(Collections.EMPTY_LIST, entry.getKey(), entry.getValue());
+            removeInternal(Collections.emptyList(), entry.getKey(), entry.getValue());
             iter.remove();
         }
         mSuggestionStatusListenerPerApp.clear();
@@ -1956,6 +1956,9 @@ public class WifiNetworkSuggestionsManager {
 
     private Set<ExtendedWifiNetworkSuggestion> getMatchedSuggestionsWithSameProfileKey(
             Set<ExtendedWifiNetworkSuggestion> matchingSuggestions, WifiConfiguration network) {
+        if (matchingSuggestions == null || matchingSuggestions.isEmpty()) {
+            return Collections.emptySet();
+        }
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsWithSameProfileKey =
                 new HashSet<>();
         for (ExtendedWifiNetworkSuggestion ewns : matchingSuggestions) {
@@ -2116,7 +2119,7 @@ public class WifiNetworkSuggestionsManager {
             }
             if (carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
                 Log.i(TAG, "Carrier privilege revoked for " + appInfo.packageName);
-                removeInternal(Collections.EMPTY_LIST, appInfo.packageName, appInfo);
+                removeInternal(Collections.emptyList(), appInfo.packageName, appInfo);
                 mActiveNetworkSuggestionsPerApp.remove(appInfo.packageName);
                 continue;
             }
@@ -2152,13 +2155,20 @@ public class WifiNetworkSuggestionsManager {
             return false;
         }
 
-        Set<ExtendedWifiNetworkSuggestion> matchingExtendedWifiNetworkSuggestions =
-                getNetworkSuggestionsForWifiConfiguration(config, config.BSSID);
         if (config.isPasspoint()) {
             if (!mWifiInjector.getPasspointManager().enableAutojoin(config.getProfileKey(),
                     null, choice)) {
                 return false;
             }
+        }
+
+        Set<ExtendedWifiNetworkSuggestion> matchingExtendedWifiNetworkSuggestions =
+                getMatchedSuggestionsWithSameProfileKey(
+                        getNetworkSuggestionsForWifiConfiguration(config, config.BSSID), config);
+        if (matchingExtendedWifiNetworkSuggestions.isEmpty()) {
+            Log.e(TAG, "allowNetworkSuggestionAutojoin: network is missing: "
+                    + config);
+            return false;
         }
         for (ExtendedWifiNetworkSuggestion ewns : matchingExtendedWifiNetworkSuggestions) {
             ewns.isAutojoinEnabled = choice;

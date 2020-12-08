@@ -3674,9 +3674,15 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
                 new ArrayList<WifiNetworkSuggestion>() {{
                     add(networkSuggestion);
                 }};
+        WifiConfiguration configuration =
+                new WifiConfiguration(networkSuggestion.wifiConfiguration);
+        configuration.fromWifiNetworkSuggestion = true;
+        configuration.ephemeral = true;
+        configuration.creatorName = TEST_PACKAGE_1;
+        configuration.creatorUid = TEST_UID_1;
         // No matching will return false.
         assertFalse(mWifiNetworkSuggestionsManager
-                .allowNetworkSuggestionAutojoin(networkSuggestion.wifiConfiguration, false));
+                .allowNetworkSuggestionAutojoin(configuration, false));
         verify(mWifiConfigManager, never()).saveToStore(true);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
@@ -3684,12 +3690,6 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mWifiNetworkSuggestionsManager.setHasUserApprovedForApp(true, TEST_PACKAGE_1);
         verify(mWifiConfigManager, times(2)).saveToStore(true);
         reset(mWifiConfigManager);
-        WifiConfiguration configuration =
-                new WifiConfiguration(networkSuggestion.wifiConfiguration);
-        configuration.fromWifiNetworkSuggestion = true;
-        configuration.ephemeral = true;
-        configuration.creatorName = TEST_PACKAGE_1;
-        configuration.creatorUid = TEST_UID_1;
 
         assertTrue(mWifiNetworkSuggestionsManager
                 .allowNetworkSuggestionAutojoin(configuration, false));
