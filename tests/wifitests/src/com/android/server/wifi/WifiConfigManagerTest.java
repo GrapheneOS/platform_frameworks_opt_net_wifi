@@ -71,6 +71,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -145,6 +146,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private WifiScoreCard mWifiScoreCard;
     @Mock private PerNetwork mPerNetwork;
     @Mock private WifiMetrics mWifiMetrics;
+    @Mock private WifiConfigManager.OnNetworkUpdateListener mListener;
     private LruConnectionTracker mLruConnectionTracker;
 
     private MockResources mResources;
@@ -3953,7 +3955,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(network1);
         verifyAddNetworkToWifiConfigManager(network2);
         verifyAddNetworkToWifiConfigManager(network3);
-
+        mWifiConfigManager.addOnNetworkUpdateListener(mListener);
         // Set connect choice of network 2 over network 1.
         verifySetUserConnectChoice(network2.networkId, network1.networkId);
 
@@ -3982,6 +3984,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // This should have triggered 2 buffered writes. 1 for setting the connect choice, 1 for
         // clearing it after network removal.
         mContextConfigStoreMockOrder.verify(mWifiConfigStore, times(2)).write(eq(false));
+        verify(mListener, times(2)).onConnectChoiceRemoved(anyString());
     }
 
     /**
@@ -3995,6 +3998,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(network1);
         verifyAddNetworkToWifiConfigManager(network2);
         verifyAddNetworkToWifiConfigManager(network3);
+        mWifiConfigManager.addOnNetworkUpdateListener(mListener);
 
         // Set connect choice of network 2 over network 1 and network 3.
         verifySetUserConnectChoice(network2.networkId, network1.networkId);
@@ -4018,6 +4022,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertEquals(
                 network2.getProfileKey(),
                 retrievedNetwork.getNetworkSelectionStatus().getConnectChoice());
+
+        verify(mListener).onConnectChoiceRemoved(network3.getProfileKey());
     }
 
     /**
@@ -4029,16 +4035,19 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration savedOpenNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         WifiConfiguration ephemeralNetwork = WifiConfigurationTestUtil.createEphemeralNetwork();
         WifiConfiguration passpointNetwork = WifiConfigurationTestUtil.createPasspointNetwork();
+        WifiConfiguration suggestionNetwork = WifiConfigurationTestUtil.createEphemeralNetwork();
+        suggestionNetwork.fromWifiNetworkSuggestion = true;
 
         verifyAddNetworkToWifiConfigManager(savedOpenNetwork);
         verifyAddEphemeralNetworkToWifiConfigManager(ephemeralNetwork);
         verifyAddPasspointNetworkToWifiConfigManager(passpointNetwork);
+        verifyAddEphemeralNetworkToWifiConfigManager(suggestionNetwork);
 
-        List<WifiConfiguration> expectedConfigsBeforeRemove = new ArrayList<WifiConfiguration>() {{
-                add(savedOpenNetwork);
-                add(ephemeralNetwork);
-                add(passpointNetwork);
-            }};
+        mWifiConfigManager.addOnNetworkUpdateListener(mListener);
+
+        List<WifiConfiguration> expectedConfigsBeforeRemove = new ArrayList<WifiConfiguration>(
+                Arrays.asList(savedOpenNetwork, ephemeralNetwork, passpointNetwork,
+                        suggestionNetwork));
         WifiConfigurationTestUtil.assertConfigurationsEqualForConfigManagerAddOrUpdate(
                 expectedConfigsBeforeRemove, mWifiConfigManager.getConfiguredNetworks());
 
@@ -4052,6 +4061,9 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // No more ephemeral or passpoint networks to remove now.
         assertFalse(mWifiConfigManager.removeAllEphemeralOrPasspointConfiguredNetworks());
+
+        // Suggestion and passpoint network will not trigger conncet choice remove.
+        verify(mListener).onConnectChoiceRemoved(ephemeralNetwork.getProfileKey());
     }
 
     /**
@@ -4907,6 +4919,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkToWifiConfigManager(savedNetwork);
         verifyAddPasspointNetworkToWifiConfigManager(passpointNetwork);
 
+        mWifiConfigManager.addOnNetworkUpdateListener(mListener);
         // Set connect choice of passpoint network over saved network.
         verifySetUserConnectChoice(passpointNetwork.networkId, savedNetwork.networkId);
 
@@ -4921,6 +4934,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         retrievedSavedNetwork = mWifiConfigManager.getConfiguredNetwork(savedNetwork.networkId);
         assertNull(retrievedSavedNetwork.getNetworkSelectionStatus().getConnectChoice());
+        verify(mListener).onConnectChoiceRemoved(passpointNetwork.getProfileKey());
     }
 
     @Test
@@ -6077,6 +6091,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         WifiConfiguration configNotInLastNetworkSelection =
                 WifiConfigurationTestUtil.createOpenNetwork();
 
+        mWifiConfigManager.addOnNetworkUpdateListener(mListener);
         List<WifiConfiguration> sharedConfigs = Arrays.asList(
                 selectedWifiConfig, configInLastNetworkSelection, configNotInLastNetworkSelection);
         // Setup xml storage
@@ -6100,6 +6115,60 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         configNotInLastNetworkSelection = mWifiConfigManager.getConfiguredNetwork(
                 configNotInLastNetworkSelection.networkId);
         assertNull(configNotInLastNetworkSelection.getNetworkSelectionStatus().getConnectChoice());
+
+        ArgumentCaptor<List<WifiConfiguration>> listArgumentCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(mListener).onConnectChoiceSet(listArgumentCaptor.capture(),
+                eq(selectedWifiConfig.getProfileKey()), eq(TEST_RSSI));
+        Collection<WifiConfiguration> networks = listArgumentCaptor.getValue();
+        assertEquals(1, networks.size());
+    }
+
+    /**
+     * Ensures that setting the user connect choice updates the all the suggestion passpoint network
+     * by callback.
+     */
+    @Test
+    public void testSetUserConnectChoiceForSuggestionAndPasspointNetwork() throws Exception {
+        WifiConfiguration selectedWifiConfig = WifiConfigurationTestUtil.createOpenNetwork();
+        selectedWifiConfig.getNetworkSelectionStatus().setCandidate(mock(ScanResult.class));
+        selectedWifiConfig.getNetworkSelectionStatus().setNetworkSelectionStatus(
+                NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED);
+        selectedWifiConfig.getNetworkSelectionStatus().setConnectChoice("bogusKey");
+
+        WifiConfiguration configInLastNetworkSelection1 =
+                WifiConfigurationTestUtil.createOpenNetwork();
+        configInLastNetworkSelection1.getNetworkSelectionStatus()
+                .setSeenInLastQualifiedNetworkSelection(true);
+        configInLastNetworkSelection1.fromWifiNetworkSuggestion = true;
+
+        WifiConfiguration configInLastNetworkSelection2 =
+                WifiConfigurationTestUtil.createPasspointNetwork();
+        configInLastNetworkSelection2.getNetworkSelectionStatus()
+                .setSeenInLastQualifiedNetworkSelection(true);
+
+        mWifiConfigManager.addOnNetworkUpdateListener(mListener);
+        List<WifiConfiguration> sharedConfigs = Arrays.asList(
+                selectedWifiConfig, configInLastNetworkSelection1, configInLastNetworkSelection2);
+        // Setup xml storage
+        setupStoreDataForRead(sharedConfigs, Arrays.asList());
+        assertTrue(mWifiConfigManager.loadFromStore());
+        verify(mWifiConfigStore).read();
+
+        assertTrue(mWifiConfigManager.updateNetworkAfterConnect(selectedWifiConfig.networkId,
+                true, TEST_RSSI));
+
+        selectedWifiConfig = mWifiConfigManager.getConfiguredNetwork(selectedWifiConfig.networkId);
+        assertEquals(NetworkSelectionStatus.DISABLED_NONE,
+                selectedWifiConfig.getNetworkSelectionStatus().getNetworkSelectionStatus());
+        assertNull(selectedWifiConfig.getNetworkSelectionStatus().getConnectChoice());
+
+        ArgumentCaptor<List<WifiConfiguration>> listArgumentCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(mListener).onConnectChoiceSet(listArgumentCaptor.capture(),
+                eq(selectedWifiConfig.getProfileKey()), eq(TEST_RSSI));
+        Collection<WifiConfiguration> networks = listArgumentCaptor.getValue();
+        assertEquals(2, networks.size());
     }
 
     @Test

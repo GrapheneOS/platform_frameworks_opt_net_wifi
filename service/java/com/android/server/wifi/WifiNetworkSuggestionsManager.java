@@ -154,6 +154,19 @@ public class WifiNetworkSuggestionsManager {
     // Keep order of network connection.
     private final LruConnectionTracker mLruConnectionTracker;
 
+    private class OnNetworkUpdateListener implements
+            WifiConfigManager.OnNetworkUpdateListener {
+        @Override
+        public void onConnectChoiceSet(@NonNull List<WifiConfiguration> networks,
+                String choiceKey, int rssi) {
+            onUserConnectChoiceSet(networks, choiceKey, rssi);
+        }
+        @Override
+        public void onConnectChoiceRemoved(String choiceKey) {
+            onUserConnectChoiceRemove(choiceKey);
+        }
+    }
+
     /**
      * Per app meta data to store network suggestions, status, etc for each app providing network
      * suggestions on the device.
@@ -262,6 +275,8 @@ public class WifiNetworkSuggestionsManager {
         public final PerAppInfo perAppInfo;
         public boolean isAutojoinEnabled;
         public String anonymousIdentity = null;
+        public String connectChoice = null;
+        public int connectChoiceRssi = 0;
 
         public ExtendedWifiNetworkSuggestion(@NonNull WifiNetworkSuggestion wns,
                                              @NonNull PerAppInfo perAppInfo,
@@ -332,6 +347,8 @@ public class WifiNetworkSuggestionsManager {
                     != null && config.enterpriseConfig.isAuthenticationSimBased()) {
                 config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
             }
+            config.getNetworkSelectionStatus().setConnectChoice(connectChoice);
+            config.getNetworkSelectionStatus().setConnectChoiceRssi(connectChoiceRssi);
             if (carrierInfoManager != null) {
                 config.subscriptionId = carrierInfoManager.getBestMatchSubscriptionId(config);
             }
@@ -639,6 +656,8 @@ public class WifiNetworkSuggestionsManager {
 
         mContext.registerReceiver(mBroadcastReceiver, mIntentFilter, null, handler);
         mLruConnectionTracker = lruConnectionTracker;
+        mWifiConfigManager.addOnNetworkUpdateListener(
+                new WifiNetworkSuggestionsManager.OnNetworkUpdateListener());
     }
 
     /**
@@ -831,7 +850,6 @@ public class WifiNetworkSuggestionsManager {
 
     private void updateWifiConfigInWcmIfPresent(
             WifiConfiguration newConfig, int uid, String packageName) {
-        newConfig.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(newConfig);
         WifiConfiguration configInWcm =
                 mWifiConfigManager.getConfiguredNetwork(newConfig.getProfileKey());
         if (configInWcm == null) return;
@@ -1197,6 +1215,8 @@ public class WifiNetworkSuggestionsManager {
                     mWifiKeyStore.removeKeys(ewns.wns.wifiConfiguration.enterpriseConfig);
                 }
                 removeFromScanResultMatchInfoMapAndRemoveRelatedScoreCard(ewns);
+                mWifiConfigManager.removeConnectChoiceFromAllNetworks(ewns
+                        .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey());
             }
             removingSuggestions.add(ewns.wns);
         }
@@ -2415,6 +2435,40 @@ public class WifiNetworkSuggestionsManager {
             return false;
         }
         return extendedWifiNetworkSuggestion.wns.wifiConfiguration.isOpenNetwork();
+    }
+
+    private void onUserConnectChoiceSet(Collection<WifiConfiguration> networks, String choiceKey,
+            int rssi) {
+        Set<String> networkKeys = networks.stream()
+                .filter(config -> config.fromWifiNetworkSuggestion)
+                .map(WifiConfiguration::getProfileKey)
+                .collect(Collectors.toSet());
+        mActiveNetworkSuggestionsPerApp.values().stream()
+                .flatMap(e -> e.extNetworkSuggestions.stream())
+                .forEach(ewns -> {
+                    String profileKey = ewns
+                            .createInternalWifiConfiguration(mWifiCarrierInfoManager)
+                            .getProfileKey();
+                    if (TextUtils.equals(profileKey, choiceKey)) {
+                        ewns.connectChoice = null;
+                        ewns.connectChoiceRssi = 0;
+                    } else if (networkKeys.contains(profileKey)) {
+                        ewns.connectChoice = choiceKey;
+                        ewns.connectChoiceRssi = rssi;
+                    }
+                });
+        saveToStore();
+    }
+
+    private void onUserConnectChoiceRemove(String choiceKey) {
+        mActiveNetworkSuggestionsPerApp.values().stream()
+                .flatMap(e -> e.extNetworkSuggestions.stream())
+                .filter(ewns -> TextUtils.equals(ewns.connectChoice, choiceKey))
+                .forEach(ewns -> {
+                    ewns.connectChoice = null;
+                    ewns.connectChoiceRssi = 0;
+                });
+        saveToStore();
     }
 
     /**

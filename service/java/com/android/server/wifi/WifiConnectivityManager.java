@@ -922,8 +922,6 @@ public class WifiConnectivityManager {
         public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
             triggerScanOnNetworkChanges();
         }
-        @Override
-        public void onNetworkTemporarilyDisabled(WifiConfiguration config, int disableReason) { }
 
         @Override
         public void onNetworkPermanentlyDisabled(WifiConfiguration config, int disableReason) {

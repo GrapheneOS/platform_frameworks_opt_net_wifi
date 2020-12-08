@@ -1012,14 +1012,6 @@ public class WifiHealthMonitor {
         }
 
         @Override
-        public void onNetworkEnabled(WifiConfiguration config) {
-        }
-
-        @Override
-        public void onNetworkPermanentlyDisabled(WifiConfiguration config, int disableReason) {
-        }
-
-        @Override
         public void onNetworkRemoved(WifiConfiguration config) {
             if (config == null || (config.fromWifiNetworkSuggestion && !config.isPasspoint())) {
                 // If a suggestion non-passpoint network is removed from wifiConfigManager do not
@@ -1027,14 +1019,6 @@ public class WifiHealthMonitor {
                 return;
             }
             mWifiScoreCard.removeNetwork(config.SSID);
-        }
-
-        @Override
-        public void onNetworkTemporarilyDisabled(WifiConfiguration config, int disableReason) {
-        }
-
-        @Override
-        public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
         }
     }
 

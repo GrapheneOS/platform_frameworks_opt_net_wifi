@@ -254,6 +254,44 @@ public class PasspointManager {
         }
     }
 
+    private class OnNetworkUpdateListener implements
+            WifiConfigManager.OnNetworkUpdateListener {
+        @Override
+        public void onConnectChoiceSet(@NonNull List<WifiConfiguration> networks,
+                String choiceKey, int rssi) {
+            onUserConnectChoiceSet(networks, choiceKey, rssi);
+        }
+        @Override
+        public void onConnectChoiceRemoved(String choiceKey) {
+            onUserConnectChoiceRemove(choiceKey);
+        }
+
+    }
+
+    private void onUserConnectChoiceRemove(String choiceKey) {
+        mProviders.values().stream()
+                .filter(provider -> TextUtils.equals(provider.getConnectChoice(), choiceKey))
+                .forEach(provider -> {
+                    provider.setUserConnectChoice(null, 0);
+                });
+        mWifiConfigManager.saveToStore(true);
+    }
+
+    private void onUserConnectChoiceSet(List<WifiConfiguration> networks, String choiceKey,
+            int rssi) {
+        for (WifiConfiguration config : networks) {
+            PasspointProvider provider = mProviders.get(config.getProfileKey());
+            if (provider != null) {
+                provider.setUserConnectChoice(choiceKey, rssi);
+            }
+        }
+        PasspointProvider provider = mProviders.get(choiceKey);
+        if (provider != null) {
+            provider.setUserConnectChoice(null, 0);
+        }
+        mWifiConfigManager.saveToStore(true);
+    }
+
     /**
      * Remove all Passpoint profiles installed by the app that has been disabled or uninstalled.
      *
@@ -324,6 +362,8 @@ public class PasspointManager {
         sPasspointManager = this;
         mMacAddressUtil = macAddressUtil;
         mClock = clock;
+        mWifiConfigManager.addOnNetworkUpdateListener(
+                new PasspointManager.OnNetworkUpdateListener());
     }
 
     /**
@@ -505,6 +545,7 @@ public class PasspointManager {
                 provider.getWifiConfig().getProfileKey());
         String uniqueId = provider.getConfig().getUniqueId();
         mProviders.remove(uniqueId);
+        mWifiConfigManager.removeConnectChoiceFromAllNetworks(uniqueId);
         mWifiConfigManager.saveToStore(true /* forceWrite */);
 
         // Stop monitoring the package if there is no Passpoint profile installed by the package

@@ -111,7 +111,6 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
 
     private void addOrUpdateSuggestionToWifiConfigManger(ExtendedWifiNetworkSuggestion ewns) {
         WifiConfiguration config = ewns.createInternalWifiConfiguration(mWifiCarrierInfoManager);
-
         WifiConfiguration wCmConfiguredNetwork =
                 mWifiConfigManager.getConfiguredNetwork(config.getProfileKey());
         NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
