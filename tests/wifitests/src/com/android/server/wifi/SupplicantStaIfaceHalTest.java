@@ -1687,8 +1687,19 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     @Test
     public void testTerminateV1_0() throws Exception {
         executeAndValidateInitializationSequence();
+
+        doAnswer(new MockAnswerUtil.AnswerWithArguments() {
+            public boolean answer(IHwBinder.DeathRecipient cb, long cookie) throws RemoteException {
+                mHandler.post(() -> cb.serviceDied(cookie));
+                return true;
+            }
+        }).when(mISupplicantMock).linkToDeath(any(IHwBinder.DeathRecipient.class), any(long.class));
         mDut.terminate();
+        mLooper.dispatchAll();
         verify(mFrameworkFacade).stopSupplicant();
+
+        // Check that terminate cleared all internal state.
+        assertFalse(mDut.isInitializationComplete());
     }
 
     /**
@@ -1699,9 +1710,21 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         setupMocksForHalV1_1();
 
         executeAndValidateInitializationSequenceV1_1(false, false);
+
+        doAnswer(new MockAnswerUtil.AnswerWithArguments() {
+            public boolean answer(IHwBinder.DeathRecipient cb, long cookie) throws RemoteException {
+                mHandler.post(() -> cb.serviceDied(cookie));
+                return true;
+            }
+        }).when(mISupplicantMock).linkToDeath(any(IHwBinder.DeathRecipient.class), any(long.class));
+
         mDut.terminate();
+        mLooper.dispatchAll();
         verify(mFrameworkFacade, never()).stopSupplicant();
         verify(mISupplicantMockV1_1).terminate();
+
+        // Check that terminate cleared all internal state.
+        assertFalse(mDut.isInitializationComplete());
     }
 
     private class GetKeyMgmtCapabilitiesAnswer extends MockAnswerUtil.AnswerWithArguments {
