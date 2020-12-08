@@ -224,19 +224,8 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
     @Test
     public void testPskPassphraseNetworkWifiConfigurationSaveLoad() throws Exception {
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
-        config.requirePmf = true;
 
         // Set the new defaults
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.SMS4);
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_128);
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.SMS4);
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_128);
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-        config.allowedGroupManagementCiphers
-                .set(WifiConfiguration.GroupMgmtCipher.BIP_GMAC_256);
         testWifiConfigurationSaveLoad(config);
         verify(mISupplicantStaNetworkMock).setPskPassphrase(anyString());
         verify(mISupplicantStaNetworkMock)
@@ -245,9 +234,13 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         verify(mISupplicantStaNetworkMock, never())
                 .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
         verify(mISupplicantStaNetworkMock)
-                .setPairwiseCipher(ISupplicantStaNetwork.PairwiseCipherMask.CCMP);
+                .setPairwiseCipher(ISupplicantStaNetwork.PairwiseCipherMask.TKIP
+                        | ISupplicantStaNetwork.PairwiseCipherMask.CCMP);
         verify(mISupplicantStaNetworkMock)
-                .setGroupCipher(ISupplicantStaNetwork.GroupCipherMask.CCMP);
+                .setGroupCipher(ISupplicantStaNetwork.GroupCipherMask.WEP40
+                        | ISupplicantStaNetwork.GroupCipherMask.WEP104
+                        | ISupplicantStaNetwork.GroupCipherMask.TKIP
+                        | ISupplicantStaNetwork.GroupCipherMask.CCMP);
     }
 
     /**
@@ -1134,38 +1127,6 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
      * HAL v1.2 or higher
      */
     @Test
-    public void testPskPassphraseNetworkWifiConfigurationSaveLoad1_2OrHigher() throws Exception {
-        createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_2);
-        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
-        config.requirePmf = true;
-
-        // Set the new defaults
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
-        config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
-        config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-        testWifiConfigurationSaveLoad(config);
-        verify(mISupplicantStaNetworkMock).setPskPassphrase(anyString());
-        verify(mISupplicantStaNetworkMock)
-                .getPskPassphrase(any(ISupplicantStaNetwork.getPskPassphraseCallback.class));
-        verify(mISupplicantStaNetworkMock, never()).setPsk(any(byte[].class));
-        verify(mISupplicantStaNetworkMock, never())
-                .getPsk(any(ISupplicantStaNetwork.getPskCallback.class));
-        verify(mISupplicantStaNetworkV12)
-                .setPairwiseCipher_1_2(ISupplicantStaNetwork.PairwiseCipherMask.CCMP
-                        | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        .PairwiseCipherMask.GCMP_256);
-        verify(mISupplicantStaNetworkV12)
-                .setGroupCipher_1_2(ISupplicantStaNetwork.GroupCipherMask.CCMP
-                        | android.hardware.wifi.supplicant.V1_2.ISupplicantStaNetwork
-                        .GroupCipherMask.GCMP_256);
-    }
-
-    /**
-     * Tests the saving/loading of WifiConfiguration to wpa_supplicant with psk passphrase for
-     * HAL v1.2 or higher
-     */
-    @Test
     public void testSaeNetworkWifiConfigurationSaveLoad1_4OrHigher() throws Exception {
         createSupplicantStaNetwork(SupplicantStaNetworkVersion.V1_4);
         WifiConfiguration config = WifiConfigurationTestUtil.createSaeNetwork();
@@ -1275,7 +1236,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
 
     private void testUnsupportingCiphers(SupplicantStaNetworkVersion version) throws Exception {
         createSupplicantStaNetwork(version);
-        WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
+        WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         int expectedHalPairwiseCiphers =
                 putAllSupportingPairwiseCiphersAndReturnExpectedHalCiphersValue(config, version);
         int expectedHalGroupCiphers =
@@ -1722,6 +1683,23 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
                 .getPairwiseCipher_1_4(any(android.hardware.wifi.supplicant.V1_4
                         .ISupplicantStaNetwork.getPairwiseCipher_1_4Callback.class));
 
+        /** allowedGroupManagementCiphers v1.2 */
+        doAnswer(new AnswerWithArguments() {
+            public SupplicantStatus answer(int mask) throws RemoteException {
+                mSupplicantVariables.groupManagementCipherMask = mask;
+                return mStatusSuccess;
+            }
+        }).when(mISupplicantStaNetworkV12).setGroupMgmtCipher(any(int.class));
+        doAnswer(new AnswerWithArguments() {
+            public void answer(android.hardware.wifi.supplicant.V1_2
+                    .ISupplicantStaNetwork.getGroupMgmtCipherCallback cb)
+                    throws RemoteException {
+                cb.onValues(mStatusSuccess, mSupplicantVariables.groupManagementCipherMask);
+            }
+        }).when(mISupplicantStaNetworkV12)
+                .getGroupMgmtCipher(any(android.hardware.wifi.supplicant.V1_2
+                        .ISupplicantStaNetwork.getGroupMgmtCipherCallback.class));
+
         /** metadata: idstr */
         doAnswer(new AnswerWithArguments() {
             public SupplicantStatus answer(String idStr) throws RemoteException {
@@ -2112,6 +2090,7 @@ public class SupplicantStaNetworkHalTest extends WifiBaseTest {
         public int authAlgMask;
         public int groupCipherMask;
         public int pairwiseCipherMask;
+        public int groupManagementCipherMask;
         public boolean scanSsid;
         public boolean requirePmf;
         public String idStr;
