@@ -109,6 +109,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     @Mock SelfRecovery mSelfRecovery;
     @Mock WifiGlobals mWifiGlobals;
     @Mock ScanOnlyModeImpl mScanOnlyModeImpl;
+    @Mock DefaultClientModeManager mDefaultClientModeManager;
     private RegistrationManager.RegistrationCallback mImsMmTelManagerRegistrationCallback = null;
     private @RegistrationManager.ImsRegistrationState int mCurrentImsRegistrationState =
             RegistrationManager.REGISTRATION_STATE_NOT_REGISTERED;
@@ -140,6 +141,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         when(mContext.getResources()).thenReturn(mResources);
         when(mWifiInjector.makeClientModeImpl(any(), any(), anyBoolean()))
                 .thenReturn(mClientModeImpl);
+        when(mWifiInjector.makeScanOnlyModeImpl(any())).thenReturn(mScanOnlyModeImpl);
     }
 
     /*
@@ -239,7 +241,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private ConcreteClientModeManager createClientModeManager(ActiveModeManager.ClientRole role) {
         return new ConcreteClientModeManager(mContext, mLooper.getLooper(), mClock, mWifiNative,
                 mListener, mWifiMetrics, mWakeupController, mWifiInjector, mSelfRecovery,
-                mWifiGlobals, mScanOnlyModeImpl, 0, TEST_WORKSOURCE, role, false);
+                mWifiGlobals, mDefaultClientModeManager, 0, TEST_WORKSOURCE, role, false);
     }
 
     private void startClientInScanOnlyModeAndVerifyEnabled() throws Exception {
@@ -348,6 +350,10 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     @Test
     public void clientInScanOnlyModeStartCreatesClientInterface() throws Exception {
         startClientInScanOnlyModeAndVerifyEnabled();
+
+        mClientModeManager.getFactoryMacAddress();
+        // in scan only mode, should get value from ScanOnlyModeImpl
+        verify(mScanOnlyModeImpl).getFactoryMacAddress();
     }
 
     /**
@@ -380,6 +386,10 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
 
         verify(mListener).onStarted(mClientModeManager);
         verify(mListener).onRoleChanged(mClientModeManager);
+
+        mClientModeManager.getFactoryMacAddress();
+        // in client mode, should get value from ClientModeImpl
+        verify(mClientModeImpl).getFactoryMacAddress();
     }
 
     /**
@@ -435,6 +445,24 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
                 WIFI_STATE_UNKNOWN);
         assertEquals(WIFI_STATE_DISABLED, mClientModeManager.syncGetWifiState());
         verify(mListener).onStartFailure(mClientModeManager);
+    }
+
+    /** Tests failure when setting up iface for scan only mode. */
+    @Test
+    public void detectAndReportErrorWhenSetupInterfaceForClientInScanModeWifiNativeFailure()
+            throws Exception {
+        // failed to setup iface in Scan Only mode
+        when(mWifiNative.setupInterfaceForClientInScanMode(any(), any())).thenReturn(null);
+
+        mClientModeManager = createClientModeManager(ROLE_CLIENT_PRIMARY);
+        mLooper.dispatchAll();
+
+        assertEquals(WIFI_STATE_DISABLED, mClientModeManager.syncGetWifiState());
+        verify(mListener).onStartFailure(mClientModeManager);
+
+        mClientModeManager.getFactoryMacAddress();
+        // wifi is off, should get value from DefaultClientModeManager
+        verify(mDefaultClientModeManager).getFactoryMacAddress();
     }
 
     /**

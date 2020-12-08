@@ -202,7 +202,7 @@ public class WifiInjector {
     private final WifiP2pConnection mWifiP2pConnection;
     private final WifiGlobals mWifiGlobals;
     private final SimRequiredNotifier mSimRequiredNotifier;
-    private final ScanOnlyModeImpl mScanOnlyModeImpl;
+    private final DefaultClientModeManager mDefaultClientModeManager;
     private final AdaptiveConnectivityEnabledSettingObserver
             mAdaptiveConnectivityEnabledSettingObserver;
 
@@ -385,8 +385,9 @@ public class WifiInjector {
         mWifiHealthMonitor = new WifiHealthMonitor(mContext, this, mClock, mWifiConfigManager,
                 mWifiScoreCard, wifiHandler, mWifiNative, l2KeySeed, mDeviceConfigFacade);
         mWifiMetrics.setWifiHealthMonitor(mWifiHealthMonitor);
+        mDefaultClientModeManager = new DefaultClientModeManager();
         mActiveModeWarden = new ActiveModeWarden(this, wifiLooper,
-                mWifiNative, new DefaultClientModeManager(), mBatteryStats, mWifiDiagnostics,
+                mWifiNative, mDefaultClientModeManager, mBatteryStats, mWifiDiagnostics,
                 mContext, mSettingsStore, mFrameworkFacade, mWifiPermissionsUtil, mWifiMetrics);
         mWifiP2pConnection = new WifiP2pConnection(mContext, wifiLooper, mActiveModeWarden);
         mConnectHelper = new ConnectHelper(mActiveModeWarden, mWifiConfigManager);
@@ -469,8 +470,6 @@ public class WifiInjector {
         mWifiNetworkSelector.registerNetworkNominator(mScoredNetworkNominator);
 
         mSimRequiredNotifier = new SimRequiredNotifier(mContext, mFrameworkFacade);
-
-        mScanOnlyModeImpl = new ScanOnlyModeImpl();
     }
 
     /**
@@ -703,8 +702,12 @@ public class WifiInjector {
         return new ConcreteClientModeManager(
                 mContext, mWifiHandlerThread.getLooper(), mClock,
                 mWifiNative, listener, mWifiMetrics, mWakeupController,
-                this, mSelfRecovery, mWifiGlobals, mScanOnlyModeImpl,
+                this, mSelfRecovery, mWifiGlobals, mDefaultClientModeManager,
                 mClock.getElapsedSinceBootMillis(), requestorWs, role, verboseLoggingEnabled);
+    }
+
+    public ScanOnlyModeImpl makeScanOnlyModeImpl(@NonNull String ifaceName) {
+        return new ScanOnlyModeImpl(mClock.getElapsedSinceBootMillis(), mWifiNative, ifaceName);
     }
 
     /**

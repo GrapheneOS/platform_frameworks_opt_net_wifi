@@ -19,10 +19,15 @@ package com.android.server.wifi;
 import android.net.wifi.WifiManager;
 import android.os.WorkSource;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+
 /**
  * This is used for creating a public {@link ClientModeManager} instance when wifi is off.
+ *
+ * Note: this class is currently a singleton as it has no state.
  */
-public class DefaultClientModeManager extends ScanOnlyModeImpl implements ClientModeManager {
+public class DefaultClientModeManager implements ClientModeManager, ClientModeDefaults {
 
     private static final long ID = -1;
 
@@ -47,6 +52,12 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
     }
 
     @Override
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) { }
+
+    @Override
+    public void enableVerboseLogging(boolean verbose) { }
+
+    @Override
     public int syncGetWifiState() {
         return WifiManager.WIFI_STATE_DISABLED;
     }
@@ -62,5 +73,15 @@ public class DefaultClientModeManager extends ScanOnlyModeImpl implements Client
                 + " iface=" + getInterfaceName()
                 + " role=" + getRole()
                 + "}";
+    }
+
+    @Override
+    public long getSupportedFeatures() {
+        return 0L;
+    }
+
+    @Override
+    public boolean isWifiStandardSupported(int standard) {
+        return false;
     }
 }
