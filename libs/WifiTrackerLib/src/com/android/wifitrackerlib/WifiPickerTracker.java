@@ -195,10 +195,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final Network currentNetwork = mWifiManager.getCurrentNetwork();
         mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
         updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
-        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
+
+        // Populate mConnectedWifiEntry with information from missed callbacks.
+        handleNetworkCapabilitiesChanged(
+                mConnectivityManager.getNetworkCapabilities(currentNetwork));
+        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
+        handleDefaultRouteChanged();
     }
 
     @WorkerThread
@@ -276,6 +281,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
         if (mConnectedWifiEntry != null
                 && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mConnectedWifiEntry.updateNetworkCapabilities(capabilities);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
+    }
+
+    @WorkerThread
+    protected void handleDefaultRouteChanged() {
+        if (mConnectedWifiEntry != null) {
+            mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
     }
 
@@ -491,7 +505,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
         // Remove entries that are now unreachable
         mPasspointWifiEntryCache.entrySet()
                 .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE
-                        || !seenKeys.contains(entry.getKey()));
+                        || (!seenKeys.contains(entry.getKey()))
+                        && entry.getValue().getConnectedState() == CONNECTED_STATE_DISCONNECTED);
     }
 
     @WorkerThread

@@ -19,13 +19,11 @@ package com.android.wifitrackerlib;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
-import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
@@ -45,7 +43,6 @@ import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +56,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private final PasspointWifiEntry mChosenEntry;
     private OsuWifiEntry mOsuWifiEntry;
     private NetworkInfo mCurrentNetworkInfo;
+    private WifiConfiguration mCurrentWifiConfig;
 
     PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
@@ -101,16 +99,6 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                         "Cannot find config for given PasspointWifiEntry key!");
             }
         }
-
-        cacheNewScanResults();
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
-        conditionallyUpdateConfig();
-        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        final Network currentNetwork = mWifiManager.getCurrentNetwork();
-        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
-        mChosenEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
-        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(
-                mWifiManager.getCurrentNetwork()));
     }
 
     @AnyThread
@@ -118,6 +106,22 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     @NonNull
     public WifiEntry getWifiEntry() {
         return mChosenEntry;
+    }
+
+    @WorkerThread
+    @Override
+    protected  void handleOnStart() {
+        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateConfig();
+        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+        final Network currentNetwork = mWifiManager.getCurrentNetwork();
+        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
+        mChosenEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
+        handleNetworkCapabilitiesChanged(
+                mConnectivityManager.getNetworkCapabilities(currentNetwork));
+        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
+        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
     }
 
     @WorkerThread
@@ -142,34 +146,6 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     }
 
     @WorkerThread
-    @Override
-    protected void handleRssiChangedAction() {
-        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
-    }
-
-    @WorkerThread
-    @Override
-    protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
-        checkNotNull(intent, "Intent cannot be null!");
-        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
-        mChosenEntry.updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
-    }
-
-    @WorkerThread
-    @Override
-    protected void handleLinkPropertiesChanged(@NonNull LinkProperties linkProperties) {
-        if (mChosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            mChosenEntry.updateLinkProperties(linkProperties);
-        }
-    }
-
-    @WorkerThread
-    @Override
-    protected void handleNetworkScoreCacheUpdated() {
-        mChosenEntry.onScoreCacheUpdated();
-    }
-
-    @WorkerThread
     private void updatePasspointWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
 
@@ -180,14 +156,16 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
             final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
 
             if (TextUtils.equals(key, mChosenEntry.getKey())) {
-                mChosenEntry.updateScanResultInfo(wifiConfig,
+                mCurrentWifiConfig = wifiConfig;
+                mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
                         pair.second.get(WifiManager.PASSPOINT_HOME_NETWORK),
                         pair.second.get(WifiManager.PASSPOINT_ROAMING_NETWORK));
                 return;
             }
         }
-        // No AP in range; set scan results and connection config to null.
-        mChosenEntry.updateScanResultInfo(null /* wifiConfig */,
+        // No AP in range; set scan results to null but keep the last seen WifiConfig to display
+        // the previous information while out of range.
+        mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
                 null /* homeScanResults */,
                 null /* roamingScanResults */);
     }
@@ -235,8 +213,9 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
      */
     private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
-            mChosenEntry.updateScanResultInfo(null /* wifiConfig */,
-                    Collections.emptyList(), Collections.emptyList());
+            mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
+                    null /* homeScanResults */,
+                    null /* roamingScanResults */);
             return;
         }
 

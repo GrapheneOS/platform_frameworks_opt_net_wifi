@@ -65,6 +65,7 @@ import com.android.server.wifi.util.WifiPermissionsUtil;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Network factory to handle trusted wifi network requests.
@@ -128,20 +130,23 @@ public class WifiNetworkFactory extends NetworkFactory {
     private WifiScanner mWifiScanner;
     private CompanionDeviceManager mCompanionDeviceManager;
     // Temporary approval set by shell commands.
-    private String mApprovedApp = null;
+    @Nullable private String mApprovedApp = null;
 
     private int mGenericConnectionReqCount = 0;
     // Request that is being actively processed. All new requests start out as an "active" request
     // because we're processing it & handling all the user interactions associated with it. Once we
     // successfully connect to the network, we transition that request to "connected".
-    private NetworkRequest mActiveSpecificNetworkRequest;
-    private WifiNetworkSpecifier mActiveSpecificNetworkRequestSpecifier;
+    @Nullable private NetworkRequest mActiveSpecificNetworkRequest;
+    @Nullable private WifiNetworkSpecifier mActiveSpecificNetworkRequestSpecifier;
     // Request corresponding to the the network that the device is currently connected to.
-    private NetworkRequest mConnectedSpecificNetworkRequest;
-    private WifiNetworkSpecifier mConnectedSpecificNetworkRequestSpecifier;
-    private WifiConfiguration mUserSelectedNetwork;
+    @Nullable private NetworkRequest mConnectedSpecificNetworkRequest;
+    @Nullable private WifiNetworkSpecifier mConnectedSpecificNetworkRequestSpecifier;
+    @Nullable private WifiConfiguration mUserSelectedNetwork;
     private int mUserSelectedNetworkConnectRetryCount;
-    private List<ScanResult> mActiveMatchedScanResults;
+    // Map of bssid to latest scan results for all scan results matching a request. Will be
+    //  - null, if there are no active requests.
+    //  - empty, if there are no matching scan results received for the active request.
+    @Nullable private Map<String, ScanResult> mActiveMatchedScanResults;
     // Verbose logging flag.
     private boolean mVerboseLoggingEnabled = false;
     private boolean mPeriodicScanTimerSet = false;
@@ -237,7 +242,10 @@ public class WifiNetworkFactory extends NetworkFactory {
                 Log.v(TAG, "Received " + scanResults.length + " scan results");
             }
             handleScanResults(scanResults);
-            sendNetworkRequestMatchCallbacksForActiveRequest(mActiveMatchedScanResults);
+            if (mActiveMatchedScanResults != null) {
+                sendNetworkRequestMatchCallbacksForActiveRequest(
+                        mActiveMatchedScanResults.values());
+            }
             scheduleNextPeriodicScan();
         }
 
@@ -432,7 +440,10 @@ public class WifiNetworkFactory extends NetworkFactory {
 
         // If we are already in the midst of processing a request, send matching callbacks
         // immediately on registering the callback.
-        sendNetworkRequestMatchCallbacksForActiveRequest(mActiveMatchedScanResults);
+        if (mActiveMatchedScanResults != null) {
+            sendNetworkRequestMatchCallbacksForActiveRequest(
+                    mActiveMatchedScanResults.values());
+        }
     }
 
     /**
@@ -610,8 +621,11 @@ public class WifiNetworkFactory extends NetworkFactory {
                 if (mVerboseLoggingEnabled) {
                     Log.v(TAG, "Using cached " + cachedScanResults.length + " scan results");
                 }
-                handleScanResults(cachedScanResults);
-                sendNetworkRequestMatchCallbacksForActiveRequest(mActiveMatchedScanResults);
+                handleScanResults(cachedScanResults);          
+                if (mActiveMatchedScanResults != null) {
+                    sendNetworkRequestMatchCallbacksForActiveRequest(
+                            mActiveMatchedScanResults.values());
+                }
                 startPeriodicScans();
             }
         }
@@ -1163,8 +1177,8 @@ public class WifiNetworkFactory extends NetworkFactory {
     }
 
     private void sendNetworkRequestMatchCallbacksForActiveRequest(
-            @Nullable List<ScanResult> matchedScanResults) {
-        if (matchedScanResults == null || matchedScanResults.isEmpty()) return;
+            @NonNull Collection<ScanResult> matchedScanResults) {
+        if (matchedScanResults.isEmpty()) return;
         if (mRegisteredCallbacks.getNumCallbacks() == 0) {
             Log.e(TAG, "No callback registered for sending network request matches. "
                     + "Ignoring...");
@@ -1172,7 +1186,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         }
         for (INetworkRequestMatchCallback callback : mRegisteredCallbacks.getCallbacks()) {
             try {
-                callback.onMatch(matchedScanResults);
+                callback.onMatch(new ArrayList<>(matchedScanResults));
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to invoke network request match callback " + callback, e);
             }
@@ -1265,6 +1279,7 @@ public class WifiNetworkFactory extends NetworkFactory {
         if (mActiveSpecificNetworkRequestSpecifier == null
                 || mActiveMatchedScanResults == null) return null;
         ScanResult selectedScanResult = mActiveMatchedScanResults
+                .values()
                 .stream()
                 .filter(scanResult -> Objects.equals(
                         ScanResultMatchInfo.fromScanResult(scanResult),
@@ -1354,7 +1369,7 @@ public class WifiNetworkFactory extends NetworkFactory {
 
         ScanResultMatchInfo fromWifiConfiguration =
                 ScanResultMatchInfo.fromWifiConfiguration(network);
-        for (ScanResult scanResult : mActiveMatchedScanResults) {
+        for (ScanResult scanResult : mActiveMatchedScanResults.values()) {
             ScanResultMatchInfo fromScanResult = ScanResultMatchInfo.fromScanResult(scanResult);
             if (fromScanResult.equals(fromWifiConfiguration)) {
                 AccessPoint approvedAccessPoint =
@@ -1433,7 +1448,19 @@ public class WifiNetworkFactory extends NetworkFactory {
             mWifiMetrics.incrementNetworkRequestApiMatchSizeHistogram(
                     matchedScanResults.size());
         }
-        mActiveMatchedScanResults = matchedScanResults;
+        // First set of scan results for this request.
+        if (mActiveMatchedScanResults == null) mActiveMatchedScanResults = new HashMap<>();
+        // Coalesce the new set of scan results with previous scan results received for request.
+        mActiveMatchedScanResults.putAll(matchedScanResults
+                .stream()
+                .collect(Collectors.toMap(
+                        scanResult -> scanResult.BSSID, scanResult -> scanResult)));
+        // Weed out any stale cached scan results.
+        long currentTimeInMillis = mClock.getElapsedSinceBootMillis();
+        mActiveMatchedScanResults.entrySet().removeIf(
+                e -> ((currentTimeInMillis - (e.getValue().timestamp / 1000))
+                        >= CACHED_SCAN_RESULTS_MAX_AGE_IN_MILLIS));
+
     }
 
     /**

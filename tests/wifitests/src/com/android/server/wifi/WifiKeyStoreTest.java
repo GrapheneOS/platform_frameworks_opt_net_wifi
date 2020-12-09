@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
@@ -223,6 +224,8 @@ public class WifiKeyStoreTest extends WifiBaseTest {
      */
     @Test
     public void testConfigureSuiteBRsa3072() throws Exception {
+        when(mWifiEnterpriseConfig.getCaCertificateAliases())
+                .thenReturn(new String[]{USER_CA_CERT_ALIAS});
         when(mWifiEnterpriseConfig.getClientPrivateKey())
                 .thenReturn(FakeKeys.CLIENT_SUITE_B_RSA3072_KEY);
         when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
@@ -249,6 +252,8 @@ public class WifiKeyStoreTest extends WifiBaseTest {
      */
     @Test
     public void testConfigureSuiteBEcdsa() throws Exception {
+        when(mWifiEnterpriseConfig.getCaCertificateAliases())
+                .thenReturn(new String[]{USER_CA_CERT_ALIAS});
         when(mWifiEnterpriseConfig.getClientPrivateKey())
                 .thenReturn(FakeKeys.CLIENT_SUITE_B_ECC_KEY);
         when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
@@ -268,5 +273,120 @@ public class WifiKeyStoreTest extends WifiBaseTest {
         assertTrue(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
         assertTrue(
                 savedNetwork.allowedSuiteBCiphers.get(WifiConfiguration.SuiteBCipher.ECDHE_ECDSA));
+    }
+
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 fails when CA and client
+     * certificates are not of the same type.
+     */
+    @Test
+    public void testConfigurationFailureSuiteB() throws Exception {
+        // Create a configuration with RSA client cert and ECDSA CA cert
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_SUITE_B_RSA3072_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_SUITE_B_RSA3072_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[]{FakeKeys.CA_SUITE_B_ECDSA_CERT});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_ECDSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+    }
+
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 fails when CA is RSA but not
+     * with the required security
+     */
+    @Test
+    public void testConfigurationFailureSuiteBNon3072Rsa() throws Exception {
+        // Create a configuration with RSA client cert and weak RSA CA cert
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_SUITE_B_RSA3072_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_CERT0);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_SUITE_B_RSA3072_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(new X509Certificate[]{FakeKeys.CA_CERT0});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_CERT0);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_RSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+    }
+
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 fails when one CA in the list
+     * is RSA but not with the required security
+     */
+    @Test
+    public void testConfigurationFailureSuiteBNon3072RsaInList() throws Exception {
+        // Create a configuration with RSA client cert and weak RSA CA cert
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_SUITE_B_RSA3072_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_SUITE_B_RSA3072_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(
+                        new X509Certificate[]{FakeKeys.CA_SUITE_B_RSA3072_CERT, FakeKeys.CA_CERT0});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[1]))).thenReturn(
+                FakeKeys.CA_CERT0);
+        when(mWifiEnterpriseConfig.getCaCertificateAliases())
+                .thenReturn(USER_CA_CERT_ALIASES);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_RSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
+    }
+
+    /**
+     * Test configuring WPA3-Enterprise in 192-bit mode for RSA 3072 fails when one CA in the list
+     * is RSA and the other is ECDSA
+     */
+    @Test
+    public void testConfigurationFailureSuiteBRsaAndEcdsaInList() throws Exception {
+        // Create a configuration with RSA client cert and weak RSA CA cert
+        when(mWifiEnterpriseConfig.getClientPrivateKey())
+                .thenReturn(FakeKeys.CLIENT_SUITE_B_RSA3072_KEY);
+        when(mWifiEnterpriseConfig.getClientCertificate()).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificate()).thenReturn(FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        when(mWifiEnterpriseConfig.getClientCertificateChain())
+                .thenReturn(new X509Certificate[]{FakeKeys.CLIENT_SUITE_B_RSA3072_CERT});
+        when(mWifiEnterpriseConfig.getCaCertificates())
+                .thenReturn(
+                        new X509Certificate[]{FakeKeys.CA_SUITE_B_RSA3072_CERT,
+                                FakeKeys.CA_SUITE_B_ECDSA_CERT});
+        when(mKeyStore.getCertificate(eq(USER_CERT_ALIAS))).thenReturn(
+                FakeKeys.CLIENT_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[0]))).thenReturn(
+                FakeKeys.CA_SUITE_B_RSA3072_CERT);
+        when(mKeyStore.getCertificate(eq(USER_CA_CERT_ALIASES[1]))).thenReturn(
+                FakeKeys.CA_SUITE_B_ECDSA_CERT);
+        when(mWifiEnterpriseConfig.getCaCertificateAliases())
+                .thenReturn(USER_CA_CERT_ALIASES);
+        WifiConfiguration savedNetwork = WifiConfigurationTestUtil.createEapSuiteBNetwork(
+                WifiConfiguration.SuiteBCipher.ECDHE_RSA);
+        savedNetwork.enterpriseConfig = mWifiEnterpriseConfig;
+        assertFalse(mWifiKeyStore.updateNetworkKeys(savedNetwork, null));
     }
 }

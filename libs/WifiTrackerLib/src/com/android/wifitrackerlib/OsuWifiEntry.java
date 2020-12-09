@@ -24,6 +24,7 @@ import static com.android.wifitrackerlib.WifiEntry.ConnectCallback.CONNECT_STATU
 import android.annotation.MainThread;
 import android.content.Context;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -60,11 +61,12 @@ class OsuWifiEntry extends WifiEntry {
     @NonNull private final String mKey;
     @NonNull private final Context mContext;
     @NonNull private OsuProvider mOsuProvider;
+    private String mSsid;
     private String mOsuStatusString;
     private boolean mIsAlreadyProvisioned = false;
 
     /**
-     * Create n OsuWifiEntry with the associated OsuProvider
+     * Create an OsuWifiEntry with the associated OsuProvider
      */
     OsuWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull OsuProvider osuProvider,
@@ -87,7 +89,18 @@ class OsuWifiEntry extends WifiEntry {
 
     @Override
     public String getTitle() {
-        return mOsuProvider.getFriendlyName();
+        final String friendlyName = mOsuProvider.getFriendlyName();
+        if (!TextUtils.isEmpty(friendlyName)) {
+            return friendlyName;
+        }
+        if (!TextUtils.isEmpty(mSsid)) {
+            return mSsid;
+        }
+        final Uri serverUri = mOsuProvider.getServerUri();
+        if (serverUri != null) {
+            return serverUri.toString();
+        }
+        return "";
     }
 
     @Override
@@ -105,8 +118,7 @@ class OsuWifiEntry extends WifiEntry {
 
     @Override
     public String getSsid() {
-        // TODO(b/70983952): Fill this method in in case we need the SSID for verbose logging
-        return "";
+        return mSsid;
     }
 
     @Override
@@ -267,10 +279,13 @@ class OsuWifiEntry extends WifiEntry {
         }
 
         final ScanResult bestScanResult = getBestScanResultByLevel(scanResults);
-        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-            mLevel = bestScanResult != null
-                    ? mWifiManager.calculateSignalLevel(bestScanResult.level)
-                    : WIFI_LEVEL_UNREACHABLE;
+        if (bestScanResult != null) {
+            mSsid = bestScanResult.SSID;
+            if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+            }
+        } else {
+            mLevel = WIFI_LEVEL_UNREACHABLE;
         }
         notifyOnUpdated();
     }
@@ -336,7 +351,7 @@ class OsuWifiEntry extends WifiEntry {
                 case OSU_STATUS_WAITING_FOR_REDIRECT_RESPONSE:
                     newStatusString = String.format(mContext.getString(
                             R.string.osu_opening_provider),
-                            mOsuProvider.getFriendlyName());
+                            getTitle());
                     break;
                 case OSU_STATUS_REDIRECT_RESPONSE_RECEIVED:
                 case OSU_STATUS_SECOND_SOAP_EXCHANGE:

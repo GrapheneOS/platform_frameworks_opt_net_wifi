@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkKey;
 import android.net.ScoredNetwork;
@@ -147,7 +148,8 @@ public class PasspointWifiEntryTest {
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
                 .thenReturn(mockConnectivityManager);
-
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
         WifiInfo wifiInfo = mock(WifiInfo.class);
         when(wifiInfo.isPasspointAp()).thenReturn(true);
         when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
@@ -159,8 +161,52 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
                 false /* forSavedNetworksPage */);
         entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.setIsDefaultNetwork(true);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
+    }
+
+    @Test
+    public void testShouldShowXLevelIcon_unvalidatedOrNotDefault_returnsTrue() {
+        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mockConnectivityManager);
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.isPasspointAp()).thenReturn(true);
+        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        final NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        // Disconnected should return false;
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
+
+        // Not validated, Not Default
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
+
+        // Not Validated, Default
+        entry.setIsDefaultNetwork(true);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
+
+        // Validated, Default
+        entry.updateNetworkCapabilities(networkCapabilities);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
+
+        // Validated, Not Default
+        entry.setIsDefaultNetwork(false);
+
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
     }
 
     @Test
@@ -220,5 +266,41 @@ public class PasspointWifiEntryTest {
                 null);
 
         assertThat(entry.getSpeed()).isEqualTo(SPEED_SLOW);
+    }
+
+    @Test
+    public void testGetMacAddress_wifiInfoAvailable_usesWifiInfoMacAddress() {
+        final String factoryMac = "01:23:45:67:89:ab";
+        final String wifiInfoMac = "11:23:45:67:89:ab";
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        config.FQDN = FQDN;
+        when(mMockWifiManager.getFactoryMacAddresses()).thenReturn(new String[]{factoryMac});
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.isPasspointAp()).thenReturn(true);
+        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(wifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
+        NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.getMacAddress()).isEqualTo(wifiInfoMac);
+    }
+
+    @Test
+    public void testIsAutoJoinEnabled_nullConfigs_returnsFalse() {
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        entry.updatePasspointConfig(null);
+
+        assertThat(entry.isAutoJoinEnabled()).isFalse();
     }
 }

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
 import android.app.test.TestAlarmManager;
 import android.content.Context;
+import android.content.pm.ModuleInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
@@ -98,6 +99,8 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
     PackageManager mPackageManager;
     @Mock
     PackageInfo mPackageInfo;
+    @Mock
+    ModuleInfo mModuleInfo;
 
     private final ArrayList<String> mKeys = new ArrayList<>();
     private final ArrayList<WifiScoreCard.BlobListener> mBlobListeners = new ArrayList<>();
@@ -154,8 +157,9 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         mDriverVersion = "build 1.1";
         mFirmwareVersion = "HW 1.1";
         when(mPackageInfo.getLongVersionCode()).thenReturn(MODULE_VERSION);
-        when(mContext.getPackageName()).thenReturn("WifiAPK");
         when(mPackageManager.getPackageInfo(anyString(), anyInt())).thenReturn(mPackageInfo);
+        when(mPackageManager.getModuleInfo(anyString(), anyInt())).thenReturn(mModuleInfo);
+        when(mModuleInfo.getPackageName()).thenReturn("WifiAPK");
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
 
         mWifiConfigManager = mockConfigManager();
@@ -323,7 +327,7 @@ public class WifiHealthMonitorTest extends WifiBaseTest {
         // trigger extractCurrentSoftwareBuildInfo() call to update currSoftwareBuildInfo
         mWifiHealthMonitor.installMemoryStoreSetUpDetectionAlarm(mMemoryStore);
         mWifiHealthMonitor.setWifiEnabled(true);
-        assertEquals(0, mWifiHealthMonitor.getWifiStackVersion());
+        assertEquals(MODULE_VERSION, mWifiHealthMonitor.getWifiStackVersion());
         millisecondsPass(5000);
         mWifiScanner.startScan(mScanSettings, mScanListener);
         mAlarmManager.dispatch(WifiHealthMonitor.POST_BOOT_DETECTION_TIMER_TAG);

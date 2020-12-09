@@ -811,7 +811,8 @@ public class ClientModeImpl extends StateMachine {
 
         mWifiScoreReport = new WifiScoreReport(mWifiInjector.getScoringParams(), mClock,
                 mWifiMetrics, mWifiInfo, mWifiNative, mBssidBlocklistMonitor,
-                mWifiInjector.getWifiThreadRunner());
+                mWifiInjector.getWifiThreadRunner(), mWifiInjector.getDeviceConfigFacade(),
+                mContext, looper, mFacade);
 
         mNetworkCapabilitiesFilter = new NetworkCapabilities.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -908,8 +909,6 @@ public class ClientModeImpl extends StateMachine {
         mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.HS20_REMEDIATION_EVENT,
                 getHandler());
         mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_CONNECTION_EVENT,
-                getHandler());
-        mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.FILS_NETWORK_CONNECTION_EVENT,
                 getHandler());
         mWifiMonitor.registerHandler(mInterfaceName, WifiMonitor.NETWORK_DISCONNECTION_EVENT,
                 getHandler());
@@ -1111,6 +1110,10 @@ public class ClientModeImpl extends StateMachine {
         public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
             // Clear invalid cached data.
             mWifiNative.removeNetworkCachedData(oldConfig.networkId);
+
+            if (WifiConfigurationUtil.hasCredentialChanged(oldConfig, newConfig)) {
+                mBssidBlocklistMonitor.handleNetworkRemoved(newConfig.SSID);
+            }
 
             // Check if user/app change meteredOverride for connected network.
             if (newConfig.networkId != mLastNetworkId
@@ -1993,7 +1996,6 @@ public class ClientModeImpl extends StateMachine {
                 }
                 sb.append(" blacklist=" + Boolean.toString(mDidBlackListBSSID));
                 break;
-            case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 sb.append(" ");
                 sb.append(Integer.toString(msg.arg1));
@@ -2258,9 +2260,6 @@ public class ClientModeImpl extends StateMachine {
                 break;
             case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 s = "NETWORK_CONNECTION_EVENT";
-                break;
-            case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
-                s = "FILS_NETWORK_CONNECTION_EVENT";
                 break;
             case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 s = "NETWORK_DISCONNECTION_EVENT";
@@ -2558,7 +2557,6 @@ public class ClientModeImpl extends StateMachine {
     private void sendLinkConfigurationChangedBroadcast() {
         Intent intent = new Intent(WifiManager.ACTION_LINK_CONFIGURATION_CHANGED);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        intent.putExtra(WifiManager.EXTRA_LINK_PROPERTIES, new LinkProperties(mLinkProperties));
         mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
     }
 
@@ -2966,13 +2964,8 @@ public class ClientModeImpl extends StateMachine {
                         mWifiHealthMonitor.getScanRssiValidTimeMs());
                 mWifiScoreCard.noteConnectionFailure(mWifiInfo, scanRssi, ssid, blocklistReason);
                 checkAbnormalConnectionFailureAndTakeBugReport(ssid);
-                boolean isLowRssi = false;
-                int sufficientRssi = getSufficientRssi(networkId, bssid);
-                if (scanRssi != WifiInfo.INVALID_RSSI && sufficientRssi != WifiInfo.INVALID_RSSI) {
-                    isLowRssi = scanRssi < sufficientRssi;
-                }
                 mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, blocklistReason,
-                        isLowRssi);
+                        scanRssi);
             }
         }
 
@@ -3441,6 +3434,7 @@ public class ClientModeImpl extends StateMachine {
                     break;
                 case CMD_INITIALIZE:
                     mWifiNative.initialize();
+                    mWifiScoreReport.initialize();
                     break;
                 case CMD_BOOT_COMPLETED:
                     // get other services that we need to manage
@@ -3455,7 +3449,6 @@ public class ClientModeImpl extends StateMachine {
                 case CMD_RECONNECT:
                 case CMD_REASSOCIATE:
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
-                case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
@@ -3686,9 +3679,10 @@ public class ClientModeImpl extends StateMachine {
         // TODO: b/79504296 This broadcast has been deprecated and should be removed
         sendSupplicantConnectionChangedBroadcast(false);
 
-        // Let's remove any ephemeral or passpoint networks.
+        // Remove any ephemeral or Passpoint networks, flush ANQP cache
         mWifiConfigManager.removeAllEphemeralOrPasspointConfiguredNetworks();
         mWifiConfigManager.clearUserTemporarilyDisabledList();
+        mPasspointManager.clearAnqpRequestsAndFlushCache();
     }
 
     void registerConnected() {
@@ -4211,12 +4205,11 @@ public class ClientModeImpl extends StateMachine {
                     }
                     handleStatus = NOT_HANDLED;
                     break;
-                case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
-                    mWifiMetrics.incrementL2ConnectionThroughFilsAuthCount();
-                    mSentHLPs = true;
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                     if (mVerboseLoggingEnabled) log("Network connection established");
                     mLastNetworkId = message.arg1;
+                    mSentHLPs = message.arg2 == 1;
+                    if (mSentHLPs) mWifiMetrics.incrementL2ConnectionThroughFilsAuthCount();
                     mWifiConfigManager.clearRecentFailureReason(mLastNetworkId);
                     mLastBssid = (String) message.obj;
                     reasonCode = message.arg2;
@@ -4906,14 +4899,11 @@ public class ClientModeImpl extends StateMachine {
                     }
                     break;
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
-                case WifiMonitor.FILS_NETWORK_CONNECTION_EVENT:
                     mWifiInfo.setBSSID((String) message.obj);
                     mLastNetworkId = message.arg1;
                     mWifiInfo.setNetworkId(mLastNetworkId);
                     mWifiInfo.setMacAddress(mWifiNative.getMacAddress(mInterfaceName));
-                    if (!mLastBssid.equals(message.obj)) {
-                        mLastBssid = (String) message.obj;
-                    }
+                    mLastBssid = (String) message.obj;
                     break;
                 case CMD_ONESHOT_RSSI_POLL:
                     if (!mEnableRssiPolling) {
@@ -5014,11 +5004,12 @@ public class ClientModeImpl extends StateMachine {
                             && mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID) {
                         WifiConfiguration config =
                                 mWifiConfigManager.getConfiguredNetwork(mLastNetworkId);
-                        if ((message.arg1 == RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED
+                        if (config != null
+                            && ((message.arg1 == RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED
                                 && config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID)
                                 || (config.enterpriseConfig != null
                                         && config.enterpriseConfig.isAuthenticationSimBased()
-                                        && !mWifiCarrierInfoManager.isSimPresent(mLastSubId))) {
+                                        && !mWifiCarrierInfoManager.isSimPresent(mLastSubId)))) {
                             mWifiMetrics.logStaEvent(StaEvent.TYPE_FRAMEWORK_DISCONNECT,
                                     StaEvent.DISCONNECT_RESET_SIM_NETWORKS);
                             // remove local PMKSA cache in framework
@@ -5420,15 +5411,11 @@ public class ClientModeImpl extends StateMachine {
                                     mWifiConfigManager.updateNetworkSelectionStatus(
                                             config.networkId,
                                             DISABLED_NO_INTERNET_TEMPORARY);
+                                    mBssidBlocklistMonitor.handleBssidConnectionFailure(
+                                            mLastBssid, config.SSID,
+                                            BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+                                            mWifiInfo.getRssi());
                                 }
-                                int rssi = mWifiInfo.getRssi();
-                                int sufficientRssi = mWifiInjector.getScoringParams()
-                                        .getSufficientRssi(mWifiInfo.getFrequency());
-                                boolean isLowRssi = rssi < sufficientRssi;
-                                mBssidBlocklistMonitor.handleBssidConnectionFailure(
-                                        mLastBssid, config.SSID,
-                                        BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
-                                        isLowRssi);
                                 mWifiScoreCard.noteValidationFailure(mWifiInfo);
                             }
                         }
@@ -5484,13 +5471,10 @@ public class ClientModeImpl extends StateMachine {
                     boolean localGen = message.arg1 == 1;
                     if (!localGen) { // ignore disconnects initiated by wpa_supplicant.
                         mWifiScoreCard.noteNonlocalDisconnect(message.arg2);
-                        int rssi = mWifiInfo.getRssi();
-                        int sufficientRssi = mWifiInjector.getScoringParams()
-                                .getSufficientRssi(mWifiInfo.getFrequency());
-                        boolean isLowRssi = rssi < sufficientRssi;
                         mBssidBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
                                 mWifiInfo.getSSID(),
-                                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, isLowRssi);
+                                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT,
+                                mWifiInfo.getRssi());
                     }
                     config = getCurrentWifiConfiguration();
 
@@ -5695,6 +5679,7 @@ public class ClientModeImpl extends StateMachine {
                     }
                     clearNetworkCachedDataIfNeeded(getTargetWifiConfiguration(), message.arg2);
                     mTargetNetworkId = WifiConfiguration.INVALID_NETWORK_ID;
+                    mWifiInfo.reset();
                     break;
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                     StateChangeResult stateChangeResult = (StateChangeResult) message.obj;
@@ -5825,15 +5810,20 @@ public class ClientModeImpl extends StateMachine {
     }
 
     void handleGsmAuthRequest(SimAuthRequestData requestData) {
+        WifiConfiguration requestingWifiConfiguration = null;
         if (mTargetWifiConfiguration != null
                 && mTargetWifiConfiguration.networkId
                 == requestData.networkId) {
+            requestingWifiConfiguration = mTargetWifiConfiguration;
             logd("id matches targetWifiConfiguration");
         } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
                 && mLastNetworkId == requestData.networkId) {
+            requestingWifiConfiguration = getCurrentWifiConfiguration();
             logd("id matches currentWifiConfiguration");
-        } else {
-            logd("id does not match targetWifiConfiguration");
+        }
+
+        if (requestingWifiConfiguration == null) {
+            logd("GsmAuthRequest received with null target/current WifiConfiguration.");
             return;
         }
 
@@ -5850,15 +5840,15 @@ public class ClientModeImpl extends StateMachine {
          *                            [SRES][Cipher Key Kc]
          */
         String response = mWifiCarrierInfoManager
-                .getGsmSimAuthResponse(requestData.data, mTargetWifiConfiguration);
+                .getGsmSimAuthResponse(requestData.data, requestingWifiConfiguration);
         if (response == null) {
             // In case of failure, issue may be due to sim type, retry as No.2 case
             response = mWifiCarrierInfoManager
-                    .getGsmSimpleSimAuthResponse(requestData.data, mTargetWifiConfiguration);
+                    .getGsmSimpleSimAuthResponse(requestData.data, requestingWifiConfiguration);
             if (response == null) {
                 // In case of failure, issue may be due to sim type, retry as No.3 case
                 response = mWifiCarrierInfoManager.getGsmSimpleSimNoLengthAuthResponse(
-                                requestData.data, mTargetWifiConfiguration);
+                                requestData.data, requestingWifiConfiguration);
             }
         }
         if (response == null || response.length() == 0) {
@@ -5871,20 +5861,25 @@ public class ClientModeImpl extends StateMachine {
     }
 
     void handle3GAuthRequest(SimAuthRequestData requestData) {
+        WifiConfiguration requestingWifiConfiguration = null;
         if (mTargetWifiConfiguration != null
                 && mTargetWifiConfiguration.networkId
                 == requestData.networkId) {
+            requestingWifiConfiguration = mTargetWifiConfiguration;
             logd("id matches targetWifiConfiguration");
         } else if (mLastNetworkId != WifiConfiguration.INVALID_NETWORK_ID
                 && mLastNetworkId == requestData.networkId) {
+            requestingWifiConfiguration = getCurrentWifiConfiguration();
             logd("id matches currentWifiConfiguration");
-        } else {
-            logd("id does not match targetWifiConfiguration");
+        }
+
+        if (requestingWifiConfiguration == null) {
+            logd("3GAuthRequest received with null target/current WifiConfiguration.");
             return;
         }
 
         SimAuthResponseData response = mWifiCarrierInfoManager
-                .get3GAuthResponse(requestData, mTargetWifiConfiguration);
+                .get3GAuthResponse(requestData, requestingWifiConfiguration);
         if (response != null) {
             mWifiNative.simAuthResponse(
                     mInterfaceName, response.type, response.response);
@@ -6282,19 +6277,24 @@ public class ClientModeImpl extends StateMachine {
 
 
         if ((frameData.mBssTmDataFlagsMask
-                & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED)
-                != 0) {
-            long duration = frameData.mBlackListDurationMs;
-            mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
+                & MboOceConstants.BTM_DATA_FLAG_DISASSOCIATION_IMMINENT) != 0) {
+            long duration = 0;
+            if ((frameData.mBssTmDataFlagsMask
+                    & MboOceConstants.BTM_DATA_FLAG_MBO_ASSOC_RETRY_DELAY_INCLUDED) != 0) {
+                mWifiMetrics.incrementSteeringRequestCountIncludingMboAssocRetryDelay();
+                duration = frameData.mBlockListDurationMs;
+            }
             if (duration == 0) {
                 /*
-                 * When MBO assoc retry delay is set to zero(reserved as per spec),
-                 * blacklist the BSS for sometime to avoid AP rejecting the re-connect request.
+                 * When disassoc imminent bit alone is set or MBO assoc retry delay is
+                 * set to zero(reserved as per spec), blocklist the BSS for sometime to
+                 * avoid AP rejecting the re-connect request.
                  */
-                duration = MboOceConstants.DEFAULT_BLACKLIST_DURATION_MS;
+                duration = MboOceConstants.DEFAULT_BLOCKLIST_DURATION_MS;
             }
-            // Blacklist the current BSS
-            mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration);
+            // Blocklist the current BSS
+            mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid, duration,
+                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 0);
         }
 
         if (frameData.mStatus != MboOceConstants.BTM_RESPONSE_STATUS_ACCEPT) {

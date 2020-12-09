@@ -494,6 +494,11 @@ class Utils {
             sj.add(wifiInfoDescription);
         }
 
+        final String networkCapabilityDescription = wifiEntry.getNetworkCapabilityDescription();
+        if (!TextUtils.isEmpty(networkCapabilityDescription)) {
+            sj.add(networkCapabilityDescription);
+        }
+
         final String scanResultsDescription = wifiEntry.getScanResultDescription();
         if (!TextUtils.isEmpty(scanResultsDescription)) {
             sj.add(scanResultsDescription);

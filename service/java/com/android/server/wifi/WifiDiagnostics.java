@@ -226,6 +226,10 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
         if (!mActiveInterfaces.isEmpty()) {
             return;
         }
+        if (mLogLevel != VERBOSE_NO_LOG) {
+            stopLoggingAllBuffers();
+            mRingBuffers = null;
+        }
         if (mIsLoggingEventHandlerRegistered) {
             if (!mWifiNative.resetLogHandler()) {
                 mLog.wC("Fail to reset log handler");
@@ -235,10 +239,6 @@ class WifiDiagnostics extends BaseWifiDiagnostics {
             // Clear mIsLoggingEventHandlerRegistered even if resetLogHandler() failed, because
             // the log handler is in an indeterminate state.
             mIsLoggingEventHandlerRegistered = false;
-        }
-        if (mLogLevel != VERBOSE_NO_LOG) {
-            stopLoggingAllBuffers();
-            mRingBuffers = null;
         }
     }
 

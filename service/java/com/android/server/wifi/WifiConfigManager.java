@@ -1132,7 +1132,6 @@ public class WifiConfigManager {
         newInternalConfig.noInternetAccessExpected = externalConfig.noInternetAccessExpected;
         newInternalConfig.ephemeral = externalConfig.ephemeral;
         newInternalConfig.osu = externalConfig.osu;
-        newInternalConfig.trusted = externalConfig.trusted;
         newInternalConfig.fromWifiNetworkSuggestion = externalConfig.fromWifiNetworkSuggestion;
         newInternalConfig.fromWifiNetworkSpecifier = externalConfig.fromWifiNetworkSpecifier;
         newInternalConfig.useExternalScores = externalConfig.useExternalScores;
@@ -1801,7 +1800,7 @@ public class WifiConfigManager {
             int disableReason = networkStatus.getNetworkSelectionDisableReason();
             int blockedBssids = Math.min(MAX_BLOCKED_BSSID_PER_NETWORK,
                     mWifiInjector.getBssidBlocklistMonitor()
-                            .getNumBlockedBssidsForSsid(config.SSID));
+                            .updateAndGetNumBlockedBssidsForSsid(config.SSID));
             // if no BSSIDs are blocked then we should keep trying to connect to something
             long disableTimeoutMs = 0;
             if (blockedBssids > 0) {
@@ -2927,13 +2926,21 @@ public class WifiConfigManager {
         Set<Integer> removedNetworkIds = new HashSet<>();
         // Remove any private networks of the old user before switching the userId.
         for (WifiConfiguration config : getConfiguredNetworks()) {
-            if (!config.shared && doesUidBelongToCurrentUser(config.creatorUid)) {
+            if ((!config.shared && doesUidBelongToCurrentUser(config.creatorUid))
+                    || config.ephemeral) {
                 removedNetworkIds.add(config.networkId);
                 localLog("clearInternalUserData: removed config."
                         + " netId=" + config.networkId
                         + " configKey=" + config.getKey());
                 mConfiguredNetworks.remove(config.networkId);
+                for (OnNetworkUpdateListener listener : mListeners) {
+                    listener.onNetworkRemoved(
+                            createExternalWifiConfiguration(config, true, Process.WIFI_UID));
+                }
             }
+        }
+        if (!removedNetworkIds.isEmpty()) {
+            sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_REMOVED);
         }
         mUserTemporarilyDisabledList.clear();
         mScanDetailCaches.clear();

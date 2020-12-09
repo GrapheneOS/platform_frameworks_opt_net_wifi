@@ -246,6 +246,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 mLocalLog.log("Failed to add network suggestion");
                 continue;
             }
+            mWifiConfigManager.allowAutojoin(result.getNetworkId(), config.allowAutojoin);
             WifiConfiguration currentWCmConfiguredNetwork =
                     mWifiConfigManager.getConfiguredNetwork(result.netId);
             // Try to enable network selection
@@ -276,6 +277,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
             mLocalLog.log("Failed to add network suggestion");
             return null;
         }
+        mWifiConfigManager.allowAutojoin(result.getNetworkId(), wifiConfiguration.allowAutojoin);
         if (!mWifiConfigManager.updateNetworkSelectionStatus(result.getNetworkId(),
                 WifiConfiguration.NetworkSelectionStatus.DISABLED_NONE)) {
             mLocalLog.log("Failed to make network suggestion selectable");

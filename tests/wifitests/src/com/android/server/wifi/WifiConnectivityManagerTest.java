@@ -893,7 +893,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 CANDIDATE_SSID);
         // Verify the failed BSSID is added to blocklist
         verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(CANDIDATE_BSSID),
-                eq(CANDIDATE_SSID), anyLong());
+                eq(CANDIDATE_SSID), anyLong(), anyInt(), anyInt());
         // Verify another connection starting
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
                 argThat(new WifiCandidatesListSizeMatcher(1)));
@@ -2210,10 +2210,14 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void verifyBlacklistRefreshedAfterScanResults() {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
+        InOrder inOrder = inOrder(mBssidBlocklistMonitor);
         // Force a connectivity scan
-        verify(mBssidBlocklistMonitor, never()).updateAndGetBssidBlocklist();
+        inOrder.verify(mBssidBlocklistMonitor, never())
+                .updateAndGetBssidBlocklistForSsid(anyString());
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
-        verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklist();
+
+        inOrder.verify(mBssidBlocklistMonitor).tryEnablingBlockedBssids(any());
+        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsid(anyString());
     }
 
     /**

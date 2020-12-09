@@ -1689,11 +1689,18 @@ public class WifiScoreCard {
      * @return
      */
     public static long computeHashLong(String ssid, MacAddress mac, String l2KeySeed) {
+        final ArrayList<Byte> decodedSsid;
+        try {
+            decodedSsid = NativeUtil.decodeSsid(ssid);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "NativeUtil.decodeSsid failed: malformed string: " + ssid);
+            return 0;
+        }
         byte[][] parts = {
                 // Our seed keeps the L2Keys specific to this device
                 l2KeySeed.getBytes(),
                 // ssid is either quoted utf8 or hex-encoded bytes; turn it into plain bytes.
-                NativeUtil.byteArrayFromArrayList(NativeUtil.decodeSsid(ssid)),
+                NativeUtil.byteArrayFromArrayList(decodedSsid),
                 // And the BSSID
                 mac.toByteArray()
         };

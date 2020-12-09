@@ -355,20 +355,19 @@
     config_wifiBssidBlocklistMonitorFailureStreakCap is set to 7-->
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorBaseBlockDurationMs"> 300000 </integer>
 
-    <!-- Base block duration for a failure at low RSSI (less than the sufficient RSSI) used for
-    ASSOCIATION_TIMEOUT, ABNORMAL_DISCONNECT, and NETWORK_VALIDATION failures. The block duration
-    for a BSSID that keeps failing will grow exponentially to the this base duration.
+    <!-- Base duration to block a BSSID after the external connected scorer sets wifi as unusable.
+    The block duration is increased exponentially if the same BSSID is repeated marked as unusable.
     ie. 0.5/1/2/4/8/16/32/64 minutes - capped at 64 minutes because the default for
-    config_wifiBssidBlocklistMonitorFailureStreakCap is set to 7.
-    This value should be configured to be less than config_wifiBssidBlocklistMonitorBaseBlockDurationMs -->
-    <integer translatable="false" name="config_wifiBssidBlocklistMonitorBaseLowRssiBlockDurationMs"> 30000 </integer>
+    config_wifiBssidBlocklistMonitorFailureStreakCap is set to 7. The block duration is reset to
+    the base value 3 hours after the latest connection to this BSSID. -->
+    <integer translatable="false" name="config_wifiBssidBlocklistMonitorConnectedScoreBaseBlockDurationMs"> 30000 </integer>
 
     <!-- The failure streak is the number of times a BSSID consecutively gets blocked without ever
     successfully connecting in between, and is used to calculate the exponentially growing blocklist time.
     The config_wifiBssidBlocklistMonitorFailureStreakCap controls how many times the block duration
     could exponentially grow when a BSSID keeps failing.
     ie. A value of 0 means BSSIDs are always blocked for the flat base duration defined by
-    config_wifiBssidBlocklistMonitorBaseBlockDurationMs and config_wifiBssidBlocklistMonitorBaseLowRssiBlockDurationMs. -->
+    config_wifiBssidBlocklistMonitorBaseBlockDurationMs. -->
     <integer translatable="false" name="config_wifiBssidBlocklistMonitorFailureStreakCap"> 7 </integer>
 
     <!-- If a non-locally generated disconnect happens within this time window after association,
@@ -462,4 +461,7 @@
 
     <!-- integer indicating additional disconnect delay (in ms) after IMS onLost() indication is received -->
     <integer translatable="false" name="config_wifiDelayDisconnectOnImsLostMs">0</integer>
+
+    <!-- Enable adding minimum confirmation duration when sending network score to connectivity service. -->
+    <bool translatable="false" name="config_wifiMinConfirmationDurationSendNetworkScoreEnabled">false</bool>
 </resources>
