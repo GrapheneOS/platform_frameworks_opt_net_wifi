@@ -5628,14 +5628,14 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * @return true if this device supports FILS-SHA256
      */
     private boolean isFilsSha256Supported() {
-        return (mWifiNative.getSupportedFeatureSet(mInterfaceName) & WIFI_FEATURE_FILS_SHA256) != 0;
+        return (getSupportedFeatures() & WIFI_FEATURE_FILS_SHA256) != 0;
     }
 
     /**
      * @return true if this device supports FILS-SHA384
      */
     private boolean isFilsSha384Supported() {
-        return (mWifiNative.getSupportedFeatureSet(mInterfaceName) & WIFI_FEATURE_FILS_SHA384) != 0;
+        return (getSupportedFeatures() & WIFI_FEATURE_FILS_SHA384) != 0;
     }
 
     /**

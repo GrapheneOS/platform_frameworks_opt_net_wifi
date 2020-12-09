@@ -116,7 +116,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WifiInjector mWifiInjector;
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
-    private final ScanOnlyModeImpl mScanOnlyModeImpl;
+    private final DefaultClientModeManager mDefaultClientModeManager;
     private final long mId;
     private final Graveyard mGraveyard = new Graveyard();
 
@@ -140,6 +140,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Nullable
     private ClientModeImpl mClientModeImpl = null;
 
+    @Nullable
+    private ScanOnlyModeImpl mScanOnlyModeImpl = null;
+
     /**
      * One of  {@link WifiManager#WIFI_STATE_DISABLED},
      * {@link WifiManager#WIFI_STATE_DISABLING},
@@ -155,7 +158,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            ScanOnlyModeImpl scanOnlyModeImpl, long id,
+            DefaultClientModeManager defaultClientModeManager, long id,
             @NonNull WorkSource requestorWs, @NonNull ClientRole role,
             boolean verboseLoggingEnabled) {
         mContext = context;
@@ -169,7 +172,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mDeferStopHandler = new DeferStopHandler(looper);
         mSelfRecovery = selfRecovery;
         mWifiGlobals = wifiGlobals;
-        mScanOnlyModeImpl = scanOnlyModeImpl;
+        mDefaultClientModeManager = defaultClientModeManager;
         mId = id;
         mTargetRole = role;
         mTargetRequestorWs = requestorWs;
@@ -809,8 +812,15 @@ public class ConcreteClientModeManager implements ClientModeManager {
             @Override
             public void enter() {
                 Log.d(getTag(), "entering ScanOnlyModeState");
-                setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
 
+                if (mClientInterfaceName != null) {
+                    mScanOnlyModeImpl = mWifiInjector.makeScanOnlyModeImpl(
+                            mClientInterfaceName);
+                } else {
+                    Log.e(getTag(), "Entered ScanOnlyModeState with a null interface name!");
+                }
+
+                setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
                 mWakeupController.start();
             }
 
@@ -828,6 +838,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
             @Override
             public void exit() {
+                mScanOnlyModeImpl = null;
                 mWakeupController.stop();
             }
         }
@@ -930,11 +941,13 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @NonNull
     private ClientMode getClientMode() {
-        if (mClientModeImpl == null) {
-            return mScanOnlyModeImpl;
-        } else {
+        if (mClientModeImpl != null) {
             return mClientModeImpl;
         }
+        if (mScanOnlyModeImpl != null) {
+            return mScanOnlyModeImpl;
+        }
+        return mDefaultClientModeManager;
     }
 
     /*
