@@ -324,12 +324,16 @@ public class WifiNetworkSuggestionsManager {
         /**
          * Create a {@link WifiConfiguration} from suggestion for framework internal use.
          */
-        public WifiConfiguration createInternalWifiConfiguration() {
+        public WifiConfiguration createInternalWifiConfiguration(
+                @Nullable WifiCarrierInfoManager carrierInfoManager) {
             WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
             config.allowAutojoin = isAutojoinEnabled;
             if (config.enterpriseConfig
                     != null && config.enterpriseConfig.isAuthenticationSimBased()) {
                 config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
+            }
+            if (carrierInfoManager != null) {
+                config.subscriptionId = carrierInfoManager.getBestMatchSubscriptionId(config);
             }
             return config;
         }
@@ -460,7 +464,8 @@ public class WifiNetworkSuggestionsManager {
                         continue;
                     }
                     ewns.wns.wifiConfiguration.isMostRecentlyConnected = mLruConnectionTracker
-                            .isMostRecentlyConnected(ewns.createInternalWifiConfiguration());
+                            .isMostRecentlyConnected(ewns.createInternalWifiConfiguration(
+                                    mWifiCarrierInfoManager));
                 }
             }
             // Clear the flag after writing to disk.
@@ -489,7 +494,8 @@ public class WifiNetworkSuggestionsManager {
                     } else {
                         if (ewns.wns.wifiConfiguration.isMostRecentlyConnected) {
                             mLruConnectionTracker
-                                    .addNetwork(ewns.createInternalWifiConfiguration());
+                                    .addNetwork(ewns.createInternalWifiConfiguration(
+                                            mWifiCarrierInfoManager));
                         }
                         addToScanResultMatchInfoMap(ewns);
                     }
@@ -774,9 +780,7 @@ public class WifiNetworkSuggestionsManager {
             return;
         }
         WifiConfiguration activeWifiConfiguration = mActiveNetworkSuggestionsMatchingConnection
-                .iterator().next().createInternalWifiConfiguration();
-        activeWifiConfiguration.subscriptionId =
-                mWifiCarrierInfoManager.getBestMatchSubscriptionId(activeWifiConfiguration);
+                .iterator().next().createInternalWifiConfiguration(mWifiCarrierInfoManager);
         if (mActiveNetworkSuggestionsMatchingConnection.removeAll(extNetworkSuggestionsRemoved)) {
             if (mActiveNetworkSuggestionsMatchingConnection.isEmpty()) {
                 Log.i(TAG, "Only network suggestion matching the connected network removed. "
@@ -966,8 +970,8 @@ public class WifiNetworkSuggestionsManager {
                 // If we have a config in WifiConfigManager for this suggestion, update
                 // WifiConfigManager with the latest WifiConfig.
                 // Note: Similar logic is present in PasspointManager for passpoint networks.
-                updateWifiConfigInWcmIfPresent(
-                        ewns.createInternalWifiConfiguration(), uid, packageName);
+                updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(
+                        mWifiCarrierInfoManager), uid, packageName);
                 addToScanResultMatchInfoMap(ewns);
             } else {
                 ewns.wns.passpointConfiguration.setAutojoinEnabled(ewns.isAutojoinEnabled);
@@ -1352,7 +1356,8 @@ public class WifiNetworkSuggestionsManager {
                                     null, ewns.isAutojoinEnabled);
                 } else {
                     // Update WifiConfigManager to sync auto-join.
-                    updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(),
+                    updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(
+                            mWifiCarrierInfoManager),
                             ewns.perAppInfo.uid, ewns.perAppInfo.packageName);
                 }
             }
@@ -1402,7 +1407,7 @@ public class WifiNetworkSuggestionsManager {
                 WifiConfiguration network = mWifiConfigManager
                         .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getProfileKey());
                 if (network == null) {
-                    network = ewns.createInternalWifiConfiguration();
+                    network = ewns.createInternalWifiConfiguration(mWifiCarrierInfoManager);
                 }
                 networks.add(network);
             }
@@ -1732,8 +1737,8 @@ public class WifiNetworkSuggestionsManager {
                             + ewns + " for " + scanResult.SSID
                             + "[" + scanResult.capabilities + "]");
                 }
-                WifiConfiguration config = ewns.createInternalWifiConfiguration();
-                config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+                WifiConfiguration config = ewns.createInternalWifiConfiguration(
+                        mWifiCarrierInfoManager);
                 if (config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID
                         && !mWifiCarrierInfoManager.isSimPresent(config.subscriptionId)) {
                     continue;
@@ -1962,8 +1967,8 @@ public class WifiNetworkSuggestionsManager {
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsWithSameProfileKey =
                 new HashSet<>();
         for (ExtendedWifiNetworkSuggestion ewns : matchingSuggestions) {
-            WifiConfiguration config = ewns.createInternalWifiConfiguration();
-            config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+            WifiConfiguration config = ewns
+                    .createInternalWifiConfiguration(mWifiCarrierInfoManager);
             if (config.getProfileKey().equals(network.getProfileKey())) {
                 matchingExtNetworkSuggestionsWithSameProfileKey.add(ewns);
             }
