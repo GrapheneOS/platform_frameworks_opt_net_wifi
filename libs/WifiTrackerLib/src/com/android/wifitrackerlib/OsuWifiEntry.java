@@ -123,39 +123,8 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    @Security
-    public int getSecurity() {
-        return SECURITY_NONE;
-    }
-
-    @Override
     public String getMacAddress() {
         // TODO(b/70983952): Fill this method in in case we need the mac address for verbose logging
-        return null;
-    }
-
-    @Override
-    public boolean isMetered() {
-        return false;
-    }
-
-    @Override
-    public boolean isSaved() {
-        return false;
-    }
-
-    @Override
-    public boolean isSuggestion() {
-        return false;
-    }
-
-    @Override
-    public boolean isSubscription() {
-        return false;
-    }
-
-    @Override
-    public WifiConfiguration getWifiConfiguration() {
         return null;
     }
 
@@ -170,103 +139,6 @@ class OsuWifiEntry extends WifiEntry {
         mConnectCallback = callback;
         mWifiManager.startSubscriptionProvisioning(mOsuProvider, mContext.getMainExecutor(),
                 new OsuWifiEntryProvisioningCallback());
-    }
-
-    // Exiting from the OSU flow should disconnect from the network.
-    @Override
-    public boolean canDisconnect() {
-        return false;
-    }
-
-    @Override
-    public void disconnect(@Nullable DisconnectCallback callback) {
-    }
-
-    @Override
-    public boolean canForget() {
-        return false;
-    }
-
-    @Override
-    public void forget(@Nullable ForgetCallback callback) {
-    }
-
-    @Override
-    public boolean canSignIn() {
-        return false;
-    }
-
-    @Override
-    public void signIn(@Nullable SignInCallback callback) {
-        return;
-    }
-
-    @Override
-    public boolean canShare() {
-        return false;
-    }
-
-    @Override
-    public boolean canEasyConnect() {
-        return false;
-    }
-
-    @Override
-    @MeteredChoice
-    public int getMeteredChoice() {
-        // Metered choice is meaningless for OSU entries
-        return METERED_CHOICE_AUTO;
-    }
-
-    @Override
-    public boolean canSetMeteredChoice() {
-        return false;
-    }
-
-    @Override
-    public void setMeteredChoice(int meteredChoice) {
-        // Metered choice is meaningless for OSU entries
-    }
-
-    @Override
-    @Privacy
-    public int getPrivacy() {
-        // MAC Randomization choice is meaningless for OSU entries.
-        return PRIVACY_UNKNOWN;
-    }
-
-    @Override
-    public boolean canSetPrivacy() {
-        return false;
-    }
-
-    @Override
-    public void setPrivacy(int privacy) {
-        // MAC Randomization choice is meaningless for OSU entries.
-    }
-
-    @Override
-    public boolean isAutoJoinEnabled() {
-        return false;
-    }
-
-    @Override
-    public boolean canSetAutoJoinEnabled() {
-        return false;
-    }
-
-    @Override
-    public void setAutoJoinEnabled(boolean enabled) {
-    }
-
-    @Override
-    public String getSecurityString(boolean concise) {
-        return "";
-    }
-
-    @Override
-    public boolean isExpired() {
-        return false;
     }
 
     @WorkerThread

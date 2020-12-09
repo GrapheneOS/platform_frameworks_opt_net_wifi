@@ -354,11 +354,6 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public boolean isSubscription() {
-        return false;
-    }
-
-    @Override
     public WifiConfiguration getWifiConfiguration() {
         if (!isSaved()) {
             return null;
@@ -680,11 +675,6 @@ public class StandardWifiEntry extends WifiEntry {
                 return concise ? "" : mContext.getString(
                         R.string.wifitrackerlib_wifi_security_none);
         }
-    }
-
-    @Override
-    public boolean isExpired() {
-        return false;
     }
 
     @Override
