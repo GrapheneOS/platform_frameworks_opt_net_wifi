@@ -57,8 +57,6 @@ import java.util.List;
 public class NetworkListStoreDataTest extends WifiBaseTest {
 
     private static final String TEST_SSID = "WifiConfigStoreDataSSID_";
-    private static final String TEST_CONNECT_CHOICE = "XmlUtilConnectChoice";
-    private static final long TEST_CONNECT_CHOICE_TIMESTAMP = 0x4566;
     private static final String TEST_CREATOR_NAME = "CreatorName";
     private static final MacAddress TEST_RANDOMIZED_MAC =
             MacAddress.fromString("da:a1:19:c4:26:fa");
@@ -114,6 +112,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
                     + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                     + "<null name=\"ConnectChoice\" />\n"
+                    + "<int name=\"ConnectChoiceRssi\" value=\"0\" />\n"
                     + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
                     + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                     + "</NetworkStatus>\n"
@@ -174,6 +173,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
                     + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                     + "<null name=\"ConnectChoice\" />\n"
+                    + "<int name=\"ConnectChoiceRssi\" value=\"0\" />\n"
                     + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
                     + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                     + "</NetworkStatus>\n"
@@ -257,6 +257,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
                     + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                     + "<null name=\"ConnectChoice\" />\n"
+                    + "<int name=\"ConnectChoiceRssi\" value=\"0\" />\n"
                     + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
                     + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                     + "</NetworkStatus>\n"
@@ -320,6 +321,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
                     + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                     + "<null name=\"ConnectChoice\" />\n"
+                    + "<int name=\"ConnectChoiceRssi\" value=\"0\" />\n"
                     + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
                     + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                     + "</NetworkStatus>\n"
@@ -555,6 +557,7 @@ public class NetworkListStoreDataTest extends WifiBaseTest {
                         + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
                         + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                         + "<null name=\"ConnectChoice\" />\n"
+                        + "<int name=\"ConnectChoiceRssi\" value=\"0\" />\n"
                         + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
                         + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                         + "</NetworkStatus>\n"

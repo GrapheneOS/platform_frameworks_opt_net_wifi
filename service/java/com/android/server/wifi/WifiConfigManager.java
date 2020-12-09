@@ -2000,7 +2000,7 @@ public class WifiConfigManager {
         config.allowAutojoin = choice;
         if (!choice) {
             removeConnectChoiceFromAllNetworks(config.getProfileKey());
-            config.getNetworkSelectionStatus().setConnectChoice(null);
+            clearConnectChoiceInternal(config);
         }
         sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
         if (!config.ephemeral) {
@@ -2044,9 +2044,11 @@ public class WifiConfigManager {
      *
      * @param networkId network ID corresponding to the network.
      * @param shouldSetUserConnectChoice setup user connect choice on this network.
+     * @param rssi signal strength of the connected network.
      * @return true if the network was found, false otherwise.
      */
-    public boolean updateNetworkAfterConnect(int networkId, boolean shouldSetUserConnectChoice) {
+    public boolean updateNetworkAfterConnect(int networkId, boolean shouldSetUserConnectChoice,
+            int rssi) {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Update network after connect for " + networkId);
         }
@@ -2060,7 +2062,7 @@ public class WifiConfigManager {
             mLruConnectionTracker.addNetwork(config);
         }
         if (shouldSetUserConnectChoice) {
-            setUserConnectChoice(config.networkId);
+            setUserConnectChoice(config.networkId, rssi);
         }
         config.lastConnected = mClock.getWallClockMillis();
         config.numAssociation++;
@@ -2202,7 +2204,7 @@ public class WifiConfigManager {
             if (TextUtils.equals(connectChoice, connectChoiceConfigKey)) {
                 Log.d(TAG, "remove connect choice:" + connectChoice + " from " + config.SSID
                         + " : " + config.networkId);
-                config.getNetworkSelectionStatus().setConnectChoice(null);
+                clearConnectChoiceInternal(config);
             }
         }
     }
@@ -3484,10 +3486,11 @@ public class WifiConfigManager {
      * selection procedure.
      *
      * @param netId ID for the network chosen by the user
+     * @param rssi the signal strength of the user selected network
      * @return true -- There is change made to connection choice of any saved network.
      * false -- There is no change made to connection choice of any saved network.
      */
-    private boolean setUserConnectChoice(int netId) {
+    private boolean setUserConnectChoice(int netId, int rssi) {
         localLog("userSelectNetwork: network ID=" + netId);
         WifiConfiguration selected = getInternalConfiguredNetwork(netId);
 
@@ -3501,39 +3504,49 @@ public class WifiConfigManager {
             updateNetworkSelectionStatus(selected,
                     WifiConfiguration.NetworkSelectionStatus.DISABLED_NONE);
         }
-        boolean changed = setLegacyUserConnectChoice(selected);
+        boolean changed = setLegacyUserConnectChoice(selected, rssi);
         return changed;
     }
 
     /**
      * This maintains the legacy user connect choice state in the config store
      */
-    private boolean setLegacyUserConnectChoice(@NonNull final WifiConfiguration selected) {
+    private boolean setLegacyUserConnectChoice(@NonNull final WifiConfiguration selected,
+            int rssi) {
         boolean change = false;
-        String key = selected.getProfileKey();
         Collection<WifiConfiguration> configuredNetworks = getInternalConfiguredNetworks();
 
+        String key = selected.getProfileKey();
         for (WifiConfiguration network : configuredNetworks) {
             WifiConfiguration.NetworkSelectionStatus status = network.getNetworkSelectionStatus();
             if (network.networkId == selected.networkId) {
                 if (status.getConnectChoice() != null) {
                     localLog("Remove user selection preference of " + status.getConnectChoice()
                             + " from " + network.SSID + " : " + network.networkId);
-                    network.getNetworkSelectionStatus().setConnectChoice(null);
+                    clearConnectChoiceInternal(network);
                     change = true;
                 }
                 continue;
             }
 
-            if (status.getSeenInLastQualifiedNetworkSelection()
-                    && !key.equals(status.getConnectChoice())) {
-                localLog("Add key: " + key + " to "
-                        + WifiNetworkSelector.toNetworkString(network));
-                network.getNetworkSelectionStatus().setConnectChoice(key);
+            if (status.getSeenInLastQualifiedNetworkSelection()) {
+                setConnectChoiceInternal(network, key, rssi);
                 change = true;
             }
         }
         return change;
+    }
+
+    private void clearConnectChoiceInternal(WifiConfiguration config) {
+        config.getNetworkSelectionStatus().setConnectChoice(null);
+        config.getNetworkSelectionStatus().setConnectChoiceRssi(0);
+    }
+
+    private void setConnectChoiceInternal(WifiConfiguration config, String key, int rssi) {
+        config.getNetworkSelectionStatus().setConnectChoice(key);
+        config.getNetworkSelectionStatus().setConnectChoiceRssi(rssi);
+        localLog("Add connect choice key: " + key + " rssi: " + rssi + " to "
+                + WifiNetworkSelector.toNetworkString(config));
     }
 
     /** Update WifiConfigManager before connecting to a network. */
