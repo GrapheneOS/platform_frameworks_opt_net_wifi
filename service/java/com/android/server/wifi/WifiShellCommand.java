@@ -55,6 +55,7 @@ import android.os.Binder;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.telephony.SubscriptionManager;
 import android.text.TextUtils;
 import android.util.Pair;
 
@@ -613,8 +614,16 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 }
                 case "add-suggestion": {
                     WifiNetworkSuggestion suggestion = buildSuggestion(pw);
-                    mWifiService.addNetworkSuggestions(
+                    if (suggestion  == null) {
+                        pw.println("Invalid network suggestion parameter");
+                        return -1;
+                    }
+                    int errorCode = mWifiService.addNetworkSuggestions(
                             Arrays.asList(suggestion), SHELL_PACKAGE_NAME, null);
+                    if (errorCode != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
+                        pw.println("Add network suggestion failed with error code: " + errorCode);
+                        return -1;
+                    }
                     // untrusted/oem-paid networks need a corresponding NetworkRequest.
                     if (suggestion.isUntrusted()
                             || (SdkLevel.isAtLeastS()
@@ -786,6 +795,24 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     mWifiService.clearWifiConnectedNetworkScorer(); // clear any previous scorer
                     return 0;
                 }
+                case "network-suggestions-set-as-carrier-provider": {
+                    String packageName = getNextArgRequired();
+                    boolean enabled = getNextArgRequiredTrueOrFalse("yes", "no");
+                    mWifiNetworkSuggestionsManager
+                            .setAppWorkingAsCrossCarrierProvider(packageName, enabled);
+                    return 0;
+                }
+                case "is-network-suggestions-set-as-carrier-provider": {
+                    String packageName = getNextArgRequired();
+                    pw.println(mWifiNetworkSuggestionsManager
+                            .isAppWorkingAsCrossCarrierProvider(packageName) ? "yes" : "no");
+                    return 0;
+                }
+                case "remove-shell-app-from-suggestion_database <packageName>": {
+                    String packageName = getNextArgRequired();
+                    mWifiNetworkSuggestionsManager.removeApp(packageName);
+                    return 0;
+                }
                 case "set-emergency-callback-mode": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
                     mActiveModeWarden.emergencyCallbackModeChanged(enabled);
@@ -916,6 +943,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         } else {
             throw new IllegalArgumentException("Unknown network type " + type);
         }
+        boolean isCarrierMerged = false;
         String option = getNextOption();
         while (option != null) {
             if (option.equals("-u")) {
@@ -942,12 +970,36 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 } else {
                     pw.println("-e option is not supported before S");
                 }
+            } else if (option.equals("-a")) {
+                if (SdkLevel.isAtLeastS()) {
+                    isCarrierMerged = true;
+                } else {
+                    pw.println("-a option is not supported before S");
+                }
+            } else if (option.equals("-i")) {
+                if (SdkLevel.isAtLeastS()) {
+                    int subId = Integer.parseInt(getNextArgRequired());
+                    suggestionBuilder.setSubscriptionId(subId);
+                } else {
+                    pw.println("-c option is not supported before S");
+                }
+            } else if (option.equals("-c")) {
+                int carrierId = Integer.parseInt(getNextArgRequired());
+                suggestionBuilder.setCarrierId(carrierId);
             } else {
                 pw.println("Ignoring unknown option " + option);
             }
             option = getNextOption();
         }
-        return suggestionBuilder.build();
+        WifiNetworkSuggestion suggestion = suggestionBuilder.build();
+        if (isCarrierMerged) {
+            if (suggestion.getSubscriptionId() == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                pw.println("Carrier merged network must have valid subscription Id");
+                return null;
+            }
+            suggestion.wifiConfiguration.carrierMerged = true;
+        }
+        return suggestion;
     }
 
     private NetworkRequest buildNetworkRequest(PrintWriter pw) {
@@ -1203,7 +1255,7 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Undo the effects of "
                 + "start-temporarily-disabling-all-non-carrier-merged-wifi");
         pw.println("  add-suggestion <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-u] [-o] [-p] [-m] "
-                + " [-s] [-d] [-b <bssid>] [-e]");
+                + " [-s] [-d] [-b <bssid>] [-e] [-i] [-a <carrierId>] [-c <subscriptionId>]");
         pw.println("    Add a network suggestion with provided params");
         pw.println("    Use 'network-suggestions-set-user-approved " + SHELL_PACKAGE_NAME + " yes'"
                 +  " to approve suggestions added via shell (Needs root access)");
@@ -1224,6 +1276,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    -b <bssid> - Set specific BSSID.");
         pw.println("    -e - Disable enhanced randomization "
                 + "(i.e use persistent MAC randomization).");
+        pw.println("    -a - Mark the suggestion carrier merged");
+        pw.println("    -c <carrierId> - set carrier Id");
+        pw.println("    -i <subscriptionId> - set subscription Id, if -a is used, "
+                + "this must be set");
         pw.println("  remove-suggestion <ssid>");
         pw.println("    Remove a network suggestion with provided SSID of the network");
         pw.println("  remove-all-suggestions");
@@ -1344,6 +1400,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Sets whether we are in the middle of an emergency call.");
         pw.println("Equivalent to receiving the "
                 + "TelephonyManager.ACTION_EMERGENCY_CALL_STATE_CHANGED broadcast.");
+        pw.println("  network-suggestions-set-as-carrier-provider <packageName> yes|no");
+        pw.println("    Set the <packageName> work as carrier provider or not.");
+        pw.println("  is-network-suggestions-set-as-carrier-provider <packageName>");
+        pw.println("    Queries whether the <packageName> is working as carrier provider or not.");
+        pw.println("  remove-app-from-suggestion_database <packageName>");
+        pw.println("    Remove <packageName> from the suggestion database, all suggestions and user"
+                + " approval will be deleted, it is the same as uninstalling this app.");
     }
 
     @Override

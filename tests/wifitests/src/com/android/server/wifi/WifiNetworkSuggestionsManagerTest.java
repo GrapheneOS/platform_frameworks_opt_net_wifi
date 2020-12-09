@@ -4553,6 +4553,18 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
         mInorder.verifyNoMoreInteractions();
     }
 
+    @Test
+    public void testTreatAppAsCarrierProvider() {
+        assertFalse(mWifiNetworkSuggestionsManager
+                .isAppWorkingAsCrossCarrierProvider(TEST_APP_NAME_1));
+        mWifiNetworkSuggestionsManager.setAppWorkingAsCrossCarrierProvider(TEST_APP_NAME_1, true);
+        assertTrue(mWifiNetworkSuggestionsManager
+                .isAppWorkingAsCrossCarrierProvider(TEST_APP_NAME_1));
+        mWifiNetworkSuggestionsManager.setAppWorkingAsCrossCarrierProvider(TEST_APP_NAME_1, false);
+        assertFalse(mWifiNetworkSuggestionsManager
+                .isAppWorkingAsCrossCarrierProvider(TEST_APP_NAME_1));
+    }
+
     /**
      * Helper function for creating a test configuration with user credential.
      *
