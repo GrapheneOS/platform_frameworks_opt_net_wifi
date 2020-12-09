@@ -119,6 +119,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * WifiP2pService includes a state machine to perform Wi-Fi p2p operations. Applications
@@ -476,7 +477,7 @@ public class WifiP2pServiceImpl extends IWifiP2pManager.Stub {
         final WorkSource mWorkSource;
     }
     private Object mLock = new Object();
-    private final Map<IBinder, DeathHandlerData> mDeathDataByBinder = new HashMap<>();
+    private final Map<IBinder, DeathHandlerData> mDeathDataByBinder = new ConcurrentHashMap<>();
 
     public WifiP2pServiceImpl(Context context, WifiInjector wifiInjector) {
         mContext = context;
