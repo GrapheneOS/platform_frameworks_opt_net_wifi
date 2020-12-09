@@ -1355,4 +1355,26 @@ public class PasspointManager {
             provider.blockBssOrEss(event.getBssid(), event.isEss(), event.getDelay());
         }
     }
+
+    /**
+     * Store the AnonymousIdentity for passpoint after connection.
+     */
+    public void setAnonymousIdentity(WifiConfiguration configuration) {
+        if (!configuration.isPasspoint()) {
+            return;
+        }
+        PasspointProvider provider = mProviders.get(configuration.getProfileKey());
+        if (provider != null) {
+            provider.setAnonymousIdentity(configuration.enterpriseConfig.getAnonymousIdentity());
+            mWifiConfigManager.saveToStore(true);
+        }
+    }
+
+    /**
+     * Resets all sim networks state.
+     */
+    public void resetSimPasspointNetwork() {
+        mProviders.values().stream().forEach(p -> p.setAnonymousIdentity(null));
+        mWifiConfigManager.saveToStore(true);
+    }
 }

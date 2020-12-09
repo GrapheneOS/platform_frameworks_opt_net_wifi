@@ -4059,6 +4059,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             config.enterpriseConfig.setAnonymousIdentity(null);
                         }
                         mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
+                        if (config.isPasspoint()) {
+                            mPasspointManager.setAnonymousIdentity(config);
+                        } else if (config.fromWifiNetworkSuggestion) {
+                            mWifiNetworkSuggestionsManager.setAnonymousIdentity(config);
+                        }
                     }
                     // When connecting to Passpoint, ask for the Venue URL
                     if (config.isPasspoint()) {

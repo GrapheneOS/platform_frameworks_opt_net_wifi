@@ -115,6 +115,7 @@ public class PasspointProvider {
     private final Clock mClock;
     private long mReauthDelay = 0;
     private List<String> mBlockedBssids = new ArrayList<>();
+    private String mAnonymousIdentity = null;
 
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
             WifiCarrierInfoManager wifiCarrierInfoManager, long providerId, int creatorUid,
@@ -176,6 +177,17 @@ public class PasspointProvider {
 
     public boolean isTrusted() {
         return mIsTrusted;
+    }
+
+    /**
+     * Set Anonymous Identity for passpoint network.
+     */
+    public void setAnonymousIdentity(String anonymousIdentity) {
+        mAnonymousIdentity = anonymousIdentity;
+    }
+
+    public String getAnonymousIdentity() {
+        return mAnonymousIdentity;
     }
 
     public PasspointConfiguration getConfig() {
@@ -528,6 +540,7 @@ public class PasspointProvider {
         } else {
             buildEnterpriseConfigForSimCredential(enterpriseConfig,
                     mConfig.getCredential().getSimCredential());
+            enterpriseConfig.setAnonymousIdentity(mAnonymousIdentity);
         }
         // If AAA server trusted names are specified, use it to replace HOME SP FQDN
         // and use system CA regardless of provisioned CA certificate.

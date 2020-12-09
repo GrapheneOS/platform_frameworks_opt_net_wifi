@@ -1145,6 +1145,117 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt());
         mockSession.finishMocking();
     }
+
+    /**
+     * Tests anonymous identity will be set to suggestion network.
+     */
+    @Test
+    public void testSetAnonymousIdentityWhenConnectionIsEstablishedWithPseudonymForSuggestion()
+            throws Exception {
+        mConnectedNetwork = spy(WifiConfigurationTestUtil.createEapNetwork(
+                WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE));
+        when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
+        when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
+        mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
+        mConnectedNetwork.fromWifiNetworkSuggestion = true;
+
+        String expectedAnonymousIdentity = "anonymous@wlan.mnc456.mcc123.3gppnetwork.org";
+        String pseudonym = "83bcca9384fca@wlan.mnc456.mcc123.3gppnetwork.org";
+        MockitoSession mockSession = ExtendedMockito.mockitoSession()
+                .mockStatic(SubscriptionManager.class)
+                .startMocking();
+        when(SubscriptionManager.getDefaultDataSubscriptionId()).thenReturn(DATA_SUBID);
+        doReturn(true).when(mWifiCarrierInfoManager).isImsiEncryptionInfoAvailable(anyInt());
+
+        triggerConnect();
+
+        // CMD_START_CONNECT should have set anonymousIdentity to anonymous@<realm>
+        assertEquals(expectedAnonymousIdentity,
+                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+
+        when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
+                .thenReturn(mScanDetailCache);
+        when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
+        when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
+        when(mWifiNative.getEapAnonymousIdentity(anyString()))
+                .thenReturn(pseudonym);
+
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).getEapAnonymousIdentity(any());
+        assertEquals(pseudonym,
+                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+        // Verify that WifiConfigManager#addOrUpdateNetwork() was called if there we received a
+        // real pseudonym to be stored. i.e. Encrypted IMSI will be used once, followed by
+        // pseudonym usage in all subsequent connections.
+        // Note: This test will fail if future logic will have additional conditions that would
+        // trigger "add or update network" operation. The test needs to be updated to account for
+        // this change.
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt());
+        verify(mWifiNetworkSuggestionsManager).setAnonymousIdentity(any());
+        mockSession.finishMocking();
+    }
+
+    /**
+     * Tests anonymous identity will be set to passpoint network.
+     */
+    @Test
+    public void testSetAnonymousIdentityWhenConnectionIsEstablishedWithPseudonymForPasspoint()
+            throws Exception {
+        mConnectedNetwork = spy(WifiConfigurationTestUtil.createEapNetwork(
+                WifiEnterpriseConfig.Eap.SIM, WifiEnterpriseConfig.Phase2.NONE));
+        when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
+        when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
+        mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
+        mConnectedNetwork.FQDN = WifiConfigurationTestUtil.TEST_FQDN;
+        mConnectedNetwork.providerFriendlyName =
+                WifiConfigurationTestUtil.TEST_PROVIDER_FRIENDLY_NAME;
+        mConnectedNetwork.setPasspointUniqueId(WifiConfigurationTestUtil.TEST_FQDN + "_"
+                + WifiConfigurationTestUtil.TEST_FQDN.hashCode());
+
+
+        String expectedAnonymousIdentity = "anonymous@wlan.mnc456.mcc123.3gppnetwork.org";
+        String pseudonym = "83bcca9384fca@wlan.mnc456.mcc123.3gppnetwork.org";
+        MockitoSession mockSession = ExtendedMockito.mockitoSession()
+                .mockStatic(SubscriptionManager.class)
+                .startMocking();
+        when(SubscriptionManager.getDefaultDataSubscriptionId()).thenReturn(DATA_SUBID);
+        doReturn(true).when(mWifiCarrierInfoManager).isImsiEncryptionInfoAvailable(anyInt());
+
+        triggerConnect();
+
+        // CMD_START_CONNECT should have set anonymousIdentity to anonymous@<realm>
+        assertEquals(expectedAnonymousIdentity,
+                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+
+        when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
+                .thenReturn(mScanDetailCache);
+        when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
+        when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
+        when(mWifiNative.getEapAnonymousIdentity(anyString()))
+                .thenReturn(pseudonym);
+
+        mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).getEapAnonymousIdentity(any());
+        assertEquals(pseudonym,
+                mConnectedNetwork.enterpriseConfig.getAnonymousIdentity());
+        // Verify that WifiConfigManager#addOrUpdateNetwork() was called if there we received a
+        // real pseudonym to be stored. i.e. Encrypted IMSI will be used once, followed by
+        // pseudonym usage in all subsequent connections.
+        // Note: This test will fail if future logic will have additional conditions that would
+        // trigger "add or update network" operation. The test needs to be updated to account for
+        // this change.
+        verify(mWifiConfigManager).addOrUpdateNetwork(any(), anyInt());
+        verify(mPasspointManager).setAnonymousIdentity(any());
+        mockSession.finishMocking();
+    }
     /**
      * Tests the Passpoint information is set in WifiInfo for Passpoint AP connection.
      */

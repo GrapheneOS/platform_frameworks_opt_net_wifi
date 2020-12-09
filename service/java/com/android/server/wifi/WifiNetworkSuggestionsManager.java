@@ -261,6 +261,7 @@ public class WifiNetworkSuggestionsManager {
         // Store the pointer to the corresponding app's meta data.
         public final PerAppInfo perAppInfo;
         public boolean isAutojoinEnabled;
+        public String anonymousIdentity = null;
 
         public ExtendedWifiNetworkSuggestion(@NonNull WifiNetworkSuggestion wns,
                                              @NonNull PerAppInfo perAppInfo,
@@ -326,6 +327,10 @@ public class WifiNetworkSuggestionsManager {
         public WifiConfiguration createInternalWifiConfiguration() {
             WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
             config.allowAutojoin = isAutojoinEnabled;
+            if (config.enterpriseConfig
+                    != null && config.enterpriseConfig.isAuthenticationSimBased()) {
+                config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
+            }
             return config;
         }
     }
@@ -2125,6 +2130,16 @@ public class WifiNetworkSuggestionsManager {
     }
 
     /**
+     * Resets all sim networks state.
+     */
+    public void resetSimNetworkSuggestions() {
+        mActiveNetworkSuggestionsPerApp.values().stream()
+                .flatMap(e -> e.extNetworkSuggestions.stream())
+                .forEach(ewns -> ewns.anonymousIdentity = null);
+        saveToStore();
+    }
+
+    /**
      * Set auto-join enable/disable for suggestion network
      * @param config WifiConfiguration which is to change.
      * @param choice true to enable auto-join, false to disable.
@@ -2354,6 +2369,30 @@ public class WifiNetworkSuggestionsManager {
      */
     public boolean isAppWorkingAsCrossCarrierProvider(String packageName) {
         return mCrossCarrierProvidersSet.contains(packageName);
+    }
+
+    /**
+     * Store Anonymous Identity for SIM based suggestion after connection.
+     */
+    public void setAnonymousIdentity(WifiConfiguration config) {
+        if (config.isPasspoint() || !config.fromWifiNetworkSuggestion) {
+            return;
+        }
+        if (config.enterpriseConfig == null
+                || !config.enterpriseConfig.isAuthenticationSimBased()) {
+            Log.e(TAG, "Network is not SIM based, AnonymousIdentity is invalid");
+        }
+        Set<ExtendedWifiNetworkSuggestion> matchedSuggestionSet =
+                getMatchedSuggestionsWithSameProfileKey(
+                        getNetworkSuggestionsForWifiConfiguration(config, config.BSSID), config);
+        if (matchedSuggestionSet.isEmpty()) {
+            Log.wtf(TAG, "Current connected SIM based network suggestion is missing!");
+            return;
+        }
+        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestionSet) {
+            ewns.anonymousIdentity = config.enterpriseConfig.getAnonymousIdentity();
+        }
+        saveToStore();
     }
 
     private boolean isOpenSuggestion(ExtendedWifiNetworkSuggestion extendedWifiNetworkSuggestion) {
