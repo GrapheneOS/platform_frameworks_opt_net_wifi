@@ -614,8 +614,10 @@ public class SoftApManager implements ActiveModeManager {
         SoftApStateMachine(Looper looper) {
             super(TAG, looper);
 
+            // CHECKSTYLE:OFF IndentationCheck
             addState(mIdleState);
-            addState(mStartedState);
+                addState(mStartedState, mIdleState);
+            // CHECKSTYLE:ON IndentationCheck
 
             setInitialState(mIdleState);
             start();
@@ -627,6 +629,11 @@ public class SoftApManager implements ActiveModeManager {
                 mApInterfaceName = null;
                 mIfaceIsUp = false;
                 mIfaceIsDestroyed = false;
+            }
+
+            @Override
+            public void exit() {
+                mModeListener.onStopped(SoftApManager.this);
             }
 
             @Override
@@ -934,8 +941,6 @@ public class SoftApManager implements ActiveModeManager {
                 mIfaceIsUp = false;
                 mIfaceIsDestroyed = false;
                 mRole = null;
-                mStateMachine.quitNow();
-                mModeListener.onStopped(SoftApManager.this);
                 updateSoftApInfo(new SoftApInfo());
             }
 
@@ -1002,7 +1007,7 @@ public class SoftApManager implements ActiveModeManager {
                             updateApState(WifiManager.WIFI_AP_STATE_DISABLING,
                                     WifiManager.WIFI_AP_STATE_ENABLING, 0);
                         }
-                        transitionTo(mIdleState);
+                        quitNow();
                         break;
                     case CMD_START:
                         // Already started, ignore this command.
@@ -1022,14 +1027,14 @@ public class SoftApManager implements ActiveModeManager {
                         Log.i(getTag(), "Timeout message received. Stopping soft AP.");
                         updateApState(WifiManager.WIFI_AP_STATE_DISABLING,
                                 WifiManager.WIFI_AP_STATE_ENABLED, 0);
-                        transitionTo(mIdleState);
+                        quitNow();
                         break;
                     case CMD_INTERFACE_DESTROYED:
                         Log.d(getTag(), "Interface was cleanly destroyed.");
                         updateApState(WifiManager.WIFI_AP_STATE_DISABLING,
                                 WifiManager.WIFI_AP_STATE_ENABLED, 0);
                         mIfaceIsDestroyed = true;
-                        transitionTo(mIdleState);
+                        quitNow();
                         break;
                     case CMD_FAILURE:
                         Log.w(getTag(), "hostapd failure, stop and report failure");
@@ -1041,7 +1046,7 @@ public class SoftApManager implements ActiveModeManager {
                                 WifiManager.SAP_START_FAILURE_GENERAL);
                         updateApState(WifiManager.WIFI_AP_STATE_DISABLING,
                                 WifiManager.WIFI_AP_STATE_FAILED, 0);
-                        transitionTo(mIdleState);
+                        quitNow();
                         break;
                     case CMD_UPDATE_CAPABILITY:
                         // Capability should only changed by carrier requirement. Only apply to

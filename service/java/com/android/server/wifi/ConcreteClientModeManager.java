@@ -627,9 +627,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
             // CHECKSTYLE:OFF IndentationCheck
             addState(mIdleState);
-            addState(mStartedState);
-                addState(mScanOnlyModeState, mStartedState);
-                addState(mConnectModeState, mStartedState);
+                addState(mStartedState, mIdleState);
+                    addState(mScanOnlyModeState, mStartedState);
+                    addState(mConnectModeState, mStartedState);
             // CHECKSTYLE:ON IndentationCheck
 
             setInitialState(mIdleState);
@@ -676,6 +676,11 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 Log.d(getTag(), "entering IdleState");
                 mClientInterfaceName = null;
                 mIfaceIsUp = false;
+            }
+
+            @Override
+            public void exit() {
+                mModeListener.onStopped(ConcreteClientModeManager.this);
             }
 
             @Override
@@ -766,16 +771,18 @@ public class ConcreteClientModeManager implements ClientModeManager {
                         Log.e(getTag(), "Detected an interface down, reporting failure to "
                                 + "SelfRecovery");
                         mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
-                        transitionTo(mIdleState);
+                        // once interface down, nothing else to do...  stop the state machine
+                        captureObituaryAndQuitNow();
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
                         boolean isUp = message.arg1 == 1;
                         onUpChanged(isUp);
                         break;
                     case CMD_INTERFACE_DESTROYED:
-                        Log.d(getTag(), "interface destroyed - client mode stopping");
+                        Log.e(getTag(), "interface destroyed - client mode stopping");
                         mClientInterfaceName = null;
-                        transitionTo(mIdleState);
+                        // once interface destroyed, nothing else to do...  stop the state machine
+                        captureObituaryAndQuitNow();
                         break;
                     default:
                         return NOT_HANDLED;
@@ -794,10 +801,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     mIfaceIsUp = false;
                 }
 
-                // once we leave started, nothing else to do...  stop the state machine
                 mRole = null;
-                mStateMachine.captureObituaryAndQuitNow();
-                mModeListener.onStopped(ConcreteClientModeManager.this);
             }
         }
 
