@@ -482,8 +482,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         assertTrue(connectableNetworks.isEmpty());
 
-        verify(mWifiConfigManager).getConfiguredNetwork(eq(
-                suggestions[0].createInternalWifiConfiguration().getProfileKey()));
+        verify(mWifiConfigManager).getConfiguredNetwork(eq(suggestions[0]
+                .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey()));
         // Verify we did not try to add any new networks or other interactions with
         // WifiConfigManager.
         verifyNoMoreInteractions(mWifiConfigManager);
@@ -526,7 +526,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         setupAddToWifiConfigManager(suggestions[0]);
         // Existing saved network matching the credentials.
         when(mWifiConfigManager.getConfiguredNetwork(suggestions[0]
-                .createInternalWifiConfiguration().getProfileKey()))
+                .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey()))
                 .thenReturn(suggestions[0].wns.wifiConfiguration);
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
@@ -543,7 +543,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 .isNetworkTemporarilyDisabledByUser(anyString());
         verify(mWifiConfigManager)
                 .getConfiguredNetwork(suggestions[0]
-                        .createInternalWifiConfiguration().getProfileKey());
+                        .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey());
         verify(mWifiConfigManager).isNonCarrierMergedNetworkTemporarilyDisabled(any());
         // Verify we did not try to add any new networks or other interactions with
         // WifiConfigManager.
@@ -639,7 +639,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         // Existing network matching the credentials.
         when(mWifiConfigManager.getConfiguredNetwork(suggestions[0]
-                .createInternalWifiConfiguration().getProfileKey()))
+                .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey()))
                 .thenReturn(suggestions[0].wns.wifiConfiguration);
 
         List<Pair<ScanDetail, WifiConfiguration>> connectableNetworks = new ArrayList<>();
@@ -700,7 +700,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
                 NETWORK_SELECTION_TEMPORARY_DISABLED);
         // Existing network matching the credentials.
         when(mWifiConfigManager.getConfiguredNetwork(suggestions[0]
-                .createInternalWifiConfiguration().getProfileKey()))
+                .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey()))
                 .thenReturn(suggestions[0].wns.wifiConfiguration);
         when(mWifiConfigManager.tryEnableNetwork(suggestions[0].wns.wifiConfiguration.networkId))
                 .thenReturn(true);
@@ -716,8 +716,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
         verify(mWifiConfigManager, times(suggestionSsids.length))
                 .isNetworkTemporarilyDisabledByUser(anyString());
-        verify(mWifiConfigManager).getConfiguredNetwork(eq(
-                suggestions[0].createInternalWifiConfiguration().getProfileKey()));
+        verify(mWifiConfigManager).getConfiguredNetwork(eq(suggestions[0]
+                .createInternalWifiConfiguration(mWifiCarrierInfoManager).getProfileKey()));
         verify(mWifiConfigManager).tryEnableNetwork(eq(
                 suggestions[0].wns.wifiConfiguration.networkId));
         verify(mWifiConfigManager).isNonCarrierMergedNetworkTemporarilyDisabled(any());
@@ -760,7 +760,7 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         suggestions[0].wns.wifiConfiguration.setPasspointUniqueId(PASSPOINT_UNIQUE_ID);
 
         passpointCandidates.add(Pair.create(scanDetails[0],
-                suggestions[0].createInternalWifiConfiguration()));
+                suggestions[0].createInternalWifiConfiguration(mWifiCarrierInfoManager)));
         when(mPasspointNetworkNominateHelper
                 .getPasspointNetworkCandidates(Arrays.asList(scanDetails), true))
                 .thenReturn(passpointCandidates);
@@ -1415,7 +1415,8 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
 
     private void setupAddToWifiConfigManager(ExtendedWifiNetworkSuggestion...candidates) {
         for (int i = 0; i < candidates.length; i++) {
-            WifiConfiguration candidate = candidates[i].createInternalWifiConfiguration();
+            WifiConfiguration candidate = candidates[i].createInternalWifiConfiguration(
+                    mWifiCarrierInfoManager);
             WifiConfiguration.NetworkSelectionStatus status =
                     mock(WifiConfiguration.NetworkSelectionStatus.class);
             when(status.isNetworkEnabled()).thenReturn(true);
