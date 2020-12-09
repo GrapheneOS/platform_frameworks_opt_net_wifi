@@ -396,6 +396,7 @@ public class WifiNetworkSuggestionsManager {
     private boolean mIsLastUserApprovalUiDialog = false;
 
     private boolean mUserDataLoaded = false;
+
     /**
      * Listener for app-ops changes for active suggestor apps.
      */
@@ -844,6 +845,10 @@ public class WifiNetworkSuggestionsManager {
     public @WifiManager.NetworkSuggestionsStatusCode int add(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName,
             @Nullable String featureId) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL;
+        }
         if (!mUserDataLoaded) {
             Log.e(TAG, "Add Network suggestion before boot complete is not allowed.");
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL;
@@ -1188,6 +1193,10 @@ public class WifiNetworkSuggestionsManager {
      */
     public @WifiManager.NetworkSuggestionsStatusCode int remove(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL;
+        }
         if (!mUserDataLoaded) {
             Log.e(TAG, "Remove Network suggestion before boot complete is not allowed.");
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL;
@@ -1246,8 +1255,12 @@ public class WifiNetworkSuggestionsManager {
      * Get all network suggestion for target App
      * @return List of WifiNetworkSuggestions
      */
-    public @NonNull List<WifiNetworkSuggestion> get(@NonNull String packageName) {
+    public @NonNull List<WifiNetworkSuggestion> get(@NonNull String packageName, int uid) {
         List<WifiNetworkSuggestion> networkSuggestionList = new ArrayList<>();
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return networkSuggestionList;
+        }
         if (!mUserDataLoaded) {
             Log.e(TAG, "Get Network suggestion before boot complete is not allowed.");
             return networkSuggestionList;
@@ -2030,11 +2043,16 @@ public class WifiNetworkSuggestionsManager {
      * @param binder IBinder instance to allow cleanup if the app dies.
      * @param listener ISuggestionNetworkCallback instance to add.
      * @param listenerIdentifier identifier of the listener, should be hash code of listener.
+     * @param uid uid of the app.
      * @return true if succeed otherwise false.
      */
     public boolean registerSuggestionConnectionStatusListener(@NonNull IBinder binder,
             @NonNull ISuggestionConnectionStatusListener listener,
-            int listenerIdentifier, String packageName) {
+            int listenerIdentifier, String packageName, int uid) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return false;
+        }
         ExternalCallbackTracker<ISuggestionConnectionStatusListener> listenersTracker =
                 mSuggestionStatusListenerPerApp.get(packageName);
         if (listenersTracker == null) {
@@ -2049,9 +2067,14 @@ public class WifiNetworkSuggestionsManager {
     /**
      * Unregister a listener on network connection failure.
      * @param listenerIdentifier identifier of the listener, should be hash code of listener.
+     * @param uid uid of the app.
      */
     public void unregisterSuggestionConnectionStatusListener(int listenerIdentifier,
-            String packageName) {
+            String packageName, int uid) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return;
+        }
         ExternalCallbackTracker<ISuggestionConnectionStatusListener> listenersTracker =
                 mSuggestionStatusListenerPerApp.get(packageName);
         if (listenersTracker == null || listenersTracker.remove(listenerIdentifier) == null) {
@@ -2230,6 +2253,10 @@ public class WifiNetworkSuggestionsManager {
      */
     public @WifiManager.SuggestionUserApprovalStatus int getNetworkSuggestionUserApprovalStatus(
             int uid, String packageName) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return WifiManager.STATUS_SUGGESTION_APPROVAL_UNKNOWN;
+        }
         if (mAppOps.unsafeCheckOpNoThrow(OPSTR_CHANGE_WIFI_STATE, uid, packageName)
                 == AppOpsManager.MODE_IGNORED) {
             return WifiManager.STATUS_SUGGESTION_APPROVAL_REJECTED_BY_USER;
