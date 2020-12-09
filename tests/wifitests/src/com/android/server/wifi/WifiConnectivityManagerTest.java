@@ -616,7 +616,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                         && (candidates.get(0).isOemPaid() || candidates.get(0).isOemPrivate()))
         ))).thenReturn(mCandidateWifiConfig1);
         when(mActiveModeWarden.isStaStaConcurrencySupported()).thenReturn(true);
-        when(mActiveModeWarden.canRequestMoreClientModeManagers(any())).thenReturn(true);
+        when(mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                any(), eq(ROLE_CLIENT_SECONDARY_LONG_LIVED))).thenReturn(true);
         doAnswer(new AnswerWithArguments() {
             public void answer(ExternalClientModeManagerRequestListener listener,
                     WorkSource requestorWs, String ssid, String bssid) {
@@ -766,7 +767,8 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mWifiConnectivityManager.setOemPaidConnectionAllowed(true, new WorkSource());
 
         // STA + STA is supported, but not available.
-        when(mActiveModeWarden.canRequestMoreClientModeManagers(any())).thenReturn(false);
+        when(mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                any(), eq(ROLE_CLIENT_SECONDARY_LONG_LIVED))).thenReturn(false);
 
         // Set WiFi to disconnected state
         mWifiConnectivityManager.handleConnectionStateChanged(

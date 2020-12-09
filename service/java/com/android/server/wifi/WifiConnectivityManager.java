@@ -17,6 +17,7 @@
 package com.android.server.wifi;
 
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_LONG_LIVED;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
 
@@ -441,12 +442,12 @@ public class WifiConnectivityManager {
         WorkSource secondaryRequestorWs = null;
         // OEM_PAID takes precedence over OEM_PRIVATE, so attribute to OEM_PAID requesting app.
         if (secondaryCmmCandidate.oemPaid
-                && mActiveModeWarden.canRequestMoreClientModeManagers(
-                mOemPaidConnectionRequestorWs)) {
+                && mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                mOemPaidConnectionRequestorWs, ROLE_CLIENT_SECONDARY_LONG_LIVED)) {
             secondaryRequestorWs = mOemPaidConnectionRequestorWs;
         } else if (secondaryCmmCandidate.oemPrivate
-                && mActiveModeWarden.canRequestMoreClientModeManagers(
-                mOemPrivateConnectionRequestorWs)) {
+                && mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                mOemPrivateConnectionRequestorWs, ROLE_CLIENT_SECONDARY_LONG_LIVED)) {
             secondaryRequestorWs = mOemPrivateConnectionRequestorWs;
         }
         // Secondary STA not available, fallback to legacy flow.
