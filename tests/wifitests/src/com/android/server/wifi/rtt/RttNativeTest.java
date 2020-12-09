@@ -17,6 +17,8 @@
 
 package com.android.server.wifi.rtt;
 
+import static junit.framework.Assert.fail;
+
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -154,6 +156,8 @@ public class RttNativeTest extends WifiBaseTest {
         collector.checkThat("entry 0: peer type", rttConfig.peer, equalTo(RttPeerType.AP));
         collector.checkThat("entry 0: lci", rttConfig.mustRequestLci, equalTo(true));
         collector.checkThat("entry 0: lcr", rttConfig.mustRequestLcr, equalTo(true));
+        collector.checkThat("entry 0: rtt burst size", rttConfig.numFramesPerBurst,
+                equalTo(RangingRequest.getMaxRttBurstSize()));
 
         rttConfig = halRequest.get(1);
         collector.checkThat("entry 1: MAC", rttConfig.addr,
@@ -162,6 +166,8 @@ public class RttNativeTest extends WifiBaseTest {
         collector.checkThat("entry 1: peer type", rttConfig.peer, equalTo(RttPeerType.AP));
         collector.checkThat("entry 1: lci", rttConfig.mustRequestLci, equalTo(true));
         collector.checkThat("entry 1: lcr", rttConfig.mustRequestLcr, equalTo(true));
+        collector.checkThat("entry 1: rtt burst size", rttConfig.numFramesPerBurst,
+                equalTo(RangingRequest.getMaxRttBurstSize()));
 
         rttConfig = halRequest.get(2);
         collector.checkThat("entry 2: MAC", rttConfig.addr,
@@ -170,6 +176,8 @@ public class RttNativeTest extends WifiBaseTest {
         collector.checkThat("entry 2: peer type", rttConfig.peer, equalTo(RttPeerType.NAN));
         collector.checkThat("entry 2: lci", rttConfig.mustRequestLci, equalTo(false));
         collector.checkThat("entry 2: lcr", rttConfig.mustRequestLcr, equalTo(false));
+        collector.checkThat("entry 2: rtt burst size", rttConfig.numFramesPerBurst,
+                equalTo(RangingRequest.getMaxRttBurstSize()));
 
         verifyNoMoreInteractions(mockRttController, mockRttServiceImpl);
     }
