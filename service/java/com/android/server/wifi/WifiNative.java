@@ -1322,6 +1322,28 @@ public class WifiNative {
     }
 
     /**
+     * Change the requestor WorkSource for a given STA iface.
+     * @return true if the operation succeeded, false otherwise.
+     */
+    public boolean replaceStaIfaceRequestorWs(@NonNull String ifaceName, WorkSource newWorkSource) {
+        final Iface iface = mIfaceMgr.getIface(ifaceName);
+        if (iface == null) {
+            Log.e(TAG, "Called replaceStaIfaceRequestorWs() on an invalid iface=" + ifaceName);
+            return false;
+        }
+        if (!mWifiVendorHal.isVendorHalSupported()) {
+            // if vendor HAL isn't supported, return true since there's nothing to do.
+            return true;
+        }
+        if (!mWifiVendorHal.replaceStaIfaceRequestorWs(iface.name, newWorkSource)) {
+            Log.e(TAG, "Failed to replace requestor ws on " + iface);
+            teardownInterface(iface.name);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      *
      * Check if the interface is up or down.
      *

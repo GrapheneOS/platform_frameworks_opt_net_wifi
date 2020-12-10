@@ -89,6 +89,7 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     private static final int TEST_WIFI_OFF_DEFERRING_TIME_MS = 4000;
     private static final int TEST_ACTIVE_SUBSCRIPTION_ID = 1;
     private static final WorkSource TEST_WORKSOURCE = new WorkSource();
+    private static final WorkSource TEST_WORKSOURCE2 = new WorkSource();
 
     TestLooper mLooper;
 
@@ -231,6 +232,8 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
                 return mElapsedSinceBootMillis;
             }
         }).when(mClock).getElapsedSinceBootMillis();
+        when(mWifiNative.replaceStaIfaceRequestorWs(TEST_INTERFACE_NAME, TEST_WORKSOURCE))
+                .thenReturn(true);
 
         mLooper = new TestLooper();
     }
@@ -1299,13 +1302,36 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         assertEquals(ActiveModeManager.ROLE_CLIENT_PRIMARY, mClientModeManager.getRole());
         mClientModeManager.setRole(ActiveModeManager.ROLE_CLIENT_PRIMARY, TEST_WORKSOURCE);
         mLooper.dispatchAll();
-        verify(mListener, never()).onStarted(any()); // no callback sent.
+        verify(mWifiNative).replaceStaIfaceRequestorWs(
+                eq(TEST_INTERFACE_NAME), same(TEST_WORKSOURCE));
+        verify(mListener, never()).onRoleChanged(any()); // no callback sent.
 
         // Change the connectivity role.
         mClientModeManager.setRole(
                 ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT, TEST_WORKSOURCE);
         mLooper.dispatchAll();
+        verify(mWifiNative, times(2)).replaceStaIfaceRequestorWs(
+                eq(TEST_INTERFACE_NAME), same(TEST_WORKSOURCE));
         verify(mListener).onRoleChanged(mClientModeManager); // callback sent.
+    }
+
+    @Test
+    public void clientInConnectModeChangeRolesNewWorkSource_WifiNativeFailed_noCallback()
+            throws Exception {
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mListener);
+
+        when(mWifiNative.replaceStaIfaceRequestorWs(TEST_INTERFACE_NAME, TEST_WORKSOURCE2))
+                .thenReturn(false);
+
+        // set new mode with new WorkSource
+        mClientModeManager.setRole(ROLE_CLIENT_SECONDARY_TRANSIENT, TEST_WORKSOURCE2);
+        mLooper.dispatchAll();
+
+        verify(mWifiNative).replaceStaIfaceRequestorWs(
+                eq(TEST_INTERFACE_NAME), same(TEST_WORKSOURCE2));
+        // no callback sent since replaceStaIfaceRequestorWs failed
+        verify(mListener, never()).onRoleChanged(any());
     }
 
     @Test

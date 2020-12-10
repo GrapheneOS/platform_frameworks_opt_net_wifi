@@ -3590,6 +3590,7 @@ public class WifiServiceImpl extends BaseWifiService {
             pw.println("SettingsStore:");
             mSettingsStore.dump(fd, pw, args);
             mActiveModeWarden.dump(fd, pw, args);
+            mWifiInjector.getMakeBeforeBreakManager().dump(fd, pw, args);
             pw.println();
             mWifiTrafficPoller.dump(fd, pw, args);
             pw.println();

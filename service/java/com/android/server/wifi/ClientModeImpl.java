@@ -569,6 +569,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private final OnNetworkUpdateListener mOnNetworkUpdateListener;
 
+    private final ClientModeImplMonitor mCmiMonitor;
+
     // Maximum duration to continue to log Wifi usability stats after a data stall is triggered.
     @VisibleForTesting
     public static final long DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS = 30 * 1000;
@@ -629,6 +631,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             @NonNull WifiGlobals wifiGlobals,
             @NonNull String ifaceName,
             @NonNull ConcreteClientModeManager clientModeManager,
+            @NonNull ClientModeImplMonitor cmiMonitor,
             boolean verboseLoggingEnabled) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
@@ -701,6 +704,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mInterfaceName = ifaceName;
         mClientModeManager = clientModeManager;
+        mCmiMonitor = cmiMonitor;
         updateInterfaceCapabilities();
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
@@ -5202,6 +5206,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             mWifiConfigManager.setNetworkValidatedInternetAccess(
                                     config.networkId, true);
                         }
+                        mCmiMonitor.onL3Validated(mClientModeManager);
                     }
                     break;
                 }

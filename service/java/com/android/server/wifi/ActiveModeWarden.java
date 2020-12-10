@@ -398,8 +398,7 @@ public class ActiveModeWarden {
                     R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled);
         }
         if (clientRole == ROLE_CLIENT_SECONDARY_TRANSIENT) {
-            return mContext.getResources().getBoolean(
-                    R.bool.config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled);
+            return isMakeBeforeBreakEnabled();
         }
         if (clientRole == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
             return mContext.getResources().getBoolean(
@@ -779,7 +778,7 @@ public class ActiveModeWarden {
 
     /** Get all client mode managers in the specified roles. */
     @NonNull
-    public List<ConcreteClientModeManager> getClientModeManagersInRoles(ClientRole ...roles) {
+    public List<ConcreteClientModeManager> getClientModeManagersInRoles(ClientRole... roles) {
         Set<ClientRole> rolesList = Set.of(roles);
         List<ConcreteClientModeManager> result = new ArrayList<>();
         for (ConcreteClientModeManager manager : mClientModeManagers) {
@@ -946,8 +945,7 @@ public class ActiveModeWarden {
     private void stopAdditionalClientModeManager(ClientModeManager clientModeManager) {
         if (clientModeManager.getRole() == ROLE_CLIENT_PRIMARY
                 || clientModeManager.getRole() == ROLE_CLIENT_SCAN_ONLY) return;
-        Log.d(TAG, "Shutting down additional client mode manager in role:"
-                + clientModeManager.getRole());
+        Log.d(TAG, "Shutting down additional client mode manager: " + clientModeManager);
         clientModeManager.stop();
     }
 
@@ -1186,6 +1184,11 @@ public class ActiveModeWarden {
     private boolean checkScanOnlyModeAvailable() {
         return mWifiPermissionsUtil.isLocationModeEnabled()
                 && mSettingsStore.isScanAlwaysAvailable();
+    }
+
+    public boolean isMakeBeforeBreakEnabled() {
+        return mContext.getResources().getBoolean(
+                R.bool.config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled);
     }
 
     /**
