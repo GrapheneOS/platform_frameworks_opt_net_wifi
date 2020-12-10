@@ -18,7 +18,6 @@ package com.android.server.wifi;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -560,12 +559,12 @@ public class BssidBlocklistMonitor {
                 .filter(entry -> ssid.equals(entry.ssid)).count();
     }
 
-    private int getNumBlockedBssidsForSsid(@Nullable String ssid) {
-        if (ssid == null) {
+    private int getNumBlockedBssidsForSsids(@NonNull Set<String> ssids) {
+        if (ssids.isEmpty()) {
             return 0;
         }
         return (int) mBssidStatusMap.values().stream()
-                .filter(entry -> entry.isInBlocklist && ssid.equals(entry.ssid))
+                .filter(entry -> entry.isInBlocklist && ssids.contains(entry.ssid))
                 .count();
     }
 
@@ -573,14 +572,14 @@ public class BssidBlocklistMonitor {
      * Overloaded version of updateAndGetBssidBlocklist.
      * Accepts a @Nullable String ssid as input, and updates the firmware roaming
      * configuration if the blocklist for the input ssid has been changed.
-     * @param ssid to update firmware roaming configuration for.
+     * @param ssids set of ssids to update firmware roaming configuration for.
      * @return Set of BSSIDs currently in the blocklist
      */
-    public Set<String> updateAndGetBssidBlocklistForSsid(@Nullable String ssid) {
-        int numBefore = getNumBlockedBssidsForSsid(ssid);
+    public Set<String> updateAndGetBssidBlocklistForSsids(@NonNull Set<String> ssids) {
+        int numBefore = getNumBlockedBssidsForSsids(ssids);
         Set<String> bssidBlocklist = updateAndGetBssidBlocklist();
-        if (getNumBlockedBssidsForSsid(ssid) != numBefore) {
-            updateFirmwareRoamingConfiguration(ssid);
+        if (getNumBlockedBssidsForSsids(ssids) != numBefore) {
+            updateFirmwareRoamingConfiguration(ssids);
         }
         return bssidBlocklist;
     }
@@ -665,14 +664,14 @@ public class BssidBlocklistMonitor {
     /**
      * Sends the BSSIDs belonging to the input SSID down to the firmware to prevent auto-roaming
      * to those BSSIDs.
-     * @param ssid
+     * @param ssids
      */
-    public void updateFirmwareRoamingConfiguration(@NonNull String ssid) {
+    public void updateFirmwareRoamingConfiguration(@NonNull Set<String> ssids) {
         if (!mConnectivityHelper.isFirmwareRoamingSupported()) {
             return;
         }
         ArrayList<String> bssidBlocklist = updateAndGetBssidBlocklistInternal()
-                .filter(entry -> ssid.equals(entry.ssid))
+                .filter(entry -> ssids.contains(entry.ssid))
                 .sorted((o1, o2) -> (int) (o2.blocklistEndTimeMs - o1.blocklistEndTimeMs))
                 .map(entry -> entry.bssid)
                 .collect(Collectors.toCollection(ArrayList::new));

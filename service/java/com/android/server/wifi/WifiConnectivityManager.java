@@ -341,30 +341,51 @@ public class WifiConnectivityManager {
             @NonNull String listenerName,
             boolean isFullScan,
             @NonNull HandleScanResultsListener handleScanResultsListener) {
-        ClientModeManager clientModeManager = getPrimaryClientModeManager();
-        // TODO (b/169413079): Include long lived secondary cmm here.
-        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
-                clientModeManager.getWifiLinkLayerStats(),
-                WifiChannelUtilization.UNKNOWN_FREQ);
-
-        updateUserDisabledList(scanDetails);
-
+        List<WifiNetworkSelector.ClientModeManagerState> cmmStates = new ArrayList<>();
+        Set<String> connectedSsids = new HashSet<>();
+        boolean hasExistingSecondaryCmm = false;
+        for (ClientModeManager clientModeManager :
+                mActiveModeWarden.getInternetConnectivityClientModeManagers()) {
+            if (clientModeManager.getRole() == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+                hasExistingSecondaryCmm = true;
+            }
+            mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
+                    clientModeManager.getWifiLinkLayerStats(),
+                    WifiChannelUtilization.UNKNOWN_FREQ);
+            WifiInfo wifiInfo = clientModeManager.syncRequestConnectionInfo();
+            if (clientModeManager.isConnected()) {
+                connectedSsids.add(wifiInfo.getSSID());
+            }
+            cmmStates.add(new WifiNetworkSelector.ClientModeManagerState(clientModeManager));
+        }
+        // We don't have any existing secondary CMM, but are we allowed to create a secondary CMM
+        // and do we have a request for OEM_PAID/OEM_PRIVATE request? If yes, we need to perform
+        // network selection to check if we have any potential candidate for the secondary CMM
+        // creation.
+        if (!hasExistingSecondaryCmm
+                && (mOemPaidConnectionAllowed || mOemPrivateConnectionAllowed)) {
+            // prefer OEM PAID requestor if it exists.
+            WorkSource oemPaidOrOemPrivateRequestorWs =
+                    mOemPaidConnectionRequestorWs != null
+                            ? mOemPaidConnectionRequestorWs
+                            : mOemPrivateConnectionRequestorWs;
+            if (mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                    oemPaidOrOemPrivateRequestorWs,
+                    ROLE_CLIENT_SECONDARY_LONG_LIVED)) {
+                // Add a placeholder CMM state to ensure network selection is performed for a
+                // potential second STA creation.
+                cmmStates.add(new WifiNetworkSelector.ClientModeManagerState());
+            }
+        }
         // Check if any blocklisted BSSIDs can be freed.
         mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
-        WifiInfo wifiInfo = getPrimaryWifiInfo();
-        // TODO (b/169413079): Include long lived secondary cmm here.
-        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
-                wifiInfo.getSSID());
-
+        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
+                connectedSsids);
+        updateUserDisabledList(scanDetails);
         // Clear expired recent failure statuses
         mConfigManager.cleanupExpiredRecentFailureReasons();
 
         localLog(listenerName + " onResults: start network selection");
-
-        WifiNetworkSelector.ClientModeManagerState primaryCmmState =
-                new WifiNetworkSelector.ClientModeManagerState(clientModeManager);
-        // TODO (b/169413079): Add long lived secondary cmm state here.
-        List<WifiNetworkSelector.ClientModeManagerState> cmmStates = Arrays.asList(primaryCmmState);
 
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
                 scanDetails, bssidBlocklist, cmmStates, mUntrustedConnectionAllowed,
@@ -2136,9 +2157,9 @@ public class WifiConnectivityManager {
      * Handler for WiFi state (connected/disconnected) changes
      */
     public void handleConnectionStateChanged(ActiveModeManager activeModeManager, int state) {
-        List<ClientModeManager> primaryManagers =
+        List<ClientModeManager> internetConnectivityCmms =
                 mActiveModeWarden.getInternetConnectivityClientModeManagers();
-        if (!(primaryManagers.contains(activeModeManager))) {
+        if (!(internetConnectivityCmms.contains(activeModeManager))) {
             Log.w(TAG, "Ignoring call from non primary Mode Manager " + activeModeManager,
                     new Throwable());
             return;
@@ -2194,9 +2215,9 @@ public class WifiConnectivityManager {
      */
     public void handleConnectionAttemptEnded(@NonNull ActiveModeManager activeModeManager,
             int failureCode, @NonNull String bssid, @NonNull String ssid) {
-        List<ClientModeManager> primaryManagers =
+        List<ClientModeManager> internetConnectivityCmms =
                 mActiveModeWarden.getInternetConnectivityClientModeManagers();
-        if (!(primaryManagers.contains(activeModeManager))) {
+        if (!(internetConnectivityCmms.contains(activeModeManager))) {
             Log.w(TAG, "Ignoring call from non primary Mode Manager " + activeModeManager,
                     new Throwable());
             return;

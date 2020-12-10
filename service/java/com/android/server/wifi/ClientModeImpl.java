@@ -3357,7 +3357,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mLastScanRssi = mWifiConfigManager.findScanRssi(netId,
                             mWifiHealthMonitor.getScanRssiValidTimeMs());
                     mWifiScoreCard.noteConnectionAttempt(mWifiInfo, mLastScanRssi, config.SSID);
-                    mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(config.SSID);
+                    mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(config.SSID));
 
                     updateWifiConfigOnStartConnection(config, bssid);
                     reportConnectionAttemptStart(config, mTargetBssid,

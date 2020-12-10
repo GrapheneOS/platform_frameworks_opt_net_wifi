@@ -160,6 +160,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -2787,6 +2788,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(TEST_LOCAL_MAC_ADDRESS.toString());
 
         WifiConfiguration config = new WifiConfiguration();
+        config.SSID = sSSID;
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(0)).thenReturn(config);
@@ -2813,6 +2815,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = new WifiConfiguration();
+        config.SSID = sSSID;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         when(mWifiConfigManager.getConfiguredNetworkWithoutMasking(0)).thenReturn(config);
@@ -2857,6 +2860,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = new WifiConfiguration();
+        config.SSID = sSSID;
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_AUTO;
         config.setRandomizedMacAddress(MacAddress.fromString(WifiInfo.DEFAULT_MAC_ADDRESS));
@@ -3306,9 +3310,9 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testBssidBlocklistSentToFirmwareAfterCmdStartConnect() throws Exception {
         initializeAndAddNetworkAndVerifySuccess();
         mCmi.sendMessage(ClientModeImpl.CMD_START_CONNECT, 0, 0, sBSSID);
-        verify(mBssidBlocklistMonitor, never()).updateFirmwareRoamingConfiguration(sSSID);
+        verify(mBssidBlocklistMonitor, never()).updateFirmwareRoamingConfiguration(Set.of(sSSID));
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor).updateFirmwareRoamingConfiguration(sSSID);
+        verify(mBssidBlocklistMonitor).updateFirmwareRoamingConfiguration(Set.of(sSSID));
         // But don't expect to see connection success yet
         verify(mWifiScoreCard, never()).noteIpConfiguration(any());
         // And certainly not validation success
@@ -4405,6 +4409,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = sSSID;
         BitSet allowedKeyManagement = mock(BitSet.class);
         config.allowedKeyManagement = allowedKeyManagement;
         when(config.allowedKeyManagement.get(eq(WifiConfiguration.KeyMgmt.WPA_PSK))).thenReturn(
@@ -4432,6 +4437,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = sSSID;
         BitSet allowedKeyManagement = mock(BitSet.class);
         BitSet allowedAuthAlgorithms = mock(BitSet.class);
         config.allowedKeyManagement = allowedKeyManagement;
@@ -4462,6 +4468,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = sSSID;
         BitSet allowedKeyManagement = mock(BitSet.class);
         config.allowedKeyManagement = allowedKeyManagement;
         when(config.allowedKeyManagement.get(eq(WifiConfiguration.KeyMgmt.WPA_PSK)))
@@ -4501,6 +4508,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = sSSID;
         BitSet allowedKeyManagement = mock(BitSet.class);
         BitSet allowedAuthAlgorithms = mock(BitSet.class);
         BitSet allowedProtocols = mock(BitSet.class);
@@ -4549,6 +4557,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = sSSID;
         BitSet allowedKeyManagement = mock(BitSet.class);
         BitSet allowedAuthAlgorithms = mock(BitSet.class);
         BitSet allowedProtocols = mock(BitSet.class);
@@ -4621,6 +4630,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         initializeAndAddNetworkAndVerifySuccess();
 
         WifiConfiguration config = mock(WifiConfiguration.class);
+        config.SSID = sSSID;
         BitSet allowedKeyManagement = mock(BitSet.class);
         BitSet allowedAuthAlgorithms = mock(BitSet.class);
         BitSet allowedProtocols = mock(BitSet.class);

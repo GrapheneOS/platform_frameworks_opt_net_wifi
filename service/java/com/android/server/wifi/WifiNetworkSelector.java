@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -758,6 +759,33 @@ public class WifiNetworkSelector {
             this.connected = connected;
             this.disconnected = disconnected;
             this.wifiInfo = wifiInfo;
+        }
+
+        @Override
+        public boolean equals(Object that) {
+            if (this == that) return true;
+            if (!(that instanceof ClientModeManagerState)) return false;
+            ClientModeManagerState thatCmmState = (ClientModeManagerState) that;
+            return Objects.equals(ifaceName, thatCmmState.ifaceName)
+                    && connected == thatCmmState.connected
+                    && disconnected == thatCmmState.disconnected
+                    // Since wifiinfo does not have equals currently.
+                    && Objects.equals(wifiInfo.getSSID(), thatCmmState.wifiInfo.getSSID())
+                    && Objects.equals(wifiInfo.getBSSID(), thatCmmState.wifiInfo.getBSSID());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ifaceName, connected, disconnected,
+                    wifiInfo.getSSID(), wifiInfo.getBSSID());
+        }
+
+        @Override
+        public String toString() {
+            return "ClientModeManagerState: " + ifaceName
+                    + ", connection state: "
+                    + (connected ? " connected" : (disconnected ? " disconnected" : "unknown"))
+                    + ", WifiInfo: " + wifiInfo;
         }
     }
 
