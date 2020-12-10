@@ -49,6 +49,7 @@ import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.internal.util.WakeupMessage;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
 import com.android.server.wifi.WifiNative.SoftApListener;
 import com.android.server.wifi.util.ApConfigUtil;
@@ -657,7 +658,8 @@ public class SoftApManager implements ActiveModeManager {
                         }
                         mApInterfaceName = mWifiNative.setupInterfaceForSoftApMode(
                                 mWifiNativeInterfaceCallback, mRequestorWs,
-                                mApConfig.getSoftApConfiguration().getBands().length > 1);
+                                (SdkLevel.isAtLeastS()
+                                && mApConfig.getSoftApConfiguration().getBands().length > 1));
                         if (TextUtils.isEmpty(mApInterfaceName)) {
                             Log.e(getTag(), "setup failure when creating ap interface.");
                             updateApState(WifiManager.WIFI_AP_STATE_FAILED,
