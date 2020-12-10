@@ -54,6 +54,7 @@ import android.os.UserHandle;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.ArraySet;
 import android.util.Log;
 import android.util.Pair;
 import android.view.WindowManager;
@@ -260,6 +261,7 @@ public class WifiNetworkSuggestionsManager {
         // Store the pointer to the corresponding app's meta data.
         public final PerAppInfo perAppInfo;
         public boolean isAutojoinEnabled;
+        public String anonymousIdentity = null;
 
         public ExtendedWifiNetworkSuggestion(@NonNull WifiNetworkSuggestion wns,
                                              @NonNull PerAppInfo perAppInfo,
@@ -322,9 +324,17 @@ public class WifiNetworkSuggestionsManager {
         /**
          * Create a {@link WifiConfiguration} from suggestion for framework internal use.
          */
-        public WifiConfiguration createInternalWifiConfiguration() {
+        public WifiConfiguration createInternalWifiConfiguration(
+                @Nullable WifiCarrierInfoManager carrierInfoManager) {
             WifiConfiguration config = new WifiConfiguration(wns.getWifiConfiguration());
             config.allowAutojoin = isAutojoinEnabled;
+            if (config.enterpriseConfig
+                    != null && config.enterpriseConfig.isAuthenticationSimBased()) {
+                config.enterpriseConfig.setAnonymousIdentity(anonymousIdentity);
+            }
+            if (carrierInfoManager != null) {
+                config.subscriptionId = carrierInfoManager.getBestMatchSubscriptionId(config);
+            }
             return config;
         }
     }
@@ -398,6 +408,11 @@ public class WifiNetworkSuggestionsManager {
     private boolean mUserDataLoaded = false;
 
     /**
+     * Keep a set of packageNames which is treated as carrier provider.
+     */
+    private final Set<String> mCrossCarrierProvidersSet = new ArraySet<>();
+
+    /**
      * Listener for app-ops changes for active suggestor apps.
      */
     private final class AppOpsChangedListener implements AppOpsManager.OnOpChangedListener {
@@ -449,7 +464,8 @@ public class WifiNetworkSuggestionsManager {
                         continue;
                     }
                     ewns.wns.wifiConfiguration.isMostRecentlyConnected = mLruConnectionTracker
-                            .isMostRecentlyConnected(ewns.createInternalWifiConfiguration());
+                            .isMostRecentlyConnected(ewns.createInternalWifiConfiguration(
+                                    mWifiCarrierInfoManager));
                 }
             }
             // Clear the flag after writing to disk.
@@ -478,7 +494,8 @@ public class WifiNetworkSuggestionsManager {
                     } else {
                         if (ewns.wns.wifiConfiguration.isMostRecentlyConnected) {
                             mLruConnectionTracker
-                                    .addNetwork(ewns.createInternalWifiConfiguration());
+                                    .addNetwork(ewns.createInternalWifiConfiguration(
+                                            mWifiCarrierInfoManager));
                         }
                         addToScanResultMatchInfoMap(ewns);
                     }
@@ -763,9 +780,7 @@ public class WifiNetworkSuggestionsManager {
             return;
         }
         WifiConfiguration activeWifiConfiguration = mActiveNetworkSuggestionsMatchingConnection
-                .iterator().next().createInternalWifiConfiguration();
-        activeWifiConfiguration.subscriptionId =
-                mWifiCarrierInfoManager.getBestMatchSubscriptionId(activeWifiConfiguration);
+                .iterator().next().createInternalWifiConfiguration(mWifiCarrierInfoManager);
         if (mActiveNetworkSuggestionsMatchingConnection.removeAll(extNetworkSuggestionsRemoved)) {
             if (mActiveNetworkSuggestionsMatchingConnection.isEmpty()) {
                 Log.i(TAG, "Only network suggestion matching the connected network removed. "
@@ -860,7 +875,7 @@ public class WifiNetworkSuggestionsManager {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Adding " + networkSuggestions.size() + " networks from " + packageName);
         }
-        if (!validateNetworkSuggestions(networkSuggestions)) {
+        if (!validateNetworkSuggestions(networkSuggestions, packageName)) {
             Log.e(TAG, "Invalid suggestion add from app: " + packageName);
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_ADD_INVALID;
         }
@@ -876,7 +891,8 @@ public class WifiNetworkSuggestionsManager {
         if (perAppInfo == null) {
             perAppInfo = new PerAppInfo(uid, packageName, featureId);
             mActiveNetworkSuggestionsPerApp.put(packageName, perAppInfo);
-            if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)) {
+            if (mWifiPermissionsUtil.checkNetworkCarrierProvisioningPermission(uid)
+                    || isAppWorkingAsCrossCarrierProvider(packageName)) {
                 Log.i(TAG, "Setting the carrier provisioning app approved");
                 perAppInfo.hasUserApproved = true;
                 mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
@@ -954,8 +970,8 @@ public class WifiNetworkSuggestionsManager {
                 // If we have a config in WifiConfigManager for this suggestion, update
                 // WifiConfigManager with the latest WifiConfig.
                 // Note: Similar logic is present in PasspointManager for passpoint networks.
-                updateWifiConfigInWcmIfPresent(
-                        ewns.createInternalWifiConfiguration(), uid, packageName);
+                updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(
+                        mWifiCarrierInfoManager), uid, packageName);
                 addToScanResultMatchInfoMap(ewns);
             } else {
                 ewns.wns.passpointConfiguration.setAutojoinEnabled(ewns.isAutojoinEnabled);
@@ -999,7 +1015,8 @@ public class WifiNetworkSuggestionsManager {
         }
     }
 
-    private boolean validateNetworkSuggestions(List<WifiNetworkSuggestion> networkSuggestions) {
+    private boolean validateNetworkSuggestions(List<WifiNetworkSuggestion> networkSuggestions,
+            String packageName) {
         for (WifiNetworkSuggestion wns : networkSuggestions) {
             if (wns == null || wns.wifiConfiguration == null) {
                 return false;
@@ -1020,7 +1037,8 @@ public class WifiNetworkSuggestionsManager {
                     return false;
                 }
             }
-            if (!isValidCarrierMergedNetworkSuggestion(wns)) {
+            if (!isAppWorkingAsCrossCarrierProvider(packageName)
+                    && !isValidCarrierMergedNetworkSuggestion(wns)) {
                 Log.e(TAG, "Merged carrier network must be a metered, enterprise config with a "
                         + "valid subscription Id");
                 return false;
@@ -1074,7 +1092,8 @@ public class WifiNetworkSuggestionsManager {
     private boolean validateCarrierNetworkSuggestions(
             List<WifiNetworkSuggestion> networkSuggestions, int uid, String packageName) {
         boolean isCrossCarrierProvisioner = mWifiPermissionsUtil
-                .checkNetworkCarrierProvisioningPermission(uid);
+                .checkNetworkCarrierProvisioningPermission(uid)
+                || isAppWorkingAsCrossCarrierProvider(packageName);
         int provisionerCarrierId = mWifiCarrierInfoManager
                 .getCarrierIdForPackageWithCarrierPrivileges(packageName);
 
@@ -1209,7 +1228,7 @@ public class WifiNetworkSuggestionsManager {
             Log.v(TAG, "Removing " + networkSuggestions.size() + " networks from " + packageName);
         }
 
-        if (!validateNetworkSuggestions(networkSuggestions)) {
+        if (!validateNetworkSuggestions(networkSuggestions, packageName)) {
             Log.e(TAG, "Invalid suggestion remove from app: " + packageName);
             return WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_REMOVE_INVALID;
         }
@@ -1241,7 +1260,7 @@ public class WifiNetworkSuggestionsManager {
     public void removeApp(@NonNull String packageName) {
         PerAppInfo perAppInfo = mActiveNetworkSuggestionsPerApp.get(packageName);
         if (perAppInfo == null) return;
-        removeInternal(Collections.EMPTY_LIST, packageName, perAppInfo);
+        removeInternal(Collections.emptyList(), packageName, perAppInfo);
         // Remove the package fully from the internal database.
         mActiveNetworkSuggestionsPerApp.remove(packageName);
         ExternalCallbackTracker<ISuggestionConnectionStatusListener> listenerTracker =
@@ -1282,7 +1301,7 @@ public class WifiNetworkSuggestionsManager {
                 mActiveNetworkSuggestionsPerApp.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<String, PerAppInfo> entry = iter.next();
-            removeInternal(Collections.EMPTY_LIST, entry.getKey(), entry.getValue());
+            removeInternal(Collections.emptyList(), entry.getKey(), entry.getValue());
             iter.remove();
         }
         mSuggestionStatusListenerPerApp.clear();
@@ -1337,7 +1356,8 @@ public class WifiNetworkSuggestionsManager {
                                     null, ewns.isAutojoinEnabled);
                 } else {
                     // Update WifiConfigManager to sync auto-join.
-                    updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(),
+                    updateWifiConfigInWcmIfPresent(ewns.createInternalWifiConfiguration(
+                            mWifiCarrierInfoManager),
                             ewns.perAppInfo.uid, ewns.perAppInfo.packageName);
                 }
             }
@@ -1387,7 +1407,7 @@ public class WifiNetworkSuggestionsManager {
                 WifiConfiguration network = mWifiConfigManager
                         .getConfiguredNetwork(ewns.wns.getWifiConfiguration().getProfileKey());
                 if (network == null) {
-                    network = ewns.createInternalWifiConfiguration();
+                    network = ewns.createInternalWifiConfiguration(mWifiCarrierInfoManager);
                 }
                 networks.add(network);
             }
@@ -1717,8 +1737,8 @@ public class WifiNetworkSuggestionsManager {
                             + ewns + " for " + scanResult.SSID
                             + "[" + scanResult.capabilities + "]");
                 }
-                WifiConfiguration config = ewns.createInternalWifiConfiguration();
-                config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+                WifiConfiguration config = ewns.createInternalWifiConfiguration(
+                        mWifiCarrierInfoManager);
                 if (config.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID
                         && !mWifiCarrierInfoManager.isSimPresent(config.subscriptionId)) {
                     continue;
@@ -1941,11 +1961,14 @@ public class WifiNetworkSuggestionsManager {
 
     private Set<ExtendedWifiNetworkSuggestion> getMatchedSuggestionsWithSameProfileKey(
             Set<ExtendedWifiNetworkSuggestion> matchingSuggestions, WifiConfiguration network) {
+        if (matchingSuggestions == null || matchingSuggestions.isEmpty()) {
+            return Collections.emptySet();
+        }
         Set<ExtendedWifiNetworkSuggestion> matchingExtNetworkSuggestionsWithSameProfileKey =
                 new HashSet<>();
         for (ExtendedWifiNetworkSuggestion ewns : matchingSuggestions) {
-            WifiConfiguration config = ewns.createInternalWifiConfiguration();
-            config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+            WifiConfiguration config = ewns
+                    .createInternalWifiConfiguration(mWifiCarrierInfoManager);
             if (config.getProfileKey().equals(network.getProfileKey())) {
                 matchingExtNetworkSuggestionsWithSameProfileKey.add(ewns);
             }
@@ -2101,7 +2124,7 @@ public class WifiNetworkSuggestionsManager {
             }
             if (carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
                 Log.i(TAG, "Carrier privilege revoked for " + appInfo.packageName);
-                removeInternal(Collections.EMPTY_LIST, appInfo.packageName, appInfo);
+                removeInternal(Collections.emptyList(), appInfo.packageName, appInfo);
                 mActiveNetworkSuggestionsPerApp.remove(appInfo.packageName);
                 continue;
             }
@@ -2111,6 +2134,16 @@ public class WifiNetworkSuggestionsManager {
                 ewns.wns.wifiConfiguration.carrierId = carrierId;
             }
         }
+        saveToStore();
+    }
+
+    /**
+     * Resets all sim networks state.
+     */
+    public void resetSimNetworkSuggestions() {
+        mActiveNetworkSuggestionsPerApp.values().stream()
+                .flatMap(e -> e.extNetworkSuggestions.stream())
+                .forEach(ewns -> ewns.anonymousIdentity = null);
         saveToStore();
     }
 
@@ -2127,13 +2160,20 @@ public class WifiNetworkSuggestionsManager {
             return false;
         }
 
-        Set<ExtendedWifiNetworkSuggestion> matchingExtendedWifiNetworkSuggestions =
-                getNetworkSuggestionsForWifiConfiguration(config, config.BSSID);
         if (config.isPasspoint()) {
             if (!mWifiInjector.getPasspointManager().enableAutojoin(config.getProfileKey(),
                     null, choice)) {
                 return false;
             }
+        }
+
+        Set<ExtendedWifiNetworkSuggestion> matchingExtendedWifiNetworkSuggestions =
+                getMatchedSuggestionsWithSameProfileKey(
+                        getNetworkSuggestionsForWifiConfiguration(config, config.BSSID), config);
+        if (matchingExtendedWifiNetworkSuggestions.isEmpty()) {
+            Log.e(TAG, "allowNetworkSuggestionAutojoin: network is missing: "
+                    + config);
+            return false;
         }
         for (ExtendedWifiNetworkSuggestion ewns : matchingExtendedWifiNetworkSuggestions) {
             ewns.isAutojoinEnabled = choice;
@@ -2322,6 +2362,52 @@ public class WifiNetworkSuggestionsManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Set the app treated as cross carrier provider. That can suggest for any carrier
+     * @param packageName App name to set.
+     * @param enabled True to set app treated as cross carrier provider, false otherwise.
+     */
+    public void setAppWorkingAsCrossCarrierProvider(String packageName, boolean enabled) {
+        if (enabled) {
+            mCrossCarrierProvidersSet.add(packageName);
+        } else {
+            mCrossCarrierProvidersSet.remove(packageName);
+        }
+    }
+
+    /**
+     * Check whether the app is treated as a cross carrier provider or not.
+     * @param packageName App name to check
+     * @return True for app is treated as a carrier provider, false otherwise.
+     */
+    public boolean isAppWorkingAsCrossCarrierProvider(String packageName) {
+        return mCrossCarrierProvidersSet.contains(packageName);
+    }
+
+    /**
+     * Store Anonymous Identity for SIM based suggestion after connection.
+     */
+    public void setAnonymousIdentity(WifiConfiguration config) {
+        if (config.isPasspoint() || !config.fromWifiNetworkSuggestion) {
+            return;
+        }
+        if (config.enterpriseConfig == null
+                || !config.enterpriseConfig.isAuthenticationSimBased()) {
+            Log.e(TAG, "Network is not SIM based, AnonymousIdentity is invalid");
+        }
+        Set<ExtendedWifiNetworkSuggestion> matchedSuggestionSet =
+                getMatchedSuggestionsWithSameProfileKey(
+                        getNetworkSuggestionsForWifiConfiguration(config, config.BSSID), config);
+        if (matchedSuggestionSet.isEmpty()) {
+            Log.wtf(TAG, "Current connected SIM based network suggestion is missing!");
+            return;
+        }
+        for (ExtendedWifiNetworkSuggestion ewns : matchedSuggestionSet) {
+            ewns.anonymousIdentity = config.enterpriseConfig.getAnonymousIdentity();
+        }
+        saveToStore();
     }
 
     private boolean isOpenSuggestion(ExtendedWifiNetworkSuggestion extendedWifiNetworkSuggestion) {

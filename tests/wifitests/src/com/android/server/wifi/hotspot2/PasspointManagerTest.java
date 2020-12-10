@@ -164,6 +164,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final int TEST_CREATOR_UID1 = 1235;
     private static final int TEST_UID = 1500;
     private static final int TEST_NETWORK_ID = 2;
+    private static final String TEST_ANONYMOUS_IDENTITY = "AnonymousIdentity";
 
     @Mock Context mContext;
     @Mock WifiNative mWifiNative;
@@ -2617,5 +2618,28 @@ public class PasspointManagerTest extends WifiBaseTest {
         mManager.handleDeauthImminentEvent(event, wifiConfig);
         verify(provider).blockBssOrEss(eq(event.getBssid()), eq(event.isEss()),
                 eq(event.getDelay()));
+    }
+
+    /**
+     * Verify set Anonymous Identity to the right passpoint provider.
+     */
+    @Test
+    public void testSetAnonymousIdentity() {
+        WifiConfiguration wifiConfig = WifiConfigurationTestUtil.generateWifiConfig(10, TEST_UID,
+                "\"PasspointTestSSID\"", true, true, TEST_FQDN,
+                TEST_FRIENDLY_NAME, SECURITY_EAP);
+
+        PasspointProvider provider =
+                addTestProvider(TEST_FQDN, TEST_FRIENDLY_NAME, TEST_PACKAGE, wifiConfig, false,
+                        null);
+
+        wifiConfig.enterpriseConfig.setAnonymousIdentity(TEST_ANONYMOUS_IDENTITY);
+        mManager.setAnonymousIdentity(wifiConfig);
+        verify(provider).setAnonymousIdentity(TEST_ANONYMOUS_IDENTITY);
+
+
+        mManager.resetSimPasspointNetwork();
+        verify(provider).setAnonymousIdentity(null);
+        verify(mWifiConfigManager, times(3)).saveToStore(true);
     }
 }

@@ -61,6 +61,7 @@ public class XmlUtilTest extends WifiBaseTest {
     private static final String TEST_PACKAGE_NAME = "XmlUtilPackage";
     private static final String TEST_STATIC_IP_GATEWAY_ADDRESS = "192.168.48.1";
     private static final String TEST_PLACEHOLDER_CONFIG_KEY = "XmlUtilPlaceholderConfigKey";
+    private static final int TEST_RSSI = -55;
     private static final String TEST_IDENTITY = "XmlUtilTestIdentity";
     private static final String TEST_ANON_IDENTITY = "XmlUtilTestAnonIdentity";
     private static final String TEST_PASSWORD = "XmlUtilTestPassword";
@@ -268,6 +269,7 @@ public class XmlUtilTest extends WifiBaseTest {
         status.setNetworkSelectionStatus(NetworkSelectionStatus.NETWORK_SELECTION_ENABLED);
         status.setNetworkSelectionDisableReason(NetworkSelectionStatus.DISABLED_NONE);
         status.setConnectChoice(TEST_PLACEHOLDER_CONFIG_KEY);
+        status.setConnectChoiceRssi(TEST_RSSI);
         status.setHasEverConnected(true);
         serializeDeserializeNetworkSelectionStatus(status);
     }
@@ -320,6 +322,7 @@ public class XmlUtilTest extends WifiBaseTest {
         status.setNetworkSelectionDisableReason(
                 NetworkSelectionStatus.DISABLED_DHCP_FAILURE);
         status.setConnectChoice(TEST_PLACEHOLDER_CONFIG_KEY);
+        status.setConnectChoiceRssi(TEST_RSSI);
         status.setHasEverConnected(true);
 
         // Serialize this to XML string.
@@ -368,6 +371,7 @@ public class XmlUtilTest extends WifiBaseTest {
         status.setNetworkSelectionDisableReason(
                 NetworkSelectionStatus.DISABLED_DHCP_FAILURE);
         status.setConnectChoice(TEST_PLACEHOLDER_CONFIG_KEY);
+        status.setConnectChoiceRssi(TEST_RSSI);
         status.setHasEverConnected(true);
 
         // Serialize this to XML string.

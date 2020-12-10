@@ -111,9 +111,8 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
     }
 
     private void addOrUpdateSuggestionToWifiConfigManger(ExtendedWifiNetworkSuggestion ewns) {
-        WifiConfiguration config = ewns.createInternalWifiConfiguration();
-        config.subscriptionId = mWifiCarrierInfoManager
-                .getBestMatchSubscriptionId(ewns.wns.getWifiConfiguration());
+        WifiConfiguration config = ewns.createInternalWifiConfiguration(mWifiCarrierInfoManager);
+
         WifiConfiguration wCmConfiguredNetwork =
                 mWifiConfigManager.getConfiguredNetwork(config.getProfileKey());
         NetworkUpdateResult result = mWifiConfigManager.addOrUpdateNetwork(
@@ -212,8 +211,8 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                 continue;
             }
             for (ExtendedWifiNetworkSuggestion ewns : matchingExtNetworkSuggestions) {
-                WifiConfiguration config = ewns.createInternalWifiConfiguration();
-                config.subscriptionId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+                WifiConfiguration config = ewns.createInternalWifiConfiguration(
+                        mWifiCarrierInfoManager);
                 WifiConfiguration wCmConfiguredNetwork =
                         mWifiConfigManager.getConfiguredNetwork(config.getProfileKey());
                 if (wCmConfiguredNetwork == null) {

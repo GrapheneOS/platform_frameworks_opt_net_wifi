@@ -130,6 +130,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<string name=\"SelectionStatus\">NETWORK_SELECTION_ENABLED</string>\n"
                     + "<string name=\"DisableReason\">NETWORK_SELECTION_ENABLE</string>\n"
                     + "<null name=\"ConnectChoice\" />\n"
+                    + "<int name=\"ConnectChoiceRssi\" value=\"0\" />\n"
                     + "<boolean name=\"HasEverConnected\" value=\"false\" />\n"
                     + "<boolean name=\"CaptivePortalNeverDetected\" value=\"true\" />\n"
                     + "</NetworkStatus>\n"

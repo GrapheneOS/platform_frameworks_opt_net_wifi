@@ -88,6 +88,7 @@ public interface ClientMode {
 
     DhcpResultsParcelable syncGetDhcpResultsParcelable();
 
+    /** Get the supported feature set synchronously */
     long getSupportedFeatures();
 
     boolean syncStartSubscriptionProvisioning(int callingUid, OsuProvider provider,

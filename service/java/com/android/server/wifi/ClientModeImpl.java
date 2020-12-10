@@ -3102,7 +3102,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     && config.getNetworkSelectionStatus().hasEverConnected()
                     && mWifiPermissionsUtil.checkNetworkSettingsPermission(config.lastConnectUid);
             mWifiConfigManager.updateNetworkAfterConnect(mLastNetworkId,
-                    shouldSetUserConnectChoice);
+                    shouldSetUserConnectChoice, mWifiInfo.getRssi());
             // Notify PasspointManager of Passpoint network connected event.
             WifiConfiguration currentNetwork = getConnectedWifiConfigurationInternal();
             if (currentNetwork != null && currentNetwork.isPasspoint()) {
@@ -4059,6 +4059,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             config.enterpriseConfig.setAnonymousIdentity(null);
                         }
                         mWifiConfigManager.addOrUpdateNetwork(config, Process.WIFI_UID);
+                        if (config.isPasspoint()) {
+                            mPasspointManager.setAnonymousIdentity(config);
+                        } else if (config.fromWifiNetworkSuggestion) {
+                            mWifiNetworkSuggestionsManager.setAnonymousIdentity(config);
+                        }
                     }
                     // When connecting to Passpoint, ask for the Venue URL
                     if (config.isPasspoint()) {
@@ -5628,14 +5633,14 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * @return true if this device supports FILS-SHA256
      */
     private boolean isFilsSha256Supported() {
-        return (mWifiNative.getSupportedFeatureSet(mInterfaceName) & WIFI_FEATURE_FILS_SHA256) != 0;
+        return (getSupportedFeatures() & WIFI_FEATURE_FILS_SHA256) != 0;
     }
 
     /**
      * @return true if this device supports FILS-SHA384
      */
     private boolean isFilsSha384Supported() {
-        return (mWifiNative.getSupportedFeatureSet(mInterfaceName) & WIFI_FEATURE_FILS_SHA384) != 0;
+        return (getSupportedFeatures() & WIFI_FEATURE_FILS_SHA384) != 0;
     }
 
     /**

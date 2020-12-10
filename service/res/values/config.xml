@@ -452,6 +452,10 @@
     filtered out from network selection. (default = 10 dBs) -->
     <integer translatable="false" name="config_wifiHighMovementNetworkSelectionOptimizationRssiDelta">10</integer>
 
+    <!-- The estimate RSSI error margin in dBs to account minor differences in the environment and
+    the device's orientation. -->
+    <integer translatable="false" name="config_wifiEstimateRssiErrorMarginDb">5</integer>
+
     <!-- The interval in milliseconds at which wifi rtt ranging requests will be throttled when
          they are coming from the background apps (default = 30 mins). -->
     <integer translatable="false" name="config_wifiRttBackgroundExecGapMs">1800000</integer>

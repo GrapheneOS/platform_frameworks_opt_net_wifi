@@ -387,8 +387,25 @@ public class ActiveModeWarden {
     /**
      * @return Returns whether we can create more client mode managers or not.
      */
-    public boolean canRequestMoreClientModeManagers(@NonNull WorkSource requestorWs) {
-        return mWifiNative.isItPossibleToCreateStaIface(requestorWs);
+    public boolean canRequestMoreClientModeManagersInRole(@NonNull WorkSource requestorWs,
+            @NonNull ClientRole clientRole) {
+        if (!mWifiNative.isItPossibleToCreateStaIface(requestorWs)) {
+            return false;
+        }
+        if (clientRole == ROLE_CLIENT_LOCAL_ONLY) {
+            return mContext.getResources().getBoolean(
+                    R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled);
+        }
+        if (clientRole == ROLE_CLIENT_SECONDARY_TRANSIENT) {
+            return mContext.getResources().getBoolean(
+                    R.bool.config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled);
+        }
+        if (clientRole == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+            return mContext.getResources().getBoolean(
+                    R.bool.config_wifiMultiStaRestrictedConcurrencyEnabled);
+        }
+        Log.e(TAG, "Unrecognized role=" + clientRole);
+        return false;
     }
 
     /**
@@ -1538,27 +1555,6 @@ public class ActiveModeWarden {
                 super.exit();
             }
 
-            private boolean shouldRequestAdditionalClientModeManager(
-                    AdditionalClientModeManagerRequestInfo requestInfo) {
-                if (!canRequestMoreClientModeManagers(requestInfo.requestorWs)) {
-                    return false;
-                }
-                if (requestInfo.clientRole == ROLE_CLIENT_LOCAL_ONLY) {
-                    return mContext.getResources().getBoolean(
-                            R.bool.config_wifiMultiStaLocalOnlyConcurrencyEnabled);
-                }
-                if (requestInfo.clientRole == ROLE_CLIENT_SECONDARY_TRANSIENT) {
-                    return mContext.getResources().getBoolean(
-                            R.bool.config_wifiMultiStaNetworkSwitchingMakeBeforeBreakEnabled);
-                }
-                if (requestInfo.clientRole == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
-                    return mContext.getResources().getBoolean(
-                            R.bool.config_wifiMultiStaRestrictedConcurrencyEnabled);
-                }
-                Log.e(TAG, "Unrecognized role=" + requestInfo.clientRole);
-                return false;
-            }
-
             private boolean isClientModeManagerConnectedOrConnectingToBssid(
                     @NonNull ClientModeManager clientModeManager,
                     @NonNull String ssid, @NonNull String bssid) {
@@ -1619,7 +1615,8 @@ public class ActiveModeWarden {
                     requestInfo.listener.onAnswer(cmmForSameRole);
                     return;
                 }
-                if (shouldRequestAdditionalClientModeManager(requestInfo)) {
+                if (canRequestMoreClientModeManagersInRole(
+                        requestInfo.requestorWs, requestInfo.clientRole)) {
                     // Can create an additional client mode manager.
                     Log.v(TAG, "Starting a new ClientModeManager");
                     startAdditionalClientModeManager(

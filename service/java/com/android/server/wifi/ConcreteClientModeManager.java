@@ -116,7 +116,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
     private final WifiInjector mWifiInjector;
     private final SelfRecovery mSelfRecovery;
     private final WifiGlobals mWifiGlobals;
-    private final ScanOnlyModeImpl mScanOnlyModeImpl;
+    private final DefaultClientModeManager mDefaultClientModeManager;
     private final long mId;
     private final Graveyard mGraveyard = new Graveyard();
 
@@ -140,6 +140,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
     @Nullable
     private ClientModeImpl mClientModeImpl = null;
 
+    @Nullable
+    private ScanOnlyModeImpl mScanOnlyModeImpl = null;
+
     /**
      * One of  {@link WifiManager#WIFI_STATE_DISABLED},
      * {@link WifiManager#WIFI_STATE_DISABLING},
@@ -155,7 +158,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
             WifiMetrics wifiMetrics,
             WakeupController wakeupController, WifiInjector wifiInjector,
             SelfRecovery selfRecovery, WifiGlobals wifiGlobals,
-            ScanOnlyModeImpl scanOnlyModeImpl, long id,
+            DefaultClientModeManager defaultClientModeManager, long id,
             @NonNull WorkSource requestorWs, @NonNull ClientRole role,
             boolean verboseLoggingEnabled) {
         mContext = context;
@@ -169,7 +172,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
         mDeferStopHandler = new DeferStopHandler(looper);
         mSelfRecovery = selfRecovery;
         mWifiGlobals = wifiGlobals;
-        mScanOnlyModeImpl = scanOnlyModeImpl;
+        mDefaultClientModeManager = defaultClientModeManager;
         mId = id;
         mTargetRole = role;
         mTargetRequestorWs = requestorWs;
@@ -627,9 +630,9 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
             // CHECKSTYLE:OFF IndentationCheck
             addState(mIdleState);
-            addState(mStartedState);
-                addState(mScanOnlyModeState, mStartedState);
-                addState(mConnectModeState, mStartedState);
+                addState(mStartedState, mIdleState);
+                    addState(mScanOnlyModeState, mStartedState);
+                    addState(mConnectModeState, mStartedState);
             // CHECKSTYLE:ON IndentationCheck
 
             setInitialState(mIdleState);
@@ -676,6 +679,11 @@ public class ConcreteClientModeManager implements ClientModeManager {
                 Log.d(getTag(), "entering IdleState");
                 mClientInterfaceName = null;
                 mIfaceIsUp = false;
+            }
+
+            @Override
+            public void exit() {
+                mModeListener.onStopped(ConcreteClientModeManager.this);
             }
 
             @Override
@@ -766,16 +774,18 @@ public class ConcreteClientModeManager implements ClientModeManager {
                         Log.e(getTag(), "Detected an interface down, reporting failure to "
                                 + "SelfRecovery");
                         mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
-                        transitionTo(mIdleState);
+                        // once interface down, nothing else to do...  stop the state machine
+                        captureObituaryAndQuitNow();
                         break;
                     case CMD_INTERFACE_STATUS_CHANGED:
                         boolean isUp = message.arg1 == 1;
                         onUpChanged(isUp);
                         break;
                     case CMD_INTERFACE_DESTROYED:
-                        Log.d(getTag(), "interface destroyed - client mode stopping");
+                        Log.e(getTag(), "interface destroyed - client mode stopping");
                         mClientInterfaceName = null;
-                        transitionTo(mIdleState);
+                        // once interface destroyed, nothing else to do...  stop the state machine
+                        captureObituaryAndQuitNow();
                         break;
                     default:
                         return NOT_HANDLED;
@@ -794,10 +804,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     mIfaceIsUp = false;
                 }
 
-                // once we leave started, nothing else to do...  stop the state machine
                 mRole = null;
-                mStateMachine.captureObituaryAndQuitNow();
-                mModeListener.onStopped(ConcreteClientModeManager.this);
             }
         }
 
@@ -805,8 +812,15 @@ public class ConcreteClientModeManager implements ClientModeManager {
             @Override
             public void enter() {
                 Log.d(getTag(), "entering ScanOnlyModeState");
-                setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
 
+                if (mClientInterfaceName != null) {
+                    mScanOnlyModeImpl = mWifiInjector.makeScanOnlyModeImpl(
+                            mClientInterfaceName);
+                } else {
+                    Log.e(getTag(), "Entered ScanOnlyModeState with a null interface name!");
+                }
+
+                setRoleInternalAndInvokeCallback(ROLE_CLIENT_SCAN_ONLY);
                 mWakeupController.start();
             }
 
@@ -824,6 +838,7 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
             @Override
             public void exit() {
+                mScanOnlyModeImpl = null;
                 mWakeupController.stop();
             }
         }
@@ -926,11 +941,13 @@ public class ConcreteClientModeManager implements ClientModeManager {
 
     @NonNull
     private ClientMode getClientMode() {
-        if (mClientModeImpl == null) {
-            return mScanOnlyModeImpl;
-        } else {
+        if (mClientModeImpl != null) {
             return mClientModeImpl;
         }
+        if (mScanOnlyModeImpl != null) {
+            return mScanOnlyModeImpl;
+        }
+        return mDefaultClientModeManager;
     }
 
     /*

@@ -306,11 +306,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     }
 
     @Override
-    public boolean isSaved() {
-        return false;
-    }
-
-    @Override
     public boolean isSuggestion() {
         return mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion;
     }
@@ -318,11 +313,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Override
     public boolean isSubscription() {
         return mPasspointConfig != null;
-    }
-
-    @Override
-    public WifiConfiguration getWifiConfiguration() {
-        return null;
     }
 
     @Override
@@ -388,26 +378,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         mForgetCallback = callback;
         mWifiManager.removePasspointConfiguration(mPasspointConfig.getHomeSp().getFqdn());
         new ForgetActionListener().onSuccess();
-    }
-
-    @Override
-    public boolean canSignIn() {
-        return false;
-    }
-
-    @Override
-    public void signIn(@Nullable SignInCallback callback) {
-        return;
-    }
-
-    @Override
-    public boolean canShare() {
-        return false;
-    }
-
-    @Override
-    public boolean canEasyConnect() {
-        return false;
     }
 
     @Override

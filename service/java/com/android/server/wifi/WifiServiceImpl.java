@@ -402,6 +402,8 @@ public class WifiServiceImpl extends BaseWifiService {
                 mSimRequiredNotifier.dismissSimRequiredNotification();
             } else {
                 mWifiConfigManager.resetSimNetworks();
+                mWifiNetworkSuggestionsManager.resetSimNetworkSuggestions();
+                mPasspointManager.resetSimPasspointNetwork();
             }
 
             // do additional handling if we are current connected to a sim auth network
