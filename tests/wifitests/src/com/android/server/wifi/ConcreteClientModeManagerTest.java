@@ -734,6 +734,63 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
     }
 
     /**
+     * ClientMode stop properly with IMS deferring time, Wifi calling.
+     *
+     * The network losts first and then IMS is de-registered.
+     * The WIFI should be off after IMS deregistration.
+     */
+    @Test
+    public void clientModeStopWithWifiOffDeferringTimeWithWifiCallingAndNetworkLostFirst()
+            throws Exception {
+        setUpVoWifiTest(true,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        mClientModeManager.stop();
+        mLooper.dispatchAll();
+
+        // Not yet finish IMS deregistration.
+        verify(mImsMmTelManager).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mListener, never()).onStopped(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
+
+        // Notify wifi service the network lost.
+        assertNotNull(mImsNetworkCallback);
+        mImsNetworkCallback.onLost(null);
+        mLooper.dispatchAll();
+
+        // Since IMS service is not de-registered yet, wifi should be available.
+        moveTimeForward(1000);
+        mLooper.dispatchAll();
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
+
+        // Notify wifi service IMS service is de-registered.
+        assertNotNull(mImsMmTelManagerRegistrationCallback);
+        mImsMmTelManagerRegistrationCallback.onUnregistered(null);
+        mLooper.dispatchAll();
+
+        // Now Wifi could be turned off actually.
+        verify(mImsMmTelManager).unregisterImsRegistrationCallback(
+                any(RegistrationManager.RegistrationCallback.class));
+        assertNull(mImsMmTelManagerRegistrationCallback);
+        assertNull(mImsNetworkCallback);
+        verify(mListener).onStopped(mClientModeManager);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
+
+        verifyConnectModeNotificationsForCleanShutdown(WIFI_STATE_ENABLED);
+
+        // on an explicit stop, we should not trigger the callback
+        verifyNoMoreInteractions(mListener);
+    }
+
+    /**
      * ClientMode stop properly with IMS deferring time and Wifi calling.
      *
      * IMS deregistration is done before reaching the timeout.
@@ -952,6 +1009,61 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
         mImsMmTelManagerRegistrationCallback.onUnregistered(null);
         assertNotNull(mImsNetworkCallback);
         mImsNetworkCallback.onLost(null);
+        mLooper.dispatchAll();
+
+        // Now Wifi could be switched to scan mode actually.
+        verify(mWifiNative).switchClientInterfaceToScanMode(TEST_INTERFACE_NAME, TEST_WORKSOURCE);
+        verify(mImsMmTelManager).unregisterImsRegistrationCallback(
+                any(RegistrationManager.RegistrationCallback.class));
+        assertNull(mImsMmTelManagerRegistrationCallback);
+        assertNull(mImsNetworkCallback);
+        verify(mWifiMetrics).noteWifiOff(eq(true), eq(false), anyInt());
+    }
+
+    /**
+     * Switch to scan mode properly with IMS deferring time and Wifi calling.
+     *
+     * Network lost before IMS deregistration is done. The wifi should be still available
+     * until IMS is de-registered or time out.
+     */
+    @Test
+    public void switchToScanOnlyModeWithWifiOffDeferringTimeAndWifiCallingOnNetworkLostFirst()
+            throws Exception {
+        setUpVoWifiTest(true,
+                TEST_WIFI_OFF_DEFERRING_TIME_MS);
+
+        startClientInConnectModeAndVerifyEnabled();
+        reset(mContext, mListener);
+        setUpSystemServiceForContext();
+        when(mWifiNative.switchClientInterfaceToScanMode(any(), any()))
+                .thenReturn(true);
+
+        mClientModeManager.setRole(ROLE_CLIENT_SCAN_ONLY, TEST_WORKSOURCE);
+        mLooper.dispatchAll();
+
+        // Not yet finish IMS deregistration.
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
+        verify(mImsMmTelManager).registerImsRegistrationCallback(
+                any(Executor.class),
+                any(RegistrationManager.RegistrationCallback.class));
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
+
+        // Notify wifi service network lost
+        assertNotNull(mImsNetworkCallback);
+        mImsNetworkCallback.onLost(null);
+        mLooper.dispatchAll();
+
+        // Since IMS service is not de-registered yet, wifi should be available.
+        moveTimeForward(1000);
+        mLooper.dispatchAll();
+        verify(mWifiNative, never()).switchClientInterfaceToScanMode(any(), any());
+        verify(mImsMmTelManager, never()).unregisterImsRegistrationCallback(any());
+        verify(mWifiMetrics, never()).noteWifiOff(anyBoolean(), anyBoolean(), anyInt());
+
+        // Notify wifi service IMS service is de-registered.
+        assertNotNull(mImsMmTelManagerRegistrationCallback);
+        mImsMmTelManagerRegistrationCallback.onUnregistered(null);
         mLooper.dispatchAll();
 
         // Now Wifi could be switched to scan mode actually.
