@@ -401,9 +401,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 countDownLatch.countDown();
                             }
                         }
+
                         @Override
                         public void onConnectedClientsChanged(List<WifiClient> clients) {
                         }
+
                         @Override
                         public void onInfoChanged(SoftApInfo softApInfo) {
                             pw.println("onInfoChanged: " + softApInfo);
@@ -411,10 +413,16 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 countDownLatch.countDown();
                             }
                         }
+
+                        @Override
+                        public void onInfoListChanged(List<SoftApInfo> softApInfoList) {
+                        }
+
                         @Override
                         public void onCapabilityChanged(SoftApCapability capability) {
                             pw.println("onCapabilityChanged " + capability);
                         }
+
                         @Override
                         public void onBlockedClientConnecting(WifiClient client, int reason) {
                         }
