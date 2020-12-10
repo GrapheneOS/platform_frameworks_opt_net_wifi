@@ -404,6 +404,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 mWifiConfigManager.resetSimNetworks();
                 mWifiNetworkSuggestionsManager.resetSimNetworkSuggestions();
                 mPasspointManager.resetSimPasspointNetwork();
+                mWifiConfigManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
             }
 
             // do additional handling if we are current connected to a sim auth network
