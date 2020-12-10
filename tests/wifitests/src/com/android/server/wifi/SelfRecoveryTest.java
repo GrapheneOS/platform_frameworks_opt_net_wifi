@@ -61,13 +61,15 @@ public class SelfRecoveryTest extends WifiBaseTest {
     @Test
     public void testValidTriggerReasonsSendMessageToWifiController() {
         mSelfRecovery.trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
-        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_LAST_RESORT_WATCHDOG], false);
         reset(mActiveModeWarden);
 
         when(mClock.getElapsedSinceBootMillis())
                 .thenReturn(TimeUnit.HOURS.toMillis(1) + 1);
         mSelfRecovery.trigger(SelfRecovery.REASON_WIFINATIVE_FAILURE);
-        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         reset(mActiveModeWarden);
     }
 
@@ -105,25 +107,30 @@ public class SelfRecoveryTest extends WifiBaseTest {
         // aren't ignored
         for (int i = 0; i < DEFAULT_MAX_RECOVERY_PER_HOUR; i++) {
             mSelfRecovery.trigger(SelfRecovery.REASON_WIFINATIVE_FAILURE);
-            verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+            verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                    SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
             reset(mActiveModeWarden);
         }
 
         // Verify that further attempts to trigger restarts disable wifi
         mSelfRecovery.trigger(SelfRecovery.REASON_WIFINATIVE_FAILURE);
-        verify(mActiveModeWarden, never())
-                .recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+        verify(mActiveModeWarden, never()).recoveryRestartWifi(
+                SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         verify(mActiveModeWarden).recoveryDisableWifi();
         reset(mActiveModeWarden);
 
         mSelfRecovery.trigger(SelfRecovery.REASON_WIFINATIVE_FAILURE);
-        verify(mActiveModeWarden, never()).recoveryRestartWifi(anyInt());
+        verify(mActiveModeWarden, never()).recoveryRestartWifi(
+                SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         verify(mActiveModeWarden).recoveryDisableWifi();
         reset(mActiveModeWarden);
 
         // Verify L.R.Watchdog can still restart things (It has its own complex limiter)
         mSelfRecovery.trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
-        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_LAST_RESORT_WATCHDOG], false);
         reset(mActiveModeWarden);
 
         // Verify Sta Interface Down will still disable wifi
@@ -135,13 +142,15 @@ public class SelfRecoveryTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis())
                 .thenReturn(TimeUnit.HOURS.toMillis(1) + 1);
         mSelfRecovery.trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
-        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_LAST_RESORT_WATCHDOG], false);
         reset(mActiveModeWarden);
 
         when(mClock.getElapsedSinceBootMillis())
                 .thenReturn(TimeUnit.HOURS.toMillis(1) + 1);
         mSelfRecovery.trigger(SelfRecovery.REASON_WIFINATIVE_FAILURE);
-        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         reset(mActiveModeWarden);
     }
 
@@ -155,14 +164,16 @@ public class SelfRecoveryTest extends WifiBaseTest {
         when(mClock.getElapsedSinceBootMillis()).thenReturn(0L);
         mResources.setInteger(R.integer.config_wifiMaxNativeFailureSelfRecoveryPerHour, 0);
         mSelfRecovery.trigger(SelfRecovery.REASON_WIFINATIVE_FAILURE);
-        verify(mActiveModeWarden, never())
-                .recoveryRestartWifi(SelfRecovery.REASON_WIFINATIVE_FAILURE);
+        verify(mActiveModeWarden, never()).recoveryRestartWifi(
+                SelfRecovery.REASON_WIFINATIVE_FAILURE,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_WIFINATIVE_FAILURE], true);
         verify(mActiveModeWarden).recoveryDisableWifi();
         reset(mActiveModeWarden);
 
         // Verify L.R.Watchdog can still restart things (It has its own complex limiter)
         mSelfRecovery.trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
-        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+        verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG,
+                SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_LAST_RESORT_WATCHDOG], false);
     }
 
     /**
@@ -175,7 +186,8 @@ public class SelfRecoveryTest extends WifiBaseTest {
         for (int i = 0; i < DEFAULT_MAX_RECOVERY_PER_HOUR * 2; i++) {
             // Verify L.R.Watchdog can still restart things (It has it's own complex limiter)
             mSelfRecovery.trigger(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
-            verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG);
+            verify(mActiveModeWarden).recoveryRestartWifi(SelfRecovery.REASON_LAST_RESORT_WATCHDOG,
+                    SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_LAST_RESORT_WATCHDOG], false);
             reset(mActiveModeWarden);
         }
     }
@@ -190,7 +202,9 @@ public class SelfRecoveryTest extends WifiBaseTest {
         for (int i = 0; i < DEFAULT_MAX_RECOVERY_PER_HOUR * 2; i++) {
             mSelfRecovery.trigger(SelfRecovery.REASON_STA_IFACE_DOWN);
             verify(mActiveModeWarden).recoveryDisableWifi();
-            verify(mActiveModeWarden, never()).recoveryRestartWifi(anyInt());
+            verify(mActiveModeWarden, never()).recoveryRestartWifi(
+                    SelfRecovery.REASON_STA_IFACE_DOWN,
+                    SelfRecovery.REASON_STRINGS[SelfRecovery.REASON_STA_IFACE_DOWN], true);
             reset(mActiveModeWarden);
         }
     }

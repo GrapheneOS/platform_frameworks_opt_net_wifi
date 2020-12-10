@@ -30,6 +30,7 @@ import static android.net.wifi.WifiManager.WIFI_AP_STATE_FAILED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED;
+import static com.android.server.wifi.SelfRecovery.REASON_API_CALL;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 
 import android.Manifest;
@@ -704,6 +705,11 @@ public class WifiServiceImpl extends BaseWifiService {
                 "WifiService");
     }
 
+    private void enforceAirplaneModePermission() {
+        mContext.enforceCallingOrSelfPermission(android.Manifest.permission.NETWORK_AIRPLANE_MODE,
+                "WifiService");
+    }
+
     /**
      * Checks whether the caller can change the wifi state.
      * Possible results:
@@ -828,6 +834,19 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiMetrics.incrementNumWifiToggles(isPrivileged, enable);
         mActiveModeWarden.wifiToggled(new WorkSource(Binder.getCallingUid(), packageName));
         return true;
+    }
+
+    @Override
+    public void restartWifiSubsystem(@Nullable String reason) {
+        if (!SdkLevel.isAtLeastS()) {
+            throw new UnsupportedOperationException();
+        }
+        enforceAirplaneModePermission();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("restartWifiSubsystem uid=% reason=%").c(Binder.getCallingUid()).r(
+                    reason).flush();
+        }
+        mActiveModeWarden.recoveryRestartWifi(REASON_API_CALL, reason, !TextUtils.isEmpty(reason));
     }
 
     /**
