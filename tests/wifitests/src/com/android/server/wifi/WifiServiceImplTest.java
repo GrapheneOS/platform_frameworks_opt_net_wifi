@@ -117,6 +117,7 @@ import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ISoftApCallback;
 import android.net.wifi.ISuggestionConnectionStatusListener;
+import android.net.wifi.ISuggestionUserApprovalStatusListener;
 import android.net.wifi.ITrafficStateCallback;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
@@ -331,6 +332,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock ICoexCallback mCoexCallback;
     @Mock IScanResultsCallback mScanResultsCallback;
     @Mock ISuggestionConnectionStatusListener mSuggestionConnectionStatusListener;
+    @Mock ISuggestionUserApprovalStatusListener mSuggestionUserApprovalStatusListener;
     @Mock IOnWifiActivityEnergyInfoListener mOnWifiActivityEnergyInfoListener;
     @Mock IWifiConnectedNetworkScorer mWifiConnectedNetworkScorer;
     @Mock WifiSettingsConfigStore mWifiSettingsConfigStore;
@@ -6842,5 +6844,60 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.stopAutoDispatchAndIgnoreExceptions();
         verify(mWifiNetworkSuggestionsManager)
                 .getNetworkSuggestionUserApprovalStatus(anyInt(), eq(TEST_PACKAGE_NAME));
+    }
+
+    /**
+     * Test register listener without permission.
+     */
+    @Test(expected = SecurityException.class)
+    public void testAddSuggestionUserApprovalStatusListenerWithMissingPermission() {
+        doThrow(new SecurityException()).when(mContext).enforceCallingOrSelfPermission(
+                eq(ACCESS_WIFI_STATE), eq("WifiService"));
+        mWifiServiceImpl.addSuggestionUserApprovalStatusListener(mAppBinder,
+                mSuggestionUserApprovalStatusListener, NETWORK_CALLBACK_ID, TEST_PACKAGE_NAME,
+                TEST_FEATURE_ID);
+    }
+
+    /**
+     * Test register listener without listener
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddSuggestionUserApprovalStatusListenerWithIllegalArgument() {
+        mWifiServiceImpl.addSuggestionUserApprovalStatusListener(mAppBinder, null,
+                NETWORK_CALLBACK_ID, TEST_PACKAGE_NAME, TEST_FEATURE_ID);
+    }
+
+    /**
+     * Test unregister callback without permission.
+     */
+    @Test(expected = SecurityException.class)
+    public void testUnregisterSuggestionUserApprovalStatusListenerWithMissingPermission() {
+        doThrow(new SecurityException()).when(mContext).enforceCallingOrSelfPermission(
+                eq(ACCESS_WIFI_STATE), eq("WifiService"));
+        mWifiServiceImpl.removeSuggestionUserApprovalStatusListener(
+                NETWORK_CALLBACK_ID, TEST_PACKAGE_NAME);
+    }
+
+    /**
+     * Test add and remove listener will go to WifiNetworkSuggestionManager
+     */
+    @Test
+    public void testAddRemoveSuggestionUserApprovalStatusListener() {
+        mLooper.startAutoDispatch();
+        when(mWifiNetworkSuggestionsManager.addSuggestionUserApprovalStatusListener(
+                any(), any(), anyInt(), anyString(), anyInt())).thenReturn(true);
+        assertTrue(mWifiServiceImpl.addSuggestionUserApprovalStatusListener(mAppBinder,
+                mSuggestionUserApprovalStatusListener, NETWORK_CALLBACK_ID, TEST_PACKAGE_NAME,
+                TEST_FEATURE_ID));
+        mLooper.stopAutoDispatch();
+        verify(mWifiNetworkSuggestionsManager).addSuggestionUserApprovalStatusListener(
+                eq(mAppBinder), eq(mSuggestionUserApprovalStatusListener), eq(NETWORK_CALLBACK_ID),
+                eq(TEST_PACKAGE_NAME), anyInt());
+
+        mWifiServiceImpl.removeSuggestionUserApprovalStatusListener(NETWORK_CALLBACK_ID,
+                TEST_PACKAGE_NAME);
+        mLooper.dispatchAll();
+        verify(mWifiNetworkSuggestionsManager).removeSuggestionUserApprovalStatusListener(
+                eq(NETWORK_CALLBACK_ID), eq(TEST_PACKAGE_NAME), anyInt());
     }
 }

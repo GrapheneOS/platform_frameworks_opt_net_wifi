@@ -66,6 +66,7 @@ import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ISoftApCallback;
 import android.net.wifi.ISuggestionConnectionStatusListener;
+import android.net.wifi.ISuggestionUserApprovalStatusListener;
 import android.net.wifi.ITrafficStateCallback;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.ScanResult;
@@ -4810,5 +4811,48 @@ public class WifiServiceImpl extends BaseWifiService {
 
         return mWifiThreadRunner.call(()->
                 mWifiCarrierInfoManager.isCarrierNetworkOffloadEnabled(subId, merged), true);
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#addSuggestionUserApprovalStatusListener(Executor,
+     * WifiManager.SuggestionUserApprovalStatusListener)}
+     */
+    @Override
+    public boolean addSuggestionUserApprovalStatusListener(IBinder binder,
+            ISuggestionUserApprovalStatusListener listener, int listenerIdentifier,
+            String packageName, String featureId) {
+        if (binder == null) {
+            throw new IllegalArgumentException("Binder must not be null");
+        }
+        if (listener == null) {
+            throw new IllegalArgumentException("listener must not be null");
+        }
+        final int uid = Binder.getCallingUid();
+        enforceAccessPermission();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("addSuggestionUserApprovalStatusListener uid=%").c(uid).flush();
+        }
+        return mWifiThreadRunner.call(() -> mWifiNetworkSuggestionsManager
+                .addSuggestionUserApprovalStatusListener(
+                        binder, listener, listenerIdentifier, packageName, uid), false);
+    }
+
+    /**
+     * See {@link android.net.wifi.WifiManager#removeSuggestionUserApprovalStatusListener(
+     * WifiManager.SuggestionUserApprovalStatusListener)}
+     */
+    @Override
+    public void removeSuggestionUserApprovalStatusListener(int listenerIdentifier,
+            String packageName) {
+        enforceAccessPermission();
+        int uid = Binder.getCallingUid();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("removeSuggestionUserApprovalStatusListener uid=%")
+                    .c(uid).flush();
+        }
+        mWifiThreadRunner.post(() ->
+                mWifiNetworkSuggestionsManager
+                        .removeSuggestionUserApprovalStatusListener(listenerIdentifier,
+                                packageName, uid));
     }
 }

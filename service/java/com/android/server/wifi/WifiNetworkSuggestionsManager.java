@@ -40,6 +40,7 @@ import android.graphics.drawable.Icon;
 import android.net.MacAddress;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ISuggestionConnectionStatusListener;
+import android.net.wifi.ISuggestionUserApprovalStatusListener;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
@@ -397,6 +398,9 @@ public class WifiNetworkSuggestionsManager {
     private final HashMap<String, ExternalCallbackTracker<ISuggestionConnectionStatusListener>>
             mSuggestionStatusListenerPerApp = new HashMap<>();
 
+    private final HashMap<String, ExternalCallbackTracker<ISuggestionUserApprovalStatusListener>>
+            mSuggestionUserApprovalStatusListenerPerApp = new HashMap<>();
+
     /**
      * Store the suggestion update listeners.
      */
@@ -548,11 +552,11 @@ public class WifiNetworkSuggestionsManager {
 
     private void handleUserDisallowAction(int uid, String packageName) {
         Log.i(TAG, "User clicked to disallow app");
-        // Set the user approved flag.
-        setHasUserApprovedForApp(false, packageName);
         // Take away CHANGE_WIFI_STATE app-ops from the app.
         mAppOps.setMode(AppOpsManager.OPSTR_CHANGE_WIFI_STATE, uid, packageName,
                 MODE_IGNORED);
+        // Set the user approved flag.
+        setHasUserApprovedForApp(false, packageName);
         mUserApprovalUiActive = false;
         mWifiMetrics.addUserApprovalSuggestionAppUiReaction(
                 ACTION_USER_DISALLOWED_APP,
@@ -935,6 +939,7 @@ public class WifiNetworkSuggestionsManager {
                 mWifiMetrics.incrementNetworkSuggestionApiUsageNumOfAppInType(
                         APP_TYPE_NON_PRIVILEGED);
             }
+            onSuggestionUserApprovalStatusChanged(packageName);
         }
         // If PerAppInfo is upgrade from pre-R, uid may not be set.
         perAppInfo.setUid(uid);
@@ -1325,6 +1330,7 @@ public class WifiNetworkSuggestionsManager {
             iter.remove();
         }
         mSuggestionStatusListenerPerApp.clear();
+        mSuggestionUserApprovalStatusListenerPerApp.clear();
         saveToStore();
         Log.i(TAG, "Cleared all internal state");
     }
@@ -1351,6 +1357,7 @@ public class WifiNetworkSuggestionsManager {
                     + (approved ? " approved" : " not approved"));
         }
         perAppInfo.hasUserApproved = approved;
+        onSuggestionUserApprovalStatusChanged(packageName);
         saveToStore();
     }
 
@@ -2082,6 +2089,55 @@ public class WifiNetworkSuggestionsManager {
     }
 
     /**
+     * Register a SuggestionUserApprovalStatusListener on user approval status changes.
+     * @param binder IBinder instance to allow cleanup if the app dies.
+     * @param listener ISuggestionUserApprovalStatusListener instance to add.
+     * @param listenerIdentifier identifier of the listener, should be hash code of listener.
+     * @param uid uid of the app.
+     * @return true if succeed otherwise false.
+     */
+    public boolean addSuggestionUserApprovalStatusListener(@NonNull IBinder binder,
+            @NonNull ISuggestionUserApprovalStatusListener listener,
+            int listenerIdentifier, String packageName, int uid) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return false;
+        }
+        ExternalCallbackTracker<ISuggestionUserApprovalStatusListener> listenersTracker =
+                mSuggestionUserApprovalStatusListenerPerApp.get(packageName);
+        if (listenersTracker == null) {
+            listenersTracker =
+                    new ExternalCallbackTracker<>(mHandler);
+        }
+        listenersTracker.add(binder, listener, listenerIdentifier);
+        mSuggestionUserApprovalStatusListenerPerApp.put(packageName, listenersTracker);
+        return true;
+    }
+
+    /**
+     * Unregister a listener on on user approval status changes.
+     * @param listenerIdentifier identifier of the listener, should be hash code of listener.
+     * @param uid uid of the app.
+     */
+    public void removeSuggestionUserApprovalStatusListener(int listenerIdentifier,
+            String packageName, int uid) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return;
+        }
+        ExternalCallbackTracker<ISuggestionUserApprovalStatusListener> listenersTracker =
+                mSuggestionUserApprovalStatusListenerPerApp.get(packageName);
+        if (listenersTracker == null || listenersTracker.remove(listenerIdentifier) == null) {
+            Log.w(TAG, "removeSuggestionUserApprovalStatusListener: Listener["
+                    + listenerIdentifier + "] from " + packageName + " already removed.");
+            return;
+        }
+        if (listenersTracker != null && listenersTracker.getNumCallbacks() == 0) {
+            mSuggestionUserApprovalStatusListenerPerApp.remove(packageName);
+        }
+    }
+
+    /**
      * Register a SuggestionConnectionStatusListener on network connection failure.
      * @param binder IBinder instance to allow cleanup if the app dies.
      * @param listener ISuggestionNetworkCallback instance to add.
@@ -2469,6 +2525,24 @@ public class WifiNetworkSuggestionsManager {
                     ewns.connectChoiceRssi = 0;
                 });
         saveToStore();
+    }
+
+    private void onSuggestionUserApprovalStatusChanged(String packageName) {
+        ExternalCallbackTracker<ISuggestionUserApprovalStatusListener> listenersTracker =
+                mSuggestionUserApprovalStatusListenerPerApp.get(packageName);
+        if (listenersTracker == null || listenersTracker.getNumCallbacks() == 0) {
+            return;
+        }
+        if (mVerboseLoggingEnabled) {
+            Log.v(TAG, "Sending user approval status change event to " + packageName);
+        }
+        for (ISuggestionUserApprovalStatusListener listener : listenersTracker.getCallbacks()) {
+            try {
+                listener.onUserApprovalStatusChange();
+            } catch (RemoteException e) {
+                Log.e(TAG, "sendUserApprovalStatusChange: remote exception -- " + e);
+            }
+        }
     }
 
     /**
