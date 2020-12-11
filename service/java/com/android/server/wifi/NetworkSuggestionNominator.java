@@ -18,6 +18,7 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.net.wifi.WifiConfiguration;
+import android.telephony.TelephonyManager;
 import android.util.LocalLog;
 import android.util.Log;
 import android.util.Pair;
@@ -113,7 +114,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                     && mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(config)) {
                 continue;
             }
-            if (!isSimBasedNetworkAvailableToAutoConnect(config)) {
+            if (!isCarrierNetworkAvailableToAutoConnect(config)) {
                 continue;
             }
             // If untrusted network is not allowed, ignore untrusted suggestion.
@@ -160,7 +161,7 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
                     continue;
                 }
                 if (!ewns.isAutojoinEnabled
-                        || !isSimBasedNetworkAvailableToAutoConnect(config)) {
+                        || !isCarrierNetworkAvailableToAutoConnect(config)) {
                     autoJoinDisabledSuggestions.add(ewns);
                     continue;
                 }
@@ -213,18 +214,30 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
         }
     }
 
+    private boolean isCarrierNetworkAvailableToAutoConnect(WifiConfiguration config) {
+        if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            return true;
+        }
+
+        int subId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
+        if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
+            mLocalLog.log("SIM is not present for subId: " + subId);
+            return false;
+        }
+        return isSimBasedNetworkAvailableToAutoConnect(config);
+    }
+
     private boolean isSimBasedNetworkAvailableToAutoConnect(WifiConfiguration config) {
         if (config.enterpriseConfig == null
                 || !config.enterpriseConfig.isAuthenticationSimBased()) {
             return true;
         }
         int subId = mWifiCarrierInfoManager.getBestMatchSubscriptionId(config);
-        if (!mWifiCarrierInfoManager.isSimPresent(subId)) {
-            mLocalLog.log("SIM is not present for subId: " + subId);
+        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)
+                && !mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(subId)) {
+            mLocalLog.log("Ignoring SIM based network IMSI encryption info not Available, "
+                    + "subId: " + subId);
             return false;
-        }
-        if (mWifiCarrierInfoManager.requiresImsiEncryption(subId)) {
-            return mWifiCarrierInfoManager.isImsiEncryptionInfoAvailable(subId);
         }
         return true;
     }
