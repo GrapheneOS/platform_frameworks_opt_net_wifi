@@ -405,6 +405,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 mWifiConfigManager.resetSimNetworks();
                 mWifiNetworkSuggestionsManager.resetSimNetworkSuggestions();
                 mPasspointManager.resetSimPasspointNetwork();
+                mWifiConfigManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
             }
 
             // do additional handling if we are current connected to a sim auth network
@@ -2786,7 +2787,9 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!SdkLevel.isAtLeastS()) {
             throw new UnsupportedOperationException();
         }
-        enforceNetworkSettingsPermission();
+        if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
+            throw new SecurityException(TAG + ": Permission denied");
+        }
 
         mLog.info("startTemporarilyDisablingAllNonCarrierMergedWifi=% uid=%").c(subscriptionId)
                 .c(Binder.getCallingUid()).flush();
@@ -2809,7 +2812,9 @@ public class WifiServiceImpl extends BaseWifiService {
         if (!SdkLevel.isAtLeastS()) {
             throw new UnsupportedOperationException();
         }
-        enforceNetworkSettingsPermission();
+        if (!isSettingsOrSuw(Binder.getCallingPid(), Binder.getCallingUid())) {
+            throw new SecurityException(TAG + ": Permission denied");
+        }
 
         mLog.info("stopTemporarilyDisablingAllNonCarrierMergedWifi uid=%")
                 .c(Binder.getCallingUid()).flush();
