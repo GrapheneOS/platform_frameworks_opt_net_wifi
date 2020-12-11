@@ -2249,7 +2249,7 @@ public class SupplicantStaNetworkHal {
             final String methodStr = "getProto_1_3";
             try {
                 MutableBoolean statusOk = new MutableBoolean(false);
-                getV1_3StaNetwork().getProto((SupplicantStatus status, int protoMaskValue) -> {
+                getV1_3StaNetwork().getProto_1_3((SupplicantStatus status, int protoMaskValue) -> {
                     statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
                     if (statusOk.value) {
                         this.mProtoMask = protoMaskValue;
@@ -2347,7 +2347,7 @@ public class SupplicantStaNetworkHal {
             final String methodStr = "getGroupCipher_1_3";
             try {
                 MutableBoolean statusOk = new MutableBoolean(false);
-                getV1_3StaNetwork().getGroupCipher((SupplicantStatus status,
+                getV1_3StaNetwork().getGroupCipher_1_3((SupplicantStatus status,
                         int groupCipherMaskValue) -> {
                     statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
                     if (statusOk.value) {
@@ -2422,7 +2422,7 @@ public class SupplicantStaNetworkHal {
             final String methodStr = "getPairwiseCipher_1_3";
             try {
                 MutableBoolean statusOk = new MutableBoolean(false);
-                getV1_3StaNetwork().getPairwiseCipher((SupplicantStatus status,
+                getV1_3StaNetwork().getPairwiseCipher_1_3((SupplicantStatus status,
                         int pairwiseCipherMaskValue) -> {
                     statusOk.value = status.code == SupplicantStatusCode.SUCCESS;
                     if (statusOk.value) {
