@@ -20,7 +20,6 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import android.net.IpConfiguration;
-import android.net.util.MacAddressUtils;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -30,6 +29,7 @@ import android.util.Xml;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.util.FastXmlSerializer;
+import com.android.net.module.util.MacAddressUtils;
 import com.android.server.wifi.WifiBaseTest;
 import com.android.server.wifi.WifiConfigurationTestUtil;
 import com.android.server.wifi.util.XmlUtil.IpConfigurationXmlUtil;
