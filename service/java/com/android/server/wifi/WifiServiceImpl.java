@@ -30,6 +30,7 @@ import static android.net.wifi.WifiManager.WIFI_AP_STATE_FAILED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED;
+import static com.android.server.wifi.SelfRecovery.REASON_API_CALL;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
 
 import android.Manifest;
@@ -704,6 +705,11 @@ public class WifiServiceImpl extends BaseWifiService {
                 "WifiService");
     }
 
+    private void enforceAirplaneModePermission() {
+        mContext.enforceCallingOrSelfPermission(android.Manifest.permission.NETWORK_AIRPLANE_MODE,
+                "WifiService");
+    }
+
     /**
      * Checks whether the caller can change the wifi state.
      * Possible results:
@@ -828,6 +834,19 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiMetrics.incrementNumWifiToggles(isPrivileged, enable);
         mActiveModeWarden.wifiToggled(new WorkSource(Binder.getCallingUid(), packageName));
         return true;
+    }
+
+    @Override
+    public void restartWifiSubsystem(@Nullable String reason) {
+        if (!SdkLevel.isAtLeastS()) {
+            throw new UnsupportedOperationException();
+        }
+        enforceAirplaneModePermission();
+        if (mVerboseLoggingEnabled) {
+            mLog.info("restartWifiSubsystem uid=% reason=%").c(Binder.getCallingUid()).r(
+                    reason).flush();
+        }
+        mActiveModeWarden.recoveryRestartWifi(REASON_API_CALL, reason, !TextUtils.isEmpty(reason));
     }
 
     /**
@@ -1140,6 +1159,7 @@ public class WifiServiceImpl extends BaseWifiService {
         private final Object mLock = new Object();
         private int mTetheredSoftApState = WIFI_AP_STATE_DISABLED;
         private List<WifiClient> mTetheredSoftApConnectedClients = new ArrayList<>();
+        private List<SoftApInfo> mTetheredSoftApInfoList = new ArrayList<>();
         private SoftApInfo mTetheredSoftApInfo = new SoftApInfo();
         // TODO: We need to maintain two capability. One for LTE + SAP and one for WIFI + SAP
         private SoftApCapability mTetheredSoftApCapability = null;
@@ -1178,6 +1198,12 @@ public class WifiServiceImpl extends BaseWifiService {
         public List<WifiClient> getConnectedClients() {
             synchronized (mLock) {
                 return mTetheredSoftApConnectedClients;
+            }
+        }
+
+        public List<SoftApInfo> getSoftApInfoList() {
+            synchronized (mLock) {
+                return mTetheredSoftApInfoList;
             }
         }
 
@@ -1347,6 +1373,29 @@ public class WifiServiceImpl extends BaseWifiService {
                 ISoftApCallback callback = iterator.next();
                 try {
                     callback.onInfoChanged(mTetheredSoftApInfo);
+                } catch (RemoteException e) {
+                    Log.e(TAG, "onInfoChanged: remote exception -- " + e);
+                }
+            }
+        }
+
+        /**
+         * Called when informations of softap change.
+         *
+         * @param softApInfoList is the list of the softap information. {@link SoftApInfo}
+         */
+        @Override
+        public void onInfoListChanged(List<SoftApInfo> softApInfoList) {
+            synchronized (mLock) {
+                mTetheredSoftApInfoList = new ArrayList<>(softApInfoList);
+            }
+
+            Iterator<ISoftApCallback> iterator =
+                    mRegisteredSoftApCallbacks.getCallbacks().iterator();
+            while (iterator.hasNext()) {
+                ISoftApCallback callback = iterator.next();
+                try {
+                    callback.onInfoListChanged(mTetheredSoftApInfoList);
                 } catch (RemoteException e) {
                     Log.e(TAG, "onInfoChanged: remote exception -- " + e);
                 }
@@ -1816,6 +1865,7 @@ public class WifiServiceImpl extends BaseWifiService {
             try {
                 callback.onStateChanged(mTetheredSoftApTracker.getState(), 0);
                 callback.onConnectedClientsChanged(mTetheredSoftApTracker.getConnectedClients());
+                callback.onInfoListChanged(mTetheredSoftApTracker.getSoftApInfoList());
                 callback.onInfoChanged(mTetheredSoftApTracker.getSoftApInfo());
                 callback.onCapabilityChanged(mTetheredSoftApTracker.getSoftApCapability());
             } catch (RemoteException e) {

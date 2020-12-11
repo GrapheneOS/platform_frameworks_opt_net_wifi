@@ -66,6 +66,7 @@ import android.util.SparseArray;
 import android.util.SparseIntArray;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.aware.WifiAwareMetrics;
 import com.android.server.wifi.hotspot2.ANQPNetworkKey;
 import com.android.server.wifi.hotspot2.NetworkDetail;
@@ -2858,7 +2859,9 @@ public class WifiMetrics {
                 if (event != null && event.eventType == SoftApConnectedClientsEvent.SOFT_AP_UP) {
                     event.channelFrequency = info.getFrequency();
                     event.channelBandwidth = info.getBandwidth();
-                    event.generation = info.getWifiStandardInternal();
+                    if (SdkLevel.isAtLeastS()) {
+                        event.generation = info.getWifiStandard();
+                    }
                     break;
                 }
             }

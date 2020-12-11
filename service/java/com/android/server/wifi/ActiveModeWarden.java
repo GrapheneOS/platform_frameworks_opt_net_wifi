@@ -46,6 +46,7 @@ import android.os.Message;
 import android.os.Process;
 import android.os.WorkSource;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.ArraySet;
 import android.util.Log;
 import android.util.Pair;
@@ -481,8 +482,10 @@ public class ActiveModeWarden {
      * Restart Wifi for recovery purposes.
      * @param reason One of {@link SelfRecovery.RecoveryReason}
      */
-    public void recoveryRestartWifi(@SelfRecovery.RecoveryReason int reason) {
-        mWifiController.sendMessage(WifiController.CMD_RECOVERY_RESTART_WIFI, reason);
+    public void recoveryRestartWifi(@SelfRecovery.RecoveryReason int reason,
+            @Nullable String reasonDetail, boolean requestBugReport) {
+        mWifiController.sendMessage(WifiController.CMD_RECOVERY_RESTART_WIFI, reason,
+                requestBugReport ? 1 : 0, reasonDetail);
     }
 
     /** Wifi has been toggled. */
@@ -1713,18 +1716,17 @@ public class ActiveModeWarden {
                             log("STA disabled, remain in EnabledState.");
                         }
                         break;
-                    case CMD_RECOVERY_RESTART_WIFI:
+                    case CMD_RECOVERY_RESTART_WIFI: {
                         final String bugTitle;
-                        final String bugDetail;
-                        if (msg.arg1 < SelfRecovery.REASON_STRINGS.length && msg.arg1 >= 0) {
-                            bugDetail = SelfRecovery.REASON_STRINGS[msg.arg1];
-                            bugTitle = "Wi-Fi BugReport: " + bugDetail;
-                        } else {
-                            bugDetail = "";
+                        final String bugDetail = (String) msg.obj;
+                        if (TextUtils.isEmpty(bugDetail)) {
                             bugTitle = "Wi-Fi BugReport";
+                        } else {
+                            bugTitle = "Wi-Fi BugReport: " + bugDetail;
                         }
                         log("Recovery triggered, disable wifi");
-                        if (msg.arg1 != SelfRecovery.REASON_LAST_RESORT_WATCHDOG) {
+                        boolean bugReportRequested = msg.arg2 != 0;
+                        if (bugReportRequested) {
                             mHandler.post(() ->
                                     mWifiDiagnostics.takeBugReport(bugTitle, bugDetail));
                         }
@@ -1741,6 +1743,7 @@ public class ActiveModeWarden {
                         shutdownWifi();
                         // onStopped will move the state machine to "DisabledState".
                         break;
+                    }
                     default:
                         return NOT_HANDLED;
                 }

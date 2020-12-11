@@ -25,6 +25,8 @@ import static android.net.wifi.WifiConfiguration.METERED_OVERRIDE_METERED;
 import static android.net.wifi.WifiManager.WIFI_STATE_DISABLED;
 import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
 
+import static com.android.server.wifi.SelfRecovery.REASON_API_CALL;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -399,9 +401,11 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 countDownLatch.countDown();
                             }
                         }
+
                         @Override
                         public void onConnectedClientsChanged(List<WifiClient> clients) {
                         }
+
                         @Override
                         public void onInfoChanged(SoftApInfo softApInfo) {
                             pw.println("onInfoChanged: " + softApInfo);
@@ -409,10 +413,16 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                                 countDownLatch.countDown();
                             }
                         }
+
+                        @Override
+                        public void onInfoListChanged(List<SoftApInfo> softApInfoList) {
+                        }
+
                         @Override
                         public void onCapabilityChanged(SoftApCapability capability) {
                             pw.println("onCapabilityChanged " + capability);
                         }
+
                         @Override
                         public void onBlockedClientConnecting(WifiClient client, int reason) {
                         }
@@ -821,6 +831,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 case "set-emergency-call-state": {
                     boolean enabled = getNextArgRequiredTrueOrFalse("enabled", "disabled");
                     mActiveModeWarden.emergencyCallStateChanged(enabled);
+                    return 0;
+                }
+                case "trigger-recovery": {
+                    mActiveModeWarden.recoveryRestartWifi(REASON_API_CALL, null, false);
                     return 0;
                 }
                 default:
@@ -1407,6 +1421,8 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("  remove-app-from-suggestion_database <packageName>");
         pw.println("    Remove <packageName> from the suggestion database, all suggestions and user"
                 + " approval will be deleted, it is the same as uninstalling this app.");
+        pw.println("  trigger-recovery");
+        pw.println("    Trigger Wi-Fi subsystem restart.");
     }
 
     @Override

@@ -49,6 +49,7 @@ import com.android.internal.util.Preconditions;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 import com.android.internal.util.WakeupMessage;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiNative.InterfaceCallback;
 import com.android.server.wifi.WifiNative.SoftApListener;
 import com.android.server.wifi.util.ApConfigUtil;
@@ -58,6 +59,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -111,7 +113,7 @@ public class SoftApManager implements ActiveModeManager {
     private SoftApModeConfiguration mApConfig;
 
     @NonNull
-    private SoftApInfo mCurrentSoftApInfo = new SoftApInfo();
+    private Map<String, SoftApInfo> mCurrentSoftApInfoMap = new HashMap<>();
 
     @NonNull
     private SoftApCapability mCurrentSoftApCapability;
@@ -119,6 +121,7 @@ public class SoftApManager implements ActiveModeManager {
     private List<WifiClient> mConnectedClients = new ArrayList<>();
     @VisibleForTesting
     Map<WifiClient, Integer> mPendingDisconnectClients = new HashMap<>();
+
     private boolean mTimeoutEnabled = false;
 
     private String mStartTimestamp;
@@ -163,6 +166,8 @@ public class SoftApManager implements ActiveModeManager {
             if (apIfaceInstanceMacAddress != null) {
                 apInfo.setBssid(apIfaceInstanceMacAddress);
             }
+            apInfo.setApInstanceIdentifier(apIfaceInstance != null
+                    ? apIfaceInstance : mApInterfaceName);
             mStateMachine.sendMessage(
                     SoftApStateMachine.CMD_AP_INFO_CHANGED, 0, 0, apInfo);
         }
@@ -171,8 +176,10 @@ public class SoftApManager implements ActiveModeManager {
         public void onConnectedClientsChanged(String apIfaceInstance, MacAddress clientAddress,
                 boolean isConnected) {
             if (clientAddress != null) {
+                WifiClient client = new WifiClient(clientAddress, apIfaceInstance != null
+                        ? apIfaceInstance : mApInterfaceName);
                 mStateMachine.sendMessage(SoftApStateMachine.CMD_ASSOCIATED_STATIONS_CHANGED,
-                        isConnected ? 1 : 0, 0, clientAddress);
+                        isConnected ? 1 : 0, 0, client);
             } else {
                 Log.e(getTag(), "onConnectedClientsChanged: Invalid type returned");
             }
@@ -321,7 +328,7 @@ public class SoftApManager implements ActiveModeManager {
         pw.println("mApConfig.SoftApConfiguration.hiddenSSID: " + softApConfig.isHiddenSsid());
         pw.println("mConnectedClients.size(): " + mConnectedClients.size());
         pw.println("mTimeoutEnabled: " + mTimeoutEnabled);
-        pw.println("mCurrentSoftApInfo " + mCurrentSoftApInfo);
+        pw.println("mCurrentSoftApInfoMap " + mCurrentSoftApInfoMap);
         pw.println("mStartTimestamp: " + mStartTimestamp);
         mStateMachine.dump(fd, pw, args);
     }
@@ -657,7 +664,8 @@ public class SoftApManager implements ActiveModeManager {
                         }
                         mApInterfaceName = mWifiNative.setupInterfaceForSoftApMode(
                                 mWifiNativeInterfaceCallback, mRequestorWs,
-                                mApConfig.getSoftApConfiguration().getBands().length > 1);
+                                (SdkLevel.isAtLeastS()
+                                && mApConfig.getSoftApConfiguration().getBands().length > 1));
                         if (TextUtils.isEmpty(mApInterfaceName)) {
                             Log.e(getTag(), "setup failure when creating ap interface.");
                             updateApState(WifiManager.WIFI_AP_STATE_FAILED,
@@ -847,21 +855,36 @@ public class SoftApManager implements ActiveModeManager {
                 scheduleTimeoutMessage();
             }
 
-            private void updateSoftApInfo(SoftApInfo apInfo) {
+            /**
+             * @param apInfo, the new SoftApInfo changed. Null used to clean up.
+             */
+            private void updateSoftApInfo(@Nullable SoftApInfo apInfo) {
                 Log.d(getTag(), "SoftApInfo update " + apInfo);
 
-                if (apInfo.equals(mCurrentSoftApInfo)) {
+                if (apInfo == null) {
+                    // Clean up
+                    mSoftApCallback.onInfoChanged(new SoftApInfo());
+                    mSoftApCallback.onInfoListChanged(Collections.emptyList());
+                    mCurrentSoftApInfoMap.clear();
+                    return;
+                }
+
+                if (apInfo.equals(mCurrentSoftApInfoMap.get(apInfo.getApInstanceIdentifier()))) {
                     return; // no change
                 }
 
-                mCurrentSoftApInfo = new SoftApInfo(apInfo);
-                mSoftApCallback.onInfoChanged(mCurrentSoftApInfo);
+                mCurrentSoftApInfoMap.put(apInfo.getApInstanceIdentifier(), new SoftApInfo(apInfo));
+                // For old callback, always return the last info.
+                mSoftApCallback.onInfoChanged(new SoftApInfo(apInfo));
+                mSoftApCallback.onInfoListChanged(
+                        new ArrayList<SoftApInfo>(mCurrentSoftApInfoMap.values()));
+
                 // ignore invalid freq and softap disable case for metrics
                 if (apInfo.getFrequency() > 0
                         && apInfo.getBandwidth() != SoftApInfo.CHANNEL_WIDTH_INVALID) {
-                    mWifiMetrics.addSoftApChannelSwitchedEvent(mCurrentSoftApInfo,
+                    mWifiMetrics.addSoftApChannelSwitchedEvent(new SoftApInfo(apInfo),
                             mApConfig.getTargetMode());
-                    updateUserBandPreferenceViolationMetricsIfNeeded();
+                    updateUserBandPreferenceViolationMetricsIfNeeded(apInfo);
                 }
             }
 
@@ -941,25 +964,28 @@ public class SoftApManager implements ActiveModeManager {
                 mIfaceIsUp = false;
                 mIfaceIsDestroyed = false;
                 mRole = null;
-                updateSoftApInfo(new SoftApInfo());
+                updateSoftApInfo(null);
             }
 
-            private void updateUserBandPreferenceViolationMetricsIfNeeded() {
+            private void updateUserBandPreferenceViolationMetricsIfNeeded(SoftApInfo apInfo) {
+                // The band preference violation only need to detect in single AP mode.
+                if (SdkLevel.isAtLeastS()
+                        && mApConfig.getSoftApConfiguration().getBands().length > 1) return;
                 int band = mApConfig.getSoftApConfiguration().getBand();
                 boolean bandPreferenceViolated =
-                        (ScanResult.is24GHz(mCurrentSoftApInfo.getFrequency())
+                        (ScanResult.is24GHz(apInfo.getFrequency())
                             && !ApConfigUtil.containsBand(band,
                                     SoftApConfiguration.BAND_2GHZ))
-                        || (ScanResult.is5GHz(mCurrentSoftApInfo.getFrequency())
+                        || (ScanResult.is5GHz(apInfo.getFrequency())
                             && !ApConfigUtil.containsBand(band,
                                     SoftApConfiguration.BAND_5GHZ))
-                        || (ScanResult.is6GHz(mCurrentSoftApInfo.getFrequency())
+                        || (ScanResult.is6GHz(apInfo.getFrequency())
                             && !ApConfigUtil.containsBand(band,
                                     SoftApConfiguration.BAND_6GHZ));
 
                 if (bandPreferenceViolated) {
                     Log.e(getTag(), "Channel does not satisfy user band preference: "
-                            + mCurrentSoftApInfo.getFrequency());
+                            + apInfo.getFrequency());
                     mWifiMetrics.incrementNumSoftApUserBandPreferenceUnsatisfied();
                 }
             }
@@ -968,16 +994,15 @@ public class SoftApManager implements ActiveModeManager {
             public boolean processMessage(Message message) {
                 switch (message.what) {
                     case CMD_ASSOCIATED_STATIONS_CHANGED:
-                        if (!(message.obj instanceof MacAddress)) {
+                        if (!(message.obj instanceof WifiClient)) {
                             Log.e(getTag(), "Invalid type returned for"
                                     + " CMD_ASSOCIATED_STATIONS_CHANGED");
                             break;
                         }
-                        MacAddress madAddress = (MacAddress) message.obj;
                         boolean isConnected = (message.arg1 == 1);
-                        WifiClient client = new WifiClient(madAddress);
+                        WifiClient client = (WifiClient) message.obj;
                         Log.d(getTag(), "CMD_ASSOCIATED_STATIONS_CHANGED, Client: "
-                                + madAddress.toString() + " isConnected: "
+                                + client.getMacAddress().toString() + " isConnected: "
                                 + isConnected);
                         updateConnectedClients(client, isConnected);
                         break;

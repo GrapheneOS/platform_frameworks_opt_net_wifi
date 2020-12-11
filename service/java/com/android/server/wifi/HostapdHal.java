@@ -39,6 +39,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiNative.HostapdDeathEventHandler;
 import com.android.server.wifi.WifiNative.SoftApListener;
 import com.android.server.wifi.util.ApConfigUtil;
@@ -837,21 +838,24 @@ public class HostapdHal {
         ifaceParamsV1_3.V1_2 = ifaceParamsV12;
         ArrayList<android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams>
                 channelParams1_3List = new ArrayList<>();
-        for (int i = 0; i < config.getChannelsInternal().size(); i++) {
+        if (!SdkLevel.isAtLeastS()) {
+            return ifaceParamsV1_3;
+        }
+        for (int i = 0; i < config.getChannels().size(); i++) {
             android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams channelParam13 =
                     new android.hardware.wifi.hostapd.V1_3.IHostapd.ChannelParams();
             // Prepare channel
-            channelParam13.channel = config.getChannelsInternal().valueAt(i);
+            channelParam13.channel = config.getChannels().valueAt(i);
             // Prepare enableAcs
             channelParam13.enableAcs = ApConfigUtil.isAcsSupported(mContext)
                     && channelParam13.channel == 0;
             // Prepare the bandMask
-            channelParam13.V1_2.bandMask = getHalBandMask(config.getChannelsInternal().keyAt(i));
+            channelParam13.V1_2.bandMask = getHalBandMask(config.getChannels().keyAt(i));
             // Prepare  AcsChannelFreqRangesMhz
             if (channelParam13.enableAcs && ApConfigUtil.isSendFreqRangesNeeded(
-                    config.getChannelsInternal().keyAt(i), mContext)) {
+                    config.getChannels().keyAt(i), mContext)) {
                 prepareAcsChannelFreqRangesMhz(
-                        channelParam13.V1_2, config.getChannelsInternal().keyAt(i));
+                        channelParam13.V1_2, config.getChannels().keyAt(i));
             }
             channelParams1_3List.add(channelParam13);
         }

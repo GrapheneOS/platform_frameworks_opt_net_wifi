@@ -46,18 +46,21 @@ public class SelfRecovery {
     public static final int REASON_LAST_RESORT_WATCHDOG = 0;
     public static final int REASON_WIFINATIVE_FAILURE = 1;
     public static final int REASON_STA_IFACE_DOWN = 2;
+    public static final int REASON_API_CALL = 3;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(prefix = {"REASON_"}, value = {
             REASON_LAST_RESORT_WATCHDOG,
             REASON_WIFINATIVE_FAILURE,
-            REASON_STA_IFACE_DOWN})
+            REASON_STA_IFACE_DOWN,
+            REASON_API_CALL})
     public @interface RecoveryReason {}
 
     protected static final String[] REASON_STRINGS = {
             "Last Resort Watchdog",  // REASON_LAST_RESORT_WATCHDOG
             "WifiNative Failure",    // REASON_WIFINATIVE_FAILURE
-            "Sta Interface Down"     // REASON_STA_IFACE_DOWN
+            "Sta Interface Down",    // REASON_STA_IFACE_DOWN
+            "API call (e.g. user)"   // REASON_API_CALL
     };
 
     private final Context mContext;
@@ -114,7 +117,13 @@ public class SelfRecovery {
             }
             mPastRestartTimes.add(mClock.getElapsedSinceBootMillis());
         }
-        mActiveModeWarden.recoveryRestartWifi(reason);
+
+        String reasonString =  "";
+        if (reason < REASON_STRINGS.length && reason >= 0) {
+            reasonString = REASON_STRINGS[reason];
+        }
+        mActiveModeWarden.recoveryRestartWifi(reason, reasonString,
+                reason != REASON_LAST_RESORT_WATCHDOG);
     }
 
     /**
