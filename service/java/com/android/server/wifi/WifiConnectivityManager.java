@@ -341,6 +341,7 @@ public class WifiConnectivityManager {
             boolean isFullScan,
             @NonNull HandleScanResultsListener handleScanResultsListener) {
         ClientModeManager clientModeManager = getPrimaryClientModeManager();
+        // TODO (b/169413079): Include long lived secondary cmm here.
         mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
                 clientModeManager.getWifiLinkLayerStats(),
                 WifiChannelUtilization.UNKNOWN_FREQ);
@@ -350,25 +351,22 @@ public class WifiConnectivityManager {
         // Check if any blocklisted BSSIDs can be freed.
         mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
         WifiInfo wifiInfo = getPrimaryWifiInfo();
+        // TODO (b/169413079): Include long lived secondary cmm here.
         Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
                 wifiInfo.getSSID());
 
         // Clear expired recent failure statuses
         mConfigManager.cleanupExpiredRecentFailureReasons();
 
-        if (clientModeManager.isSupplicantTransientState()) {
-            localLog(listenerName
-                    + " onResults: No network selection because supplicantTransientState is "
-                    + clientModeManager.isSupplicantTransientState());
-            handleScanResultsListener.onHandled(false);
-            return;
-        }
-
         localLog(listenerName + " onResults: start network selection");
 
+        WifiNetworkSelector.ClientModeManagerState primaryCmmState =
+                new WifiNetworkSelector.ClientModeManagerState(clientModeManager);
+        // TODO (b/169413079): Add long lived secondary cmm state here.
+        List<WifiNetworkSelector.ClientModeManagerState> cmmStates = Arrays.asList(primaryCmmState);
+
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
-                scanDetails, bssidBlocklist, wifiInfo, clientModeManager.isConnected(),
-                clientModeManager.isDisconnected(), mUntrustedConnectionAllowed,
+                scanDetails, bssidBlocklist, cmmStates, mUntrustedConnectionAllowed,
                 mOemPaidConnectionAllowed, mOemPrivateConnectionAllowed);
         mLatestCandidates = candidates;
         mLatestCandidatesTimestampMs = mClock.getElapsedSinceBootMillis();

@@ -86,7 +86,6 @@ public class SavedNetworkNominator implements WifiNetworkSelector.NetworkNominat
      */
     @Override
     public void nominateNetworks(List<ScanDetail> scanDetails,
-                    WifiConfiguration currentNetwork, String currentBssid, boolean connected,
                     boolean untrustedNetworkAllowed /* unused */,
                     boolean oemPaidNetworkAllowed /* unused */,
                     boolean oemPrivateNetworkAllowed /* unused */,

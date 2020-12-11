@@ -157,20 +157,13 @@ public class WifiNetworkSelector {
          * Evaluate all the networks from the scan results.
          *
          * @param scanDetails              a list of scan details constructed from the scan results
-         * @param currentNetwork           configuration of the current connected network
-         *                                 or null if disconnected
-         * @param currentBssid             BSSID of the current connected network or null if
-         *                                 disconnected
-         * @param connected                a flag to indicate if ClientModeImpl is in connected
-         *                                 state
          * @param untrustedNetworkAllowed  a flag to indicate if untrusted networks are allowed
          * @param oemPaidNetworkAllowed    a flag to indicate if oem paid networks are allowed
          * @param oemPrivateNetworkAllowed a flag to indicate if oem private networks are allowed
          * @param onConnectableListener    callback to record all of the connectable networks
          */
         void nominateNetworks(List<ScanDetail> scanDetails,
-                WifiConfiguration currentNetwork, String currentBssid,
-                boolean connected, boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
+                boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
                 boolean oemPrivateNetworkAllowed, OnConnectableListener onConnectableListener);
 
         /**
@@ -308,19 +301,13 @@ public class WifiNetworkSelector {
         return true;
     }
 
-    private boolean isNetworkSelectionNeeded(List<ScanDetail> scanDetails, WifiInfo wifiInfo,
-            boolean connected, boolean disconnected) {
-        if (scanDetails.size() == 0) {
-            localLog("Empty connectivity scan results. Skip network selection.");
-            return false;
-        }
-
-        if (connected) {
+    private boolean isNetworkSelectionNeededForCmm(@NonNull ClientModeManagerState cmmState) {
+        if (cmmState.connected) {
             // Is roaming allowed?
             if (!mContext.getResources().getBoolean(
                     R.bool.config_wifi_framework_enable_associated_network_selection)) {
-                localLog("Switching networks in connected state is not allowed."
-                        + " Skip network selection.");
+                localLog(cmmState.ifaceName + ": Switching networks in connected state is not "
+                        + "allowed. Skip network selection.");
                 return false;
             }
 
@@ -329,30 +316,49 @@ public class WifiNetworkSelector {
                 long gap = mClock.getElapsedSinceBootMillis()
                         - mLastNetworkSelectionTimeStamp;
                 if (gap < MINIMUM_NETWORK_SELECTION_INTERVAL_MS) {
-                    localLog("Too short since last network selection: " + gap + " ms."
-                            + " Skip network selection.");
+                    localLog(cmmState.ifaceName + ": Too short since last network selection: "
+                            + gap + " ms. Skip network selection.");
                     return false;
                 }
             }
             // Please note other scans (e.g., location scan or app scan) may also trigger network
             // selection and these scans may or may not run sufficiency check.
             // So it is better to run sufficiency check here before network selection.
-            if (isNetworkSufficient(wifiInfo)) {
-                localLog("Current connected network already sufficient. Skip network selection.");
+            if (isNetworkSufficient(cmmState.wifiInfo)) {
+                localLog(cmmState.ifaceName
+                        + ": Current connected network already sufficient."
+                        + " Skip network selection.");
                 return false;
             } else {
-                localLog("Current connected network is not sufficient.");
+                localLog(cmmState.ifaceName + ": Current connected network is not sufficient.");
                 return true;
             }
-        } else if (disconnected) {
+        } else if (cmmState.disconnected) {
             return true;
         } else {
             // No network selection if ClientModeImpl is in a state other than
-            // CONNECTED or DISCONNECTED.
-            localLog("ClientModeImpl is in neither CONNECTED nor DISCONNECTED state."
-                    + " Skip network selection.");
+            // connected or disconnected (i.e connecting).
+            localLog(cmmState.ifaceName + ": ClientModeImpl is in neither CONNECTED nor "
+                    + "DISCONNECTED state. Skip network selection.");
             return false;
         }
+
+    }
+
+    private boolean isNetworkSelectionNeeded(@NonNull List<ScanDetail> scanDetails,
+            @NonNull List<ClientModeManagerState> cmmStates) {
+        if (scanDetails.size() == 0) {
+            localLog("Empty connectivity scan results. Skip network selection.");
+            return false;
+        }
+        for (ClientModeManagerState cmmState : cmmStates) {
+            // network selection needed by this CMM instance, perform network selection
+            if (isNetworkSelectionNeededForCmm(cmmState)) {
+                return true;
+            }
+        }
+        // none of the CMM instances need network selection, skip network selection.
+        return false;
     }
 
     /**
@@ -382,13 +388,16 @@ public class WifiNetworkSelector {
     }
 
     private List<ScanDetail> filterScanResults(List<ScanDetail> scanDetails,
-            Set<String> bssidBlocklist, boolean isConnected, String currentBssid) {
+            Set<String> bssidBlocklist, List<ClientModeManagerState> cmmStates) {
         List<ScanDetail> validScanDetails = new ArrayList<>();
         StringBuffer noValidSsid = new StringBuffer();
         StringBuffer blockedBssid = new StringBuffer();
         StringBuffer lowRssi = new StringBuffer();
         StringBuffer mboAssociationDisallowedBssid = new StringBuffer();
-        boolean scanResultsHaveCurrentBssid = false;
+        List<String> currentBssids = cmmStates.stream()
+                .map(cmmState -> cmmState.wifiInfo.getBSSID())
+                .collect(Collectors.toList());
+        Set<String> scanResultPresentForCurrentBssids = new ArraySet<>();
         int numBssidFiltered = 0;
 
         for (ScanDetail scanDetail : scanDetails) {
@@ -399,9 +408,9 @@ public class WifiNetworkSelector {
                 continue;
             }
 
-            // Check if the scan results contain the currently connected BSSID
-            if (scanResult.BSSID.equals(currentBssid)) {
-                scanResultsHaveCurrentBssid = true;
+            // Check if the scan results contain the currently connected BSSID's
+            if (currentBssids.contains(scanResult.BSSID)) {
+                scanResultPresentForCurrentBssids.add(scanResult.BSSID);
                 validScanDetails.add(scanDetail);
                 continue;
             }
@@ -451,11 +460,15 @@ public class WifiNetworkSelector {
         // network won't show up in the scan results. We don't act on these scan results
         // to avoid aggressive network switching which might trigger disconnection.
         // TODO(b/147751334) this may no longer be needed
-        if (isConnected && !scanResultsHaveCurrentBssid) {
-            localLog("Current connected BSSID " + currentBssid + " is not in the scan results."
-                    + " Skip network selection.");
-            validScanDetails.clear();
-            return validScanDetails;
+        for (ClientModeManagerState cmmState : cmmStates) {
+            // TODO (b/169413079): Disable network selection on corresponding CMM instead.
+            if (cmmState.connected && cmmState.wifiInfo.getScore() >= WIFI_POOR_SCORE
+                    && !scanResultPresentForCurrentBssids.contains(cmmState.wifiInfo.getBSSID())) {
+                localLog("Current connected BSSID " + cmmState.wifiInfo.getBSSID()
+                        + " is not in the scan results. Skip network selection.");
+                validScanDetails.clear();
+                return validScanDetails;
+            }
         }
 
         if (noValidSsid.length() != 0) {
@@ -709,21 +722,61 @@ public class WifiNetworkSelector {
     }
 
     /**
+     * Container class for passing the ClientModeManager state for each instance that is managed by
+     * WifiConnectivityManager, i.e all {@link ClientModeManager#getRole()} equals
+     * {@link ActiveModeManager#ROLE_CLIENT_PRIMARY} or
+     * {@link ActiveModeManager#ROLE_CLIENT_SECONDARY_LONG_LIVED}.
+     */
+    public static class ClientModeManagerState {
+        /** Iface Name corresponding to iface (if known) */
+        public final String ifaceName;
+        /** True if the device is connected */
+        public final boolean connected;
+        /** True if the device is disconnected */
+        public final boolean disconnected;
+         /** Currently connected network */
+        public final WifiInfo wifiInfo;
+
+        ClientModeManagerState(@NonNull ClientModeManager clientModeManager) {
+            ifaceName = clientModeManager.getInterfaceName();
+            connected = clientModeManager.isConnected();
+            disconnected = clientModeManager.isDisconnected();
+            wifiInfo = clientModeManager.syncRequestConnectionInfo();
+        }
+
+        ClientModeManagerState() {
+            ifaceName = "unknown";
+            connected = false;
+            disconnected = true;
+            wifiInfo = new WifiInfo();
+        }
+
+        @VisibleForTesting
+        ClientModeManagerState(@NonNull String ifaceName, boolean connected, boolean disconnected,
+                @NonNull WifiInfo wifiInfo) {
+            this.ifaceName = ifaceName;
+            this.connected = connected;
+            this.disconnected = disconnected;
+            this.wifiInfo = wifiInfo;
+        }
+    }
+
+    /**
      * Returns the list of Candidates from networks in range.
      *
      * @param scanDetails              List of ScanDetail for all the APs in range
      * @param bssidBlocklist           Blocked BSSIDs
-     * @param wifiInfo                 Currently connected network
-     * @param connected                True if the device is connected
-     * @param disconnected             True if the device is disconnected
+     * @param cmmStates                State of all long lived client mode manager instances -
+     *                                 {@link ActiveModeManager#ROLE_CLIENT_PRIMARY} &
+     *                                 {@link ActiveModeManager#ROLE_CLIENT_SECONDARY_LONG_LIVED}.
      * @param untrustedNetworkAllowed  True if untrusted networks are allowed for connection
      * @param oemPaidNetworkAllowed    True if oem paid networks are allowed for connection
      * @param oemPrivateNetworkAllowed True if oem private networks are allowed for connection
      * @return list of valid Candidate(s)
      */
     public List<WifiCandidates.Candidate> getCandidatesFromScan(
-            List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
-            boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
+            @NonNull List<ScanDetail> scanDetails, @NonNull Set<String> bssidBlocklist,
+            @NonNull List<ClientModeManagerState> cmmStates, boolean untrustedNetworkAllowed,
             boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed) {
         mFilteredNetworks.clear();
         mConnectableNetworks.clear();
@@ -731,13 +784,6 @@ public class WifiNetworkSelector {
             localLog("Empty connectivity scan result");
             return null;
         }
-
-        WifiConfiguration currentNetwork =
-                mWifiConfigManager.getConfiguredNetwork(wifiInfo.getNetworkId());
-
-        // Always get the current BSSID from WifiInfo in case that firmware initiated
-        // roaming happened.
-        String currentBssid = wifiInfo.getBSSID();
 
         // Update the scan detail cache at the start, even if we skip network selection
         updateScanDetailCache(scanDetails);
@@ -751,48 +797,60 @@ public class WifiNetworkSelector {
         }
 
         // Shall we start network selection at all?
-        if (!isNetworkSelectionNeeded(scanDetails, wifiInfo, connected, disconnected)) {
+        if (!isNetworkSelectionNeeded(scanDetails, cmmStates)) {
             return null;
         }
 
         // Filter out unwanted networks.
-        mFilteredNetworks = filterScanResults(scanDetails, bssidBlocklist,
-                connected && wifiInfo.getScore() >= WIFI_POOR_SCORE, currentBssid);
+        mFilteredNetworks = filterScanResults(scanDetails, bssidBlocklist, cmmStates);
         if (mFilteredNetworks.size() == 0) {
             return null;
         }
 
         WifiCandidates wifiCandidates = new WifiCandidates(mWifiScoreCard, mContext);
-        if (currentNetwork != null) {
-            wifiCandidates.setCurrent(currentNetwork.networkId, currentBssid);
-            // We always want the current network to be a candidate so that it can participate.
-            // It may also get re-added by a nominator, in which case this fallback
-            // will be replaced.
-            MacAddress bssid = MacAddress.fromString(currentBssid);
-            WifiCandidates.Key key = new WifiCandidates.Key(
-                    ScanResultMatchInfo.fromWifiConfiguration(currentNetwork),
-                    bssid, currentNetwork.networkId);
-            ScanDetail scanDetail = findScanDetailForBssid(mFilteredNetworks, currentBssid);
-            int predictedTputMbps = (scanDetail == null) ? 0 : predictThroughput(scanDetail);
-            wifiCandidates.add(key, currentNetwork,
-                    NetworkNominator.NOMINATOR_ID_CURRENT,
-                    wifiInfo.getRssi(),
-                    wifiInfo.getFrequency(),
-                    calculateLastSelectionWeight(currentNetwork.networkId),
-                    WifiConfiguration.isMetered(currentNetwork, wifiInfo),
-                    isFromCarrierOrPrivilegedApp(currentNetwork),
-                    predictedTputMbps);
+        for (ClientModeManagerState cmmState : cmmStates) {
+            // Always get the current BSSID from WifiInfo in case that firmware initiated
+            // roaming happened.
+            String currentBssid = cmmState.wifiInfo.getBSSID();
+            WifiConfiguration currentNetwork =
+                    mWifiConfigManager.getConfiguredNetwork(cmmState.wifiInfo.getNetworkId());
+            if (currentNetwork != null) {
+                wifiCandidates.setCurrent(currentNetwork.networkId, currentBssid);
+                // We always want the current network to be a candidate so that it can participate.
+                // It may also get re-added by a nominator, in which case this fallback
+                // will be replaced.
+                MacAddress bssid = MacAddress.fromString(currentBssid);
+                WifiCandidates.Key key = new WifiCandidates.Key(
+                        ScanResultMatchInfo.fromWifiConfiguration(currentNetwork),
+                        bssid, currentNetwork.networkId);
+                ScanDetail scanDetail = findScanDetailForBssid(mFilteredNetworks, currentBssid);
+                int predictedTputMbps = (scanDetail == null) ? 0 : predictThroughput(scanDetail);
+                wifiCandidates.add(key, currentNetwork,
+                        NetworkNominator.NOMINATOR_ID_CURRENT,
+                        cmmState.wifiInfo.getRssi(),
+                        cmmState.wifiInfo.getFrequency(),
+                        calculateLastSelectionWeight(currentNetwork.networkId),
+                        WifiConfiguration.isMetered(currentNetwork, cmmState.wifiInfo),
+                        isFromCarrierOrPrivilegedApp(currentNetwork),
+                        predictedTputMbps);
+            }
         }
         for (NetworkNominator registeredNominator : mNominators) {
             localLog("About to run " + registeredNominator.getName() + " :");
             registeredNominator.nominateNetworks(
-                    new ArrayList<>(mFilteredNetworks), currentNetwork, currentBssid, connected,
+                    new ArrayList<>(mFilteredNetworks),
                     untrustedNetworkAllowed, oemPaidNetworkAllowed, oemPrivateNetworkAllowed,
                     (scanDetail, config) -> {
                         WifiCandidates.Key key = wifiCandidates.keyFromScanDetailAndConfig(
                                 scanDetail, config);
                         if (key != null) {
-                            boolean metered = isEverMetered(config, wifiInfo, scanDetail);
+                            boolean metered = false;
+                            for (ClientModeManagerState cmmState : cmmStates) {
+                                if (isEverMetered(config, cmmState.wifiInfo, scanDetail)) {
+                                    metered = true;
+                                    break;
+                                }
+                            }
                             // TODO(b/151981920) Saved passpoint candidates are marked ephemeral
                             boolean added = wifiCandidates.add(key, config,
                                     registeredNominator.getId(),
