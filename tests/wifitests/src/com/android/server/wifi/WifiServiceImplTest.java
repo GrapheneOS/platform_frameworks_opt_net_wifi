@@ -3958,6 +3958,27 @@ public class WifiServiceImplTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that a call to {@link WifiServiceImpl#restoreSoftApBackupData(byte[])}
+     * will call WifiApConfigStore#upgradeSoftApConfiguration and
+     * WifiApConfigStore#resetToDefaultForUnsupportedConfig.
+     */
+    @Test
+    public void testRestoreSoftApBackupData() {
+        when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_SETTINGS),
+            anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        InOrder inorder = inOrder(mWifiApConfigStore);
+        SoftApConfiguration testConfig = new SoftApConfiguration.Builder().setSsid("test").build();
+        byte[] testData = testConfig.toString().getBytes();
+        when(mSoftApBackupRestore.retrieveSoftApConfigurationFromBackupData(testData))
+                .thenReturn(testConfig);
+        mWifiServiceImpl.restoreSoftApBackupData(testData);
+        mLooper.dispatchAll();
+        inorder.verify(mWifiApConfigStore).upgradeSoftApConfiguration(testConfig);
+        inorder.verify(mWifiApConfigStore).resetToDefaultForUnsupportedConfig(any());
+        inorder.verify(mWifiApConfigStore).setApConfiguration(any());
+    }
+
+    /**
      * Verify that a call to {@link WifiServiceImpl#retrieveSoftApBackupData()} is only allowed from
      * callers with the signature only NETWORK_SETTINGS permission.
      */
