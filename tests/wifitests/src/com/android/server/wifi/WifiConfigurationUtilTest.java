@@ -542,8 +542,7 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createPskNetwork();
         assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
 
-        config.allowedKeyManagement.clear();
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.OSEN);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OSEN);
         assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
         // Verify we reset the KeyMgmt
         assertTrue(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK));

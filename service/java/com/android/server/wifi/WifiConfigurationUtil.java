@@ -689,8 +689,7 @@ public class WifiConfigurationUtil {
         // b/153435438: Added to deal with badly formed WifiConfiguration from apps.
         if (config.preSharedKey != null && !config.needsPreSharedKey()) {
             Log.e(TAG, "preSharedKey set with an invalid KeyMgmt, resetting KeyMgmt to WPA_PSK");
-            config.allowedKeyManagement.clear();
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+            config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         }
         if (!validateIpConfiguration(config.getIpConfiguration())) {
             return false;

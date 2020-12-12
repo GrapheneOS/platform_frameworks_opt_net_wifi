@@ -27,7 +27,6 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.os.Handler;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.LocalLog;
 import android.util.Log;
 import android.util.Pair;
@@ -141,7 +140,6 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
 
     @Override
     public void nominateNetworks(List<ScanDetail> scanDetails,
-            WifiConfiguration currentNetwork, String currentBssid, boolean connected,
             boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed /* unused */,
             boolean oemPrivateNetworkAllowed /* unused */,
             @NonNull OnConnectableListener onConnectableListener) {
@@ -192,16 +190,14 @@ public class ScoredNetworkNominator implements WifiNetworkSelector.NetworkNomina
                 continue;
             }
 
-            // TODO(b/37485956): consider applying a boost for networks with only the same SSID
-            boolean isCurrentNetwork = currentNetwork != null
-                    && currentNetwork.networkId == configuredNetwork.networkId
-                    && TextUtils.equals(currentBssid, scanResult.BSSID);
+            // score boosts for current network is done by the candidate scorer. Don't artificially
+            // boost the score in the nominator.
             if (!configuredNetwork.trusted) {
                 scoreTracker.trackUntrustedCandidate(
-                        scanResult, configuredNetwork, isCurrentNetwork);
+                        scanResult, configuredNetwork, false /* isCurrentNetwork */);
             } else {
                 scoreTracker.trackExternallyScoredCandidate(
-                        scanResult, configuredNetwork, isCurrentNetwork);
+                        scanResult, configuredNetwork, false /* isCurrentNetwork */);
             }
             onConnectableListener.onConnectable(scanDetail, configuredNetwork);
         }

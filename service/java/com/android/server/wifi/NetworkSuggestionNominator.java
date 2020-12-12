@@ -74,7 +74,6 @@ public class NetworkSuggestionNominator implements WifiNetworkSelector.NetworkNo
 
     @Override
     public void nominateNetworks(List<ScanDetail> scanDetails,
-            WifiConfiguration currentNetwork, String currentBssid, boolean connected,
             boolean untrustedNetworkAllowed, boolean oemPaidNetworkAllowed,
             boolean oemPrivateNetworkAllowed,
             @NonNull OnConnectableListener onConnectableListener) {

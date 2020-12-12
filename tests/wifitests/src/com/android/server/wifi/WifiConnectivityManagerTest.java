@@ -403,7 +403,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         mCandidateList = new ArrayList<WifiCandidates.Candidate>();
         mCandidateList.add(mCandidate1);
         when(ns.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(mCandidateList);
+                anyBoolean())).thenReturn(mCandidateList);
         when(ns.selectNetwork(any()))
                 .then(new AnswerWithArguments() {
                     public WifiConfiguration answer(List<WifiCandidates.Candidate> candidateList) {
@@ -1425,7 +1425,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidateList.add(mCandidate1);
         candidateList.add(otherCandidate);
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(candidateList);
+                anyBoolean())).thenReturn(candidateList);
 
         // Set WiFi to disconnected state to trigger scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -1491,7 +1491,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         candidateList.add(mCandidate1);
         candidateList.add(otherCandidate);
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(candidateList);
+                anyBoolean())).thenReturn(candidateList);
 
         // Set WiFi to disconnected state to trigger scan
         mWifiConnectivityManager.handleConnectionStateChanged(
@@ -1593,7 +1593,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void wifiDisconnected_noCandidatesInScan_openNetworkNotifierScanResultsHandled() {
         // no connection candidates from scan.
         when(mWifiNS.getCandidatesFromScan(any(), any(), any(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(null);
+                anyBoolean())).thenReturn(null);
 
         List<ScanDetail> expectedOpenNetworks = new ArrayList<>();
         expectedOpenNetworks.add(
@@ -2564,7 +2564,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * Expected behavior: WifiConnectivityManager does partial scan.
      */
     @Test
-    public void checkPartialScanRequestedWithHighRssiNoActiveStreamWithoutFwRoaming() {
+    public void checkPartialSCanRequestedWithHighRssiNoActiveStreamWithoutFwRoaming() {
         when(mWifiNS.isNetworkSufficient(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasActiveStream(eq(mWifiInfo))).thenReturn(false);
         when(mWifiNS.hasSufficientLinkQuality(eq(mWifiInfo))).thenReturn(true);
@@ -3220,7 +3220,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * on a DBS supported device.
      *
      * Expected behavior: WifiConnectivityManager invokes
-     * {@link WifiNetworkSelector#getCandidatesFromScan(List, Set, WifiInfo, boolean, boolean,
+     * {@link WifiNetworkSelector#getCandidatesFromScan(List, Set, List, boolean, boolean, boolean)}
      * boolean, boolean, boolean)} after filtering out the scan results obtained via DBS scan.
      */
     @Test
@@ -3237,15 +3237,15 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         final List<ScanDetail> capturedScanDetails = new ArrayList<>();
         doAnswer(new AnswerWithArguments() {
             public List<WifiCandidates.Candidate> answer(
-                    List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
-                    boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
+                    List<ScanDetail> scanDetails, Set<String> bssidBlocklist,
+                    List<WifiNetworkSelector.ClientModeManagerState> cmmStates,
+                    boolean untrustedNetworkAllowed,
                     boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed)
                     throws Exception {
                 capturedScanDetails.addAll(scanDetails);
                 return null;
             }}).when(mWifiNS).getCandidatesFromScan(
-                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), eq(true),
-                    eq(false));
+                    any(), any(), any(), anyBoolean(), eq(true), eq(false));
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
         mWifiConnectivityManager.setOemPaidConnectionAllowed(true, new WorkSource());
@@ -3279,7 +3279,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
      * on a DBS supported device.
      *
      * Expected behavior: WifiConnectivityManager invokes
-     * {@link WifiNetworkSelector#selectNetwork(List, HashSet, WifiInfo, boolean, boolean, boolean)}
+     * {@link WifiNetworkSelector#selectNetwork(List)}
      * after filtering out the scan results obtained via DBS scan.
      */
     @Test
@@ -3296,15 +3296,15 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         final List<ScanDetail> capturedScanDetails = new ArrayList<>();
         doAnswer(new AnswerWithArguments() {
             public List<WifiCandidates.Candidate> answer(
-                    List<ScanDetail> scanDetails, Set<String> bssidBlocklist, WifiInfo wifiInfo,
-                    boolean connected, boolean disconnected, boolean untrustedNetworkAllowed,
+                    List<ScanDetail> scanDetails, Set<String> bssidBlocklist,
+                    List<WifiNetworkSelector.ClientModeManagerState> cmmStates,
+                    boolean untrustedNetworkAllowed,
                     boolean oemPaidNetworkAllowed, boolean oemPrivateNetworkAllowed)
                     throws Exception {
                 capturedScanDetails.addAll(scanDetails);
                 return null;
             }}).when(mWifiNS).getCandidatesFromScan(
-                    any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), eq(false),
-                    eq(true));
+                any(), any(), any(), anyBoolean(), eq(false), eq(true));
 
         mWifiConnectivityManager.setTrustedConnectionAllowed(true);
         mWifiConnectivityManager.setOemPrivateConnectionAllowed(true, new WorkSource());

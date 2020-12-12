@@ -146,43 +146,38 @@ public class WifiConfigurationTestUtil {
                 providerFriendlyName);
 
         if ((security == SECURITY_NONE) || ((security & SECURITY_WEP) != 0)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+            config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         } else {
             if ((security & SECURITY_PSK) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
             }
 
             if ((security & SECURITY_SAE) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
-                config.requirePmf = true;
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
             }
 
             if ((security & SECURITY_OWE) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.OWE);
-                config.requirePmf = true;
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
             }
 
             if ((security & SECURITY_EAP) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
                 config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.TTLS);
                 config.enterpriseConfig.setCaPath(TEST_CA_CERT_PATH);
                 config.enterpriseConfig.setDomainSuffixMatch(TEST_DOM_SUBJECT_MATCH);
             }
 
             if ((security & SECURITY_EAP_SUITE_B) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
-                config.requirePmf = true;
+                config.addSecurityParams(
+                        WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
             }
 
             if ((security & SECURITY_WAPI_PSK) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_PSK);
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_WAPI_PSK);
             }
 
             if ((security & SECURITY_WAPI_CERT) != 0) {
-                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WAPI_CERT);
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_WAPI_CERT);
             }
 
         }
@@ -599,7 +594,7 @@ public class WifiConfigurationTestUtil {
      * and config store.
      */
     private static void assertCommonConfigurationElementsEqual(
-            WifiConfiguration expected, WifiConfiguration actual) {
+            WifiConfiguration expected, WifiConfiguration actual, boolean isSupplicantBackup) {
         assertNotNull(expected);
         assertNotNull(actual);
         assertEquals(expected.SSID, actual.SSID);
@@ -610,11 +605,14 @@ public class WifiConfigurationTestUtil {
         assertEquals(expected.hiddenSSID, actual.hiddenSSID);
         assertEquals(expected.requirePmf, actual.requirePmf);
         assertEquals(expected.allowedKeyManagement, actual.allowedKeyManagement);
-        assertEquals(expected.allowedProtocols, actual.allowedProtocols);
         assertEquals(expected.allowedAuthAlgorithms, actual.allowedAuthAlgorithms);
-        assertEquals(expected.allowedGroupCiphers, actual.allowedGroupCiphers);
-        assertEquals(expected.allowedPairwiseCiphers, actual.allowedPairwiseCiphers);
-        assertEquals(expected.shared, actual.shared);
+        // Supplicant backup does not include the following fields.
+        if (!isSupplicantBackup) {
+            assertEquals(expected.allowedProtocols, actual.allowedProtocols);
+            assertEquals(expected.allowedGroupCiphers, actual.allowedGroupCiphers);
+            assertEquals(expected.allowedPairwiseCiphers, actual.allowedPairwiseCiphers);
+            assertEquals(expected.shared, actual.shared);
+        }
         assertEquals(expected.getIpConfiguration(), actual.getIpConfiguration());
     }
 
@@ -640,7 +638,7 @@ public class WifiConfigurationTestUtil {
      */
     public static void assertConfigurationEqualForBackup(
             WifiConfiguration expected, WifiConfiguration actual) {
-        assertCommonConfigurationElementsEqual(expected, actual);
+        assertCommonConfigurationElementsEqual(expected, actual, true);
         assertEquals(expected.meteredOverride, actual.meteredOverride);
     }
 
@@ -650,7 +648,7 @@ public class WifiConfigurationTestUtil {
      */
     public static void assertConfigurationEqualForConfigStore(
             WifiConfiguration expected, WifiConfiguration actual) {
-        assertCommonConfigurationElementsEqual(expected, actual);
+        assertCommonConfigurationElementsEqual(expected, actual, false);
         assertEquals(expected.status, actual.status);
         assertEquals(expected.FQDN, actual.FQDN);
         assertEquals(expected.providerFriendlyName, actual.providerFriendlyName);
@@ -687,7 +685,7 @@ public class WifiConfigurationTestUtil {
      */
     public static void assertConfigurationEqualForConfigManagerAddOrUpdate(
             WifiConfiguration expected, WifiConfiguration actual) {
-        assertCommonConfigurationElementsEqual(expected, actual);
+        assertCommonConfigurationElementsEqual(expected, actual, false);
         assertEquals(expected.FQDN, actual.FQDN);
         assertEquals(expected.providerFriendlyName, actual.providerFriendlyName);
         assertEquals(expected.noInternetAccessExpected, actual.noInternetAccessExpected);
@@ -742,7 +740,7 @@ public class WifiConfigurationTestUtil {
      */
     public static void assertConfigurationEqual(
             WifiConfiguration expected, WifiConfiguration actual) {
-        assertCommonConfigurationElementsEqual(expected, actual);
+        assertCommonConfigurationElementsEqual(expected, actual, false);
         assertEquals(expected.networkId, actual.networkId);
         assertEquals(expected.ephemeral, actual.ephemeral);
         assertEquals(expected.fromWifiNetworkSuggestion, actual.fromWifiNetworkSuggestion);

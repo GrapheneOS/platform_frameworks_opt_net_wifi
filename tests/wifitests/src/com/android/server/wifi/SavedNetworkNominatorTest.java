@@ -111,8 +111,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
             wifiConfiguration.useExternalScores = true;
         }
 
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -137,8 +137,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.getMatchingSubId(TEST_CARRIER_ID)).thenReturn(INVALID_SUBID);
         when(mWifiCarrierInfoManager.isSimPresent(eq(INVALID_SUBID))).thenReturn(false);
 
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -164,8 +164,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
             wifiConfiguration.ephemeral = true;
         }
 
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
@@ -189,14 +189,14 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         List<ScanDetail> scanDetails = scanDetailsAndConfigs.getScanDetails();
         WifiConfiguration[] savedConfigs = scanDetailsAndConfigs.getWifiConfigs();
 
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
 
         verify(mOnConnectableListener, times(2)).onConnectable(any(), any());
         reset(mOnConnectableListener);
         savedConfigs[1].allowAutojoin = false;
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(),
                 mWifiConfigurationArgumentCaptor.capture());
         WifiConfigurationTestUtil.assertConfigurationEqual(savedConfigs[0],
@@ -223,8 +223,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         for (WifiConfiguration wifiConfiguration : savedConfigs) {
             wifiConfiguration.allowAutojoin = false;
         }
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
     }
 
@@ -245,8 +245,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
                         configuration2));
         when(mPasspointNetworkNominateHelper.getPasspointNetworkCandidates(scanDetails, false))
                 .thenReturn(passpointCandidates);
-        mSavedNetworkNominator.nominateNetworks(scanDetails, null, null,
-                false, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(scanDetail1, configuration1);
         verify(mOnConnectableListener, never()).onConnectable(scanDetail2, configuration2);
     }
@@ -269,8 +269,8 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         savedConfigs[0].carrierId = TEST_CARRIER_ID;
         when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
                 .thenReturn(false);
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
         reset(mOnConnectableListener);
         when(mWifiCarrierInfoManager.isCarrierNetworkFromNonDefaultDataSim(savedConfigs[0]))
@@ -300,16 +300,16 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiCarrierInfoManager.requiresImsiEncryption(VALID_SUBID)).thenReturn(false);
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(false);
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
         verify(mWifiCarrierInfoManager)
                 .sendImsiProtectionExemptionNotificationIfRequired(TEST_CARRIER_ID);
         // Simulate user approved
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
                 .thenReturn(true);
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
         // If from settings app, will bypass the IMSI check.
         when(mWifiCarrierInfoManager.hasUserApprovedImsiPrivacyExemptionForCarrier(TEST_CARRIER_ID))
@@ -335,15 +335,15 @@ public class SavedNetworkNominatorTest extends WifiBaseTest {
         when(mWifiNetworkSuggestionsManager
                 .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
                 .thenReturn(true);
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener, never()).onConnectable(any(), any());
 
         when(mWifiNetworkSuggestionsManager
                 .shouldBeIgnoredBySecureSuggestionFromSameCarrier(any(), any()))
                 .thenReturn(false);
-        mSavedNetworkNominator.nominateNetworks(scanDetails,
-                null, null, true, false, true, true, mOnConnectableListener);
+        mSavedNetworkNominator.nominateNetworks(
+                scanDetails, false, true, true, mOnConnectableListener);
         verify(mOnConnectableListener).onConnectable(any(), any());
     }
 }

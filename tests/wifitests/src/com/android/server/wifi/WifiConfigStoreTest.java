@@ -90,7 +90,7 @@ public class WifiConfigStoreTest extends WifiBaseTest {
                     + "<boolean name=\"HiddenSSID\" value=\"false\" />\n"
                     + "<boolean name=\"RequirePMF\" value=\"false\" />\n"
                     + "<byte-array name=\"AllowedKeyMgmt\" num=\"1\">01</byte-array>\n"
-                    + "<byte-array name=\"AllowedProtocols\" num=\"0\"></byte-array>\n"
+                    + "<byte-array name=\"AllowedProtocols\" num=\"1\">03</byte-array>\n"
                     + "<byte-array name=\"AllowedAuthAlgos\" num=\"0\"></byte-array>\n"
                     + "<byte-array name=\"AllowedGroupCiphers\" num=\"0\"></byte-array>\n"
                     + "<byte-array name=\"AllowedPairwiseCiphers\" num=\"0\"></byte-array>\n"

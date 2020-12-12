@@ -285,14 +285,15 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
         String configKeyParsed = parsedConfig.first;
         WifiConfiguration configuration = parsedConfig.second;
 
+        configuration.convertLegacyFieldsToSecurityParamsIfNeeded();
+
         if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
             fixSaeNetworkSecurityBits(configuration);
         }
         // b/153435438: Added to deal with badly formed WifiConfiguration from apps.
         if (configuration.preSharedKey != null && !configuration.needsPreSharedKey()) {
             Log.e(TAG, "preSharedKey set with an invalid KeyMgmt, resetting KeyMgmt to WPA_PSK");
-            configuration.allowedKeyManagement.clear();
-            configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+            configuration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
             // Recreate configKey to pass the check below.
             configKeyParsed = configuration.getKey();
         }
