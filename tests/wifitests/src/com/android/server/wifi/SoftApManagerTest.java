@@ -179,7 +179,7 @@ public class SoftApManagerTest extends WifiBaseTest {
         when(mWifiNative.setApMacAddress(any(), any())).thenReturn(true);
         when(mWifiNative.startSoftAp(eq(TEST_INTERFACE_NAME), any(), anyBoolean(),
                 any(WifiNative.SoftApListener.class))).thenReturn(true);
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyBoolean()))
+        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyInt(), anyBoolean()))
                 .thenReturn(TEST_INTERFACE_NAME);
         when(mFrameworkFacade.getIntegerSetting(
                 mContext, Settings.Global.SOFT_AP_TIMEOUT_ENABLED, 1)).thenReturn(1);
@@ -329,7 +329,8 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void testSetupForSoftApModeNullApInterfaceNameFailureIncrementsMetrics()
             throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyBoolean())).thenReturn(null);
+        when(mWifiNative.setupInterfaceForSoftApMode(
+                    any(), any(), anyInt(), anyBoolean())).thenReturn(null);
         when(mWifiApConfigStore.getApConfiguration()).thenReturn(null);
         SoftApModeConfiguration nullApConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
@@ -357,7 +358,8 @@ public class SoftApManagerTest extends WifiBaseTest {
     @Test
     public void testSetupForSoftApModeEmptyInterfaceNameFailureIncrementsMetrics()
             throws Exception {
-        when(mWifiNative.setupInterfaceForSoftApMode(any(), any(), anyBoolean())).thenReturn("");
+        when(mWifiNative.setupInterfaceForSoftApMode(
+                    any(), any(), anyInt(), anyBoolean())).thenReturn("");
         SoftApModeConfiguration nullApConfig =
                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null,
                 mTestSoftApCapability);
@@ -1762,6 +1764,8 @@ public class SoftApManagerTest extends WifiBaseTest {
     /** Starts soft AP and verifies that it is enabled successfully. */
     protected void startSoftApAndVerifyEnabled(
             SoftApModeConfiguration softApConfig, String countryCode) throws Exception {
+        // The expected band to setup the interface
+        int expectedBandMask = SoftApConfiguration.BAND_2GHZ;
         // The expected config to pass to Native
         SoftApConfiguration expectedConfig = null;
         // The config which base on mDefaultApConfig and generate ramdonized mac address
@@ -1780,6 +1784,7 @@ public class SoftApManagerTest extends WifiBaseTest {
                 .setChannel(DEFAULT_AP_CHANNEL, SoftApConfiguration.BAND_2GHZ)
                 .build();
         } else {
+            expectedBandMask = config.getBand();
             expectedConfig = new SoftApConfiguration.Builder(config)
                 .setChannel(DEFAULT_AP_CHANNEL, SoftApConfiguration.BAND_2GHZ)
                 .build();
@@ -1792,7 +1797,8 @@ public class SoftApManagerTest extends WifiBaseTest {
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(mFakeSoftApNotifier).dismissSoftApShutDownTimeoutExpiredNotification();
         order.verify(mWifiNative).setupInterfaceForSoftApMode(
-                mWifiNativeInterfaceCallbackCaptor.capture(), eq(TEST_WORKSOURCE), eq(false));
+                mWifiNativeInterfaceCallbackCaptor.capture(), eq(TEST_WORKSOURCE),
+                eq(expectedBandMask), eq(false));
         ArgumentCaptor<SoftApConfiguration> configCaptor =
                 ArgumentCaptor.forClass(SoftApConfiguration.class);
         order.verify(mCallback).onStateChanged(WifiManager.WIFI_AP_STATE_ENABLING, 0);
@@ -2250,7 +2256,8 @@ public class SoftApManagerTest extends WifiBaseTest {
                 mTestSoftApCapability);
         mSoftApManager = createSoftApManager(dualBandConfig,
                 TEST_COUNTRY_CODE, ROLE_SOFTAP_TETHERED);
-        verify(mWifiNative).setupInterfaceForSoftApMode(any(), any(), eq(true));
+        verify(mWifiNative).setupInterfaceForSoftApMode(
+                any(), any(), eq(SoftApConfiguration.BAND_2GHZ), eq(true));
     }
 
     @Test

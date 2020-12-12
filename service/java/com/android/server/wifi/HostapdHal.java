@@ -851,6 +851,7 @@ public class HostapdHal {
                     && channelParam13.channel == 0;
             // Prepare the bandMask
             channelParam13.V1_2.bandMask = getHalBandMask(config.getChannels().keyAt(i));
+            channelParam13.bandMask = channelParam13.V1_2.bandMask;
             // Prepare  AcsChannelFreqRangesMhz
             if (channelParam13.enableAcs && ApConfigUtil.isSendFreqRangesNeeded(
                     config.getChannels().keyAt(i), mContext)) {
@@ -932,6 +933,9 @@ public class HostapdHal {
         }
         if (ApConfigUtil.containsBand(apBand, SoftApConfiguration.BAND_6GHZ)) {
             bandMask |= android.hardware.wifi.hostapd.V1_2.IHostapd.BandMask.BAND_6_GHZ;
+        }
+        if (ApConfigUtil.containsBand(apBand, SoftApConfiguration.BAND_60GHZ)) {
+            bandMask |= android.hardware.wifi.hostapd.V1_3.IHostapd.BandMask.BAND_60_GHZ;
         }
 
         return bandMask;
@@ -1179,6 +1183,14 @@ public class HostapdHal {
                 return SoftApInfo.CHANNEL_WIDTH_80MHZ_PLUS_MHZ;
             case Bandwidth.WIFI_BANDWIDTH_160:
                 return SoftApInfo.CHANNEL_WIDTH_160MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_2160:
+                return SoftApInfo.CHANNEL_WIDTH_2160MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_4320:
+                return SoftApInfo.CHANNEL_WIDTH_4320MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_6480:
+                return SoftApInfo.CHANNEL_WIDTH_6480MHZ;
+            case Bandwidth.WIFI_BANDWIDTH_8640:
+                return SoftApInfo.CHANNEL_WIDTH_8640MHZ;
             default:
                 return SoftApInfo.CHANNEL_WIDTH_INVALID;
         }
@@ -1201,6 +1213,8 @@ public class HostapdHal {
                 return ScanResult.WIFI_STANDARD_11AC;
             case Generation.WIFI_STANDARD_11AX:
                 return ScanResult.WIFI_STANDARD_11AX;
+            case Generation.WIFI_STANDARD_11AD:
+                return ScanResult.WIFI_STANDARD_11AD;
             default:
                 return ScanResult.WIFI_STANDARD_UNKNOWN;
         }

@@ -66,6 +66,7 @@
           <item type="string"  name="config_wifiSoftap2gChannelList" />
           <item type="string"  name="config_wifiSoftap5gChannelList" />
           <item type="string"  name="config_wifiSoftap6gChannelList" />
+          <item type="string"  name="config_wifiSoftap60gChannelList" />
           <item type="integer" name="config_wifi_framework_associated_partial_scan_max_num_active_channels" />
           <item type="integer" name="config_wifi_framework_recovery_timeout_delay" />
           <item type="bool" name="config_wifi_framework_enable_associated_network_selection" />
