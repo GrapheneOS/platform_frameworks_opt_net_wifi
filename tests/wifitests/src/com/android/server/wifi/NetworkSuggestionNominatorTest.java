@@ -807,12 +807,9 @@ public class NetworkSuggestionNominatorTest extends WifiBaseTest {
         ExtendedWifiNetworkSuggestion[] suggestions = buildNetworkSuggestions(suggestionSsids,
                 securities, appInteractions, meteredness, priorities, uids,
                 packageNames, autojoin, shareWithUser);
-        WifiConfiguration eapSimConfig = suggestions[0].wns.wifiConfiguration;
-        eapSimConfig.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.SIM);
-        eapSimConfig.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
-        eapSimConfig.carrierId = TEST_CARRIER_ID;
-        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(eapSimConfig))
-                .thenReturn(TEST_SUB_ID);
+        suggestions[0].wns.wifiConfiguration.carrierId = TEST_CARRIER_ID;
+        when(mWifiCarrierInfoManager.getBestMatchSubscriptionId(
+                suggestions[0].wns.wifiConfiguration)).thenReturn(TEST_SUB_ID);
         when(mWifiCarrierInfoManager.isSimPresent(TEST_SUB_ID)).thenReturn(false);
         // Link the scan result with suggestions.
         linkScanDetailsWithNetworkSuggestions(scanDetails, suggestions);
