@@ -169,6 +169,11 @@
          range string like '36-48,149'. -->
     <string  translatable="false" name="config_wifiSoftap6gChannelList"></string>
 
+    <!-- List of allowed channels in 60GHz band for softap. If the device doesn't want to restrict
+         channels this should be empty. Values is a comma separated channel string and/or channel
+         range string like '1-2,4'. -->
+    <string  translatable="false" name="config_wifiSoftap60gChannelList"></string>
+
     <!-- Integer indicating associated full scan max num active channels -->
     <integer translatable="false" name="config_wifi_framework_associated_partial_scan_max_num_active_channels">6</integer>
 

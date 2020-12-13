@@ -1259,6 +1259,16 @@ public class WifiServiceImpl extends BaseWifiService {
                             supportedChannelList.stream().mapToInt(Integer::intValue).toArray());
                 }
             }
+            if (is60GHzBandSupportedInternal()) {
+                supportedChannelList = ApConfigUtil.getAvailableChannelFreqsForBand(
+                        SoftApConfiguration.BAND_60GHZ, mWifiNative, mContext.getResources(),
+                        false);
+                if (supportedChannelList != null) {
+                    newSoftApCapability.setSupportedChannelList(
+                            SoftApConfiguration.BAND_60GHZ,
+                            supportedChannelList.stream().mapToInt(Integer::intValue).toArray());
+                }
+            }
             return newSoftApCapability;
         }
 

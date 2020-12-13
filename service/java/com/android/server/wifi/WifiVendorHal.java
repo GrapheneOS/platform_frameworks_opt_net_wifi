@@ -52,6 +52,7 @@ import android.hardware.wifi.V1_5.WifiBand;
 import android.net.MacAddress;
 import android.net.apf.ApfCapabilities;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
@@ -349,7 +350,8 @@ public class WifiVendorHal {
             if (!startVendorHal()) {
                 return false;
             }
-            if (TextUtils.isEmpty(createApIface(null, null, false))) {
+            if (TextUtils.isEmpty(createApIface(null, null,
+                    SoftApConfiguration.BAND_2GHZ, false))) {
                 stopVendorHal();
                 return false;
             }
@@ -518,18 +520,30 @@ public class WifiVendorHal {
         }
     }
 
+    private long getNecessaryCapabilitiesForSoftApMode(@SoftApConfiguration.BandType int band) {
+        long caps = HalDeviceManager.CHIP_CAPABILITY_ANY;
+        if ((band & SoftApConfiguration.BAND_60GHZ) != 0) {
+            caps |= android.hardware.wifi.V1_5.IWifiChip.ChipCapabilityMask.WIGIG;
+        }
+        return caps;
+    }
+
     /**
      * Create a AP iface using {@link HalDeviceManager}.
      *
      * @param destroyedListener Listener to be invoked when the interface is destroyed.
      * @param requestorWs Requestor worksource.
+     * @param band The requesting band for this AP interface.
      * @param isBridged Whether or not AP interface is a bridge interface.
      * @return iface name on success, null otherwise.
      */
     public String createApIface(@Nullable InterfaceDestroyedListener destroyedListener,
-            @NonNull WorkSource requestorWs, boolean isBridged) {
+            @NonNull WorkSource requestorWs,
+            @SoftApConfiguration.BandType int band,
+            boolean isBridged) {
         synchronized (sLock) {
             IWifiApIface iface = mHalDeviceManager.createApIface(
+                    getNecessaryCapabilitiesForSoftApMode(band),
                     new ApInterfaceDestroyedListenerInternal(destroyedListener), null,
                     requestorWs, isBridged);
             if (iface == null) {

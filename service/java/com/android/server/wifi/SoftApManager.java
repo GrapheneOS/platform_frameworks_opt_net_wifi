@@ -664,6 +664,7 @@ public class SoftApManager implements ActiveModeManager {
                         }
                         mApInterfaceName = mWifiNative.setupInterfaceForSoftApMode(
                                 mWifiNativeInterfaceCallback, mRequestorWs,
+                                mApConfig.getSoftApConfiguration().getBand(),
                                 (SdkLevel.isAtLeastS()
                                 && mApConfig.getSoftApConfiguration().getBands().length > 1));
                         if (TextUtils.isEmpty(mApInterfaceName)) {

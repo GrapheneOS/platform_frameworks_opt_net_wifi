@@ -115,13 +115,21 @@ public class ApConfigUtilTest extends WifiBaseTest {
             /* Now some 6GHz channels */
             5955, SoftApConfiguration.BAND_6GHZ, 1,
             5970, SoftApConfiguration.BAND_6GHZ, 4,
-            6110, SoftApConfiguration.BAND_6GHZ, 32
+            6110, SoftApConfiguration.BAND_6GHZ, 32,
+            /* some 60GHz channels */
+            58320, SoftApConfiguration.BAND_60GHZ, 1,
+            60480, SoftApConfiguration.BAND_60GHZ, 2,
+            62640, SoftApConfiguration.BAND_60GHZ, 3,
+            64800, SoftApConfiguration.BAND_60GHZ, 4,
+            66960, SoftApConfiguration.BAND_60GHZ, 5,
+            69120, SoftApConfiguration.BAND_60GHZ, 6,
     };
 
     private static final int[] EMPTY_CHANNEL_LIST = {};
     private static final int[] ALLOWED_2G_FREQS = {2462}; //ch# 11
     private static final int[] ALLOWED_5G_FREQS = {5745, 5765}; //ch# 149, 153
     private static final int[] ALLOWED_6G_FREQS = {5945, 5965};
+    private static final int[] ALLOWED_60G_FREQS = {58320, 60480}; // ch# 1, 2
 
     @Mock Context mContext;
     @Mock Resources mResources;
@@ -219,7 +227,7 @@ public class ApConfigUtilTest extends WifiBaseTest {
     public void isBandValidFailure() throws Exception {
         assertFalse(ApConfigUtil.isBandValid(0));
         assertFalse(ApConfigUtil.isBandValid(SoftApConfiguration.BAND_2GHZ
-                  | SoftApConfiguration.BAND_6GHZ | 0x0F));
+                  | SoftApConfiguration.BAND_6GHZ | 0x1F));
     }
 
     /**
@@ -310,6 +318,21 @@ public class ApConfigUtilTest extends WifiBaseTest {
         int freq = ApConfigUtil.chooseApChannel(
                 SoftApConfiguration.BAND_5GHZ, mWifiNative, mResources);
         assertTrue(ArrayUtils.contains(ALLOWED_5G_FREQS, freq));
+    }
+
+    /**
+     * Verify a 60G channel is selected from the list of allowed channels.
+     */
+    @Test
+    public void chooseApChannel60GBandWithAllowedChannels() throws Exception {
+        when(mResources.getString(R.string.config_wifiSoftap60gChannelList))
+                .thenReturn("1-2");
+        when(mWifiNative.getChannelsForBand(WifiScanner.WIFI_BAND_60_GHZ))
+                .thenReturn(ALLOWED_60G_FREQS); //ch# 1, 2
+
+        int freq = ApConfigUtil.chooseApChannel(
+                SoftApConfiguration.BAND_60GHZ, mWifiNative, mResources);
+        assertTrue(ArrayUtils.contains(ALLOWED_60G_FREQS, freq));
     }
 
     /**
