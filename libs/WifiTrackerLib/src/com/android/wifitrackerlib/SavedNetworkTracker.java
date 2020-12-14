@@ -19,7 +19,6 @@ package com.android.wifitrackerlib;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
-import static com.android.wifitrackerlib.StandardWifiEntry.wifiConfigToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.Utils.mapScanResultsToKey;
 
 import static java.util.stream.Collectors.toMap;
@@ -277,10 +276,10 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         checkNotNull(configs, "Config list should not be null!");
 
         // Group configs by StandardWifiEntry key
-        final Map<String, WifiConfiguration> wifiConfigsByKey =
-                configs.stream().collect(Collectors.toMap(
-                        StandardWifiEntry::wifiConfigToStandardWifiEntryKey,
-                        Function.identity()));
+        final Map<String, WifiConfiguration> wifiConfigsByKey = configs.stream()
+                .filter(config -> !config.carrierMerged)
+                .collect(Collectors.toMap(
+                        StandardWifiEntry::wifiConfigToStandardWifiEntryKey, Function.identity()));
 
         // Iterate through current entries and update each entry's config
         mStandardWifiEntryCache.entrySet().removeIf((entry) -> {

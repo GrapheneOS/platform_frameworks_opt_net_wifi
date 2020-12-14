@@ -45,6 +45,8 @@ import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
 import android.os.test.TestLooper;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.util.Pair;
 
 import androidx.lifecycle.Lifecycle;
@@ -64,6 +66,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 public class WifiPickerTrackerTest {
 
@@ -85,6 +88,8 @@ public class WifiPickerTrackerTest {
     @Mock
     private NetworkScoreManager mMockNetworkScoreManager;
     @Mock
+    private TelephonyManager mMockTelephonyManager;
+    @Mock
     private Clock mMockClock;
     @Mock
     private WifiPickerTracker.WifiPickerTrackerCallback mMockCallback;
@@ -105,6 +110,9 @@ public class WifiPickerTrackerTest {
     private final ArgumentCaptor<ConnectivityManager.NetworkCallback>
             mDefaultNetworkCallbackCaptor =
                 ArgumentCaptor.forClass(ConnectivityManager.NetworkCallback.class);
+    private final ArgumentCaptor<WifiPickerTracker.ActiveDataSubIdListener>
+            mActiveDataSubIdListenerCaptor =
+                ArgumentCaptor.forClass(WifiPickerTracker.ActiveDataSubIdListener.class);
 
     private WifiPickerTracker createTestWifiPickerTracker() {
         final Handler testHandler = new Handler(mTestLooper.getLooper());
@@ -138,6 +146,8 @@ public class WifiPickerTrackerTest {
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
                 .thenReturn(mMockNetworkScoreManager);
+        when(mMockContext.getSystemService(Context.TELEPHONY_SERVICE))
+                .thenReturn(mMockTelephonyManager);
     }
 
     /**
@@ -677,6 +687,7 @@ public class WifiPickerTrackerTest {
         config.networkId = networkId;
         config.allowedKeyManagement = new BitSet();
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
+        config.subscriptionId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         when(config.isPasspoint()).thenReturn(true);
         when(config.getKey()).thenReturn(passpointConfig.getUniqueId());
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
@@ -717,6 +728,7 @@ public class WifiPickerTrackerTest {
         config.networkId = networkId;
         config.allowedKeyManagement = new BitSet();
         config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SUITE_B_192);
+        config.subscriptionId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         when(config.isPasspoint()).thenReturn(true);
         when(config.getKey()).thenReturn(passpointConfig.getUniqueId());
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
@@ -758,5 +770,49 @@ public class WifiPickerTrackerTest {
                 new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
         verify(mMockWifiManager, atLeastOnce()).getMatchingOsuProviders(any());
+    }
+
+    /**
+     * Tests that a connected MergedCarrierEntry is returned if the current WifiInfo has a matching
+     * subscription id.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_wifiInfoHasMatchingSubId_entryIsConnected() {
+        final int subId = 1;
+        when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+        when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockTelephonyManager).registerPhoneStateListener(any(Executor.class),
+                mActiveDataSubIdListenerCaptor.capture());
+
+        mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId);
+        mTestLooper.dispatchAll();
+
+        assertThat(wifiPickerTracker.getMergedCarrierEntry().getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+    }
+
+    /**
+     * Tests that getMergedCarrierEntry returns a new MergedCarrierEntry with the correct
+     * subscription ID if the active data subscription ID changes.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_subscriptionIdChanges_entryChanges() {
+        final int subId1 = 1;
+        final int subId2 = 1;
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockTelephonyManager).registerPhoneStateListener(any(Executor.class),
+                mActiveDataSubIdListenerCaptor.capture());
+        mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId1);
+
+        mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId2);
+
+        assertThat(wifiPickerTracker.getMergedCarrierEntry().getSubscriptionId())
+                .isEqualTo(subId2);
     }
 }
