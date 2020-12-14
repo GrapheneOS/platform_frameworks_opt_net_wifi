@@ -1707,6 +1707,44 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the initial fast scan schedules the scan timer just like regular scans.
+     */
+    @Test
+    public void testInitialFastScanSchedulesMoreScans() {
+        // Enable the fast initial scan feature
+        mResources.setBoolean(R.bool.config_wifiEnablePartialInitialScan, true);
+        // return 2 available frequencies
+        when(mWifiScoreCard.lookupNetwork(anyString())).thenReturn(mPerNetwork);
+        when(mPerNetwork.getFrequencies(anyLong())).thenReturn(new ArrayList<>(
+                Arrays.asList(TEST_FREQUENCY_1, TEST_FREQUENCY_2)));
+
+        long currentTimeStamp = CURRENT_SYSTEM_TIME_MS;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
+        mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+
+        // set screen off and wifi disconnected
+        setScreenState(false);
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        // Set screen to ON to start a fast initial scan
+        setScreenState(true);
+
+        // Verify the initial scan state is awaiting for response
+        assertEquals(WifiConnectivityManager.INITIAL_SCAN_STATE_AWAITING_RESPONSE,
+                mWifiConnectivityManager.getInitialScanState());
+        verify(mWifiMetrics).incrementInitialPartialScanCount();
+
+        // Also verify the scan timer is set properly.
+        long firstIntervalMs = mAlarmManager
+                .getTriggerTimeMillis(WifiConnectivityManager.PERIODIC_SCAN_TIMER_TAG)
+                - currentTimeStamp;
+        int expected = (int) (VALID_DISCONNECTED_SINGLE_SCAN_SCHEDULE_SEC[0] * 1000);
+        assertEquals(expected, firstIntervalMs);
+    }
+
+    /**
      * Verify that if configuration for single scan schedule is empty, default
      * schedule is being used.
      */

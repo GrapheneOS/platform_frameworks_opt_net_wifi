@@ -126,9 +126,10 @@ public class WifiConnectivityManager {
 
     // Initial scan state, used to manage performing partial scans in initial scans
     // Initial scans are the first scan after enabling Wifi or turning on screen when disconnected
-    private static final int INITIAL_SCAN_STATE_START = 0;
-    private static final int INITIAL_SCAN_STATE_AWAITING_RESPONSE = 1;
-    private static final int INITIAL_SCAN_STATE_COMPLETE = 2;
+    @VisibleForTesting
+    public static final int INITIAL_SCAN_STATE_START = 0;
+    public static final int INITIAL_SCAN_STATE_AWAITING_RESPONSE = 1;
+    public static final int INITIAL_SCAN_STATE_COMPLETE = 2;
 
     // Log tag for this class
     private static final String TAG = "WifiConnectivityManager";
@@ -702,9 +703,6 @@ public class WifiConnectivityManager {
 
                             if (wasCandidateSelected) {
                                 Log.i(TAG, "Connection attempted with the reduced initial scans");
-                                schedulePeriodicScanTimer(
-                                        getScheduledSingleScanIntervalMs(
-                                                mCurrentSingleScanScheduleIndex));
                                 mWifiMetrics.reportInitialPartialScan(
                                         mInitialPartialScanChannelCount, true);
                                 mInitialPartialScanChannelCount = 0;
@@ -1609,11 +1607,9 @@ public class WifiConnectivityManager {
                     setInitialScanState(INITIAL_SCAN_STATE_AWAITING_RESPONSE);
                     mWifiMetrics.incrementInitialPartialScanCount();
                 }
-                // No scheduling for another scan (until we get the results)
-                return;
+            } else {
+                startSingleScan(isFullBandScan, WIFI_WORK_SOURCE);
             }
-
-            startSingleScan(isFullBandScan, WIFI_WORK_SOURCE);
             schedulePeriodicScanTimer(
                     getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
 
@@ -1695,6 +1691,11 @@ public class WifiConnectivityManager {
     private void setInitialScanState(int state) {
         Log.i(TAG, "SetInitialScanState to : " + state);
         mInitialScanState = state;
+    }
+
+    @VisibleForTesting
+    public int getInitialScanState() {
+        return mInitialScanState;
     }
 
     // Reset the last periodic single scan time stamp so that the next periodic single
