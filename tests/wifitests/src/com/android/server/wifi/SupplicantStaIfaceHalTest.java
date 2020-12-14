@@ -284,6 +284,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         })
         .when(mISupplicantStaIfaceMock)
                 .getMacAddress(any(ISupplicantStaIface.getMacAddressCallback.class));
+        when(mFrameworkFacade.startSupplicant()).thenReturn(true);
         mHandler = spy(new Handler(mLooper.getLooper()));
         mDut = new SupplicantStaIfaceHalSpy();
     }
