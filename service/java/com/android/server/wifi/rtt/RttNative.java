@@ -422,7 +422,7 @@ public class RttNative {
                     config.mustRequestLcr = false;
                     config.burstPeriod = 0;
                     config.numBurst = 0;
-                    config.numFramesPerBurst = 5;
+                    config.numFramesPerBurst = request.mRttBurstSize;
                     config.numRetriesPerRttFrame = 0; // irrelevant for 2-sided RTT
                     config.numRetriesPerFtmr = 3;
                     config.burstDuration = 9;
@@ -431,7 +431,7 @@ public class RttNative {
                     config.mustRequestLcr = true;
                     config.burstPeriod = 0;
                     config.numBurst = 0;
-                    config.numFramesPerBurst = 8;
+                    config.numFramesPerBurst = request.mRttBurstSize;
                     config.numRetriesPerRttFrame = (config.type == RttType.TWO_SIDED ? 0 : 3);
                     config.numRetriesPerFtmr = 3;
                     config.burstDuration = 9;
@@ -511,7 +511,7 @@ public class RttNative {
                     config.mustRequestLcr = false;
                     config.burstPeriod = 0;
                     config.numBurst = 0;
-                    config.numFramesPerBurst = 5;
+                    config.numFramesPerBurst = request.mRttBurstSize;
                     config.numRetriesPerRttFrame = 0; // irrelevant for 2-sided RTT
                     config.numRetriesPerFtmr = 3;
                     config.burstDuration = 9;
@@ -520,7 +520,7 @@ public class RttNative {
                     config.mustRequestLcr = true;
                     config.burstPeriod = 0;
                     config.numBurst = 0;
-                    config.numFramesPerBurst = 8;
+                    config.numFramesPerBurst = request.mRttBurstSize;
                     config.numRetriesPerRttFrame = (config.type == RttType.TWO_SIDED ? 0 : 3);
                     config.numRetriesPerFtmr = 3;
                     config.burstDuration = 9;

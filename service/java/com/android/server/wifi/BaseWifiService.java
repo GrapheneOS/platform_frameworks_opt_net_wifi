@@ -16,7 +16,6 @@
 
 package com.android.server.wifi;
 
-import android.content.pm.ParceledListSlice;
 import android.net.DhcpInfo;
 import android.net.Network;
 import android.net.wifi.CoexUnsafeChannel;
@@ -44,6 +43,8 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.WorkSource;
+
+import com.android.modules.utils.ParceledListSlice;
 
 import java.util.List;
 import java.util.Map;

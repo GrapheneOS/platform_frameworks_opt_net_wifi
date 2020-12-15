@@ -31,7 +31,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ParceledListSlice;
 import android.net.ConnectivityManager;
 import android.net.MacAddress;
 import android.net.Network;
@@ -63,6 +62,7 @@ import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BasicShellCommandHandler;
+import com.android.modules.utils.ParceledListSlice;
 import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.ClientMode.LinkProbeCallback;
 import com.android.server.wifi.util.ApConfigUtil;
@@ -499,6 +499,16 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                     if (ApConfigUtil.isWpa3SaeSupported(mContext)) {
                         pw.println("wifi_softap_wpa3_sae_supported");
                     }
+                    if ((mWifiService.getSupportedFeatures()
+                            & WifiManager.WIFI_FEATURE_BRIDGED_AP)
+                            == WifiManager.WIFI_FEATURE_BRIDGED_AP) {
+                        pw.println("wifi_softap_bridged_ap_supported");
+                    }
+                    if ((mWifiService.getSupportedFeatures()
+                            & WifiManager.WIFI_FEATURE_STA_BRIDGED_AP)
+                            == WifiManager.WIFI_FEATURE_STA_BRIDGED_AP) {
+                        pw.println("wifi_softap_bridged_ap_with_sta_supported");
+                    }
                     return 0;
                 case "settings-reset":
                     mWifiService.factoryReset(SHELL_PACKAGE_NAME);
@@ -931,6 +941,14 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                 } else if (preferredBand.equals("any")) {
                     configBuilder.setBand(SoftApConfiguration.BAND_2GHZ
                             | SoftApConfiguration.BAND_5GHZ | SoftApConfiguration.BAND_6GHZ);
+                } else if (preferredBand.equals("bridged")) {
+                    if (SdkLevel.isAtLeastS()) {
+                        int[] dualBands = new int[] {
+                                SoftApConfiguration.BAND_2GHZ, SoftApConfiguration.BAND_5GHZ};
+                        configBuilder.setBands(dualBands);
+                    } else {
+                        pw.println("-b bridged option is not supported before S");
+                    }
                 } else {
                     throw new IllegalArgumentException("Invalid band option " + preferredBand);
                 }
@@ -1329,11 +1347,13 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    open|wpa2|wpa3|wpa3_transition - Security type of the network.");
         pw.println("        - Use 'open' for networks with no passphrase");
         pw.println("        - Use 'wpa2', 'wpa3', 'wpa3_transition' for networks with passphrase");
-        pw.println("    -b 2|5|6|any - select the preferred band.");
+        pw.println("    -b 2|5|6|any|bridged - select the preferred band.");
         pw.println("        - Use '2' to select 2.4GHz band as the preferred band");
         pw.println("        - Use '5' to select 5GHz band as the preferred band");
         pw.println("        - Use '6' to select 6GHz band as the preferred band");
         pw.println("        - Use 'any' to indicate no band preference");
+        pw.println("        - Use 'bridged' to indicate bridged AP which enables APs on both "
+                + "2.4G + 5G");
         pw.println("    Note: If the band option is not provided, 2.4GHz is the preferred band.");
         pw.println("          The exact channel is auto-selected by FW unless overridden by "
                 + "force-softap-channel command");
@@ -1381,7 +1401,10 @@ public class WifiShellCommand extends BasicShellCommandHandler {
         pw.println("    Gets setting of wifi watchdog trigger recovery.");
         pw.println("  get-softap-supported-features");
         pw.println("    Gets softap supported features. Will print 'wifi_softap_acs_supported'");
-        pw.println("    and/or 'wifi_softap_wpa3_sae_supported', each on a separate line.");
+        pw.println("    and/or 'wifi_softap_wpa3_sae_supported',");
+        pw.println("    and/or 'wifi_softap_bridged_ap_supported',");
+        pw.println("    and/or 'wifi_softap_bridged_ap_with_sta_supported',");
+        pw.println("    each on a separate line.");
         pw.println("  settings-reset");
         pw.println("    Initiates wifi settings reset");
         pw.println("  add-request <ssid> open|owe|wpa2|wpa3 [<passphrase>] [-b <bssid>]");

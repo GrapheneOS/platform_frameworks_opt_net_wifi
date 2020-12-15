@@ -51,7 +51,7 @@ public class RttTestUtils {
     }
 
     /**
-     * Returns a placeholder ranging request with 3 requests:
+     * Returns a placeholder ranging request with 3 requests and a non-default in-range burst size:
      * - First: 802.11mc capable
      * - Second: 802.11mc not capable
      * - Third: Aware peer
@@ -71,6 +71,8 @@ public class RttTestUtils {
         builder.addAccessPoint(scan1);
         builder.addAccessPoint(scan2);
         builder.addWifiAwarePeer(mac1);
+        // Changing default RTT burst size to a valid, but maximum, value
+        builder.setRttBurstSize(RangingRequest.getMaxRttBurstSize());
 
         return builder.build();
     }

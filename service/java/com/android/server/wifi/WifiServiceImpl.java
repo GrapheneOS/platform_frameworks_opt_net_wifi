@@ -47,7 +47,6 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ParceledListSlice;
 import android.content.pm.ResolveInfo;
 import android.net.DhcpInfo;
 import android.net.DhcpResultsParcelable;
@@ -115,6 +114,7 @@ import android.util.MutableBoolean;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.utils.ParceledListSlice;
 import com.android.modules.utils.build.SdkLevel;
 import com.android.net.module.util.Inet4AddressUtils;
 import com.android.server.wifi.coex.CoexManager;
