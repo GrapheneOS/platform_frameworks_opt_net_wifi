@@ -79,7 +79,7 @@ android_test {
     privileged: true,
     test_suites: [
         "device-tests",
-        "mts",
+        "mts-wifi",
     ],
 
     // For coverage
