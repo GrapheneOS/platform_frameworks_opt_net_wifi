@@ -104,6 +104,7 @@ import com.android.server.wifi.util.InformationElementUtil.RoamingConsortium;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -112,6 +113,7 @@ import org.mockito.MockitoSession;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.security.cert.PKIXParameters;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -168,6 +170,7 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final String TEST_ANONYMOUS_IDENTITY = "AnonymousIdentity";
     private static final String USER_CONNECT_CHOICE = "SomeNetworkProfileId";
     private static final int TEST_RSSI = -50;
+    public static PKIXParameters TEST_PKIX_PARAMETERS;
 
     @Mock Context mContext;
     @Mock WifiNative mWifiNative;
@@ -205,6 +208,14 @@ public class PasspointManagerTest extends WifiBaseTest {
     ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mNetworkListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
 
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("AndroidCAStore");
+        keyStore.load(null, null);
+        TEST_PKIX_PARAMETERS = new PKIXParameters(keyStore);
+        TEST_PKIX_PARAMETERS.setRevocationEnabled(false);
+    }
+
     /** Sets up test. */
     @Before
     public void setUp() throws Exception {
@@ -234,6 +245,9 @@ public class PasspointManagerTest extends WifiBaseTest {
                 mWifiKeyStore, mClock, mObjectFactory, mWifiConfigManager,
                 mWifiConfigStore, mWifiMetrics, mWifiCarrierInfoManager, mMacAddressUtil,
                 mWifiPermissionsUtil);
+        mManager.setUseInjectedPKIX(true);
+        mManager.injectPKIXParameters(TEST_PKIX_PARAMETERS);
+
         ArgumentCaptor<PasspointEventHandler.Callbacks> callbacks =
                 ArgumentCaptor.forClass(PasspointEventHandler.Callbacks.class);
         verify(mObjectFactory).makePasspointEventHandler(any(WifiInjector.class),
