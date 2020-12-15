@@ -4267,7 +4267,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         int errorCode = message.arg2;
                         if (targetedNetwork != null && targetedNetwork.enterpriseConfig != null
                                 && targetedNetwork.enterpriseConfig.isAuthenticationSimBased()) {
-                            mEapFailureNotifier.onEapFailure(errorCode, targetedNetwork);
+                            if (mEapFailureNotifier.onEapFailure(errorCode, targetedNetwork)) {
+                                disableReason = WifiConfiguration.NetworkSelectionStatus
+                                    .DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC;
+                                mWifiConfigManager.loadCarrierConfigsForDisableReasonInfos();
+                            }
                         }
                         handleEapAuthFailure(mTargetNetworkId, errorCode);
                         if (errorCode == WifiNative.EAP_SIM_NOT_SUBSCRIBED) {

@@ -526,4 +526,11 @@
     <bool translatable="false" name="config_wifiDefaultCoexAlgorithmEnabled">false</bool>
     <!-- Filepath of the xml table of parameters used by Wifi coex channel avoidance. -->
     <string translatable="false" name="config_wifiCoexTableFilepath">/vendor/etc/wifi/coex_table.xml</string>
+    <!-- A value to indicate how many failures are needed to temporarily or permanently
+    (depends on config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs)
+    disable a network from auto-connect based on Carrier requirement -->
+    <integer translatable="false" name="config_wifiDisableReasonAuthenticationFailureCarrierSpecificThreshold">1</integer>
+    <!-- A value to indicate the duration (in ms) to disable a network from auto-connect based on
+    Carrier requirement. -1 represents disabling a network permanently -->
+    <integer translatable="false" name="config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs">-1</integer>
 </resources>
