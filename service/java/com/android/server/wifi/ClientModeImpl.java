@@ -924,12 +924,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private class OnNetworkUpdateListener implements
             WifiConfigManager.OnNetworkUpdateListener {
         @Override
-        public void onNetworkAdded(WifiConfiguration config) { }
-
-        @Override
-        public void onNetworkEnabled(WifiConfiguration config) { }
-
-        @Override
         public void onNetworkRemoved(WifiConfiguration config) {
             // The current connected or connecting network has been removed, trigger a disconnect.
             if (config.networkId == mTargetNetworkId || config.networkId == mLastNetworkId) {

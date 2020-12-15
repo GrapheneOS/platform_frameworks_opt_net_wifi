@@ -116,6 +116,8 @@ public class PasspointProvider {
     private long mReauthDelay = 0;
     private List<String> mBlockedBssids = new ArrayList<>();
     private String mAnonymousIdentity = null;
+    private String mConnectChoice = null;
+    private int mConnectChoiceRssi = 0;
 
     public PasspointProvider(PasspointConfiguration config, WifiKeyStore keyStore,
             WifiCarrierInfoManager wifiCarrierInfoManager, long providerId, int creatorUid,
@@ -574,6 +576,9 @@ public class PasspointProvider {
             wifiConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         }
         wifiConfig.meteredOverride = mConfig.getMeteredOverride();
+        wifiConfig.getNetworkSelectionStatus().setConnectChoice(mConnectChoice);
+        wifiConfig.getNetworkSelectionStatus().setConnectChoiceRssi(mConnectChoiceRssi);
+
         return wifiConfig;
     }
 
@@ -685,6 +690,7 @@ public class PasspointProvider {
         builder.append("Shared: ").append(mIsShared).append("\n");
         builder.append("Suggestion: ").append(mIsFromSuggestion).append("\n");
         builder.append("Trusted: ").append(mIsTrusted).append("\n");
+        builder.append("UserConnectChoice: ").append(mConnectChoice).append("\n");
         if (mReauthDelay != 0 && mClock.getElapsedSinceBootMillis() < mReauthDelay) {
             builder.append("Reauth delay remaining (seconds): ")
                     .append((mReauthDelay - mClock.getElapsedSinceBootMillis()) / 1000)
@@ -1124,5 +1130,23 @@ public class PasspointProvider {
 
         // Trying to associate to another BSS in the ESS
         return false;
+    }
+
+    /**
+     * Set the user connect choice on the passpoint network.
+     * @param choice The {@link WifiConfiguration#getProfileKey()} of the user conncet network.
+     * @param rssi The signal strength of the network.
+     */
+    public void setUserConnectChoice(String choice, int rssi) {
+        mConnectChoice = choice;
+        mConnectChoiceRssi = rssi;
+    }
+
+    public String getConnectChoice() {
+        return mConnectChoice;
+    }
+
+    public int getConnectChoiceRssi() {
+        return mConnectChoiceRssi;
     }
 }
