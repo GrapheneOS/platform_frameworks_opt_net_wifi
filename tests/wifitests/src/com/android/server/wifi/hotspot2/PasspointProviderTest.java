@@ -122,6 +122,8 @@ public class PasspointProviderTest extends WifiBaseTest {
     private static final int TEST_ANQP_DOMAIN_ID = 0;
     private static final long TEST_ELAPSED_TIME_SINCE_BOOT = 100000L;
     private static final String TEST_ANONYMOUS_IDENTITY = "AnonymousIdentity";
+    private static final String USER_CONNECT_CHOICE = "SomeNetworkProfileId";
+    private static final int TEST_RSSI = -50;
 
     private enum CredentialType {
         USER,
@@ -1905,5 +1907,22 @@ public class PasspointProviderTest extends WifiBaseTest {
         mProvider = createProvider(config);
         mProvider.setAnonymousIdentity(TEST_ANONYMOUS_IDENTITY);
         assertEquals(TEST_ANONYMOUS_IDENTITY, mProvider.getAnonymousIdentity());
+    }
+
+    /**
+     * Verify set and get connect choice on passpoint provider.
+     */
+    @Test
+    public void testSetUserConnectChoice() throws Exception {
+        PasspointConfiguration config = generateTestPasspointConfiguration(
+                CredentialType.SIM, false);
+        mProvider = createProvider(config);
+        mProvider.setUserConnectChoice(USER_CONNECT_CHOICE, TEST_RSSI);
+        assertEquals(USER_CONNECT_CHOICE, mProvider.getConnectChoice());
+        assertEquals(TEST_RSSI, mProvider.getConnectChoiceRssi());
+        WifiConfiguration configuration = mProvider.getWifiConfig();
+        assertEquals(USER_CONNECT_CHOICE,
+                configuration.getNetworkSelectionStatus().getConnectChoice());
+        assertEquals(TEST_RSSI, configuration.getNetworkSelectionStatus().getConnectChoiceRssi());
     }
 }

@@ -19,6 +19,7 @@ package com.android.server.wifi;
 import static android.content.Intent.ACTION_SCREEN_OFF;
 import static android.content.Intent.ACTION_SCREEN_ON;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_LONG_LIVED;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT;
 import static com.android.server.wifi.ClientModeImpl.WIFI_WORK_SOURCE;
@@ -1707,6 +1708,44 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify that the initial fast scan schedules the scan timer just like regular scans.
+     */
+    @Test
+    public void testInitialFastScanSchedulesMoreScans() {
+        // Enable the fast initial scan feature
+        mResources.setBoolean(R.bool.config_wifiEnablePartialInitialScan, true);
+        // return 2 available frequencies
+        when(mWifiScoreCard.lookupNetwork(anyString())).thenReturn(mPerNetwork);
+        when(mPerNetwork.getFrequencies(anyLong())).thenReturn(new ArrayList<>(
+                Arrays.asList(TEST_FREQUENCY_1, TEST_FREQUENCY_2)));
+
+        long currentTimeStamp = CURRENT_SYSTEM_TIME_MS;
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(currentTimeStamp);
+        mWifiConnectivityManager.setTrustedConnectionAllowed(true);
+
+        // set screen off and wifi disconnected
+        setScreenState(false);
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                mPrimaryClientModeManager,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        // Set screen to ON to start a fast initial scan
+        setScreenState(true);
+
+        // Verify the initial scan state is awaiting for response
+        assertEquals(WifiConnectivityManager.INITIAL_SCAN_STATE_AWAITING_RESPONSE,
+                mWifiConnectivityManager.getInitialScanState());
+        verify(mWifiMetrics).incrementInitialPartialScanCount();
+
+        // Also verify the scan timer is set properly.
+        long firstIntervalMs = mAlarmManager
+                .getTriggerTimeMillis(WifiConnectivityManager.PERIODIC_SCAN_TIMER_TAG)
+                - currentTimeStamp;
+        int expected = (int) (VALID_DISCONNECTED_SINGLE_SCAN_SCHEDULE_SEC[0] * 1000);
+        assertEquals(expected, firstIntervalMs);
+    }
+
+    /**
      * Verify that if configuration for single scan schedule is empty, default
      * schedule is being used.
      */
@@ -2850,11 +2889,11 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         InOrder inOrder = inOrder(mBssidBlocklistMonitor);
         // Force a connectivity scan
         inOrder.verify(mBssidBlocklistMonitor, never())
-                .updateAndGetBssidBlocklistForSsid(anyString());
+                .updateAndGetBssidBlocklistForSsids(anySet());
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
 
         inOrder.verify(mBssidBlocklistMonitor).tryEnablingBlockedBssids(any());
-        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsid(anyString());
+        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsids(anySet());
     }
 
     /**
@@ -3934,6 +3973,80 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         // Ensure that we restarted PNO.
         inOrder.verify(mWifiScanner).stopPnoScan(any());
         inOrder.verify(mWifiScanner).startDisconnectedPnoScan(any(), any(), any(), any());
+    }
+
+    @Test
+    public void includeSecondaryStaWhenPresentInGetCandidatesFromScan() {
+        // Set screen to on
+        setScreenState(true);
+
+        ClientModeManager primaryCmm = mock(ClientModeManager.class);
+        WifiInfo wifiInfo1 = mock(WifiInfo.class);
+        when(primaryCmm.getInterfaceName()).thenReturn("wlan0");
+        when(primaryCmm.getRole()).thenReturn(ROLE_CLIENT_PRIMARY);
+        when(primaryCmm.isConnected()).thenReturn(false);
+        when(primaryCmm.isDisconnected()).thenReturn(true);
+        when(primaryCmm.syncRequestConnectionInfo()).thenReturn(wifiInfo1);
+
+        ClientModeManager secondaryCmm = mock(ClientModeManager.class);
+        WifiInfo wifiInfo2 = mock(WifiInfo.class);
+        when(secondaryCmm.getInterfaceName()).thenReturn("wlan1");
+        when(secondaryCmm.getRole()).thenReturn(ROLE_CLIENT_SECONDARY_LONG_LIVED);
+        when(secondaryCmm.isConnected()).thenReturn(false);
+        when(secondaryCmm.isDisconnected()).thenReturn(true);
+        when(secondaryCmm.syncRequestConnectionInfo()).thenReturn(wifiInfo2);
+
+        when(mActiveModeWarden.getInternetConnectivityClientModeManagers())
+                .thenReturn(Arrays.asList(primaryCmm, secondaryCmm));
+
+        // Set WiFi to disconnected state to trigger scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                primaryCmm,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        List<WifiNetworkSelector.ClientModeManagerState> expectedCmmStates =
+                Arrays.asList(new WifiNetworkSelector.ClientModeManagerState(
+                                "wlan0", false, true, wifiInfo1),
+                        new WifiNetworkSelector.ClientModeManagerState(
+                                "wlan1", false, true, wifiInfo2));
+        verify(mWifiNS).getCandidatesFromScan(any(), any(),
+                eq(expectedCmmStates), anyBoolean(), anyBoolean(), anyBoolean());
+    }
+
+    @Test
+    public void includeSecondaryStaWhenNotPresentButAvailableInGetCandidatesFromScan() {
+        // Set screen to on
+        setScreenState(true);
+        // set OEM paid connection allowed.
+        WorkSource oemPaidWs = new WorkSource();
+        mWifiConnectivityManager.setOemPaidConnectionAllowed(true, oemPaidWs);
+
+        ClientModeManager primaryCmm = mock(ClientModeManager.class);
+        WifiInfo wifiInfo1 = mock(WifiInfo.class);
+        when(primaryCmm.getInterfaceName()).thenReturn("wlan0");
+        when(primaryCmm.getRole()).thenReturn(ROLE_CLIENT_PRIMARY);
+        when(primaryCmm.isConnected()).thenReturn(false);
+        when(primaryCmm.isDisconnected()).thenReturn(true);
+        when(primaryCmm.syncRequestConnectionInfo()).thenReturn(wifiInfo1);
+
+        when(mActiveModeWarden.getInternetConnectivityClientModeManagers())
+                .thenReturn(Arrays.asList(primaryCmm));
+        // Second STA creation is allowed.
+        when(mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                eq(oemPaidWs), eq(ROLE_CLIENT_SECONDARY_LONG_LIVED))).thenReturn(true);
+
+        // Set WiFi to disconnected state to trigger scan
+        mWifiConnectivityManager.handleConnectionStateChanged(
+                primaryCmm,
+                WifiConnectivityManager.WIFI_STATE_DISCONNECTED);
+
+        List<WifiNetworkSelector.ClientModeManagerState> expectedCmmStates =
+                Arrays.asList(new WifiNetworkSelector.ClientModeManagerState(
+                        "wlan0", false, true, wifiInfo1),
+                new WifiNetworkSelector.ClientModeManagerState(
+                        "unknown", false, true, new WifiInfo()));
+        verify(mWifiNS).getCandidatesFromScan(any(), any(),
+                eq(expectedCmmStates), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     private void setWifiEnabled(boolean enable) {

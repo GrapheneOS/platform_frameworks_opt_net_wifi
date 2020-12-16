@@ -76,6 +76,8 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
     private static final String XML_TAG_SECTION_HEADER_PASSPOINT_CONFIGURATION =
             "PasspointConfiguration";
     private static final String XML_TAG_PRIORITY_GROUP = "PriorityGroup";
+    private static final String XML_TAG_CONNECT_CHOICE = "ConnectChoice";
+    private static final String XML_TAG_CONNECT_CHOICE_RSSI = "ConnectChoiceRssi";
 
     /**
      * Interface define the data source for the network suggestions store data.
@@ -249,6 +251,8 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN,
                 extSuggestion.isAutojoinEnabled);
         XmlUtil.writeNextValue(out, XML_TAG_PRIORITY_GROUP, suggestion.priorityGroup);
+        XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE, extSuggestion.connectChoice);
+        XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE_RSSI, extSuggestion.connectChoiceRssi);
         XmlUtil.writeNextSectionEnd(out, XML_TAG_SECTION_HEADER_NETWORK_SUGGESTION);
     }
 
@@ -324,14 +328,9 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
                         }
                         switch (tagName) {
                             case XML_TAG_SECTION_HEADER_NETWORK_SUGGESTION:
-                                Pair<WifiNetworkSuggestion, Boolean> networkSuggestionData =
-                                        parseNetworkSuggestion(
-                                                in, outerTagDepth + 2, version, encryptionUtil,
-                                                perAppInfo);
-                                perAppInfo.extNetworkSuggestions.add(
-                                        ExtendedWifiNetworkSuggestion.fromWns(
-                                                networkSuggestionData.first, perAppInfo,
-                                                networkSuggestionData.second));
+                                ExtendedWifiNetworkSuggestion ewns = parseNetworkSuggestion(in,
+                                        outerTagDepth + 2, version, encryptionUtil, perAppInfo);
+                                perAppInfo.extNetworkSuggestions.add(ewns);
                                 break;
                             default:
                                 Log.w(TAG, "Ignoring unknown tag under "
@@ -367,7 +366,7 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
      * @throws XmlPullParserException
      * @throws IOException
      */
-    private Pair<WifiNetworkSuggestion, Boolean> parseNetworkSuggestion(XmlPullParser in,
+    private ExtendedWifiNetworkSuggestion parseNetworkSuggestion(XmlPullParser in,
             int outerTagDepth, @WifiConfigStore.Version int version,
             @Nullable WifiConfigStoreEncryptionUtil encryptionUtil, PerAppInfo perAppInfo)
             throws XmlPullParserException, IOException {
@@ -382,6 +381,8 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         boolean isNetworkUntrusted = false;
         int priorityGroup = WifiNetworkSuggestionsManager.DEFAULT_PRIORITY_GROUP;
         int suggestorUid = Process.INVALID_UID;
+        String connectChoice = null;
+        int connectChoiceRssi = 0;
 
         // Loop through and parse out all the elements from the stream within this section.
         while (XmlUtil.nextElementWithin(in, outerTagDepth)) {
@@ -411,6 +412,12 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
                         break;
                     case XML_TAG_PRIORITY_GROUP:
                         priorityGroup = (int) value;
+                        break;
+                    case XML_TAG_CONNECT_CHOICE:
+                        connectChoice = (String) value;
+                        break;
+                    case XML_TAG_CONNECT_CHOICE_RSSI:
+                        connectChoiceRssi = (int) value;
                         break;
                     default:
                         Log.w(TAG, "Ignoring unknown value name found: " + valueName[0]);
@@ -472,9 +479,14 @@ public class NetworkSuggestionStoreData implements WifiConfigStore.StoreData {
         if (enterpriseConfig != null) {
             wifiConfiguration.enterpriseConfig = enterpriseConfig;
         }
-        return Pair.create(new WifiNetworkSuggestion(wifiConfiguration, passpointConfiguration,
-                isAppInteractionRequired, isUserInteractionRequired, isUserAllowedToManuallyConnect,
-                isInitializedAutoJoinEnabled, priorityGroup), isAutoJoinEnabled);
+        ExtendedWifiNetworkSuggestion ewns = ExtendedWifiNetworkSuggestion
+                .fromWns(new WifiNetworkSuggestion(wifiConfiguration, passpointConfiguration,
+                        isAppInteractionRequired, isUserInteractionRequired,
+                        isUserAllowedToManuallyConnect, isInitializedAutoJoinEnabled,
+                        priorityGroup), perAppInfo, isAutoJoinEnabled);
+        ewns.connectChoice = connectChoice;
+        ewns.connectChoiceRssi = connectChoiceRssi;
+        return ewns;
     }
 }
 

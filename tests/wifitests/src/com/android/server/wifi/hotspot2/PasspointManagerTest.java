@@ -165,6 +165,8 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final int TEST_UID = 1500;
     private static final int TEST_NETWORK_ID = 2;
     private static final String TEST_ANONYMOUS_IDENTITY = "AnonymousIdentity";
+    private static final String USER_CONNECT_CHOICE = "SomeNetworkProfileId";
+    private static final int TEST_RSSI = -50;
 
     @Mock Context mContext;
     @Mock WifiNative mWifiNative;
@@ -198,6 +200,8 @@ public class PasspointManagerTest extends WifiBaseTest {
     ArgumentCaptor<AppOpsManager.OnOpChangedListener> mAppOpChangedListenerCaptor =
             ArgumentCaptor.forClass(AppOpsManager.OnOpChangedListener.class);
     WifiCarrierInfoManager mWifiCarrierInfoManager;
+    ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mNetworkListenerCaptor =
+            ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
 
     /** Sets up test. */
     @Before
@@ -243,6 +247,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         // SIM is absent
         when(mSubscriptionManager.getActiveSubscriptionInfoList())
                 .thenReturn(Collections.emptyList());
+        verify(mWifiConfigManager).addOnNetworkUpdateListener(mNetworkListenerCaptor.capture());
     }
 
     /**
@@ -578,6 +583,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallSuccess();
         verify(mAppOpsManager).stopWatchingMode(any(AppOpsManager.OnOpChangedListener.class));
         assertTrue(mManager.getProviderConfigs(TEST_CREATOR_UID, false).isEmpty());
+        verify(mWifiConfigManager).removeConnectChoiceFromAllNetworks(config.getUniqueId());
 
         // Verify content in the data source.
         assertTrue(mUserDataSource.getProviders().isEmpty());
@@ -716,6 +722,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallation();
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallSuccess();
         assertTrue(mManager.getProviderConfigs(TEST_UID, true).isEmpty());
+        verify(mWifiConfigManager).removeConnectChoiceFromAllNetworks(config.getUniqueId());
 
         // Verify content in the data source.
         assertTrue(mUserDataSource.getProviders().isEmpty());
@@ -1994,6 +2001,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallSuccess();
         verify(mAppOpsManager, never()).stopWatchingMode(
                 any(AppOpsManager.OnOpChangedListener.class));
+        verify(mWifiConfigManager).removeConnectChoiceFromAllNetworks(config.getUniqueId());
 
         // Verify content in the data source.
         assertTrue(mUserDataSource.getProviders().isEmpty());
@@ -2497,6 +2505,7 @@ public class PasspointManagerTest extends WifiBaseTest {
         verify(mWifiMetrics, times(3)).incrementNumPasspointProviderUninstallSuccess();
         verify(mAppOpsManager).stopWatchingMode(any(AppOpsManager.OnOpChangedListener.class));
         assertTrue(mManager.getProviderConfigs(TEST_CREATOR_UID, false).isEmpty());
+        verify(mWifiConfigManager, times(3)).removeConnectChoiceFromAllNetworks(any());
 
         // Verify content in the data source.
         assertTrue(mUserDataSource.getProviders().isEmpty());
@@ -2640,6 +2649,49 @@ public class PasspointManagerTest extends WifiBaseTest {
 
         mManager.resetSimPasspointNetwork();
         verify(provider).setAnonymousIdentity(null);
+        verify(mWifiConfigManager, times(3)).saveToStore(true);
+    }
+
+    /**
+     * Test set and remove user connect choice.
+     */
+    @Test
+    public void testSetUserConnectChoice() {
+        WifiConfiguration wifiConfig = WifiConfigurationTestUtil.generateWifiConfig(10, TEST_UID,
+                "\"PasspointTestSSID\"", true, true, TEST_FQDN,
+                TEST_FRIENDLY_NAME, SECURITY_EAP);
+
+        PasspointProvider provider =
+                addTestProvider(TEST_FQDN, TEST_FRIENDLY_NAME, TEST_PACKAGE, wifiConfig, false,
+                        null);
+
+        WifiConfiguration wifiConfig2 = WifiConfigurationTestUtil.generateWifiConfig(11, TEST_UID,
+                "\"PasspointTestSSID\"", true, true, TEST_FQDN2,
+                TEST_FRIENDLY_NAME, SECURITY_EAP);
+
+        PasspointProvider provider2 =
+                addTestProvider(TEST_FQDN2, TEST_FRIENDLY_NAME, TEST_PACKAGE, wifiConfig2, false,
+                        null);
+
+        WifiConfigManager.OnNetworkUpdateListener listener = mNetworkListenerCaptor.getValue();
+        reset(mWifiConfigManager);
+
+        // Set user connect choice on this passpoint network
+        listener.onConnectChoiceSet(Collections.singletonList(wifiConfig), USER_CONNECT_CHOICE,
+                TEST_RSSI);
+        verify(provider).setUserConnectChoice(USER_CONNECT_CHOICE, TEST_RSSI);
+
+        // The user connect choice is this psspoint network, its user connect choice should null
+        listener.onConnectChoiceSet(Collections.emptyList(), wifiConfig.getPasspointUniqueId(),
+                TEST_RSSI);
+        verify(provider).setUserConnectChoice(null, 0);
+
+        // Remove the user connect choice, if equals, user connect choice should set to null
+        when(provider.getConnectChoice()).thenReturn(USER_CONNECT_CHOICE);
+        listener.onConnectChoiceRemoved(USER_CONNECT_CHOICE);
+        verify(provider, times(2)).setUserConnectChoice(null, 0);
+
+        verify(provider2, never()).setUserConnectChoice(any(), anyInt());
         verify(mWifiConfigManager, times(3)).saveToStore(true);
     }
 }

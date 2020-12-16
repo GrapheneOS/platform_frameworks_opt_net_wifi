@@ -64,6 +64,8 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
     private static final String TEST_FQDN = "FQDN";
     private static final String TEST_FRIENDLY_NAME = "test_friendly_name";
     private static final String TEST_REALM = "realm.test.com";
+    private static final String USER_CONNECT_CHOICE = "SomeNetworkProfileId";
+    private static final int TEST_RSSI = -50;
     private static final int TEST_PRIORITY_GROUP =
             WifiNetworkSuggestionsManager.DEFAULT_PRIORITY_GROUP;
     private static final String TEST_PRE_R_STORE_FORMAT_XML_STRING =
@@ -300,8 +302,11 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
                 new WifiNetworkSuggestion(configuration, null, false, false, true, true,
                         TEST_PRIORITY_GROUP);
         appInfo.hasUserApproved = false;
-        appInfo.extNetworkSuggestions.add(
-                ExtendedWifiNetworkSuggestion.fromWns(networkSuggestion, appInfo, true));
+        ExtendedWifiNetworkSuggestion ewns = ExtendedWifiNetworkSuggestion
+                .fromWns(networkSuggestion, appInfo, true);
+        ewns.connectChoice = USER_CONNECT_CHOICE;
+        ewns.connectChoiceRssi = TEST_RSSI;
+        appInfo.extNetworkSuggestions.add(ewns);
         networkSuggestionsMap.put(TEST_PACKAGE_NAME_1, appInfo);
 
         Map<String, PerAppInfo> deserializedPerAppInfoMap =
@@ -316,6 +321,8 @@ public class NetworkSuggestionStoreDataTest extends WifiBaseTest {
         WifiConfigurationTestUtil.assertWifiEnterpriseConfigEqualForConfigStore(
                 configuration.enterpriseConfig,
                 deserializedSuggestion.wns.wifiConfiguration.enterpriseConfig);
+        assertEquals(USER_CONNECT_CHOICE, deserializedSuggestion.connectChoice);
+        assertEquals(TEST_RSSI, deserializedSuggestion.connectChoiceRssi);
     }
 
     /**

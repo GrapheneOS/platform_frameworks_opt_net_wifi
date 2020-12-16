@@ -126,9 +126,10 @@ public class WifiConnectivityManager {
 
     // Initial scan state, used to manage performing partial scans in initial scans
     // Initial scans are the first scan after enabling Wifi or turning on screen when disconnected
-    private static final int INITIAL_SCAN_STATE_START = 0;
-    private static final int INITIAL_SCAN_STATE_AWAITING_RESPONSE = 1;
-    private static final int INITIAL_SCAN_STATE_COMPLETE = 2;
+    @VisibleForTesting
+    public static final int INITIAL_SCAN_STATE_START = 0;
+    public static final int INITIAL_SCAN_STATE_AWAITING_RESPONSE = 1;
+    public static final int INITIAL_SCAN_STATE_COMPLETE = 2;
 
     // Log tag for this class
     private static final String TAG = "WifiConnectivityManager";
@@ -340,30 +341,51 @@ public class WifiConnectivityManager {
             @NonNull String listenerName,
             boolean isFullScan,
             @NonNull HandleScanResultsListener handleScanResultsListener) {
-        ClientModeManager clientModeManager = getPrimaryClientModeManager();
-        // TODO (b/169413079): Include long lived secondary cmm here.
-        mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
-                clientModeManager.getWifiLinkLayerStats(),
-                WifiChannelUtilization.UNKNOWN_FREQ);
-
-        updateUserDisabledList(scanDetails);
-
+        List<WifiNetworkSelector.ClientModeManagerState> cmmStates = new ArrayList<>();
+        Set<String> connectedSsids = new HashSet<>();
+        boolean hasExistingSecondaryCmm = false;
+        for (ClientModeManager clientModeManager :
+                mActiveModeWarden.getInternetConnectivityClientModeManagers()) {
+            if (clientModeManager.getRole() == ROLE_CLIENT_SECONDARY_LONG_LIVED) {
+                hasExistingSecondaryCmm = true;
+            }
+            mWifiChannelUtilization.refreshChannelStatsAndChannelUtilization(
+                    clientModeManager.getWifiLinkLayerStats(),
+                    WifiChannelUtilization.UNKNOWN_FREQ);
+            WifiInfo wifiInfo = clientModeManager.syncRequestConnectionInfo();
+            if (clientModeManager.isConnected()) {
+                connectedSsids.add(wifiInfo.getSSID());
+            }
+            cmmStates.add(new WifiNetworkSelector.ClientModeManagerState(clientModeManager));
+        }
+        // We don't have any existing secondary CMM, but are we allowed to create a secondary CMM
+        // and do we have a request for OEM_PAID/OEM_PRIVATE request? If yes, we need to perform
+        // network selection to check if we have any potential candidate for the secondary CMM
+        // creation.
+        if (!hasExistingSecondaryCmm
+                && (mOemPaidConnectionAllowed || mOemPrivateConnectionAllowed)) {
+            // prefer OEM PAID requestor if it exists.
+            WorkSource oemPaidOrOemPrivateRequestorWs =
+                    mOemPaidConnectionRequestorWs != null
+                            ? mOemPaidConnectionRequestorWs
+                            : mOemPrivateConnectionRequestorWs;
+            if (mActiveModeWarden.canRequestMoreClientModeManagersInRole(
+                    oemPaidOrOemPrivateRequestorWs,
+                    ROLE_CLIENT_SECONDARY_LONG_LIVED)) {
+                // Add a placeholder CMM state to ensure network selection is performed for a
+                // potential second STA creation.
+                cmmStates.add(new WifiNetworkSelector.ClientModeManagerState());
+            }
+        }
         // Check if any blocklisted BSSIDs can be freed.
         mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
-        WifiInfo wifiInfo = getPrimaryWifiInfo();
-        // TODO (b/169413079): Include long lived secondary cmm here.
-        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsid(
-                wifiInfo.getSSID());
-
+        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
+                connectedSsids);
+        updateUserDisabledList(scanDetails);
         // Clear expired recent failure statuses
         mConfigManager.cleanupExpiredRecentFailureReasons();
 
         localLog(listenerName + " onResults: start network selection");
-
-        WifiNetworkSelector.ClientModeManagerState primaryCmmState =
-                new WifiNetworkSelector.ClientModeManagerState(clientModeManager);
-        // TODO (b/169413079): Add long lived secondary cmm state here.
-        List<WifiNetworkSelector.ClientModeManagerState> cmmStates = Arrays.asList(primaryCmmState);
 
         List<WifiCandidates.Candidate> candidates = mNetworkSelector.getCandidatesFromScan(
                 scanDetails, bssidBlocklist, cmmStates, mUntrustedConnectionAllowed,
@@ -702,9 +724,6 @@ public class WifiConnectivityManager {
 
                             if (wasCandidateSelected) {
                                 Log.i(TAG, "Connection attempted with the reduced initial scans");
-                                schedulePeriodicScanTimer(
-                                        getScheduledSingleScanIntervalMs(
-                                                mCurrentSingleScanScheduleIndex));
                                 mWifiMetrics.reportInitialPartialScan(
                                         mInitialPartialScanChannelCount, true);
                                 mInitialPartialScanChannelCount = 0;
@@ -922,8 +941,6 @@ public class WifiConnectivityManager {
         public void onNetworkUpdated(WifiConfiguration newConfig, WifiConfiguration oldConfig) {
             triggerScanOnNetworkChanges();
         }
-        @Override
-        public void onNetworkTemporarilyDisabled(WifiConfiguration config, int disableReason) { }
 
         @Override
         public void onNetworkPermanentlyDisabled(WifiConfiguration config, int disableReason) {
@@ -1609,11 +1626,9 @@ public class WifiConnectivityManager {
                     setInitialScanState(INITIAL_SCAN_STATE_AWAITING_RESPONSE);
                     mWifiMetrics.incrementInitialPartialScanCount();
                 }
-                // No scheduling for another scan (until we get the results)
-                return;
+            } else {
+                startSingleScan(isFullBandScan, WIFI_WORK_SOURCE);
             }
-
-            startSingleScan(isFullBandScan, WIFI_WORK_SOURCE);
             schedulePeriodicScanTimer(
                     getScheduledSingleScanIntervalMs(mCurrentSingleScanScheduleIndex));
 
@@ -1695,6 +1710,11 @@ public class WifiConnectivityManager {
     private void setInitialScanState(int state) {
         Log.i(TAG, "SetInitialScanState to : " + state);
         mInitialScanState = state;
+    }
+
+    @VisibleForTesting
+    public int getInitialScanState() {
+        return mInitialScanState;
     }
 
     // Reset the last periodic single scan time stamp so that the next periodic single
@@ -2135,9 +2155,9 @@ public class WifiConnectivityManager {
      * Handler for WiFi state (connected/disconnected) changes
      */
     public void handleConnectionStateChanged(ActiveModeManager activeModeManager, int state) {
-        List<ClientModeManager> primaryManagers =
+        List<ClientModeManager> internetConnectivityCmms =
                 mActiveModeWarden.getInternetConnectivityClientModeManagers();
-        if (!(primaryManagers.contains(activeModeManager))) {
+        if (!(internetConnectivityCmms.contains(activeModeManager))) {
             Log.w(TAG, "Ignoring call from non primary Mode Manager " + activeModeManager,
                     new Throwable());
             return;
@@ -2193,9 +2213,9 @@ public class WifiConnectivityManager {
      */
     public void handleConnectionAttemptEnded(@NonNull ActiveModeManager activeModeManager,
             int failureCode, @NonNull String bssid, @NonNull String ssid) {
-        List<ClientModeManager> primaryManagers =
+        List<ClientModeManager> internetConnectivityCmms =
                 mActiveModeWarden.getInternetConnectivityClientModeManagers();
-        if (!(primaryManagers.contains(activeModeManager))) {
+        if (!(internetConnectivityCmms.contains(activeModeManager))) {
             Log.w(TAG, "Ignoring call from non primary Mode Manager " + activeModeManager,
                     new Throwable());
             return;

@@ -113,31 +113,49 @@ public class WifiConfigManager {
         /**
          * Invoked on network being added.
          */
-        void onNetworkAdded(@NonNull WifiConfiguration config);
+        default void onNetworkAdded(@NonNull WifiConfiguration config) { };
         /**
          * Invoked on network being enabled.
          */
-        void onNetworkEnabled(@NonNull WifiConfiguration config);
+        default void onNetworkEnabled(@NonNull WifiConfiguration config) { };
         /**
          * Invoked on network being permanently disabled.
          */
-        void onNetworkPermanentlyDisabled(@NonNull WifiConfiguration config, int disableReason);
+        default void onNetworkPermanentlyDisabled(@NonNull WifiConfiguration config,
+                int disableReason) { };
         /**
          * Invoked on network being removed.
          */
-        void onNetworkRemoved(@NonNull WifiConfiguration config);
+        default void onNetworkRemoved(@NonNull WifiConfiguration config) { };
         /**
          * Invoked on network being temporarily disabled.
          */
-        void onNetworkTemporarilyDisabled(@NonNull WifiConfiguration config, int disableReason);
+        default void onNetworkTemporarilyDisabled(@NonNull WifiConfiguration config,
+                int disableReason) { };
         /**
          * Invoked on network being updated.
          *
          * @param newConfig Updated WifiConfiguration object.
          * @param oldConfig Prev WifiConfiguration object.
          */
-        void onNetworkUpdated(
-                @NonNull WifiConfiguration newConfig, @NonNull WifiConfiguration oldConfig);
+        default void onNetworkUpdated(
+                @NonNull WifiConfiguration newConfig, @NonNull WifiConfiguration oldConfig) { };
+
+        /**
+         * Invoked when user connect choice is set.
+         * @param networks List of network profiles to set user connect choice.
+         * @param choiceKey Network key {@link WifiConfiguration#getProfileKey()} corresponding to
+         *                  the network which the user chose.
+         * @param rssi the signal strength of the user selected network
+         */
+        default void onConnectChoiceSet(@NonNull List<WifiConfiguration> networks,
+                String choiceKey, int rssi) { }
+
+        /**
+         * Invoked when user connect choice is removed.
+         * @param choiceKey The network profile key of the user connect choice that was removed.
+         */
+        default void onConnectChoiceRemoved(String choiceKey){ }
     }
     /**
      * Max size of scan details to cache in {@link #mScanDetailCaches}.
@@ -1116,6 +1134,10 @@ public class WifiConfigManager {
         internalConfig.carrierId = externalConfig.carrierId;
         internalConfig.isHomeProviderNetwork = externalConfig.isHomeProviderNetwork;
         internalConfig.subscriptionId = externalConfig.subscriptionId;
+        internalConfig.getNetworkSelectionStatus()
+                .setConnectChoice(externalConfig.getNetworkSelectionStatus().getConnectChoice());
+        internalConfig.getNetworkSelectionStatus().setConnectChoiceRssi(
+                externalConfig.getNetworkSelectionStatus().getConnectChoiceRssi());
     }
 
     /**
@@ -1472,7 +1494,12 @@ public class WifiConfigManager {
             mWifiKeyStore.removeKeys(config.enterpriseConfig);
         }
 
-        removeConnectChoiceFromAllNetworks(config.getProfileKey());
+        // Do not remove the user choice when passpoint or suggestion networks are removed from
+        // WifiConfigManager. Will remove that when profile is deleted from PassointManager or
+        // WifiNetworkSuggestionsManager.
+        if (!config.isPasspoint() && !config.fromWifiNetworkSuggestion) {
+            removeConnectChoiceFromAllNetworks(config.getProfileKey());
+        }
         mConfiguredNetworks.remove(config.networkId);
         mScanDetailCaches.remove(config.networkId);
         // Stage the backup of the SettingsProvider package which backs this up.
@@ -2191,7 +2218,7 @@ public class WifiConfigManager {
      *
      * @param connectChoiceConfigKey ConfigKey corresponding to the network that is being removed.
      */
-    private void removeConnectChoiceFromAllNetworks(String connectChoiceConfigKey) {
+    public void removeConnectChoiceFromAllNetworks(String connectChoiceConfigKey) {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Removing connect choice from all networks " + connectChoiceConfigKey);
         }
@@ -2206,6 +2233,9 @@ public class WifiConfigManager {
                         + " : " + config.networkId);
                 clearConnectChoiceInternal(config);
             }
+        }
+        for (OnNetworkUpdateListener listener : mListeners) {
+            listener.onConnectChoiceRemoved(connectChoiceConfigKey);
         }
     }
 
@@ -3515,7 +3545,7 @@ public class WifiConfigManager {
             int rssi) {
         boolean change = false;
         Collection<WifiConfiguration> configuredNetworks = getInternalConfiguredNetworks();
-
+        ArrayList<WifiConfiguration> networksInRange = new ArrayList<>();
         String key = selected.getProfileKey();
         for (WifiConfiguration network : configuredNetworks) {
             WifiConfiguration.NetworkSelectionStatus status = network.getNetworkSelectionStatus();
@@ -3532,7 +3562,12 @@ public class WifiConfigManager {
             if (status.getSeenInLastQualifiedNetworkSelection()) {
                 setConnectChoiceInternal(network, key, rssi);
                 change = true;
+                networksInRange.add(network);
             }
+        }
+
+        for (OnNetworkUpdateListener listener : mListeners) {
+            listener.onConnectChoiceSet(networksInRange, key, rssi);
         }
         return change;
     }
@@ -3571,5 +3606,18 @@ public class WifiConfigManager {
             return NetworkUpdateResult.makeFailed();
         }
         return result;
+    }
+
+    /** Update DisableReasonInfo with carrier configurations defined in an overlay. **/
+    public void loadCarrierConfigsForDisableReasonInfos() {
+        int duration = mContext.getResources().getInteger(
+                R.integer.config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs);
+        mDisableReasonInfo.put(
+                NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC,
+                new DisableReasonInfo(
+                        "NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC",
+                        mContext.getResources().getInteger(R.integer
+                        .config_wifiDisableReasonAuthenticationFailureCarrierSpecificThreshold),
+                        duration == -1 ? Integer.MAX_VALUE : duration));
     }
 }

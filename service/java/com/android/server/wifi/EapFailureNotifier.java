@@ -69,25 +69,28 @@ public class EapFailureNotifier {
      * Invoked when EAP failure occurs.
      *
      * @param errorCode error code which delivers from supplicant
+     * @return true if the receiving error code is found in wifi resource
      */
-    public void onEapFailure(int errorCode, WifiConfiguration config) {
+    public boolean onEapFailure(int errorCode, WifiConfiguration config) {
+        Resources res = getResourcesForSubId(mContext,
+                mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
+        if (res == null) return false;
+        int resourceId = res.getIdentifier(ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
+                "string", mContext.getWifiOverlayApkPkgName());
+
+        if (resourceId == 0) return false;
+        String errorMessage = res.getString(resourceId, config.SSID);
+        if (TextUtils.isEmpty(errorMessage)) return false;
         StatusBarNotification[] activeNotifications = mNotificationManager.getActiveNotifications();
         for (StatusBarNotification activeNotification : activeNotifications) {
             if ((activeNotification.getId() == NOTIFICATION_ID)
                     && TextUtils.equals(config.SSID, mCurrentShownSsid)) {
-                return;
+                return true;
             }
         }
-        Resources res = getResourcesForSubId(mContext,
-                mWifiCarrierInfoManager.getBestMatchSubscriptionId(config));
-        if (res == null) return;
-        int resourceId = res.getIdentifier(ERROR_MESSAGE_OVERLAY_PREFIX + errorCode,
-                "string", mContext.getWifiOverlayApkPkgName());
 
-        if (resourceId == 0) return;
-        String errorMessage = res.getString(resourceId, config.SSID);
-        if (TextUtils.isEmpty(errorMessage)) return;
         showNotification(errorMessage, config.SSID);
+        return true;
     }
 
     private String getSettingsPackageName() {

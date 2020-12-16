@@ -233,7 +233,7 @@ public class BssidBlocklistMonitorTest {
         verifyAddTestBssidToBlocklist();
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
         assertEquals(0, mBssidBlocklistMonitor
-                .updateAndGetBssidBlocklistForSsid(TEST_SSID_1).size());
+                .updateAndGetBssidBlocklistForSsids(Set.of(TEST_SSID_1)).size());
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(new ArrayList<>()),
                 eq(new ArrayList<>()));
     }
@@ -247,7 +247,7 @@ public class BssidBlocklistMonitorTest {
         verifyAddTestBssidToBlocklist();
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
         assertEquals(0, mBssidBlocklistMonitor
-                .updateAndGetBssidBlocklistForSsid(TEST_SSID_2).size());
+                .updateAndGetBssidBlocklistForSsids(Set.of(TEST_SSID_2)).size());
         verify(mWifiConnectivityHelper, never()).setFirmwareRoamingConfiguration(
                 eq(new ArrayList<>()), eq(new ArrayList<>()));
     }
@@ -660,20 +660,20 @@ public class BssidBlocklistMonitorTest {
         ArrayList<String> blocklist1 = new ArrayList<>();
         blocklist1.add(TEST_BSSID_2);
         blocklist1.add(TEST_BSSID_1);
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(TEST_SSID_1);
+        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(blocklist1),
                 eq(new ArrayList<>()));
 
         // Verify we are sending 1 BSSID down to the firmware for SSID_2.
         ArrayList<String> blocklist2 = new ArrayList<>();
         blocklist2.add(TEST_BSSID_3);
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(TEST_SSID_2);
+        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_2));
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(blocklist2),
                 eq(new ArrayList<>()));
 
         // Verify we are not sending any BSSIDs down to the firmware since there does not
         // exists any BSSIDs for TEST_SSID_3 in the blocklist.
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(TEST_SSID_3);
+        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_3));
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(new ArrayList<>()),
                 eq(new ArrayList<>()));
     }
@@ -704,7 +704,7 @@ public class BssidBlocklistMonitorTest {
                 }
                 blocklist.add(bssid + j);
             }
-            mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(TEST_SSID_1);
+            mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
             verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(blocklist),
                     eq(new ArrayList<>()));
         }
@@ -720,7 +720,7 @@ public class BssidBlocklistMonitorTest {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
         verifyAddTestBssidToBlocklist();
 
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(TEST_SSID_1);
+        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
         verify(mWifiConnectivityHelper, never()).setFirmwareRoamingConfiguration(any(), any());
     }
 

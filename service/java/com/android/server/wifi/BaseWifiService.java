@@ -29,6 +29,7 @@ import android.net.wifi.IOnWifiUsabilityStatsListener;
 import android.net.wifi.IScanResultsCallback;
 import android.net.wifi.ISoftApCallback;
 import android.net.wifi.ISuggestionConnectionStatusListener;
+import android.net.wifi.ISuggestionUserApprovalStatusListener;
 import android.net.wifi.ITrafficStateCallback;
 import android.net.wifi.IWifiConnectedNetworkScorer;
 import android.net.wifi.IWifiManager;
@@ -703,6 +704,19 @@ public class BaseWifiService extends IWifiManager.Stub {
 
     @Override
     public boolean isAutoWakeupEnabled() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean addSuggestionUserApprovalStatusListener(IBinder binder,
+            ISuggestionUserApprovalStatusListener listener, int listenerIdentifier,
+            String packageName, String featureId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeSuggestionUserApprovalStatusListener(int listenerIdentifier,
+            String packageName) {
         throw new UnsupportedOperationException();
     }
 }

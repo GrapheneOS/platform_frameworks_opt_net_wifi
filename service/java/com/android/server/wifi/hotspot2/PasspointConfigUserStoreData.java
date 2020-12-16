@@ -76,6 +76,8 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
     private static final String XML_TAG_HAS_EVER_CONNECTED = "HasEverConnected";
     private static final String XML_TAG_IS_FROM_SUGGESTION = "IsFromSuggestion";
     private static final String XML_TAG_IS_TRUSTED = "IsTrusted";
+    private static final String XML_TAG_CONNECT_CHOICE = "ConnectChoice";
+    private static final String XML_TAG_CONNECT_CHOICE_RSSI = "ConnectChoiceRssi";
 
     private final WifiKeyStore mKeyStore;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
@@ -207,6 +209,8 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
         XmlUtil.writeNextValue(out, XML_TAG_HAS_EVER_CONNECTED, provider.getHasEverConnected());
         XmlUtil.writeNextValue(out, XML_TAG_IS_FROM_SUGGESTION, provider.isFromSuggestion());
         XmlUtil.writeNextValue(out, XML_TAG_IS_TRUSTED, provider.isTrusted());
+        XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE, provider.getConnectChoice());
+        XmlUtil.writeNextValue(out, XML_TAG_CONNECT_CHOICE_RSSI, provider.getConnectChoiceRssi());
         if (provider.getConfig() != null) {
             XmlUtil.writeNextSectionStart(out, XML_TAG_SECTION_HEADER_PASSPOINT_CONFIGURATION);
             PasspointXmlUtils.serializePasspointConfiguration(out, provider.getConfig());
@@ -282,6 +286,8 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
         boolean shared = false;
         boolean isTrusted = true;
         PasspointConfiguration config = null;
+        String connectChoice = null;
+        int connectChoiceRssi = 0;
         while (XmlUtil.nextElementWithin(in, outerTagDepth)) {
             if (in.getAttributeValue(null, "name") != null) {
                 // Value elements.
@@ -320,6 +326,12 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
                     case XML_TAG_IS_TRUSTED:
                         isTrusted = (boolean) value;
                         break;
+                    case XML_TAG_CONNECT_CHOICE:
+                        connectChoice = (String) value;
+                        break;
+                    case XML_TAG_CONNECT_CHOICE_RSSI:
+                        connectChoiceRssi = (int) value;
+                        break;
                     default:
                         Log.w(TAG, "Ignoring unknown value name found " + name[0]);
                         break;
@@ -356,6 +368,7 @@ public class PasspointConfigUserStoreData implements WifiConfigStore.StoreData {
                 providerId, creatorUid, packageName, isFromSuggestion, caCertificateAliases,
                 clientPrivateKeyAndCertificateAlias, remediationCaCertificateAlias,
                 hasEverConnected, shared, mClock);
+        provider.setUserConnectChoice(connectChoice, connectChoiceRssi);
         if (isFromSuggestion) {
             provider.setTrusted(isTrusted);
         }

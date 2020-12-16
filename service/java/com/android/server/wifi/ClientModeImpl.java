@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import static android.net.util.KeepalivePacketDataUtil.parseTcpKeepalivePacketData;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY;
 import static android.net.wifi.WifiManager.WIFI_FEATURE_FILS_SHA256;
@@ -52,6 +53,7 @@ import android.net.NetworkProvider;
 import android.net.SocketKeepalive;
 import android.net.StaticIpConfiguration;
 import android.net.TcpKeepalivePacketData;
+import android.net.TcpKeepalivePacketDataParcelable;
 import android.net.Uri;
 import android.net.ip.IIpClient;
 import android.net.ip.IpClientCallbacks;
@@ -921,12 +923,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      */
     private class OnNetworkUpdateListener implements
             WifiConfigManager.OnNetworkUpdateListener {
-        @Override
-        public void onNetworkAdded(WifiConfiguration config) { }
-
-        @Override
-        public void onNetworkEnabled(WifiConfiguration config) { }
-
         @Override
         public void onNetworkRemoved(WifiConfiguration config) {
             // The current connected or connecting network has been removed, trigger a disconnect.
@@ -3357,7 +3353,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mLastScanRssi = mWifiConfigManager.findScanRssi(netId,
                             mWifiHealthMonitor.getScanRssiValidTimeMs());
                     mWifiScoreCard.noteConnectionAttempt(mWifiInfo, mLastScanRssi, config.SSID);
-                    mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(config.SSID);
+                    mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(config.SSID));
 
                     updateWifiConfigOnStartConnection(config, bssid);
                     reportConnectionAttemptStart(config, mTargetBssid,
@@ -4267,7 +4263,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                         int errorCode = message.arg2;
                         if (targetedNetwork != null && targetedNetwork.enterpriseConfig != null
                                 && targetedNetwork.enterpriseConfig.isAuthenticationSimBased()) {
-                            mEapFailureNotifier.onEapFailure(errorCode, targetedNetwork);
+                            if (mEapFailureNotifier.onEapFailure(errorCode, targetedNetwork)) {
+                                disableReason = WifiConfiguration.NetworkSelectionStatus
+                                    .DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC;
+                                mWifiConfigManager.loadCarrierConfigsForDisableReasonInfos();
+                            }
                         }
                         handleEapAuthFailure(mTargetNetworkId, errorCode);
                         if (errorCode == WifiNative.EAP_SIM_NOT_SUBSCRIBED) {
@@ -4737,10 +4737,23 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             final NattKeepalivePacketData pkt =
                                     (NattKeepalivePacketData) message.obj;
                             mIpClient.addKeepalivePacketFilter(slot, pkt);
-                        } else if (message.obj instanceof TcpKeepalivePacketData) {
-                            final TcpKeepalivePacketData pkt =
-                                    (TcpKeepalivePacketData) message.obj;
-                            mIpClient.addKeepalivePacketFilter(slot, pkt);
+                        } else if (SdkLevel.isAtLeastS()) {
+                            if (message.obj instanceof TcpKeepalivePacketData) {
+                                final TcpKeepalivePacketData pkt =
+                                        (TcpKeepalivePacketData) message.obj;
+                                mIpClient.addKeepalivePacketFilter(slot, pkt);
+                            }
+                            // Otherwise unsupported keepalive data class: skip
+                        } else {
+                            // Before S, non-NattKeepalivePacketData KeepalivePacketData would be
+                            // the not-yet-SystemApi android.net.TcpKeepalivePacketData.
+                            // Attempt to parse TcpKeepalivePacketDataParcelable from the
+                            // KeepalivePacketData superclass.
+                            final TcpKeepalivePacketDataParcelable p =
+                                    parseTcpKeepalivePacketData((KeepalivePacketData) message.obj);
+                            if (p != null) {
+                                mIpClient.addKeepalivePacketFilter(slot, p);
+                            }
                         }
                     }
                     break;

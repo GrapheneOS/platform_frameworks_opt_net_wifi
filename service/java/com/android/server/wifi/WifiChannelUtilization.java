@@ -41,6 +41,7 @@ import java.util.Iterator;
  * The cache is updated when a new stats arrives and it has been a long while since the last update.
  * To get more statistically sound channel utilization, for these devices which support
  * mobility state report, the cache update is stopped when the device stays in the stationary state.
+ * TODO(b/159052883): This may need to be reworked for STA + STA.
  */
 public class WifiChannelUtilization {
     private static final String TAG = "WifiChannelUtilization";
