@@ -41,6 +41,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.MacAddressUtil;
 import com.android.server.wifi.NetworkUpdateResult;
@@ -1348,6 +1349,26 @@ public class PasspointManager {
         mAnqpCache.flush();
     }
 
+    private PKIXParameters mInjectedPKIXParameters;
+    private boolean mUseInjectedPKIX = false;
+
+
+    /**
+     * Used to speedup unit test.
+     */
+    @VisibleForTesting
+    public void injectPKIXParameters(PKIXParameters params) {
+        mInjectedPKIXParameters = params;
+    }
+
+    /**
+     * Used to speedup unit test.
+     */
+    @VisibleForTesting
+    public void setUseInjectedPKIX(boolean value) {
+        mUseInjectedPKIX = value;
+    }
+
     /**
      * Verify that the given certificate is trusted by one of the pre-loaded public CAs in the
      * system key store.
@@ -1362,10 +1383,15 @@ public class PasspointManager {
         CertPathValidator validator =
                 CertPathValidator.getInstance(CertPathValidator.getDefaultType());
         CertPath path = factory.generateCertPath(Arrays.asList(caCert));
-        KeyStore ks = KeyStore.getInstance("AndroidCAStore");
-        ks.load(null, null);
-        PKIXParameters params = new PKIXParameters(ks);
-        params.setRevocationEnabled(false);
+        PKIXParameters params;
+        if (mUseInjectedPKIX) {
+            params = mInjectedPKIXParameters;
+        } else {
+            KeyStore ks = KeyStore.getInstance("AndroidCAStore");
+            ks.load(null, null);
+            params = new PKIXParameters(ks);
+            params.setRevocationEnabled(false);
+        }
         validator.validate(path, params);
     }
 
