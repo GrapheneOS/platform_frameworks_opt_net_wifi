@@ -31,6 +31,7 @@ import android.os.Build;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.Settings;
+import android.util.EventLog;
 import android.util.Log;
 
 import com.android.internal.annotations.GuardedBy;
@@ -629,6 +630,12 @@ public class WifiPermissionsUtil {
                 || checkNetworkSettingsPermission(uid)) {
             return true;
         }
-        return isCurrentProfile(uid);
+        boolean isCurrentProfile = isCurrentProfile(uid);
+        if (!isCurrentProfile) {
+            // Fix for b/174749461
+            EventLog.writeEvent(0x534e4554, "174749461", -1,
+                    "Non foreground user trying to modify wifi configuration");
+        }
+        return isCurrentProfile;
     }
 }
