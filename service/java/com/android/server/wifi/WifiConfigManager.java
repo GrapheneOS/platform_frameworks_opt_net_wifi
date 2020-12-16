@@ -913,32 +913,6 @@ public class WifiConfigManager {
     }
 
     /**
-     * Check if the given UID belongs to the current foreground user. This is
-     * used to prevent apps running in background users from modifying network
-     * configurations.
-     * <p>
-     * UIDs belonging to system internals (such as SystemUI) are always allowed,
-     * since they always run as {@link UserHandle#USER_SYSTEM}.
-     *
-     * @param uid uid of the app.
-     * @return true if the given UID belongs to the current foreground user,
-     *         otherwise false.
-     */
-    private boolean doesUidBelongToCurrentUser(int uid) {
-        if (uid == android.os.Process.SYSTEM_UID
-                // UIDs with the NETWORK_SETTINGS permission are always allowed since they are
-                // acting on behalf of the user.
-                || mWifiPermissionsUtil.checkNetworkSettingsPermission(uid)) {
-            return true;
-        } else {
-            UserHandle currentUser = UserHandle.of(mCurrentUserId);
-            UserHandle callingUser = UserHandle.getUserHandleForUid(uid);
-            return currentUser.equals(callingUser)
-                    || mUserManager.isSameProfileGroup(currentUser, callingUser);
-        }
-    }
-
-    /**
      * Copy over public elements from an external WifiConfiguration object to the internal
      * configuration object if element has been set in the provided external WifiConfiguration.
      * The only exception is the hidden |IpConfiguration| parameters, these need to be copied over
@@ -1333,7 +1307,7 @@ public class WifiConfigManager {
      */
     public NetworkUpdateResult addOrUpdateNetwork(WifiConfiguration config, int uid,
                                                   @Nullable String packageName) {
-        if (!doesUidBelongToCurrentUser(uid)) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
             Log.e(TAG, "UID " + uid + " not visible to the current user");
             return new NetworkUpdateResult(WifiConfiguration.INVALID_NETWORK_ID);
         }
@@ -1439,7 +1413,7 @@ public class WifiConfigManager {
      * @return true if successful, false otherwise.
      */
     public boolean removeNetwork(int networkId, int uid, String packageName) {
-        if (!doesUidBelongToCurrentUser(uid)) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
             Log.e(TAG, "UID " + uid + " not visible to the current user");
             return false;
         }
@@ -1848,7 +1822,7 @@ public class WifiConfigManager {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Enabling network " + networkId + " (disableOthers " + disableOthers + ")");
         }
-        if (!doesUidBelongToCurrentUser(uid)) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
             Log.e(TAG, "UID " + uid + " not visible to the current user");
             return false;
         }
@@ -1886,7 +1860,7 @@ public class WifiConfigManager {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Disabling network " + networkId);
         }
-        if (!doesUidBelongToCurrentUser(uid)) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
             Log.e(TAG, "UID " + uid + " not visible to the current user");
             return false;
         }
@@ -1954,7 +1928,7 @@ public class WifiConfigManager {
         if (mVerboseLoggingEnabled) {
             Log.v(TAG, "Update network last connect UID for " + networkId);
         }
-        if (!doesUidBelongToCurrentUser(uid)) {
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
             Log.e(TAG, "UID " + uid + " not visible to the current user");
             return false;
         }
@@ -2926,7 +2900,8 @@ public class WifiConfigManager {
         Set<Integer> removedNetworkIds = new HashSet<>();
         // Remove any private networks of the old user before switching the userId.
         for (WifiConfiguration config : getConfiguredNetworks()) {
-            if ((!config.shared && doesUidBelongToCurrentUser(config.creatorUid))
+            if ((!config.shared && !mWifiPermissionsUtil
+                    .doesUidBelongToCurrentUser(config.creatorUid))
                     || config.ephemeral) {
                 removedNetworkIds.add(config.networkId);
                 localLog("clearInternalUserData: removed config."
@@ -3153,7 +3128,8 @@ public class WifiConfigManager {
 
             // Migrate the legacy Passpoint configurations owned by the current user to
             // {@link PasspointManager}.
-            if (config.isLegacyPasspointConfig && doesUidBelongToCurrentUser(config.creatorUid)) {
+            if (config.isLegacyPasspointConfig && !mWifiPermissionsUtil
+                    .doesUidBelongToCurrentUser(config.creatorUid)) {
                 legacyPasspointNetId.add(config.networkId);
                 // Migrate the legacy Passpoint configuration and add it to PasspointManager.
                 if (!PasspointManager.addLegacyPasspointConfig(config)) {
@@ -3173,7 +3149,8 @@ public class WifiConfigManager {
             // because all networks were previously stored in a central file. We cannot
             // write these private networks to the user specific store until the corresponding
             // user logs in.
-            if (config.shared || !doesUidBelongToCurrentUser(config.creatorUid)) {
+            if (config.shared || !mWifiPermissionsUtil
+                    .doesUidBelongToCurrentUser(config.creatorUid)) {
                 sharedConfigurations.add(config);
             } else {
                 userConfigurations.add(config);
