@@ -82,7 +82,7 @@ import java.util.StringJoiner;
 /**
  * Utility methods for WifiTrackerLib.
  */
-class Utils {
+public class Utils {
     /** Copy of the @hide Settings.Global.USE_OPEN_WIFI_PACKAGE constant. */
     static final String SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE = "use_open_wifi_package";
 
@@ -97,7 +97,7 @@ class Utils {
 
     // Returns the ScanResult with the best RSSI from a list of ScanResults.
     @Nullable
-    static ScanResult getBestScanResultByLevel(@NonNull List<ScanResult> scanResults) {
+    public static ScanResult getBestScanResultByLevel(@NonNull List<ScanResult> scanResults) {
         if (scanResults.isEmpty()) return null;
 
         return Collections.max(scanResults, comparingInt(scanResult -> scanResult.level));
@@ -324,7 +324,7 @@ class Utils {
     }
 
     @Speed
-    static int getAverageSpeedFromScanResults(@NonNull WifiNetworkScoreCache scoreCache,
+    public static int getAverageSpeedFromScanResults(@NonNull WifiNetworkScoreCache scoreCache,
             @NonNull List<ScanResult> scanResults) {
         int count = 0;
         int totalSpeed = 0;
@@ -347,7 +347,7 @@ class Utils {
     }
 
     @Speed
-    static int getSpeedFromWifiInfo(@NonNull WifiNetworkScoreCache scoreCache,
+    public static int getSpeedFromWifiInfo(@NonNull WifiNetworkScoreCache scoreCache,
             @NonNull WifiInfo wifiInfo) {
         final WifiKey wifiKey;
         try {

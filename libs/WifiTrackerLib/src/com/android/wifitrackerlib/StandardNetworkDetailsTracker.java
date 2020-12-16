@@ -47,14 +47,14 @@ import java.util.Collections;
 /**
  * Implementation of NetworkDetailsTracker that tracks a single StandardWifiEntry.
  */
-class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
+public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "StandardNetworkDetailsTracker";
 
     private final StandardWifiEntry mChosenEntry;
     private final boolean mIsNetworkRequest;
     private NetworkInfo mCurrentNetworkInfo;
 
-    StandardNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
+    public StandardNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,

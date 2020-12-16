@@ -258,6 +258,13 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @Override
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
+
+        processConfiguredNetworksChanged();
+    }
+
+    @WorkerThread
+    /** All wifi entries and saved entries needs to be updated. */
+    protected void processConfiguredNetworksChanged() {
         updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
@@ -343,7 +350,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * Update the list returned by getWifiEntries() with the current states of the entry caches.
      */
     @WorkerThread
-    private void updateWifiEntries() {
+    protected void updateWifiEntries() {
         synchronized (mLock) {
             mConnectedWifiEntry = mStandardWifiEntryCache.values().stream().filter(entry -> {
                 final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
@@ -395,6 +402,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mWifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED
                             && !entry.isAlreadyProvisioned()).collect(toList()));
+            mWifiEntries.addAll(getContextualWifiEntries().stream().filter(entry ->
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             Collections.sort(mWifiEntries);
             if (isVerboseLoggingEnabled()) {
                 Log.v(TAG, "Connected WifiEntry: " + mConnectedWifiEntry);
@@ -425,6 +434,20 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
         }
         notifyOnWifiEntriesChanged();
+    }
+
+    /**
+     * Get the contextual WifiEntries added according to customized conditions.
+     */
+    protected List<WifiEntry> getContextualWifiEntries() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Update the contextual wifi entry according to customized conditions.
+     */
+    protected void updateContextualWifiEntryScans(@NonNull List<ScanResult> scanResults) {
+        // do nothing
     }
 
     /**
@@ -638,6 +661,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             updatePasspointWifiEntryScans(Collections.emptyList());
             updateOsuWifiEntryScans(Collections.emptyList());
             updateNetworkRequestEntryScans(Collections.emptyList());
+            updateContextualWifiEntryScans(Collections.emptyList());
             return;
         }
 
@@ -657,6 +681,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updatePasspointWifiEntryScans(scanResults);
         updateOsuWifiEntryScans(scanResults);
         updateNetworkRequestEntryScans(scanResults);
+        updateContextualWifiEntryScans(scanResults);
     }
 
     /**

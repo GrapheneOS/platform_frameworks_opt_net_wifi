@@ -83,7 +83,7 @@ import java.util.stream.Collectors;
  */
 @VisibleForTesting
 public class StandardWifiEntry extends WifiEntry {
-    static final String KEY_PREFIX = "StandardWifiEntry:";
+    public static final String KEY_PREFIX = "StandardWifiEntry:";
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {
@@ -868,7 +868,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    String getScanResultDescription() {
+    protected String getScanResultDescription() {
         synchronized (mLock) {
             if (mCurrentScanResults.size() == 0) {
                 return "";
