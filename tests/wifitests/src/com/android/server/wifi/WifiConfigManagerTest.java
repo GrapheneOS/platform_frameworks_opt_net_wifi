@@ -146,7 +146,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     @Mock private FrameworkFacade mFrameworkFacade;
     @Mock private DeviceConfigFacade mDeviceConfigFacade;
     @Mock private MacAddressUtil mMacAddressUtil;
-    @Mock private BssidBlocklistMonitor mBssidBlocklistMonitor;
+    @Mock private WifiBlocklistMonitor mWifiBlocklistMonitor;
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
     @Mock private WifiScoreCard mWifiScoreCard;
     @Mock private PerNetwork mPerNetwork;
@@ -232,7 +232,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 }
                 return true;
             }
-        }).when(mBssidBlocklistMonitor).updateNetworkSelectionStatus(any(), anyInt());
+        }).when(mWifiBlocklistMonitor).updateNetworkSelectionStatus(any(), anyInt());
 
         when(mContext.getSystemService(ActivityManager.class))
                 .thenReturn(mock(ActivityManager.class));
@@ -647,14 +647,14 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             public void answer(String ssid) {
                 mBssidStatusMap.entrySet().removeIf(e -> e.getValue().equals(ssid));
             }
-        }).when(mBssidBlocklistMonitor).clearBssidBlocklistForSsid(
+        }).when(mWifiBlocklistMonitor).clearBssidBlocklistForSsid(
                 anyString());
         doAnswer(new AnswerWithArguments() {
             public int answer(String ssid) {
                 return (int) mBssidStatusMap.entrySet().stream()
                         .filter(e -> e.getValue().equals(ssid)).count();
             }
-        }).when(mBssidBlocklistMonitor).updateAndGetNumBlockedBssidsForSsid(
+        }).when(mWifiBlocklistMonitor).updateAndGetNumBlockedBssidsForSsid(
                 anyString());
         // add bssid to the blocklist
         mBssidStatusMap.put(TEST_BSSID, openNetwork.SSID);
@@ -689,7 +689,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertFalse(oldConfig.oemPrivate);
         assertNull(oldConfig.BSSID);
 
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(
                 openNetwork.SSID));
     }
 
@@ -1330,13 +1330,13 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
     /**
      * Verify tryEnableNetwork sets NetworkSelectionStatus to NETWORK_SELECTION_ENABLED when
-     * BssidBlocklistMonitor.shouldEnableNetwork returns true.
+     * WifiBlocklistMonitor.shouldEnableNetwork returns true.
      */
     @Test
     public void testTryEnableNetwork() {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-        when(mBssidBlocklistMonitor.shouldEnableNetwork(any())).thenReturn(true);
+        when(mWifiBlocklistMonitor.shouldEnableNetwork(any())).thenReturn(true);
 
         // first set the network to temporarily disabled
         verifyDisableNetwork(result, false);
@@ -5082,7 +5082,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 new WifiConfigManager(
                         mContext, mClock, mUserManager, mWifiCarrierInfoManager,
                         mWifiKeyStore, mWifiConfigStore,
-                        mWifiPermissionsUtil, mMacAddressUtil, mWifiMetrics, mBssidBlocklistMonitor,
+                        mWifiPermissionsUtil, mMacAddressUtil, mWifiMetrics, mWifiBlocklistMonitor,
                         mWifiLastResortWatchdog,
                         mNetworkListSharedStoreData, mNetworkListUserStoreData,
                         mRandomizedMacStoreData,
@@ -5554,7 +5554,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyNetworkRemoveBroadcast();
         // Verify if the config store write was triggered without this new configuration.
         verifyNetworkNotInConfigStoreData(configuration);
-        verify(mBssidBlocklistMonitor, atLeastOnce()).handleNetworkRemoved(configuration.SSID);
+        verify(mWifiBlocklistMonitor, atLeastOnce()).handleNetworkRemoved(configuration.SSID);
     }
 
     /**

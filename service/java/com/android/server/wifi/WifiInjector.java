@@ -177,7 +177,7 @@ public class WifiInjector {
     private final LinkProbeManager mLinkProbeManager;
     private IpMemoryStore mIpMemoryStore;
     private final WifiThreadRunner mWifiThreadRunner;
-    private final BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final WifiBlocklistMonitor mWifiBlocklistMonitor;
     private final MacAddressUtil mMacAddressUtil = new MacAddressUtil();
     private final MboOceController mMboOceController;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
@@ -316,16 +316,16 @@ public class WifiInjector {
         mWifiLastResortWatchdog = new WifiLastResortWatchdog(this, mContext, mClock,
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
                 mDeviceConfigFacade, mWifiThreadRunner, mWifiMonitor);
-        mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
+        mWifiBlocklistMonitor = new WifiBlocklistMonitor(mContext, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mClock, new LocalLog(
                 mContext.getSystemService(ActivityManager.class).isLowRamDevice() ? 128 : 256),
                 mWifiScoreCard, mScoringParams);
-        mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
+        mWifiMetrics.setWifiBlocklistMonitor(mWifiBlocklistMonitor);
         // Config Manager
         mWifiConfigManager = new WifiConfigManager(mContext, mClock,
                 mUserManager, mWifiCarrierInfoManager,
                 mWifiKeyStore, mWifiConfigStore, mWifiPermissionsUtil,
-                mMacAddressUtil, mWifiMetrics, mBssidBlocklistMonitor, mWifiLastResortWatchdog,
+                mMacAddressUtil, mWifiMetrics, mWifiBlocklistMonitor, mWifiLastResortWatchdog,
                 new NetworkListSharedStoreData(mContext),
                 new NetworkListUserStoreData(mContext),
                 new RandomizedMacStoreData(), mFrameworkFacade, mDeviceConfigFacade,
@@ -401,7 +401,7 @@ public class WifiInjector {
                 mWifiNetworkSuggestionsManager, mWifiNetworkSelector,
                 mWifiConnectivityHelper, mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, wifiHandler,
-                mClock, mConnectivityLocalLog, mWifiScoreCard, mBssidBlocklistMonitor,
+                mClock, mConnectivityLocalLog, mWifiScoreCard, mWifiBlocklistMonitor,
                 mWifiChannelUtilizationScan, mPasspointManager, mDeviceConfigFacade,
                 mActiveModeWarden);
         mBroadcastQueue = new ClientModeManagerBroadcastQueue(mActiveModeWarden);
@@ -672,7 +672,7 @@ public class WifiInjector {
                 mWifiDataStall, mScoringParams, mWifiThreadRunner,
                 mWifiNetworkSuggestionsManager, mWifiHealthMonitor, mThroughputPredictor,
                 mDeviceConfigFacade, mScanRequestProxy, wifiInfo, mWifiConnectivityManager,
-                mBssidBlocklistMonitor, mConnectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
+                mWifiBlocklistMonitor, mConnectionFailureNotifier, NETWORK_CAPABILITIES_FILTER,
                 mWifiNetworkFactory, mUntrustedWifiNetworkFactory, mOemPaidWifiNetworkFactory,
                 mOemPrivateWifiNetworkFactory, mWifiLastResortWatchdog, mWakeupController,
                 mLockManager, mFrameworkFacade, mWifiHandlerThread.getLooper(), mCountryCode,
@@ -682,7 +682,7 @@ public class WifiInjector {
                 new EapFailureNotifier(mContext, mFrameworkFacade, mWifiCarrierInfoManager),
                 mSimRequiredNotifier,
                 new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, wifiInfo,
-                        mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
+                        mWifiNative, mWifiBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
                         mDeviceConfigFacade, mContext, mAdaptiveConnectivityEnabledSettingObserver,
                         ifaceName),
                 mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager,
@@ -856,8 +856,8 @@ public class WifiInjector {
         return mIpMemoryStore;
     }
 
-    public BssidBlocklistMonitor getBssidBlocklistMonitor() {
-        return mBssidBlocklistMonitor;
+    public WifiBlocklistMonitor getWifiBlocklistMonitor() {
+        return mWifiBlocklistMonitor;
     }
 
     public HostapdHal getHostapdHal() {

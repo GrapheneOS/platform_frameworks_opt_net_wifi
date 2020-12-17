@@ -55,7 +55,7 @@ import java.util.stream.Stream;
  * This class manages the addition and removal of BSSIDs to the BSSID blocklist, which is used
  * for firmware roaming and network selection.
  */
-public class BssidBlocklistMonitor {
+public class WifiBlocklistMonitor {
     // A special type association rejection
     public static final int REASON_AP_UNABLE_TO_HANDLE_NEW_STA = 0;
     // No internet
@@ -114,7 +114,7 @@ public class BssidBlocklistMonitor {
      * disabling a network.
      */
     private static final int MAX_BLOCKED_BSSID_PER_NETWORK = 10;
-    private static final String TAG = "BssidBlocklistMonitor";
+    private static final String TAG = "WifiBlocklistMonitor";
 
     private final Context mContext;
     private final WifiLastResortWatchdog mWifiLastResortWatchdog;
@@ -185,9 +185,9 @@ public class BssidBlocklistMonitor {
     }
 
     /**
-     * Create a new instance of BssidBlocklistMonitor
+     * Create a new instance of WifiBlocklistMonitor
      */
-    BssidBlocklistMonitor(Context context, WifiConnectivityHelper connectivityHelper,
+    WifiBlocklistMonitor(Context context, WifiConnectivityHelper connectivityHelper,
             WifiLastResortWatchdog wifiLastResortWatchdog, Clock clock, LocalLog localLog,
             WifiScoreCard wifiScoreCard, ScoringParams scoringParams) {
         mContext = context;
@@ -224,14 +224,14 @@ public class BssidBlocklistMonitor {
     }
 
     /**
-     * Dump the local log buffer and other internal state of BssidBlocklistMonitor.
+     * Dump the local log buffer and other internal state of WifiBlocklistMonitor.
      */
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
-        pw.println("Dump of BssidBlocklistMonitor");
+        pw.println("Dump of WifiBlocklistMonitor");
         mLocalLog.dump(fd, pw, args);
-        pw.println("BssidBlocklistMonitor - Bssid blocklist begin ----");
+        pw.println("WifiBlocklistMonitor - Bssid blocklist begin ----");
         mBssidStatusMap.values().stream().forEach(entry -> pw.println(entry));
-        pw.println("BssidBlocklistMonitor - Bssid blocklist end ----");
+        pw.println("WifiBlocklistMonitor - Bssid blocklist end ----");
         mBssidStatusHistoryLogger.dump(pw);
     }
 
@@ -750,11 +750,11 @@ public class BssidBlocklistMonitor {
         }
 
         public void dump(PrintWriter pw) {
-            pw.println("BssidBlocklistMonitor - Bssid blocklist history begin ----");
+            pw.println("WifiBlocklistMonitor - Bssid blocklist history begin ----");
             for (String line : mLogHistory) {
                 pw.println(line);
             }
-            pw.println("BssidBlocklistMonitor - Bssid blocklist history end ----");
+            pw.println("WifiBlocklistMonitor - Bssid blocklist history end ----");
         }
     }
 
@@ -825,7 +825,7 @@ public class BssidBlocklistMonitor {
     }
 
     /**
-     * Enable/disable verbose logging in BssidBlocklistMonitor.
+     * Enable/disable verbose logging in WifiBlocklistMonitor.
      */
     public void enableVerboseLogging(boolean verbose) {
         mVerboseLoggingEnabled = verbose;
