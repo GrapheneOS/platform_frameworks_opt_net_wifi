@@ -130,7 +130,6 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.LocalOnlyHotspotCallback;
-import android.net.wifi.WifiManager.SoftApCallback;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
@@ -165,6 +164,7 @@ import com.android.internal.os.PowerProfile;
 import com.android.modules.utils.ParceledListSlice;
 import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.WifiServiceImpl.LocalOnlyRequestorCallback;
+import com.android.server.wifi.WifiServiceImpl.SoftApCallbackInternal;
 import com.android.server.wifi.coex.CoexManager;
 import com.android.server.wifi.hotspot2.PasspointManager;
 import com.android.server.wifi.hotspot2.PasspointProvisioningTestUtil;
@@ -185,7 +185,6 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 
@@ -265,8 +264,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private int mPid;
     private int mPid2 = Process.myPid();
     private OsuProvider mOsuProvider;
-    private SoftApCallback mStateMachineSoftApCallback;
-    private SoftApCallback mLohsApCallback;
+    private SoftApCallbackInternal mStateMachineSoftApCallback;
+    private SoftApCallbackInternal mLohsApCallback;
     private String mLohsInterfaceName;
     private ApplicationInfo mApplicationInfo;
     private List<ClientModeManager> mClientModeManagers;
@@ -533,13 +532,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private WifiServiceImpl makeWifiServiceImpl() {
         WifiServiceImpl wifiServiceImpl =
                 new WifiServiceImpl(mContext, mWifiInjector);
-        ArgumentCaptor<SoftApCallback> softApCallbackCaptor =
-                ArgumentCaptor.forClass(SoftApCallback.class);
+        ArgumentCaptor<SoftApCallbackInternal> softApCallbackCaptor =
+                ArgumentCaptor.forClass(SoftApCallbackInternal.class);
         verify(mActiveModeWarden, atLeastOnce()).registerSoftApCallback(
                 softApCallbackCaptor.capture());
         mStateMachineSoftApCallback = softApCallbackCaptor.getValue();
-        ArgumentCaptor<SoftApCallback> lohsCallbackCaptor =
-                ArgumentCaptor.forClass(SoftApCallback.class);
+        ArgumentCaptor<SoftApCallbackInternal> lohsCallbackCaptor =
+                ArgumentCaptor.forClass(SoftApCallbackInternal.class);
         mLohsInterfaceName = WIFI_IFACE_NAME;
         verify(mActiveModeWarden, atLeastOnce()).registerLohsCallback(
                 lohsCallbackCaptor.capture());
@@ -2937,9 +2936,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.registerSoftApCallback(mAppBinder, mClientSoftApCallback, 1);
         mLooper.dispatchAll();
         verify(mClientSoftApCallback, never()).onStateChanged(WIFI_AP_STATE_DISABLED, 0);
-        verify(mClientSoftApCallback, never()).onConnectedClientsChanged(any());
-        verify(mClientSoftApCallback, never()).onInfoChanged(any());
-        verify(mClientSoftApCallback, never()).onInfoListChanged(any());
+        verify(mClientSoftApCallback, never()).onConnectedClientsOrInfoChanged(
+                any(), any(), anyBoolean(), anyBoolean());
         verify(mClientSoftApCallback, never()).onCapabilityChanged(any());
     }
 
@@ -2962,9 +2960,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.registerSoftApCallback(binder, callback, callbackIdentifier);
         mLooper.dispatchAll();
         verify(callback).onStateChanged(WIFI_AP_STATE_DISABLED, 0);
-        verify(callback).onConnectedClientsChanged(Mockito.<WifiClient>anyList());
-        verify(callback).onInfoChanged(new SoftApInfo());
-        verify(callback).onInfoListChanged(Mockito.<SoftApInfo>anyList());
+        verify(callback).onConnectedClientsOrInfoChanged(new HashMap<String, SoftApInfo>(),
+                new HashMap<String, List<WifiClient>>(), false, true);
         verify(callback).onCapabilityChanged(ApConfigUtil.updateCapabilityFromResource(mContext));
         // Don't need to invoke callback when register.
         verify(callback, never()).onBlockedClientConnecting(any(), anyInt());
@@ -2984,15 +2981,17 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mAppBinder).unlinkToDeath(any(), anyInt());
         verify(mAnotherAppBinder).linkToDeath(any(), anyInt());
         verify(mAnotherAppBinder, never()).unlinkToDeath(any(), anyInt());
-
-        final WifiClient testClient = new WifiClient(TEST_FACTORY_MAC_ADDR, WIFI_IFACE_NAME2);
-        final List<WifiClient> testClients = new ArrayList();
-        testClients.add(testClient);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
+        reset(mClientSoftApCallback);
+        reset(mAnotherSoftApCallback);
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mLooper.dispatchAll();
         // Verify only the second callback is being called
-        verify(mClientSoftApCallback, never()).onConnectedClientsChanged(testClients);
-        verify(mAnotherSoftApCallback).onConnectedClientsChanged(testClients);
+        verify(mClientSoftApCallback, never()).onConnectedClientsOrInfoChanged(
+                any(), any(), anyBoolean(), anyBoolean());
+        verify(mAnotherSoftApCallback).onConnectedClientsOrInfoChanged(testInfos,
+                testClients, false, false);
     }
 
     /**
@@ -3006,12 +3005,13 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.unregisterSoftApCallback(callbackIdentifier);
         mLooper.dispatchAll();
 
-        final WifiClient testClient = new WifiClient(TEST_FACTORY_MAC_ADDR, WIFI_IFACE_NAME2);
-        final List<WifiClient> testClients = new ArrayList();
-        testClients.add(testClient);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
+        reset(mClientSoftApCallback);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mLooper.dispatchAll();
-        verify(mClientSoftApCallback, never()).onConnectedClientsChanged(testClients);
+        verify(mClientSoftApCallback, never()).onConnectedClientsOrInfoChanged(
+                any(), any(), anyBoolean(), anyBoolean());
     }
 
     /**
@@ -3026,13 +3026,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         final int differentCallbackIdentifier = 2;
         mWifiServiceImpl.unregisterSoftApCallback(differentCallbackIdentifier);
         mLooper.dispatchAll();
-
-        final WifiClient testClient = new WifiClient(TEST_FACTORY_MAC_ADDR, WIFI_IFACE_NAME2);
-        final List<WifiClient> testClients = new ArrayList();
-        testClients.add(testClient);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mLooper.dispatchAll();
-        verify(mClientSoftApCallback).onConnectedClientsChanged(testClients);
+        verify(mClientSoftApCallback).onConnectedClientsOrInfoChanged(
+                testInfos, testClients, false, false);
     }
 
     /**
@@ -3041,18 +3040,18 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void correctCallbackIsCalledAfterAddingTwoCallbacksAndRemovingOne() throws Exception {
         final int callbackIdentifier = 1;
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
         WifiClient testWifiClient = new WifiClient(MacAddress.fromString("22:33:44:55:66:77"),
                 WIFI_IFACE_NAME2);
         mWifiServiceImpl.registerSoftApCallback(mAppBinder, mClientSoftApCallback,
                 callbackIdentifier);
         mLooper.dispatchAll();
 
+        reset(mClientSoftApCallback);
         // Change state from default before registering the second callback
-        final List<WifiClient> testClients = new ArrayList();
         mStateMachineSoftApCallback.onStateChanged(WIFI_AP_STATE_ENABLED, 0);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
-        mStateMachineSoftApCallback.onInfoChanged(mTestSoftApInfo);
-        mStateMachineSoftApCallback.onInfoListChanged(mTestSoftApInfoList);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mStateMachineSoftApCallback.onBlockedClientConnecting(testWifiClient, 0);
 
 
@@ -3061,9 +3060,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mWifiServiceImpl.registerSoftApCallback(mAppBinder, mAnotherSoftApCallback, anotherUid);
         mLooper.dispatchAll();
         verify(mAnotherSoftApCallback).onStateChanged(WIFI_AP_STATE_ENABLED, 0);
-        verify(mAnotherSoftApCallback).onConnectedClientsChanged(testClients);
-        verify(mAnotherSoftApCallback).onInfoChanged(mTestSoftApInfo);
-        verify(mAnotherSoftApCallback).onInfoListChanged(mTestSoftApInfoList);
+        verify(mAnotherSoftApCallback).onConnectedClientsOrInfoChanged(
+                testInfos, testClients, false, true);
         // Verify only first callback will receive onBlockedClientConnecting since it call after
         // first callback register but before another callback register.
         verify(mClientSoftApCallback).onBlockedClientConnecting(testWifiClient, 0);
@@ -3107,14 +3105,14 @@ public class WifiServiceImplTest extends WifiBaseTest {
         drCaptor.getValue().binderDied();
         mLooper.dispatchAll();
         verify(mAppBinder).unlinkToDeath(drCaptor.getValue(), 0);
-
+        reset(mClientSoftApCallback);
         // Verify callback is removed from the list as well
-        final WifiClient testClient = new WifiClient(TEST_FACTORY_MAC_ADDR, WIFI_IFACE_NAME2);
-        final List<WifiClient> testClients = new ArrayList();
-        testClients.add(testClient);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mLooper.dispatchAll();
-        verify(mClientSoftApCallback, never()).onConnectedClientsChanged(testClients);
+        verify(mClientSoftApCallback, never()).onConnectedClientsOrInfoChanged(
+                any(), any(), anyBoolean(), anyBoolean());
     }
 
     /**
@@ -3125,12 +3123,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         final int callbackIdentifier = 1;
         registerSoftApCallbackAndVerify(mClientSoftApCallback, callbackIdentifier);
 
-        final WifiClient testClient = new WifiClient(TEST_FACTORY_MAC_ADDR, WIFI_IFACE_NAME2);
-        final List<WifiClient> testClients = new ArrayList();
-        testClients.add(testClient);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mLooper.dispatchAll();
-        verify(mClientSoftApCallback).onConnectedClientsChanged(testClients);
+        verify(mClientSoftApCallback).onConnectedClientsOrInfoChanged(
+                testInfos, testClients, false, false);
     }
 
     /**
@@ -3152,13 +3150,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void updatesSoftApStateAndConnectedClientsOnSoftApEvents() throws Exception {
-        final List<WifiClient> testClients = new ArrayList();
+        Map<String, List<WifiClient>> testClients = mock(Map.class);
+        Map<String, SoftApInfo> testInfos = mock(Map.class);
         WifiClient testWifiClient = new WifiClient(MacAddress.fromString("22:33:44:55:66:77"),
                 WIFI_IFACE_NAME2);
         mStateMachineSoftApCallback.onStateChanged(WIFI_AP_STATE_ENABLED, 0);
-        mStateMachineSoftApCallback.onConnectedClientsChanged(testClients);
-        mStateMachineSoftApCallback.onInfoChanged(mTestSoftApInfo);
-        mStateMachineSoftApCallback.onInfoListChanged(mTestSoftApInfoList);
+        mStateMachineSoftApCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mStateMachineSoftApCallback.onBlockedClientConnecting(testWifiClient, 0);
 
         // Register callback after num clients and soft AP are changed.
@@ -3167,9 +3164,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 callbackIdentifier);
         mLooper.dispatchAll();
         verify(mClientSoftApCallback).onStateChanged(WIFI_AP_STATE_ENABLED, 0);
-        verify(mClientSoftApCallback).onConnectedClientsChanged(testClients);
-        verify(mClientSoftApCallback).onInfoChanged(mTestSoftApInfo);
-        verify(mClientSoftApCallback).onInfoListChanged(mTestSoftApInfoList);
+        verify(mClientSoftApCallback).onConnectedClientsOrInfoChanged(
+                testInfos, testClients, false, true);
         // Don't need to invoke callback when register.
         verify(mClientSoftApCallback, never()).onBlockedClientConnecting(any(), anyInt());
     }

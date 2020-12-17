@@ -109,8 +109,8 @@ public class ActiveModeWarden {
     private final Graveyard mGraveyard;
     private final WifiMetrics mWifiMetrics;
 
-    private WifiManager.SoftApCallback mSoftApCallback;
-    private WifiManager.SoftApCallback mLohsCallback;
+    private WifiServiceImpl.SoftApCallbackInternal mSoftApCallback;
+    private WifiServiceImpl.SoftApCallbackInternal mLohsCallback;
 
     private boolean mIsShuttingdown = false;
     private boolean mVerboseLoggingEnabled = false;
@@ -123,7 +123,7 @@ public class ActiveModeWarden {
     /**
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
      */
-    public void registerSoftApCallback(@NonNull WifiManager.SoftApCallback callback) {
+    public void registerSoftApCallback(@NonNull WifiServiceImpl.SoftApCallbackInternal callback) {
         mSoftApCallback = callback;
     }
 
@@ -131,7 +131,7 @@ public class ActiveModeWarden {
      * Called from WifiServiceImpl to register a callback for notifications from SoftApManager
      * for local-only hotspot.
      */
-    public void registerLohsCallback(@NonNull WifiManager.SoftApCallback callback) {
+    public void registerLohsCallback(@NonNull WifiServiceImpl.SoftApCallbackInternal callback) {
         mLohsCallback = callback;
     }
 
@@ -806,7 +806,7 @@ public class ActiveModeWarden {
         Preconditions.checkState(softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
                 || softApConfig.getTargetMode() == IFACE_IP_MODE_TETHERED);
 
-        WifiManager.SoftApCallback callback =
+        WifiServiceImpl.SoftApCallbackInternal callback =
                 softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
                         ? mLohsCallback : mSoftApCallback;
         SoftApManager manager = mWifiInjector.makeSoftApManager(
@@ -1378,7 +1378,7 @@ public class ActiveModeWarden {
                         Pair<SoftApModeConfiguration, WorkSource> softApConfigAndWs =
                                 (Pair<SoftApModeConfiguration, WorkSource>) msg.obj;
                         SoftApModeConfiguration softApConfig = softApConfigAndWs.first;
-                        WifiManager.SoftApCallback callback =
+                        WifiServiceImpl.SoftApCallbackInternal callback =
                                 softApConfig.getTargetMode() == IFACE_IP_MODE_LOCAL_ONLY
                                         ? mLohsCallback : mSoftApCallback;
                         // need to notify SoftApCallback that start/stop AP failed

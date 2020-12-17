@@ -28,7 +28,6 @@ import android.net.MatchAllNetworkSpecifier;
 import android.net.NetworkCapabilities;
 import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
-import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BatteryStatsManager;
@@ -639,7 +638,7 @@ public class WifiInjector {
      */
     public SoftApManager makeSoftApManager(
             @NonNull ActiveModeManager.Listener<SoftApManager> listener,
-            @NonNull WifiManager.SoftApCallback callback,
+            @NonNull WifiServiceImpl.SoftApCallbackInternal callback,
             @NonNull SoftApModeConfiguration config,
             @NonNull WorkSource requestorWs,
             @NonNull ActiveModeManager.SoftApRole role,

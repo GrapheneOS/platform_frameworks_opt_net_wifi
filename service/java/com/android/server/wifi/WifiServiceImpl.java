@@ -81,7 +81,10 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.CoexRestriction;
 import android.net.wifi.WifiManager.DeviceMobilityState;
 import android.net.wifi.WifiManager.LocalOnlyHotspotCallback;
+import android.net.wifi.WifiManager.SapClientBlockedReason;
+import android.net.wifi.WifiManager.SapStartFailure;
 import android.net.wifi.WifiManager.SuggestionConnectionStatusListener;
+import android.net.wifi.WifiManager.WifiApState;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
@@ -259,6 +262,40 @@ public class WifiServiceImpl extends BaseWifiService {
     private final WifiDataStall mWifiDataStall;
     private final WifiNative mWifiNative;
     private final SimRequiredNotifier mSimRequiredNotifier;
+
+    /**
+     * The wrapper of SoftApCallback is used in WifiService internally.
+     * see: {@code WifiManager.SoftApCallback}
+     */
+    public interface SoftApCallbackInternal {
+        /**
+         * see: {@code WifiManager.SoftApCallback#onStateChanged(int, int)}
+         */
+        default void onStateChanged(@WifiApState int state, @SapStartFailure int failureReason) {}
+
+        /**
+         * The callback which only is used in service internally and pass to WifiManager.
+         * It will base on the change to send corresponding callback as below:
+         * 1. onInfoChanged(SoftApInfo)
+         * 2. onInfoChanged(List<SoftApInfo>)
+         * 3. onConnectedClientsChanged(SoftApInfo, List<WifiClient>)
+         * 4. onConnectedClientsChanged(List<WifiClient>)
+         */
+        default void onConnectedClientsOrInfoChanged(Map<String, SoftApInfo> infos,
+                Map<String, List<WifiClient>> clients, boolean isBridged) {}
+
+        /**
+         * see: {@code WifiManager.SoftApCallback#onCapabilityChanged(SoftApCapability)}
+         */
+        default void onCapabilityChanged(@NonNull SoftApCapability softApCapability) {}
+
+        /**
+         * see: {@code WifiManager.SoftApCallback#onBlockedClientConnecting(WifiClient, int)}
+         */
+        default void onBlockedClientConnecting(@NonNull WifiClient client,
+                @SapClientBlockedReason int blockedReason) {}
+    }
+
 
     public WifiServiceImpl(Context context, WifiInjector wifiInjector) {
         mContext = context;
@@ -1149,7 +1186,7 @@ public class WifiServiceImpl extends BaseWifiService {
     /**
      * SoftAp callback
      */
-    private final class TetheredSoftApTracker implements WifiManager.SoftApCallback {
+    private final class TetheredSoftApTracker implements SoftApCallbackInternal {
         /**
          * State of tethered SoftAP
          * One of:  {@link WifiManager#WIFI_AP_STATE_DISABLED},
@@ -1160,9 +1197,9 @@ public class WifiServiceImpl extends BaseWifiService {
          */
         private final Object mLock = new Object();
         private int mTetheredSoftApState = WIFI_AP_STATE_DISABLED;
-        private List<WifiClient> mTetheredSoftApConnectedClients = new ArrayList<>();
-        private List<SoftApInfo> mTetheredSoftApInfoList = new ArrayList<>();
-        private SoftApInfo mTetheredSoftApInfo = new SoftApInfo();
+        private Map<String, List<WifiClient>> mTetheredSoftApConnectedClientsMap = new HashMap();
+        private Map<String, SoftApInfo> mTetheredSoftApInfoMap = new HashMap();
+        private boolean mIsBridgedMode = false;
         // TODO: We need to maintain two capability. One for LTE + SAP and one for WIFI + SAP
         private SoftApCapability mTetheredSoftApCapability = null;
         private boolean mIsBootComplete = false;
@@ -1197,21 +1234,21 @@ public class WifiServiceImpl extends BaseWifiService {
             }
         }
 
-        public List<WifiClient> getConnectedClients() {
+        public Map<String, List<WifiClient>> getConnectedClients() {
             synchronized (mLock) {
-                return mTetheredSoftApConnectedClients;
+                return mTetheredSoftApConnectedClientsMap;
             }
         }
 
-        public List<SoftApInfo> getSoftApInfoList() {
+        public Map<String, SoftApInfo> getSoftApInfos() {
             synchronized (mLock) {
-                return mTetheredSoftApInfoList;
+                return mTetheredSoftApInfoMap;
             }
         }
 
-        public SoftApInfo getSoftApInfo() {
+        public boolean getIsBridgedMode() {
             synchronized (mLock) {
-                return mTetheredSoftApInfo;
+                return mIsBridgedMode;
             }
         }
 
@@ -1349,67 +1386,22 @@ public class WifiServiceImpl extends BaseWifiService {
          * @param clients connected clients to soft AP
          */
         @Override
-        public void onConnectedClientsChanged(List<WifiClient> clients) {
+        public void onConnectedClientsOrInfoChanged(Map<String, SoftApInfo> infos,
+                Map<String, List<WifiClient>> clients, boolean isBridged) {
             synchronized (mLock) {
-                mTetheredSoftApConnectedClients = new ArrayList<>(clients);
+                mIsBridgedMode = isBridged;
+                mTetheredSoftApConnectedClientsMap = clients;
+                mTetheredSoftApInfoMap = infos;
             }
-
             Iterator<ISoftApCallback> iterator =
                     mRegisteredSoftApCallbacks.getCallbacks().iterator();
             while (iterator.hasNext()) {
                 ISoftApCallback callback = iterator.next();
                 try {
-                    callback.onConnectedClientsChanged(mTetheredSoftApConnectedClients);
+                    callback.onConnectedClientsOrInfoChanged(mTetheredSoftApInfoMap,
+                            mTetheredSoftApConnectedClientsMap, mIsBridgedMode, false);
                 } catch (RemoteException e) {
-                    Log.e(TAG, "onConnectedClientsChanged: remote exception -- " + e);
-                    // TODO(b/138863863) remove does nothing, getCallbacks() returns a copy
-                    iterator.remove();
-                }
-            }
-        }
-
-        /**
-         * Called when information of softap changes.
-         *
-         * @param softApInfo is the softap information. {@link SoftApInfo}
-         */
-        @Override
-        public void onInfoChanged(SoftApInfo softApInfo) {
-            synchronized (mLock) {
-                mTetheredSoftApInfo = new SoftApInfo(softApInfo);
-            }
-
-            Iterator<ISoftApCallback> iterator =
-                    mRegisteredSoftApCallbacks.getCallbacks().iterator();
-            while (iterator.hasNext()) {
-                ISoftApCallback callback = iterator.next();
-                try {
-                    callback.onInfoChanged(mTetheredSoftApInfo);
-                } catch (RemoteException e) {
-                    Log.e(TAG, "onInfoChanged: remote exception -- " + e);
-                }
-            }
-        }
-
-        /**
-         * Called when informations of softap change.
-         *
-         * @param softApInfoList is the list of the softap information. {@link SoftApInfo}
-         */
-        @Override
-        public void onInfoListChanged(List<SoftApInfo> softApInfoList) {
-            synchronized (mLock) {
-                mTetheredSoftApInfoList = new ArrayList<>(softApInfoList);
-            }
-
-            Iterator<ISoftApCallback> iterator =
-                    mRegisteredSoftApCallbacks.getCallbacks().iterator();
-            while (iterator.hasNext()) {
-                ISoftApCallback callback = iterator.next();
-                try {
-                    callback.onInfoListChanged(mTetheredSoftApInfoList);
-                } catch (RemoteException e) {
-                    Log.e(TAG, "onInfoChanged: remote exception -- " + e);
+                    Log.e(TAG, "onConnectedClientsOrInfoChanged: remote exception -- " + e);
                 }
             }
         }
@@ -1464,7 +1456,7 @@ public class WifiServiceImpl extends BaseWifiService {
     /**
      * Implements LOHS behavior on top of the existing SoftAp API.
      */
-    private final class LohsSoftApTracker implements WifiManager.SoftApCallback {
+    private final class LohsSoftApTracker implements SoftApCallbackInternal {
         @GuardedBy("mLocalOnlyHotspotRequests")
         private final HashMap<Integer, LocalOnlyHotspotRequestInfo>
                 mLocalOnlyHotspotRequests = new HashMap<>();
@@ -1798,43 +1790,6 @@ public class WifiServiceImpl extends BaseWifiService {
                 mLohsState = state;
             }
         }
-
-        @Override
-        public void onConnectedClientsChanged(List<WifiClient> clients) {
-            // Nothing to do
-        }
-
-        /**
-         * Called when information of softap changes.
-         *
-         * @param softApInfo is the softap information. {@link SoftApInfo}
-         */
-        @Override
-        public void onInfoChanged(SoftApInfo softApInfo) {
-            // Nothing to do
-        }
-
-        /**
-         * Called when capability of softap changes.
-         *
-         * @param capability is the softap information. {@link SoftApCapability}
-         */
-        @Override
-        public void onCapabilityChanged(SoftApCapability capability) {
-            // Nothing to do
-        }
-
-        /**
-         * Called when client trying to connect but device blocked the client with specific reason.
-         *
-         * @param client the currently blocked client.
-         * @param blockedReason one of blocked reason from
-         * {@link WifiManager.SapClientBlockedReason}
-         */
-        @Override
-        public void onBlockedClientConnecting(WifiClient client, int blockedReason) {
-            // Nothing to do
-        }
     }
 
     /**
@@ -1876,9 +1831,9 @@ public class WifiServiceImpl extends BaseWifiService {
             // Update the client about the current state immediately after registering the callback
             try {
                 callback.onStateChanged(mTetheredSoftApTracker.getState(), 0);
-                callback.onConnectedClientsChanged(mTetheredSoftApTracker.getConnectedClients());
-                callback.onInfoListChanged(mTetheredSoftApTracker.getSoftApInfoList());
-                callback.onInfoChanged(mTetheredSoftApTracker.getSoftApInfo());
+                callback.onConnectedClientsOrInfoChanged(mTetheredSoftApTracker.getSoftApInfos(),
+                        mTetheredSoftApTracker.getConnectedClients(),
+                        mTetheredSoftApTracker.getIsBridgedMode(), true);
                 callback.onCapabilityChanged(mTetheredSoftApTracker.getSoftApCapability());
             } catch (RemoteException e) {
                 Log.e(TAG, "registerSoftApCallback: remote exception -- " + e);
