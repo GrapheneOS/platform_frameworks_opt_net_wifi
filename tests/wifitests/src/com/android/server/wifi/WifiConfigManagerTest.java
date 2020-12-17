@@ -222,6 +222,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 .thenReturn(false);
         when(mWifiInjector.getMacAddressUtil()).thenReturn(mMacAddressUtil);
         when(mWifiInjector.getWifiMetrics()).thenReturn(mWifiMetrics);
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(anyInt())).thenReturn(true);
         when(mMacAddressUtil.calculatePersistentMac(any(), any())).thenReturn(TEST_RANDOMIZED_MAC);
         when(mWifiScoreCard.lookupNetwork(any())).thenReturn(mPerNetwork);
 
@@ -2913,6 +2914,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         setupStoreDataForUserRead(user2Networks, new HashMap<>());
         // Now switch the user to user 2 and ensure that user 1's private network has been removed.
         when(mUserManager.isUserUnlockingOrUnlocked(UserHandle.of(user2))).thenReturn(true);
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(user1Network.creatorUid))
+                .thenReturn(false);
         Set<Integer> removedNetworks = mWifiConfigManager.handleUserSwitch(user2);
         verify(mWifiConfigStore).switchUserStoresAndRead(any(List.class));
         assertTrue((removedNetworks.size() == 1) && (removedNetworks.contains(user1NetworkId)));
@@ -3053,7 +3056,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     public void testHandleUserSwitchPushesOtherPrivateNetworksToSharedStore() throws Exception {
         int user1 = TEST_DEFAULT_USER;
         int user2 = TEST_DEFAULT_USER + 1;
-        setupUserProfiles(user2);
+        setupUserProfiles(user1);
 
         int appId = 674;
 
@@ -3091,6 +3094,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
             }
         };
         setupStoreDataForUserRead(userNetworks, new HashMap<>());
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(user2Network.creatorUid))
+                .thenReturn(false);
         mWifiConfigManager.handleUserUnlock(user1);
         verify(mWifiConfigStore).switchUserStoresAndRead(any(List.class));
         // Capture the written data for the user 1 and ensure that it corresponds to what was
@@ -3105,6 +3110,10 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Now switch the user to user2 and ensure that user 2's private network has been moved to
         // the user store.
         when(mUserManager.isUserUnlockingOrUnlocked(UserHandle.of(user2))).thenReturn(true);
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(user1Network.creatorUid))
+                .thenReturn(true).thenReturn(false);
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(user2Network.creatorUid))
+                .thenReturn(false).thenReturn(true);
         mWifiConfigManager.handleUserSwitch(user2);
         // Set the expected network list before comparing. user1Network should be in shared data.
         // Note: In the real world, user1Network will no longer be visible now because it should
@@ -3169,6 +3178,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // Unlock the owner of the legacy Passpoint configuration, verify it is removed from
         // the configured networks (migrated to PasspointManager).
         setupStoreDataForUserRead(new ArrayList<WifiConfiguration>(), new HashMap<>());
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(passpointConfig.creatorUid))
+                .thenReturn(false);
         mWifiConfigManager.handleUserUnlock(user1);
         verify(mWifiConfigStore).switchUserStoresAndRead(any(List.class));
         Pair<List<WifiConfiguration>, List<WifiConfiguration>> writtenNetworkList =
@@ -3296,7 +3307,8 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Ensure that we have 2 networks in the database before the stop.
         assertEquals(2, mWifiConfigManager.getConfiguredNetworks().size());
-
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(user1Network.creatorUid))
+                .thenReturn(false);
         mWifiConfigManager.handleUserStop(user1);
 
         // Ensure that we only have 1 shared network in the database after the stop.
@@ -3498,6 +3510,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         int creatorUid = UserHandle.getUid(user2, 674);
 
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(creatorUid)).thenReturn(false);
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(creatorUid)).thenReturn(false);
 
         // Create a network for user2 try adding it. This should be rejected.
         final WifiConfiguration user2Network = WifiConfigurationTestUtil.createPskNetwork();

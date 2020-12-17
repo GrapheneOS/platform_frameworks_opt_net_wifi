@@ -4592,12 +4592,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Test
     public void testGetNetworkSuggestions() {
         List<WifiNetworkSuggestion> testList = new ArrayList<>();
-        when(mWifiNetworkSuggestionsManager.get(anyString())).thenReturn(testList);
+        when(mWifiNetworkSuggestionsManager.get(anyString(), anyInt())).thenReturn(testList);
         mLooper.startAutoDispatch();
         assertEquals(testList, mWifiServiceImpl.getNetworkSuggestions(TEST_PACKAGE_NAME));
         mLooper.stopAutoDispatchAndIgnoreExceptions();
 
-        verify(mWifiNetworkSuggestionsManager).get(eq(TEST_PACKAGE_NAME));
+        verify(mWifiNetworkSuggestionsManager).get(eq(TEST_PACKAGE_NAME), anyInt());
     }
 
     /**
@@ -4612,7 +4612,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         assertTrue(mWifiServiceImpl.getNetworkSuggestions(TEST_PACKAGE_NAME).isEmpty());
         mLooper.stopAutoDispatchAndIgnoreExceptions();
 
-        verify(mWifiNetworkSuggestionsManager, never()).get(eq(TEST_PACKAGE_NAME));
+        verify(mWifiNetworkSuggestionsManager, never()).get(eq(TEST_PACKAGE_NAME), anyInt());
     }
 
     /**
@@ -5394,12 +5394,12 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiNetworkSuggestionsManager).registerSuggestionConnectionStatusListener(
                 eq(mAppBinder), eq(mSuggestionConnectionStatusListener), eq(NETWORK_CALLBACK_ID),
-                eq(TEST_PACKAGE_NAME));
+                eq(TEST_PACKAGE_NAME), anyInt());
         mWifiServiceImpl.unregisterSuggestionConnectionStatusListener(NETWORK_CALLBACK_ID,
                 TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
         verify(mWifiNetworkSuggestionsManager).unregisterSuggestionConnectionStatusListener(
-                eq(NETWORK_CALLBACK_ID), eq(TEST_PACKAGE_NAME));
+                eq(NETWORK_CALLBACK_ID), eq(TEST_PACKAGE_NAME), anyInt());
     }
 
 
