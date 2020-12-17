@@ -41,6 +41,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.wifi.Clock;
 import com.android.server.wifi.MacAddressUtil;
 import com.android.server.wifi.NetworkUpdateResult;
@@ -57,6 +58,7 @@ import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.InformationElementUtil;
+import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -123,6 +125,7 @@ public class PasspointManager {
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final MacAddressUtil mMacAddressUtil;
     private final Clock mClock;
+    private final WifiPermissionsUtil mWifiPermissionsUtil;
 
     /**
      * Map of package name of an app to the app ops changed listener for the app.
@@ -338,7 +341,8 @@ public class PasspointManager {
             WifiConfigStore wifiConfigStore,
             WifiMetrics wifiMetrics,
             WifiCarrierInfoManager wifiCarrierInfoManager,
-            MacAddressUtil macAddressUtil) {
+            MacAddressUtil macAddressUtil,
+            WifiPermissionsUtil wifiPermissionsUtil) {
         mPasspointEventHandler = objectFactory.makePasspointEventHandler(wifiInjector,
                 new CallbackHandler(context));
         mWifiInjector = wifiInjector;
@@ -364,6 +368,7 @@ public class PasspointManager {
         mClock = clock;
         mWifiConfigManager.addOnNetworkUpdateListener(
                 new PasspointManager.OnNetworkUpdateListener());
+        mWifiPermissionsUtil = wifiPermissionsUtil;
     }
 
     /**
@@ -442,6 +447,10 @@ public class PasspointManager {
         }
         if (!(isFromSuggestion || isTrusted)) {
             Log.e(TAG, "Set isTrusted to false on a non suggestion passpoint is not allowed");
+            return false;
+        }
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
+            Log.e(TAG, "UID " + uid + " not visible to the current user");
             return false;
         }
 
@@ -536,6 +545,10 @@ public class PasspointManager {
         if (!privileged && callingUid != provider.getCreatorUid()) {
             Log.e(TAG, "UID " + callingUid + " cannot remove profile created by "
                     + provider.getCreatorUid());
+            return false;
+        }
+        if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(callingUid)) {
+            Log.e(TAG, "UID " + callingUid + " not visible to the current user");
             return false;
         }
         provider.uninstallCertsAndKeys();
@@ -1336,6 +1349,26 @@ public class PasspointManager {
         mAnqpCache.flush();
     }
 
+    private PKIXParameters mInjectedPKIXParameters;
+    private boolean mUseInjectedPKIX = false;
+
+
+    /**
+     * Used to speedup unit test.
+     */
+    @VisibleForTesting
+    public void injectPKIXParameters(PKIXParameters params) {
+        mInjectedPKIXParameters = params;
+    }
+
+    /**
+     * Used to speedup unit test.
+     */
+    @VisibleForTesting
+    public void setUseInjectedPKIX(boolean value) {
+        mUseInjectedPKIX = value;
+    }
+
     /**
      * Verify that the given certificate is trusted by one of the pre-loaded public CAs in the
      * system key store.
@@ -1350,10 +1383,15 @@ public class PasspointManager {
         CertPathValidator validator =
                 CertPathValidator.getInstance(CertPathValidator.getDefaultType());
         CertPath path = factory.generateCertPath(Arrays.asList(caCert));
-        KeyStore ks = KeyStore.getInstance("AndroidCAStore");
-        ks.load(null, null);
-        PKIXParameters params = new PKIXParameters(ks);
-        params.setRevocationEnabled(false);
+        PKIXParameters params;
+        if (mUseInjectedPKIX) {
+            params = mInjectedPKIXParameters;
+        } else {
+            KeyStore ks = KeyStore.getInstance("AndroidCAStore");
+            ks.load(null, null);
+            params = new PKIXParameters(ks);
+            params.setRevocationEnabled(false);
+        }
         validator.validate(path, params);
     }
 

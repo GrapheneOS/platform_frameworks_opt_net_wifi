@@ -1921,8 +1921,6 @@ public class WifiConnectivityManager {
             addChannelFromWifiScoreCard(channelList, config, 0,
                     MAX_PNO_SCAN_FREQUENCY_AGE_MS);
             pnoNetwork.frequencies = channelList.stream().mapToInt(Integer::intValue).toArray();
-            localLog("retrievePnoNetworkList " + pnoNetwork.ssid + ":"
-                    + Arrays.toString(pnoNetwork.frequencies));
         }
         return pnoList;
     }

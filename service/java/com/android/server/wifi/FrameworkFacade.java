@@ -47,6 +47,7 @@ import android.widget.Toast;
 import com.android.server.wifi.util.WifiAsyncChannel;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * This class allows overriding objects with mocks to write unit tests
@@ -243,8 +244,13 @@ public class FrameworkFacade {
     /**
      * Starts supplicant
      */
-    public void startSupplicant() {
-        SupplicantManager.start();
+    public boolean startSupplicant() {
+        try {
+            SupplicantManager.start();
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
     /**

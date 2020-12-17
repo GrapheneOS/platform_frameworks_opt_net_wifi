@@ -713,14 +713,7 @@ public class SupplicantStaIfaceHal {
                 return startDaemon_V1_1();
             } else {
                 Log.i(TAG, "Starting supplicant using init");
-                try {
-                    mFrameworkFacade.startSupplicant();
-                } catch (RuntimeException e) {
-                    // likely a "failed to set system property" runtime exception
-                    Log.e(TAG, "Failed to start supplicant using init", e);
-                    return false;
-                }
-                return true;
+                return mFrameworkFacade.startSupplicant();
             }
         }
     }
