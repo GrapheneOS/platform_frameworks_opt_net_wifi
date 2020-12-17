@@ -4266,7 +4266,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             if (mEapFailureNotifier.onEapFailure(errorCode, targetedNetwork)) {
                                 disableReason = WifiConfiguration.NetworkSelectionStatus
                                     .DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC;
-                                mWifiConfigManager.loadCarrierConfigsForDisableReasonInfos();
+                                mBssidBlocklistMonitor.loadCarrierConfigsForDisableReasonInfos();
                             }
                         }
                         handleEapAuthFailure(mTargetNetworkId, errorCode);

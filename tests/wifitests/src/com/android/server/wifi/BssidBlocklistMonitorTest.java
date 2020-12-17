@@ -18,10 +18,11 @@ package com.android.server.wifi;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.times;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.util.LocalLog;
 
 import androidx.test.filters.SmallTest;
@@ -51,6 +52,7 @@ public class BssidBlocklistMonitorTest {
     private static final String TEST_BSSID_1 = "0a:08:5c:67:89:00";
     private static final String TEST_BSSID_2 = "0a:08:5c:67:89:01";
     private static final String TEST_BSSID_3 = "0a:08:5c:67:89:02";
+    private static final long TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS = 29457631;
     private static final int TEST_GOOD_RSSI = -50;
     private static final int TEST_SUFFICIENT_RSSI = -67;
     private static final int MIN_RSSI_DIFF_TO_UNBLOCK_BSSID = 5;
@@ -149,6 +151,20 @@ public class BssidBlocklistMonitorTest {
                 R.integer.config_wifiBssidBlocklistMonitorNonlocalDisconnectConnectingThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
                         BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING));
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonAssociationRejectionThreshold,
+                NetworkSelectionStatus.DISABLE_REASON_INFOS
+                        .get(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION)
+                        .mDisableThreshold);
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonAuthenticationFailureThreshold,
+                NetworkSelectionStatus.DISABLE_REASON_INFOS
+                        .get(NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE)
+                        .mDisableThreshold);
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonDhcpFailureThreshold,
+                NetworkSelectionStatus.DISABLE_REASON_INFOS
+                        .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
 
         when(mContext.getResources()).thenReturn(mResources);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
@@ -923,5 +939,278 @@ public class BssidBlocklistMonitorTest {
                 .contains(BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA));
         assertTrue(mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
                 .contains(BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
+    }
+
+    /**
+     * Verifies SSID blocklist consistent with Watchdog trigger.
+     *
+     * Expected behavior: A SSID won't gets blocklisted if there only single SSID
+     * be observed and Watchdog trigger is activated.
+     */
+    @Test
+    public void verifyConsistentWatchdogAndSsidBlocklist() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        when(mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()).thenReturn(true);
+        // First set it to enabled.
+        assertTrue(mBssidBlocklistMonitor.updateNetworkSelectionStatus(openNetwork,
+                NetworkSelectionStatus.DISABLED_NONE));
+        assertEquals(NetworkSelectionStatus.NETWORK_SELECTION_ENABLED,
+                openNetwork.getNetworkSelectionStatus().getNetworkSelectionStatus());
+
+        int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
+        int assocRejectThreshold =
+                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(assocRejectReason);
+        for (int i = 1; i <= assocRejectThreshold; i++) {
+            assertFalse(mBssidBlocklistMonitor.updateNetworkSelectionStatus(
+                    openNetwork, assocRejectReason));
+        }
+        assertFalse(openNetwork.getNetworkSelectionStatus().isNetworkTemporaryDisabled());
+    }
+
+    /**
+     * Verifies the update of network status using
+     * {@link WifiConfigManager#updateNetworkSelectionStatus(int, int)}.
+     */
+    @Test
+    public void testNetworkSelectionStatus() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        // First set it to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_NONE, 0);
+
+        // Now set it to temporarily disabled. The threshold for association rejection is 5, so
+        // disable it 5 times to actually mark it temporarily disabled.
+        int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
+        int assocRejectThreshold =
+                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(assocRejectReason);
+        for (int i = 1; i <= assocRejectThreshold; i++) {
+            verifyUpdateNetworkSelectionStatus(openNetwork, assocRejectReason, i);
+        }
+        assertEquals(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION,
+                openNetwork.getNetworkSelectionStatus().getNetworkSelectionDisableReason());
+        // Now set it to permanently disabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER, 0);
+        assertEquals(NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER,
+                openNetwork.getNetworkSelectionStatus().getNetworkSelectionDisableReason());
+        // Now set it back to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_NONE, 0);
+        assertEquals(NetworkSelectionStatus.DISABLED_NONE,
+                openNetwork.getNetworkSelectionStatus().getNetworkSelectionDisableReason());
+    }
+
+    /**
+     * Verifies the update of network status using
+     * {@link BssidBlocklistMonitor#updateNetworkSelectionStatus(int, int)}.
+     */
+    @Test
+    public void testNetworkSelectionStatusTemporarilyDisabledDueToNoInternet() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        // First set it to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_NONE, 0);
+
+        // Now set it to temporarily disabled. The threshold for no internet is 1, so
+        // disable it once to actually mark it temporarily disabled.
+        verifyUpdateNetworkSelectionStatus(openNetwork,
+                NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY, 1);
+        // Now set it back to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_NONE, 0);
+    }
+
+    /**
+     * Verifies the update of network status using
+     * {@link WifiConfigManager#updateNetworkSelectionStatus(int, int)} and ensures that
+     * enabling a network clears out all the temporary disable counters.
+     */
+    @Test
+    public void testNetworkSelectionStatusEnableClearsDisableCounters() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        // First set it to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_NONE, 0);
+
+        // Now set it to temporarily disabled 2 times for 2 different reasons.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION, 1);
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION, 2);
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE, 1);
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE, 2);
+
+        // Now set it back to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_NONE, 0);
+
+        // Ensure that the counters have all been reset now.
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION, 1);
+        verifyUpdateNetworkSelectionStatus(
+                openNetwork, NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE, 1);
+    }
+
+    /**
+     * Verifies the network's selection status update.
+     *
+     * For temporarily disabled reasons, the method ensures that the status has changed only if
+     * disable reason counter has exceeded the threshold.
+     *
+     * For permanently disabled/enabled reasons, the method ensures that the public status has
+     * changed and the network change broadcast has been sent out.
+     */
+    private void verifyUpdateNetworkSelectionStatus(
+            WifiConfiguration config, int reason, int temporaryDisableReasonCounter) {
+        when(mClock.getElapsedSinceBootMillis())
+                .thenReturn(TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
+        NetworkSelectionStatus currentStatus = config.getNetworkSelectionStatus();
+        int currentDisableReason = currentStatus.getNetworkSelectionDisableReason();
+
+        // First set the status to the provided reason.
+        mBssidBlocklistMonitor.updateNetworkSelectionStatus(config, reason);
+
+        NetworkSelectionStatus retrievedStatus = config.getNetworkSelectionStatus();
+        int retrievedDisableReason = retrievedStatus.getNetworkSelectionDisableReason();
+        long retrievedDisableTime = retrievedStatus.getDisableTime();
+        int retrievedDisableReasonCounter = retrievedStatus.getDisableReasonCounter(reason);
+        int disableReasonThreshold =
+                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(reason);
+
+        if (reason == NetworkSelectionStatus.DISABLED_NONE) {
+            assertEquals(reason, retrievedDisableReason);
+            assertTrue(retrievedStatus.isNetworkEnabled());
+            assertEquals(
+                    NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP,
+                    retrievedDisableTime);
+            assertEquals(WifiConfiguration.Status.ENABLED, config.status);
+        } else if (mBssidBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(reason)
+                < Integer.MAX_VALUE) {
+            // For temporarily disabled networks, we need to ensure that the current status remains
+            // until the threshold is crossed.
+            assertEquals(temporaryDisableReasonCounter, retrievedDisableReasonCounter);
+            if (retrievedDisableReasonCounter < disableReasonThreshold) {
+                assertEquals(currentDisableReason, retrievedDisableReason);
+                assertEquals(
+                        currentStatus.getNetworkSelectionStatus(),
+                        retrievedStatus.getNetworkSelectionStatus());
+            } else {
+                assertEquals(reason, retrievedDisableReason);
+                assertTrue(retrievedStatus.isNetworkTemporaryDisabled());
+                assertEquals(
+                        TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS, retrievedDisableTime);
+            }
+        } else if (reason < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX) {
+            assertEquals(reason, retrievedDisableReason);
+            assertTrue(retrievedStatus.isNetworkPermanentlyDisabled());
+            assertEquals(
+                    NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP,
+                    retrievedDisableTime);
+            assertEquals(WifiConfiguration.Status.DISABLED, config.status);
+        }
+    }
+
+    /**
+     * Verifies the enabling of temporarily disabled network when there are 2 BSSIDs blocked.
+     */
+    @Test
+    public void testTryEnableNetworkTwoBssidsInBlocklist() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+
+        // Verify exponential backoff on the disable duration based on number of BSSIDs in the
+        // BSSID blocklist
+        int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
+        verifyDisableNetwork(openNetwork, disableReason);
+        // add 2 BSSIDs to the blocklist
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, openNetwork.SSID,
+                Long.MAX_VALUE, BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+                TEST_GOOD_RSSI);
+        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_2, openNetwork.SSID,
+                Long.MAX_VALUE, BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+                TEST_GOOD_RSSI);
+        assertEquals(2, mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
+                Set.of(TEST_SSID_1)).size());
+        verifyNetworkIsEnabledAfter(openNetwork,
+                TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS
+                        + (mBssidBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(
+                                disableReason) * 2));
+    }
+
+    /**
+     * Verifies that a network is disabled for the base duration even when there are no BSSIDs
+     * blocked.
+     */
+    @Test
+    public void testTryEnableNetworkNoBssidsInBlocklist() {
+        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
+        int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
+
+        // Verify that with 0 BSSIDs in blocklist we enable the network immediately
+        verifyDisableNetwork(openNetwork, disableReason);
+
+        verifyNetworkIsEnabledAfter(openNetwork,
+                mBssidBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(disableReason)
+                        + TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
+    }
+
+    private void verifyDisableNetwork(WifiConfiguration config, int reason) {
+        // First set it to enabled.
+        verifyUpdateNetworkSelectionStatus(
+                config, NetworkSelectionStatus.DISABLED_NONE, 0);
+
+        int disableThreshold =
+                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(reason);
+        for (int i = 1; i <= disableThreshold; i++) {
+            verifyUpdateNetworkSelectionStatus(config, reason, i);
+        }
+    }
+
+    private void verifyNetworkIsEnabledAfter(WifiConfiguration config, long timeout) {
+        // try enabling this network 1 second earlier than the expected timeout. This
+        // should fail and the status should remain temporarily disabled.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(timeout - 1);
+        assertFalse(mBssidBlocklistMonitor.shouldEnableNetwork(config));
+
+        // Now advance time by the timeout for association rejection and ensure that the
+        // network is now enabled.
+        when(mClock.getElapsedSinceBootMillis()).thenReturn(timeout);
+        assertTrue(mBssidBlocklistMonitor.shouldEnableNetwork(config));
+    }
+
+    /**
+     * Verify that the parameters in DISABLE_REASON_INFOS are overlayable.
+     */
+    @Test
+    public void testNetworkSelectionDisableReasonCustomConfigOverride() {
+        int oldThreshold = NetworkSelectionStatus.DISABLE_REASON_INFOS
+                .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold;
+
+        // Modify the overlay value and create WifiConfigManager again.
+        int newThreshold = oldThreshold + 1;
+        mResources.setInteger(
+                R.integer.config_wifiDisableReasonDhcpFailureThreshold, newThreshold);
+        mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
+                mWifiLastResortWatchdog, mClock, mLocalLog, mWifiScoreCard, mScoringParams);
+
+        // Verify that the threshold is updated in the copied version
+        assertEquals(newThreshold, mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(
+                NetworkSelectionStatus.DISABLED_DHCP_FAILURE));
+        // Verify the original DISABLE_REASON_INFOS is unchanged
+        assertEquals(oldThreshold, NetworkSelectionStatus.DISABLE_REASON_INFOS
+                .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
+    }
+
+    /**
+     * Verify the correctness of the copied DISABLE_REASON_INFOS.
+     */
+    @Test
+    public void testNetworkSelectionDisableReasonClone() {
+        for (int i = 1; i < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX; i++) {
+            assertEquals("Disable threshold for reason=" + i + " should be equal",
+                    NetworkSelectionStatus.DISABLE_REASON_INFOS.get(i).mDisableThreshold,
+                    mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(i));
+        }
     }
 }
