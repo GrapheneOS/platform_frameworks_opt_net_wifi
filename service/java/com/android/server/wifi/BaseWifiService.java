@@ -315,6 +315,11 @@ public class BaseWifiService extends IWifiManager.Stub {
     }
 
     @Override
+    public boolean isDefaultCoexAlgorithmEnabled() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void setCoexUnsafeChannels(List<CoexUnsafeChannel> unsafeChannels, int restrictions) {
         throw new UnsupportedOperationException();
     }
