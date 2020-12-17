@@ -317,8 +317,9 @@ public class WifiInjector {
                 mWifiMetrics, mWifiDiagnostics, wifiLooper,
                 mDeviceConfigFacade, mWifiThreadRunner, mWifiMonitor);
         mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
-                mWifiLastResortWatchdog, mClock, mConnectivityLocalLog, mWifiScoreCard,
-                mScoringParams);
+                mWifiLastResortWatchdog, mClock, new LocalLog(
+                mContext.getSystemService(ActivityManager.class).isLowRamDevice() ? 128 : 256),
+                mWifiScoreCard, mScoringParams);
         mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
         // Config Manager
         mWifiConfigManager = new WifiConfigManager(mContext, mClock,

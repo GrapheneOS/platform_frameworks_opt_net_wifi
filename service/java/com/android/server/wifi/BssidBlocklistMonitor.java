@@ -228,6 +228,7 @@ public class BssidBlocklistMonitor {
      */
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("Dump of BssidBlocklistMonitor");
+        mLocalLog.dump(fd, pw, args);
         pw.println("BssidBlocklistMonitor - Bssid blocklist begin ----");
         mBssidStatusMap.values().stream().forEach(entry -> pw.println(entry));
         pw.println("BssidBlocklistMonitor - Bssid blocklist end ----");
