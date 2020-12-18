@@ -908,6 +908,15 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * see {@link WifiManager#isDefaultCoexAlgorithmEnabled()}
+     * @return {@code true} if the default coex algorithm is enabled. {@code false} otherwise.
+     */
+    @Override
+    public boolean isDefaultCoexAlgorithmEnabled() {
+        return mContext.getResources().getBoolean(R.bool.config_wifiDefaultCoexAlgorithmEnabled);
+    }
+
+    /**
      * see {@link android.net.wifi.WifiManager#setCoexUnsafeChannels(Set, int)}
      * @param unsafeChannels List of {@link CoexUnsafeChannel} to avoid.
      * @param restrictions Bitmap of {@link CoexRestriction} specifying the mandatory
