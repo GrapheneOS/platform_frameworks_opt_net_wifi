@@ -90,7 +90,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private static final String TEST_BSSID = "0a:08:5c:67:89:00";
     private static final long TEST_WALLCLOCK_CREATION_TIME_MILLIS = 9845637;
     private static final long TEST_WALLCLOCK_UPDATE_TIME_MILLIS = 75455637;
-    private static final long TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS = 29457631;
     private static final int TEST_CREATOR_UID = WifiConfigurationTestUtil.TEST_UID;
     private static final int TEST_NO_PERM_UID = 7;
     private static final int TEST_UPDATE_UID = 4;
@@ -121,6 +120,12 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     private static final int DATA_SUBID = 1;
     private static final String SYSUI_PACKAGE_NAME = "com.android.systemui";
     private static final int ALL_NON_CARRIER_MERGED_WIFI_DISABLE_DURATION_MINUTES = 30;
+    private static final int TEST_NETWORK_SELECTION_ENABLE_REASON =
+            NetworkSelectionStatus.DISABLED_NONE;
+    private static final int TEST_NETWORK_SELECTION_TEMP_DISABLE_REASON =
+            NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY;
+    private static final int TEST_NETWORK_SELECTION_PERM_DISABLE_REASON =
+            NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER;
 
     @Mock private Context mContext;
     @Mock private Clock mClock;
@@ -183,20 +188,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         mResources.setBoolean(R.bool.config_wifi_connected_mac_randomization_supported, true);
         mResources.setInteger(R.integer.config_wifiMaxPnoSsidCount, 16);
         mResources.setInteger(
-                R.integer.config_wifiDisableReasonAssociationRejectionThreshold,
-                NetworkSelectionStatus.DISABLE_REASON_INFOS
-                        .get(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION)
-                        .mDisableThreshold);
-        mResources.setInteger(
-                R.integer.config_wifiDisableReasonAuthenticationFailureThreshold,
-                NetworkSelectionStatus.DISABLE_REASON_INFOS
-                        .get(NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE)
-                        .mDisableThreshold);
-        mResources.setInteger(
-                R.integer.config_wifiDisableReasonDhcpFailureThreshold,
-                NetworkSelectionStatus.DISABLE_REASON_INFOS
-                        .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
-        mResources.setInteger(
                 R.integer.config_wifiAllNonCarrierMergedWifiDisableDurationMinutes,
                 ALL_NON_CARRIER_MERGED_WIFI_DISABLE_DURATION_MINUTES);
         when(mContext.getResources()).thenReturn(mResources);
@@ -223,6 +214,25 @@ public class WifiConfigManagerTest extends WifiBaseTest {
                 return "";
             }
         }).when(mPackageManager).getNameForUid(anyInt());
+        doAnswer(new AnswerWithArguments() {
+            public boolean answer(WifiConfiguration config, int reason) {
+                if (reason == TEST_NETWORK_SELECTION_ENABLE_REASON) {
+                    config.getNetworkSelectionStatus().setNetworkSelectionStatus(
+                            NetworkSelectionStatus.NETWORK_SELECTION_ENABLED);
+                    config.status = WifiConfiguration.Status.ENABLED;
+                } else if (reason == TEST_NETWORK_SELECTION_TEMP_DISABLE_REASON) {
+                    config.getNetworkSelectionStatus().setNetworkSelectionStatus(
+                            NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED);
+                } else if (reason == TEST_NETWORK_SELECTION_PERM_DISABLE_REASON) {
+                    config.getNetworkSelectionStatus().setNetworkSelectionStatus(
+                            NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED);
+                    config.status = WifiConfiguration.Status.DISABLED;
+                } else {
+                    // ignore all other failure reasons for simplicity of mocking.
+                }
+                return true;
+            }
+        }).when(mBssidBlocklistMonitor).updateNetworkSelectionStatus(any(), anyInt());
 
         when(mContext.getSystemService(ActivityManager.class))
                 .thenReturn(mock(ActivityManager.class));
@@ -1280,40 +1290,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that the parameters in DISABLE_REASON_INFOS are overlayable.
-     */
-    @Test
-    public void testNetworkSelectionDisableReasonCustomConfigOverride() {
-        int oldThreshold = NetworkSelectionStatus.DISABLE_REASON_INFOS
-                .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold;
-
-        // Modify the overlay value and create WifiConfigManager again.
-        int newThreshold = oldThreshold + 1;
-        mResources.setInteger(
-                R.integer.config_wifiDisableReasonDhcpFailureThreshold, newThreshold);
-        createWifiConfigManager();
-
-        // Verify that the threshold is updated in the copied version
-        assertEquals(newThreshold, mWifiConfigManager.getNetworkSelectionDisableThreshold(
-                NetworkSelectionStatus.DISABLED_DHCP_FAILURE));
-        // Verify the original DISABLE_REASON_INFOS is unchanged
-        assertEquals(oldThreshold, NetworkSelectionStatus.DISABLE_REASON_INFOS
-                .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
-    }
-
-    /**
-     * Verify the correctness of the copied DISABLE_REASON_INFOS.
-     */
-    @Test
-    public void testNetworkSelectionDisableReasonClone() {
-        for (int i = 1; i < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX; i++) {
-            assertEquals("Disable threshold for reason=" + i + " should be equal",
-                    NetworkSelectionStatus.DISABLE_REASON_INFOS.get(i).mDisableThreshold,
-                    mWifiConfigManager.getNetworkSelectionDisableThreshold(i));
-        }
-    }
-
-    /**
      * Verifies the update of network status using
      * {@link WifiConfigManager#updateNetworkSelectionStatus(int, int)}.
      */
@@ -1327,185 +1303,50 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         int networkId = result.getNetworkId();
         // First set it to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                networkId, NetworkSelectionStatus.DISABLED_NONE, 0);
+        mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                TEST_NETWORK_SELECTION_ENABLE_REASON);
 
-        // Now set it to temporarily disabled. The threshold for association rejection is 5, so
-        // disable it 5 times to actually mark it temporarily disabled.
-        int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
-        int assocRejectThreshold =
-                mWifiConfigManager.getNetworkSelectionDisableThreshold(assocRejectReason);
-        for (int i = 1; i <= assocRejectThreshold; i++) {
-            verifyUpdateNetworkSelectionStatus(result.getNetworkId(), assocRejectReason, i);
-        }
+        // Now set it to temporarily disabled.
+        mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                TEST_NETWORK_SELECTION_TEMP_DISABLE_REASON);
         verify(mWcmListener).onNetworkTemporarilyDisabled(wifiConfigCaptor.capture(),
-                eq(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION));
+                eq(TEST_NETWORK_SELECTION_TEMP_DISABLE_REASON));
         assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        verifyNetworkUpdateBroadcast();
         // Now set it to permanently disabled.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER, 0);
+        mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                TEST_NETWORK_SELECTION_PERM_DISABLE_REASON);
         verify(mWcmListener).onNetworkPermanentlyDisabled(
-                wifiConfigCaptor.capture(), eq(NetworkSelectionStatus.DISABLED_BY_WIFI_MANAGER));
+                wifiConfigCaptor.capture(), eq(TEST_NETWORK_SELECTION_PERM_DISABLE_REASON));
         assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        verifyNetworkUpdateBroadcast();
         // Now set it back to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
-        verify(mWcmListener, times(2))
-                .onNetworkEnabled(wifiConfigCaptor.capture());
+        mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                TEST_NETWORK_SELECTION_ENABLE_REASON);
+        verify(mWcmListener, times(2)).onNetworkEnabled(wifiConfigCaptor.capture());
         assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
+        verifyNetworkUpdateBroadcast();
     }
 
     /**
-     * Verifies the update of network status using
-     * {@link WifiConfigManager#updateNetworkSelectionStatus(int, int)}.
-     */
-    @Test
-    public void testNetworkSelectionStatusTemporarilyDisabledDueToNoInternet() {
-        ArgumentCaptor<WifiConfiguration> wifiConfigCaptor =
-                ArgumentCaptor.forClass(WifiConfiguration.class);
-        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-
-        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-
-        int networkId = result.getNetworkId();
-        // First set it to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                networkId, NetworkSelectionStatus.DISABLED_NONE, 0);
-
-        // Now set it to temporarily disabled. The threshold for no internet is 1, so
-        // disable it once to actually mark it temporarily disabled.
-        verifyUpdateNetworkSelectionStatus(result.getNetworkId(),
-                NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY, 1);
-        verify(mWcmListener).onNetworkTemporarilyDisabled(
-                wifiConfigCaptor.capture(),
-                eq(NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY));
-        assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
-        verify(mBssidBlocklistMonitor).handleWifiConfigurationDisabled(anyString());
-        // Now set it back to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
-        verify(mWcmListener, times(2))
-                .onNetworkEnabled(wifiConfigCaptor.capture());
-        assertEquals(openNetwork.networkId, wifiConfigCaptor.getValue().networkId);
-    }
-
-    /**
-     * Verifies the update of network status using
-     * {@link WifiConfigManager#updateNetworkSelectionStatus(int, int)} and ensures that
-     * enabling a network clears out all the temporary disable counters.
-     */
-    @Test
-    public void testNetworkSelectionStatusEnableClearsDisableCounters() {
-        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-
-        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-
-        // First set it to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
-
-        // Now set it to temporarily disabled 2 times for 2 different reasons.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION, 1);
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION, 2);
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE, 1);
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE, 2);
-
-        // Now set it back to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
-
-        // Ensure that the counters have all been reset now.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION, 1);
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE, 1);
-    }
-
-    private void verifyDisableNetwork(NetworkUpdateResult result, int reason) {
-        // First set it to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                result.getNetworkId(), NetworkSelectionStatus.DISABLED_NONE, 0);
-
-        int disableThreshold =
-                mWifiConfigManager.getNetworkSelectionDisableThreshold(reason);
-        for (int i = 1; i <= disableThreshold; i++) {
-            verifyUpdateNetworkSelectionStatus(result.getNetworkId(), reason, i);
-        }
-    }
-
-    private void verifyNetworkIsEnabledAfter(int networkId, long timeout) {
-        // try enabling this network 1 second earlier than the expected timeout. This
-        // should fail and the status should remain temporarily disabled.
-        when(mClock.getElapsedSinceBootMillis()).thenReturn(timeout - 1);
-        assertFalse(mWifiConfigManager.tryEnableNetwork(networkId));
-        NetworkSelectionStatus retrievedStatus =
-                mWifiConfigManager.getConfiguredNetwork(networkId).getNetworkSelectionStatus();
-        assertTrue(retrievedStatus.isNetworkTemporaryDisabled());
-
-        // Now advance time by the timeout for association rejection and ensure that the
-        // network is now enabled.
-        when(mClock.getElapsedSinceBootMillis()).thenReturn(timeout);
-        assertTrue(mWifiConfigManager.tryEnableNetwork(networkId));
-        retrievedStatus = mWifiConfigManager.getConfiguredNetwork(networkId)
-                .getNetworkSelectionStatus();
-        assertTrue(retrievedStatus.isNetworkEnabled());
-    }
-
-    /**
-     * Verifies the enabling of temporarily disabled network using
-     * {@link WifiConfigManager#tryEnableNetwork(int)}.
+     * Verify tryEnableNetwork sets NetworkSelectionStatus to NETWORK_SELECTION_ENABLED when
+     * BssidBlocklistMonitor.shouldEnableNetwork returns true.
      */
     @Test
     public void testTryEnableNetwork() {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
+        when(mBssidBlocklistMonitor.shouldEnableNetwork(any())).thenReturn(true);
 
-        // Verify exponential backoff on the disable duration based on number of BSSIDs in the
-        // BSSID blocklist
-        long multiplier = 1;
-        int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
-        long timeout = 0;
-        for (int i = 1; i < MAX_BLOCKED_BSSID_PER_NETWORK + 1; i++) {
-            verifyDisableNetwork(result, disableReason);
-            int numBssidsInBlocklist = i;
-            when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString()))
-                    .thenReturn(numBssidsInBlocklist);
-            timeout = mWifiConfigManager.getNetworkSelectionDisableTimeoutMillis(disableReason)
-                    * multiplier;
-            multiplier *= 2;
-            verifyNetworkIsEnabledAfter(result.getNetworkId(),
-                    TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS + timeout);
-        }
+        // first set the network to temporarily disabled
+        verifyDisableNetwork(result, false);
+        verifyNetworkUpdateBroadcast();
 
-        // Verify one last time that the disable duration is capped at some maximum.
-        verifyDisableNetwork(result, disableReason);
-        when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString()))
-                .thenReturn(MAX_BLOCKED_BSSID_PER_NETWORK + 1);
-        verifyNetworkIsEnabledAfter(result.getNetworkId(),
-                TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS + timeout);
-    }
-
-    /**
-     * Verifies that a network is disabled for the base duration even when there are no BSSIDs
-     * blocked.
-     */
-    @Test
-    public void testTryEnableNetworkNoBssidsInBlocklist() {
-        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-        int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
-
-        // Verify that with 0 BSSIDs in blocklist we enable the network immediately
-        verifyDisableNetwork(result, disableReason);
-        when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(anyString())).thenReturn(0);
-
-        verifyNetworkIsEnabledAfter(result.getNetworkId(),
-                mWifiConfigManager.getNetworkSelectionDisableTimeoutMillis(disableReason)
-                        + TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
+        assertTrue(mWifiConfigManager.tryEnableNetwork(result.getNetworkId()));
+        assertEquals(NetworkSelectionStatus.NETWORK_SELECTION_ENABLED,
+                mWifiConfigManager.getConfiguredNetworks().get(0)
+                        .getNetworkSelectionStatus().getNetworkSelectionStatus());
+        verifyNetworkUpdateBroadcast();
     }
 
     /**
@@ -1515,8 +1356,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     public void testEnableTemporaryDisabledNetworks() {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-        int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
-        verifyDisableNetwork(result, disableReason);
+        verifyDisableNetwork(result, false);
         assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
                 .getNetworkSelectionStatus().isNetworkTemporaryDisabled());
 
@@ -1533,14 +1373,37 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     public void testEnableTemporaryDisabledNetworks_PermanentDisableNetworksStillDisabled() {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-        int disableReason = NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
-        verifyDisableNetwork(result, disableReason);
+        verifyDisableNetwork(result, true);
         assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
                 .getNetworkSelectionStatus().isNetworkPermanentlyDisabled());
 
         mWifiConfigManager.enableTemporaryDisabledNetworks();
         assertEquals(true, mWifiConfigManager.getConfiguredNetworks().get(0)
                 .getNetworkSelectionStatus().isNetworkPermanentlyDisabled());
+    }
+
+    private void verifyDisableNetwork(NetworkUpdateResult result, boolean permanentlyDisable) {
+        // First set it to enabled.
+        int networkId = result.getNetworkId();
+        assertTrue(mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                TEST_NETWORK_SELECTION_ENABLE_REASON));
+        assertEquals(NetworkSelectionStatus.NETWORK_SELECTION_ENABLED,
+                mWifiConfigManager.getConfiguredNetworks().get(0)
+                        .getNetworkSelectionStatus().getNetworkSelectionStatus());
+
+        if (permanentlyDisable) {
+            assertTrue(mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                    TEST_NETWORK_SELECTION_PERM_DISABLE_REASON));
+            assertEquals(NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED,
+                    mWifiConfigManager.getConfiguredNetworks().get(0)
+                            .getNetworkSelectionStatus().getNetworkSelectionStatus());
+        } else {
+            assertTrue(mWifiConfigManager.updateNetworkSelectionStatus(networkId,
+                    TEST_NETWORK_SELECTION_TEMP_DISABLE_REASON));
+            assertEquals(NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED,
+                    mWifiConfigManager.getConfiguredNetworks().get(0)
+                            .getNetworkSelectionStatus().getNetworkSelectionStatus());
+        }
     }
 
     /**
@@ -5732,72 +5595,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     }
 
     /**
-     * Verifies the network's selection status update.
-     *
-     * For temporarily disabled reasons, the method ensures that the status has changed only if
-     * disable reason counter has exceeded the threshold.
-     *
-     * For permanently disabled/enabled reasons, the method ensures that the public status has
-     * changed and the network change broadcast has been sent out.
-     */
-    private void verifyUpdateNetworkSelectionStatus(
-            int networkId, int reason, int temporaryDisableReasonCounter) {
-        when(mClock.getElapsedSinceBootMillis())
-                .thenReturn(TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
-
-        // Fetch the current status of the network before we try to update the status.
-        WifiConfiguration retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(networkId);
-        NetworkSelectionStatus currentStatus = retrievedNetwork.getNetworkSelectionStatus();
-        int currentDisableReason = currentStatus.getNetworkSelectionDisableReason();
-
-        // First set the status to the provided reason.
-        assertTrue(mWifiConfigManager.updateNetworkSelectionStatus(networkId, reason));
-
-        // Now fetch the network configuration and verify the new status of the network.
-        retrievedNetwork = mWifiConfigManager.getConfiguredNetwork(networkId);
-
-        NetworkSelectionStatus retrievedStatus = retrievedNetwork.getNetworkSelectionStatus();
-        int retrievedDisableReason = retrievedStatus.getNetworkSelectionDisableReason();
-        long retrievedDisableTime = retrievedStatus.getDisableTime();
-        int retrievedDisableReasonCounter = retrievedStatus.getDisableReasonCounter(reason);
-        int disableReasonThreshold =
-                mWifiConfigManager.getNetworkSelectionDisableThreshold(reason);
-
-        if (reason == NetworkSelectionStatus.DISABLED_NONE) {
-            assertEquals(reason, retrievedDisableReason);
-            assertTrue(retrievedStatus.isNetworkEnabled());
-            assertEquals(
-                    NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP,
-                    retrievedDisableTime);
-            verifyUpdateNetworkStatus(retrievedNetwork, WifiConfiguration.Status.ENABLED);
-        } else if (mWifiConfigManager.getNetworkSelectionDisableTimeoutMillis(reason)
-                < Integer.MAX_VALUE) {
-            // For temporarily disabled networks, we need to ensure that the current status remains
-            // until the threshold is crossed.
-            assertEquals(temporaryDisableReasonCounter, retrievedDisableReasonCounter);
-            if (retrievedDisableReasonCounter < disableReasonThreshold) {
-                assertEquals(currentDisableReason, retrievedDisableReason);
-                assertEquals(
-                        currentStatus.getNetworkSelectionStatus(),
-                        retrievedStatus.getNetworkSelectionStatus());
-            } else {
-                assertEquals(reason, retrievedDisableReason);
-                assertTrue(retrievedStatus.isNetworkTemporaryDisabled());
-                assertEquals(
-                        TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS, retrievedDisableTime);
-                verifyNetworkUpdateBroadcast();
-            }
-        } else if (reason < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX) {
-            assertEquals(reason, retrievedDisableReason);
-            assertTrue(retrievedStatus.isNetworkPermanentlyDisabled());
-            assertEquals(
-                    NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP,
-                    retrievedDisableTime);
-            verifyUpdateNetworkStatus(retrievedNetwork, WifiConfiguration.Status.DISABLED);
-        }
-    }
-
-    /**
      * Creates a scan detail corresponding to the provided network and given BSSID, level &frequency
      * values.
      */
@@ -5915,37 +5712,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
 
         // Ensure all the networks are removed now.
         assertTrue(mWifiConfigManager.getConfiguredNetworks().isEmpty());
-    }
-
-    /**
-     * Verifies SSID blocklist consistent with Watchdog trigger.
-     *
-     * Expected behavior: A SSID won't gets blocklisted if there only single SSID
-     * be observed and Watchdog trigger is activated.
-     */
-    @Test
-    public void verifyConsistentWatchdogAndSsidBlocklist() {
-
-        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        NetworkUpdateResult result = verifyAddNetworkToWifiConfigManager(openNetwork);
-
-        when(mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()).thenReturn(true);
-
-        int networkId = result.getNetworkId();
-        // First set it to enabled.
-        verifyUpdateNetworkSelectionStatus(
-                networkId, NetworkSelectionStatus.DISABLED_NONE, 0);
-
-        int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
-        int assocRejectThreshold =
-                mWifiConfigManager.getNetworkSelectionDisableThreshold(assocRejectReason);
-        for (int i = 1; i <= assocRejectThreshold; i++) {
-            assertFalse(mWifiConfigManager.updateNetworkSelectionStatus(
-                        networkId, assocRejectReason));
-        }
-
-        assertFalse(mWifiConfigManager.getConfiguredNetwork(networkId)
-                    .getNetworkSelectionStatus().isNetworkTemporaryDisabled());
     }
 
     /**

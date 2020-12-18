@@ -16,8 +16,6 @@
 
 package com.android.server.wifi;
 
-import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLE_REASON_INFOS;
-
 import android.Manifest;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -33,8 +31,6 @@ import android.net.StaticIpConfiguration;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
-import android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DisableReasonInfo;
-import android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NetworkSelectionDisableReason;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -49,7 +45,6 @@ import android.util.ArraySet;
 import android.util.LocalLog;
 import android.util.Log;
 import android.util.Pair;
-import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.net.module.util.MacAddressUtils;
@@ -188,12 +183,6 @@ public class WifiConfigManager {
      * Maximum age of scan results that can be used for averaging out RSSI value.
      */
     private static final int SCAN_RESULT_MAXIMUM_AGE_MS = 40000;
-
-    /**
-     * Maximum number of blocked BSSIDs per SSID used for calcualting the duration of temporarily
-     * disabling a network.
-     */
-    private static final int MAX_BLOCKED_BSSID_PER_NETWORK = 10;
 
     /**
      * Enforce a minimum time to wait after the last disconnect to generate a new randomized MAC,
@@ -352,7 +341,6 @@ public class WifiConfigManager {
     private final NetworkListSharedStoreData mNetworkListSharedStoreData;
     private final NetworkListUserStoreData mNetworkListUserStoreData;
     private final RandomizedMacStoreData mRandomizedMacStoreData;
-    private final SparseArray<DisableReasonInfo> mDisableReasonInfo;
 
     /**
      * Create new instance of WifiConfigManager.
@@ -407,75 +395,11 @@ public class WifiConfigManager {
 
         mFrameworkFacade = frameworkFacade;
         mDeviceConfigFacade = deviceConfigFacade;
-        mDisableReasonInfo = DISABLE_REASON_INFOS.clone();
-        loadCustomConfigsForDisableReasonInfos();
 
         mLocalLog = new LocalLog(
                 context.getSystemService(ActivityManager.class).isLowRamDevice() ? 128 : 256);
         mMacAddressUtil = macAddressUtil;
         mLruConnectionTracker = lruConnectionTracker;
-    }
-
-    /**
-     * Modify the internal copy of DisableReasonInfo with custom configurations defined in
-     * an overlay.
-     */
-    private void loadCustomConfigsForDisableReasonInfos() {
-        mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION,
-                new DisableReasonInfo(
-                        // Note that there is a space at the end of this string. Cannot fix
-                        // since this string is persisted.
-                        "NETWORK_SELECTION_DISABLED_ASSOCIATION_REJECTION ",
-                        mContext.getResources().getInteger(R.integer
-                                .config_wifiDisableReasonAssociationRejectionThreshold),
-                        5 * 60 * 1000));
-
-        mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE,
-                new DisableReasonInfo(
-                        "NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE",
-                        mContext.getResources().getInteger(R.integer
-                                .config_wifiDisableReasonAuthenticationFailureThreshold),
-                        5 * 60 * 1000));
-
-        mDisableReasonInfo.put(NetworkSelectionStatus.DISABLED_DHCP_FAILURE,
-                new DisableReasonInfo(
-                        "NETWORK_SELECTION_DISABLED_DHCP_FAILURE",
-                        mContext.getResources().getInteger(R.integer
-                                .config_wifiDisableReasonDhcpFailureThreshold),
-                        5 * 60 * 1000));
-    }
-
-    /**
-     * Network Selection disable reason thresholds. These numbers are used to debounce network
-     * failures before we disable them.
-     *
-     * @param reason int reason code
-     * @return the disable threshold, or -1 if not found.
-     */
-    @VisibleForTesting
-    public int getNetworkSelectionDisableThreshold(@NetworkSelectionDisableReason int reason) {
-        DisableReasonInfo info = mDisableReasonInfo.get(reason);
-        if (info == null) {
-            Log.e(TAG, "Unrecognized network disable reason code for disable threshold: " + reason);
-            return -1;
-        } else {
-            return info.mDisableThreshold;
-        }
-    }
-
-    /**
-     * Network Selection disable timeout for each kind of error. After the timeout in milliseconds,
-     * enable the network again.
-     */
-    @VisibleForTesting
-    public int getNetworkSelectionDisableTimeoutMillis(@NetworkSelectionDisableReason int reason) {
-        DisableReasonInfo info = mDisableReasonInfo.get(reason);
-        if (info == null) {
-            Log.e(TAG, "Unrecognized network disable reason code for disable timeout: " + reason);
-            return -1;
-        } else {
-            return info.mDisableTimeoutMillis;
-        }
     }
 
     /**
@@ -669,6 +593,7 @@ public class WifiConfigManager {
         mVerboseLoggingEnabled = verbose;
         mWifiConfigStore.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiKeyStore.enableVerboseLogging(mVerboseLoggingEnabled);
+        mBssidBlocklistMonitor.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
     /**
@@ -1693,155 +1618,12 @@ public class WifiConfigManager {
     }
 
     /**
-     * Helper method to mark a network enabled for network selection.
-     */
-    private void setNetworkSelectionEnabled(WifiConfiguration config) {
-        NetworkSelectionStatus status = config.getNetworkSelectionStatus();
-        if (status.getNetworkSelectionStatus()
-                != NetworkSelectionStatus.NETWORK_SELECTION_ENABLED) {
-            localLog("setNetworkSelectionEnabled: configKey=" + config.getProfileKey()
-                    + " old networkStatus=" + status.getNetworkStatusString()
-                    + " disableReason=" + status.getNetworkSelectionDisableReasonString());
-        }
-        status.setNetworkSelectionStatus(
-                NetworkSelectionStatus.NETWORK_SELECTION_ENABLED);
-        status.setDisableTime(
-                NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP);
-        status.setNetworkSelectionDisableReason(NetworkSelectionStatus.DISABLED_NONE);
-
-        // Clear out all the disable reason counters.
-        status.clearDisableReasonCounter();
-        for (OnNetworkUpdateListener listener : mListeners) {
-            listener.onNetworkEnabled(
-                    createExternalWifiConfiguration(config, true, Process.WIFI_UID));
-        }
-    }
-
-    /**
-     * Helper method to mark a network temporarily disabled for network selection.
-     */
-    private void setNetworkSelectionTemporarilyDisabled(
-            WifiConfiguration config, int disableReason) {
-        NetworkSelectionStatus status = config.getNetworkSelectionStatus();
-        status.setNetworkSelectionStatus(
-                NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED);
-        // Only need a valid time filled in for temporarily disabled networks.
-        status.setDisableTime(mClock.getElapsedSinceBootMillis());
-        status.setNetworkSelectionDisableReason(disableReason);
-        for (OnNetworkUpdateListener listener : mListeners) {
-            listener.onNetworkTemporarilyDisabled(
-                    createExternalWifiConfiguration(config, true, Process.WIFI_UID), disableReason);
-        }
-        mBssidBlocklistMonitor.handleWifiConfigurationDisabled(config.SSID);
-    }
-
-    /**
-     * Helper method to mark a network permanently disabled for network selection.
-     */
-    private void setNetworkSelectionPermanentlyDisabled(
-            WifiConfiguration config, int disableReason) {
-        NetworkSelectionStatus status = config.getNetworkSelectionStatus();
-        status.setNetworkSelectionStatus(
-                NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED);
-        status.setDisableTime(
-                NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP);
-        status.setNetworkSelectionDisableReason(disableReason);
-        for (OnNetworkUpdateListener listener : mListeners) {
-            WifiConfiguration configForListener = new WifiConfiguration(config);
-            listener.onNetworkPermanentlyDisabled(
-                    createExternalWifiConfiguration(config, true, Process.WIFI_UID), disableReason);
-        }
-        mBssidBlocklistMonitor.handleWifiConfigurationDisabled(config.SSID);
-    }
-
-    /**
      * Helper method to set the publicly exposed status for the network and send out the network
      * status change broadcast.
      */
     private void setNetworkStatus(WifiConfiguration config, int status) {
         config.status = status;
         sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
-    }
-
-    /**
-     * Sets a network's status (both internal and public) according to the update reason and
-     * its current state.
-     *
-     * This updates the network's {@link WifiConfiguration#mNetworkSelectionStatus} field and the
-     * public {@link WifiConfiguration#status} field if the network is either enabled or
-     * permanently disabled.
-     *
-     * @param config network to be updated.
-     * @param reason reason code for update.
-     * @return true if the input configuration has been updated, false otherwise.
-     */
-    private boolean setNetworkSelectionStatus(WifiConfiguration config, int reason) {
-        NetworkSelectionStatus networkStatus = config.getNetworkSelectionStatus();
-        if (reason < 0 || reason >= NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX) {
-            Log.e(TAG, "Invalid Network disable reason " + reason);
-            return false;
-        }
-        if (reason == NetworkSelectionStatus.DISABLED_NONE) {
-            setNetworkSelectionEnabled(config);
-            setNetworkStatus(config, WifiConfiguration.Status.ENABLED);
-        } else if (getNetworkSelectionDisableTimeoutMillis(reason) < Integer.MAX_VALUE) {
-            setNetworkSelectionTemporarilyDisabled(config, reason);
-            sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
-        } else {
-            setNetworkSelectionPermanentlyDisabled(config, reason);
-            setNetworkStatus(config, WifiConfiguration.Status.DISABLED);
-        }
-        localLog("setNetworkSelectionStatus: configKey=" + config.getProfileKey()
-                + " networkStatus=" + networkStatus.getNetworkStatusString() + " disableReason="
-                + networkStatus.getNetworkSelectionDisableReasonString());
-        saveToStore(false);
-        return true;
-    }
-
-    /**
-     * Update a network's status (both internal and public) according to the update reason and
-     * its current state.
-     *
-     * @param config network to be updated.
-     * @param reason reason code for update.
-     * @return true if the input configuration has been updated, false otherwise.
-     */
-    private boolean updateNetworkSelectionStatus(WifiConfiguration config, int reason) {
-        NetworkSelectionStatus networkStatus = config.getNetworkSelectionStatus();
-        if (reason != NetworkSelectionStatus.DISABLED_NONE) {
-
-            // Do not update SSID blocklist with information if this is the only
-            // SSID be observed. By ignoring it we will cause additional failures
-            // which will trigger Watchdog.
-            if (reason == NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION
-                    || reason == NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE
-                    || reason == NetworkSelectionStatus.DISABLED_DHCP_FAILURE) {
-                if (mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()) {
-                    if (mVerboseLoggingEnabled) {
-                        Log.v(TAG, "Ignore update network selection status "
-                                    + "since Watchdog trigger is activated");
-                    }
-                    return false;
-                }
-            }
-
-            networkStatus.incrementDisableReasonCounter(reason);
-            // For network disable reasons, we should only update the status if we cross the
-            // threshold.
-            int disableReasonCounter = networkStatus.getDisableReasonCounter(reason);
-            int disableReasonThreshold = getNetworkSelectionDisableThreshold(reason);
-            if (disableReasonCounter < disableReasonThreshold) {
-                if (mVerboseLoggingEnabled) {
-                    Log.v(TAG, "Disable counter for network " + config.getPrintableSsid()
-                            + " for reason "
-                            + NetworkSelectionStatus.getNetworkSelectionDisableReasonString(reason)
-                            + " is " + networkStatus.getDisableReasonCounter(reason)
-                            + " and threshold is " + disableReasonThreshold);
-                }
-                return true;
-            }
-        }
-        return setNetworkSelectionStatus(config, reason);
     }
 
     /**
@@ -1867,46 +1649,61 @@ public class WifiConfigManager {
         return updateNetworkSelectionStatus(config, reason);
     }
 
+    private boolean updateNetworkSelectionStatus(WifiConfiguration config, int reason) {
+        int prevNetworkSelectionStatus = config.getNetworkSelectionStatus()
+                .getNetworkSelectionStatus();
+        if (!mBssidBlocklistMonitor.updateNetworkSelectionStatus(config, reason)) {
+            return false;
+        }
+        int newNetworkSelectionStatus = config.getNetworkSelectionStatus()
+                .getNetworkSelectionStatus();
+        if (prevNetworkSelectionStatus != newNetworkSelectionStatus) {
+            sendNetworkSelectionStatusChangedUpdate(config, newNetworkSelectionStatus, reason);
+            sendConfiguredNetworkChangedBroadcast(WifiManager.CHANGE_REASON_CONFIG_CHANGE);
+        }
+        saveToStore(false);
+        return true;
+    }
+
+    private void sendNetworkSelectionStatusChangedUpdate(WifiConfiguration config,
+            int newNetworkSelectionStatus, int disableReason) {
+        switch (newNetworkSelectionStatus) {
+            case NetworkSelectionStatus.NETWORK_SELECTION_ENABLED:
+                for (OnNetworkUpdateListener listener : mListeners) {
+                    listener.onNetworkEnabled(
+                            createExternalWifiConfiguration(config, true, Process.WIFI_UID));
+                }
+                break;
+            case NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED:
+                for (OnNetworkUpdateListener listener : mListeners) {
+                    listener.onNetworkTemporarilyDisabled(
+                            createExternalWifiConfiguration(config, true, Process.WIFI_UID),
+                            disableReason);
+                }
+                break;
+            case NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED:
+                for (OnNetworkUpdateListener listener : mListeners) {
+                    WifiConfiguration configForListener = new WifiConfiguration(config);
+                    listener.onNetworkPermanentlyDisabled(
+                            createExternalWifiConfiguration(config, true, Process.WIFI_UID),
+                            disableReason);
+                }
+                break;
+            default:
+                // all cases covered
+        }
+    }
+
     /**
      * Re-enable all temporary disabled configured networks.
      */
     public void enableTemporaryDisabledNetworks() {
         for (WifiConfiguration config : getInternalConfiguredNetworks()) {
             if (config.getNetworkSelectionStatus().isNetworkTemporaryDisabled()) {
-                setNetworkSelectionStatus(config, NetworkSelectionStatus.DISABLED_NONE);
+                updateNetworkSelectionStatus(config,
+                        NetworkSelectionStatus.DISABLED_NONE);
             }
         }
-    }
-
-    /**
-     * Attempt to re-enable a network for network selection, if this network was either:
-     * a) Previously temporarily disabled, but its disable timeout has expired, or
-     * b) Previously disabled because of a user switch, but is now visible to the current
-     * user.
-     *
-     * @param config configuration for the network to be re-enabled for network selection. The
-     *               network corresponding to the config must be visible to the current user.
-     * @return true if the network identified by {@param config} was re-enabled for qualified
-     * network selection, false otherwise.
-     */
-    private boolean tryEnableNetwork(WifiConfiguration config) {
-        NetworkSelectionStatus networkStatus = config.getNetworkSelectionStatus();
-        if (networkStatus.isNetworkTemporaryDisabled()) {
-            long timeDifferenceMs =
-                    mClock.getElapsedSinceBootMillis() - networkStatus.getDisableTime();
-            int disableReason = networkStatus.getNetworkSelectionDisableReason();
-            int blockedBssids = Math.min(MAX_BLOCKED_BSSID_PER_NETWORK,
-                    mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID));
-            long disableTimeoutMs = (long) getNetworkSelectionDisableTimeoutMillis(disableReason);
-            if (blockedBssids > 1) {
-                disableTimeoutMs *= Math.pow(2.0, blockedBssids - 1.0);
-            }
-            if (timeDifferenceMs >= disableTimeoutMs) {
-                return updateNetworkSelectionStatus(
-                        config, NetworkSelectionStatus.DISABLED_NONE);
-            }
-        }
-        return false;
     }
 
     /**
@@ -1924,7 +1721,10 @@ public class WifiConfigManager {
         if (config == null) {
             return false;
         }
-        return tryEnableNetwork(config);
+        if (mBssidBlocklistMonitor.shouldEnableNetwork(config)) {
+            return updateNetworkSelectionStatus(config, NetworkSelectionStatus.DISABLED_NONE);
+        }
+        return false;
     }
 
     /**
@@ -3606,18 +3406,5 @@ public class WifiConfigManager {
             return NetworkUpdateResult.makeFailed();
         }
         return result;
-    }
-
-    /** Update DisableReasonInfo with carrier configurations defined in an overlay. **/
-    public void loadCarrierConfigsForDisableReasonInfos() {
-        int duration = mContext.getResources().getInteger(
-                R.integer.config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs);
-        mDisableReasonInfo.put(
-                NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC,
-                new DisableReasonInfo(
-                        "NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC",
-                        mContext.getResources().getInteger(R.integer
-                        .config_wifiDisableReasonAuthenticationFailureCarrierSpecificThreshold),
-                        duration == -1 ? Integer.MAX_VALUE : duration));
     }
 }
