@@ -23,6 +23,7 @@ import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static java.security.cert.PKIXReason.NO_TRUST_ANCHOR;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.net.MacAddress;
@@ -55,13 +56,17 @@ import com.android.server.wifi.WifiNative;
 import com.android.server.wifi.hotspot2.anqp.ANQPElement;
 import com.android.server.wifi.hotspot2.anqp.Constants;
 import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
+import com.android.server.wifi.hotspot2.anqp.I18Name;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
+import com.android.server.wifi.hotspot2.anqp.VenueNameElement;
+import com.android.server.wifi.hotspot2.anqp.VenueUrlElement;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.InformationElementUtil;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.CertPath;
@@ -76,6 +81,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1416,6 +1422,69 @@ public class PasspointManager {
         // I am seeing R2's that respond to Venue URL request, so may keep it this way.
         // APs that do not support this ANQP request simply ignore it.
         mAnqpRequestManager.requestVenueUrlAnqpElement(bssid, anqpKey);
+    }
+
+    /**
+     * Get the Venue URL associated to the scan result, matched to the system language. If no
+     * Venue URL matches the system language, then entry number one is returned, which is considered
+     * to be the venue's default language.
+     *
+     * @param scanResult Scan result
+     * @return The Venue URL associated to the scan result or null if not found
+     */
+    @Nullable
+    public URL getVenueUrl(@NonNull ScanResult scanResult) {
+        long bssid;
+        try {
+            bssid = Utils.parseMac(scanResult.BSSID);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid BSSID provided in the scan result: " + scanResult.BSSID);
+            return null;
+        }
+        InformationElementUtil.Vsa vsa = InformationElementUtil.getHS2VendorSpecificIE(
+                scanResult.informationElements);
+        ANQPNetworkKey anqpKey = ANQPNetworkKey.buildKey(scanResult.SSID, bssid, scanResult.hessid,
+                vsa.anqpDomainID);
+        ANQPData anqpEntry = mAnqpCache.getEntry(anqpKey);
+        if (anqpEntry == null) {
+            return null;
+        }
+        VenueUrlElement venueUrlElement = (VenueUrlElement)
+                anqpEntry.getElements().get(Constants.ANQPElementType.ANQPVenueUrl);
+        if (venueUrlElement == null || venueUrlElement.getVenueUrls().isEmpty()) {
+            return null; // No Venue URL
+        }
+        VenueNameElement venueNameElement = (VenueNameElement)
+                anqpEntry.getElements().get(Constants.ANQPElementType.ANQPVenueName);
+        if (venueNameElement == null
+                || venueUrlElement.getVenueUrls().size() != venueNameElement.getNames().size()) {
+            Log.w(TAG, "Venue name list size mismatches the Venue URL list size");
+            return null; // No match between Venue names Venue URLs
+        }
+
+        // Find the Venue URL that matches the system language. Venue URLs are ordered by venue
+        // names.
+        Locale locale = Locale.getDefault();
+        URL venueUrl = null;
+        int index = 1;
+        for (I18Name venueName : venueNameElement.getNames()) {
+            if (venueName.getLanguage().equals(locale.getISO3Language())) {
+                venueUrl = venueUrlElement.getVenueUrls().get(index);
+                break;
+            }
+            index++;
+        }
+
+        // If no venue URL for the system language is available, use entry number one
+        if (venueUrl == null) {
+            venueUrl = venueUrlElement.getVenueUrls().get(1);
+        }
+
+        if (mVerboseLoggingEnabled) {
+            Log.d(TAG, "Venue URL to display (language = " + locale.getDisplayLanguage()
+                    + "): " + (venueUrl != null ? venueUrl : "None"));
+        }
+        return venueUrl;
     }
 
     /**

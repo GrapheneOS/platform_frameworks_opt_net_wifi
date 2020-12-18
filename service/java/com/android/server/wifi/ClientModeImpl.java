@@ -34,6 +34,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.ReasonCode;
 import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback.StatusCode;
+import android.net.CaptivePortalData;
 import android.net.ConnectivityManager;
 import android.net.DhcpResultsParcelable;
 import android.net.InvalidPacketException;
@@ -136,6 +137,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -835,6 +837,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void onProvisioningSuccess(LinkProperties newLp) {
+            addPasspointVenueUrlToLinkProperties(newLp);
             mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CMD_IP_CONFIGURATION_SUCCESSFUL);
             sendMessage(CMD_UPDATE_LINKPROPERTIES, newLp);
             sendMessage(CMD_IP_CONFIGURATION_SUCCESSFUL);
@@ -848,6 +851,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void onLinkPropertiesChange(LinkProperties newLp) {
+            addPasspointVenueUrlToLinkProperties(newLp);
             sendMessage(CMD_UPDATE_LINKPROPERTIES, newLp);
         }
 
@@ -2139,6 +2143,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
         // We own this instance of LinkProperties because IpClient passes us a copy.
         mLinkProperties = newLp;
+
         if (mNetworkAgent != null) {
             mNetworkAgent.sendLinkProperties(mLinkProperties);
         }
@@ -3477,8 +3482,6 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                 }
                 case WifiMonitor.ANQP_DONE_EVENT: {
                     mPasspointManager.notifyANQPDone((AnqpEvent) message.obj);
-                    //TODO(haishalom@): If this was a Venue URL response, need to invoke the
-                    //networking API to display a notification
                     break;
                 }
                 case CMD_STOP_IP_PACKET_OFFLOAD: {
@@ -5980,5 +5983,27 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     @Override
     public List<RxFateReport> getRxPktFates() {
         return mWifiNative.getRxPktFates(mInterfaceName);
+    }
+
+    private void addPasspointVenueUrlToLinkProperties(LinkProperties linkProperties) {
+        WifiConfiguration currentNetwork = getConnectedWifiConfigurationInternal();
+        if (currentNetwork == null || !currentNetwork.isPasspoint()) {
+            return;
+        }
+        ScanResult scanResult = mScanRequestProxy.getScanResult(mLastBssid);
+
+        if (scanResult == null) {
+            return;
+        }
+        URL venueUrl = mPasspointManager.getVenueUrl(scanResult);
+        if (venueUrl != null) {
+            // Update the Venue URL and the friendly name to populate the notification
+            CaptivePortalData captivePortalData = new CaptivePortalData.Builder()
+                    .setVenueInfoUrl(Uri.parse(venueUrl.toString()))
+                    // TODO: Add when new API is available
+                    // .setVenueFriendlyName(currentNetwork.providerFriendlyName)
+                    .build();
+            linkProperties.setCaptivePortalData(captivePortalData);
+        }
     }
 }

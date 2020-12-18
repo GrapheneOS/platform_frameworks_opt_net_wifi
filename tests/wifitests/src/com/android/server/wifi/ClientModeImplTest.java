@@ -5490,11 +5490,13 @@ public class ClientModeImplTest extends WifiBaseTest {
         when(mDataTelephonyManager.getSimOperator()).thenReturn("123456");
         when(mDataTelephonyManager.getSimState()).thenReturn(TelephonyManager.SIM_STATE_READY);
         mConnectedNetwork.enterpriseConfig.setAnonymousIdentity("");
-
         triggerConnect();
 
+        when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(mConnectedNetwork);
         when(mWifiConfigManager.getScanDetailCacheForNetwork(FRAMEWORK_NETWORK_ID))
                 .thenReturn(mScanDetailCache);
+        when(mScanRequestProxy.getScanResult(sBSSID)).thenReturn(
+                getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq).getScanResult());
         when(mScanDetailCache.getScanDetail(sBSSID)).thenReturn(
                 getGoogleGuestScanDetail(TEST_RSSI, sBSSID, sFreq));
         when(mScanDetailCache.getScanResult(sBSSID)).thenReturn(
@@ -5571,6 +5573,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mPasspointManager).handleDeauthImminentEvent(eq(wnmData),
                 any(WifiConfiguration.class));
     }
+
     /**
      * Verify that the network selection status will be updated and the function onEapFailure()
      * in EapFailureNotifier is called when a EAP Authentication failure is detected
@@ -5601,5 +5604,28 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConfigManager).updateNetworkSelectionStatus(anyInt(),
                 eq(WifiConfiguration.NetworkSelectionStatus
                         .DISABLED_AUTHENTICATION_FAILURE_CARRIER_SPECIFIC));
+    }
+
+    /**
+     * When connected to a Passpoint network, verify that the Venue URL is updated in the
+     * {@link LinkProperties} object when provisioning complete and when link properties change
+     * events are received.
+     */
+    @Test
+    public void testVenueUrlUpdateForPasspointNetworks() throws Exception {
+        setupPasspointConnection();
+        DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
+        dhcpResults.baseConfiguration = new StaticIpConfiguration();
+        dhcpResults.baseConfiguration.gateway = InetAddresses.parseNumericAddress("1.2.3.4");
+        dhcpResults.baseConfiguration.ipAddress =
+                new LinkAddress(InetAddresses.parseNumericAddress("192.168.1.100"), 0);
+        dhcpResults.baseConfiguration.dnsServers.add(InetAddresses.parseNumericAddress("8.8.8.8"));
+        dhcpResults.leaseDuration = 3600;
+        injectDhcpSuccess(dhcpResults);
+
+        mLooper.dispatchAll();
+        mIpClientCallback.onLinkPropertiesChange(new LinkProperties());
+        mLooper.dispatchAll();
+        verify(mPasspointManager, times(2)).getVenueUrl(any(ScanResult.class));
     }
 }

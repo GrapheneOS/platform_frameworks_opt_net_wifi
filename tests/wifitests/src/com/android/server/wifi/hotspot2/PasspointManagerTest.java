@@ -28,6 +28,7 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -98,6 +99,8 @@ import com.android.server.wifi.hotspot2.anqp.DomainNameElement;
 import com.android.server.wifi.hotspot2.anqp.HSOsuProvidersElement;
 import com.android.server.wifi.hotspot2.anqp.I18Name;
 import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
+import com.android.server.wifi.hotspot2.anqp.VenueNameElement;
+import com.android.server.wifi.hotspot2.anqp.VenueUrlElement;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.UserActionEvent;
 import com.android.server.wifi.util.InformationElementUtil;
 import com.android.server.wifi.util.InformationElementUtil.RoamingConsortium;
@@ -110,6 +113,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoSession;
 
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -144,6 +148,11 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final String FULL_IMSI = "123456789123456";
     private static final int TEST_CARRIER_ID = 10;
     private static final int TEST_SUBID = 1;
+    private static final String TEST_VENUE_URL_ENG = "https://www.google.com/";
+    private static final String TEST_VENUE_URL_HEB = "https://www.google.co.il/";
+    private static final String TEST_LOCALE_ENGLISH = "eng";
+    private static final String TEST_LOCALE_HEBREW = "heb";
+    private static final String TEST_LOCALE_SPANISH = "spa";
 
     private static final long TEST_BSSID = 0x112233445566L;
     private static final String TEST_SSID = "TestSSID";
@@ -2759,4 +2768,175 @@ public class PasspointManagerTest extends WifiBaseTest {
         verify(provider2, never()).setUserConnectChoice(any(), anyInt());
         verify(mWifiConfigManager, times(3)).saveToStore(true);
     }
+
+    /*
+     * Verify that Passpoint manager returns the correct venue URL.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetVenueUrl() throws Exception {
+        // static mocking
+        MockitoSession session =
+                com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession().mockStatic(
+                        InformationElementUtil.class).startMocking();
+        try {
+            ScanResult scanResult = createTestScanResult();
+            InformationElementUtil.Vsa vsa = new InformationElementUtil.Vsa();
+            vsa.anqpDomainID = scanResult.anqpDomainId;
+            when(InformationElementUtil.getHS2VendorSpecificIE(isNull())).thenReturn(vsa);
+
+            Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+            anqpElementMap.put(ANQPElementType.ANQPDomName,
+                    new DomainNameElement(Arrays.asList(new String[]{"test.com"})));
+            List<I18Name> names = new ArrayList<>();
+            names.add(new I18Name(TEST_LOCALE_ENGLISH,
+                    new Locale.Builder().setLanguage(TEST_LOCALE_ENGLISH).build(),
+                    "Passpoint Venue"));
+            names.add(new I18Name(TEST_LOCALE_HEBREW,
+                    new Locale.Builder().setLanguage(TEST_LOCALE_HEBREW).build(), "רשת פאספוינט"));
+            anqpElementMap.put(ANQPElementType.ANQPVenueName, new VenueNameElement(names));
+
+            Map<Integer, URL> venueUrls = new HashMap<>();
+            venueUrls.put(1, new URL(TEST_VENUE_URL_ENG));
+            venueUrls.put(2, new URL(TEST_VENUE_URL_HEB));
+            anqpElementMap.put(ANQPElementType.ANQPVenueUrl, new VenueUrlElement(venueUrls));
+
+            mAnqpCache.addOrUpdateEntry(TEST_ANQP_KEY, anqpElementMap);
+            ANQPData entry = new ANQPData(mClock, anqpElementMap);
+            when(mAnqpCache.getEntry(TEST_ANQP_KEY)).thenReturn(entry);
+
+            // Test language 1
+            Locale.setDefault(new Locale(TEST_LOCALE_ENGLISH));
+            URL venueUrl = mManager.getVenueUrl(scanResult);
+            assertEquals(venueUrl.toString(), TEST_VENUE_URL_ENG);
+
+            // Test language 2
+            Locale.setDefault(new Locale(TEST_LOCALE_HEBREW));
+            venueUrl = mManager.getVenueUrl(scanResult);
+            assertEquals(venueUrl.toString(), TEST_VENUE_URL_HEB);
+
+            // Test default language when no language match
+            Locale.setDefault(new Locale(TEST_LOCALE_SPANISH));
+            venueUrl = mManager.getVenueUrl(scanResult);
+            assertEquals(venueUrl.toString(), TEST_VENUE_URL_ENG);
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    /**
+     * Verify that Passpoint manager returns null when no ANQP entry is available.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetVenueUrlNoAnqpEntry() throws Exception {
+        // static mocking
+        MockitoSession session =
+                com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession().mockStatic(
+                        InformationElementUtil.class).startMocking();
+        try {
+            ScanResult scanResult = createTestScanResult();
+            InformationElementUtil.Vsa vsa = new InformationElementUtil.Vsa();
+            vsa.anqpDomainID = scanResult.anqpDomainId;
+            when(InformationElementUtil.getHS2VendorSpecificIE(isNull())).thenReturn(vsa);
+
+            when(mAnqpCache.getEntry(TEST_ANQP_KEY)).thenReturn(null);
+
+            URL venueUrl = mManager.getVenueUrl(scanResult);
+            assertNull(venueUrl);
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    /**
+     * Verify that Passpoint manager returns null when no Venue URL ANQP-element is available.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetVenueUrlNoVenueUrlAnqpElement() throws Exception {
+        // static mocking
+        MockitoSession session =
+                com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession().mockStatic(
+                        InformationElementUtil.class).startMocking();
+        try {
+            ScanResult scanResult = createTestScanResult();
+            InformationElementUtil.Vsa vsa = new InformationElementUtil.Vsa();
+            vsa.anqpDomainID = scanResult.anqpDomainId;
+            when(InformationElementUtil.getHS2VendorSpecificIE(isNull())).thenReturn(vsa);
+
+            Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+            anqpElementMap.put(ANQPElementType.ANQPDomName,
+                    new DomainNameElement(Arrays.asList(new String[]{"test.com"})));
+            List<I18Name> names = new ArrayList<>();
+            names.add(new I18Name(TEST_LOCALE_ENGLISH,
+                    new Locale.Builder().setLanguage(TEST_LOCALE_ENGLISH).build(),
+                    "Passpoint Venue"));
+            names.add(new I18Name(TEST_LOCALE_HEBREW,
+                    new Locale.Builder().setLanguage(TEST_LOCALE_HEBREW).build(), "רשת פאספוינט"));
+            anqpElementMap.put(ANQPElementType.ANQPVenueName, new VenueNameElement(names));
+
+            mAnqpCache.addOrUpdateEntry(TEST_ANQP_KEY, anqpElementMap);
+            ANQPData entry = new ANQPData(mClock, anqpElementMap);
+            when(mAnqpCache.getEntry(TEST_ANQP_KEY)).thenReturn(entry);
+
+            URL venueUrl = mManager.getVenueUrl(scanResult);
+            assertNull(venueUrl);
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    /**
+     * Verify that Passpoint manager returns null when no Venue Name ANQP-element is available.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetVenueUrlNoVenueNameAnqpElement() throws Exception {
+        // static mocking
+        MockitoSession session =
+                com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession().mockStatic(
+                        InformationElementUtil.class).startMocking();
+        try {
+            ScanResult scanResult = createTestScanResult();
+            InformationElementUtil.Vsa vsa = new InformationElementUtil.Vsa();
+            vsa.anqpDomainID = scanResult.anqpDomainId;
+            when(InformationElementUtil.getHS2VendorSpecificIE(isNull())).thenReturn(vsa);
+
+            Map<ANQPElementType, ANQPElement> anqpElementMap = new HashMap<>();
+            anqpElementMap.put(ANQPElementType.ANQPDomName,
+                    new DomainNameElement(Arrays.asList(new String[]{"test.com"})));
+
+            Map<Integer, URL> venueUrls = new HashMap<>();
+            venueUrls.put(1, new URL(TEST_VENUE_URL_ENG));
+            venueUrls.put(2, new URL(TEST_VENUE_URL_HEB));
+            anqpElementMap.put(ANQPElementType.ANQPVenueUrl, new VenueUrlElement(venueUrls));
+
+            mAnqpCache.addOrUpdateEntry(TEST_ANQP_KEY, anqpElementMap);
+            ANQPData entry = new ANQPData(mClock, anqpElementMap);
+            when(mAnqpCache.getEntry(TEST_ANQP_KEY)).thenReturn(entry);
+
+            URL venueUrl = mManager.getVenueUrl(scanResult);
+            assertNull(venueUrl);
+
+            // Now try with an incomplete list of venue names
+            List<I18Name> names = new ArrayList<>();
+            names.add(new I18Name(TEST_LOCALE_ENGLISH,
+                    new Locale.Builder().setLanguage(TEST_LOCALE_ENGLISH).build(),
+                    "Passpoint Venue"));
+            anqpElementMap.put(ANQPElementType.ANQPVenueName, new VenueNameElement(names));
+            entry = new ANQPData(mClock, anqpElementMap);
+            when(mAnqpCache.getEntry(TEST_ANQP_KEY)).thenReturn(entry);
+
+            venueUrl = mManager.getVenueUrl(scanResult);
+            assertNull(venueUrl);
+        } finally {
+            session.finishMocking();
+        }
+    }
 }
+
