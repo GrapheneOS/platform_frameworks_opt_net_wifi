@@ -56,6 +56,7 @@ import com.android.server.wifi.Clock;
 import com.android.server.wifi.util.NetdWrapper;
 import com.android.server.wifi.util.WifiPermissionsUtil;
 import com.android.server.wifi.util.WifiPermissionsWrapper;
+import com.android.wifi.resources.R;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -1119,13 +1120,17 @@ public class WifiAwareDataPathStateManager {
      * Select one of the existing interfaces for the new network request. A request is canonical
      * (otherwise it wouldn't be executed).
      *
-     * Construct a list of all interfaces currently used to communicate to the peer. The remaining
-     * interfaces are available for use for this request - if none are left then the request should
-     * fail (signaled to the caller by returning a null).
+     * Criteria:
+     * 1. Select a network interface which is unused. This is because the network stack does not
+     * support multiple networks per interface.
+     * 2. If no network interface is available then (based on a device overlay) either fail (new
+     * behavior) or (preserve legacy behavior) pick an interface which isn't used for
+     * communication to the same peer.
      */
     private String selectInterfaceForRequest(AwareNetworkRequestInformation req) {
-        SortedSet<String> potential = new TreeSet<>(mInterfaces);
-        Set<String> used = new HashSet<>();
+        SortedSet<String> unused = new TreeSet<>(mInterfaces);
+        Set<String> invalid = new HashSet<>();
+        SortedSet<String> inuse = new TreeSet<>();
 
         if (mDbg) {
             Log.v(TAG, "selectInterfaceForRequest: req=" + req + ", mNetworkRequestsCache="
@@ -1133,22 +1138,38 @@ public class WifiAwareDataPathStateManager {
         }
 
         for (AwareNetworkRequestInformation nnri : mNetworkRequestsCache.values()) {
-            if (nnri == req) {
+            if (nnri == req || nnri.interfaceName == null) {
                 continue;
             }
 
             if (Arrays.equals(req.peerDiscoveryMac, nnri.peerDiscoveryMac)) {
-                used.add(nnri.interfaceName);
+                invalid.add(nnri.interfaceName);
+            } else {
+                inuse.add(nnri.interfaceName);
             }
+            unused.remove(nnri.interfaceName);
         }
 
         if (VDBG) {
-            Log.v(TAG, "selectInterfaceForRequest: potential=" + potential + ", used=" + used);
+            Log.v(TAG, "selectInterfaceForRequest: unUsed=" + unused + ", inuse=" + inuse
+                    + ", invalid" + invalid + ", allInterfaces" + mInterfaces);
         }
 
-        for (String ifName: potential) {
-            if (!used.contains(ifName)) {
-                return ifName;
+        // If any interface is unused, pick it first
+        if (!unused.isEmpty()) {
+            return unused.first();
+        }
+
+        // If device doesn't allow to make multiple network on same interface, return null.
+        if (!mContext.getResources()
+                .getBoolean(R.bool.config_wifiAllowMultipleNetworksOnSameAwareNdi)) {
+            Log.e(TAG, "selectInterfaceForRequest: req=" + req + " - no interfaces available!");
+            return null;
+        }
+
+        for (String iface : inuse) {
+            if (!invalid.contains(iface)) {
+                return iface;
             }
         }
 
