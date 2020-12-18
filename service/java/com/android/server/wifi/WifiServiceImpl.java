@@ -3915,7 +3915,8 @@ public class WifiServiceImpl extends BaseWifiService {
                 mSoftApBackupRestore.retrieveSoftApConfigurationFromBackupData(data);
         if (softApConfig != null) {
             mWifiThreadRunner.post(() -> mWifiApConfigStore.setApConfiguration(
-                    mWifiApConfigStore.resetToDefaultForUnsupportedConfig(softApConfig)));
+                    mWifiApConfigStore.resetToDefaultForUnsupportedConfig(
+                    mWifiApConfigStore.upgradeSoftApConfiguration(softApConfig))));
             Log.d(TAG, "Restored soft ap backup data");
         }
         return softApConfig;
@@ -4040,14 +4041,12 @@ public class WifiServiceImpl extends BaseWifiService {
             // no corresponding flags in vendor HAL, set if overlay enables it.
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_CONNECTED_RAND_MAC;
         }
-        if (mContext.getResources().getBoolean(
-                R.bool.config_wifi_ap_mac_randomization_supported)) {
+        if (ApConfigUtil.isApMacRandomizationSupported(mContext)) {
             // no corresponding flags in vendor HAL, set if overlay enables it.
             supportedFeatureSet |= WifiManager.WIFI_FEATURE_AP_RAND_MAC;
         }
         if (SdkLevel.isAtLeastS()) {
-            if (mContext.getResources().getBoolean(
-                    R.bool.config_wifiBridgedSoftApSupported)) {
+            if (ApConfigUtil.isBridgedModeSupported(mContext)) {
                 // The bridged mode requires the kernel network modules support.
                 // It doesn't relate the vendor HAL, set if overlay enables it.
                 supportedFeatureSet |= WifiManager.WIFI_FEATURE_BRIDGED_AP;

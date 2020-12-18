@@ -155,6 +155,23 @@ public class WifiApConfigStore {
     }
 
     /**
+     * Returns SoftApConfiguration in which some parameters might be upgrade to supported default
+     * configuration.
+     */
+    public SoftApConfiguration upgradeSoftApConfiguration(@NonNull SoftApConfiguration config) {
+        SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder(config);
+        if (SdkLevel.isAtLeastS() && ApConfigUtil.isBridgedModeSupported(mContext)
+                && config.getBands().length == 1) {
+            int[] dual_bands = new int[] {
+                    SoftApConfiguration.BAND_2GHZ,
+                    SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ};
+            configBuilder.setBands(dual_bands);
+            Log.i(TAG, "Device support bridged AP, upgrade band setting to bridged configuration");
+        }
+        return configBuilder.build();
+    }
+
+    /**
      * Returns SoftApConfiguration in which some parameters might be reset to supported default
      * config since it depends on UI or HW.
      *
@@ -166,6 +183,10 @@ public class WifiApConfigStore {
      *
      * SAE/SAE-Transition need hardware support, reset to secured WPA2 security type when device
      * doesn't support it.
+     *
+     * Check band(s) setting to make sure all of the band(s) are supported.
+     * - If previous bands configuration is bridged mode. Reset to 2.4G when device doesn't support
+     *   it.
      */
     public SoftApConfiguration resetToDefaultForUnsupportedConfig(
             @NonNull SoftApConfiguration config) {
@@ -206,24 +227,46 @@ public class WifiApConfigStore {
             Log.i(TAG, "Reset SAP channel configuration");
         }
 
-        int newBand = config.getBand();
-        if (!mContext.getResources().getBoolean(R.bool.config_wifi6ghzSupport)
-                && (newBand & SoftApConfiguration.BAND_6GHZ) != 0) {
-            newBand &= ~SoftApConfiguration.BAND_6GHZ;
-            Log.i(TAG, "Device doesn't support 6g, remove 6G band from band setting");
+        if (!ApConfigUtil.isBridgedModeSupported(mContext)) {
+            if (SdkLevel.isAtLeastS() && config.getBands().length > 1) {
+                configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+                Log.i(TAG, "Device doesn't support bridged AP, force 2.4G when bridged configured");
+            }
         }
 
-        if (!mContext.getResources().getBoolean(R.bool.config_wifi5ghzSupport)
-                && (newBand & SoftApConfiguration.BAND_5GHZ) != 0) {
-            newBand &= ~SoftApConfiguration.BAND_5GHZ;
-            Log.i(TAG, "Device doesn't support 5g, remove 5G band from band setting");
-        }
+        if (SdkLevel.isAtLeastS() && config.getBands().length > 1) {
+            for (int currentBand : config.getBands()) {
+                if (!ApConfigUtil.isBandSupported(currentBand, mContext)) {
+                    configBuilder.setBand(SoftApConfiguration.BAND_2GHZ);
+                    Log.i(TAG, "An unsupported band setting for the bridged mode, force to 2.4G");
+                }
+            }
+        } else {
+            int newBand = config.getBand();
+            if (!mContext.getResources().getBoolean(R.bool.config_wifi6ghzSupport)
+                    && (newBand & SoftApConfiguration.BAND_6GHZ) != 0) {
+                newBand &= ~SoftApConfiguration.BAND_6GHZ;
+                Log.i(TAG, "Device doesn't support 6g, remove 6G band from band setting");
+            }
 
-        if (newBand != config.getBand()) {
-            // Always added 2.4G by default when reset the band.
-            Log.i(TAG, "Reset band from " + config.getBand() + " to "
-                    + (newBand | SoftApConfiguration.BAND_2GHZ));
-            configBuilder.setBand(newBand | SoftApConfiguration.BAND_2GHZ);
+            if (!mContext.getResources().getBoolean(R.bool.config_wifi5ghzSupport)
+                    && (newBand & SoftApConfiguration.BAND_5GHZ) != 0) {
+                newBand &= ~SoftApConfiguration.BAND_5GHZ;
+                Log.i(TAG, "Device doesn't support 5g, remove 5G band from band setting");
+            }
+
+            if (!mContext.getResources().getBoolean(R.bool.config_wifi60ghzSupport)
+                    && (newBand & SoftApConfiguration.BAND_60GHZ) != 0) {
+                newBand &= ~SoftApConfiguration.BAND_60GHZ;
+                Log.i(TAG, "Device doesn't support 60g, remove 60G band from band setting");
+            }
+
+            if (newBand != config.getBand()) {
+                // Always added 2.4G by default when reset the band.
+                Log.i(TAG, "Reset band from " + config.getBand() + " to "
+                        + (newBand | SoftApConfiguration.BAND_2GHZ));
+                configBuilder.setBand(newBand | SoftApConfiguration.BAND_2GHZ);
+            }
         }
 
         if (mContext.getResources().getBoolean(R.bool.config_wifiSoftapResetHiddenConfig)
@@ -237,6 +280,13 @@ public class WifiApConfigStore {
                 && config.getShutdownTimeoutMillis() != 0) {
             configBuilder.setShutdownTimeoutMillis(0);
             Log.i(TAG, "Reset SAP auto shutdown configuration");
+        }
+
+        if (!ApConfigUtil.isApMacRandomizationSupported(mContext)) {
+            if (SdkLevel.isAtLeastS()) {
+                configBuilder.setMacRandomizationSetting(SoftApConfiguration.RANDOMIZATION_NONE);
+                Log.i(TAG, "Force set SAP MAC randomization to NONE when not supported");
+            }
         }
 
         mWifiMetrics.noteSoftApConfigReset(config, configBuilder.build());
@@ -284,6 +334,25 @@ public class WifiApConfigStore {
             configBuilder.setPassphrase(generatePassword(),
                     SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
         }
+
+        // It is new overlay configuration, it should always false in R. Add SdkLevel.isAtLeastS for
+        // lint check
+        if (ApConfigUtil.isBridgedModeSupported(mContext)) {
+            if (SdkLevel.isAtLeastS()) {
+                int[] dual_bands = new int[] {
+                        SoftApConfiguration.BAND_2GHZ,
+                        SoftApConfiguration.BAND_2GHZ | SoftApConfiguration.BAND_5GHZ};
+                configBuilder.setBands(dual_bands);
+            }
+        }
+
+        // Update default MAC randomization setting to NONE when feature doesn't support it.
+        if (!ApConfigUtil.isApMacRandomizationSupported(mContext)) {
+            if (SdkLevel.isAtLeastS()) {
+                configBuilder.setMacRandomizationSetting(SoftApConfiguration.RANDOMIZATION_NONE);
+            }
+        }
+
         return configBuilder.build();
     }
 
@@ -328,6 +397,13 @@ public class WifiApConfigStore {
             }
         }
 
+        // Update default MAC randomization setting to NONE when feature doesn't support it.
+        if (!ApConfigUtil.isApMacRandomizationSupported(context)) {
+            if (SdkLevel.isAtLeastS()) {
+                configBuilder.setMacRandomizationSetting(SoftApConfiguration.RANDOMIZATION_NONE);
+            }
+        }
+
         return configBuilder.build();
     }
 
@@ -337,8 +413,7 @@ public class WifiApConfigStore {
      */
     SoftApConfiguration randomizeBssidIfUnset(Context context, SoftApConfiguration config) {
         SoftApConfiguration.Builder configBuilder = new SoftApConfiguration.Builder(config);
-        if (config.getBssid() == null && context.getResources().getBoolean(
-                R.bool.config_wifi_ap_mac_randomization_supported)) {
+        if (config.getBssid() == null && ApConfigUtil.isApMacRandomizationSupported(mContext)) {
             if (SdkLevel.isAtLeastS() && config.getMacRandomizationSetting()
                     == SoftApConfiguration.RANDOMIZATION_NONE) {
                 return configBuilder.build();
