@@ -1207,7 +1207,8 @@ public class WifiNative {
                 mWifiMetrics.incrementNumSetupSoftApInterfaceFailureDueToHal();
                 return null;
             }
-            if (!mWifiCondManager.setupInterfaceForSoftApMode(iface.name)) {
+            if (!mHostapdHal.isApInfoCallbackSupported()
+                    && !mWifiCondManager.setupInterfaceForSoftApMode(iface.name)) {
                 Log.e(TAG, "Failed to setup iface in wificond on " + iface);
                 teardownInterface(iface.name);
                 mWifiMetrics.incrementNumSetupSoftApInterfaceFailureDueToWificond();
@@ -1791,13 +1792,17 @@ public class WifiNative {
     public boolean startSoftAp(
             @NonNull String ifaceName, SoftApConfiguration config, boolean isMetered,
             SoftApListener listener) {
-        if (!mHostapdHal.registerApCallback(ifaceName, listener)) {
+        if (mHostapdHal.isApInfoCallbackSupported()) {
+            if (!mHostapdHal.registerApCallback(ifaceName, listener)) {
+                Log.e(TAG, "Failed to register ap listener");
+                return false;
+            }
+        } else {
             SoftApListenerFromWificond softApListenerFromWificond =
                     new SoftApListenerFromWificond(ifaceName, listener);
-            Log.i(TAG, "Register ap listener from wificond");
             if (!mWifiCondManager.registerApCallback(ifaceName,
                     Runnable::run, softApListenerFromWificond)) {
-                Log.e(TAG, "Failed to register ap listener");
+                Log.e(TAG, "Failed to register ap listener from wificond");
                 return false;
             }
         }

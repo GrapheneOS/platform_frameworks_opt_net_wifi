@@ -193,6 +193,31 @@ public class ApConfigUtil {
         return ((band & (band - 1)) != 0);
     }
 
+
+    /**
+     * Checks whether or not band configuration is supported.
+     * @param band a combination of the bands
+     * @param context the caller context used to get value from resource file.
+     * @return true if band is supported, false otherwise
+     */
+    public static boolean isBandSupported(@BandType int band, Context context) {
+        if (!context.getResources().getBoolean(R.bool.config_wifi6ghzSupport)
+                && (band & SoftApConfiguration.BAND_6GHZ) != 0) {
+            return false;
+        }
+
+        if (!context.getResources().getBoolean(R.bool.config_wifi5ghzSupport)
+                && (band & SoftApConfiguration.BAND_5GHZ) != 0) {
+            return false;
+        }
+
+        if (!context.getResources().getBoolean(R.bool.config_wifi60ghzSupport)
+                && (band & SoftApConfiguration.BAND_60GHZ) != 0) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Convert string to channel list
      * Format of the list is a comma separated channel numbers, or range of channel numbers
@@ -506,7 +531,29 @@ public class ApConfigUtil {
     }
 
     /**
-     * Helper function to get hal support client force disconnect or not.
+     * Helper function to get device support AP MAC randomization or not.
+     *
+     * @param context the caller context used to get value from resource file.
+     * @return true if supported, false otherwise.
+     */
+    public static boolean isApMacRandomizationSupported(@NonNull Context context) {
+        return context.getResources().getBoolean(
+                    R.bool.config_wifi_ap_mac_randomization_supported);
+    }
+
+    /**
+     * Helper function to get HAL support bridged AP or not.
+     *
+     * @param context the caller context used to get value from resource file.
+     * @return true if supported, false otherwise.
+     */
+    public static boolean isBridgedModeSupported(@NonNull Context context) {
+        return SdkLevel.isAtLeastS() && context.getResources().getBoolean(
+                    R.bool.config_wifiBridgedSoftApSupported);
+    }
+
+    /**
+     * Helper function to get HAL support client force disconnect or not.
      *
      * @param context the caller context used to get value from resource file.
      * @return true if supported, false otherwise.

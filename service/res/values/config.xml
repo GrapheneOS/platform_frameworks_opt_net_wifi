@@ -533,4 +533,10 @@
     <!-- A value to indicate the duration (in ms) to disable a network from auto-connect based on
     Carrier requirement. -1 represents disabling a network permanently -->
     <integer translatable="false" name="config_wifiDisableReasonAuthenticationFailureCarrierSpecificDurationMs">-1</integer>
+
+    <!-- Enable Aware NDP interface selection on interface that already has network set up.
+     Note: the default AOSP Android does not support multiple networks on the same Aware NDI.
+     Enabling this configuration will restore legacy behavior but may result in incorrect behavior.
+     -->
+    <bool translatable="false" name="config_wifiAllowMultipleNetworksOnSameAwareNdi">false</bool>
 </resources>

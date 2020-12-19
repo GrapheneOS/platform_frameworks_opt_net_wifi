@@ -223,6 +223,13 @@ public class HostapdHal {
     }
 
     /**
+     * Returns whether or not the hostapd supported to get the AP info from the callback.
+     */
+    public boolean isApInfoCallbackSupported() {
+        return isV1_3();
+    }
+
+    /**
      * Registers a service notification for the IHostapd service, which triggers intialization of
      * the IHostapd
      * @return true if the service notification was successfully registered
