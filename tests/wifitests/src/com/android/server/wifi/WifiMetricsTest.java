@@ -172,7 +172,7 @@ public class WifiMetricsTest extends WifiBaseTest {
     @Mock Clock mClock;
     @Mock ScoringParams mScoringParams;
     @Mock WifiConfigManager mWcm;
-    @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
+    @Mock WifiBlocklistMonitor mWifiBlocklistMonitor;
     @Mock PasspointManager mPpm;
     @Mock WifiNetworkSelector mWns;
     @Mock WifiPowerMetrics mWifiPowerMetrics;
@@ -206,7 +206,7 @@ public class WifiMetricsTest extends WifiBaseTest {
                 new WifiAwareMetrics(mClock), new RttMetrics(mClock), mWifiPowerMetrics,
                 mWifiP2pMetrics, mDppMetrics, mWifiMonitor);
         mWifiMetrics.setWifiConfigManager(mWcm);
-        mWifiMetrics.setBssidBlocklistMonitor(mBssidBlocklistMonitor);
+        mWifiMetrics.setWifiBlocklistMonitor(mWifiBlocklistMonitor);
         mWifiMetrics.setPasspointManager(mPpm);
         mWifiMetrics.setScoringParams(mScoringParams);
         mWifiMetrics.setWifiNetworkSelector(mWns);
@@ -1792,7 +1792,7 @@ public class WifiMetricsTest extends WifiBaseTest {
         config.allowedKeyManagement = new BitSet();
         when(config.getNetworkSelectionStatus()).thenReturn(
                 mock(WifiConfiguration.NetworkSelectionStatus.class));
-        when(mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(eq(config.SSID)))
+        when(mWifiBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(eq(config.SSID)))
                 .thenReturn(3);
         mWifiMetrics.startConnectionEvent(TEST_IFACE_NAME, config,
                 "RED", WifiMetricsProto.ConnectionEvent.ROAM_NONE);
@@ -2694,8 +2694,8 @@ public class WifiMetricsTest extends WifiBaseTest {
 
         // Also setup the same BSSID level failure
         Set<Integer> testBssidBlocklistReasons = new HashSet<>();
-        testBssidBlocklistReasons.add(BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
-        when(mBssidBlocklistMonitor.getFailureReasonsForSsid(anyString()))
+        testBssidBlocklistReasons.add(WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
+        when(mWifiBlocklistMonitor.getFailureReasonsForSsid(anyString()))
                 .thenReturn(testBssidBlocklistReasons);
 
         // Logging the user action event

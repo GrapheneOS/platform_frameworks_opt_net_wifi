@@ -41,10 +41,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Unit tests for {@link com.android.server.wifi.BssidBlocklistMonitor}.
+ * Unit tests for {@link com.android.server.wifi.WifiBlocklistMonitor}.
  */
 @SmallTest
-public class BssidBlocklistMonitorTest {
+public class WifiBlocklistMonitorTest {
     private static final int TEST_NUM_MAX_FIRMWARE_SUPPORT_BSSIDS = 3;
     private static final String TEST_SSID_1 = "TestSSID1";
     private static final String TEST_SSID_2 = "TestSSID2";
@@ -57,9 +57,9 @@ public class BssidBlocklistMonitorTest {
     private static final int TEST_SUFFICIENT_RSSI = -67;
     private static final int MIN_RSSI_DIFF_TO_UNBLOCK_BSSID = 5;
     private static final int TEST_FRAMEWORK_BLOCK_REASON =
-            BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE;
-    private static final int TEST_L2_FAILURE = BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION;
-    private static final int TEST_DHCP_FAILURE = BssidBlocklistMonitor.REASON_DHCP_FAILURE;
+            WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE;
+    private static final int TEST_L2_FAILURE = WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION;
+    private static final int TEST_DHCP_FAILURE = WifiBlocklistMonitor.REASON_DHCP_FAILURE;
     private static final long BASE_BLOCKLIST_DURATION = TimeUnit.MINUTES.toMillis(5); // 5 minutes
     private static final long BASE_CONNECTED_SCORE_BLOCKLIST_DURATION =
             TimeUnit.SECONDS.toMillis(30);
@@ -68,19 +68,19 @@ public class BssidBlocklistMonitorTest {
     private static final int FAILURE_STREAK_CAP = 7;
     private static final Map<Integer, Integer> BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP =
             Map.ofEntries(
-                    Map.entry(BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_WRONG_PASSWORD, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_EAP_FAILURE, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION, 3),
-                    Map.entry(BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT, 3),
-                    Map.entry(BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE, 3),
-                    Map.entry(BssidBlocklistMonitor.REASON_DHCP_FAILURE, 3),
-                    Map.entry(BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, 3),
-                    Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE, 1),
-                    Map.entry(BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING, 2)
+                    Map.entry(WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_WRONG_PASSWORD, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_EAP_FAILURE, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION, 3),
+                    Map.entry(WifiBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT, 3),
+                    Map.entry(WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE, 3),
+                    Map.entry(WifiBlocklistMonitor.REASON_DHCP_FAILURE, 3),
+                    Map.entry(WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, 3),
+                    Map.entry(WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE, 1),
+                    Map.entry(WifiBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING, 2)
             );
     private static final int NUM_FAILURES_TO_BLOCKLIST =
             BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(TEST_L2_FAILURE);
@@ -94,7 +94,7 @@ public class BssidBlocklistMonitorTest {
     @Mock private ScoringParams mScoringParams;
 
     private MockResources mResources;
-    private BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private WifiBlocklistMonitor mWifiBlocklistMonitor;
 
     @Before
     public void setup() {
@@ -117,40 +117,40 @@ public class BssidBlocklistMonitorTest {
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorApUnableToHandleNewStaThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA));
+                        WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA));
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorNetworkValidationFailureThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE));
+                        WifiBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE));
         mResources.setInteger(R.integer.config_wifiBssidBlocklistMonitorWrongPasswordThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_WRONG_PASSWORD));
+                        WifiBlocklistMonitor.REASON_WRONG_PASSWORD));
         mResources.setInteger(R.integer.config_wifiBssidBlocklistMonitorEapFailureThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_EAP_FAILURE));
+                        WifiBlocklistMonitor.REASON_EAP_FAILURE));
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorAssociationRejectionThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION));
+                        WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION));
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorAssociationTimeoutThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT));
+                        WifiBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT));
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorAuthenticationFailureThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE));
+                        WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE));
         mResources.setInteger(R.integer.config_wifiBssidBlocklistMonitorDhcpFailureThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_DHCP_FAILURE));
+                        WifiBlocklistMonitor.REASON_DHCP_FAILURE));
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorAbnormalDisconnectThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
+                        WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
         mResources.setInteger(
                 R.integer.config_wifiBssidBlocklistMonitorNonlocalDisconnectConnectingThreshold,
                 BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(
-                        BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING));
+                        WifiBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING));
         mResources.setInteger(
                 R.integer.config_wifiDisableReasonAssociationRejectionThreshold,
                 NetworkSelectionStatus.DISABLE_REASON_INFOS
@@ -167,33 +167,33 @@ public class BssidBlocklistMonitorTest {
                         .get(NetworkSelectionStatus.DISABLED_DHCP_FAILURE).mDisableThreshold);
 
         when(mContext.getResources()).thenReturn(mResources);
-        mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
+        mWifiBlocklistMonitor = new WifiBlocklistMonitor(mContext, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mClock, mLocalLog, mWifiScoreCard, mScoringParams);
     }
 
     private void verifyAddTestBssidToBlocklist() {
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(
                 TEST_BSSID_1, TEST_SSID_1,
-                BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, TEST_GOOD_RSSI);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+                WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, TEST_GOOD_RSSI);
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     // Verify adding 2 BSSID for SSID_1 and 1 BSSID for SSID_2 to the blocklist.
     private void verifyAddMultipleBssidsToBlocklist() {
         when(mClock.getWallClockMillis()).thenReturn(0L);
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_1,
-                TEST_SSID_1, BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_1,
+                TEST_SSID_1, WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
                 TEST_GOOD_RSSI);
         when(mClock.getWallClockMillis()).thenReturn(1L);
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_2,
-                TEST_SSID_1, BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_2,
+                TEST_SSID_1, WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
                 TEST_GOOD_RSSI);
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_3,
-                TEST_SSID_2, BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_3,
+                TEST_SSID_2, WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
                 TEST_GOOD_RSSI);
 
         // Verify that we have 3 BSSIDs in the blocklist.
-        Set<String> bssidList = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
+        Set<String> bssidList = mWifiBlocklistMonitor.updateAndGetBssidBlocklist();
         assertEquals(3, bssidList.size());
         assertTrue(bssidList.contains(TEST_BSSID_1));
         assertTrue(bssidList.contains(TEST_BSSID_2));
@@ -207,7 +207,7 @@ public class BssidBlocklistMonitorTest {
     private void handleBssidConnectionFailureMultipleTimes(String bssid, String ssid, int reason,
             int times) {
         for (int i = 0; i < times; i++) {
-            mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, reason,
+            mWifiBlocklistMonitor.handleBssidConnectionFailure(bssid, ssid, reason,
                     TEST_GOOD_RSSI);
         }
     }
@@ -218,8 +218,8 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testUpdateAndGetNumBlockedBssidsForSsid() {
         verifyAddMultipleBssidsToBlocklist();
-        assertEquals(2, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(TEST_SSID_1));
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(TEST_SSID_2));
+        assertEquals(2, mWifiBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(TEST_SSID_1));
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(TEST_SSID_2));
     }
 
     /**
@@ -231,13 +231,13 @@ public class BssidBlocklistMonitorTest {
         verifyAddTestBssidToBlocklist();
         // Verify TEST_BSSID_1 is not removed from the blocklist until sufficient time have passed.
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
 
         // Verify that TEST_BSSID_1 is removed from the blocklist after the timeout duration.
         // By default there is no blocklist streak so the timeout duration is simply
         // BASE_BLOCKLIST_DURATION
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -248,7 +248,7 @@ public class BssidBlocklistMonitorTest {
     public void testBssidRemovalUpdatesFirmwareConfiguration() {
         verifyAddTestBssidToBlocklist();
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
-        assertEquals(0, mBssidBlocklistMonitor
+        assertEquals(0, mWifiBlocklistMonitor
                 .updateAndGetBssidBlocklistForSsids(Set.of(TEST_SSID_1)).size());
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(new ArrayList<>()),
                 eq(new ArrayList<>()));
@@ -262,7 +262,7 @@ public class BssidBlocklistMonitorTest {
     public void testBssidRemovalNotUpdateFirmwareConfiguration() {
         verifyAddTestBssidToBlocklist();
         when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
-        assertEquals(0, mBssidBlocklistMonitor
+        assertEquals(0, mWifiBlocklistMonitor
                 .updateAndGetBssidBlocklistForSsids(Set.of(TEST_SSID_2)).size());
         verify(mWifiConnectivityHelper, never()).setFirmwareRoamingConfiguration(
                 eq(new ArrayList<>()), eq(new ArrayList<>()));
@@ -279,7 +279,7 @@ public class BssidBlocklistMonitorTest {
         when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_2)).thenReturn(false);
 
         // Simulate both BSSIDs failing
-        int failureReason = BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
+        int failureReason = WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
         int threshold = BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(failureReason);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1,
                 failureReason, threshold);
@@ -287,8 +287,8 @@ public class BssidBlocklistMonitorTest {
                 failureReason, threshold);
 
         // Verify that only TEST_BSSID_2 is added to the blocklist.
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
     }
 
     /**
@@ -301,14 +301,14 @@ public class BssidBlocklistMonitorTest {
         when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_1)).thenReturn(true);
 
         // Simulate TEST_BSSID_1 failing
-        int failureReason = BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA;
+        int failureReason = WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA;
         int threshold = BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(failureReason);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1,
                 failureReason, threshold);
 
         // Verify verify that TEST_BSSID_1 is in the blocklist
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -322,10 +322,10 @@ public class BssidBlocklistMonitorTest {
         when(mWifiLastResortWatchdog.isBssidOnlyApOfSsid(TEST_BSSID_2)).thenReturn(true);
 
         // setup TEST_SSID_2 to be disabled
-        mBssidBlocklistMonitor.handleWifiConfigurationDisabled(TEST_SSID_2);
+        mWifiBlocklistMonitor.handleWifiConfigurationDisabled(TEST_SSID_2);
 
         // Simulate both BSSIDs failing
-        int failureReason = BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
+        int failureReason = WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE;
         int threshold = BLOCK_REASON_TO_DISABLE_THRESHOLD_MAP.get(failureReason);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1,
                 failureReason, threshold);
@@ -333,16 +333,16 @@ public class BssidBlocklistMonitorTest {
                 failureReason, threshold);
 
         // Verify that only TEST_BSSID_2 is added to the blocklist.
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_2));
 
         // Now simulate having a connection success on TEST_BSSID_2 and verify there are
         // no more blocked BSSIDs, and connection failure should be ignored on TEST_BSSID_2 again.
-        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_2, TEST_SSID_2);
-        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_2);
+        mWifiBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_2, TEST_SSID_2);
+        mWifiBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_2);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_2, TEST_SSID_2,
                 failureReason, threshold);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -364,9 +364,9 @@ public class BssidBlocklistMonitorTest {
             // exactly after the duration.
             duration = multiplier * BASE_BLOCKLIST_DURATION;
             when(mClock.getWallClockMillis()).thenReturn(duration);
-            assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+            assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
             when(mClock.getWallClockMillis()).thenReturn(duration + 1);
-            assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+            assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
             multiplier *= 2;
         }
@@ -377,9 +377,9 @@ public class BssidBlocklistMonitorTest {
         when(mClock.getWallClockMillis()).thenReturn(0L);
         verifyAddTestBssidToBlocklist();
         when(mClock.getWallClockMillis()).thenReturn(duration);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
         when(mClock.getWallClockMillis()).thenReturn(duration + 1);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -390,44 +390,44 @@ public class BssidBlocklistMonitorTest {
         // First verify that n-1 failrues does not add the BSSID to blocklist
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE,
                 NUM_FAILURES_TO_BLOCKLIST - 1);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Simulate a long time passing to make sure failure counters are not being cleared through
         // some time based check
         when(mClock.getWallClockMillis()).thenReturn(10 * BASE_BLOCKLIST_DURATION);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that 1 more failure will add the BSSID to blocklist.
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE, 1);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
      * Verify that only abnormal disconnects that happened in a window of time right after
-     * connection gets counted in the BssidBlocklistMonitor.
+     * connection gets counted in the WifiBlocklistMonitor.
      */
     @Test
     public void testAbnormalDisconnectRecencyCheck() {
         // does some setup so that 1 failure is enough to add the BSSID to blocklist.
         when(mWifiScoreCard.getBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT)).thenReturn(1);
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT)).thenReturn(1);
 
         // simulate an abnormal disconnect coming in after the allowed window of time
         when(mWifiScoreCard.getBssidConnectionTimestampMs(TEST_SSID_1, TEST_BSSID_1))
                 .thenReturn(0L);
         when(mClock.getWallClockMillis()).thenReturn(ABNORMAL_DISCONNECT_TIME_WINDOW_MS + 1);
-        assertFalse(mBssidBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_1, TEST_SSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI));
+        assertFalse(mWifiBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_1, TEST_SSID_1,
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI));
         verify(mWifiScoreCard, never()).incrementBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
 
         // simulate another abnormal disconnect within the time window and verify the BSSID is
         // added to blocklist.
         when(mClock.getWallClockMillis()).thenReturn(ABNORMAL_DISCONNECT_TIME_WINDOW_MS);
-        assertTrue(mBssidBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_1, TEST_SSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI));
+        assertTrue(mWifiBlocklistMonitor.handleBssidConnectionFailure(TEST_BSSID_1, TEST_SSID_1,
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI));
         verify(mWifiScoreCard).incrementBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
     }
 
     /**
@@ -438,9 +438,9 @@ public class BssidBlocklistMonitorTest {
     public void testBlocklistStreakExpeditesAddingToBlocklist() {
         when(mWifiScoreCard.getBssidBlocklistStreak(anyString(), anyString(), anyInt()))
                 .thenReturn(1);
-        assertTrue(mBssidBlocklistMonitor.handleBssidConnectionFailure(
+        assertTrue(mWifiBlocklistMonitor.handleBssidConnectionFailure(
                 TEST_BSSID_1, TEST_SSID_1, TEST_L2_FAILURE, TEST_GOOD_RSSI));
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -453,16 +453,16 @@ public class BssidBlocklistMonitorTest {
                 NUM_FAILURES_TO_BLOCKLIST - 1);
 
         // Verify that a connection success event will clear the failure count.
-        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE,
                 NUM_FAILURES_TO_BLOCKLIST - 1);
 
         // Verify we have not blocklisted anything yet because the failure count was cleared.
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that TEST_BSSID_1 is added to blocklist after 1 more failure.
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE, 1);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -475,16 +475,16 @@ public class BssidBlocklistMonitorTest {
                 NUM_FAILURES_TO_BLOCKLIST - 1);
 
         // Verify that a dhcp provisioning success event will clear appropirate failure counts.
-        mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleDhcpProvisioningSuccess(TEST_BSSID_1, TEST_SSID_1);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_DHCP_FAILURE,
                 NUM_FAILURES_TO_BLOCKLIST - 1);
 
         // Verify we have not blocklisted anything yet because the failure count was cleared.
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that TEST_BSSID_1 is added to blocklist after 1 more failure.
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_DHCP_FAILURE, 1);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -494,27 +494,27 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testNetworkConnectionResetsBlocklistStreak() {
         when(mClock.getWallClockMillis()).thenReturn(ABNORMAL_DISCONNECT_RESET_TIME_MS + 1);
-        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA);
+                WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_WRONG_PASSWORD);
+                WifiBlocklistMonitor.REASON_WRONG_PASSWORD);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_EAP_FAILURE);
+                WifiBlocklistMonitor.REASON_EAP_FAILURE);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
+                WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT);
+                WifiBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE);
+                WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE);
         verify(mWifiScoreCard).setBssidConnectionTimestampMs(TEST_SSID_1, TEST_BSSID_1,
                 ABNORMAL_DISCONNECT_RESET_TIME_MS + 1);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
+                WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING);
+                WifiBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING);
     }
 
     /**
@@ -523,11 +523,11 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testNetworkConnectionNotResetAbnormalDisconnectStreak() {
         when(mClock.getWallClockMillis()).thenReturn(ABNORMAL_DISCONNECT_RESET_TIME_MS);
-        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
         verify(mWifiScoreCard).setBssidConnectionTimestampMs(TEST_SSID_1, TEST_BSSID_1,
                 ABNORMAL_DISCONNECT_RESET_TIME_MS);
         verify(mWifiScoreCard, never()).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT);
     }
 
     /**
@@ -537,11 +537,11 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testNetworkConnectionNotResetConnectedScoreStreak() {
         when(mClock.getWallClockMillis()).thenReturn(ABNORMAL_DISCONNECT_RESET_TIME_MS);
-        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
         verify(mWifiScoreCard).setBssidConnectionTimestampMs(TEST_SSID_1, TEST_BSSID_1,
                 ABNORMAL_DISCONNECT_RESET_TIME_MS);
         verify(mWifiScoreCard, never()).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
+                WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE);
     }
 
     /**
@@ -549,9 +549,9 @@ public class BssidBlocklistMonitorTest {
      */
     @Test
     public void testDhcpProvisioningResetsBlocklistStreak() {
-        mBssidBlocklistMonitor.handleDhcpProvisioningSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleDhcpProvisioningSuccess(TEST_BSSID_1, TEST_SSID_1);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_DHCP_FAILURE);
+                WifiBlocklistMonitor.REASON_DHCP_FAILURE);
     }
 
     /**
@@ -561,10 +561,10 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testNetworkValidationResetsBlocklistStreak() {
         verifyAddTestBssidToBlocklist();
-        mBssidBlocklistMonitor.handleNetworkValidationSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleNetworkValidationSuccess(TEST_BSSID_1, TEST_SSID_1);
         verify(mWifiScoreCard).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
-                BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+                WifiBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE);
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -575,12 +575,12 @@ public class BssidBlocklistMonitorTest {
         // First simulate getting an L3 failure n-1 times.
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_DHCP_FAILURE,
                 NUM_FAILURES_TO_BLOCKLIST - 1);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that the failure counter is not cleared by |handleBssidConnectionSuccess|.
-        mBssidBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
+        mWifiBlocklistMonitor.handleBssidConnectionSuccess(TEST_BSSID_1, TEST_SSID_1);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_DHCP_FAILURE, 1);
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -596,7 +596,7 @@ public class BssidBlocklistMonitorTest {
             handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_1, reason, threshold);
 
             // verify the BSSID is blocked
-            assertEquals(1, mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(
+            assertEquals(1, mWifiBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(
                     TEST_SSID_1));
 
             // verify that the blocklist streak is incremented
@@ -604,7 +604,7 @@ public class BssidBlocklistMonitorTest {
 
             // Verify that TEST_BSSID_1 is removed from the blocklist after the timeout duration.
             when(mClock.getWallClockMillis()).thenReturn(BASE_BLOCKLIST_DURATION + 1);
-            assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+            assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
             // But the blocklist streak count is not cleared
             verify(mWifiScoreCard, never()).resetBssidBlocklistStreak(TEST_SSID_1, TEST_BSSID_1,
@@ -627,11 +627,11 @@ public class BssidBlocklistMonitorTest {
                 NUM_FAILURES_TO_BLOCKLIST - 1);
 
         // Verify we have not blocklisted anything yet because the failure count was cleared.
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that TEST_BSSID_1 is added to blocklist after 1 more failure.
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_SSID_2, TEST_L2_FAILURE, 1);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -645,13 +645,13 @@ public class BssidBlocklistMonitorTest {
         when(mWifiLastResortWatchdog.shouldIgnoreBssidUpdate(anyString())).thenReturn(true);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE,
                 NUM_FAILURES_TO_BLOCKLIST * 2);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that after watchdog is okay with blocking a BSSID, it gets blocked after 1
         // more failure.
         when(mWifiLastResortWatchdog.shouldIgnoreBssidUpdate(anyString())).thenReturn(false);
         handleBssidConnectionFailureMultipleTimes(TEST_BSSID_1, TEST_L2_FAILURE, 1);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -676,20 +676,20 @@ public class BssidBlocklistMonitorTest {
         ArrayList<String> blocklist1 = new ArrayList<>();
         blocklist1.add(TEST_BSSID_2);
         blocklist1.add(TEST_BSSID_1);
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
+        mWifiBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(blocklist1),
                 eq(new ArrayList<>()));
 
         // Verify we are sending 1 BSSID down to the firmware for SSID_2.
         ArrayList<String> blocklist2 = new ArrayList<>();
         blocklist2.add(TEST_BSSID_3);
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_2));
+        mWifiBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_2));
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(blocklist2),
                 eq(new ArrayList<>()));
 
         // Verify we are not sending any BSSIDs down to the firmware since there does not
         // exists any BSSIDs for TEST_SSID_3 in the blocklist.
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_3));
+        mWifiBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_3));
         verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(new ArrayList<>()),
                 eq(new ArrayList<>()));
     }
@@ -706,8 +706,8 @@ public class BssidBlocklistMonitorTest {
         String bssid = "0a:08:5c:67:89:0";
         for (int i = 0; i < 10; i++) {
             when(mClock.getWallClockMillis()).thenReturn((long) i);
-            mBssidBlocklistMonitor.handleBssidConnectionFailure(bssid + i,
-                    TEST_SSID_1, BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
+            mWifiBlocklistMonitor.handleBssidConnectionFailure(bssid + i,
+                    TEST_SSID_1, WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA,
                     TEST_GOOD_RSSI);
 
             // This will build a List of BSSIDs starting from the latest added ones that is at
@@ -720,11 +720,11 @@ public class BssidBlocklistMonitorTest {
                 }
                 blocklist.add(bssid + j);
             }
-            mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
+            mWifiBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
             verify(mWifiConnectivityHelper).setFirmwareRoamingConfiguration(eq(blocklist),
                     eq(new ArrayList<>()));
         }
-        assertEquals(10, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(10, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -736,7 +736,7 @@ public class BssidBlocklistMonitorTest {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(false);
         verifyAddTestBssidToBlocklist();
 
-        mBssidBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
+        mWifiBlocklistMonitor.updateFirmwareRoamingConfiguration(Set.of(TEST_SSID_1));
         verify(mWifiConnectivityHelper, never()).setFirmwareRoamingConfiguration(any(), any());
     }
 
@@ -746,8 +746,8 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testClearBssidBlocklist() {
         verifyAddTestBssidToBlocklist();
-        mBssidBlocklistMonitor.clearBssidBlocklist();
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        mWifiBlocklistMonitor.clearBssidBlocklist();
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
     }
 
@@ -759,13 +759,13 @@ public class BssidBlocklistMonitorTest {
         int bssidStatusHistoryLoggerSize = 30;
         for (int i = 0; i < bssidStatusHistoryLoggerSize; i++) {
             verifyAddTestBssidToBlocklist();
-            mBssidBlocklistMonitor.clearBssidBlocklist();
-            assertEquals(i + 1, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+            mWifiBlocklistMonitor.clearBssidBlocklist();
+            assertEquals(i + 1, mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
         }
         verifyAddTestBssidToBlocklist();
-        mBssidBlocklistMonitor.clearBssidBlocklist();
+        mWifiBlocklistMonitor.clearBssidBlocklist();
         assertEquals(bssidStatusHistoryLoggerSize,
-                mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+                mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
     }
 
     /**
@@ -777,10 +777,10 @@ public class BssidBlocklistMonitorTest {
         verifyAddMultipleBssidsToBlocklist();
 
         // Clear the blocklist for SSID 1.
-        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
+        mWifiBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
 
         // Verify that the blocklist is deleted for SSID 1 and the BSSID for SSID 2 still remains.
-        Set<String> bssidList = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
+        Set<String> bssidList = mWifiBlocklistMonitor.updateAndGetBssidBlocklist();
         assertEquals(1, bssidList.size());
         assertTrue(bssidList.contains(TEST_BSSID_3));
         verify(mWifiScoreCard, never()).resetBssidBlocklistStreakForSsid(TEST_SSID_1);
@@ -795,10 +795,10 @@ public class BssidBlocklistMonitorTest {
         verifyAddMultipleBssidsToBlocklist();
 
         // Clear the blocklist for SSID 1.
-        mBssidBlocklistMonitor.handleNetworkRemoved(TEST_SSID_1);
+        mWifiBlocklistMonitor.handleNetworkRemoved(TEST_SSID_1);
 
         // Verify that the blocklist is deleted for SSID 1 and the BSSID for SSID 2 still remains.
-        Set<String> bssidList = mBssidBlocklistMonitor.updateAndGetBssidBlocklist();
+        Set<String> bssidList = mWifiBlocklistMonitor.updateAndGetBssidBlocklist();
         assertEquals(1, bssidList.size());
         assertTrue(bssidList.contains(TEST_BSSID_3));
         verify(mWifiScoreCard).resetBssidBlocklistStreakForSsid(TEST_SSID_1);
@@ -811,24 +811,24 @@ public class BssidBlocklistMonitorTest {
     public void testBlockBssidForDurationMs() {
         when(mClock.getWallClockMillis()).thenReturn(0L);
         long testDuration = 5500L;
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
                 TEST_FRAMEWORK_BLOCK_REASON, TEST_GOOD_RSSI);
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that the BSSID is removed from blocklist by clearBssidBlocklistForSsid
-        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertEquals(1, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+        mWifiBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(1, mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
 
         // Add the BSSID to blocklist again.
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
                 TEST_FRAMEWORK_BLOCK_REASON, TEST_GOOD_RSSI);
-        assertEquals(1, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(1, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // Verify that the BSSID is removed from blocklist once the specified duration is over.
         when(mClock.getWallClockMillis()).thenReturn(testDuration + 1);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertEquals(2, mBssidBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(2, mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
     }
 
     /**
@@ -839,19 +839,19 @@ public class BssidBlocklistMonitorTest {
         // test invalid BSSID
         when(mClock.getWallClockMillis()).thenReturn(0L);
         long testDuration = 5500L;
-        mBssidBlocklistMonitor.blockBssidForDurationMs(null, TEST_SSID_1, testDuration,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(null, TEST_SSID_1, testDuration,
                 TEST_FRAMEWORK_BLOCK_REASON, TEST_GOOD_RSSI);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // test invalid SSID
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, null, testDuration,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, null, testDuration,
                 TEST_FRAMEWORK_BLOCK_REASON, TEST_GOOD_RSSI);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
 
         // test invalid duration
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, -1,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, -1,
                 TEST_FRAMEWORK_BLOCK_REASON, TEST_GOOD_RSSI);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     private void simulateRssiUpdate(String bssid, int rssi) {
@@ -862,7 +862,7 @@ public class BssidBlocklistMonitorTest {
         when(scanDetail.getScanResult()).thenReturn(scanResult);
         List<ScanDetail> scanDetails = new ArrayList<>();
         scanDetails.add(scanDetail);
-        mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
+        mWifiBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
     }
 
     /**
@@ -873,18 +873,18 @@ public class BssidBlocklistMonitorTest {
     public void testUnblockBssidAfterRssiImproves() {
         when(mClock.getWallClockMillis()).thenReturn(0L);
         // verify TEST_BSSID_1 is blocked
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(
-                TEST_BSSID_1, TEST_SSID_1, BssidBlocklistMonitor.REASON_EAP_FAILURE,
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(
+                TEST_BSSID_1, TEST_SSID_1, WifiBlocklistMonitor.REASON_EAP_FAILURE,
                 TEST_SUFFICIENT_RSSI - MIN_RSSI_DIFF_TO_UNBLOCK_BSSID);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
 
         // verify the blocklist is not cleared when the rssi improvement is not large enough.
         simulateRssiUpdate(TEST_BSSID_1, TEST_SUFFICIENT_RSSI - 1);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
 
         // verify TEST_BSSID_1 is removed from the blocklist after RSSI improves
         simulateRssiUpdate(TEST_BSSID_1, TEST_SUFFICIENT_RSSI);
-        assertEquals(0, mBssidBlocklistMonitor.updateAndGetBssidBlocklist().size());
+        assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
     }
 
     /**
@@ -895,14 +895,14 @@ public class BssidBlocklistMonitorTest {
     public void testBssidNotUnblockedIfRssiAlreadyGood() {
         when(mClock.getWallClockMillis()).thenReturn(0L);
         // verify TEST_BSSID_1 is blocked
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(
-                TEST_BSSID_1, TEST_SSID_1, BssidBlocklistMonitor.REASON_EAP_FAILURE,
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(
+                TEST_BSSID_1, TEST_SSID_1, WifiBlocklistMonitor.REASON_EAP_FAILURE,
                 TEST_SUFFICIENT_RSSI);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
 
         // verify TEST_BSSID_1 is not removed from blocklist
         simulateRssiUpdate(TEST_BSSID_1, TEST_GOOD_RSSI);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -912,13 +912,13 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testRssiImprovementNotUnblockBssidForSomeFailureReasons() {
         when(mClock.getWallClockMillis()).thenReturn(0L);
-        mBssidBlocklistMonitor.handleBssidConnectionFailure(
-                TEST_BSSID_1, TEST_SSID_1, BssidBlocklistMonitor.REASON_WRONG_PASSWORD,
+        mWifiBlocklistMonitor.handleBssidConnectionFailure(
+                TEST_BSSID_1, TEST_SSID_1, WifiBlocklistMonitor.REASON_WRONG_PASSWORD,
                 TEST_SUFFICIENT_RSSI - MIN_RSSI_DIFF_TO_UNBLOCK_BSSID);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
 
         simulateRssiUpdate(TEST_BSSID_1, TEST_SUFFICIENT_RSSI);
-        assertTrue(mBssidBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
+        assertTrue(mWifiBlocklistMonitor.updateAndGetBssidBlocklist().contains(TEST_BSSID_1));
     }
 
     /**
@@ -927,18 +927,18 @@ public class BssidBlocklistMonitorTest {
     @Test
     public void testGetFailureReasonsForSsid() {
         // Null input should not crash
-        mBssidBlocklistMonitor.getFailureReasonsForSsid(null).size();
-        assertEquals(0, mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1).size());
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, 1000,
-                BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, TEST_GOOD_RSSI);
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_2, TEST_SSID_1, 1000,
-                BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI);
+        mWifiBlocklistMonitor.getFailureReasonsForSsid(null).size();
+        assertEquals(0, mWifiBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1).size());
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, 1000,
+                WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA, TEST_GOOD_RSSI);
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_2, TEST_SSID_1, 1000,
+                WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT, TEST_GOOD_RSSI);
 
-        assertEquals(2, mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1).size());
-        assertTrue(mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
-                .contains(BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA));
-        assertTrue(mBssidBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
-                .contains(BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
+        assertEquals(2, mWifiBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1).size());
+        assertTrue(mWifiBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
+                .contains(WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA));
+        assertTrue(mWifiBlocklistMonitor.getFailureReasonsForSsid(TEST_SSID_1)
+                .contains(WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT));
     }
 
     /**
@@ -952,16 +952,16 @@ public class BssidBlocklistMonitorTest {
         WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
         when(mWifiLastResortWatchdog.shouldIgnoreSsidUpdate()).thenReturn(true);
         // First set it to enabled.
-        assertTrue(mBssidBlocklistMonitor.updateNetworkSelectionStatus(openNetwork,
+        assertTrue(mWifiBlocklistMonitor.updateNetworkSelectionStatus(openNetwork,
                 NetworkSelectionStatus.DISABLED_NONE));
         assertEquals(NetworkSelectionStatus.NETWORK_SELECTION_ENABLED,
                 openNetwork.getNetworkSelectionStatus().getNetworkSelectionStatus());
 
         int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
         int assocRejectThreshold =
-                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(assocRejectReason);
+                mWifiBlocklistMonitor.getNetworkSelectionDisableThreshold(assocRejectReason);
         for (int i = 1; i <= assocRejectThreshold; i++) {
-            assertFalse(mBssidBlocklistMonitor.updateNetworkSelectionStatus(
+            assertFalse(mWifiBlocklistMonitor.updateNetworkSelectionStatus(
                     openNetwork, assocRejectReason));
         }
         assertFalse(openNetwork.getNetworkSelectionStatus().isNetworkTemporaryDisabled());
@@ -982,7 +982,7 @@ public class BssidBlocklistMonitorTest {
         // disable it 5 times to actually mark it temporarily disabled.
         int assocRejectReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
         int assocRejectThreshold =
-                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(assocRejectReason);
+                mWifiBlocklistMonitor.getNetworkSelectionDisableThreshold(assocRejectReason);
         for (int i = 1; i <= assocRejectThreshold; i++) {
             verifyUpdateNetworkSelectionStatus(openNetwork, assocRejectReason, i);
         }
@@ -1002,7 +1002,7 @@ public class BssidBlocklistMonitorTest {
 
     /**
      * Verifies the update of network status using
-     * {@link BssidBlocklistMonitor#updateNetworkSelectionStatus(int, int)}.
+     * {@link WifiBlocklistMonitor#updateNetworkSelectionStatus(int, int)}.
      */
     @Test
     public void testNetworkSelectionStatusTemporarilyDisabledDueToNoInternet() {
@@ -1070,14 +1070,14 @@ public class BssidBlocklistMonitorTest {
         int currentDisableReason = currentStatus.getNetworkSelectionDisableReason();
 
         // First set the status to the provided reason.
-        mBssidBlocklistMonitor.updateNetworkSelectionStatus(config, reason);
+        mWifiBlocklistMonitor.updateNetworkSelectionStatus(config, reason);
 
         NetworkSelectionStatus retrievedStatus = config.getNetworkSelectionStatus();
         int retrievedDisableReason = retrievedStatus.getNetworkSelectionDisableReason();
         long retrievedDisableTime = retrievedStatus.getDisableTime();
         int retrievedDisableReasonCounter = retrievedStatus.getDisableReasonCounter(reason);
         int disableReasonThreshold =
-                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(reason);
+                mWifiBlocklistMonitor.getNetworkSelectionDisableThreshold(reason);
 
         if (reason == NetworkSelectionStatus.DISABLED_NONE) {
             assertEquals(reason, retrievedDisableReason);
@@ -1086,7 +1086,7 @@ public class BssidBlocklistMonitorTest {
                     NetworkSelectionStatus.INVALID_NETWORK_SELECTION_DISABLE_TIMESTAMP,
                     retrievedDisableTime);
             assertEquals(WifiConfiguration.Status.ENABLED, config.status);
-        } else if (mBssidBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(reason)
+        } else if (mWifiBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(reason)
                 < Integer.MAX_VALUE) {
             // For temporarily disabled networks, we need to ensure that the current status remains
             // until the threshold is crossed.
@@ -1124,17 +1124,17 @@ public class BssidBlocklistMonitorTest {
         int disableReason = NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION;
         verifyDisableNetwork(openNetwork, disableReason);
         // add 2 BSSIDs to the blocklist
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, openNetwork.SSID,
-                Long.MAX_VALUE, BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, openNetwork.SSID,
+                Long.MAX_VALUE, WifiBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
                 TEST_GOOD_RSSI);
-        mBssidBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_2, openNetwork.SSID,
-                Long.MAX_VALUE, BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
+        mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_2, openNetwork.SSID,
+                Long.MAX_VALUE, WifiBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE,
                 TEST_GOOD_RSSI);
-        assertEquals(2, mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
+        assertEquals(2, mWifiBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
                 Set.of(TEST_SSID_1)).size());
         verifyNetworkIsEnabledAfter(openNetwork,
                 TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS
-                        + (mBssidBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(
+                        + (mWifiBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(
                                 disableReason) * 2));
     }
 
@@ -1151,7 +1151,7 @@ public class BssidBlocklistMonitorTest {
         verifyDisableNetwork(openNetwork, disableReason);
 
         verifyNetworkIsEnabledAfter(openNetwork,
-                mBssidBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(disableReason)
+                mWifiBlocklistMonitor.getNetworkSelectionDisableTimeoutMillis(disableReason)
                         + TEST_ELAPSED_UPDATE_NETWORK_SELECTION_TIME_MILLIS);
     }
 
@@ -1161,7 +1161,7 @@ public class BssidBlocklistMonitorTest {
                 config, NetworkSelectionStatus.DISABLED_NONE, 0);
 
         int disableThreshold =
-                mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(reason);
+                mWifiBlocklistMonitor.getNetworkSelectionDisableThreshold(reason);
         for (int i = 1; i <= disableThreshold; i++) {
             verifyUpdateNetworkSelectionStatus(config, reason, i);
         }
@@ -1171,12 +1171,12 @@ public class BssidBlocklistMonitorTest {
         // try enabling this network 1 second earlier than the expected timeout. This
         // should fail and the status should remain temporarily disabled.
         when(mClock.getElapsedSinceBootMillis()).thenReturn(timeout - 1);
-        assertFalse(mBssidBlocklistMonitor.shouldEnableNetwork(config));
+        assertFalse(mWifiBlocklistMonitor.shouldEnableNetwork(config));
 
         // Now advance time by the timeout for association rejection and ensure that the
         // network is now enabled.
         when(mClock.getElapsedSinceBootMillis()).thenReturn(timeout);
-        assertTrue(mBssidBlocklistMonitor.shouldEnableNetwork(config));
+        assertTrue(mWifiBlocklistMonitor.shouldEnableNetwork(config));
     }
 
     /**
@@ -1191,11 +1191,11 @@ public class BssidBlocklistMonitorTest {
         int newThreshold = oldThreshold + 1;
         mResources.setInteger(
                 R.integer.config_wifiDisableReasonDhcpFailureThreshold, newThreshold);
-        mBssidBlocklistMonitor = new BssidBlocklistMonitor(mContext, mWifiConnectivityHelper,
+        mWifiBlocklistMonitor = new WifiBlocklistMonitor(mContext, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mClock, mLocalLog, mWifiScoreCard, mScoringParams);
 
         // Verify that the threshold is updated in the copied version
-        assertEquals(newThreshold, mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(
+        assertEquals(newThreshold, mWifiBlocklistMonitor.getNetworkSelectionDisableThreshold(
                 NetworkSelectionStatus.DISABLED_DHCP_FAILURE));
         // Verify the original DISABLE_REASON_INFOS is unchanged
         assertEquals(oldThreshold, NetworkSelectionStatus.DISABLE_REASON_INFOS
@@ -1210,7 +1210,7 @@ public class BssidBlocklistMonitorTest {
         for (int i = 1; i < NetworkSelectionStatus.NETWORK_SELECTION_DISABLED_MAX; i++) {
             assertEquals("Disable threshold for reason=" + i + " should be equal",
                     NetworkSelectionStatus.DISABLE_REASON_INFOS.get(i).mDisableThreshold,
-                    mBssidBlocklistMonitor.getNetworkSelectionDisableThreshold(i));
+                    mWifiBlocklistMonitor.getNetworkSelectionDisableThreshold(i));
         }
     }
 }

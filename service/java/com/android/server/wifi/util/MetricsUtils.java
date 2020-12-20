@@ -19,7 +19,7 @@ package com.android.server.wifi.util;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.util.SparseIntArray;
 
-import com.android.server.wifi.BssidBlocklistMonitor;
+import com.android.server.wifi.WifiBlocklistMonitor;
 import com.android.server.wifi.proto.nano.WifiMetricsProto.NetworkDisableReason;
 
 /**
@@ -220,34 +220,34 @@ public class MetricsUtils {
     }
 
     /**
-     * Converts BssidBlocklistMonitor.FailureReason to
+     * Converts WifiBlocklistMonitor.FailureReason to
      * WifiMetricsProto.NetworkDisableReason.DisableReason
      */
     public static int convertBssidBlocklistReasonToWifiProtoEnum(int reason) {
         switch (reason) {
-            case BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA:
+            case WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA:
                 return NetworkDisableReason.REASON_AP_UNABLE_TO_HANDLE_NEW_STA;
-            case BssidBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE:
+            case WifiBlocklistMonitor.REASON_NETWORK_VALIDATION_FAILURE:
                 return NetworkDisableReason.REASON_NETWORK_VALIDATION_FAILURE;
-            case BssidBlocklistMonitor.REASON_WRONG_PASSWORD:
+            case WifiBlocklistMonitor.REASON_WRONG_PASSWORD:
                 return NetworkDisableReason.REASON_WRONG_PASSWORD;
-            case BssidBlocklistMonitor.REASON_EAP_FAILURE:
+            case WifiBlocklistMonitor.REASON_EAP_FAILURE:
                 return NetworkDisableReason.REASON_EAP_FAILURE;
-            case BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION:
+            case WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION:
                 return NetworkDisableReason.REASON_ASSOCIATION_REJECTION;
-            case BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT:
+            case WifiBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT:
                 return NetworkDisableReason.REASON_ASSOCIATION_TIMEOUT;
-            case BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE:
+            case WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE:
                 return NetworkDisableReason.REASON_AUTHENTICATION_FAILURE;
-            case BssidBlocklistMonitor.REASON_DHCP_FAILURE:
+            case WifiBlocklistMonitor.REASON_DHCP_FAILURE:
                 return NetworkDisableReason.REASON_DHCP_FAILURE;
-            case BssidBlocklistMonitor.REASON_ABNORMAL_DISCONNECT:
+            case WifiBlocklistMonitor.REASON_ABNORMAL_DISCONNECT:
                 return NetworkDisableReason.REASON_ABNORMAL_DISCONNECT;
-            case BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE:
+            case WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_MBO_OCE:
                 return NetworkDisableReason.REASON_FRAMEWORK_DISCONNECT_MBO_OCE;
-            case BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT:
+            case WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT:
                 return NetworkDisableReason.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT;
-            case BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE:
+            case WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE:
                 return NetworkDisableReason.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE;
             default:
                 return NetworkDisableReason.REASON_UNKNOWN;

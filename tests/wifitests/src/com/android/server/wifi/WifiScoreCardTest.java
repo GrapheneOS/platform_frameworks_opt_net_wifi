@@ -86,7 +86,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
     static final double TOL = 1e-6; // for assertEquals(double, double, tolerance)
 
     static final int TEST_BSSID_FAILURE_REASON =
-            BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION;
+            WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION;
 
     WifiScoreCard mWifiScoreCard;
 
@@ -845,7 +845,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(1000);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT);
+                WifiBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT);
     }
 
     /**
@@ -894,19 +894,19 @@ public class WifiScoreCardTest extends WifiBaseTest {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(500);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE);
+                WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE);
         millisecondsPass(1000);
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(1000);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_WRONG_PASSWORD);
+                WifiBlocklistMonitor.REASON_WRONG_PASSWORD);
     }
 
     private void makeAuthFailureExample() {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(500);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE);
+                WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE);
     }
 
     /**
@@ -938,7 +938,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
             mWifiScoreCard.noteNonlocalDisconnect(disconnectionReason);
         }
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING);
+                WifiBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING);
         millisecondsPass(500);
     }
 
@@ -1019,12 +1019,12 @@ public class WifiScoreCardTest extends WifiBaseTest {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -83, mWifiInfo.getSSID());
         millisecondsPass(1000);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -83, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
+                WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
         millisecondsPass(3000);
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -83, mWifiInfo.getSSID());
         millisecondsPass(1000);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -83, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
+                WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
 
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());
         NetworkConnectionStats dailyStats = perNetwork.getRecentStats();
@@ -1224,7 +1224,7 @@ public class WifiScoreCardTest extends WifiBaseTest {
         mWifiScoreCard.noteConnectionAttempt(mWifiInfo, -53, mWifiInfo.getSSID());
         millisecondsPass(1000);
         mWifiScoreCard.noteConnectionFailure(mWifiInfo, -53, mWifiInfo.getSSID(),
-                BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
+                WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION);
         mWifiScoreCard.removeNetwork(mWifiInfo.getSSID());
 
         PerNetwork perNetwork = mWifiScoreCard.fetchByNetwork(mWifiInfo.getSSID());

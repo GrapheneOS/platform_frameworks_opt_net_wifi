@@ -220,7 +220,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     @Mock private OpenNetworkNotifier mOpenNetworkNotifier;
     @Mock private WifiMetrics mWifiMetrics;
     @Mock private WifiNetworkSuggestionsManager mWifiNetworkSuggestionsManager;
-    @Mock private BssidBlocklistMonitor mBssidBlocklistMonitor;
+    @Mock private WifiBlocklistMonitor mWifiBlocklistMonitor;
     @Mock private WifiChannelUtilization mWifiChannelUtilization;
     @Mock private ScoringParams mScoringParams;
     @Mock private WifiScoreCard mWifiScoreCard;
@@ -444,7 +444,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 mWifiNS, mWifiConnectivityHelper,
                 mWifiLastResortWatchdog, mOpenNetworkNotifier,
                 mWifiMetrics, new Handler(mLooper.getLooper()), mClock,
-                mLocalLog, mWifiScoreCard, mBssidBlocklistMonitor, mWifiChannelUtilization,
+                mLocalLog, mWifiScoreCard, mWifiBlocklistMonitor, mWifiChannelUtilization,
                 mPasspointManager, mDeviceConfigFacade, mActiveModeWarden);
         verify(mActiveModeWarden, atLeastOnce()).registerModeChangeCallback(
                 mModeChangeCallbackCaptor.capture());
@@ -1444,7 +1444,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 WifiMetrics.ConnectionEvent.FAILURE_ASSOCIATION_REJECTION, CANDIDATE_BSSID,
                 CANDIDATE_SSID);
         // Verify the failed BSSID is added to blocklist
-        verify(mBssidBlocklistMonitor).blockBssidForDurationMs(eq(CANDIDATE_BSSID),
+        verify(mWifiBlocklistMonitor).blockBssidForDurationMs(eq(CANDIDATE_BSSID),
                 eq(CANDIDATE_SSID), anyLong(), anyInt(), anyInt());
         // Verify another connection starting
         verify(mWifiNS).selectNetwork((List<WifiCandidates.Candidate>)
@@ -2886,14 +2886,14 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
     public void verifyBlocklistRefreshedAfterScanResults() {
         when(mWifiConnectivityHelper.isFirmwareRoamingSupported()).thenReturn(true);
 
-        InOrder inOrder = inOrder(mBssidBlocklistMonitor);
+        InOrder inOrder = inOrder(mWifiBlocklistMonitor);
         // Force a connectivity scan
-        inOrder.verify(mBssidBlocklistMonitor, never())
+        inOrder.verify(mWifiBlocklistMonitor, never())
                 .updateAndGetBssidBlocklistForSsids(anySet());
         mWifiConnectivityManager.forceConnectivityScan(WIFI_WORK_SOURCE);
 
-        inOrder.verify(mBssidBlocklistMonitor).tryEnablingBlockedBssids(any());
-        inOrder.verify(mBssidBlocklistMonitor).updateAndGetBssidBlocklistForSsids(anySet());
+        inOrder.verify(mWifiBlocklistMonitor).tryEnablingBlockedBssids(any());
+        inOrder.verify(mWifiBlocklistMonitor).updateAndGetBssidBlocklistForSsids(anySet());
     }
 
     /**
@@ -2907,7 +2907,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
         setWifiEnabled(false);
 
         // Verify the BSSID blocklist is cleared again.
-        verify(mBssidBlocklistMonitor).clearBssidBlocklist();
+        verify(mWifiBlocklistMonitor).clearBssidBlocklist();
         verify(mWifiConfigManager).enableTemporaryDisabledNetworks();
         verify(mWifiConfigManager).stopTemporarilyDisablingAllNonCarrierMergedWifi();
         // Verify WifiNetworkSelector is informed of the disable.
@@ -2926,7 +2926,7 @@ public class WifiConnectivityManagerTest extends WifiBaseTest {
                 0, CANDIDATE_NETWORK_ID, CANDIDATE_SSID, false, true, null, null);
         when(mWifiConfigManager.getConfiguredNetwork(anyInt())).thenReturn(currentNetwork);
         mWifiConnectivityManager.prepareForForcedConnection(1);
-        verify(mBssidBlocklistMonitor).clearBssidBlocklistForSsid(CANDIDATE_SSID);
+        verify(mWifiBlocklistMonitor).clearBssidBlocklistForSsid(CANDIDATE_SSID);
     }
 
     /**
