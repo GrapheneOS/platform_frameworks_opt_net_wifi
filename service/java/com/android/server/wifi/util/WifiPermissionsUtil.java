@@ -35,6 +35,7 @@ import android.util.EventLog;
 import android.util.Log;
 
 import com.android.internal.annotations.GuardedBy;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.server.wifi.FrameworkFacade;
 import com.android.server.wifi.WifiInjector;
 import com.android.server.wifi.WifiLog;
@@ -99,20 +100,27 @@ public class WifiPermissionsUtil {
     public boolean isTargetSdkLessThan(String packageName, int versionCode, int callingUid) {
         long ident = Binder.clearCallingIdentity();
         try {
-            if (mContext.getPackageManager().getApplicationInfoAsUser(
-                    packageName, 0,
-                    UserHandle.getUserHandleForUid(callingUid)).targetSdkVersion
-                    < versionCode) {
-                return true;
+            final int targetSdkVersion;
+            if (SdkLevel.isAtLeastS()) {
+                // >= S, use the lightweight API to just get the target SDK version.
+                Context userContext = createPackageContextAsUser(callingUid);
+                if (userContext == null) return false;
+                targetSdkVersion = userContext.getPackageManager().getTargetSdkVersion(packageName);
+            } else {
+                // < S, use the heavyweight API to get all package info.
+                targetSdkVersion = mContext.getPackageManager().getApplicationInfoAsUser(
+                        packageName, 0,
+                        UserHandle.getUserHandleForUid(callingUid)).targetSdkVersion;
             }
+            return targetSdkVersion < versionCode;
         } catch (PackageManager.NameNotFoundException e) {
             // In case of exception, assume unknown app (more strict checking)
             // Note: This case will never happen since checkPackage is
             // called to verify validity before checking App's version.
+            return false;
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
-        return false;
     }
 
     /**
@@ -534,7 +542,8 @@ public class WifiPermissionsUtil {
         return devicePolicyManager;
     }
 
-    private DevicePolicyManager retrieveDevicePolicyManagerFromUserContext(int uid) {
+    @Nullable
+    private Context createPackageContextAsUser(int uid) {
         Context userContext = null;
         try {
             userContext = mContext.createPackageContextAsUser(mContext.getPackageName(), 0,
@@ -547,6 +556,12 @@ public class WifiPermissionsUtil {
             Log.e(TAG, "Unable to retrieve user context for " + uid);
             return null;
         }
+        return userContext;
+    }
+
+    private DevicePolicyManager retrieveDevicePolicyManagerFromUserContext(int uid) {
+        Context userContext = createPackageContextAsUser(uid);
+        if (userContext == null) return null;
         return retrieveDevicePolicyManagerFromContext(userContext);
     }
 
