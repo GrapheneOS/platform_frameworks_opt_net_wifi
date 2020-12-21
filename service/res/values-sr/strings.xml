@@ -80,5 +80,5 @@
     <string name="wifi_softap_auto_shutdown_timeout_expired_title" msgid="3145323037688670043">"Хотспот је искључен"</string>
     <string name="wifi_softap_auto_shutdown_timeout_expired_summary" msgid="5136282560556465701">"Ниједан уређај није повезан. Додирните да бисте изменили."</string>
     <string name="wifi_sim_required_title" msgid="8362843050699015640">"WiFi веза је прекинута"</string>
-    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Да бисте се повезали на мрежу <xliff:g id="SSID">%1$s</xliff:g>, уметните <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM картицу"</string>
+    <string name="wifi_sim_required_message" msgid="6085636103482409595">"Да бисте се повезали на мрежу <xliff:g id="SSID">%1$s</xliff:g>, ставите <xliff:g id="CARRIER_NAME">%2$s</xliff:g> SIM картицу"</string>
 </resources>
