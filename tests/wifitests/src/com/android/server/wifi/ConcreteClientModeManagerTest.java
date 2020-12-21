@@ -28,6 +28,7 @@ import static android.net.wifi.WifiManager.WIFI_STATE_UNKNOWN;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_PRIMARY;
 import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SCAN_ONLY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_TRANSIENT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -46,6 +47,7 @@ import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
 import android.net.NetworkRequest;
 import android.net.wifi.IWifiConnectedNetworkScorer;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PersistableBundle;
@@ -1364,5 +1366,21 @@ public class ConcreteClientModeManagerTest extends WifiBaseTest {
 
         mClientModeManager.setWifiConnectedNetworkScorer(iBinder, iScorer);
         verify(mClientModeImpl, times(2)).setWifiConnectedNetworkScorer(iBinder, iScorer);
+    }
+
+    @Test
+    public void updateConnectModeStateInAllRoles() throws Exception {
+        startClientInConnectModeAndVerifyEnabled();
+        mClientModeManager.setRole(ROLE_CLIENT_SECONDARY_TRANSIENT, TEST_WORKSOURCE);
+        mLooper.dispatchAll();
+        mClientModeManager.stop();
+        // disabling broadcast wasn't sent out (since role is secondary)
+        verify(mContext, never()).sendStickyBroadcastAsUser(
+                argThat(intent ->
+                        intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, -1)
+                                == WifiManager.WIFI_STATE_DISABLING),
+                any());
+        // but wifi state was updated (should be updated no matter the role)
+        assertEquals(WifiManager.WIFI_STATE_DISABLING, mClientModeManager.syncGetWifiState());
     }
 }
