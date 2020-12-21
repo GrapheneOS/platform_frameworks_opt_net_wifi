@@ -229,7 +229,7 @@ public class WifiMetrics {
     private Handler mHandler;
     private ScoringParams mScoringParams;
     private WifiConfigManager mWifiConfigManager;
-    private BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private WifiBlocklistMonitor mWifiBlocklistMonitor;
     private WifiNetworkSelector mWifiNetworkSelector;
     private PasspointManager mPasspointManager;
     private Context mContext;
@@ -869,7 +869,7 @@ public class WifiMetrics {
                     networkInfo.isPasspoint = config.isPasspoint();
                     mUserActionEvent.targetNetworkInfo = networkInfo;
                     mUserActionEvent.networkDisableReason = convertToNetworkDisableReason(
-                            config, mBssidBlocklistMonitor.getFailureReasonsForSsid(config.SSID));
+                            config, mWifiBlocklistMonitor.getFailureReasonsForSsid(config.SSID));
                 }
             }
         }
@@ -1481,9 +1481,9 @@ public class WifiMetrics {
         mWifiDataStall = wifiDataStall;
     }
 
-    /** Sets internal BssidBlocklistMonitor member */
-    public void setBssidBlocklistMonitor(BssidBlocklistMonitor bssidBlocklistMonitor) {
-        mBssidBlocklistMonitor = bssidBlocklistMonitor;
+    /** Sets internal WifiBlocklistMonitor member */
+    public void setWifiBlocklistMonitor(WifiBlocklistMonitor wifiBlocklistMonitor) {
+        mWifiBlocklistMonitor = wifiBlocklistMonitor;
     }
 
     /** Sets internal WifiHealthMonitor member */
@@ -1663,7 +1663,7 @@ public class WifiMetrics {
                     mScanResultRssiTimestampMillis = mClock.getElapsedSinceBootMillis();
                 }
                 currentConnectionEvent.mConnectionEvent.numBssidInBlocklist =
-                        mBssidBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID);
+                        mWifiBlocklistMonitor.updateAndGetNumBlockedBssidsForSsid(config.SSID);
                 currentConnectionEvent.mConnectionEvent.networkType =
                         WifiMetricsProto.ConnectionEvent.TYPE_UNKNOWN;
                 currentConnectionEvent.mConnectionEvent.isOsuProvisioned = false;

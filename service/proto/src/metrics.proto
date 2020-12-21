@@ -581,7 +581,7 @@ message WifiLog {
   // Metrics collected by health monitor
   optional HealthMonitorMetrics health_monitor_metrics = 158;
 
-  // Metrics related to the BssidBlocklistMonitor
+  // Metrics related to the WifiBlocklistMonitor
   optional BssidBlocklistStats bssid_blocklist_stats = 159;
 
   // Connection duration under various health conditions

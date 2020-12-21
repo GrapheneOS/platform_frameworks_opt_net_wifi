@@ -57,7 +57,6 @@ import com.android.wifi.resources.R;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -154,7 +153,7 @@ public class WifiConnectivityManager {
      * milliseconds.
      */
     private final LinkedList<Long> mConnectionAttemptTimeStamps = new LinkedList<>();
-    private final BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final WifiBlocklistMonitor mWifiBlocklistMonitor;
     private final PasspointManager mPasspointManager;
     private final WifiScoreCard mWifiScoreCard;
     private final WifiChannelUtilization mWifiChannelUtilization;
@@ -378,8 +377,8 @@ public class WifiConnectivityManager {
             }
         }
         // Check if any blocklisted BSSIDs can be freed.
-        mBssidBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
-        Set<String> bssidBlocklist = mBssidBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
+        mWifiBlocklistMonitor.tryEnablingBlockedBssids(scanDetails);
+        Set<String> bssidBlocklist = mWifiBlocklistMonitor.updateAndGetBssidBlocklistForSsids(
                 connectedSsids);
         updateUserDisabledList(scanDetails);
         // Clear expired recent failure statuses
@@ -1001,7 +1000,7 @@ public class WifiConnectivityManager {
             Clock clock,
             LocalLog localLog,
             WifiScoreCard scoreCard,
-            BssidBlocklistMonitor bssidBlocklistMonitor,
+            WifiBlocklistMonitor wifiBlocklistMonitor,
             WifiChannelUtilization wifiChannelUtilization,
             PasspointManager passpointManager,
             DeviceConfigFacade deviceConfigFacade,
@@ -1019,7 +1018,7 @@ public class WifiConnectivityManager {
         mClock = clock;
         mLocalLog = localLog;
         mWifiScoreCard = scoreCard;
-        mBssidBlocklistMonitor = bssidBlocklistMonitor;
+        mWifiBlocklistMonitor = wifiBlocklistMonitor;
         mWifiChannelUtilization = wifiChannelUtilization;
         mPasspointManager = passpointManager;
         mDeviceConfigFacade = deviceConfigFacade;
@@ -2251,9 +2250,9 @@ public class WifiConnectivityManager {
                 localLog("Automatic retry on the next best WNS candidate-" + candidate.SSID);
                 // Make sure that the failed BSSID is blocked for at least TEMP_BSSID_BLOCK_DURATION
                 // to prevent the supplicant from trying it again.
-                mBssidBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
+                mWifiBlocklistMonitor.blockBssidForDurationMs(bssid, ssid,
                         TEMP_BSSID_BLOCK_DURATION,
-                        BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 0);
+                        WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_FAST_RECONNECT, 0);
                 connectToNetworkForPrimaryCmmUsingMbbIfAvailable(candidate);
             }
         } catch (IllegalArgumentException e) {
@@ -2350,7 +2349,7 @@ public class WifiConnectivityManager {
         localLog("prepareForForcedConnection: SSID=" + config.SSID);
 
         clearConnectionAttemptTimeStamps();
-        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(config.SSID);
+        mWifiBlocklistMonitor.clearBssidBlocklistForSsid(config.SSID);
     }
 
     /**
@@ -2436,7 +2435,7 @@ public class WifiConnectivityManager {
 
         if (!enable) {
             mNetworkSelector.resetOnDisable();
-            mBssidBlocklistMonitor.clearBssidBlocklist();
+            mWifiBlocklistMonitor.clearBssidBlocklist();
             mConfigManager.enableTemporaryDisabledNetworks();
             mConfigManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
         }
@@ -2483,6 +2482,6 @@ public class WifiConnectivityManager {
         mLocalLog.dump(fd, pw, args);
         pw.println("WifiConnectivityManager - Log End ----");
         mOpenNetworkNotifier.dump(fd, pw, args);
-        mBssidBlocklistMonitor.dump(fd, pw, args);
+        mWifiBlocklistMonitor.dump(fd, pw, args);
     }
 }

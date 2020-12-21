@@ -252,7 +252,7 @@ public class WifiConfigManager {
     private final WifiPermissionsUtil mWifiPermissionsUtil;
     private final MacAddressUtil mMacAddressUtil;
     private final WifiMetrics mWifiMetrics;
-    private final BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final WifiBlocklistMonitor mWifiBlocklistMonitor;
     private final WifiLastResortWatchdog mWifiLastResortWatchdog;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiScoreCard mWifiScoreCard;
@@ -355,7 +355,7 @@ public class WifiConfigManager {
             WifiPermissionsUtil wifiPermissionsUtil,
             MacAddressUtil macAddressUtil,
             WifiMetrics wifiMetrics,
-            BssidBlocklistMonitor bssidBlocklistMonitor,
+            WifiBlocklistMonitor wifiBlocklistMonitor,
             WifiLastResortWatchdog wifiLastResortWatchdog,
             NetworkListSharedStoreData networkListSharedStoreData,
             NetworkListUserStoreData networkListUserStoreData,
@@ -373,7 +373,7 @@ public class WifiConfigManager {
         mWifiConfigStore = wifiConfigStore;
         mWifiPermissionsUtil = wifiPermissionsUtil;
         mWifiMetrics = wifiMetrics;
-        mBssidBlocklistMonitor = bssidBlocklistMonitor;
+        mWifiBlocklistMonitor = wifiBlocklistMonitor;
         mWifiLastResortWatchdog = wifiLastResortWatchdog;
         mWifiScoreCard = wifiScoreCard;
 
@@ -593,7 +593,7 @@ public class WifiConfigManager {
         mVerboseLoggingEnabled = verbose;
         mWifiConfigStore.enableVerboseLogging(mVerboseLoggingEnabled);
         mWifiKeyStore.enableVerboseLogging(mVerboseLoggingEnabled);
-        mBssidBlocklistMonitor.enableVerboseLogging(mVerboseLoggingEnabled);
+        mWifiBlocklistMonitor.enableVerboseLogging(mVerboseLoggingEnabled);
     }
 
     /**
@@ -1429,7 +1429,7 @@ public class WifiConfigManager {
         mScanDetailCaches.remove(config.networkId);
         // Stage the backup of the SettingsProvider package which backs this up.
         mBackupManagerProxy.notifyDataChanged();
-        mBssidBlocklistMonitor.handleNetworkRemoved(config.SSID);
+        mWifiBlocklistMonitor.handleNetworkRemoved(config.SSID);
 
         localLog("removeNetworkInternal: removed config."
                 + " netId=" + config.networkId
@@ -1652,7 +1652,7 @@ public class WifiConfigManager {
     private boolean updateNetworkSelectionStatus(WifiConfiguration config, int reason) {
         int prevNetworkSelectionStatus = config.getNetworkSelectionStatus()
                 .getNetworkSelectionStatus();
-        if (!mBssidBlocklistMonitor.updateNetworkSelectionStatus(config, reason)) {
+        if (!mWifiBlocklistMonitor.updateNetworkSelectionStatus(config, reason)) {
             return false;
         }
         int newNetworkSelectionStatus = config.getNetworkSelectionStatus()
@@ -1721,7 +1721,7 @@ public class WifiConfigManager {
         if (config == null) {
             return false;
         }
-        if (mBssidBlocklistMonitor.shouldEnableNetwork(config)) {
+        if (mWifiBlocklistMonitor.shouldEnableNetwork(config)) {
             return updateNetworkSelectionStatus(config, NetworkSelectionStatus.DISABLED_NONE);
         }
         return false;
@@ -2653,7 +2653,7 @@ public class WifiConfigManager {
             network = configuration.SSID;
         }
         mUserTemporarilyDisabledList.remove(network);
-        mBssidBlocklistMonitor.clearBssidBlocklistForSsid(configuration.SSID);
+        mWifiBlocklistMonitor.clearBssidBlocklistForSsid(configuration.SSID);
         Log.d(TAG, "Enable disabled network: " + network + " num="
                 + mUserTemporarilyDisabledList.size());
         return true;

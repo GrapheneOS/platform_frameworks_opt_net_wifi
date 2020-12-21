@@ -99,7 +99,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
     @Mock IBinder mAppBinder;
     @Mock IWifiConnectedNetworkScorer mWifiConnectedNetworkScorer;
     @Mock WifiNative mWifiNative;
-    @Mock BssidBlocklistMonitor mBssidBlocklistMonitor;
+    @Mock WifiBlocklistMonitor mWifiBlocklistMonitor;
     @Mock Network mNetwork;
     @Mock WifiDataStall mWifiDataStall;
     @Mock DeviceConfigFacade mDeviceConfigFacade;
@@ -211,7 +211,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mWifiThreadRunner = new WifiThreadRunner(new Handler(mLooper.getLooper()));
         when(mAdaptiveConnectivityEnabledSettingObserver.get()).thenReturn(true);
         mWifiScoreReport = new WifiScoreReport(mScoringParams, mClock, mWifiMetrics, mWifiInfo,
-                mWifiNative, mBssidBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
+                mWifiNative, mWifiBlocklistMonitor, mWifiThreadRunner, mWifiDataStall,
                 mDeviceConfigFacade, mContext,
                 mAdaptiveConnectivityEnabledSettingObserver, TEST_IFACE_NAME);
         mWifiScoreReport.setNetworkAgent(mNetworkAgent);
@@ -802,7 +802,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor, never()).handleBssidConnectionFailure(any(), any(),
+        verify(mWifiBlocklistMonitor, never()).handleBssidConnectionFailure(any(), any(),
                 anyInt(), anyInt());
     }
 
@@ -827,8 +827,8 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor).handleBssidConnectionFailure(any(), any(),
-                eq(BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE), anyInt());
+        verify(mWifiBlocklistMonitor).handleBssidConnectionFailure(any(), any(),
+                eq(WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE), anyInt());
     }
 
     /**
@@ -854,7 +854,7 @@ public class WifiScoreReportTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mWifiScoreReport.stopConnectedNetworkScorer();
         mLooper.dispatchAll();
-        verify(mBssidBlocklistMonitor, never()).handleBssidConnectionFailure(any(), any(),
+        verify(mWifiBlocklistMonitor, never()).handleBssidConnectionFailure(any(), any(),
                 anyInt(), anyInt());
     }
 

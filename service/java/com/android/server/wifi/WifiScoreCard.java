@@ -45,7 +45,7 @@ import android.util.SparseLongArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.Preconditions;
-import com.android.server.wifi.BssidBlocklistMonitor.FailureReason;
+import com.android.server.wifi.WifiBlocklistMonitor.FailureReason;
 import com.android.server.wifi.WifiHealthMonitor.FailureStats;
 import com.android.server.wifi.proto.WifiScoreCardProto;
 import com.android.server.wifi.proto.WifiScoreCardProto.AccessPoint;
@@ -548,7 +548,7 @@ public class WifiScoreCard {
      * @return the updated count
      */
     public int incrementBssidBlocklistStreak(String ssid, String bssid,
-            @BssidBlocklistMonitor.FailureReason int reason) {
+            @WifiBlocklistMonitor.FailureReason int reason) {
         PerBssid perBssid = lookupBssid(ssid, bssid);
         return ++perBssid.blocklistStreakCount[reason];
     }
@@ -558,7 +558,7 @@ public class WifiScoreCard {
      * @return the blocklist streak count
      */
     public int getBssidBlocklistStreak(String ssid, String bssid,
-            @BssidBlocklistMonitor.FailureReason int reason) {
+            @WifiBlocklistMonitor.FailureReason int reason) {
         return lookupBssid(ssid, bssid).blocklistStreakCount[reason];
     }
 
@@ -566,7 +566,7 @@ public class WifiScoreCard {
      * Clear the blocklist streak count for a failure reason on an AP.
      */
     public void resetBssidBlocklistStreak(String ssid, String bssid,
-            @BssidBlocklistMonitor.FailureReason int reason) {
+            @WifiBlocklistMonitor.FailureReason int reason) {
         lookupBssid(ssid, bssid).blocklistStreakCount[reason] = 0;
     }
 
@@ -684,7 +684,7 @@ public class WifiScoreCard {
         public final String ssid;
         public final MacAddress bssid;
         public final int[] blocklistStreakCount =
-                new int[BssidBlocklistMonitor.NUMBER_REASON_CODES];
+                new int[WifiBlocklistMonitor.NUMBER_REASON_CODES];
         // The wall clock time in milliseconds for the last successful l2 connection.
         public long lastConnectionTimestampMs;
         public boolean changed;
@@ -902,27 +902,27 @@ public class WifiScoreCard {
                 case CONNECTION_FAILURE:
                     mConnectionSessionStartTimeMs = TS_NONE;
                     if (rssi >= mDeviceConfigFacade.getHealthMonitorMinRssiThrDbm()) {
-                        if (failureReason != BssidBlocklistMonitor.REASON_WRONG_PASSWORD) {
+                        if (failureReason != WifiBlocklistMonitor.REASON_WRONG_PASSWORD) {
                             mRecentStats.incrementCount(CNT_CONNECTION_FAILURE);
                             mRecentStats.incrementCount(CNT_CONSECUTIVE_CONNECTION_FAILURE);
                         }
                         switch (failureReason) {
-                            case BssidBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA:
-                            case BssidBlocklistMonitor.REASON_ASSOCIATION_REJECTION:
+                            case WifiBlocklistMonitor.REASON_AP_UNABLE_TO_HANDLE_NEW_STA:
+                            case WifiBlocklistMonitor.REASON_ASSOCIATION_REJECTION:
                                 mRecentStats.incrementCount(CNT_ASSOCIATION_REJECTION);
                                 break;
-                            case BssidBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT:
+                            case WifiBlocklistMonitor.REASON_ASSOCIATION_TIMEOUT:
                                 mRecentStats.incrementCount(CNT_ASSOCIATION_TIMEOUT);
                                 break;
-                            case BssidBlocklistMonitor.REASON_AUTHENTICATION_FAILURE:
-                            case BssidBlocklistMonitor.REASON_EAP_FAILURE:
+                            case WifiBlocklistMonitor.REASON_AUTHENTICATION_FAILURE:
+                            case WifiBlocklistMonitor.REASON_EAP_FAILURE:
                                 mRecentStats.incrementCount(CNT_AUTHENTICATION_FAILURE);
                                 break;
-                            case BssidBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING:
+                            case WifiBlocklistMonitor.REASON_NONLOCAL_DISCONNECT_CONNECTING:
                                 mRecentStats.incrementCount(CNT_DISCONNECTION_NONLOCAL_CONNECTING);
                                 break;
-                            case BssidBlocklistMonitor.REASON_WRONG_PASSWORD:
-                            case BssidBlocklistMonitor.REASON_DHCP_FAILURE:
+                            case WifiBlocklistMonitor.REASON_WRONG_PASSWORD:
+                            case WifiBlocklistMonitor.REASON_DHCP_FAILURE:
                             default:
                                 break;
                         }

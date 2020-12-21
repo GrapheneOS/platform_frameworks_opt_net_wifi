@@ -66,7 +66,7 @@ public class WifiScoreReport {
     private final Clock mClock;
     private int mSessionNumber = 0; // not to be confused with sessionid, this just counts resets
     private final String mInterfaceName;
-    private final BssidBlocklistMonitor mBssidBlocklistMonitor;
+    private final WifiBlocklistMonitor mWifiBlocklistMonitor;
     private final WifiDataStall mWifiDataStall;
     private final Context mContext;
     private long mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
@@ -320,7 +320,7 @@ public class WifiScoreReport {
 
     WifiScoreReport(ScoringParams scoringParams, Clock clock, WifiMetrics wifiMetrics,
             WifiInfo wifiInfo, WifiNative wifiNative,
-            BssidBlocklistMonitor bssidBlocklistMonitor,
+            WifiBlocklistMonitor wifiBlocklistMonitor,
             WifiThreadRunner wifiThreadRunner, WifiDataStall wifiDataStall,
             DeviceConfigFacade deviceConfigFacade, Context context,
             AdaptiveConnectivityEnabledSettingObserver adaptiveConnectivityEnabledSettingObserver,
@@ -333,7 +333,7 @@ public class WifiScoreReport {
         mWifiMetrics = wifiMetrics;
         mWifiInfo = wifiInfo;
         mWifiNative = wifiNative;
-        mBssidBlocklistMonitor = bssidBlocklistMonitor;
+        mWifiBlocklistMonitor = wifiBlocklistMonitor;
         mWifiThreadRunner = wifiThreadRunner;
         mWifiDataStall = wifiDataStall;
         mDeviceConfigFacade = deviceConfigFacade;
@@ -722,9 +722,9 @@ public class WifiScoreReport {
         if ((mLastScoreBreachLowTimeMillis != INVALID_WALL_CLOCK_MILLIS)
                 && ((millis - mLastScoreBreachLowTimeMillis)
                         >= MIN_TIME_TO_WAIT_BEFORE_BLOCKLIST_BSSID_MILLIS)) {
-            mBssidBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
+            mWifiBlocklistMonitor.handleBssidConnectionFailure(mWifiInfo.getBSSID(),
                     mWifiInfo.getSSID(),
-                    BssidBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE,
+                    WifiBlocklistMonitor.REASON_FRAMEWORK_DISCONNECT_CONNECTED_SCORE,
                     mWifiInfo.getRssi());
             mLastScoreBreachLowTimeMillis = INVALID_WALL_CLOCK_MILLIS;
         }
