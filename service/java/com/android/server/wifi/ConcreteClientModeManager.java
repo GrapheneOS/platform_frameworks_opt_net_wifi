@@ -529,6 +529,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
      * @param currentState current wifi state
      */
     private void updateConnectModeState(ClientRole role, int newState, int currentState) {
+        setWifiStateForApiCalls(newState);
+
         if (newState == WifiManager.WIFI_STATE_UNKNOWN) {
             // do not need to broadcast failure to system
             return;
@@ -538,8 +540,8 @@ public class ConcreteClientModeManager implements ClientModeManager {
             return;
         }
 
-        setWifiStateForApiCalls(newState);
-
+        // TODO(b/175839153): this broadcast should only be sent out when wifi is toggled on/off,
+        //  not per CMM
         final Intent intent = new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         intent.putExtra(WifiManager.EXTRA_WIFI_STATE, newState);
