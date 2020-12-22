@@ -777,6 +777,19 @@ public class ActiveModeWarden {
         return null;
     }
 
+    /** Get all client mode managers in the specified roles. */
+    @NonNull
+    public List<ConcreteClientModeManager> getClientModeManagersInRoles(ClientRole ...roles) {
+        Set<ClientRole> rolesList = Set.of(roles);
+        List<ConcreteClientModeManager> result = new ArrayList<>();
+        for (ConcreteClientModeManager manager : mClientModeManagers) {
+            if (rolesList.contains(manager.getRole())) {
+                result.add(manager);
+            }
+        }
+        return result;
+    }
+
     @Nullable
     private SoftApManager getSoftApManagerInRole(SoftApRole role) {
         for (SoftApManager manager : mSoftApManagers) {

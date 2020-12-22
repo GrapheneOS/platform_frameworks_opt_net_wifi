@@ -27,6 +27,8 @@ import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLED;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_ENABLING;
 import static android.net.wifi.WifiManager.WIFI_AP_STATE_FAILED;
 
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_LOCAL_ONLY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_LONG_LIVED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_DEFAULT_DATA_SIM_CHANGED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_INSERTED;
 import static com.android.server.wifi.ClientModeImpl.RESET_SIM_REASON_SIM_REMOVED;
@@ -2965,6 +2967,30 @@ public class WifiServiceImpl extends BaseWifiService {
     }
 
     /**
+     * Provides backward compatibility for apps using
+     * {@link WifiManager#getConnectionInfo()} when a secondary STA is created as a result of
+     * a request from their app (peer to peer WifiNetworkSpecifier request or oem paid/private
+     * suggestion).
+     */
+    private ClientModeManager getClientModeManagerForConnectionInfo(
+            int callingUid, @NonNull String callingPackageName) {
+        List<ConcreteClientModeManager> secondaryCmms =
+                mActiveModeWarden.getClientModeManagersInRoles(
+                        ROLE_CLIENT_LOCAL_ONLY, ROLE_CLIENT_SECONDARY_LONG_LIVED);
+        for (ConcreteClientModeManager cmm : secondaryCmms) {
+            WorkSource reqWs = cmm.getRequestorWs();
+            // If there are more than 1 secondary CMM for same app, return any one (should not
+            // happen currently since we don't support 3 STA's concurrently).
+            if (reqWs.equals(new WorkSource(callingUid, callingPackageName))) {
+                mLog.info("getConnectionInfo providing secondary CMM info").flush();
+                return cmm;
+            }
+        }
+        // No secondary CMM's created for the app, return primary CMM.
+        return mActiveModeWarden.getPrimaryClientModeManager();
+    }
+
+    /**
      * See {@link android.net.wifi.WifiManager#getConnectionInfo()}
      * @return the Wi-Fi information, contained in {@link WifiInfo}.
      */
@@ -2978,7 +3004,8 @@ public class WifiServiceImpl extends BaseWifiService {
         long ident = Binder.clearCallingIdentity();
         try {
             WifiInfo result =
-                    mActiveModeWarden.getPrimaryClientModeManager().syncRequestConnectionInfo();
+                    getClientModeManagerForConnectionInfo(uid, callingPackage)
+                            .syncRequestConnectionInfo();
             boolean hideDefaultMacAddress = true;
             boolean hideBssidSsidNetworkIdAndFqdn = true;
 
