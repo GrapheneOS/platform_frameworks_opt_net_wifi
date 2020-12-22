@@ -16,6 +16,7 @@
 
 package com.android.server.wifi;
 
+import android.annotation.NonNull;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -27,7 +28,9 @@ import com.android.wifi.resources.R;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -41,6 +44,7 @@ public class WifiCountryCode {
     private final Context mContext;
     private final TelephonyManager mTelephonyManager;
     private final ActiveModeWarden mActiveModeWarden;
+    private List<ChangeListener> mListeners = new ArrayList<>();
     private boolean DBG = false;
     private boolean mReady = false;
     private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("MM-dd HH:mm:ss.SSS");
@@ -66,6 +70,23 @@ public class WifiCountryCode {
         }
 
         Log.d(TAG, "mDefaultCountryCode " + mDefaultCountryCode);
+    }
+
+    /**
+     * The class for country code related change listener
+     */
+    public interface ChangeListener {
+        /**
+         * Called when country code set to native layer successful.
+         */
+        void onDriverCountryCodeChanged(String countryCode);
+    }
+
+    /**
+     * Register Country code changed listener.
+     */
+    public void registerListener(@NonNull ChangeListener listener) {
+        mListeners.add(listener);
     }
 
     /**
@@ -257,6 +278,9 @@ public class WifiCountryCode {
         if (mActiveModeWarden.getPrimaryClientModeManager().setCountryCode(country)) {
             Log.d(TAG, "Succeeded to set country code to: " + country);
             mDriverCountryCode = country;
+            for (ChangeListener listener : mListeners) {
+                listener.onDriverCountryCodeChanged(country);
+            }
             return true;
         }
         Log.d(TAG, "Failed to set country code to: " + country);
