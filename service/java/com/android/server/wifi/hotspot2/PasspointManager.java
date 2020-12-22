@@ -132,6 +132,7 @@ public class PasspointManager {
     private final MacAddressUtil mMacAddressUtil;
     private final Clock mClock;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
+    private URL mTermsAndConditionsUrl = null;
 
     /**
      * Map of package name of an app to the app ops changed listener for the app.
@@ -1498,9 +1499,21 @@ public class PasspointManager {
             return;
         }
 
-        PasspointProvider provider = mProviders.get(config.getProfileKey());
+        blockProvider(config.getProfileKey(), event.getBssid(), event.isEss(), event.getDelay());
+    }
+
+    /**
+     * Block a specific provider from network selection
+     *
+     * @param passpointUniqueId The unique ID of the Passpoint network
+     * @param bssid BSSID of the AP
+     * @param isEss Block the ESS or the BSS
+     * @param delay Delay in seconds
+     */
+    private void blockProvider(String passpointUniqueId, long bssid, boolean isEss, int delay) {
+        PasspointProvider provider = mProviders.get(passpointUniqueId);
         if (provider != null) {
-            provider.blockBssOrEss(event.getBssid(), event.isEss(), event.getDelay());
+            provider.blockBssOrEss(bssid, isEss, delay);
         }
     }
 
@@ -1524,5 +1537,60 @@ public class PasspointManager {
     public void resetSimPasspointNetwork() {
         mProviders.values().stream().forEach(p -> p.setAnonymousIdentity(null));
         mWifiConfigManager.saveToStore(true);
+    }
+
+    /**
+     * Clears the Terms & Conditions URL, to be used upon a successful connection to Passpoint
+     */
+    public void clearTermsAndConditionsUrl() {
+        mTermsAndConditionsUrl = null;
+    }
+
+    /**
+     * Handle Terms & Conditions acceptance required WNM-Notification event
+     *
+     * @param event Terms & Conditions WNM-Notification data
+     * @param config Configuration of the currently connected Passpoint network
+     *
+     * @return true if Terms & conditions URL is valid, false otherwise
+     */
+    public boolean handleTermsAndConditionsEvent(WnmData event, WifiConfiguration config) {
+        if (event == null || config == null || !config.isPasspoint()) {
+            return false;
+        }
+        final int oneHourInSeconds = 60 * 60;
+        final int twentyFourHoursInSeconds = 24 * 60 * 60;
+        URL termsAndConditionsUrl;
+        try {
+            termsAndConditionsUrl = new URL(event.getUrl());
+        } catch (java.net.MalformedURLException e) {
+            Log.e(TAG, "Malformed T&C URL: " + event.getUrl() + " from BSSID: "
+                    + Utils.macToString(event.getBssid()));
+
+            // Block this provider for an hour, this unlikely issue may be resolved shortly
+            blockProvider(config.getProfileKey(), event.getBssid(), true, oneHourInSeconds);
+            return false;
+        }
+        // Reject URLs that are not HTTPS
+        if (!TextUtils.equals(termsAndConditionsUrl.getProtocol(), "https")) {
+            Log.e(TAG, "Non-HTTPS T&C URL rejected: " + termsAndConditionsUrl
+                    + " from BSSID: " + Utils.macToString(event.getBssid()));
+
+            // Block this provider for 24 hours, it is unlikely to be changed
+            blockProvider(config.getProfileKey(), event.getBssid(), true, twentyFourHoursInSeconds);
+            return false;
+        }
+        mTermsAndConditionsUrl = termsAndConditionsUrl;
+        return true;
+    }
+
+    /**
+     * Get the Terms & Conditions URL, if acceptance is required in this network
+     *
+     * @return URL to T&C website, null if not required by this network
+     */
+    @Nullable
+    public URL getTermsAndConditionsUrl() {
+        return mTermsAndConditionsUrl;
     }
 }
