@@ -45,6 +45,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.app.test.MockAnswerUtil.AnswerWithArguments;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.wifi.V1_0.IWifiApIface;
 import android.hardware.wifi.V1_0.IWifiChip;
 import android.hardware.wifi.V1_0.IWifiChipEventCallback;
@@ -143,6 +145,10 @@ public class WifiVendorHalTest extends WifiBaseTest {
     private TestLooper mLooper;
     private Handler mHandler;
     @Mock
+    private Context mContext;
+    @Mock
+    private PackageManager mPackageManager;
+    @Mock
     private HalDeviceManager mHalDeviceManager;
     @Mock
     private WifiVendorHal.HalDeviceManagerStatusListener mHalDeviceManagerStatusCallbacks;
@@ -186,8 +192,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * device.
      */
     private class WifiVendorHalSpyV1_1 extends WifiVendorHal {
-        WifiVendorHalSpyV1_1(HalDeviceManager halDeviceManager, Handler handler) {
-            super(halDeviceManager, handler);
+        WifiVendorHalSpyV1_1(Context context, HalDeviceManager halDeviceManager, Handler handler) {
+            super(context, halDeviceManager, handler);
         }
 
         @Override
@@ -234,8 +240,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * the 1.2 HAL running on the device.
      */
     private class WifiVendorHalSpyV1_2 extends WifiVendorHalSpyV1_1 {
-        WifiVendorHalSpyV1_2(HalDeviceManager halDeviceManager, Handler handler) {
-            super(halDeviceManager, handler);
+        WifiVendorHalSpyV1_2(Context context, HalDeviceManager halDeviceManager, Handler handler) {
+            super(context, halDeviceManager, handler);
         }
 
         @Override
@@ -255,8 +261,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * the 1.3 HAL running on the device.
      */
     private class WifiVendorHalSpyV1_3 extends WifiVendorHalSpyV1_2 {
-        WifiVendorHalSpyV1_3(HalDeviceManager halDeviceManager, Handler handler) {
-            super(halDeviceManager, handler);
+        WifiVendorHalSpyV1_3(Context context, HalDeviceManager halDeviceManager, Handler handler) {
+            super(context, halDeviceManager, handler);
         }
 
         @Override
@@ -276,8 +282,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * the 1.4 HAL running on the device.
      */
     private class WifiVendorHalSpyV1_4 extends WifiVendorHalSpyV1_3 {
-        WifiVendorHalSpyV1_4(HalDeviceManager halDeviceManager, Handler handler) {
-            super(halDeviceManager, handler);
+        WifiVendorHalSpyV1_4(Context context, HalDeviceManager halDeviceManager, Handler handler) {
+            super(context, halDeviceManager, handler);
         }
 
         @Override
@@ -291,8 +297,8 @@ public class WifiVendorHalTest extends WifiBaseTest {
      * the 1.5 HAL running on the device.
      */
     private class WifiVendorHalSpyV1_5 extends WifiVendorHalSpyV1_4 {
-        WifiVendorHalSpyV1_5(HalDeviceManager halDeviceManager, Handler handler) {
-            super(halDeviceManager, handler);
+        WifiVendorHalSpyV1_5(Context context, HalDeviceManager halDeviceManager, Handler handler) {
+            super(context, halDeviceManager, handler);
         }
 
         @Override
@@ -360,6 +366,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         when(mHalDeviceManager.removeIface(any())).thenReturn(true);
         when(mHalDeviceManager.getChip(any(IWifiIface.class)))
                 .thenReturn(mIWifiChip);
+        when(mHalDeviceManager.isSupported()).thenReturn(true);
         when(mIWifiChip.registerEventCallback(any(IWifiChipEventCallback.class)))
                 .thenReturn(mWifiStatusSuccess);
         mIWifiStaIfaceEventCallback = null;
@@ -407,7 +414,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         }).when(mIWifiApIface).getName(any(IWifiIface.getNameCallback.class));
 
         // Create the vendor HAL object under test.
-        mWifiVendorHal = new WifiVendorHal(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHal(mContext, mHalDeviceManager, mHandler);
 
         // Initialize the vendor HAL to capture the registered callback.
         mWifiVendorHal.initialize(mVendorHalDeathHandler);
@@ -877,7 +884,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
             }
         }).when(mIWifiChip).getCapabilities(any(IWifiChip.getCapabilitiesCallback.class));
 
-        mWifiVendorHal = new WifiVendorHalSpyV1_1(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_1(mContext, mHalDeviceManager, mHandler);
         testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
     }
 
@@ -915,7 +922,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         }).when(mIWifiChipV13).getCapabilities_1_3(
                 any(android.hardware.wifi.V1_3.IWifiChip.getCapabilities_1_3Callback.class));
 
-        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mContext, mHalDeviceManager, mHandler);
         testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
     }
 
@@ -950,8 +957,40 @@ public class WifiVendorHalTest extends WifiBaseTest {
         }).when(mIWifiChipV15).getCapabilities_1_5(
                 any(android.hardware.wifi.V1_5.IWifiChip.getCapabilities_1_5Callback.class));
 
-        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mContext, mHalDeviceManager, mHandler);
         testGetSupportedFeaturesCommon(staIfaceHidlCaps, chipHidlCaps, expectedFeatureSet);
+    }
+
+    /**
+     * Test get supported features. Tests whether we coalesce information from package manager
+     * if vendor hal is not supported.
+     */
+    @Test
+    public void testGetSupportedFeaturesFromPackageManager() throws Exception {
+        doAnswer(new AnswerWithArguments() {
+            public boolean answer() throws Exception {
+                return false;
+            }
+        }).when(mHalDeviceManager).start();
+        when(mHalDeviceManager.isSupported()).thenReturn(false);
+        assertFalse(mWifiVendorHal.startVendorHalSta());
+
+        when(mContext.getPackageManager()).thenReturn(mPackageManager);
+        when(mPackageManager.hasSystemFeature(eq(PackageManager.FEATURE_WIFI)))
+                .thenReturn(true);
+        when(mPackageManager.hasSystemFeature(eq(PackageManager.FEATURE_WIFI_DIRECT)))
+                .thenReturn(true);
+        when(mPackageManager.hasSystemFeature(eq(PackageManager.FEATURE_WIFI_AWARE)))
+                .thenReturn(true);
+
+        long expectedFeatureSet = (
+                WifiManager.WIFI_FEATURE_INFRA
+                        | WifiManager.WIFI_FEATURE_P2P
+                        | WifiManager.WIFI_FEATURE_AWARE
+        );
+
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mContext, mHalDeviceManager, mHandler);
+        assertEquals(expectedFeatureSet, mWifiVendorHal.getSupportedFeatureSet(TEST_IFACE_NAME));
     }
 
     /**
@@ -968,7 +1007,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
             }
         }).when(mIWifiStaIfaceV13).getFactoryMacAddress(any(
                 android.hardware.wifi.V1_3.IWifiStaIface.getFactoryMacAddressCallback.class));
-        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mContext, mHalDeviceManager, mHandler);
         assertEquals(MacAddress.BROADCAST_ADDRESS.toString(),
                 mWifiVendorHal.getStaFactoryMacAddress(TEST_IFACE_NAME).toString());
         verify(mIWifiStaIfaceV13).getFactoryMacAddress(any());
@@ -1004,7 +1043,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
      */
     @Test
     public void testLinkLayerStatsCorrectVersionWithHalV1_3() throws Exception {
-        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mContext, mHalDeviceManager, mHandler);
         mWifiVendorHal.getWifiLinkLayerStats(TEST_IFACE_NAME);
         verify(mIWifiStaIfaceV13).getLinkLayerStats_1_3(any());
     }
@@ -1014,7 +1053,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
      */
     @Test
     public void testLinkLayerStatsCorrectVersionWithHalV1_5() throws Exception {
-        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mContext, mHalDeviceManager, mHandler);
         mWifiVendorHal.getWifiLinkLayerStats(TEST_IFACE_NAME);
         verify(mIWifiStaIfaceV15).getLinkLayerStats_1_5(any());
     }
@@ -1502,7 +1541,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testReadApf() throws Exception {
         // Expose the 1.2 IWifiStaIface.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
 
         byte[] program = new byte[] {65, 66, 67};
         ArrayList<Byte> expected = new ArrayList<>(3);
@@ -1667,7 +1706,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
      */
     @Test
     public void testFlushRingBufferToFile() throws Exception {
-        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mContext, mHalDeviceManager, mHandler);
         when(mIWifiChipV13.flushRingBufferToFile()).thenReturn(mWifiStatusSuccess);
 
         assertFalse(mWifiVendorHal.flushRingBufferData());
@@ -2508,7 +2547,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testSetLowLatencyMode_1_2() throws RemoteException {
         // Expose the 1.2 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
         assertFalse(mWifiVendorHal.setLowLatencyMode(true));
         assertFalse(mWifiVendorHal.setLowLatencyMode(false));
     }
@@ -2521,7 +2560,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         int mode = android.hardware.wifi.V1_3.IWifiChip.LatencyMode.LOW;
 
         // Expose the 1.3 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mContext, mHalDeviceManager, mHandler);
         when(mIWifiChipV13.setLatencyMode(anyInt())).thenReturn(mWifiStatusSuccess);
         assertTrue(mWifiVendorHal.setLowLatencyMode(true));
         verify(mIWifiChipV13).setLatencyMode(eq(mode));
@@ -2535,7 +2574,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
         int mode = android.hardware.wifi.V1_3.IWifiChip.LatencyMode.NORMAL;
 
         // Expose the 1.3 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_3(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_3(mContext, mHalDeviceManager, mHandler);
         when(mIWifiChipV13.setLatencyMode(anyInt())).thenReturn(mWifiStatusSuccess);
         assertTrue(mWifiVendorHal.setLowLatencyMode(false));
         verify(mIWifiChipV13).setLatencyMode(eq(mode));
@@ -2611,7 +2650,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testAlertCallbackUsing_1_2_EventCallback() throws Exception {
         // Expose the 1.2 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
 
         assertTrue(mWifiVendorHal.startVendorHalSta());
         assertNotNull(mIWifiChipEventCallbackV12);
@@ -2625,7 +2664,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testSetStaMacAddressSuccess() throws Exception {
         // Expose the 1.2 IWifiStaIface.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         when(mIWifiStaIfaceV12.setMacAddress(macByteArray)).thenReturn(mWifiStatusSuccess);
 
@@ -2639,7 +2678,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testSetStaMacAddressFailDueToStatusFailure() throws Exception {
         // Expose the 1.2 IWifiStaIface.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         when(mIWifiStaIfaceV12.setMacAddress(macByteArray)).thenReturn(mWifiStatusFailure);
 
@@ -2653,7 +2692,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testSetStaMacAddressFailDueToRemoteException() throws Exception {
         // Expose the 1.2 IWifiStaIface.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
         byte[] macByteArray = TEST_MAC_ADDRESS.toByteArray();
         doThrow(new RemoteException()).when(mIWifiStaIfaceV12).setMacAddress(macByteArray);
 
@@ -2783,7 +2822,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
     @Test
     public void testIsStaSetMacAddressSupportedWhenV1_2Support() throws Exception {
         // Expose the 1.2 IWifiStaIface.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
         assertTrue(mWifiVendorHal.isStaSetMacAddressSupported(TEST_IFACE_NAME));
     }
 
@@ -3016,7 +3055,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
     @Test
     public void testSetMultiStaPrimaryConnection() throws Exception {
-        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mContext, mHalDeviceManager, mHandler);
         when(mIWifiChipV15.setMultiStaPrimaryConnection(any())).thenReturn(mWifiStatusSuccess);
         assertTrue(mWifiVendorHal.setMultiStaPrimaryConnection(TEST_IFACE_NAME));
         verify(mIWifiChipV15).setMultiStaPrimaryConnection(TEST_IFACE_NAME);
@@ -3024,7 +3063,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
     @Test
     public void testSetMultiStaUseCase() throws Exception {
-        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mContext, mHalDeviceManager, mHandler);
         when(mIWifiChipV15.setMultiStaUseCase(MultiStaUseCase.DUAL_STA_TRANSIENT_PREFER_PRIMARY))
                 .thenReturn(mWifiStatusSuccess);
         when(mIWifiChipV15.setMultiStaUseCase(MultiStaUseCase.DUAL_STA_NON_TRANSIENT_UNBIASED))
@@ -3042,7 +3081,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
     private void startHalInStaModeAndRegisterRadioModeChangeCallback() {
         // Expose the 1.2 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_2(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_2(mContext, mHalDeviceManager, mHandler);
         mWifiVendorHal.registerRadioModeChangeHandler(mVendorHalRadioModeChangeHandler);
         assertTrue(mWifiVendorHal.startVendorHalSta());
         assertNotNull(mIWifiChipEventCallbackV12);
@@ -3050,7 +3089,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
     private void startHalInStaModeAndRegisterRadioModeChangeCallback14() {
         // Expose the 1.4 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_4(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_4(mContext, mHalDeviceManager, mHandler);
         mWifiVendorHal.registerRadioModeChangeHandler(mVendorHalRadioModeChangeHandler);
         assertTrue(mWifiVendorHal.startVendorHalSta());
         assertNotNull(mIWifiChipEventCallbackV14);
@@ -3058,7 +3097,7 @@ public class WifiVendorHalTest extends WifiBaseTest {
 
     private void startHalInStaModeAndRegisterRadioModeChangeCallback15() {
         // Expose the 1.5 IWifiChip.
-        mWifiVendorHal = new WifiVendorHalSpyV1_5(mHalDeviceManager, mHandler);
+        mWifiVendorHal = new WifiVendorHalSpyV1_5(mContext, mHalDeviceManager, mHandler);
         mWifiVendorHal.registerRadioModeChangeHandler(mVendorHalRadioModeChangeHandler);
         assertTrue(mWifiVendorHal.startVendorHalSta());
         assertNotNull(mIWifiChipEventCallbackV14);
