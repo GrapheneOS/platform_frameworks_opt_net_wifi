@@ -890,12 +890,20 @@ public class ConcreteClientModeManager implements ClientModeManager {
                     case CMD_SWITCH_TO_CONNECT_MODE:
                         Pair<ClientRole, WorkSource> roleAndRequestorWs = (Pair) message.obj;
                         ClientRole role = roleAndRequestorWs.first;
-                        // Already in connect mode, only switching the connectivity roles.
-                        // TODO(b/162344695): Need to plumb the new requestorWs to HalDeviceManager.
-                        // For ex: MBB case, the secondary mode manager will start with WIFI_UID
-                        // requestorWs (lowest priority), but once it switches to primary, we need
-                        // to replace it with SETTINGS requestorWs (highest priority).
-                        setRoleInternalAndInvokeCallback(role);
+                        WorkSource requestorWs = roleAndRequestorWs.second;
+                        // switching to connect mode when already in connect mode, just update the
+                        // requestor WorkSource.
+                        boolean success = mWifiNative.replaceStaIfaceRequestorWs(
+                                mClientInterfaceName, requestorWs);
+                        if (success) {
+                            setRoleInternalAndInvokeCallback(role);
+                        } else {
+                            // If this call failed, the iface would be torn down.
+                            // Thus, simply abort and let the iface down handling take care of the
+                            // rest.
+                            Log.e(getTag(), "Failed to switch ClientModeManager="
+                                    + ConcreteClientModeManager.this + "'s requestorWs");
+                        }
                         break;
                     case CMD_SWITCH_TO_SCAN_ONLY_MODE:
                     case CMD_INTERFACE_DESTROYED:

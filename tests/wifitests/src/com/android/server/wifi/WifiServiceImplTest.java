@@ -354,6 +354,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock SimRequiredNotifier mSimRequiredNotifier;
     @Mock WifiGlobals mWifiGlobals;
     @Mock AdaptiveConnectivityEnabledSettingObserver mAdaptiveConnectivityEnabledSettingObserver;
+    @Mock MakeBeforeBreakManager mMakeBeforeBreakManager;
 
     @Captor ArgumentCaptor<Intent> mIntentCaptor;
 
@@ -386,6 +387,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mWifiInjector.getWifiDiagnostics()).thenReturn(mWifiDiagnostics);
         when(mWifiInjector.getActiveModeWarden()).thenReturn(mActiveModeWarden);
         when(mWifiInjector.getWifiHandlerThread()).thenReturn(mHandlerThread);
+        when(mWifiInjector.getMakeBeforeBreakManager()).thenReturn(mMakeBeforeBreakManager);
         when(mHandlerThread.getThreadHandler()).thenReturn(new Handler(mLooper.getLooper()));
         when(mHandlerThread.getLooper()).thenReturn(mLooper.getLooper());
         when(mContext.getResources()).thenReturn(mResources);

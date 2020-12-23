@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.eq;
@@ -222,6 +223,7 @@ public class WifiNativeTest extends WifiBaseTest {
     private static final RadioChainInfo MOCK_NATIVE_RADIO_CHAIN_INFO_1 = new RadioChainInfo(1, -89);
     private static final RadioChainInfo MOCK_NATIVE_RADIO_CHAIN_INFO_2 = new RadioChainInfo(0, -78);
     private static final WorkSource TEST_WORKSOURCE = new WorkSource();
+    private static final WorkSource TEST_WORKSOURCE2 = new WorkSource();
 
     @Mock private WifiVendorHal mWifiVendorHal;
     @Mock private WifiNl80211Manager mWificondControl;
@@ -235,6 +237,7 @@ public class WifiNativeTest extends WifiBaseTest {
     @Mock private Random mRandom;
     @Mock private WifiInjector mWifiInjector;
     @Mock private NetdWrapper mNetdWrapper;
+    @Mock private WifiNative.InterfaceCallback mInterfaceCallback;
 
     ArgumentCaptor<WifiNl80211Manager.ScanEventCallback> mScanCallbackCaptor =
             ArgumentCaptor.forClass(WifiNl80211Manager.ScanEventCallback.class);
@@ -1080,5 +1083,18 @@ public class WifiNativeTest extends WifiBaseTest {
 
         when(mWifiVendorHal.isItPossibleToCreateStaIface(any())).thenReturn(true);
         assertTrue(mWifiNative.isItPossibleToCreateStaIface(new WorkSource()));
+    }
+
+    @Test
+    public void testReplaceStaIfaceRequestorWs() {
+        assertEquals(WIFI_IFACE_NAME,
+                mWifiNative.setupInterfaceForClientInConnectivityMode(
+                        mInterfaceCallback, TEST_WORKSOURCE));
+        when(mWifiVendorHal.replaceStaIfaceRequestorWs(WIFI_IFACE_NAME, TEST_WORKSOURCE2))
+                .thenReturn(true);
+
+        assertTrue(mWifiNative.replaceStaIfaceRequestorWs(WIFI_IFACE_NAME, TEST_WORKSOURCE2));
+        verify(mWifiVendorHal).replaceStaIfaceRequestorWs(
+                eq(WIFI_IFACE_NAME), same(TEST_WORKSOURCE2));
     }
 }

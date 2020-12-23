@@ -441,6 +441,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock WifiP2pConnection mWifiP2pConnection;
     @Mock WifiGlobals mWifiGlobals;
     @Mock LinkProbeCallback mLinkProbeCallback;
+    @Mock ClientModeImplMonitor mCmiMonitor;
 
     final ArgumentCaptor<WifiConfigManager.OnNetworkUpdateListener> mConfigUpdateListenerCaptor =
             ArgumentCaptor.forClass(WifiConfigManager.OnNetworkUpdateListener.class);
@@ -609,7 +610,7 @@ public class ClientModeImplTest extends WifiBaseTest {
                 1, mBatteryStatsManager, mSupplicantStateTracker, mMboOceController,
                 mWifiCarrierInfoManager, mEapFailureNotifier, mSimRequiredNotifier,
                 mWifiScoreReport, mWifiP2pConnection, mWifiGlobals,
-                WIFI_IFACE_NAME, mClientModeManager, false);
+                WIFI_IFACE_NAME, mClientModeManager, mCmiMonitor, false);
 
         mWifiCoreThread = getCmiHandlerThread(mCmi);
 
@@ -3364,7 +3365,6 @@ public class ClientModeImplTest extends WifiBaseTest {
      * Verifies that a successful validation make WifiDiagnostics report CONNECTION_EVENT_SUCCEEDED
      * and then cancel any pending timeouts.
      * Also, send connection status to {@link WifiNetworkFactory} & {@link WifiConnectivityManager}.
-     * @throws Exception
      */
     @Test
     public void testReportConnectionEventIsCalledAfterSuccessfulConnection() throws Exception {
@@ -3393,6 +3393,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiNetworkSuggestionsManager).handleConnectionAttemptEnded(
                 eq(WifiMetrics.ConnectionEvent.FAILURE_NONE), any(WifiConfiguration.class),
                 any(String.class));
+        verify(mCmiMonitor).onL3Validated(mClientModeManager);
         // BSSID different, record this connection.
         verify(mWifiMetrics).incrementNumBssidDifferentSelectionBetweenFrameworkAndFirmware();
         verifyConnectionEventTimeoutDoesNotOccur();
