@@ -44,6 +44,8 @@ import static android.net.wifi.WifiScanner.WIFI_BAND_24_GHZ;
 import static android.net.wifi.WifiScanner.WIFI_BAND_5_GHZ;
 
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_LOCAL_ONLY;
+import static com.android.server.wifi.ActiveModeManager.ROLE_CLIENT_SECONDARY_LONG_LIVED;
 import static com.android.server.wifi.LocalOnlyHotspotRequestInfo.HOTSPOT_NO_ERROR;
 import static com.android.server.wifi.SelfRecovery.REASON_API_CALL;
 import static com.android.server.wifi.WifiSettingsConfigStore.WIFI_VERBOSE_LOGGING_ENABLED;
@@ -213,6 +215,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     private static final int DEFAULT_VERBOSE_LOGGING = 0;
     private static final String ANDROID_SYSTEM_PACKAGE = "android";
     private static final String TEST_PACKAGE_NAME = "TestPackage";
+    private static final String TEST_PACKAGE_NAME_OTHER = "TestPackageOther";
     private static final String TEST_FEATURE_ID = "TestFeature";
     private static final String SYSUI_PACKAGE_NAME = "com.android.systemui";
     private static final int TEST_PID = 6789;
@@ -285,7 +288,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiCountryCode mWifiCountryCode;
     @Mock Clock mClock;
     @Mock WifiTrafficPoller mWifiTrafficPoller;
-    @Mock ClientModeManager mClientModeManager;
+    @Mock ConcreteClientModeManager mClientModeManager;
     @Mock ActiveModeWarden mActiveModeWarden;
     @Mock HandlerThread mHandlerThread;
     @Mock Resources mResources;
@@ -466,6 +469,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mLohsCallback.asBinder()).thenReturn(mock(IBinder.class));
         when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
         when(mWifiPermissionsUtil.isSystem(anyString(), anyInt())).thenReturn(false);
+        when(mActiveModeWarden.getClientModeManagersInRoles(
+                ROLE_CLIENT_LOCAL_ONLY, ROLE_CLIENT_SECONDARY_LONG_LIVED))
+                .thenReturn(Collections.emptyList());
 
         mClientModeManagers = Arrays.asList(mClientModeManager, mock(ClientModeManager.class));
         when(mActiveModeWarden.getClientModeManagers()).thenReturn(mClientModeManagers);
@@ -2017,14 +2023,14 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mScanRequestProxy).startScan(Binder.getCallingUid(), SCAN_PACKAGE_NAME);
     }
 
-    private void setupForGetConnectionInfo() {
+    private WifiInfo setupForGetConnectionInfo() {
         WifiInfo wifiInfo = new WifiInfo();
         wifiInfo.setSSID(WifiSsid.createFromAsciiEncoded(TEST_SSID));
         wifiInfo.setBSSID(TEST_BSSID);
         wifiInfo.setNetworkId(TEST_NETWORK_ID);
         wifiInfo.setFQDN(TEST_FQDN);
         wifiInfo.setProviderFriendlyName(TEST_FRIENDLY_NAME);
-        when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(wifiInfo);
+        return wifiInfo;
     }
 
     /**
@@ -2033,7 +2039,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testConnectedIdsAreHiddenFromAppWithoutPermission() throws Exception {
-        setupForGetConnectionInfo();
+        WifiInfo wifiInfo = setupForGetConnectionInfo();
+        when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(wifiInfo);
 
         doThrow(new SecurityException()).when(mWifiPermissionsUtil).enforceCanAccessScanResults(
                 anyString(), nullable(String.class), anyInt(), nullable(String.class));
@@ -2053,7 +2060,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testConnectedIdsAreHiddenOnSecurityException() throws Exception {
-        setupForGetConnectionInfo();
+        WifiInfo wifiInfo = setupForGetConnectionInfo();
+        when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(wifiInfo);
 
         doThrow(new SecurityException()).when(mWifiPermissionsUtil).enforceCanAccessScanResults(
                 anyString(), nullable(String.class), anyInt(), nullable(String.class));
@@ -2073,9 +2081,62 @@ public class WifiServiceImplTest extends WifiBaseTest {
      */
     @Test
     public void testConnectedIdsAreVisibleFromPermittedApp() throws Exception {
-        setupForGetConnectionInfo();
+        WifiInfo wifiInfo = setupForGetConnectionInfo();
+        when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(wifiInfo);
 
         WifiInfo connectionInfo = mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+
+        assertEquals(TEST_SSID_WITH_QUOTES, connectionInfo.getSSID());
+        assertEquals(TEST_BSSID, connectionInfo.getBSSID());
+        assertEquals(TEST_NETWORK_ID, connectionInfo.getNetworkId());
+        assertEquals(TEST_FQDN, connectionInfo.getPasspointFqdn());
+        assertEquals(TEST_FRIENDLY_NAME, connectionInfo.getPasspointProviderFriendlyName());
+    }
+
+    /**
+     * Test that connected SSID and BSSID for secondary CMM are exposed to an app that requests
+     * the second STA on a device that supports STA + STA.
+     */
+    @Test
+    public void testConnectedIdsFromSecondaryCmmAreVisibleFromAppRequestingSecondaryCmm()
+            throws Exception {
+        WifiInfo wifiInfo = setupForGetConnectionInfo();
+        ConcreteClientModeManager secondaryCmm = mock(ConcreteClientModeManager.class);
+        when(secondaryCmm.getRequestorWs())
+                .thenReturn(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE));
+        when(secondaryCmm.syncRequestConnectionInfo()).thenReturn(wifiInfo);
+        when(mActiveModeWarden.getClientModeManagersInRoles(
+                ROLE_CLIENT_LOCAL_ONLY, ROLE_CLIENT_SECONDARY_LONG_LIVED))
+                .thenReturn(Arrays.asList(secondaryCmm));
+
+        WifiInfo connectionInfo =
+                mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+
+        assertEquals(TEST_SSID_WITH_QUOTES, connectionInfo.getSSID());
+        assertEquals(TEST_BSSID, connectionInfo.getBSSID());
+        assertEquals(TEST_NETWORK_ID, connectionInfo.getNetworkId());
+        assertEquals(TEST_FQDN, connectionInfo.getPasspointFqdn());
+        assertEquals(TEST_FRIENDLY_NAME, connectionInfo.getPasspointProviderFriendlyName());
+    }
+
+    /**
+     * Test that connected SSID and BSSID for primary CMM are exposed to an app that is not the one
+     * that requests the second STA on a device that supports STA + STA.
+     */
+    @Test
+    public void testConnectedIdsFromPrimaryCmmAreVisibleFromAppNotRequestingSecondaryCmm()
+            throws Exception {
+        WifiInfo wifiInfo = setupForGetConnectionInfo();
+        when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(wifiInfo);
+        ConcreteClientModeManager secondaryCmm = mock(ConcreteClientModeManager.class);
+        when(secondaryCmm.getRequestorWs())
+                .thenReturn(new WorkSource(Binder.getCallingUid(), TEST_PACKAGE_NAME_OTHER));
+        when(mActiveModeWarden.getClientModeManagersInRoles(
+                ROLE_CLIENT_LOCAL_ONLY, ROLE_CLIENT_SECONDARY_LONG_LIVED))
+                .thenReturn(Arrays.asList(secondaryCmm));
+
+        WifiInfo connectionInfo =
+                mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
 
         assertEquals(TEST_SSID_WITH_QUOTES, connectionInfo.getSSID());
         assertEquals(TEST_BSSID, connectionInfo.getBSSID());

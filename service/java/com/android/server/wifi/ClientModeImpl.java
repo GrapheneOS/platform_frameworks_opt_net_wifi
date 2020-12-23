@@ -837,7 +837,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void onProvisioningSuccess(LinkProperties newLp) {
-            addPasspointVenueUrlToLinkProperties(newLp);
+            addPasspointUrlsToLinkProperties(newLp);
             mWifiMetrics.logStaEvent(mInterfaceName, StaEvent.TYPE_CMD_IP_CONFIGURATION_SUCCESSFUL);
             sendMessage(CMD_UPDATE_LINKPROPERTIES, newLp);
             sendMessage(CMD_IP_CONFIGURATION_SUCCESSFUL);
@@ -851,7 +851,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         @Override
         public void onLinkPropertiesChange(LinkProperties newLp) {
-            addPasspointVenueUrlToLinkProperties(newLp);
+            addPasspointUrlsToLinkProperties(newLp);
             sendMessage(CMD_UPDATE_LINKPROPERTIES, newLp);
         }
 
@@ -3500,11 +3500,16 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     mPasspointManager.handleDeauthImminentEvent((WnmData) message.obj,
                             getConnectedWifiConfigurationInternal());
                     break;
+                case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT:
+                    if (!mPasspointManager.handleTermsAndConditionsEvent((WnmData) message.obj,
+                            getConnectedWifiConfigurationInternal())) {
+                        loge("Disconnecting from Passpoint network due to an issue with T&C");
+                        sendMessage(CMD_DISCONNECT);
+                    }
+                    break;
                 case WifiMonitor.HS20_REMEDIATION_EVENT:
-                case WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT: {
                     mPasspointManager.receivedWnmFrame((WnmData) message.obj);
                     break;
-                }
                 case WifiMonitor.MBO_OCE_BSS_TM_HANDLING_DONE: {
                     handleBssTransitionRequest((BtmFrameData) message.obj);
                     break;
@@ -4066,6 +4071,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     }
                     // When connecting to Passpoint, ask for the Venue URL
                     if (config.isPasspoint()) {
+                        mPasspointManager.clearTermsAndConditionsUrl();
                         if (scanResult == null && mLastBssid != null) {
                             // The cached scan result of connected network would be null at the
                             // first connection, try to check full scan result list again to look up
@@ -4119,6 +4125,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                     if (!newConnectionInProgress) {
                         transitionTo(mDisconnectedState);
                     }
+                    mPasspointManager.clearTermsAndConditionsUrl();
                     break;
                 }
                 case WifiMonitor.TARGET_BSSID_EVENT: {
@@ -5985,7 +5992,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         return mWifiNative.getRxPktFates(mInterfaceName);
     }
 
-    private void addPasspointVenueUrlToLinkProperties(LinkProperties linkProperties) {
+    private void addPasspointUrlsToLinkProperties(LinkProperties linkProperties) {
         WifiConfiguration currentNetwork = getConnectedWifiConfigurationInternal();
         if (currentNetwork == null || !currentNetwork.isPasspoint()) {
             return;
@@ -5996,14 +6003,29 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             return;
         }
         URL venueUrl = mPasspointManager.getVenueUrl(scanResult);
-        if (venueUrl != null) {
-            // Update the Venue URL and the friendly name to populate the notification
-            CaptivePortalData captivePortalData = new CaptivePortalData.Builder()
-                    .setVenueInfoUrl(Uri.parse(venueUrl.toString()))
-                    // TODO: Add when new API is available
-                    // .setVenueFriendlyName(currentNetwork.providerFriendlyName)
-                    .build();
-            linkProperties.setCaptivePortalData(captivePortalData);
+        URL termsAndConditionsUrl = mPasspointManager.getTermsAndConditionsUrl();
+
+        if (venueUrl == null && termsAndConditionsUrl == null) {
+            return;
         }
+
+        // Update the friendly name to populate the notification
+        CaptivePortalData.Builder captivePortalDataBuilder = new CaptivePortalData.Builder();
+        // TODO: Add when new API is available
+        //    .setVenueFriendlyName(currentNetwork.providerFriendlyName);
+
+        // Update the Venue URL if available
+        if (venueUrl != null) {
+            captivePortalDataBuilder.setVenueInfoUrl(Uri.parse(venueUrl.toString()));
+        }
+
+        // Update the T&C URL if available. The network is captive if T&C URL is available
+        if (termsAndConditionsUrl != null) {
+            // TODO: Add when NetworkStack changes are implemented
+            //captivePortalDataBuilder.setUserPortalUrl(Uri.parse(termsAndConditionsUrl.toString()))
+            //        .setCaptive(true);
+        }
+
+        linkProperties.setCaptivePortalData(captivePortalDataBuilder.build());
     }
 }

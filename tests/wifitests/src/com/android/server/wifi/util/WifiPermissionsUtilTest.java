@@ -1258,6 +1258,12 @@ public class WifiPermissionsUtilTest extends WifiBaseTest {
     private void setupMocks() throws Exception {
         when(mMockPkgMgr.getApplicationInfoAsUser(eq(TEST_PACKAGE_NAME), eq(0), any()))
             .thenReturn(mMockApplInfo);
+        when(mMockContext.createPackageContextAsUser(any(), anyInt(), any()))
+                .thenReturn(mMockContext);
+        when(mMockPkgMgr.getTargetSdkVersion(TEST_PACKAGE_NAME))
+                .thenReturn(mMockApplInfo.targetSdkVersion);
+        when(mMockPkgMgr.getApplicationInfoAsUser(eq(TEST_PACKAGE_NAME), eq(0), any()))
+                .thenReturn(mMockApplInfo);
         when(mMockContext.getPackageManager()).thenReturn(mMockPkgMgr);
         when(mMockAppOps.noteOp(AppOpsManager.OPSTR_WIFI_SCAN, mUid, TEST_PACKAGE_NAME,
                 TEST_FEATURE_ID, null)).thenReturn(mWifiScanAllowApps);

@@ -153,6 +153,12 @@ public class PasspointManagerTest extends WifiBaseTest {
     private static final String TEST_LOCALE_ENGLISH = "eng";
     private static final String TEST_LOCALE_HEBREW = "heb";
     private static final String TEST_LOCALE_SPANISH = "spa";
+    private static final String TEST_TERMS_AND_CONDITIONS_URL =
+            "https://policies.google.com/terms?hl=en-US";
+    private static final String TEST_TERMS_AND_CONDITIONS_URL_NON_HTTPS =
+            "http://policies.google.com/terms?hl=en-US";
+    private static final String TEST_TERMS_AND_CONDITIONS_URL_INVALID =
+            "httpps://policies.google.com/terms?hl=en-US";
 
     private static final long TEST_BSSID = 0x112233445566L;
     private static final String TEST_SSID = "TestSSID";
@@ -2937,6 +2943,66 @@ public class PasspointManagerTest extends WifiBaseTest {
         } finally {
             session.finishMocking();
         }
+    }
+
+    /**
+     * Verify that Passpoint manager handles the terms and conditions URL correctly: Accepts only
+     * HTTPS URLs, and rejects HTTP and invalid URLs.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testHandleTermsAndConditionsEvent() throws Exception {
+        WifiConfiguration config = WifiConfigurationTestUtil.createPasspointNetwork();
+        PasspointProvider passpointProvider = addTestProvider(TEST_FQDN, TEST_FRIENDLY_NAME,
+                TEST_PACKAGE, config, false, null);
+        assertTrue(mManager.handleTermsAndConditionsEvent(
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                        TEST_TERMS_AND_CONDITIONS_URL), config));
+
+        // Verify that this provider is never blocked
+        verify(passpointProvider, never()).blockBssOrEss(anyLong(), anyBoolean(), anyInt());
+
+        assertFalse(mManager.handleTermsAndConditionsEvent(
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                        TEST_TERMS_AND_CONDITIONS_URL_NON_HTTPS), config));
+
+        // Verify that the ESS is blocked for 24 hours, the URL is non-HTTPS and unlikely to change
+        verify(passpointProvider).blockBssOrEss(eq(TEST_BSSID), eq(true), eq(24 * 60 * 60));
+
+        assertFalse(mManager.handleTermsAndConditionsEvent(
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                        TEST_TERMS_AND_CONDITIONS_URL_INVALID), config));
+
+        // Verify that the ESS is blocked for an hour due to a temporary issue with the URL
+        verify(passpointProvider).blockBssOrEss(eq(TEST_BSSID), eq(true), eq(60 * 60));
+
+        // Now try with a non-Passpoint network
+        config = WifiConfigurationTestUtil.createEapNetwork();
+        assertFalse(mManager.handleTermsAndConditionsEvent(
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                        TEST_TERMS_AND_CONDITIONS_URL), config));
+        // and a null configuration
+        assertFalse(mManager.handleTermsAndConditionsEvent(
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                        TEST_TERMS_AND_CONDITIONS_URL), null));
+    }
+
+    /**
+     * Verify that Passpoint manager get and clear terms and conditions URL work as expected.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetAndClearTermsAndConditions() throws Exception {
+        WifiConfiguration config = WifiConfigurationTestUtil.createPasspointNetwork();
+        assertTrue(mManager.handleTermsAndConditionsEvent(
+                WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                        TEST_TERMS_AND_CONDITIONS_URL), config));
+        assertEquals(TEST_TERMS_AND_CONDITIONS_URL, mManager.getTermsAndConditionsUrl().toString());
+
+        mManager.clearTermsAndConditionsUrl();
+        assertTrue(mManager.getTermsAndConditionsUrl() == null);
     }
 }
 

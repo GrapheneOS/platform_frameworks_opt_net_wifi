@@ -207,6 +207,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     private static final int TEST_DELAY_IN_SECONDS = 300;
 
     private static final int DEFINED_ERROR_CODE = 32764;
+    private static final String TEST_TERMS_AND_CONDITIONS_URL =
+            "https://policies.google.com/terms?hl=en-US";
 
     private long mBinderToken;
     private MockitoSession mSession;
@@ -1834,6 +1836,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiConnectivityManager).handleConnectionAttemptEnded(
                 any(), anyInt(), any(), any());
         assertEquals("DisconnectedState", getCurrentState().getName());
+        verify(mPasspointManager).clearTermsAndConditionsUrl();
     }
 
     /**
@@ -5607,12 +5610,12 @@ public class ClientModeImplTest extends WifiBaseTest {
     }
 
     /**
-     * When connected to a Passpoint network, verify that the Venue URL is updated in the
-     * {@link LinkProperties} object when provisioning complete and when link properties change
+     * When connected to a Passpoint network, verify that the Venue URL and T&C URL are updated in
+     * the {@link LinkProperties} object when provisioning complete and when link properties change
      * events are received.
      */
     @Test
-    public void testVenueUrlUpdateForPasspointNetworks() throws Exception {
+    public void testVenueAndTCUrlsUpdateForPasspointNetworks() throws Exception {
         setupPasspointConnection();
         DhcpResultsParcelable dhcpResults = new DhcpResultsParcelable();
         dhcpResults.baseConfiguration = new StaticIpConfiguration();
@@ -5626,6 +5629,46 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         mIpClientCallback.onLinkPropertiesChange(new LinkProperties());
         mLooper.dispatchAll();
+        verify(mPasspointManager).clearTermsAndConditionsUrl();
         verify(mPasspointManager, times(2)).getVenueUrl(any(ScanResult.class));
+        verify(mPasspointManager, times(2)).getTermsAndConditionsUrl();
+    }
+
+    /**
+     * Verify that the T&C WNM-Notification is handled by relaying to the Passpoint
+     * Manager.
+     */
+    @Test
+    public void testHandlePasspointTermsAndConditionsWnmNotification() throws Exception {
+        setupEapSimConnection();
+        WnmData wnmData = WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                TEST_TERMS_AND_CONDITIONS_URL);
+        when(mPasspointManager.handleTermsAndConditionsEvent(eq(wnmData),
+                any(WifiConfiguration.class))).thenReturn(true);
+        mCmi.sendMessage(WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT,
+                0, 0, wnmData);
+        mLooper.dispatchAll();
+        verify(mPasspointManager).handleTermsAndConditionsEvent(eq(wnmData),
+                any(WifiConfiguration.class));
+        verify(mWifiNative, never()).disconnect(anyString());
+    }
+
+    /**
+     * Verify that when a bad URL is received in the T&C WNM-Notification, the connection is
+     * disconnected.
+     */
+    @Test
+    public void testHandlePasspointTermsAndConditionsWnmNotificationWithBadUrl() throws Exception {
+        setupEapSimConnection();
+        WnmData wnmData = WnmData.createTermsAndConditionsAccetanceRequiredEvent(TEST_BSSID,
+                TEST_TERMS_AND_CONDITIONS_URL);
+        when(mPasspointManager.handleTermsAndConditionsEvent(eq(wnmData),
+                any(WifiConfiguration.class))).thenReturn(false);
+        mCmi.sendMessage(WifiMonitor.HS20_TERMS_AND_CONDITIONS_ACCEPTANCE_REQUIRED_EVENT,
+                0, 0, wnmData);
+        mLooper.dispatchAll();
+        verify(mPasspointManager).handleTermsAndConditionsEvent(eq(wnmData),
+                any(WifiConfiguration.class));
+        verify(mWifiNative).disconnect(eq(WIFI_IFACE_NAME));
     }
 }
