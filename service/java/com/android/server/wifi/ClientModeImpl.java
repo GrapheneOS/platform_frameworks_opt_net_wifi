@@ -1285,6 +1285,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * thread, will execute synchronously).
      *
      * @return a {@link WifiInfo} object containing information about the current connection
+     * TODO (b/173551144): Change to direct call. Let callers use WifiThreadRunner if necessary.
      */
     @Override
     public WifiInfo syncRequestConnectionInfo() {

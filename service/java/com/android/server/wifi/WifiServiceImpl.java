@@ -2958,9 +2958,9 @@ public class WifiServiceImpl extends BaseWifiService {
         }
         long ident = Binder.clearCallingIdentity();
         try {
-            WifiInfo result =
+            WifiInfo result = mWifiThreadRunner.call(
                     getClientModeManagerForConnectionInfo(uid, callingPackage)
-                            .syncRequestConnectionInfo();
+                            ::syncRequestConnectionInfo, new WifiInfo());
             boolean hideDefaultMacAddress = true;
             boolean hideBssidSsidNetworkIdAndFqdn = true;
 
