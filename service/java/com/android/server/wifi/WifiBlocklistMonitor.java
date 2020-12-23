@@ -131,8 +131,9 @@ public class WifiBlocklistMonitor {
     private Map<String, BssidStatus> mBssidStatusMap = new ArrayMap<>();
     private Set<String> mDisabledSsids = new ArraySet<>();
 
-    // Keeps history of 30 blocked BSSIDs that were most recently removed.
-    private BssidStatusHistoryLogger mBssidStatusHistoryLogger = new BssidStatusHistoryLogger(30);
+    // Internal logger to make sure imporatant logs do not get lost.
+    private BssidBlocklistMonitorLogger mBssidBlocklistMonitorLogger =
+            new BssidBlocklistMonitorLogger(60);
     /**
      * Verbose logging flag. Toggled by developer options.
      */
@@ -232,7 +233,7 @@ public class WifiBlocklistMonitor {
         pw.println("WifiBlocklistMonitor - Bssid blocklist begin ----");
         mBssidStatusMap.values().stream().forEach(entry -> pw.println(entry));
         pw.println("WifiBlocklistMonitor - Bssid blocklist end ----");
-        mBssidStatusHistoryLogger.dump(pw);
+        mBssidBlocklistMonitorLogger.dump(pw);
     }
 
     private void addToBlocklist(@NonNull BssidStatus entry, long durationMs,
@@ -503,7 +504,7 @@ public class WifiBlocklistMonitor {
          * BSSIDs.
          **/
         if (status.isInBlocklist) {
-            mBssidStatusHistoryLogger.add(status, "Network validation success");
+            mBssidBlocklistMonitorLogger.logBssidUnblocked(status, "Network validation success");
             mBssidStatusMap.remove(bssid);
         }
     }
@@ -542,7 +543,8 @@ public class WifiBlocklistMonitor {
                 return false;
             }
             if (status.ssid.equals(ssid)) {
-                mBssidStatusHistoryLogger.add(status, "clearBssidBlocklistForSsid");
+                mBssidBlocklistMonitorLogger.logBssidUnblocked(
+                        status, "clearBssidBlocklistForSsid");
                 return true;
             }
             return false;
@@ -561,7 +563,7 @@ public class WifiBlocklistMonitor {
         if (mBssidStatusMap.size() > 0) {
             int prevSize = mBssidStatusMap.size();
             for (BssidStatus status : mBssidStatusMap.values()) {
-                mBssidStatusHistoryLogger.add(status, "clearBssidBlocklist");
+                mBssidBlocklistMonitorLogger.logBssidUnblocked(status, "clearBssidBlocklist");
             }
             mBssidStatusMap.clear();
             localLog(TAG + " clearBssidBlocklist: num BSSIDs cleared="
@@ -649,7 +651,8 @@ public class WifiBlocklistMonitor {
             int sufficientRssi = mScoringParams.getSufficientRssi(scanResult.frequency);
             if (status.lastRssi < sufficientRssi && scanResult.level >= sufficientRssi
                     && scanResult.level - status.lastRssi >= MIN_RSSI_DIFF_TO_UNBLOCK_BSSID) {
-                mBssidStatusHistoryLogger.add(status, "rssi significantly improved");
+                mBssidBlocklistMonitorLogger.logBssidUnblocked(
+                        status, "rssi significantly improved");
                 mBssidStatusMap.remove(status.bssid);
             }
         }
@@ -671,7 +674,8 @@ public class WifiBlocklistMonitor {
             BssidStatus status = e.getValue();
             if (status.isInBlocklist) {
                 if (status.blocklistEndTimeMs < curTime) {
-                    mBssidStatusHistoryLogger.add(status, "updateAndGetBssidBlocklistInternal");
+                    mBssidBlocklistMonitorLogger.logBssidUnblocked(
+                            status, "updateAndGetBssidBlocklistInternal");
                     return true;
                 }
                 builder.accept(status);
@@ -708,53 +712,83 @@ public class WifiBlocklistMonitor {
                     fwMaxBlocklistSize));
         }
         // plumb down to HAL
+        String message = "set firmware roaming configurations. "
+                + "bssidBlocklist=";
+        if (bssidBlocklist.size() == 0) {
+            message += "<EMPTY>";
+        } else {
+            message += String.join(", ", bssidBlocklist);
+        }
         if (!mConnectivityHelper.setFirmwareRoamingConfiguration(bssidBlocklist,
                 new ArrayList<String>())) {  // TODO(b/36488259): SSID whitelist management.
+            Log.e(TAG, "Failed to " + message);
+            mBssidBlocklistMonitorLogger.log("Failed to " + message);
+        } else {
+            mBssidBlocklistMonitorLogger.log("Successfully " + message);
         }
     }
 
     @VisibleForTesting
-    public int getBssidStatusHistoryLoggerSize() {
-        return mBssidStatusHistoryLogger.size();
+    public int getBssidBlocklistMonitorLoggerSize() {
+        return mBssidBlocklistMonitorLogger.size();
     }
 
-    private class BssidStatusHistoryLogger {
-        private LinkedList<String> mLogHistory = new LinkedList<>();
+    private class BssidBlocklistMonitorLogger {
+        private LinkedList<String> mLogBuffer = new LinkedList<>();
         private int mBufferSize;
 
-        BssidStatusHistoryLogger(int bufferSize) {
+        BssidBlocklistMonitorLogger(int bufferSize) {
             mBufferSize = bufferSize;
         }
 
-        public void add(BssidStatus bssidStatus, String trigger) {
+        public void logBssidUnblocked(BssidStatus bssidStatus, String unblockReason) {
             // only log history for Bssids that had been blocked.
             if (bssidStatus == null || !bssidStatus.isInBlocklist) {
                 return;
             }
+            StringBuilder sb = createStringBuilderWithLogTime();
+            sb.append(", Bssid unblocked, Reason=" + unblockReason);
+            sb.append(", Unblocked BssidStatus={" + bssidStatus.toString() + "}");
+            logInternal(sb.toString());
+        }
+
+        // cache a single line of log message in the rotating buffer
+        public void log(String message) {
+            if (message == null) {
+                return;
+            }
+            StringBuilder sb = createStringBuilderWithLogTime();
+            sb.append(" " + message);
+            logInternal(sb.toString());
+        }
+
+        private StringBuilder createStringBuilderWithLogTime() {
             StringBuilder sb = new StringBuilder();
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(mClock.getWallClockMillis());
-            sb.append(", logTimeMs="
-                    + String.format("%tm-%td %tH:%tM:%tS.%tL", calendar, calendar,
+            sb.append("logTimeMs=" + String.format("%tm-%td %tH:%tM:%tS.%tL", calendar, calendar,
                     calendar, calendar, calendar, calendar));
-            sb.append(", trigger=" + trigger);
-            mLogHistory.add(bssidStatus.toString() + sb.toString());
-            if (mLogHistory.size() > mBufferSize) {
-                mLogHistory.removeFirst();
+            return sb;
+        }
+
+        private void logInternal(String message) {
+            mLogBuffer.add(message);
+            if (mLogBuffer.size() > mBufferSize) {
+                mLogBuffer.removeFirst();
             }
         }
 
         @VisibleForTesting
         public int size() {
-            return mLogHistory.size();
+            return mLogBuffer.size();
         }
 
         public void dump(PrintWriter pw) {
-            pw.println("WifiBlocklistMonitor - Bssid blocklist history begin ----");
-            for (String line : mLogHistory) {
+            pw.println("WifiBlocklistMonitor - Bssid blocklist logs begin ----");
+            for (String line : mLogBuffer) {
                 pw.println(line);
             }
-            pw.println("WifiBlocklistMonitor - Bssid blocklist history end ----");
+            pw.println("WifiBlocklistMonitor - Bssid blocklist logs end ----");
         }
     }
 

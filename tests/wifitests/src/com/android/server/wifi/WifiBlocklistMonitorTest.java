@@ -752,20 +752,20 @@ public class WifiBlocklistMonitorTest {
     }
 
     /**
-     * Verify that the BssidStatusHistoryLoggerSize is capped.
+     * Verify that the BssidBlocklistMonitorLogger is capped.
      */
     @Test
-    public void testBssidStatusHistoryLoggerSize() {
-        int bssidStatusHistoryLoggerSize = 30;
-        for (int i = 0; i < bssidStatusHistoryLoggerSize; i++) {
+    public void testBssidBlocklistMonitorLoggerSize() {
+        int loggerMaxSize = 60;
+        for (int i = 0; i < loggerMaxSize; i++) {
             verifyAddTestBssidToBlocklist();
             mWifiBlocklistMonitor.clearBssidBlocklist();
-            assertEquals(i + 1, mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+            assertEquals(i + 1, mWifiBlocklistMonitor.getBssidBlocklistMonitorLoggerSize());
         }
         verifyAddTestBssidToBlocklist();
         mWifiBlocklistMonitor.clearBssidBlocklist();
-        assertEquals(bssidStatusHistoryLoggerSize,
-                mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
+        assertEquals(loggerMaxSize,
+                mWifiBlocklistMonitor.getBssidBlocklistMonitorLoggerSize());
     }
 
     /**
@@ -818,7 +818,6 @@ public class WifiBlocklistMonitorTest {
         // Verify that the BSSID is removed from blocklist by clearBssidBlocklistForSsid
         mWifiBlocklistMonitor.clearBssidBlocklistForSsid(TEST_SSID_1);
         assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertEquals(1, mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
 
         // Add the BSSID to blocklist again.
         mWifiBlocklistMonitor.blockBssidForDurationMs(TEST_BSSID_1, TEST_SSID_1, testDuration,
@@ -828,7 +827,6 @@ public class WifiBlocklistMonitorTest {
         // Verify that the BSSID is removed from blocklist once the specified duration is over.
         when(mClock.getWallClockMillis()).thenReturn(testDuration + 1);
         assertEquals(0, mWifiBlocklistMonitor.updateAndGetBssidBlocklist().size());
-        assertEquals(2, mWifiBlocklistMonitor.getBssidStatusHistoryLoggerSize());
     }
 
     /**
