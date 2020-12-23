@@ -2045,7 +2045,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         doThrow(new SecurityException()).when(mWifiPermissionsUtil).enforceCanAccessScanResults(
                 anyString(), nullable(String.class), anyInt(), nullable(String.class));
 
+        mLooper.startAutoDispatch();
         WifiInfo connectionInfo = mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
 
         assertEquals(WifiManager.UNKNOWN_SSID, connectionInfo.getSSID());
         assertEquals(WifiInfo.DEFAULT_MAC_ADDRESS, connectionInfo.getBSSID());
@@ -2066,7 +2068,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         doThrow(new SecurityException()).when(mWifiPermissionsUtil).enforceCanAccessScanResults(
                 anyString(), nullable(String.class), anyInt(), nullable(String.class));
 
+        mLooper.startAutoDispatch();
         WifiInfo connectionInfo = mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
 
         assertEquals(WifiManager.UNKNOWN_SSID, connectionInfo.getSSID());
         assertEquals(WifiInfo.DEFAULT_MAC_ADDRESS, connectionInfo.getBSSID());
@@ -2084,7 +2088,9 @@ public class WifiServiceImplTest extends WifiBaseTest {
         WifiInfo wifiInfo = setupForGetConnectionInfo();
         when(mClientModeManager.syncRequestConnectionInfo()).thenReturn(wifiInfo);
 
+        mLooper.startAutoDispatch();
         WifiInfo connectionInfo = mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
 
         assertEquals(TEST_SSID_WITH_QUOTES, connectionInfo.getSSID());
         assertEquals(TEST_BSSID, connectionInfo.getBSSID());
@@ -2109,8 +2115,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 ROLE_CLIENT_LOCAL_ONLY, ROLE_CLIENT_SECONDARY_LONG_LIVED))
                 .thenReturn(Arrays.asList(secondaryCmm));
 
+        mLooper.startAutoDispatch();
         WifiInfo connectionInfo =
                 mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
 
         assertEquals(TEST_SSID_WITH_QUOTES, connectionInfo.getSSID());
         assertEquals(TEST_BSSID, connectionInfo.getBSSID());
@@ -2135,8 +2143,10 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 ROLE_CLIENT_LOCAL_ONLY, ROLE_CLIENT_SECONDARY_LONG_LIVED))
                 .thenReturn(Arrays.asList(secondaryCmm));
 
+        mLooper.startAutoDispatch();
         WifiInfo connectionInfo =
                 mWifiServiceImpl.getConnectionInfo(TEST_PACKAGE, TEST_FEATURE_ID);
+        mLooper.stopAutoDispatchAndIgnoreExceptions();
 
         assertEquals(TEST_SSID_WITH_QUOTES, connectionInfo.getSSID());
         assertEquals(TEST_BSSID, connectionInfo.getBSSID());
