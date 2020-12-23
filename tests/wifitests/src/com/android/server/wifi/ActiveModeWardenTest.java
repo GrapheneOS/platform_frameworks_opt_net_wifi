@@ -88,9 +88,10 @@ import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -138,10 +139,10 @@ public class ActiveModeWardenTest extends WifiBaseTest {
 
     ActiveModeManager.Listener<ConcreteClientModeManager> mClientListener;
     ActiveModeManager.Listener<SoftApManager> mSoftApListener;
-    WifiManager.SoftApCallback mSoftApManagerCallback;
+    WifiServiceImpl.SoftApCallbackInternal mSoftApManagerCallback;
     SoftApModeConfiguration mSoftApConfig;
-    @Mock WifiManager.SoftApCallback mSoftApStateMachineCallback;
-    @Mock WifiManager.SoftApCallback mLohsStateMachineCallback;
+    @Mock WifiServiceImpl.SoftApCallbackInternal mSoftApStateMachineCallback;
+    @Mock WifiServiceImpl.SoftApCallbackInternal mLohsStateMachineCallback;
     WifiNative.StatusListener mWifiNativeStatusListener;
     ActiveModeWarden mActiveModeWarden;
     private SoftApInfo mTestSoftApInfo;
@@ -195,12 +196,13 @@ public class ActiveModeWardenTest extends WifiBaseTest {
             public SoftApManager answer(InvocationOnMock invocation) {
                 Object[] args = invocation.getArguments();
                 mSoftApListener = (ActiveModeManager.Listener<SoftApManager>) args[0];
-                mSoftApManagerCallback = (WifiManager.SoftApCallback) args[1];
+                mSoftApManagerCallback = (WifiServiceImpl.SoftApCallbackInternal) args[1];
                 mSoftApConfig = (SoftApModeConfiguration) args[2];
                 return mSoftApManager;
             }
         }).when(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), any(), any(), any(), anyBoolean());
+                any(WifiServiceImpl.SoftApCallbackInternal.class), any(), any(), any(),
+                anyBoolean());
         when(mWifiNative.initialize()).thenReturn(true);
 
         mActiveModeWarden = createActiveModeWarden();
@@ -834,33 +836,24 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
 
         verify(mSoftApStateMachineCallback, never()).onStateChanged(anyInt(), anyInt());
-        verify(mSoftApStateMachineCallback, never()).onConnectedClientsChanged(any());
-        verify(mSoftApStateMachineCallback, never()).onInfoChanged(any());
+        verify(mSoftApStateMachineCallback, never()).onConnectedClientsOrInfoChanged(any(),
+                any(), anyBoolean());
     }
 
     /**
-     * Verifies that NumClientsChanged event is being passed from SoftApManager to WifiServiceImpl
+     * Verifies that ConnectedClientsOrInfoChanged event is being passed from SoftApManager
+     * to WifiServiceImpl
      */
     @Test
     public void callsWifiServiceCallbackOnSoftApConnectedClientsChanged() throws Exception {
-        final List<WifiClient> testClients = new ArrayList();
+        final Map<String, List<WifiClient>> testClients = new HashMap();
+        final Map<String, SoftApInfo> testInfos = new HashMap();
         enterSoftApActiveMode();
-        mSoftApManagerCallback.onConnectedClientsChanged(testClients);
+        mSoftApManagerCallback.onConnectedClientsOrInfoChanged(testInfos, testClients, false);
         mLooper.dispatchAll();
 
-        verify(mSoftApStateMachineCallback).onConnectedClientsChanged(testClients);
-    }
-
-    /**
-     * Verifies that SoftApInfoChanged event is being passed from SoftApManager to WifiServiceImpl
-     */
-    @Test
-    public void callsWifiServiceCallbackOnSoftApInfoChanged() throws Exception {
-        enterSoftApActiveMode();
-        mSoftApManagerCallback.onInfoChanged(mTestSoftApInfo);
-        mLooper.dispatchAll();
-
-        verify(mSoftApStateMachineCallback).onInfoChanged(mTestSoftApInfo);
+        verify(mSoftApStateMachineCallback).onConnectedClientsOrInfoChanged(
+                testInfos, testClients, false);
     }
 
     /**
@@ -927,7 +920,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 return mSoftApManager;
             }
         }).when(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), eq(softApConfig1), any(), any(),
+                any(WifiServiceImpl.SoftApCallbackInternal.class), eq(softApConfig1), any(), any(),
                 anyBoolean());
         // make a second softap manager
         SoftApManager softapManager = mock(SoftApManager.class);
@@ -940,7 +933,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 return softapManager;
             }
         }).when(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), eq(softApConfig2), any(), any(),
+                any(WifiServiceImpl.SoftApCallbackInternal.class), eq(softApConfig2), any(), any(),
                 anyBoolean());
 
         mActiveModeWarden.startSoftAp(softApConfig1, TEST_WORKSOURCE);
@@ -1117,7 +1110,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 return mSoftApManager;
             }
         }).when(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), eq(tetherConfig),
+                any(WifiServiceImpl.SoftApCallbackInternal.class), eq(tetherConfig),
                 eq(TEST_WORKSOURCE), eq(ROLE_SOFTAP_TETHERED), anyBoolean());
         // make a second softap manager
         SoftApManager lohsSoftapManager = mock(SoftApManager.class);
@@ -1130,7 +1123,7 @@ public class ActiveModeWardenTest extends WifiBaseTest {
                 return lohsSoftapManager;
             }
         }).when(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), eq(lohsConfig),
+                any(WifiServiceImpl.SoftApCallbackInternal.class), eq(lohsConfig),
                 eq(TEST_WORKSOURCE), eq(ROLE_SOFTAP_LOCAL_ONLY), anyBoolean());
 
         // enable tethering and LOHS
@@ -1141,10 +1134,10 @@ public class ActiveModeWardenTest extends WifiBaseTest {
         mLooper.dispatchAll();
         lohsSoftApListener.value.onStarted(lohsSoftapManager);
         verify(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), eq(tetherConfig),
+                any(WifiServiceImpl.SoftApCallbackInternal.class), eq(tetherConfig),
                 eq(TEST_WORKSOURCE), eq(ROLE_SOFTAP_TETHERED), anyBoolean());
         verify(mWifiInjector).makeSoftApManager(any(ActiveModeManager.Listener.class),
-                any(WifiManager.SoftApCallback.class), eq(lohsConfig),
+                any(WifiServiceImpl.SoftApCallbackInternal.class), eq(lohsConfig),
                 eq(TEST_WORKSOURCE), eq(ROLE_SOFTAP_LOCAL_ONLY), anyBoolean());
         verify(mBatteryStats).reportWifiOn();
 
