@@ -50,6 +50,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
@@ -240,7 +241,9 @@ public class WifiEntry implements Comparable<WifiEntry> {
     private boolean mIsDefaultNetwork;
     protected boolean mIsLowQuality;
 
-    WifiEntry(@NonNull Handler callbackHandler, @NonNull WifiManager wifiManager,
+    private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
+
+    public WifiEntry(@NonNull Handler callbackHandler, @NonNull WifiManager wifiManager,
             @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
         checkNotNull(callbackHandler, "Cannot construct with null handler!");
@@ -537,8 +540,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
 
     /** Returns whether a user can manage their subscription through this WifiEntry */
     public boolean canManageSubscription() {
-        // Subclasses should implement this method.
-        return false;
+        return mManageSubscriptionAction.isPresent();
     };
 
     /**
@@ -553,12 +555,24 @@ public class WifiEntry implements Comparable<WifiEntry> {
 
     /** Allows the user to manage their subscription via an external flow */
     public void manageSubscription() {
-        // Subclasses should implement this method.
+        mManageSubscriptionAction.ifPresent(ManageSubscriptionAction::onExecute);
     };
+
+    /** Set the action to be called on calling WifiEntry#manageSubscription. */
+    public void setManageSubscriptionAction(
+            @NonNull ManageSubscriptionAction manageSubscriptionAction) {
+        // only notify update on 1st time
+        boolean notify = !mManageSubscriptionAction.isPresent();
+
+        mManageSubscriptionAction = Optional.of(manageSubscriptionAction);
+        if (notify) {
+            notifyOnUpdated();
+        }
+    }
 
     /** Returns the ScanResult information of a WifiEntry */
     @NonNull
-    String getScanResultDescription() {
+    protected String getScanResultDescription() {
         return "";
     }
 
@@ -969,5 +983,15 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 .append(",isDefaultNetwork:")
                 .append(mIsDefaultNetwork)
                 .toString();
+    }
+
+    /**
+     * The action used to execute the calling of WifiEntry#manageSubscription.
+     */
+    public interface ManageSubscriptionAction {
+        /**
+         * Execute the action of managing subscription.
+         */
+        void onExecute();
     }
 }

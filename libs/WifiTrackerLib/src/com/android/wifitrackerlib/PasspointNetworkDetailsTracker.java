@@ -50,7 +50,7 @@ import java.util.Optional;
 /**
  * Implementation of NetworkDetailsTracker that tracks a single PasspointWifiEntry.
  */
-class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
+public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "PasspointNetworkDetailsTracker";
 
     private final PasspointWifiEntry mChosenEntry;
@@ -58,7 +58,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private NetworkInfo mCurrentNetworkInfo;
     private WifiConfiguration mCurrentWifiConfig;
 
-    PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
+    public PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,

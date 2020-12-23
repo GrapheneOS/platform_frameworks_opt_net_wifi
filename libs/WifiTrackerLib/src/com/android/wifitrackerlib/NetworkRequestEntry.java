@@ -39,7 +39,7 @@ import com.android.internal.annotations.VisibleForTesting;
  */
 @VisibleForTesting
 public class NetworkRequestEntry extends StandardWifiEntry {
-    static final String KEY_PREFIX = "NetworkRequestEntry:";
+    public static final String KEY_PREFIX = "NetworkRequestEntry:";
 
     NetworkRequestEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull String key, @NonNull WifiManager wifiManager,

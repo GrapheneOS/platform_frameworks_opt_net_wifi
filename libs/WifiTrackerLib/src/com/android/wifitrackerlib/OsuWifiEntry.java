@@ -180,7 +180,7 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    String getScanResultDescription() {
+    protected String getScanResultDescription() {
         // TODO(b/70983952): Fill this method in.
         return "";
     }
