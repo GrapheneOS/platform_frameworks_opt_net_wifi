@@ -1255,8 +1255,7 @@ public class WifiMetrics {
                     mConfigSsid = config.SSID;
                     // Get AuthType information from config (We do this again from ScanResult after
                     // associating with BSSID)
-                    if (config.allowedKeyManagement != null
-                            && config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)) {
+                    if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_OPEN)) {
                         mRouterFingerPrint.mRouterFingerPrintProto.authentication =
                                 WifiMetricsProto.RouterFingerPrint.AUTH_OPEN;
                     } else if (config.isEnterprise()) {
@@ -4106,23 +4105,24 @@ public class WifiMetrics {
             mWifiLogProto.numPasspointNetworks = 0;
 
             for (WifiConfiguration config : networks) {
-                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)) {
+                if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_OPEN)) {
                     mWifiLogProto.numOpenNetworks++;
-                } else if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
+                } else if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_OWE)) {
                     mWifiLogProto.numEnhancedOpenNetworks++;
-                } else if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                } else if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_PSK)) {
                     mWifiLogProto.numWapiPersonalNetworks++;
                 } else if (config.isEnterprise()) {
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
+                    if (config.isSecurityType(
+                            WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT)) {
                         mWifiLogProto.numWpa3EnterpriseNetworks++;
-                    } else if (config.allowedKeyManagement.get(
-                            WifiConfiguration.KeyMgmt.WAPI_CERT)) {
+                    } else if (config.isSecurityType(
+                            WifiConfiguration.SECURITY_TYPE_WAPI_CERT)) {
                         mWifiLogProto.numWapiEnterpriseNetworks++;
                     } else {
                         mWifiLogProto.numLegacyEnterpriseNetworks++;
                     }
                 } else {
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+                    if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)) {
                         mWifiLogProto.numWpa3PersonalNetworks++;
                     } else {
                         mWifiLogProto.numLegacyPersonalNetworks++;

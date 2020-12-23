@@ -211,39 +211,18 @@ public class SupplicantStaNetworkHal {
             /** allowedKeyManagement */
             if (getKeyMgmt()) {
                 BitSet keyMgmtMask = supplicantToWifiConfigurationKeyMgmtMask(mKeyMgmtMask);
-                config.allowedKeyManagement = removeFastTransitionFlags(keyMgmtMask);
-                config.allowedKeyManagement = removeSha256KeyMgmtFlags(config.allowedKeyManagement);
-            }
-            /** allowedProtocols */
-            if (getProto()) {
-                config.allowedProtocols =
-                        supplicantToWifiConfigurationProtoMask(mProtoMask);
-            }
-            /** allowedAuthAlgorithms */
-            if (getAuthAlg()) {
-                config.allowedAuthAlgorithms =
-                        supplicantToWifiConfigurationAuthAlgMask(mAuthAlgMask);
-            }
-            /** allowedGroupCiphers */
-            if (getGroupCipher()) {
-                config.allowedGroupCiphers =
-                        supplicantToWifiConfigurationGroupCipherMask(mGroupCipherMask);
-            }
-            /** allowedPairwiseCiphers */
-            if (getPairwiseCipher()) {
-                config.allowedPairwiseCiphers =
-                        supplicantToWifiConfigurationPairwiseCipherMask(mPairwiseCipherMask);
-            }
-            /** allowedPairwiseCiphers */
-            if (getGroupMgmtCipher()) {
-                config.allowedGroupManagementCiphers =
-                        supplicantToWifiConfigurationGroupMgmtCipherMask(mGroupMgmtCipherMask);
+                keyMgmtMask = removeFastTransitionFlags(keyMgmtMask);
+                keyMgmtMask = removeSha256KeyMgmtFlags(keyMgmtMask);
+                config.setSecurityParams(keyMgmtMask);
+                config.enableFils(
+                        keyMgmtMask.get(WifiConfiguration.KeyMgmt.FILS_SHA256),
+                        keyMgmtMask.get(WifiConfiguration.KeyMgmt.FILS_SHA384));
             }
 
             /** PSK pass phrase */
             config.preSharedKey = null;
             if (getPskPassphrase() && !TextUtils.isEmpty(mPskPassphrase)) {
-                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_PSK)) {
                     config.preSharedKey = mPskPassphrase;
                 } else {
                     config.preSharedKey = NativeUtil.addEnclosingQuotes(mPskPassphrase);
@@ -261,7 +240,7 @@ public class SupplicantStaNetworkHal {
             }
 
             /** WAPI Cert Suite */
-            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_CERT)) {
+            if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_CERT)) {
                 if (config.enterpriseConfig == null) {
                     return false;
                 }
@@ -362,13 +341,13 @@ public class SupplicantStaNetworkHal {
             // For PSK, this can either be quoted ASCII passphrase or hex string for raw psk.
             // For SAE, password must be a quoted ASCII string
             if (config.preSharedKey != null) {
-                if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+                if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_PSK)) {
                     if (!setPskPassphrase(config.preSharedKey)) {
                         Log.e(TAG, "failed to set wapi psk passphrase");
                         return false;
                     }
                 } else if (config.preSharedKey.startsWith("\"")) {
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+                    if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)) {
                         /* WPA3 case, field is SAE Password */
                         if (!setSaePassword(
                                 NativeUtil.removeEnclosingQuotes(config.preSharedKey))) {
@@ -383,7 +362,7 @@ public class SupplicantStaNetworkHal {
                         }
                     }
                 } else {
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+                    if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)) {
                         return false;
                     }
                     if (!setPsk(NativeUtil.hexStringToByteArray(config.preSharedKey))) {

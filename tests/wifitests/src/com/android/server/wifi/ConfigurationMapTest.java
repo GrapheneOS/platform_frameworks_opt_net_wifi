@@ -292,8 +292,7 @@ public class ConfigurationMapTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createOpenNetwork();
         ScanResult scanResult = createScanResultForNetwork(config);
         // Change the network security type and the old scan result should not match now.
-        config.allowedKeyManagement.clear();
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         mConfigs.put(config);
         assertNull(mConfigs.getByScanResultForCurrentUser(scanResult));
     }

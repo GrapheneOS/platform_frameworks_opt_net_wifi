@@ -145,9 +145,12 @@ public class WifiConfigurationTestUtil {
         WifiConfiguration config = generateWifiConfig(networkId, uid, ssid, shared, enabled, fqdn,
                 providerFriendlyName);
 
-        if ((security == SECURITY_NONE) || ((security & SECURITY_WEP) != 0)) {
+        if (security == SECURITY_NONE) {
             config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         } else {
+            if ((security & SECURITY_WEP) != 0) {
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_WEP);
+            }
             if ((security & SECURITY_PSK) != 0) {
                 config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
             }
@@ -178,6 +181,7 @@ public class WifiConfigurationTestUtil {
 
             if ((security & SECURITY_WAPI_CERT) != 0) {
                 config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_WAPI_CERT);
+                config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.WAPI_CERT);
             }
 
         }
@@ -534,23 +538,23 @@ public class WifiConfigurationTestUtil {
      */
     public static String getScanResultCapsForNetwork(WifiConfiguration configuration) {
         String caps;
-        if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
+        if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK)) {
             caps = "[RSN-PSK-CCMP]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP)
-                || configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X)) {
+        } else if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_EAP)) {
             caps = "[RSN-EAP-CCMP]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)
+        } else if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_WEP)
                 && WifiConfigurationUtil.hasAnyValidWepKey(configuration.wepKeys)) {
             caps = "[WEP]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
+        } else if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)) {
             caps = "[RSN-SAE-CCMP]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
+        } else if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_OWE)) {
             caps = "[RSN-OWE-CCMP]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
+        } else if (configuration.isSecurityType(
+                WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT)) {
             caps = "[RSN-SUITE-B-192-CCMP]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)) {
+        } else if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_PSK)) {
             caps = "[WAPI-WAPI-PSK-SMS4]";
-        } else if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_CERT)) {
+        } else if (configuration.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_CERT)) {
             caps = "[WAPI-WAPI-CERT-SMS4]";
         } else {
             caps = "[]";
@@ -725,10 +729,7 @@ public class WifiConfigurationTestUtil {
         assertEquals(expected.hiddenSSID, actual.hiddenSSID);
         assertEquals(expected.requirePmf, actual.requirePmf);
         assertEquals(expected.allowedKeyManagement, actual.allowedKeyManagement);
-        assertEquals(expected.allowedProtocols, actual.allowedProtocols);
-        assertEquals(expected.allowedAuthAlgorithms, actual.allowedAuthAlgorithms);
-        assertEquals(expected.allowedGroupCiphers, actual.allowedGroupCiphers);
-        assertEquals(expected.allowedPairwiseCiphers, actual.allowedPairwiseCiphers);
+        /* security params are static to the security type, no need to check them anymore */
         assertWifiEnterpriseConfigEqualForConfigStore(
                 expected.enterpriseConfig, actual.enterpriseConfig);
     }

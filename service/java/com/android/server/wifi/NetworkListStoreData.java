@@ -287,9 +287,6 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
 
         configuration.convertLegacyFieldsToSecurityParamsIfNeeded();
 
-        if (configuration.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-            fixSaeNetworkSecurityBits(configuration);
-        }
         // b/153435438: Added to deal with badly formed WifiConfiguration from apps.
         if (configuration.preSharedKey != null && !configuration.needsPreSharedKey()) {
             Log.e(TAG, "preSharedKey set with an invalid KeyMgmt, resetting KeyMgmt to WPA_PSK");
@@ -325,37 +322,6 @@ public abstract class NetworkListStoreData implements WifiConfigStore.StoreData 
             configuration.enterpriseConfig = enterpriseConfig;
         }
         return configuration;
-    }
-
-    private void fixSaeNetworkSecurityBits(WifiConfiguration saeNetwork) {
-        // SAE saved networks Auth Algorithm set to OPEN need to be have this field cleared.
-        if (saeNetwork.allowedAuthAlgorithms.get(WifiConfiguration.AuthAlgorithm.OPEN)) {
-            saeNetwork.allowedAuthAlgorithms.clear();
-        }
-        // SAE saved networks Pairwise Cipher with TKIP enabled need to be have this bit
-        // cleared.
-        if (saeNetwork.allowedPairwiseCiphers.get(WifiConfiguration.PairwiseCipher.TKIP)) {
-            saeNetwork.allowedPairwiseCiphers.clear(WifiConfiguration.PairwiseCipher.TKIP);
-        }
-        // SAE saved networks Protocols with WPA enabled need to be have this bit cleared.
-        if (saeNetwork.allowedProtocols.get(WifiConfiguration.Protocol.WPA)) {
-            saeNetwork.allowedProtocols.clear(WifiConfiguration.Protocol.WPA);
-        }
-        // SAE saved networks Group Ciphers with legacy ciphers enabled, need to be have these
-        // bits cleared.
-        if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP40)) {
-            saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.WEP40);
-        }
-        if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP104)) {
-            saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.WEP104);
-        }
-        if (saeNetwork.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.TKIP)) {
-            saeNetwork.allowedGroupCiphers.clear(WifiConfiguration.GroupCipher.TKIP);
-        }
-        saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_128);
-        saeNetwork.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
-        saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_128);
-        saeNetwork.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
     }
 }
 

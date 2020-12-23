@@ -1116,7 +1116,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         executeAndValidateInitializationSequence();
         assertNotNull(mISupplicantStaIfaceCallback);
         executeAndValidateConnectSequenceWithKeyMgmt(
-                0, false, WifiConfiguration.KeyMgmt.WPA_PSK, null);
+                0, false, WifiConfiguration.SECURITY_TYPE_PSK, null);
 
         int reasonCode = 3;
         mISupplicantStaIfaceCallback.onDisconnected(
@@ -1149,7 +1149,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         executeAndValidateInitializationSequence();
         assertNotNull(mISupplicantStaIfaceCallback);
         executeAndValidateConnectSequenceWithKeyMgmt(
-                0, false, WifiConfiguration.KeyMgmt.WPA_EAP, null);
+                0, false, WifiConfiguration.SECURITY_TYPE_EAP, null);
 
         int reasonCode = 3;
         mISupplicantStaIfaceCallback.onDisconnected(
@@ -1188,7 +1188,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         executeAndValidateInitializationSequence();
         assertNotNull(mISupplicantStaIfaceCallback);
         executeAndValidateConnectSequenceWithKeyMgmt(
-                0, false, WifiConfiguration.KeyMgmt.WPA_EAP, null);
+                0, false, WifiConfiguration.SECURITY_TYPE_EAP, null);
 
         int reasonCode = 3;
         mISupplicantStaIfaceCallback.onStateChanged(
@@ -1216,7 +1216,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         assertNotNull(mISupplicantStaIfaceCallback);
 
         executeAndValidateConnectSequenceWithKeyMgmt(SUPPLICANT_NETWORK_ID, false,
-                WifiConfiguration.KeyMgmt.SAE, null);
+                WifiConfiguration.SECURITY_TYPE_SAE, null);
 
         mISupplicantStaIfaceCallback.onStateChanged(
                 ISupplicantStaIfaceCallback.State.ASSOCIATING,
@@ -1241,7 +1241,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         assertNotNull(mISupplicantStaIfaceCallback);
 
         executeAndValidateConnectSequenceWithKeyMgmt(SUPPLICANT_NETWORK_ID, false,
-                WifiConfiguration.KeyMgmt.NONE, "97CA326539");
+                WifiConfiguration.SECURITY_TYPE_WEP, "97CA326539");
 
         mISupplicantStaIfaceCallback.onStateChanged(
                 ISupplicantStaIfaceCallback.State.ASSOCIATING,
@@ -1943,7 +1943,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
                         MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
@@ -1978,7 +1978,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         when(mClock.getElapsedSinceBootMillis()).thenReturn(testStartSeconds * 1000L);
 
         setupMocksForHalV1_3();
@@ -2005,7 +2005,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
                         MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
@@ -2036,7 +2036,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
                         MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
@@ -2064,7 +2064,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         PmkCacheStoreData pmkCacheData =
                 new PmkCacheStoreData(PMK_CACHE_EXPIRATION_IN_SEC, new ArrayList<Byte>(),
                         MacAddress.fromBytes(CONNECTED_MAC_ADDRESS_BYTES));
@@ -2094,7 +2094,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
         long testStartSeconds = PMK_CACHE_EXPIRATION_IN_SEC / 2;
         WifiConfiguration config = new WifiConfiguration();
         config.networkId = testFrameworkNetworkId;
-        config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         // Assume we have a PMK cache with a different MAC address.
         final byte[] previouisConnectedMacAddressBytes =
                 {0x00, 0x01, 0x02, 0x03, 0x04, 0x09};
@@ -2782,7 +2782,7 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
     private WifiConfiguration executeAndValidateConnectSequence(
             final int newFrameworkNetworkId, final boolean haveExistingNetwork) throws Exception {
         return executeAndValidateConnectSequenceWithKeyMgmt(newFrameworkNetworkId,
-                haveExistingNetwork, WifiConfiguration.KeyMgmt.WPA_PSK, null);
+                haveExistingNetwork, WifiConfiguration.SECURITY_TYPE_PSK, null);
     }
 
     /**
@@ -2790,17 +2790,17 @@ public class SupplicantStaIfaceHalTest extends WifiBaseTest {
      *
      * @param newFrameworkNetworkId Framework Network Id of the new network to connect.
      * @param haveExistingNetwork Removes the existing network.
-     * @param keyMgmt Key management of the new network.
+     * @param securityType The security type.
      * @param wepKey if configurations are for a WEP network else null.
      * @return the WifiConfiguration object of the new network to connect.
      */
     private WifiConfiguration executeAndValidateConnectSequenceWithKeyMgmt(
             final int newFrameworkNetworkId, final boolean haveExistingNetwork,
-            int keyMgmt, String wepKey) throws Exception {
+            int securityType, String wepKey) throws Exception {
         setupMocksForConnectSequence(haveExistingNetwork);
         WifiConfiguration config = new WifiConfiguration();
+        config.setSecurityParams(securityType);
         config.networkId = newFrameworkNetworkId;
-        config.allowedKeyManagement.set(keyMgmt);
         config.wepKeys[0] = wepKey;
         config.wepTxKeyIndex = 0;
         assertTrue(mDut.connectToNetwork(WLAN0_IFACE_NAME, config));

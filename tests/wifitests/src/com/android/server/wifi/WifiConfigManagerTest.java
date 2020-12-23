@@ -2040,9 +2040,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         verifyAddNetworkHasEverConnectedFalse(pskNetwork);
         verifyUpdateNetworkAfterConnectHasEverConnectedTrue(pskNetwork.networkId);
 
-        assertFalse(pskNetwork.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X));
-        pskNetwork.allowedKeyManagement.clear();
-        pskNetwork.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+        pskNetwork.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
         pskNetwork.requirePmf = true;
         verifyUpdateNetworkWithCredentialChangeHasEverConnectedFalse(pskNetwork);
     }
@@ -2120,28 +2118,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         assertFalse(pskNetwork.hiddenSSID);
         pskNetwork.hiddenSSID = true;
         verifyUpdateNetworkWithCredentialChangeHasEverConnectedFalse(pskNetwork);
-    }
-
-    /**
-     * Verifies that hasEverConnected is cleared when a network config |requirePMF| is
-     * updated.
-     */
-    @Test
-    public void testUpdateRequirePMFClearsHasEverConnected() {
-        WifiConfiguration pskNetwork = WifiConfigurationTestUtil.createPskNetwork();
-        verifyAddNetworkHasEverConnectedFalse(pskNetwork);
-        verifyUpdateNetworkAfterConnectHasEverConnectedTrue(pskNetwork.networkId);
-
-        assertFalse(pskNetwork.requirePmf);
-        pskNetwork.requirePmf = true;
-
-        NetworkUpdateResult result =
-                verifyUpdateNetworkToWifiConfigManagerWithoutIpChange(pskNetwork);
-        WifiConfiguration retrievedNetwork =
-                mWifiConfigManager.getConfiguredNetwork(result.getNetworkId());
-        assertFalse("Updating network credentials config must clear hasEverConnected.",
-                retrievedNetwork.getNetworkSelectionStatus().hasEverConnected());
-        assertTrue(result.hasCredentialChanged());
     }
 
     /**
@@ -4068,6 +4044,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // successfully.
         WifiConfiguration network1 = new WifiConfiguration();
         network1.SSID = ssid;
+        network1.convertLegacyFieldsToSecurityParamsIfNeeded();
         NetworkUpdateResult result = addNetworkToWifiConfigManager(network1);
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
         assertTrue(result.isNewNetwork());
@@ -4082,6 +4059,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // didn't add a new duplicate network.
         WifiConfiguration network2 = new WifiConfiguration();
         network2.SSID = ssid;
+        network2.convertLegacyFieldsToSecurityParamsIfNeeded();
         result = addNetworkToWifiConfigManager(network2);
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
         assertFalse(result.isNewNetwork());
@@ -4104,7 +4082,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // successfully.
         WifiConfiguration network1 = new WifiConfiguration();
         network1.SSID = ssid;
-        network1.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        network1.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         network1.preSharedKey = "\"test_blah\"";
         NetworkUpdateResult result = addNetworkToWifiConfigManager(network1);
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
@@ -4120,7 +4098,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
         // does add a new network.
         WifiConfiguration network2 = new WifiConfiguration();
         network2.SSID = ssid;
-        network2.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+        network2.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         result = addNetworkToWifiConfigManager(network2);
         assertTrue(result.getNetworkId() != WifiConfiguration.INVALID_NETWORK_ID);
         assertTrue(result.isNewNetwork());
@@ -5097,30 +5075,6 @@ public class WifiConfigManagerTest extends WifiBaseTest {
      * WifiConfigManager.
      */
     private void setDefaults(WifiConfiguration configuration) {
-        if (configuration.allowedProtocols.isEmpty()) {
-            configuration.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-            configuration.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-        }
-        if (configuration.allowedKeyManagement.isEmpty()) {
-            configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-            configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
-        }
-        if (configuration.allowedPairwiseCiphers.isEmpty()) {
-            configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
-            configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-            configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
-        }
-        if (configuration.allowedGroupCiphers.isEmpty()) {
-            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
-            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
-        }
-        if (configuration.allowedGroupManagementCiphers.isEmpty()) {
-            configuration.allowedGroupManagementCiphers
-                    .set(WifiConfiguration.GroupMgmtCipher.BIP_GMAC_256);
-        }
         if (configuration.getIpAssignment() == IpConfiguration.IpAssignment.UNASSIGNED) {
             configuration.setIpAssignment(IpConfiguration.IpAssignment.DHCP);
         }

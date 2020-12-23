@@ -28,6 +28,7 @@ import android.net.ProxyInfo;
 import android.net.RouteInfo;
 import android.net.StaticIpConfiguration;
 import android.net.Uri;
+import android.net.wifi.SecurityParams;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -358,6 +359,12 @@ public class XmlUtil {
         public static final String XML_TAG_IS_OEM_PAID = "OemPaid";
         public static final String XML_TAG_IS_OEM_PRIVATE = "OemPrivate";
         public static final String XML_TAG_IS_CARRIER_MERGED = "CarrierMerged";
+        public static final String XML_TAG_SECURITY_PARAMS_LIST = "SecurityParamsList";
+        public static final String XML_TAG_SECURITY_PARAMS = "SecurityParams";
+        public static final String XML_TAG_SECURITY_TYPE = "SecurityType";
+        public static final String XML_TAG_SAE_IS_H2E_ONLY_MODE = "SaeIsH2eOnlyMode";
+        public static final String XML_TAG_SAE_IS_PK_ONLY_MODE = "SaeIsPkOnlyMode";
+        public static final String XML_TAG_IS_ADDED_BY_AUTO_UPGRADE = "IsAddedByAutoUpgrade";
         private static final String XML_TAG_IS_MOST_RECENTLY_CONNECTED = "IsMostRecentlyConnected";
 
         /**
@@ -416,6 +423,30 @@ public class XmlUtil {
             }
         }
 
+        private static void writeSecurityParamsListToXml(
+                XmlSerializer out, WifiConfiguration configuration)
+                throws XmlPullParserException, IOException {
+            XmlUtil.writeNextSectionStart(out, XML_TAG_SECURITY_PARAMS_LIST);
+            for (SecurityParams params: configuration.getSecurityParamsList()) {
+                XmlUtil.writeNextSectionStart(out, XML_TAG_SECURITY_PARAMS);
+                XmlUtil.writeNextValue(
+                        out, XML_TAG_SECURITY_TYPE,
+                        params.getSecurityType());
+                XmlUtil.writeNextValue(
+                        out, XML_TAG_SAE_IS_H2E_ONLY_MODE,
+                        params.isSaeH2eOnlyMode());
+                XmlUtil.writeNextValue(
+                        out, XML_TAG_SAE_IS_PK_ONLY_MODE,
+                        params.isSaePkOnlyMode());
+                XmlUtil.writeNextValue(
+                        out, XML_TAG_IS_ADDED_BY_AUTO_UPGRADE,
+                        params.isAddedByAutoUpgrade());
+                XmlUtil.writeNextSectionEnd(out, XML_TAG_SECURITY_PARAMS);
+            }
+
+            XmlUtil.writeNextSectionEnd(out, XML_TAG_SECURITY_PARAMS_LIST);
+        }
+
         /**
          * Write the Configuration data elements that are common for backup & config store to the
          * XML stream.
@@ -459,6 +490,7 @@ public class XmlUtil {
                     configuration.allowedSuiteBCiphers.toByteArray());
             XmlUtil.writeNextValue(out, XML_TAG_SHARED, configuration.shared);
             XmlUtil.writeNextValue(out, XML_TAG_IS_AUTO_JOIN, configuration.allowAutojoin);
+            writeSecurityParamsListToXml(out, configuration);
         }
 
         /**
@@ -551,6 +583,59 @@ public class XmlUtil {
                     wepKeys[i] = null;
                 } else {
                     wepKeys[i] = wepKeysInData[i];
+                }
+            }
+        }
+
+        private static SecurityParams parseSecurityParamsFromXml(
+                XmlPullParser in, int outerTagDepth) throws XmlPullParserException, IOException {
+            SecurityParams params = null;
+            while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
+                String[] valueName = new String[1];
+                Object value = XmlUtil.readCurrentValue(in, valueName);
+                String tagName = valueName[0];
+                if (tagName == null) {
+                    throw new XmlPullParserException("Missing value name");
+                }
+                switch (tagName) {
+                    case WifiConfigurationXmlUtil.XML_TAG_SECURITY_TYPE:
+                        params = SecurityParams.createSecurityParamsBySecurityType((int) value);
+                        break;
+                    case WifiConfigurationXmlUtil.XML_TAG_SAE_IS_H2E_ONLY_MODE:
+                        if (null == params) {
+                            throw new XmlPullParserException("Missing security type.");
+                        }
+                        params.enableSaeH2eOnlyMode((boolean) value);
+                        break;
+                    case WifiConfigurationXmlUtil.XML_TAG_SAE_IS_PK_ONLY_MODE:
+                        if (null == params) {
+                            throw new XmlPullParserException("Missing security type.");
+                        }
+                        params.enableSaePkOnlyMode((boolean) value);
+                        break;
+                    case WifiConfigurationXmlUtil.XML_TAG_IS_ADDED_BY_AUTO_UPGRADE:
+                        if (null == params) {
+                            throw new XmlPullParserException("Missing security type.");
+                        }
+                        params.setIsAddedByAutoUpgrade((boolean) value);
+                        break;
+                }
+            }
+            return params;
+        }
+
+        private static void parseSecurityParamsListFromXml(
+                XmlPullParser in, int outerTagDepth,
+                WifiConfiguration configuration)
+                throws XmlPullParserException, IOException {
+            while (!XmlUtil.isNextSectionEnd(in, outerTagDepth)) {
+                switch (in.getName()) {
+                    case WifiConfigurationXmlUtil.XML_TAG_SECURITY_PARAMS:
+                        SecurityParams params = parseSecurityParamsFromXml(in, outerTagDepth + 1);
+                        if (params != null) {
+                            configuration.addSecurityParams(params);
+                        }
+                        break;
                 }
             }
         }
@@ -757,6 +842,9 @@ public class XmlUtil {
                             } else {
                                 configuration.preSharedKey = new String(preSharedKeyBytes);
                             }
+                            break;
+                        case XML_TAG_SECURITY_PARAMS_LIST:
+                            parseSecurityParamsListFromXml(in, outerTagDepth + 1, configuration);
                             break;
                         default:
                             Log.w(TAG, "Ignoring unknown tag found: " + tagName);

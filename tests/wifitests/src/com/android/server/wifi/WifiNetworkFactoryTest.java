@@ -753,7 +753,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -795,7 +795,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -837,7 +837,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -880,7 +880,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(MacAddress.fromString(TEST_BSSID_1), MacAddress.BROADCAST_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -923,7 +923,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 Pair.create(MacAddress.fromString(TEST_BSSID_1_2_OUI),
                         MacAddress.fromString(TEST_BSSID_OUI_MASK));
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -967,7 +967,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -1013,7 +1013,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -1052,7 +1052,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -1275,7 +1275,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 Pair.create(MacAddress.fromString(matchingScanResult.BSSID),
                         MacAddress.BROADCAST_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -1324,7 +1324,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -1386,7 +1386,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 Pair.create(MacAddress.fromString(matchingScanResult.BSSID),
                         MacAddress.BROADCAST_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -1448,7 +1448,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
                 Pair.create(MacAddress.fromString(matchingScanResult.BSSID),
                         MacAddress.BROADCAST_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
@@ -2822,7 +2822,7 @@ public class WifiNetworkFactoryTest extends WifiBaseTest {
         Pair<MacAddress, MacAddress> bssidPatternMatch =
                 Pair.create(WifiManager.ALL_ZEROS_MAC_ADDRESS, WifiManager.ALL_ZEROS_MAC_ADDRESS);
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         wifiConfiguration.preSharedKey = TEST_WPA_PRESHARED_KEY;
         attachWifiNetworkSpecifierAndAppInfo(
                 ssidPatternMatch, bssidPatternMatch, wifiConfiguration, TEST_UID_1,
