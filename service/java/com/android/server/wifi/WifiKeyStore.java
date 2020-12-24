@@ -282,7 +282,7 @@ public class WifiKeyStore {
 
         // For WPA3-Enterprise 192-bit networks, set the SuiteBCipher field based on the
         // CA certificate type. Suite-B requires SHA384, reject other certs.
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT)) {
             // Read the CA certificates, and initialize
             String[] caAliases = config.enterpriseConfig.getCaCertificateAliases();
 
@@ -337,8 +337,9 @@ public class WifiKeyStore {
             }
 
             if (clientCertType == caCertType) {
-                config.allowedSuiteBCiphers.clear();
-                config.allowedSuiteBCiphers.set(clientCertType);
+                config.enableSuiteBCiphers(
+                        clientCertType == WifiConfiguration.SuiteBCipher.ECDHE_ECDSA,
+                        clientCertType == WifiConfiguration.SuiteBCipher.ECDHE_RSA);
             } else {
                 Log.e(TAG, "Client certificate for Suite-B is incompatible with the CA "
                         + "certificate");

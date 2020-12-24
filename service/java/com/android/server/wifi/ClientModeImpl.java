@@ -569,6 +569,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
     private final OnNetworkUpdateListener mOnNetworkUpdateListener;
 
+    private final ClientModeImplMonitor mCmiMonitor;
+
     // Maximum duration to continue to log Wifi usability stats after a data stall is triggered.
     @VisibleForTesting
     public static final long DURATION_TO_WAIT_ADD_STATS_AFTER_DATA_STALL_MS = 30 * 1000;
@@ -629,6 +631,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             @NonNull WifiGlobals wifiGlobals,
             @NonNull String ifaceName,
             @NonNull ConcreteClientModeManager clientModeManager,
+            @NonNull ClientModeImplMonitor cmiMonitor,
             boolean verboseLoggingEnabled) {
         super(TAG, looper);
         mWifiMetrics = wifiMetrics;
@@ -701,6 +704,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         mInterfaceName = ifaceName;
         mClientModeManager = clientModeManager;
+        mCmiMonitor = cmiMonitor;
         updateInterfaceCapabilities();
 
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
@@ -1281,6 +1285,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      * thread, will execute synchronously).
      *
      * @return a {@link WifiInfo} object containing information about the current connection
+     * TODO (b/173551144): Change to direct call. Let callers use WifiThreadRunner if necessary.
      */
     @Override
     public WifiInfo syncRequestConnectionInfo() {
@@ -2095,6 +2100,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
              */
             int newSignalLevel = RssiUtil.calculateSignalLevel(mContext, newRssi);
             if (newSignalLevel != mLastSignalLevel) {
+                // TODO (b/162602799): Do we need to change the update frequency?
                 updateCapabilities();
                 sendRssiChangeBroadcast(newRssi);
             }
@@ -3370,10 +3376,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
                     mTargetWifiConfiguration = config;
                     /* Check for FILS configuration again after updating the config */
-                    if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.FILS_SHA256)
-                            || config.allowedKeyManagement.get(
-                            WifiConfiguration.KeyMgmt.FILS_SHA384)) {
-
+                    if (config.isFilsSha256Enabled() || config.isFilsSha384Enabled()) {
                         boolean isIpClientStarted = startIpClient(config, true);
                         if (isIpClientStarted) {
                             mIpClientWithPreConnection = true;
@@ -3696,6 +3699,12 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         if (!mWifiInfo.getSSID().equals(WifiManager.UNKNOWN_SSID)) {
             builder.setSsid(mWifiInfo.getSSID());
         }
+
+        // Only send out WifiInfo in >= Android S devices.
+        if (SdkLevel.isAtLeastS()) {
+            builder.setTransportInfo(new WifiInfo(mWifiInfo));
+        }
+
         Pair<Integer, String> specificRequestUidAndPackageName =
                 mNetworkFactory.getSpecificNetworkRequestUidAndPackageName(
                         currentWifiConfiguration);
@@ -5202,6 +5211,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
                             mWifiConfigManager.setNetworkValidatedInternetAccess(
                                     config.networkId, true);
                         }
+                        mCmiMonitor.onL3Validated(mClientModeManager);
                     }
                     break;
                 }
@@ -5672,14 +5682,11 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
      */
     private void updateAllowedKeyManagementSchemesFromScanResult(
             WifiConfiguration config, ScanResult scanResult) {
-        if (isFilsSha256Supported()
-                && ScanResultUtil.isScanResultForFilsSha256Network(scanResult)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.FILS_SHA256);
-        }
-        if (isFilsSha384Supported()
-                && ScanResultUtil.isScanResultForFilsSha384Network(scanResult)) {
-            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.FILS_SHA384);
-        }
+        config.enableFils(
+                isFilsSha256Supported()
+                && ScanResultUtil.isScanResultForFilsSha256Network(scanResult),
+                isFilsSha384Supported()
+                && ScanResultUtil.isScanResultForFilsSha384Network(scanResult));
     }
     /**
      * Update wifi configuration based on the matching scan result.
@@ -5690,8 +5697,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
     private void updateWifiConfigFromMatchingScanResult(WifiConfiguration config,
             ScanResult scanResult) {
         updateAllowedKeyManagementSchemesFromScanResult(config, scanResult);
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.FILS_SHA256)
-                || config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.FILS_SHA384)) {
+        if (config.isFilsSha256Enabled() || config.isFilsSha384Enabled()) {
             config.enterpriseConfig.setFieldValue(WifiEnterpriseConfig.EAP_ERP, "1");
         }
     }
@@ -5710,8 +5716,8 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
 
         setTargetBssid(config, bssid);
 
-        if (isWpa3SaeUpgradeEnabled() && config.allowedKeyManagement.get(
-                WifiConfiguration.KeyMgmt.WPA_PSK)) {
+        if (isWpa3SaeUpgradeEnabled() && config.isSecurityType(
+                WifiConfiguration.SECURITY_TYPE_PSK)) {
             isFrameworkWpa3SaeUpgradePossible = true;
         }
 
@@ -5723,6 +5729,9 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
             config.allowedAuthAlgorithms.clear();
             // Note: KeyMgmt.WPA2_PSK is already enabled, enable SAE as well
             config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+            if (!config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)) {
+                config.addSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+            }
             isFrameworkWpa3SaeUpgradePossible = false;
         }
         // Check if network selection selected a good WPA3 candidate AP for a WPA2
@@ -5775,9 +5784,7 @@ public class ClientModeImpl extends StateMachine implements ClientMode {
         }
 
         if (isFrameworkWpa3SaeUpgradePossible && canUpgradePskToSae
-                && !(config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.FILS_SHA256)
-                            || config.allowedKeyManagement.get(
-                            WifiConfiguration.KeyMgmt.FILS_SHA384))) {
+                && !(config.isFilsSha256Enabled() || config.isFilsSha384Enabled())) {
             // Upgrade legacy WPA/WPA2 connection to WPA3
             if (mVerboseLoggingEnabled) {
                 Log.d(getTag(), "Upgrade legacy WPA/WPA2 connection to WPA3");

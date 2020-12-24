@@ -987,6 +987,12 @@ public class WifiConfigManager {
             internalConfig.roamingConsortiumIds = externalConfig.roamingConsortiumIds.clone();
         }
 
+        // Copy over all the security params if set.
+        if (externalConfig.getSecurityParamsList() != null
+                && !externalConfig.getSecurityParamsList().isEmpty()) {
+            internalConfig.setSecurityParams(externalConfig.getSecurityParamsList());
+        }
+
         // Copy over all the auth/protocol/key mgmt parameters if set.
         if (externalConfig.allowedAuthAlgorithms != null
                 && !externalConfig.allowedAuthAlgorithms.isEmpty()) {
@@ -1074,25 +1080,6 @@ public class WifiConfigManager {
      * @param configuration provided WifiConfiguration object.
      */
     private void setDefaultsInWifiConfiguration(WifiConfiguration configuration) {
-        configuration.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-        configuration.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-
-        configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-        configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
-
-        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
-        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
-
-        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
-        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
-
-        configuration.allowedGroupManagementCiphers
-                .set(WifiConfiguration.GroupMgmtCipher.BIP_GMAC_256);
-
         configuration.setIpAssignment(IpConfiguration.IpAssignment.DHCP);
         configuration.setProxySettings(IpConfiguration.ProxySettings.NONE);
 
@@ -1121,13 +1108,15 @@ public class WifiConfigManager {
         // First set defaults in the new configuration created.
         setDefaultsInWifiConfiguration(newInternalConfig);
 
+        // Convert legacy fields to new security params
+        externalConfig.convertLegacyFieldsToSecurityParamsIfNeeded();
+
         // Copy over all the public elements from the provided configuration.
         mergeWithInternalWifiConfiguration(newInternalConfig, externalConfig);
 
         // Copy over the hidden configuration parameters. These are the only parameters used by
         // system apps to indicate some property about the network being added.
         // These are only copied over for network additions and ignored for network updates.
-        newInternalConfig.requirePmf = externalConfig.requirePmf;
         newInternalConfig.noInternetAccessExpected = externalConfig.noInternetAccessExpected;
         newInternalConfig.ephemeral = externalConfig.ephemeral;
         newInternalConfig.osu = externalConfig.osu;
@@ -2461,7 +2450,7 @@ public class WifiConfigManager {
      */
     private void attemptNetworkLinking(WifiConfiguration config) {
         // Only link WPA_PSK config.
-        if (!config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
+        if (!config.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK)) {
             return;
         }
         ScanDetailCache scanDetailCache = getScanDetailCacheForNetwork(config.networkId);
@@ -2479,7 +2468,7 @@ public class WifiConfigManager {
             }
             // Network Selector will be allowed to dynamically jump from a linked configuration
             // to another, hence only link configurations that have WPA_PSK security type.
-            if (!linkConfig.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
+            if (!linkConfig.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK)) {
                 continue;
             }
             ScanDetailCache linkScanDetailCache =

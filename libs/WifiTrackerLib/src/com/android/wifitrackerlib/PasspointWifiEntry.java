@@ -64,7 +64,7 @@ import java.util.StringJoiner;
  */
 @VisibleForTesting
 public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntryCallback {
-    static final String KEY_PREFIX = "PasspointWifiEntry:";
+    public static final String KEY_PREFIX = "PasspointWifiEntry:";
 
     private final Object mLock = new Object();
     // Scan result list must be thread safe for generating the verbose scan summary
@@ -583,7 +583,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     }
 
     @Override
-    String getScanResultDescription() {
+    protected String getScanResultDescription() {
         // TODO(b/70983952): Fill this method in.
         return "";
     }
@@ -605,5 +605,10 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Override
     public void onUpdated() {
         notifyOnUpdated();
+    }
+
+    /** Get the PasspointConfiguration instance of the entry. */
+    public PasspointConfiguration getPasspointConfig() {
+        return mPasspointConfig;
     }
 }

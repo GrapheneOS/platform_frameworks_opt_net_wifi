@@ -405,19 +405,12 @@ public class WifiShellCommand extends BasicShellCommandHandler {
                         }
 
                         @Override
-                        public void onConnectedClientsChanged(List<WifiClient> clients) {
-                        }
-
-                        @Override
-                        public void onInfoChanged(SoftApInfo softApInfo) {
-                            pw.println("onInfoChanged: " + softApInfo);
+                        public void onConnectedClientsOrInfoChanged(Map<String, SoftApInfo> infos,
+                                Map<String, List<WifiClient>> clients, boolean isBridged,
+                                boolean isRegistration) {
                             if (mSapState == WifiManager.WIFI_AP_STATE_ENABLED) {
                                 countDownLatch.countDown();
                             }
-                        }
-
-                        @Override
-                        public void onInfoListChanged(List<SoftApInfo> softApInfoList) {
                         }
 
                         @Override

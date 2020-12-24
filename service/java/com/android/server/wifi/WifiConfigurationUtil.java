@@ -91,58 +91,57 @@ public class WifiConfigurationUtil {
      * Helper method to check if the provided |config| corresponds to a PSK network or not.
      */
     public static boolean isConfigForPskNetwork(WifiConfiguration config) {
-        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK);
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to a WAPI PSK network or not.
      */
     public static boolean isConfigForWapiPskNetwork(WifiConfiguration config) {
-        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK);
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_PSK);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to a WAPI CERT network or not.
      */
     public static boolean isConfigForWapiCertNetwork(WifiConfiguration config) {
-        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_CERT);
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WAPI_CERT);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to an SAE network or not.
      */
     public static boolean isConfigForSaeNetwork(WifiConfiguration config) {
-        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE);
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to an OWE network or not.
      */
     public static boolean isConfigForOweNetwork(WifiConfiguration config) {
-        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE);
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_OWE);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to a EAP network or not.
+     * TODO: b/175928875, add a method for Wpa3Enterprise.
      */
     public static boolean isConfigForEapNetwork(WifiConfiguration config) {
-        return (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP)
-                || config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X));
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_EAP);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to a EAP Suite-B network or not.
      */
-    public static boolean isConfigForEapSuiteBNetwork(WifiConfiguration config) {
-        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192);
+    public static boolean isConfigForWpa3Enterprise192BitNetwork(WifiConfiguration config) {
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
     }
 
     /**
      * Helper method to check if the provided |config| corresponds to a WEP network or not.
      */
     public static boolean isConfigForWepNetwork(WifiConfiguration config) {
-        return (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)
-                && hasAnyValidWepKey(config.wepKeys));
+        return config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WEP);
     }
 
     /**
@@ -152,7 +151,7 @@ public class WifiConfigurationUtil {
     public static boolean isConfigForOpenNetwork(WifiConfiguration config) {
         return (!(isConfigForWepNetwork(config) || isConfigForPskNetwork(config)
                 || isConfigForEapNetwork(config) || isConfigForSaeNetwork(config)
-                || isConfigForEapSuiteBNetwork(config)));
+                || isConfigForWpa3Enterprise192BitNetwork(config)));
     }
 
     /**
@@ -653,38 +652,18 @@ public class WifiConfigurationUtil {
         if (!validateKeyMgmt(config.allowedKeyManagement)) {
             return false;
         }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_WEP)
                 && config.wepKeys != null
                 && !validateWepKeys(config.wepKeys, config.wepTxKeyIndex, isAdd)) {
             return false;
         }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK)
                 && !validatePassword(config.preSharedKey, isAdd, false)) {
             return false;
         }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
-            // PMF mandatory for OWE networks
-            if (!config.requirePmf) {
-                Log.e(TAG, "PMF must be enabled for OWE networks");
-                return false;
-            }
-        }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-            // PMF mandatory for WPA3-Personal networks
-            if (!config.requirePmf) {
-                Log.e(TAG, "PMF must be enabled for SAE networks");
-                return false;
-            }
-            if (!validatePassword(config.preSharedKey, isAdd, true)) {
-                return false;
-            }
-        }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
-            // PMF mandatory for WPA3-Enterprise networks
-            if (!config.requirePmf) {
-                Log.e(TAG, "PMF must be enabled for Suite-B 192-bit networks");
-                return false;
-            }
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)
+                && !validatePassword(config.preSharedKey, isAdd, true)) {
+            return false;
         }
         // b/153435438: Added to deal with badly formed WifiConfiguration from apps.
         if (config.preSharedKey != null && !config.needsPreSharedKey()) {
@@ -817,30 +796,13 @@ public class WifiConfigurationUtil {
         if (!validateKeyMgmt(config.allowedKeyManagement)) {
             return false;
         }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK)
                 && !validatePassword(config.preSharedKey, true, false)) {
             return false;
         }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
-            // PMF mandatory for OWE networks
-            if (!config.requirePmf) {
-                return false;
-            }
-        }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SAE)) {
-            // PMF mandatory for WPA3-Personal networks
-            if (!config.requirePmf) {
-                return false;
-            }
-            if (!validatePassword(config.preSharedKey, true, true)) {
-                return false;
-            }
-        }
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
-            // PMF mandatory for WPA3-Enterprise networks
-            if (!config.requirePmf) {
-                return false;
-            }
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_SAE)
+                && !validatePassword(config.preSharedKey, true, true)) {
+            return false;
         }
         // TBD: Validate some enterprise params as well in the future here.
         return true;
@@ -890,10 +852,9 @@ public class WifiConfigurationUtil {
         }
         pnoNetwork.flags |= WifiScanner.PnoSettings.PnoNetwork.FLAG_A_BAND;
         pnoNetwork.flags |= WifiScanner.PnoSettings.PnoNetwork.FLAG_G_BAND;
-        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
+        if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_PSK)) {
             pnoNetwork.authBitField |= WifiScanner.PnoSettings.PnoNetwork.AUTH_CODE_PSK;
-        } else if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP)
-                || config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X)) {
+        } else if (config.isSecurityType(WifiConfiguration.SECURITY_TYPE_EAP)) {
             pnoNetwork.authBitField |= WifiScanner.PnoSettings.PnoNetwork.AUTH_CODE_EAPOL;
         } else {
             pnoNetwork.authBitField |= WifiScanner.PnoSettings.PnoNetwork.AUTH_CODE_OPEN;

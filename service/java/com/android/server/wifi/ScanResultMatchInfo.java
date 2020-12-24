@@ -62,7 +62,7 @@ public class ScanResultMatchInfo {
             return WifiConfiguration.SECURITY_TYPE_WAPI_CERT;
         } else if (WifiConfigurationUtil.isConfigForEapNetwork(config)) {
             return WifiConfiguration.SECURITY_TYPE_EAP;
-        } else if (WifiConfigurationUtil.isConfigForEapSuiteBNetwork(config)) {
+        } else if (WifiConfigurationUtil.isConfigForWpa3Enterprise192BitNetwork(config)) {
             return WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT;
         } else if (WifiConfigurationUtil.isConfigForWepNetwork(config)) {
             return WifiConfiguration.SECURITY_TYPE_WEP;

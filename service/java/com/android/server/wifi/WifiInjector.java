@@ -28,7 +28,6 @@ import android.net.MatchAllNetworkSpecifier;
 import android.net.NetworkCapabilities;
 import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
-import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.nl80211.WifiNl80211Manager;
 import android.os.BatteryStatsManager;
@@ -205,6 +204,8 @@ public class WifiInjector {
     private final DefaultClientModeManager mDefaultClientModeManager;
     private final AdaptiveConnectivityEnabledSettingObserver
             mAdaptiveConnectivityEnabledSettingObserver;
+    private final MakeBeforeBreakManager mMakeBeforeBreakManager;
+    private final ClientModeImplMonitor mCmiMonitor = new ClientModeImplMonitor();
 
     public WifiInjector(WifiContext context) {
         if (context == null) {
@@ -471,6 +472,9 @@ public class WifiInjector {
         mWifiNetworkSelector.registerNetworkNominator(mScoredNetworkNominator);
 
         mSimRequiredNotifier = new SimRequiredNotifier(mContext, mFrameworkFacade);
+
+        mMakeBeforeBreakManager = new MakeBeforeBreakManager(mActiveModeWarden, mFrameworkFacade,
+                mContext, mCmiMonitor);
     }
 
     /**
@@ -518,6 +522,7 @@ public class WifiInjector {
         mWifiDataStall.enableVerboseLogging(verboseBool);
         mWifiConnectivityManager.enableVerboseLogging(verboseBool);
         mWifiNetworkSelector.enableVerboseLogging(verboseBool);
+        mMakeBeforeBreakManager.setVerboseLoggingEnabled(verboseBool);
     }
 
     public UserManager getUserManager() {
@@ -640,7 +645,7 @@ public class WifiInjector {
      */
     public SoftApManager makeSoftApManager(
             @NonNull ActiveModeManager.Listener<SoftApManager> listener,
-            @NonNull WifiManager.SoftApCallback callback,
+            @NonNull WifiServiceImpl.SoftApCallbackInternal callback,
             @NonNull SoftApModeConfiguration config,
             @NonNull WorkSource requestorWs,
             @NonNull ActiveModeManager.SoftApRole role,
@@ -686,7 +691,7 @@ public class WifiInjector {
                         mDeviceConfigFacade, mContext, mAdaptiveConnectivityEnabledSettingObserver,
                         ifaceName),
                 mWifiP2pConnection, mWifiGlobals, ifaceName, clientModeManager,
-                verboseLoggingEnabled);
+                mCmiMonitor, verboseLoggingEnabled);
     }
 
     /**
@@ -955,5 +960,9 @@ public class WifiInjector {
     public AdaptiveConnectivityEnabledSettingObserver
             getAdaptiveConnectivityEnabledSettingObserver() {
         return mAdaptiveConnectivityEnabledSettingObserver;
+    }
+
+    public MakeBeforeBreakManager getMakeBeforeBreakManager() {
+        return mMakeBeforeBreakManager;
     }
 }

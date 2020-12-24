@@ -601,45 +601,6 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
     }
 
     /**
-     * Verify that the validate method fails to validate WifiConfiguration with malformed sae
-     * string.
-     */
-    @Test
-    public void testValidateNegativeCases_SaeMissingPmf() {
-        WifiConfiguration config = WifiConfigurationTestUtil.createSaeNetwork();
-        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
-
-        config.requirePmf = false;
-        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
-    }
-
-    /**
-     * Verify that the validate method fails to validate WifiConfiguration with malformed owe
-     * string.
-     */
-    @Test
-    public void testValidateNegativeCases_OweMissingPmf() {
-        WifiConfiguration config = WifiConfigurationTestUtil.createOweNetwork();
-        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
-
-        config.requirePmf = false;
-        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
-    }
-
-    /**
-     * Verify that the validate method fails to validate WifiConfiguration with malformed suiteb
-     * string.
-     */
-    @Test
-    public void testValidateNegativeCases_SuitebMissingPmf() {
-        WifiConfiguration config = WifiConfigurationTestUtil.createEapSuiteBNetwork();
-        assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
-
-        config.requirePmf = false;
-        assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
-    }
-
-    /**
      * Verify that the validate method successfully validates good WifiNetworkSpecifier with
      * only ssid pattern set.
      */

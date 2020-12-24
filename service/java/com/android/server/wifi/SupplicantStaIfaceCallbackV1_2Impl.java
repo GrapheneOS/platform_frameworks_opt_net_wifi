@@ -179,11 +179,10 @@ abstract class SupplicantStaIfaceCallbackV1_2Impl extends
         }
 
         // Set up key management: SAE or PSK
-        if (securityAkm == DppAkm.SAE || securityAkm == DppAkm.PSK_SAE) {
-            newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
-            newWifiConfiguration.requirePmf = true;
-        } else if (securityAkm == DppAkm.PSK) {
-            newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        if (securityAkm == DppAkm.SAE) {
+            newWifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+        } else if (securityAkm == DppAkm.PSK_SAE || securityAkm == DppAkm.PSK) {
+            newWifiConfiguration.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         } else {
             // No other AKMs are currently supported
             onDppFailure(DppFailureCode.NOT_SUPPORTED);
@@ -193,9 +192,6 @@ abstract class SupplicantStaIfaceCallbackV1_2Impl extends
         // Set up default values
         newWifiConfiguration.creatorName = mContext.getPackageManager()
                 .getNameForUid(Process.WIFI_UID);
-        newWifiConfiguration.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
-        newWifiConfiguration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-        newWifiConfiguration.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
         newWifiConfiguration.status = WifiConfiguration.Status.ENABLED;
 
         mStaIfaceHal.getDppCallback().onSuccessConfigReceived(newWifiConfiguration);
