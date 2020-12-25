@@ -17,6 +17,8 @@ package com.android.server.wifi;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.wifi.V1_0.IWifiApIface;
 import android.hardware.wifi.V1_0.IWifiChip;
 import android.hardware.wifi.V1_0.IWifiChipEventCallback;
@@ -63,6 +65,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.MutableBoolean;
 import android.util.MutableLong;
+import android.util.Pair;
 import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -258,6 +261,7 @@ public class WifiVendorHal {
     private IWifiChip mIWifiChip;
     private HashMap<String, IWifiStaIface> mIWifiStaIfaces = new HashMap<>();
     private HashMap<String, IWifiApIface> mIWifiApIfaces = new HashMap<>();
+    private final Context mContext;
     private final HalDeviceManager mHalDeviceManager;
     private final HalDeviceManagerStatusListener mHalDeviceManagerStatusCallbacks;
     private final IWifiStaIfaceEventCallback mIWifiStaIfaceEventCallback;
@@ -272,7 +276,8 @@ public class WifiVendorHal {
     // https://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.5
     private final Handler mHalEventHandler;
 
-    public WifiVendorHal(HalDeviceManager halDeviceManager, Handler handler) {
+    public WifiVendorHal(Context context, HalDeviceManager halDeviceManager, Handler handler) {
+        mContext = context;
         mHalDeviceManager = halDeviceManager;
         mHalEventHandler = handler;
         mHalDeviceManagerStatusCallbacks = new HalDeviceManagerStatusListener();
@@ -1384,6 +1389,34 @@ public class WifiVendorHal {
     }
 
     /**
+     * Translation table used by getSupportedFeatureSetFromPackageManager
+     * for translating System caps
+     */
+    private static final Pair[] sSystemFeatureCapabilityTranslation = new Pair[] {
+            Pair.create(WifiManager.WIFI_FEATURE_INFRA, PackageManager.FEATURE_WIFI),
+            Pair.create(WifiManager.WIFI_FEATURE_P2P, PackageManager.FEATURE_WIFI_DIRECT),
+            Pair.create(WifiManager.WIFI_FEATURE_AWARE, PackageManager.FEATURE_WIFI_AWARE),
+    };
+
+    /**
+     * If VendorHal is not supported, reading PackageManager
+     * system features to return basic capabilities.
+     *
+     * @return bitmask defined by WifiManager.WIFI_FEATURE_*
+     */
+    private long getSupportedFeatureSetFromPackageManager() {
+        long featureSet = 0;
+        final PackageManager pm = mContext.getPackageManager();
+        for (Pair pair: sSystemFeatureCapabilityTranslation) {
+            if (pm.hasSystemFeature((String) pair.second)) {
+                featureSet |= (long) pair.first;
+            }
+        }
+        enter("System feature set: %").c(featureSet).flush();
+        return featureSet;
+    }
+
+    /**
      * Get the supported features
      *
      * The result may differ depending on the mode (STA or AP)
@@ -1393,8 +1426,8 @@ public class WifiVendorHal {
      */
     public long getSupportedFeatureSet(@NonNull String ifaceName) {
         long featureSet = 0;
-        if (!mHalDeviceManager.isStarted()) {
-            return featureSet; // TODO: can't get capabilities with Wi-Fi down
+        if (!mHalDeviceManager.isStarted() || !mHalDeviceManager.isSupported()) {
+            return getSupportedFeatureSetFromPackageManager();
         }
         try {
             final MutableLong feat = new MutableLong(0);

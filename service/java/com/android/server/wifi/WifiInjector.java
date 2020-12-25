@@ -268,7 +268,7 @@ public class WifiInjector {
                         mFrameworkFacade, mContext);
         // Modules interacting with Native.
         mHalDeviceManager = new HalDeviceManager(mClock, this, wifiHandler);
-        mWifiVendorHal = new WifiVendorHal(mHalDeviceManager, wifiHandler);
+        mWifiVendorHal = new WifiVendorHal(mContext, mHalDeviceManager, wifiHandler);
         mSupplicantStaIfaceHal = new SupplicantStaIfaceHal(
                 mContext, mWifiMonitor, mFrameworkFacade, wifiHandler, mClock, mWifiMetrics);
         mHostapdHal = new HostapdHal(mContext, wifiHandler);
