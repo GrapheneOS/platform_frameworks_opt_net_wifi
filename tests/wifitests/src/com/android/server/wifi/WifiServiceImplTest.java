@@ -551,6 +551,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         verify(mActiveModeWarden, atLeastOnce()).registerLohsCallback(
                 lohsCallbackCaptor.capture());
         mLohsApCallback = lohsCallbackCaptor.getValue();
+        verify(mWifiCountryCode).registerListener(any(WifiCountryCode.ChangeListener.class));
         mLooper.dispatchAll();
         return wifiServiceImpl;
     }
@@ -563,6 +564,8 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mockRunner.post(any())).thenReturn(false);
 
         when(mWifiInjector.getWifiThreadRunner()).thenReturn(mockRunner);
+        // Reset mWifiCountryCode to avoid verify failure in makeWifiServiceImpl.
+        reset(mWifiCountryCode);
         return makeWifiServiceImpl();
     }
 
@@ -4799,7 +4802,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         Intent intent = new Intent(TelephonyManager.ACTION_SIM_CARD_STATE_CHANGED);
         intent.putExtra(Intent.EXTRA_USER_HANDLE, userHandle);
         mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
-        verifyNoMoreInteractions(mWifiCountryCode);
+        verify(mWifiCountryCode, never()).setCountryCodeAndUpdate(any());
     }
 
     /**
@@ -4819,7 +4822,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         intent.putExtra(Intent.EXTRA_USER_HANDLE, userHandle);
         intent.putExtra(TelephonyManager.EXTRA_SIM_STATE, Intent.SIM_STATE_ABSENT);
         mBroadcastReceiverCaptor.getValue().onReceive(mContext, intent);
-        verifyNoMoreInteractions(mWifiCountryCode);
+        verify(mWifiCountryCode, never()).setCountryCodeAndUpdate(any());
     }
 
     /**
@@ -6912,7 +6915,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
                         filter.hasAction(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED)));
         sendCountryCodeChangedBroadcast("US");
         verify(mWifiCountryCode).setCountryCodeAndUpdate(any());
-        verify(mActiveModeWarden).updateSoftApCapability(any());
     }
 
     @Test

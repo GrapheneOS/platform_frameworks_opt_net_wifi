@@ -343,6 +343,7 @@ public class WifiServiceImpl extends BaseWifiService {
         mWifiGlobals = wifiInjector.getWifiGlobals();
         mSimRequiredNotifier = wifiInjector.getSimRequiredNotifier();
         mWifiCarrierInfoManager = wifiInjector.getWifiCarrierInfoManager();
+        mCountryCode.registerListener(new CountryCodeListenerProxy());
     }
 
     /**
@@ -418,9 +419,6 @@ public class WifiServiceImpl extends BaseWifiService {
                                 TelephonyManager.EXTRA_NETWORK_COUNTRY);
                         Log.d(TAG, "Country code changed to :" + countryCode);
                         mCountryCode.setCountryCodeAndUpdate(countryCode);
-                        mTetheredSoftApTracker.updateAvailChannelListInSoftApCapability();
-                        mActiveModeWarden.updateSoftApCapability(
-                                mTetheredSoftApTracker.getSoftApCapability());
                     }}, new IntentFilter(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED));
 
             // Adding optimizations of only receiving broadcasts when wifi is enabled
@@ -1192,6 +1190,16 @@ public class WifiServiceImpl extends BaseWifiService {
         mLog.trace("stopSoftApInternal uid=% mode=%").c(Binder.getCallingUid()).c(mode).flush();
 
         mActiveModeWarden.stopSoftAp(mode);
+    }
+
+    private final class CountryCodeListenerProxy implements WifiCountryCode.ChangeListener {
+        @Override
+        public void onDriverCountryCodeChanged(String countryCode) {
+            Log.i(TAG, "onDriverCountryCodeChanged" + countryCode);
+            mTetheredSoftApTracker.updateAvailChannelListInSoftApCapability();
+            mActiveModeWarden.updateSoftApCapability(
+                    mTetheredSoftApTracker.getSoftApCapability());
+        }
     }
 
     /**
