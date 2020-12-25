@@ -105,6 +105,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.Process;
+import android.os.RemoteException;
 import android.os.test.TestLooper;
 import android.provider.Settings;
 import android.telephony.SubscriptionInfo;
@@ -117,6 +118,8 @@ import android.util.Pair;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.connectivity.aidl.INetworkAgent;
+import com.android.connectivity.aidl.INetworkAgentRegistry;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.IState;
@@ -376,7 +379,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     HandlerThread mWifiCoreThread;
     HandlerThread mP2pThread;
     HandlerThread mSyncThread;
-    AsyncChannel  mNetworkAgentAsyncChannel;
+    INetworkAgent  mNetworkAgentBinder;
     TestAlarmManager mAlarmManager;
     MockWifiMonitor mWifiMonitor;
     TestLooper mLooper;
@@ -424,7 +427,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     @Mock PackageManager mPackageManager;
     @Mock WifiLockManager mWifiLockManager;
     @Mock AsyncChannel mNullAsyncChannel;
-    @Mock Handler mNetworkAgentHandler;
+    @Mock INetworkAgentRegistry mNetworkAgentRegistry;
     @Mock BatteryStatsManager mBatteryStatsManager;
     @Mock MboOceController mMboOceController;
     @Mock SubscriptionManager mSubscriptionManager;
@@ -640,8 +643,6 @@ public class ClientModeImplTest extends WifiBaseTest {
         mWifiCoreThread = null;
         mP2pThread = null;
         mSyncThread = null;
-        mNetworkAgentAsyncChannel = null;
-        mNetworkAgentHandler = null;
         mCmi = null;
         mSession.finishMocking();
     }
@@ -2519,50 +2520,51 @@ public class ClientModeImplTest extends WifiBaseTest {
         // verify the messages sent through the NetworkAgent to ConnectivityService.
         // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
         // TODO (b/134538181): consider exposing WifiNetworkAgent and using mocks.
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
+        ArgumentCaptor<INetworkAgent> naCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
         ArgumentCaptor<NetworkAgentConfig> configCaptor =
                 ArgumentCaptor.forClass(NetworkAgentConfig.class);
         ArgumentCaptor<NetworkCapabilities> networkCapabilitiesCaptor =
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        verify(mConnectivityManager).registerNetworkAgent(naCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class),
                 networkCapabilitiesCaptor.capture(),
                 anyInt(), configCaptor.capture(), anyInt());
 
-        registerAsyncChannel((x) -> {
-            mNetworkAgentAsyncChannel = x;
-        }, messengerCaptor.getValue(), mNetworkAgentHandler);
+        mNetworkAgentBinder = naCaptor.getValue();
         configChecker.accept(configCaptor.getValue());
         networkCapabilitiesChecker.accept(networkCapabilitiesCaptor.getValue());
+        replyNetworkAgentRegistered(mNetworkAgentBinder);
+    }
 
-        mNetworkAgentAsyncChannel.sendMessage(AsyncChannel.CMD_CHANNEL_FULL_CONNECTION);
+    private void replyNetworkAgentRegistered(INetworkAgent agent) {
+        new Handler(mLooper.getLooper()).post(() -> {
+            try {
+                agent.onRegistered(mNetworkAgentRegistry);
+            } catch (RemoteException e) {
+                throw new AssertionError("Error connecting NetworkAgent", e);
+            }
+        });
         mLooper.dispatchAll();
     }
 
-    private void expectUnregisterNetworkAgent() {
+    private void expectUnregisterNetworkAgent() throws Exception {
         // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
         // TODO (b/134538181): consider exposing WifiNetworkAgent and using mocks.
-        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        final ArgumentCaptor<NetworkInfo> captor = ArgumentCaptor.forClass(NetworkInfo.class);
         mLooper.dispatchAll();
-        verify(mNetworkAgentHandler).handleMessage(messageCaptor.capture());
-        Message message = messageCaptor.getValue();
-        assertNotNull(message);
-        assertEquals(NetworkAgent.EVENT_NETWORK_INFO_CHANGED, message.what);
-        NetworkInfo networkInfo = (NetworkInfo) message.obj;
-        assertEquals(NetworkInfo.DetailedState.DISCONNECTED, networkInfo.getDetailedState());
+        verify(mNetworkAgentRegistry).sendNetworkInfo(captor.capture());
+        assertEquals(NetworkInfo.DetailedState.DISCONNECTED, captor.getValue().getDetailedState());
     }
 
     private void expectNetworkAgentUpdateCapabilities(
-            Consumer<NetworkCapabilities> networkCapabilitiesChecker) {
+            Consumer<NetworkCapabilities> networkCapabilitiesChecker) throws Exception {
         // We cannot just use a mock object here because mWifiNetworkAgent is private to CMI.
         // TODO (b/134538181): consider exposing WifiNetworkAgent and using mocks.
-        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        ArgumentCaptor<NetworkCapabilities> captor = ArgumentCaptor.forClass(
+                NetworkCapabilities.class);
         mLooper.dispatchAll();
-        verify(mNetworkAgentHandler).handleMessage(messageCaptor.capture());
-        Message message = messageCaptor.getValue();
-        assertNotNull(message);
-        assertEquals(NetworkAgent.EVENT_NETWORK_CAPABILITIES_CHANGED, message.what);
-        networkCapabilitiesChecker.accept((NetworkCapabilities) message.obj);
+        verify(mNetworkAgentRegistry).sendNetworkCapabilities(captor.capture());
+        networkCapabilitiesChecker.accept(captor.getValue());
     }
 
     /**
@@ -2632,20 +2634,16 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void verifyRssiMonitoringCallbackIsRegistered() throws Exception {
         // Simulate the first connection.
         connect();
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
+        verify(mConnectivityManager).registerNetworkAgent(agentCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
                 anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         ArrayList<Integer> thresholdsArray = new ArrayList<>();
         thresholdsArray.add(RSSI_THRESHOLD_MAX);
         thresholdsArray.add(RSSI_THRESHOLD_MIN);
-        Bundle thresholds = new Bundle();
-        thresholds.putIntegerArrayList("thresholds", thresholdsArray);
-        Message message = new Message();
-        message.what = NetworkAgent.CMD_SET_SIGNAL_STRENGTH_THRESHOLDS;
-        message.obj  = thresholds;
-        messengerCaptor.getValue().send(message);
+        agentCaptor.getValue().onSignalStrengthThresholdsUpdated(
+                thresholdsArray.stream().mapToInt(Integer::intValue).toArray());
         mLooper.dispatchAll();
 
         ArgumentCaptor<WifiNative.WifiRssiEventHandler> rssiEventHandlerCaptor =
@@ -3371,16 +3369,12 @@ public class ClientModeImplTest extends WifiBaseTest {
         mConnectedNetwork.getNetworkSelectionStatus()
                 .setCandidate(getGoogleGuestScanDetail(TEST_RSSI, sBSSID1, sFreq).getScanResult());
         connect();
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
+        verify(mConnectivityManager).registerNetworkAgent(agentCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
                 anyInt(), any(NetworkAgentConfig.class), anyInt());
-
-        Message message = new Message();
-        message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
-        message.arg1 = NetworkAgent.VALID_NETWORK;
-        message.obj = new Bundle();
-        messengerCaptor.getValue().send(message);
+        agentCaptor.getValue()
+                .onValidationStatusChanged(NetworkAgent.VALID_NETWORK, null /* captivePortalUrl */);
         mLooper.dispatchAll();
 
         verify(mWifiDiagnostics).reportConnectionEvent(
@@ -3543,8 +3537,8 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         // Simulate the first connection.
         connect();
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
+        verify(mConnectivityManager).registerNetworkAgent(agentCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
                 anyInt(), any(NetworkAgentConfig.class), anyInt());
 
@@ -3557,11 +3551,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(currentNetwork);
         when(mWifiConfigManager.getLastSelectedNetwork()).thenReturn(FRAMEWORK_NETWORK_ID + 1);
 
-        Message message = new Message();
-        message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
-        message.arg1 = NetworkAgent.INVALID_NETWORK;
-        message.obj = new Bundle();
-        messengerCaptor.getValue().send(message);
+        agentCaptor.getValue().onValidationStatusChanged(
+                NetworkAgent.INVALID_NETWORK, null /* captivePortalUr; */);
         mLooper.dispatchAll();
 
         verify(mWifiConfigManager)
@@ -3581,8 +3572,8 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void verifyLastSelectedNetworkWithInternetValidationFailure() throws Exception {
         // Simulate the first connection.
         connect();
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
+        verify(mConnectivityManager).registerNetworkAgent(agentCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
                 anyInt(), any(NetworkAgentConfig.class), anyInt());
 
@@ -3594,11 +3585,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(currentNetwork);
         when(mWifiConfigManager.getLastSelectedNetwork()).thenReturn(FRAMEWORK_NETWORK_ID);
 
-        Message message = new Message();
-        message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
-        message.arg1 = NetworkAgent.INVALID_NETWORK;
-        message.obj = new Bundle();
-        messengerCaptor.getValue().send(message);
+        agentCaptor.getValue().onValidationStatusChanged(
+                NetworkAgent.INVALID_NETWORK, null /* captivePortalUrl */);
         mLooper.dispatchAll();
 
         verify(mWifiConfigManager)
@@ -3616,8 +3604,8 @@ public class ClientModeImplTest extends WifiBaseTest {
             throws Exception {
         // Simulate the first connection.
         connect();
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
+        verify(mConnectivityManager).registerNetworkAgent(agentCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
                 anyInt(), any(NetworkAgentConfig.class), anyInt());
 
@@ -3629,11 +3617,8 @@ public class ClientModeImplTest extends WifiBaseTest {
                 .thenReturn(currentNetwork);
         when(mWifiConfigManager.getLastSelectedNetwork()).thenReturn(FRAMEWORK_NETWORK_ID + 1);
 
-        Message message = new Message();
-        message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
-        message.arg1 = NetworkAgent.INVALID_NETWORK;
-        message.obj = new Bundle();
-        messengerCaptor.getValue().send(message);
+        agentCaptor.getValue().onValidationStatusChanged(
+                NetworkAgent.INVALID_NETWORK, null /* captivePortalUrl */);
         mLooper.dispatchAll();
 
         verify(mWifiConfigManager)
@@ -3691,18 +3676,15 @@ public class ClientModeImplTest extends WifiBaseTest {
         verify(mWifiBlocklistMonitor).handleDhcpProvisioningSuccess(sBSSID, sSSID);
         verify(mWifiBlocklistMonitor, never()).handleNetworkValidationSuccess(sBSSID, sSSID);
 
-        ArgumentCaptor<Messenger> messengerCaptor = ArgumentCaptor.forClass(Messenger.class);
-        verify(mConnectivityManager).registerNetworkAgent(messengerCaptor.capture(),
+        ArgumentCaptor<INetworkAgent> agentCaptor = ArgumentCaptor.forClass(INetworkAgent.class);
+        verify(mConnectivityManager).registerNetworkAgent(agentCaptor.capture(),
                 any(NetworkInfo.class), any(LinkProperties.class), any(NetworkCapabilities.class),
                 anyInt(), any(NetworkAgentConfig.class), anyInt());
 
         when(mWifiConfigManager.getLastSelectedNetwork()).thenReturn(FRAMEWORK_NETWORK_ID + 1);
 
-        Message message = new Message();
-        message.what = NetworkAgent.CMD_REPORT_NETWORK_STATUS;
-        message.arg1 = NetworkAgent.VALID_NETWORK;
-        message.obj = new Bundle();
-        messengerCaptor.getValue().send(message);
+        agentCaptor.getValue().onValidationStatusChanged(
+                NetworkAgent.VALID_NETWORK, null /* captivePortalUrl */);
         mLooper.dispatchAll();
 
         verify(mWifiConfigManager)
@@ -3758,7 +3740,7 @@ public class ClientModeImplTest extends WifiBaseTest {
 
         ArgumentCaptor<NetworkCapabilities> networkCapabilitiesCaptor =
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
-        verify(mConnectivityManager).registerNetworkAgent(any(Messenger.class),
+        verify(mConnectivityManager).registerNetworkAgent(any(),
                 any(NetworkInfo.class), any(LinkProperties.class),
                 networkCapabilitiesCaptor.capture(), anyInt(), any(NetworkAgentConfig.class),
                 anyInt());
@@ -3796,7 +3778,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         connectWithValidInitRssi(-42);
         ArgumentCaptor<NetworkCapabilities> networkCapabilitiesCaptor =
                 ArgumentCaptor.forClass(NetworkCapabilities.class);
-        verify(mConnectivityManager).registerNetworkAgent(any(Messenger.class),
+        verify(mConnectivityManager).registerNetworkAgent(any(),
                 any(NetworkInfo.class), any(LinkProperties.class),
                 networkCapabilitiesCaptor.capture(), anyInt(), any(NetworkAgentConfig.class),
                 anyInt());
@@ -4924,7 +4906,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((config) -> { }, (cap) -> {
             assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
         });
-        reset(mNetworkAgentHandler);
+        reset(mNetworkAgentRegistry);
 
         WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
         mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NOT_METERED;
@@ -4949,7 +4931,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((config) -> { }, (cap) -> {
             assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
         });
-        reset(mNetworkAgentHandler);
+        reset(mNetworkAgentRegistry);
 
         // Mark network metered none.
         WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
@@ -4975,7 +4957,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((config) -> { }, (cap) -> {
             assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
         });
-        reset(mNetworkAgentHandler);
+        reset(mNetworkAgentRegistry);
 
         WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
         mConnectedNetwork.meteredOverride = METERED_OVERRIDE_NONE;
@@ -5003,7 +4985,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((config) -> { }, (cap) -> {
             assertFalse(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
         });
-        reset(mNetworkAgentHandler);
+        reset(mNetworkAgentRegistry);
 
         // Mark network metered none.
         WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
@@ -5017,7 +4999,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         assertEquals("L3ConnectedState", getCurrentState().getName());
 
-        verifyNoMoreInteractions(mNetworkAgentHandler);
+        verifyNoMoreInteractions(mNetworkAgentRegistry);
     }
 
     /**
@@ -5030,7 +5012,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         expectRegisterNetworkAgent((config) -> { }, (cap) -> {
             assertTrue(cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
         });
-        reset(mNetworkAgentHandler);
+        reset(mNetworkAgentRegistry);
 
         // Mark network metered none.
         WifiConfiguration oldConfig = new WifiConfiguration(mConnectedNetwork);
@@ -5044,7 +5026,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         assertEquals("L3ConnectedState", getCurrentState().getName());
 
-        verifyNoMoreInteractions(mNetworkAgentHandler);
+        verifyNoMoreInteractions(mNetworkAgentRegistry);
     }
 
     /*
@@ -5226,7 +5208,7 @@ public class ClientModeImplTest extends WifiBaseTest {
     public void testIpReachabilityLostAndRoamEventsRace() throws Exception {
         connect();
         expectRegisterNetworkAgent((agentConfig) -> { }, (cap) -> { });
-        reset(mNetworkAgentHandler);
+        reset(mNetworkAgentRegistry);
 
         // Trigger ip reachability loss and ensure we trigger a disconnect.
         mCmi.sendMessage(ClientModeImpl.CMD_IP_REACHABILITY_LOST);
@@ -5238,7 +5220,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         mCmi.sendMessage(WifiMonitor.NETWORK_CONNECTION_EVENT, 0, 0, sBSSID);
         mLooper.dispatchAll();
         // ensure that we ignored the transient roam while we're disconnecting.
-        verifyNoMoreInteractions(mNetworkAgentHandler);
+        verifyNoMoreInteractions(mNetworkAgentRegistry);
 
         // Now send the disconnect event and ensure that we transition to "DisconnectedState".
         DisconnectEventInfo disconnectEventInfo =
@@ -5248,7 +5230,7 @@ public class ClientModeImplTest extends WifiBaseTest {
         assertEquals("DisconnectedState", getCurrentState().getName());
         expectUnregisterNetworkAgent();
 
-        verifyNoMoreInteractions(mNetworkAgentHandler);
+        verifyNoMoreInteractions(mNetworkAgentRegistry);
     }
 
     @Test
