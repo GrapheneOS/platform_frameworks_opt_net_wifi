@@ -129,6 +129,8 @@ java_library {
     visibility: [
         "//frameworks/opt/net/wifi/service/apex",
         "//frameworks/opt/net/wifi/tests/wifitests/apex",
+        "//packages/modules/Wifi/apex",
+        "//packages/modules/Wifi/service/tests/wifitests/apex",
     ],
     apex_available: [
         "com.android.wifi",
