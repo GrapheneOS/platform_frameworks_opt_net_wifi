@@ -88,8 +88,9 @@
     <!-- Summary for connected network without internet due to private dns validation failed [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_private_dns_broken">Private DNS server cannot be accessed</string>
 
-    <!-- Summary for Connected wifi network without internet [CHAR LIMIT=NONE] -->
-    <string name="wifitrackerlib_wifi_connected_no_internet">No internet</string>
+    <!-- Summary for connected wifi network without internet [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet">
+        Connected to device. Can\'t provide internet.</string>
 
     <!-- Summary for Connected wifi network with a low quality connection [CHAR LIMIT=NONE] -->
     <string name="wifi_connected_low_quality">Low quality</string>
