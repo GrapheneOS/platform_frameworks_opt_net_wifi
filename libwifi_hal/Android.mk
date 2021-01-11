@@ -97,6 +97,10 @@ else
   ifeq ($(BOARD_WLAN_DEVICE), bcmdhd)
     LIB_WIFI_HAL := libwifi-hal-bcm
     VENDOR_LOCAL_SHARED_LIBRARIES := libcrypto
+ifneq ($(wildcard vendor/google/libraries/GoogleWifiConfigLib),)
+    VENDOR_LOCAL_SHARED_LIBRARIES += \
+        google_wifi_firmware_config_version_c_wrapper
+endif
   else ifeq ($(BOARD_WLAN_DEVICE), qcwcn)
     LIB_WIFI_HAL := libwifi-hal-qcom
     VENDOR_LOCAL_SHARED_LIBRARIES := libcld80211
