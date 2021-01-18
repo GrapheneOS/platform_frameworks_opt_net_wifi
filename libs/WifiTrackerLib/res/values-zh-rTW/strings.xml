@@ -37,7 +37,8 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"已透過連線品質評估供應商自動連線"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"連線能力受限"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"無法存取私人 DNS 伺服器"</string>
-    <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"沒有網際網路連線"</string>
+    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
+    <skip />
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"品質不佳"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"無"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"已失效"</string>
