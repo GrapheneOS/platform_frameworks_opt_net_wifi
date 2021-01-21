@@ -37,7 +37,8 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"நெட்வொர்க் மதிப்பீடு வழங்குநர் மூலம் தானாக இணைக்கப்பட்டது"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"வரம்பிற்கு உட்பட்ட இணைப்பு"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"தனிப்பட்ட DNS சேவையகத்தை அணுக இயலாது"</string>
-    <string name="wifitrackerlib_wifi_connected_no_internet" msgid="2329345148045635995">"இணைய இணைப்பு இல்லை"</string>
+    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
+    <skip />
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"குறைந்த தரம்"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"ஏதுமில்லை"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"காலாவதியானது"</string>
