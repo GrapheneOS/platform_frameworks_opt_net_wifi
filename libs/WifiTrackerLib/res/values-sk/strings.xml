@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Automaticky pripojené prostredníctvom poskytovateľa hodnotenia siete"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Obmedzené pripojenie"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"K súkromnému serveru DNS sa nepodarilo získať prístup"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Pripojené k zariadeniu. Internet nie je možné poskytnúť."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Nízka kvalita"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Žiadne"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Platnosť vypršala"</string>

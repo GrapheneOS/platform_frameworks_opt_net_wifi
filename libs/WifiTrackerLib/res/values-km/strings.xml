@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"បានភ្ជាប់​ដោយស្វ័យប្រវត្តិ​តាម​រយៈក្រុមហ៊ុនផ្តល់​ការ​វាយ​តម្លៃលើ​បណ្តាញ"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ការតភ្ជាប់មានកម្រិត"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"មិនអាច​ចូលប្រើ​ម៉ាស៊ីនមេ DNS ឯកជន​បានទេ"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"បានភ្ជាប់​ជាមួយ​ឧបករណ៍។ មិនអាចផ្ដល់​អ៊ីនធឺណិតបានទេ។"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"គុណភាព​ទាប"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"គ្មាន"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"បាន​ផុត​កំណត់"</string>
