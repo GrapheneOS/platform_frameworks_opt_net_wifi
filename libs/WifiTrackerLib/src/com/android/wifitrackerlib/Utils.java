@@ -585,7 +585,8 @@ public class Utils {
             if (networkCapabilities.isPrivateDnsBroken()) {
                 return context.getString(R.string.wifitrackerlib_private_dns_broken);
             }
-            return context.getString(R.string.wifitrackerlib_wifi_connected_no_internet);
+            return context.getString(
+                R.string.wifitrackerlib_wifi_connected_cannot_provide_internet);
         }
         return "";
     }
