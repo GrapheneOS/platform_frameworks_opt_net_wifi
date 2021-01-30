@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‏‏‏‏‏‎‏‏‎‎‎‏‏‏‏‏‎‎‎‎‎‎‏‏‏‎‏‏‎‏‏‎‏‏‎‏‎‏‎‏‏‎‏‏‎‏‎‏‏‏‎‎‎‎‎‎‏‏‎‎‎Automatically connected via network rating provider‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‎‏‎‏‏‎‎‎‎‏‏‎‏‎‏‏‎‎‏‎‏‏‎‏‏‏‏‎‏‏‏‏‎‎‏‏‏‏‏‏‎‎‎‏‏‎‏‏‎‎‎‏‏‏‏‏‏‎‎‎Limited connection‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‎‏‎‎‏‏‏‏‏‏‎‎‏‏‏‏‎‎‏‎‏‎‎‏‎‎‏‎‏‏‎‎‎‏‎‎‏‎‎‎‎‎‏‎‏‎‎‎‎‏‏‏‎‎‏‏‏‏‎‎‏‏‎Private DNS server cannot be accessed‎‏‎‎‏‎"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‎‏‎‎‏‏‎‎‏‎‎‎‏‎‏‎‎‏‎‏‎‎‏‏‎‎‏‎‏‎‏‎‎‎‏‎‏‏‏‏‏‎‎‏‏‏‎‏‎‎‎‏‎‏‎‎‏‎‎‏‎Connected to device. Can\'t provide internet.‎‏‎‎‏‎"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‏‏‎‎‎‏‎‎‏‏‎‎‎‏‏‏‎‏‎‏‏‏‎‎‏‏‏‏‎‎‎‎‎‎‏‏‏‏‎‏‎‏‏‎‎‎‎‏‏‎‎‏‏‎‎‏‏‎‏‎Low quality‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‎‏‎‏‎‏‎‎‎‏‏‎‏‏‎‎‏‏‏‏‏‎‎‏‏‎‎‏‎‎‏‏‎‎‎‏‏‎‏‎‎‎‏‏‏‏‎‏‏‎‏‎‎‎‏‏‎‎‎‎‎None‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‏‎‏‏‏‎‏‎‏‎‏‏‎‎‏‏‎‎‎‎‎‎‎‏‏‎‎‎‏‏‏‎‎‎‏‎‎‎‎‏‎‎‏‏‏‎‏‎‎‏‎‏‎‏‏‎‎‏‎‏‏‎‎Expired‎‏‎‎‏‎"</string>

@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"ကွန်ရက်အဆင့်သတ်မှတ်ပေးသူ မှတစ်ဆင့် အလိုအလျောက် ချိတ်ဆက်ထားပါသည်"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ချိတ်ဆက်မှု ကန့်သတ်ထားသည်"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"သီးသန့် ဒီအန်အက်စ် (DNS) ဆာဗာကို သုံး၍မရပါ"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"စက်ပစ္စည်းသို့ ချိတ်ဆက်ထားသည်။ အင်တာနက်ကို မပေးနိုင်ပါ။"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"အရည်အသွေး နိမ့်သည်"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"မရှိ"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"သက်တမ်းကုန်သွားပါပြီ"</string>
