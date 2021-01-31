@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"नेटवर्कको मूल्याङ्कन गर्ने सेवा प्रदायकमार्फत स्वतः कनेक्ट भयो"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"सीमित कनेक्सन"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"निजी DNS सर्भरमाथि पहुँच राख्न सकिँदैन"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"यन्त्रमा कनेक्ट गरियो। इन्टरनेट उपलब्ध छैन।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"न्यून गुणस्तर"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"कुनै पनि होइन"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"म्याद सकियो"</string>
