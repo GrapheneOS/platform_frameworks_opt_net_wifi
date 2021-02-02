@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Conectată automat prin furnizor de evaluări ale rețelei"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Conexiune limitată"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Serverul DNS privat nu poate fi accesat"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"S-a conectat la dispozitiv. Nu se poate stabili o conexiune la internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Calitate slabă"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Fără"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expirată"</string>
