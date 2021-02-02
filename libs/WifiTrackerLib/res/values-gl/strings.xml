@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Conectada automaticamente a través dun provedor de valoración de redes"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Pouca conexión"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Non se puido acceder ao servidor DNS privado"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Estableceuse conexión co dispositivo. Internet non está dispoñible."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Pouca calidade"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Ningunha"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Caducou"</string>

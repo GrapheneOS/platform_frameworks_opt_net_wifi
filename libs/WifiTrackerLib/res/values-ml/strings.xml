@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"നെറ്റ്‌വർക്ക് റേറ്റിംഗ് ദാതാവുമായി സ്വയമേവ കണക്‌റ്റ് ചെയ്‌തു"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"പരിമിത കണക്‌ഷൻ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"സ്വകാര്യ DNS സെർവർ ആക്‌സസ് ചെയ്യാനാവുന്നില്ല"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ഉപകരണത്തിലേക്ക് കണക്റ്റ് ചെയ്‌തു. ഇന്റർനെറ്റ് നൽകാനാകില്ല."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"കുറഞ്ഞ നിലവാരം"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"ഒന്നുമില്ല"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"കാലഹരണപ്പെട്ടു"</string>
