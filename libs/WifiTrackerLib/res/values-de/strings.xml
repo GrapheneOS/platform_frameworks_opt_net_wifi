@@ -30,15 +30,14 @@
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Nicht verbunden"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Gespeichert"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Kostenpflichtig"</string>
-    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Kostenlos"</string>
+    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Ohne Datenlimit"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Über <xliff:g id="NAME">%1$s</xliff:g> verfügbar"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automatisch verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Automatisch über Anbieter von Netzwerkbewertungen verbunden"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Eingeschränkte Verbindung"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Auf den privaten DNS-Server kann nicht zugegriffen werden"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Mit Gerät verbunden. Internetverbindung nicht möglich."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Niedrige Qualität"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"–"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Abgelaufen"</string>

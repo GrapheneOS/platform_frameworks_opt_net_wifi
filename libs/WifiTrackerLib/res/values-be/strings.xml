@@ -37,8 +37,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Аўтаматычна падключана праз пастаўшчыка паслугі ацэнкі сеткі"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Абмежаваныя магчымасці падключэння"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Не ўдалося атрымаць доступ да прыватнага DNS-сервера"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Падключана да прылады. Не ўдалося падключыцца да інтэрнэту."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Нізкая якасць"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Няма"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Тэрмін скончыўся"</string>
