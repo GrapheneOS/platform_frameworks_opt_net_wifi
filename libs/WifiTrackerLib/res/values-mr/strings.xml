@@ -23,7 +23,7 @@
     <string name="wifi_no_internet" msgid="4461212237521310895">"इंटरनेट अ‍ॅक्सेस नाही"</string>
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"ऑथेंटिकेशन समस्या"</string>
     <string name="wifi_check_password_try_again" msgid="2643230209986217827">"पासवर्ड तपासा आणि पुन्‍हा प्रयत्‍न करा"</string>
-    <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"IP कॉन्फिगरेशन अयशस्वी"</string>
+    <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"IP कॉंफिगरेशन अयशस्वी"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"अक्षम"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"अ‍ॅक्सेस पॉइंट तात्पुरते भरलेले"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"डिस्कनेक्ट केले"</string>

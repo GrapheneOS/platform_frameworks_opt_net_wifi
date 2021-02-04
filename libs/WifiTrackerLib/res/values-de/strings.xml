@@ -29,7 +29,7 @@
     <string name="wifi_disconnected" msgid="3720926757662831062">"Nicht verbunden"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"Gespeichert"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"Kostenpflichtig"</string>
-    <string name="wifi_unmetered_label" msgid="499466875639448350">"Kostenlos"</string>
+    <string name="wifi_unmetered_label" msgid="499466875639448350">"Ohne Datenlimit"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"Verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"Über <xliff:g id="NAME">%1$s</xliff:g> verfügbar"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"Automatisch verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
