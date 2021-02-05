@@ -28,7 +28,7 @@
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"จุดเข้าใช้งานเต็มชั่วคราว"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"ยกเลิกการเชื่อมต่อแล้ว"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"บันทึกแล้ว"</string>
-    <string name="wifi_metered_label" msgid="1362621600006544014">"มีการจำกัดปริมาณอินเทอร์เน็ต"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"แบบจำกัดปริมาณ"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"ไม่มีการวัดปริมาณอินเทอร์เน็ต"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"เชื่อมต่อแล้วผ่าน <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"ใช้งานได้ผ่านทาง <xliff:g id="NAME">%1$s</xliff:g>"</string>

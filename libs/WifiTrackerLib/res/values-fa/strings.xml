@@ -33,7 +33,7 @@
     <string name="connected_via_app" msgid="1818040967936972127">"متصل شده ازطریق <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"در دسترس ازطریق <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"به‌طور خودکار ازطریق <xliff:g id="NAME">%1$s</xliff:g> متصل شد"</string>
-    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"اتصال خودکار ازطریق ارائه‌دهنده رتبه‌بندی شبکه"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"اتصال خودکار ازطریق ارائه‌دهنده رده‌بندی شبکه"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"اتصال محدود"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"‏سرور DNS خصوصی قابل دسترسی نیست"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"عدم اتصال به اینترنت"</string>
