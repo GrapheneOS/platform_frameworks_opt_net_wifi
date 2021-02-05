@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Nicht verbunden"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Gespeichert"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Kostenpflichtig"</string>
-    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Kostenlos"</string>
+    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Ohne Datenlimit"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Über <xliff:g id="NAME">%1$s</xliff:g> verfügbar"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automatisch verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
