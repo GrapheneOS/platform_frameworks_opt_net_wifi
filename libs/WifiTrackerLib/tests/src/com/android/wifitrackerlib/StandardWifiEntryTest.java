@@ -411,6 +411,29 @@ public class StandardWifiEntryTest {
     }
 
     @Test
+    public void testConnect_savedNetwork_usesSavedConfig_withOutSim() {
+        final ScanResult scan = buildScanResult("ssid", "bssid", 0, GOOD_RSSI);
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_EAP),
+                Arrays.asList(scan), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
+        config.enterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.SIM);
+        config.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.NONE);
+        entry.updateConfig(config);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(null);
+
+        entry.setListener(mMockListener);
+        entry.connect(mMockConnectCallback);
+        mTestLooper.dispatchAll();
+        verify(mMockConnectCallback, times(1))
+                .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_FAILURE_SIM_ABSENT);
+    }
+
+    @Test
     public void testConnect_openNetwork_callsConnect() {
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE),

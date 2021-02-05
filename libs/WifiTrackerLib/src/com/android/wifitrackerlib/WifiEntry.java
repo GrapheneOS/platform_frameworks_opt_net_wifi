@@ -643,7 +643,8 @@ public class WifiEntry implements Comparable<WifiEntry> {
         @IntDef(value = {
                 CONNECT_STATUS_SUCCESS,
                 CONNECT_STATUS_FAILURE_NO_CONFIG,
-                CONNECT_STATUS_FAILURE_UNKNOWN
+                CONNECT_STATUS_FAILURE_UNKNOWN,
+                CONNECT_STATUS_FAILURE_SIM_ABSENT
         })
 
         public @interface ConnectStatus {}
@@ -651,6 +652,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
         int CONNECT_STATUS_SUCCESS = 0;
         int CONNECT_STATUS_FAILURE_NO_CONFIG = 1;
         int CONNECT_STATUS_FAILURE_UNKNOWN = 2;
+        int CONNECT_STATUS_FAILURE_SIM_ABSENT = 3;
 
         /**
          * Result of the connect request indicated by the CONNECT_STATUS constants.
