@@ -407,6 +407,15 @@ public class StandardWifiEntry extends WifiEntry {
         mShouldAutoOpenCaptivePortal = true;
         mWifiManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
         if (isSaved() || isSuggestion()) {
+            if (Utils.isSimCredential(mWifiConfig)
+                    && !Utils.isSimPresent(mContext, mWifiConfig.carrierId)) {
+                if (callback != null) {
+                    mCallbackHandler.post(() ->
+                            callback.onConnectResult(
+                                    ConnectCallback.CONNECT_STATUS_FAILURE_SIM_ABSENT));
+                }
+                return;
+            }
             // Saved/suggested network
             mWifiManager.connect(mWifiConfig.networkId, new ConnectActionListener());
         } else {
