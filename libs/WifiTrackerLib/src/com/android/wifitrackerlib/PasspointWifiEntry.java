@@ -38,6 +38,8 @@ import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -83,6 +85,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     private @Security int mSecurity = SECURITY_EAP;
     private boolean mIsRoaming = false;
     private OsuWifiEntry mOsuWifiEntry;
+    private boolean mShouldAutoOpenCaptivePortal = false;
 
     protected long mSubscriptionExpirationTimeInMillis;
 
@@ -333,7 +336,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                 return;
             }
         }
-
+        // We should flag this network to auto-open captive portal since this method represents
+        // the user manually connecting to a network (i.e. not auto-join).
+        mShouldAutoOpenCaptivePortal = true;
         mConnectCallback = callback;
 
         if (mWifiConfig == null) {
@@ -576,6 +581,18 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         return TextUtils.equals(wifiInfo.getPasspointFqdn(), mFqdn);
     }
 
+    @WorkerThread
+    @Override
+    void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
+        super.updateNetworkCapabilities(capabilities);
+
+        // Auto-open an available captive portal if the user manually connected to this network.
+        if (canSignIn() && mShouldAutoOpenCaptivePortal) {
+            mShouldAutoOpenCaptivePortal = false;
+            signIn(null /* callback */);
+        }
+    }
+
     @NonNull
     static String uniqueIdToPasspointWifiEntryKey(@NonNull String uniqueId) {
         checkNotNull(uniqueId, "Cannot create key with null unique id!");
@@ -605,6 +622,23 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Override
     public void onUpdated() {
         notifyOnUpdated();
+    }
+
+    @Override
+    public boolean canSignIn() {
+        return mNetworkCapabilities != null
+                && mNetworkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+    }
+
+    @Override
+    public void signIn(@Nullable SignInCallback callback) {
+        if (canSignIn()) {
+            // canSignIn() implies that this WifiEntry is the currently connected network, so use
+            // getCurrentNetwork() to start the captive portal app.
+            ((ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                    .startCaptivePortalApp(mWifiManager.getCurrentNetwork());
+        }
     }
 
     /** Get the PasspointConfiguration instance of the entry. */
