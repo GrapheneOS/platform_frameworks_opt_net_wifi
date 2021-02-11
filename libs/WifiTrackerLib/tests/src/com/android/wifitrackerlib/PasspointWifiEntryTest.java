@@ -25,6 +25,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -64,6 +66,7 @@ public class PasspointWifiEntryTest {
     @Mock private NetworkInfo mMockNetworkInfo;
     @Mock private WifiNetworkScoreCache mMockScoreCache;
     @Mock private ScoredNetwork mMockScoredNetwork;
+    @Mock private ConnectivityManager mMockConnectivityManager;
 
     private TestLooper mTestLooper;
     private Handler mTestHandler;
@@ -308,5 +311,41 @@ public class PasspointWifiEntryTest {
         entry.updatePasspointConfig(null);
 
         assertThat(entry.isAutoJoinEnabled()).isFalse();
+    }
+
+    @Test
+    public void testCanSignIn_captivePortalCapability_returnsTrue() {
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
+        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        entry.updateNetworkCapabilities(captivePortalCapabilities);
+
+        assertThat(entry.canSignIn()).isTrue();
+    }
+
+    @Test
+    public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mMockConnectivityManager);
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
+        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+
+        // Simulate user tapping on the network and receiving captive portal capabilities.
+        // This should trigger the captive portal app.
+        entry.connect(null /* callback */);
+        entry.updateNetworkCapabilities(captivePortalCapabilities);
+
+        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+
+        // Update network capabilities again. This should not trigger the captive portal app.
+        entry.updateNetworkCapabilities(captivePortalCapabilities);
+
+        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
     }
 }
