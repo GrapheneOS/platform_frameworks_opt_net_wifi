@@ -64,6 +64,8 @@ endif
 # ============================================================
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwifi-hal-common
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
+LOCAL_LICENSE_CONDITIONS := notice
 LOCAL_VENDOR_MODULE := true
 LOCAL_CFLAGS := $(wifi_hal_cflags)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
@@ -77,6 +79,8 @@ include $(BUILD_STATIC_LIBRARY)
 # ============================================================
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwifi-hal-fallback
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
+LOCAL_LICENSE_CONDITIONS := notice
 LOCAL_VENDOR_MODULE := true
 LOCAL_CFLAGS := $(wifi_hal_cflags)
 LOCAL_SRC_FILES := wifi_hal_fallback.cpp
@@ -113,6 +117,8 @@ endif
 # ============================================================
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwifi-hal
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
+LOCAL_LICENSE_CONDITIONS := notice
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_CFLAGS := $(wifi_hal_cflags)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
@@ -137,6 +143,8 @@ include $(BUILD_SHARED_LIBRARY)
 # ============================================================
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwifi-hal-test
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
+LOCAL_LICENSE_CONDITIONS := notice
 LOCAL_CFLAGS := $(wifi_hal_cflags)
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
