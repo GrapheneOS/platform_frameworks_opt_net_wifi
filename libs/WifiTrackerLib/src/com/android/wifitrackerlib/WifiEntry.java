@@ -26,7 +26,6 @@ import android.net.LinkAddress;
 import android.net.LinkProperties;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkUtils;
 import android.net.RouteInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -41,6 +40,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+
+import com.android.net.module.util.NetUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -812,7 +813,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 try {
                     InetAddress all = InetAddress.getByAddress(
                             new byte[]{(byte) 255, (byte) 255, (byte) 255, (byte) 255});
-                    mConnectedInfo.subnetMask = NetworkUtils.getNetworkPart(
+                    mConnectedInfo.subnetMask = NetUtils.getNetworkPart(
                             all, addr.getPrefixLength()).getHostAddress();
                 } catch (UnknownHostException e) {
                     // Leave subnet null;
