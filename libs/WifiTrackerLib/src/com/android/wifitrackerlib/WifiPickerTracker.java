@@ -48,8 +48,8 @@ import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.os.HandlerExecutor;
-import android.telephony.PhoneStateListener;
 import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -74,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -156,7 +155,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 TAG);
         mListener = listener;
         mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        mActiveDataSubIdListener = new ActiveDataSubIdListener(new HandlerExecutor(mWorkerHandler));
+        mActiveDataSubIdListener = new ActiveDataSubIdListener();
     }
 
     /**
@@ -218,7 +217,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
-        mTelephonyManager.registerPhoneStateListener(
+        mTelephonyManager.registerTelephonyCallback(
                 new HandlerExecutor(mWorkerHandler), mActiveDataSubIdListener);
         updateMergedCarrierEntry(SubscriptionManager.getActiveDataSubscriptionId());
 
@@ -234,7 +233,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     public void onStop() {
         super.onStop();
         mWorkerHandler.post(() -> {
-            mTelephonyManager.unregisterPhoneStateListener(mActiveDataSubIdListener);
+            mTelephonyManager.unregisterTelephonyCallback(mActiveDataSubIdListener);
         });
     }
 
@@ -965,13 +964,13 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     /**
-     * Listener for changes to the active data subscription id for the MergedCarrierEntry.
+     * Callback for changes to the active data subscription id for the MergedCarrierEntry.
      */
     @VisibleForTesting
-    /* package */ class ActiveDataSubIdListener extends PhoneStateListener implements
-            PhoneStateListener.ActiveDataSubscriptionIdChangedListener {
-        private ActiveDataSubIdListener(Executor executor) {
-            super(executor);
+            /* package */ class ActiveDataSubIdListener extends TelephonyCallback implements
+            TelephonyCallback.ActiveDataSubscriptionIdListener {
+        private ActiveDataSubIdListener() {
+            super();
         }
 
         @Override
