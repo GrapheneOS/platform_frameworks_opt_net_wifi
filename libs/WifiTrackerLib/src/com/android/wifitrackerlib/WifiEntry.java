@@ -27,6 +27,7 @@ import android.net.LinkProperties;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.RouteInfo;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -419,6 +420,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
         public List<String> ipv6Addresses = new ArrayList<>();
         public String gateway;
         public String subnetMask;
+        public int wifiStandard = ScanResult.WIFI_STANDARD_UNKNOWN;
     }
 
     // User actions on a network
@@ -772,6 +774,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 }
                 mConnectedInfo.frequencyMhz = wifiInfo.getFrequency();
                 mConnectedInfo.linkSpeedMbps = wifiInfo.getLinkSpeed();
+                mConnectedInfo.wifiStandard = wifiInfo.getWifiStandard();
             }
         } else { // Connection info doesn't matched, so this network is disconnected
             mNetworkInfo = null;
