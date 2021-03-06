@@ -785,7 +785,7 @@ public class WifiPickerTrackerTest {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
-        verify(mMockTelephonyManager).registerPhoneStateListener(any(Executor.class),
+        verify(mMockTelephonyManager).registerTelephonyCallback(any(Executor.class),
                 mActiveDataSubIdListenerCaptor.capture());
 
         mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId);
@@ -806,7 +806,7 @@ public class WifiPickerTrackerTest {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
-        verify(mMockTelephonyManager).registerPhoneStateListener(any(Executor.class),
+        verify(mMockTelephonyManager).registerTelephonyCallback(any(Executor.class),
                 mActiveDataSubIdListenerCaptor.capture());
         mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId1);
 
