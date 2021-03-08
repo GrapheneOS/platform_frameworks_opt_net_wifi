@@ -29,7 +29,7 @@
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Часова неспрыяльныя ўмовы падключэння да сеткі"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Адключана"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Захавана"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"З улікам трафіка"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"З падлікам трафіка"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Без уліку трафіка"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Падключана праз праграму \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Даступна праз праграму \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
