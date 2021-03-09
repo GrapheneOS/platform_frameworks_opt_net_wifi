@@ -444,6 +444,20 @@ public class Utils {
                             .wifitrackerlib_wifi_ap_unable_to_handle_new_sta);
                 case WifiConfiguration.RECENT_FAILURE_POOR_CHANNEL_CONDITIONS:
                     return context.getString(R.string.wifitrackerlib_wifi_poor_channel_conditions);
+                case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_UNSPECIFIED:
+                case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_AIR_INTERFACE_OVERLOADED:
+                case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_AUTH_SERVER_OVERLOADED:
+                    return context.getString(R.string
+                            .wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect);
+                case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_MAX_NUM_STA_ASSOCIATED:
+                    return context.getString(R.string
+                            .wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated);
+                case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_INSUFFICIENT_RSSI:
+                case WifiConfiguration.RECENT_FAILURE_OCE_RSSI_BASED_ASSOCIATION_REJECTION:
+                    return context.getString(R.string
+                            .wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi);
+                case WifiConfiguration.RECENT_FAILURE_NETWORK_NOT_FOUND:
+                    return context.getString(R.string.wifitrackerlib_wifi_network_not_found);
                 default:
                     // do nothing
             }
