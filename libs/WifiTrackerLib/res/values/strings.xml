@@ -58,6 +58,26 @@
     <!-- Summary for networks failing to connect due to association rejection status 34, poor channel conditions [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_wifi_poor_channel_conditions">Temporary poor network conditions</string>
 
+    <!-- Summary for networks failing to connect due to association rejection status 17 or 30, with
+         MBO association disallowed indication attribute reason code: Insufficient RSSI,
+         or association rejection status 34, with OCE RSSI based association rejection information [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi">Weak signal. Try moving closer to the router.</string>
+
+    <!-- Summary for networks failing to connect due to association rejection status 17 or 30, with
+         MBO association disallowed indication attribute reason code: maximum number of associated stations reached, [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated">Network is over capacity. Try again later.</string>
+
+    <!-- Summary for networks failing to connect due to association rejection status 17 or 30, with
+         MBO association disallowed indication attribute with one of the following reason codes:
+         Air interface is overloaded,
+         Authentication server overloaded,
+         Reserved/Unspecified [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect">Can\'t connect. Try again later.</string>
+
+    <!-- Summary for networks failing to connect due to failed to find a network in supplicant scan result
+         which matches the network requested by framework for connection (including network capabilities) [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_network_not_found">Network not compatible with this device</string>
+
     <!-- Summary for the disconnected network. [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_disconnected">Disconnected</string>
 
