@@ -405,7 +405,7 @@ public class StandardWifiEntry extends WifiEntry {
         // We should flag this network to auto-open captive portal since this method represents
         // the user manually connecting to a network (i.e. not auto-join).
         mShouldAutoOpenCaptivePortal = true;
-        mWifiManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+        mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
         if (isSaved() || isSuggestion()) {
             if (Utils.isSimCredential(mWifiConfig)
                     && !Utils.isSimPresent(mContext, mWifiConfig.carrierId)) {
