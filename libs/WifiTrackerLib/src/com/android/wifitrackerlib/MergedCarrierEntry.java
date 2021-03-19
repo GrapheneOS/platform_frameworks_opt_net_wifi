@@ -102,7 +102,7 @@ public class MergedCarrierEntry extends WifiEntry {
     @Override
     public void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
-        mWifiManager.startTemporarilyDisablingAllNonCarrierMergedWifi(mSubscriptionId);
+        mWifiManager.startRestrictingAutoJoinToSubscriptionId(mSubscriptionId);
         if (mConnectCallback != null) {
             mCallbackHandler.post(() ->
                     mConnectCallback.onConnectResult(
@@ -118,7 +118,7 @@ public class MergedCarrierEntry extends WifiEntry {
     @Override
     public void disconnect(@Nullable DisconnectCallback callback) {
         mDisconnectCallback = callback;
-        mWifiManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+        mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
         if (mDisconnectCallback != null) {
             mCallbackHandler.post(() ->
                     mDisconnectCallback.onDisconnectResult(
@@ -136,7 +136,7 @@ public class MergedCarrierEntry extends WifiEntry {
     public void setEnabled(boolean enabled) {
         mWifiManager.setCarrierNetworkOffloadEnabled(mSubscriptionId, true, enabled);
         if (!enabled) {
-            mWifiManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+            mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
         }
     }
 
