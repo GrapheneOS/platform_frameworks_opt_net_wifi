@@ -94,6 +94,6 @@ public class MergedCarrierEntryTest {
 
         verify(mMockConnectCallback)
                 .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
-        verify(mMockWifiManager).startTemporarilyDisablingAllNonCarrierMergedWifi(subId);
+        verify(mMockWifiManager).startRestrictingAutoJoinToSubscriptionId(subId);
     }
 }
