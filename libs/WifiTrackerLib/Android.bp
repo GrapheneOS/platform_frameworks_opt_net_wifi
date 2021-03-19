@@ -10,7 +10,8 @@ android_library {
         "androidx.core_core",
         "androidx.lifecycle_lifecycle-runtime",
         "SettingsLibHelpUtils",
+        "WifiTrackerHiddenApiLib",
     ],
 
-    min_sdk_version: "21",
+    min_sdk_version: "30",
 }

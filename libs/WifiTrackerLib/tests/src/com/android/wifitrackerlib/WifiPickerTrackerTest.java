@@ -144,7 +144,7 @@ public class WifiPickerTrackerTest {
         when(mMockNetworkInfo.getDetailedState()).thenReturn(
                 NetworkInfo.DetailedState.DISCONNECTED);
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
+        when(mMockContext.getSystemService(NetworkScoreManager.class))
                 .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.TELEPHONY_SERVICE))
                 .thenReturn(mMockTelephonyManager);
