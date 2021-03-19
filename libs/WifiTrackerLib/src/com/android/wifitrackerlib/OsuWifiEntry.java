@@ -137,7 +137,7 @@ class OsuWifiEntry extends WifiEntry {
     @Override
     public void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
-        mWifiManager.stopTemporarilyDisablingAllNonCarrierMergedWifi();
+        mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
         mWifiManager.startSubscriptionProvisioning(mOsuProvider, mContext.getMainExecutor(),
                 new OsuWifiEntryProvisioningCallback());
     }
