@@ -1,0 +1,9 @@
+java_library {
+    name: "WifiTrackerHiddenApiLib",
+    srcs: ["src/**/*.java"],
+    static_libs: [
+        "androidx.preference_preference",
+    ],
+
+    min_sdk_version: "30",
+}
