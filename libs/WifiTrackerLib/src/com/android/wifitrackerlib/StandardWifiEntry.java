@@ -46,6 +46,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
+import android.net.NetworkScorerAppData;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -66,7 +67,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.wifitrackerlib.hiddenapi.HiddenApiWrapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -192,14 +192,13 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public String getSummary(boolean concise) {
-        StringJoiner sj = new StringJoiner(mContext.getResources().getString(
+        StringJoiner sj = new StringJoiner(mContext.getString(
                 R.string.wifitrackerlib_summary_separator));
 
         if (!concise && mForSavedNetworksPage && isSaved()) {
             final CharSequence appLabel = getAppLabel(mContext, mWifiConfig.creatorName);
             if (!TextUtils.isEmpty(appLabel)) {
-                sj.add(mContext.getResources()
-                        .getString(R.string.wifitrackerlib_saved_network, appLabel));
+                sj.add(mContext.getString(R.string.wifitrackerlib_saved_network, appLabel));
             }
         }
 
@@ -207,8 +206,7 @@ public class StandardWifiEntry extends WifiEntry {
             String disconnectDescription = getDisconnectedStateDescription(mContext, this);
             if (TextUtils.isEmpty(disconnectDescription)) {
                 if (concise) {
-                    sj.add(mContext.getResources()
-                            .getString(R.string.wifitrackerlib_wifi_disconnected));
+                    sj.add(mContext.getString(R.string.wifitrackerlib_wifi_disconnected));
                 } else if (!mForSavedNetworksPage) {
                     // Summary for unconnected suggested network
                     if (isSuggestion()) {
@@ -219,12 +217,10 @@ public class StandardWifiEntry extends WifiEntry {
                             // Fall-back to the package name in case the app label is missing
                             suggestorName = mWifiConfig.creatorName;
                         }
-                        sj.add(mContext.getResources()
-                                .getString(R.string.wifitrackerlib_available_via_app,
+                        sj.add(mContext.getString(R.string.wifitrackerlib_available_via_app,
                                 carrierName != null ? carrierName : suggestorName));
                     } else if (isSaved()) {
-                        sj.add(mContext.getResources()
-                                .getString(R.string.wifitrackerlib_wifi_remembered));
+                        sj.add(mContext.getString(R.string.wifitrackerlib_wifi_remembered));
                     }
                 }
             } else {
@@ -276,23 +272,23 @@ public class StandardWifiEntry extends WifiEntry {
                     // Fall-back to the package name in case the app label is missing
                     suggestorName = suggestionOrSpecifierPackageName;
                 }
-                return mContext.getResources().getString(R.string.wifitrackerlib_connected_via_app,
+                return mContext.getString(R.string.wifitrackerlib_connected_via_app,
                         carrierName != null ? carrierName : suggestorName);
             }
 
             if (!isSaved() && !isSuggestion()) {
                 // Special case for connected + ephemeral networks.
                 if (!TextUtils.isEmpty(mRecommendationServiceLabel)) {
-                    return String.format(mContext.getResources().getString(
+                    return String.format(mContext.getString(
                             R.string.wifitrackerlib_connected_via_network_scorer),
                             mRecommendationServiceLabel);
                 }
-                return mContext.getResources().getString(
+                return mContext.getString(
                         R.string.wifitrackerlib_connected_via_network_scorer_default);
             }
 
             if (mIsLowQuality) {
-                return mContext.getResources().getString(R.string.wifi_connected_low_quality);
+                return mContext.getString(R.string.wifi_connected_low_quality);
             }
 
             String networkCapabilitiesinformation =
@@ -495,13 +491,8 @@ public class StandardWifiEntry extends WifiEntry {
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            if (HiddenApiWrapper.canUseHiddenApis()) {
-                HiddenApiWrapper.startCaptivePortalApp(
-                        mContext.getSystemService(ConnectivityManager.class),
-                        mWifiManager.getCurrentNetwork());
-            }
-            //TODO(b/162368129): Add a way to indicate to client to use their own captive portal app
-            // if hidden apis are not available.
+            ((ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                    .startCaptivePortalApp(mWifiManager.getCurrentNetwork());
         }
     }
 
@@ -642,62 +633,55 @@ public class StandardWifiEntry extends WifiEntry {
             case SECURITY_EAP:
                 switch (mEapType) {
                     case EAP_WPA:
-                        return concise ? mContext.getResources().getString(
+                        return concise ? mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_short_eap_wpa) :
-                                mContext.getResources()
-                                        .getString(R.string.wifitrackerlib_wifi_security_eap_wpa);
+                                mContext.getString(R.string.wifitrackerlib_wifi_security_eap_wpa);
                     case EAP_WPA2_WPA3:
-                        return concise ? mContext.getResources().getString(
+                        return concise ? mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_short_eap_wpa2_wpa3) :
-                                mContext.getResources().getString(
+                                mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_eap_wpa2_wpa3);
                     case EAP_UNKNOWN:
                     default:
-                        return concise ? mContext.getResources().getString(
+                        return concise ? mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_short_eap) :
-                                mContext.getResources()
-                                        .getString(R.string.wifitrackerlib_wifi_security_eap);
+                                mContext.getString(R.string.wifitrackerlib_wifi_security_eap);
                 }
             case SECURITY_EAP_SUITE_B:
-                return concise ? mContext.getResources().getString(
+                return concise ? mContext.getString(
                         R.string.wifitrackerlib_wifi_security_short_eap_suiteb) :
-                        mContext.getResources()
-                                .getString(R.string.wifitrackerlib_wifi_security_eap_suiteb);
+                        mContext.getString(R.string.wifitrackerlib_wifi_security_eap_suiteb);
             case SECURITY_PSK:
                 switch (mPskType) {
                     case PSK_WPA:
-                        return concise ? mContext.getResources().getString(
+                        return concise ? mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_short_wpa) :
-                                mContext.getResources()
-                                        .getString(R.string.wifitrackerlib_wifi_security_wpa);
+                                mContext.getString(R.string.wifitrackerlib_wifi_security_wpa);
                     case PSK_WPA2:
-                        return concise ? mContext.getResources().getString(
+                        return concise ? mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_short_wpa2_wpa3) :
-                                mContext.getResources()
-                                        .getString(R.string.wifitrackerlib_wifi_security_wpa2_wpa3);
+                                mContext.getString(R.string.wifitrackerlib_wifi_security_wpa2_wpa3);
                     case PSK_WPA_WPA2:
                     case PSK_UNKNOWN:
                     default:
-                        return concise ? mContext.getResources().getString(
+                        return concise ? mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3) :
-                                mContext.getResources().getString(
+                                mContext.getString(
                                 R.string.wifitrackerlib_wifi_security_wpa_wpa2_wpa3);
                 }
             case SECURITY_WEP:
-                return mContext.getResources().getString(R.string.wifitrackerlib_wifi_security_wep);
+                return mContext.getString(R.string.wifitrackerlib_wifi_security_wep);
             case SECURITY_SAE:
-                return concise ? mContext.getResources().getString(
+                return concise ? mContext.getString(
                         R.string.wifitrackerlib_wifi_security_short_sae) :
-                        mContext.getResources()
-                                .getString(R.string.wifitrackerlib_wifi_security_sae);
+                        mContext.getString(R.string.wifitrackerlib_wifi_security_sae);
             case SECURITY_OWE:
-                return concise ? mContext.getResources().getString(
+                return concise ? mContext.getString(
                         R.string.wifitrackerlib_wifi_security_short_owe) :
-                        mContext.getResources()
-                                .getString(R.string.wifitrackerlib_wifi_security_owe);
+                        mContext.getString(R.string.wifitrackerlib_wifi_security_owe);
             case SECURITY_NONE:
             default:
-                return concise ? "" : mContext.getResources().getString(
+                return concise ? "" : mContext.getString(
                         R.string.wifitrackerlib_wifi_security_none);
         }
     }
@@ -871,10 +855,10 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     private void updateRecommendationServiceLabel() {
-        if (HiddenApiWrapper.canUseHiddenApis()) {
-            mRecommendationServiceLabel =
-                    HiddenApiWrapper.getActiveScorerRecommendationServiceLabel(
-                            mContext.getSystemService(NetworkScoreManager.class));
+        final NetworkScorerAppData scorer = ((NetworkScoreManager) mContext
+                .getSystemService(Context.NETWORK_SCORE_SERVICE)).getActiveScorer();
+        if (scorer != null) {
+            mRecommendationServiceLabel = scorer.getRecommendationServiceLabel();
         }
     }
 

@@ -71,7 +71,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.settingslib.HelpUtils;
-import com.android.wifitrackerlib.hiddenapi.HiddenApiWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -416,24 +415,21 @@ public class Utils {
                             == NETWORK_SELECTION_PERMANENTLY_DISABLED
                     ? R.string.wifitrackerlib_wifi_no_internet_no_reconnect
                     : R.string.wifitrackerlib_wifi_no_internet;
-            return context.getResources().getString(messageID);
+            return context.getString(messageID);
         } else if (wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
                 != NETWORK_SELECTION_ENABLED) {
             WifiConfiguration.NetworkSelectionStatus networkStatus =
                     wifiConfiguration.getNetworkSelectionStatus();
             switch (networkStatus.getNetworkSelectionDisableReason()) {
                 case WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE:
-                    return context.getResources().getString(
+                    return context.getString(
                             R.string.wifitrackerlib_wifi_disabled_password_failure);
                 case WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD:
-                    return context.getResources()
-                            .getString(R.string.wifitrackerlib_wifi_check_password_try_again);
+                    return context.getString(R.string.wifitrackerlib_wifi_check_password_try_again);
                 case WifiConfiguration.NetworkSelectionStatus.DISABLED_DHCP_FAILURE:
-                    return context.getResources()
-                            .getString(R.string.wifitrackerlib_wifi_disabled_network_failure);
+                    return context.getString(R.string.wifitrackerlib_wifi_disabled_network_failure);
                 case WifiConfiguration.NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION:
-                    return context.getResources()
-                            .getString(R.string.wifitrackerlib_wifi_disabled_generic);
+                    return context.getString(R.string.wifitrackerlib_wifi_disabled_generic);
                 default:
                     break;
             }
@@ -444,26 +440,24 @@ public class Utils {
                 case WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA:
                 case WifiConfiguration.RECENT_FAILURE_REFUSED_TEMPORARILY:
                 case WifiConfiguration.RECENT_FAILURE_DISCONNECTION_AP_BUSY:
-                    return context.getResources().getString(R.string
+                    return context.getString(R.string
                             .wifitrackerlib_wifi_ap_unable_to_handle_new_sta);
                 case WifiConfiguration.RECENT_FAILURE_POOR_CHANNEL_CONDITIONS:
-                    return context.getResources()
-                            .getString(R.string.wifitrackerlib_wifi_poor_channel_conditions);
+                    return context.getString(R.string.wifitrackerlib_wifi_poor_channel_conditions);
                 case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_UNSPECIFIED:
                 case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_AIR_INTERFACE_OVERLOADED:
                 case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_AUTH_SERVER_OVERLOADED:
-                    return context.getResources().getString(R.string
+                    return context.getString(R.string
                             .wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect);
                 case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_MAX_NUM_STA_ASSOCIATED:
-                    return context.getResources().getString(R.string
+                    return context.getString(R.string
                             .wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated);
                 case WifiConfiguration.RECENT_FAILURE_MBO_ASSOC_DISALLOWED_INSUFFICIENT_RSSI:
                 case WifiConfiguration.RECENT_FAILURE_OCE_RSSI_BASED_ASSOCIATION_REJECTION:
-                    return context.getResources().getString(R.string
+                    return context.getString(R.string
                             .wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi);
                 case WifiConfiguration.RECENT_FAILURE_NETWORK_NOT_FOUND:
-                    return context.getResources()
-                            .getString(R.string.wifitrackerlib_wifi_network_not_found);
+                    return context.getString(R.string.wifitrackerlib_wifi_network_not_found);
                 default:
                     // do nothing
             }
@@ -478,8 +472,7 @@ public class Utils {
         }
 
         return wifiEntry.isAutoJoinEnabled()
-                ? "" : context.getResources()
-                .getString(R.string.wifitrackerlib_auto_connect_disable);
+                ? "" : context.getString(R.string.wifitrackerlib_auto_connect_disable);
     }
 
     static String getMeteredDescription(@NonNull Context context, @Nullable WifiEntry wifiEntry) {
@@ -493,11 +486,11 @@ public class Utils {
         }
 
         if (wifiEntry.getMeteredChoice() == WifiEntry.METERED_CHOICE_METERED) {
-            return context.getResources().getString(R.string.wifitrackerlib_wifi_metered_label);
+            return context.getString(R.string.wifitrackerlib_wifi_metered_label);
         } else if (wifiEntry.getMeteredChoice() == WifiEntry.METERED_CHOICE_UNMETERED) {
-            return context.getResources().getString(R.string.wifitrackerlib_wifi_unmetered_label);
+            return context.getString(R.string.wifitrackerlib_wifi_unmetered_label);
         } else { // METERED_CHOICE_AUTO
-            return wifiEntry.isMetered() ? context.getResources().getString(
+            return wifiEntry.isMetered() ? context.getString(
                     R.string.wifitrackerlib_wifi_metered_label) : "";
         }
     }
@@ -510,14 +503,13 @@ public class Utils {
         @Speed int speed = wifiEntry.getSpeed();
         switch (speed) {
             case SPEED_VERY_FAST:
-                return context.getResources()
-                        .getString(R.string.wifitrackerlib_speed_label_very_fast);
+                return context.getString(R.string.wifitrackerlib_speed_label_very_fast);
             case SPEED_FAST:
-                return context.getResources().getString(R.string.wifitrackerlib_speed_label_fast);
+                return context.getString(R.string.wifitrackerlib_speed_label_fast);
             case SPEED_MODERATE:
-                return context.getResources().getString(R.string.wifitrackerlib_speed_label_okay);
+                return context.getString(R.string.wifitrackerlib_speed_label_okay);
             case SPEED_SLOW:
-                return context.getResources().getString(R.string.wifitrackerlib_speed_label_slow);
+                return context.getString(R.string.wifitrackerlib_speed_label_slow);
             case SPEED_NONE:
             default:
                 return "";
@@ -594,22 +586,20 @@ public class Utils {
         }
 
         if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
-            return context.getResources().getString(context.getResources()
+            return context.getString(context.getResources()
                     .getIdentifier("network_available_sign_in", "string", "android"));
         }
 
         if (networkCapabilities.hasCapability(
                 NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
-            return context.getResources()
-                    .getString(R.string.wifitrackerlib_wifi_limited_connection);
+            return context.getString(R.string.wifitrackerlib_wifi_limited_connection);
         }
 
         if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
-            if (HiddenApiWrapper.canUseHiddenApis()
-                    && HiddenApiWrapper.isPrivateDnsBroken(networkCapabilities)) {
-                return context.getResources().getString(R.string.wifitrackerlib_private_dns_broken);
+            if (networkCapabilities.isPrivateDnsBroken()) {
+                return context.getString(R.string.wifitrackerlib_private_dns_broken);
             }
-            return context.getResources().getString(
+            return context.getString(
                 R.string.wifitrackerlib_wifi_connected_cannot_provide_internet);
         }
         return "";
@@ -741,7 +731,7 @@ public class Utils {
         // IMSI protection is not provided, return warning message.
         return linkifyAnnotation(context, context.getText(
                 R.string.wifitrackerlib_imsi_protection_warning), "url",
-                context.getResources().getString(R.string.wifitrackerlib_help_url_imsi_protection));
+                context.getString(R.string.wifitrackerlib_help_url_imsi_protection));
     }
 
     /** Find the annotation of specified id in rawText and linkify it with helpUriString. */
