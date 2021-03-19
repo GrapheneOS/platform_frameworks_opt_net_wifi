@@ -23,7 +23,7 @@ android_test {
     static_libs: [
         "androidx.test.rules",
         "frameworks-base-testutils",
-        "mockito-target-inline-minus-junit4",
+        "mockito-target-minus-junit4",
         "truth-prebuilt",
         "WifiTrackerLib",
         "Robolectric_all-target",
@@ -36,6 +36,4 @@ android_test {
     platform_apis: true,
 
     test_suites: ["general-tests"],
-
-    jni_libs: ["libdexmakerjvmtiagent"],
 }
