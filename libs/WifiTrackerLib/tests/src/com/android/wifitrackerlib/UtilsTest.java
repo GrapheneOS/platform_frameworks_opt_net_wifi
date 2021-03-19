@@ -111,7 +111,7 @@ public class UtilsTest {
         TestLooper testLooper = new TestLooper();
         mTestHandler = new Handler(testLooper.getLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getSystemService(NetworkScoreManager.class))
+        when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
                 .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);

@@ -8,8 +8,7 @@ android_library {
     static_libs: [
         "androidx.preference_preference",
         "SettingsLibHelpUtils",
-        "WifiTrackerHiddenApiLib",
     ],
 
-    min_sdk_version: "30",
+    min_sdk_version: "21",
 }
