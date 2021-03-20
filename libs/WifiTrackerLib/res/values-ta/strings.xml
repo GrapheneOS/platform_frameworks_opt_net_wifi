@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"முடக்கப்பட்டது"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"தற்காலிகமாக ஆக்சஸ் பாயிண்ட் நிரம்பியுள்ளது"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"தற்காலிகமாக நெட்வொர்க் சரியில்லை"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"வலுவற்ற சிக்னல். ரூட்டருக்கு அருகில் சென்று சிக்னல் வலுவாகக் கிடைக்கிறதா எனப் பாருங்கள்."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"நெட்வொர்க் பிசியாக உள்ளது. பிறகு முயலவும்."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"இணைக்க முடியவில்லை. பிறகு முயலவும்."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"இந்தச் சாதனத்துடன் நெட்வொர்க் இணங்கவில்லை"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"தொடர்பு துண்டிக்கப்பட்டது"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"சேமித்தது"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"கட்டண நெட்வொர்க்"</string>
