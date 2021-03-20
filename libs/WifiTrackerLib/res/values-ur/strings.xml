@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"غیر فعال"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"رسائی پوائنٹ عارضی طور پر فُل ہے"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"عارضی خراب نیٹ ورک کے حالات"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"کمزور سگنل۔ روٹر کے قریب منتقل کرنے کی کوشش کریں۔"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"نیٹ ورک کی گنجائش حد سے زیادہ ہے۔ بعد میں دوبارہ کوشش کریں۔"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"منسلک نہیں ہو سکا۔ بعد میں دوبارہ کوشش کریں۔"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"نیٹ ورک اس آلے کے ساتھ موافقت نہیں رکھتا ہے"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"غیر منسلک"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"محفوظ کردہ"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"میٹرڈ"</string>
