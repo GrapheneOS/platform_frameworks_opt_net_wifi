@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"已停用"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"接入点暂时满载"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"临时性网络连接状况不佳"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"信号微弱。请尝试移到离路由器更近的地方。"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"网络已过载。请稍后重试。"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"无法连接。请稍后重试。"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"网络与此设备不兼容"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"已断开连接"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"已保存"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"按流量计费"</string>

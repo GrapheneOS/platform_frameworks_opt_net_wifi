@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"사용 안함"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"액세스 포인트가 일시적으로 가득 참"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"네트워크 연결이 일시적으로 불안정함"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"신호가 약합니다. 라우터 가까이 이동해 보세요."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"네트워크 용량을 초과했습니다. 나중에 다시 시도해 주세요."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"연결할 수 없습니다. 나중에 다시 시도해 주세요."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"네트워크가 이 기기와 호환되지 않습니다."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"연결 해제됨"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"저장됨"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"종량제"</string>
