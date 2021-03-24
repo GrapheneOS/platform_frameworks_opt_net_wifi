@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -565,6 +566,7 @@ public class WifiPickerTrackerTest {
         final String lowQuality = "Low quality";
         when(mMockResources.getString(anyInt())).thenReturn("");
         when(mMockResources.getString(R.string.wifi_connected_low_quality)).thenReturn(lowQuality);
+        when(mMockResources.getStringArray(anyInt())).thenReturn(new String[0]);
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
@@ -584,13 +586,37 @@ public class WifiPickerTrackerTest {
                 .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
         mTestLooper.dispatchAll();
 
-        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
-                new NetworkCapabilities.Builder()
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build());
+        // Set cellular to be the default network
         mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
                 new NetworkCapabilities.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
 
+        // Trigger a validation callback for the non-primary Wifi network.
+        WifiInfo nonPrimaryWifiInfo = Mockito.mock(WifiInfo.class);
+        when(nonPrimaryWifiInfo.isPrimary()).thenReturn(false);
+        when(nonPrimaryWifiInfo.makeCopy(anyLong())).thenReturn(nonPrimaryWifiInfo);
+        NetworkCapabilities nonPrimaryCap = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(nonPrimaryWifiInfo)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                .build();
+        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork, nonPrimaryCap);
+
+        // Non-primary Wifi network validation should be ignored.
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isNotEqualTo(lowQuality);
+
+        // Trigger a validation callback for the primary Wifi network.
+        WifiInfo primaryWifiInfo = Mockito.mock(WifiInfo.class);
+        when(primaryWifiInfo.isPrimary()).thenReturn(true);
+        when(primaryWifiInfo.makeCopy(anyLong())).thenReturn(primaryWifiInfo);
+        NetworkCapabilities primaryCap = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(primaryWifiInfo)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                .build();
+        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork, primaryCap);
+
+        // Cell default + primary network validation should trigger low quality
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isEqualTo(lowQuality);
     }
 
