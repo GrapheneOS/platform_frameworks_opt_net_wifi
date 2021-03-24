@@ -53,7 +53,6 @@ import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.PersistableBundle;
-import android.os.UserHandle;
 import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
@@ -390,10 +389,9 @@ public class Utils {
                 packageName = openWifiPackageName;
             }
 
-            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfoAsUser(
+            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(
                     packageName,
-                    0 /* flags */,
-                    UserHandle.CURRENT);
+                    0 /* flags */);
             return appInfo.loadLabel(context.getPackageManager()).toString();
         } catch (PackageManager.NameNotFoundException e) {
             return "";
