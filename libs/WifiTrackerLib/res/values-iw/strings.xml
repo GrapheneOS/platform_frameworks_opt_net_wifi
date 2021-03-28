@@ -35,9 +35,9 @@
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"נשמרה"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"חיוב לפי שימוש בנתונים"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"שימוש חופשי"</string>
-    <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"מחובר באמצעות <xliff:g id="NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"מחובר דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"זמינה דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"מחובר אוטומטית באמצעות <xliff:g id="NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"מחובר אוטומטית דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"מחובר אוטומטית דרך ספק של דירוג רשת"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"חיבור מוגבל"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"‏לא ניתן לגשת לשרת DNS הפרטי"</string>
