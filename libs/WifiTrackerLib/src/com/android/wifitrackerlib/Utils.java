@@ -420,6 +420,8 @@ public class Utils {
                     wifiConfiguration.getNetworkSelectionStatus();
             switch (networkStatus.getNetworkSelectionDisableReason()) {
                 case WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE:
+                case WifiConfiguration.NetworkSelectionStatus
+                        .DISABLED_AUTHENTICATION_NO_SUBSCRIPTION:
                     return context.getString(
                             R.string.wifitrackerlib_wifi_disabled_password_failure);
                 case WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD:
