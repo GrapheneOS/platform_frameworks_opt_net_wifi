@@ -768,8 +768,8 @@ public class StandardWifiEntryTest {
                 Arrays.asList(
                         buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
                 mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
-        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
-        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
         entry.updateNetworkCapabilities(captivePortalCapabilities);
 
         assertThat(entry.canSignIn()).isTrue();
@@ -784,8 +784,8 @@ public class StandardWifiEntryTest {
                 Arrays.asList(
                         buildScanResult("ssid", "bssid0", 0, GOOD_RSSI)),
                 mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
-        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
-        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
 
         // Simulate user tapping on the network and receiving captive portal capabilities.
         // This should trigger the captive portal app.
