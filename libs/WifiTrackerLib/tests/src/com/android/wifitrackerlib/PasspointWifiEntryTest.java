@@ -319,8 +319,8 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
                 false /* forSavedNetworksPage */);
 
-        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
-        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
         entry.updateNetworkCapabilities(captivePortalCapabilities);
 
         assertThat(entry.canSignIn()).isTrue();
@@ -333,8 +333,8 @@ public class PasspointWifiEntryTest {
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
                 false /* forSavedNetworksPage */);
-        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities();
-        captivePortalCapabilities.addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
 
         // Simulate user tapping on the network and receiving captive portal capabilities.
         // This should trigger the captive portal app.
