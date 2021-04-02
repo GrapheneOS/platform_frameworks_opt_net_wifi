@@ -34,6 +34,8 @@ import android.net.NetworkKey;
 import android.net.NetworkRequest;
 import android.net.NetworkScoreManager;
 import android.net.ScoredNetwork;
+import android.net.TransportInfo;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
@@ -150,12 +152,19 @@ public class BaseWifiTracker implements LifecycleObserver {
                 @Override
                 public void onLinkPropertiesChanged(@NonNull Network network,
                         @NonNull LinkProperties lp) {
+                    if (!isPrimaryWifiNetwork(
+                            mConnectivityManager.getNetworkCapabilities(network))) {
+                        return;
+                    }
                     handleLinkPropertiesChanged(lp);
                 }
 
                 @Override
                 public void onCapabilitiesChanged(@NonNull Network network,
                         @NonNull NetworkCapabilities networkCapabilities) {
+                    if (!isPrimaryWifiNetwork(networkCapabilities)) {
+                        return;
+                    }
                     final boolean oldWifiValidated = mIsWifiValidated;
                     mIsWifiValidated = networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED);
                     if (isVerboseLoggingEnabled() && mIsWifiValidated != oldWifiValidated) {
@@ -166,6 +175,10 @@ public class BaseWifiTracker implements LifecycleObserver {
 
                 @Override
                 public void onLost(@NonNull Network network) {
+                    if (!isPrimaryWifiNetwork(
+                            mConnectivityManager.getNetworkCapabilities(network))) {
+                        return;
+                    }
                     mIsWifiValidated = false;
                 }
             };
@@ -177,7 +190,7 @@ public class BaseWifiTracker implements LifecycleObserver {
                         @NonNull NetworkCapabilities networkCapabilities) {
                     final boolean oldWifiDefault = mIsWifiDefaultRoute;
                     final boolean oldCellDefault = mIsCellDefaultRoute;
-                    mIsWifiDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_WIFI);
+                    mIsWifiDefaultRoute = isPrimaryWifiNetwork(networkCapabilities);
                     mIsCellDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_CELLULAR);
                     if (mIsWifiDefaultRoute != oldWifiDefault
                             || mIsCellDefaultRoute != oldCellDefault) {
@@ -199,6 +212,17 @@ public class BaseWifiTracker implements LifecycleObserver {
                     handleDefaultRouteChanged();
                 }
             };
+
+    private boolean isPrimaryWifiNetwork(@Nullable NetworkCapabilities networkCapabilities) {
+        if (networkCapabilities == null) {
+            return false;
+        }
+        final TransportInfo transportInfo = networkCapabilities.getTransportInfo();
+        if (!(transportInfo instanceof WifiInfo)) {
+            return false;
+        }
+        return ((WifiInfo) transportInfo).isPrimary();
+    }
 
     /**
      * Constructor for BaseWifiTracker.
