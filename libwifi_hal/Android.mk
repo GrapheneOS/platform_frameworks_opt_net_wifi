@@ -96,7 +96,7 @@ ifeq ($(WIFI_MULTIPLE_VENDOR_HALS), true)
   # vendor HALs are loaded dynamically and not linked here
   LIB_WIFI_HAL :=
 else
-  LIB_WIFI_HAL := libwifi-hal-fallback
+  LIB_WIFI_HAL ?= libwifi-hal-fallback
   VENDOR_LOCAL_SHARED_LIBRARIES :=
   ifeq ($(BOARD_WLAN_DEVICE), bcmdhd)
     LIB_WIFI_HAL := libwifi-hal-bcm
