@@ -33,7 +33,7 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Şəbəkə bu cihaz ilə uyğun deyil"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Bağlantı kəsildi"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Yadda saxlandı"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Limitli"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Tarif sayğacılı"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Limitsiz"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> vasitəsilə qoşulub"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> vasitəsilə əlçatandır"</string>
