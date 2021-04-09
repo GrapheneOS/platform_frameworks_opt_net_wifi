@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"स्वतः कनेक्ट गर्ने सुविधा अफ छ"</string>
-    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"<xliff:g id="NAME">%1$s</xliff:g> ले सुरक्षित गरेको"</string>
+    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"<xliff:g id="NAME">%1$s</xliff:g> ले सेभ गरेको"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"स्वतः कनेक्ट हुने छैन"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"इन्टरनेट छैन"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"प्रमाणीकरण हुन सकेन"</string>
@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"सिग्नल कमजोर छ। राउटरको नजिकै गई हेर्नुहोस्।"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"नेटवर्कमा अत्यधिक लोड छ। पछि फेरि प्रयास गर्नुहोस्।"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"कनेक्ट गर्न सकिएन। पछि फेरि प्रयास गर्नुहोस्।"</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"यो यन्त्रसँग नेटवर्क कम्प्याटिबल छैन"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"यो डिभाइससँग नेटवर्क कम्प्याटिबल छैन"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"डिस्कनेक्ट गरियो"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"सुरक्षित गरियो"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"सीमा तोकिएको इन्टरनेट"</string>
@@ -41,7 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"नेटवर्कको मूल्याङ्कन गर्ने सेवा प्रदायकमार्फत स्वतः कनेक्ट भयो"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"सीमित कनेक्सन"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"निजी DNS सर्भरमाथि पहुँच राख्न सकिँदैन"</string>
-    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"यन्त्रमा कनेक्ट गरियो। इन्टरनेट उपलब्ध छैन।"</string>
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"डिभाइसमा कनेक्ट गरियो। इन्टरनेट उपलब्ध छैन।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"न्यून गुणस्तर"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"कुनै पनि होइन"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"म्याद सकियो"</string>
@@ -52,7 +52,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"साइन अप गर्ने कार्य सम्पन्न गर्दै…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"साइन अप गर्ने कार्य सम्पन्न गर्न सकिएन। फेरि प्रयास गर्न ट्याप गर्नुहोस्।"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"साइन अप गर्ने कार्य सम्पन्न भयो। कनेक्ट गर्दै…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"यो नेटवर्कलाई यन्त्रको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"यो नेटवर्कलाई डिभाइसको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"धेरै सुस्त"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"सुस्त"</string>
     <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ठिकै"</string>
