@@ -31,7 +31,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Мрежата е преоптоварена. Обидете се повторно подоцна."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Не може да се поврзе. Обидете се повторно подоцна."</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Мрежата не е компатибилна со уредов"</string>
-    <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Исклучена"</string>
+    <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Не е поврзано"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Зачувана"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Со ограничен интернет"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Со неограничен интернет"</string>
