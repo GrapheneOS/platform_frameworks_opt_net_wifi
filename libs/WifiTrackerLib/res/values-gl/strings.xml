@@ -33,8 +33,8 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"A rede non é compatible con este dispositivo"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Desconectada"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Gardada"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"De de pago por consumo"</string>
-    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Con tarifa plana"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Rede sen tarifa plana"</string>
+    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Rede con tarifa plana"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Conectada a través de <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Dispoñible a través de <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Conectada automaticamente a través de: <xliff:g id="NAME">%1$s</xliff:g>"</string>
