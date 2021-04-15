@@ -1,0 +1,1082 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="5" by="lint 4.1.0" client="cli" variant="all" version="4.1.0">
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.NetworkRequest.Builder#clearCapabilities`"
+        errorLine1="            .clearCapabilities().addTransportType(TRANSPORT_WIFI).build();"
+        errorLine2="             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
+            line="146"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.ConnectivityManager#registerNetworkCallback`"
+        errorLine1="        mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
+            line="267"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.ConnectivityManager#registerDefaultNetworkCallback`"
+        errorLine1="        mConnectivityManager.registerDefaultNetworkCallback(mDefaultNetworkCallback,"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
+            line="269"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.ConnectivityManager#getActiveNetwork`"
+        errorLine1="                .getNetworkCapabilities(mConnectivityManager.getActiveNetwork());"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
+            line="272"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 28 (current min is 21): `android.content.Context#getMainExecutor`"
+        errorLine1="        mWifiManager.startSubscriptionProvisioning(mOsuProvider, mContext.getMainExecutor(),"
+        errorLine2="                                                                          ~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
+            line="170"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiManager#calculateSignalLevel`"
+        errorLine1="                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
+            line="285"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiInfo#getPasspointProviderFriendlyName`"
+        errorLine1="                wifiInfo.getPasspointProviderFriendlyName(), mOsuProvider.getFriendlyName());"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
+            line="305"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="            String uniqueId = passpointConfig.getUniqueId();"
+        errorLine2="                                              ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
+            line="385"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="                if (TextUtils.equals(config.getKey(), uniqueId)) {"
+        errorLine2="                                            ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
+            line="389"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#getPasspointConfigurations`"
+        errorLine1="                mWifiManager.getPasspointConfigurations()"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="76"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="                                uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId())))"
+        errorLine2="                                                                                ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="79"
+            column="81"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="                            .filter(wifiConfig -> wifiConfig.isPasspoint()"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="89"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="                                            uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey())))"
+        errorLine2="                                                                                       ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="91"
+            column="88"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="            final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());"
+        errorLine2="                                                                          ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="156"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="                        uniqueIdToPasspointWifiEntryKey(provisionedConfig.getUniqueId()))) {"
+        errorLine2="                                                                          ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="192"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#getPasspointConfigurations`"
+        errorLine1="        mWifiManager.getPasspointConfigurations().stream()"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="240"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="                        uniqueIdToPasspointWifiEntryKey(config.getUniqueId()),"
+        errorLine2="                                                               ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointNetworkDetailsTracker.java"
+            line="242"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="        mKey = uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId());"
+        errorLine2="                                                               ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="110"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="        mFqdn = passpointConfig.getHomeSp().getFqdn();"
+        errorLine2="                                ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="111"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFqdn`"
+        errorLine1="        mFqdn = passpointConfig.getHomeSp().getFqdn();"
+        errorLine2="                                            ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="111"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="        mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();"
+        errorLine2="                                        ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="112"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFriendlyName`"
+        errorLine1="        mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();"
+        errorLine2="                                                    ~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="112"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getSubscriptionExpirationTimeMillis`"
+        errorLine1="                passpointConfig.getSubscriptionExpirationTimeMillis();"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="114"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="        if (!wifiConfig.isPasspoint()) {"
+        errorLine2="                        ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="131"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="        mKey = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());"
+        errorLine2="                                                          ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="137"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#providerFriendlyName`"
+        errorLine1="        mFriendlyName = mWifiConfig.providerFriendlyName;"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="139"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiConfiguration#getRandomizedMacAddress`"
+        errorLine1="        return mWifiConfig.getRandomizedMacAddress().toString();"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="300"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#removePasspointConfiguration`"
+        errorLine1="        mWifiManager.removePasspointConfiguration(mPasspointConfig.getHomeSp().getFqdn());"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="390"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="        mWifiManager.removePasspointConfiguration(mPasspointConfig.getHomeSp().getFqdn());"
+        errorLine2="                                                                   ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="390"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFqdn`"
+        errorLine1="        mWifiManager.removePasspointConfiguration(mPasspointConfig.getHomeSp().getFqdn());"
+        errorLine2="                                                                               ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="390"
+            column="80"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="        mWifiManager.setPasspointMeteredOverride(mPasspointConfig.getHomeSp().getFqdn(),"
+        errorLine2="                                                                  ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="450"
+            column="67"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFqdn`"
+        errorLine1="        mWifiManager.setPasspointMeteredOverride(mPasspointConfig.getHomeSp().getFqdn(),"
+        errorLine2="                                                                              ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="450"
+            column="79"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="                mPasspointConfig.getHomeSp().getFqdn(),"
+        errorLine2="                                 ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="477"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFqdn`"
+        errorLine1="                mPasspointConfig.getHomeSp().getFqdn(),"
+        errorLine2="                                             ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="477"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="            mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);"
+        errorLine2="                                                                 ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="501"
+            column="66"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFqdn`"
+        errorLine1="            mWifiManager.allowAutojoinPasspoint(mPasspointConfig.getHomeSp().getFqdn(), enabled);"
+        errorLine2="                                                                             ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="501"
+            column="78"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getHomeSp`"
+        errorLine1="            mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();"
+        errorLine2="                                            ~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="527"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.hotspot2.pps.HomeSp#getFriendlyName`"
+        errorLine1="            mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="527"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getSubscriptionExpirationTimeMillis`"
+        errorLine1="                    passpointConfig.getSubscriptionExpirationTimeMillis();"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="529"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiManager#calculateSignalLevel`"
+        errorLine1="                        ? mWifiManager.calculateSignalLevel(bestScanResult.level)"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="568"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiInfo#getPasspointFqdn`"
+        errorLine1="        return TextUtils.equals(wifiInfo.getPasspointFqdn(), mFqdn);"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="606"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#getPasspointConfigurations`"
+        errorLine1="        updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="129"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="        if (config != null &amp;&amp; !config.isPasspoint()) {"
+        errorLine2="                                      ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="160"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#getPasspointConfigurations`"
+        errorLine1="        updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="166"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isWpa3SaeSupported`"
+        errorLine1="                mWifiManager.isWpa3SaeSupported(),"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="216"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isWpa3SuiteBSupported`"
+        errorLine1="                mWifiManager.isWpa3SuiteBSupported(),"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="217"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isEnhancedOpenSupported`"
+        errorLine1="                mWifiManager.isEnhancedOpenSupported());"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="218"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `java.lang.Iterable#forEach`"
+        errorLine1="        mStandardWifiEntryCache.entrySet().forEach(entry -> {"
+        errorLine2="                                           ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="221"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="            final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());"
+        errorLine2="                                                                          ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="237"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="                        (config) -> uniqueIdToPasspointWifiEntryKey(config.getUniqueId()),"
+        errorLine2="                                                                           ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
+            line="351"
+            column="76"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="        if (config.isPasspoint()) {"
+        errorLine2="                   ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardNetworkDetailsTracker.java"
+            line="189"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiConfiguration#getRandomizedMacAddress`"
+        errorLine1="        return mWifiConfig.getRandomizedMacAddress().toString();"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="334"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiEnterpriseConfig#isAuthenticationSimBased`"
+        errorLine1="            if (!mWifiConfig.enterpriseConfig.isAuthenticationSimBased()) {"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="381"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 22 (current min is 21): `android.telephony.SubscriptionManager`"
+        errorLine1="            List&lt;SubscriptionInfo> activeSubscriptionInfos = ((SubscriptionManager) mContext"
+        errorLine2="                                                               ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="384"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 22 (current min is 21): `android.telephony.SubscriptionManager#getActiveSubscriptionInfoList`"
+        errorLine1="                    .getActiveSubscriptionInfoList();"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="386"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.telephony.SubscriptionInfo#getCarrierId`"
+        errorLine1="                if (subscriptionInfo.getCarrierId() == mWifiConfig.carrierId) {"
+        errorLine2="                                     ~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="395"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isEasyConnectSupported`"
+        errorLine1="        if (!mWifiManager.isEasyConnectSupported()) {"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="524"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiManager#calculateSignalLevel`"
+        errorLine1="                    ? mWifiManager.calculateSignalLevel(bestScanResult.level)"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="726"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `java.lang.Iterable#forEach`"
+        errorLine1="        scanResults.forEach(scanResult ->"
+        errorLine2="                    ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="908"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.content.Context#getSystemService`"
+        errorLine1="            sNetworkScoreManager = context.getSystemService(NetworkScoreManager.class);"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="89"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 22 (current min is 21): `android.telephony.SubscriptionManager`"
+        errorLine1="                (SubscriptionManager) context.getSystemService("
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="593"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 22 (current min is 21): `android.telephony.SubscriptionManager#getActiveSubscriptionInfoList`"
+        errorLine1="        List&lt;SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();"
+        errorLine2="                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="596"
+            column="66"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.telephony.SubscriptionInfo#getCarrierId`"
+        errorLine1="                .anyMatch(info -> info.getCarrierId() == carrierId);"
+        errorLine2="                                       ~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="601"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `android.telephony.TelephonyManager#createForSubscriptionId`"
+        errorLine1="        TelephonyManager specifiedTm = telephonyManager.createForSubscriptionId(subId);"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="614"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 28 (current min is 21): `android.telephony.TelephonyManager#getSimCarrierIdName`"
+        errorLine1="        CharSequence name = specifiedTm.getSimCarrierIdName();"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="618"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiEnterpriseConfig#isAuthenticationSimBased`"
+        errorLine1="                &amp;&amp; config.enterpriseConfig.isAuthenticationSimBased();"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="627"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 22 (current min is 21): `android.telephony.SubscriptionManager`"
+        errorLine1="                (SubscriptionManager) context.getSystemService("
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="638"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 22 (current min is 21): `android.telephony.SubscriptionManager#getActiveSubscriptionInfoList`"
+        errorLine1="        List&lt;SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();"
+        errorLine2="                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="643"
+            column="66"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `android.telephony.SubscriptionManager#getDefaultDataSubscriptionId`"
+        errorLine1="        int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="649"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.telephony.SubscriptionInfo#getCarrierId`"
+        errorLine1="            if (subInfo.getCarrierId() == config.carrierId) {"
+        errorLine2="                        ~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="651"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 22 (current min is 21): `android.telephony.SubscriptionInfo#getSubscriptionId`"
+        errorLine1="                matchSubId = subInfo.getSubscriptionId();"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="652"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 23 (current min is 21): `android.telephony.CarrierConfigManager`"
+        errorLine1="                (CarrierConfigManager) context.getSystemService(Context.CARRIER_CONFIG_SERVICE);"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="667"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.telephony.CarrierConfigManager#getConfigForSubId`"
+        errorLine1="        PersistableBundle bundle = carrierConfigManager.getConfigForSubId(subId);"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="671"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `android.telephony.SubscriptionManager#getDefaultSubscriptionId`"
+        errorLine1="            subId = SubscriptionManager.getDefaultSubscriptionId();"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="687"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiManager#calculateSignalLevel`"
+        errorLine1="                mLevel = mWifiManager.calculateSignalLevel(wifiInfoRssi);"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
+            line="633"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.RouteInfo#hasGateway`"
+        errorLine1="                    instanceof Inet4Address &amp;&amp; routeInfo.hasGateway()) {"
+        errorLine2="                                                         ~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
+            line="707"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiInfo#getWifiStandard`"
+        errorLine1="            sj.add(&quot;standard = &quot; + mWifiInfo.getWifiStandard());"
+        errorLine2="                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
+            line="751"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#getPasspointConfigurations`"
+        errorLine1="        updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());"
+        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="191"
+            column="52"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="        if (config != null &amp;&amp; !config.isPasspoint()) {"
+        errorLine2="                                      ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="232"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.net.wifi.WifiManager#getPasspointConfigurations`"
+        errorLine1="        updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());"
+        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="238"
+            column="52"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isWpa3SaeSupported`"
+        errorLine1="                mWifiManager.isWpa3SaeSupported(),"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="391"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isWpa3SuiteBSupported`"
+        errorLine1="                mWifiManager.isWpa3SuiteBSupported(),"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="392"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isEnhancedOpenSupported`"
+        errorLine1="                mWifiManager.isEnhancedOpenSupported());"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="393"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isWpa3SaeSupported`"
+        errorLine1="                mWifiManager.isWpa3SaeSupported(),"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="432"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isWpa3SuiteBSupported`"
+        errorLine1="                mWifiManager.isWpa3SuiteBSupported(),"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="433"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.wifi.WifiManager#isEnhancedOpenSupported`"
+        errorLine1="                mWifiManager.isEnhancedOpenSupported());"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="434"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="            final String key = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());"
+        errorLine2="                                                                          ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="483"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `java.lang.Iterable#forEach`"
+        errorLine1="        mOsuWifiEntryCache.values().forEach(osuEntry -> {"
+        errorLine2="                                    ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="536"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="                    uniqueIdToPasspointWifiEntryKey(provisionedConfig.getUniqueId()));"
+        errorLine2="                                                                      ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="545"
+            column="71"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="                            !cachedConfig.isEphemeral() &amp;&amp; !cachedConfig.isPasspoint()).count();"
+        errorLine2="                                                                         ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="650"
+            column="74"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="                    !cachedConfig.isEphemeral() &amp;&amp; !cachedConfig.isPasspoint()).count();"
+        errorLine2="                                                                 ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="685"
+            column="66"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `java.lang.Iterable#forEach`"
+        errorLine1="        mStandardWifiEntryCache.entrySet().forEach((entry) -> {"
+        errorLine2="                                           ~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="688"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="            if (config != null &amp;&amp; config.isPasspoint()) {"
+        errorLine2="                                         ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="692"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="            if (config != null &amp;&amp; !config.isPasspoint()) {"
+        errorLine2="                                          ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="703"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.hotspot2.PasspointConfiguration#getUniqueId`"
+        errorLine1="                        config.getUniqueId()), Function.identity())));"
+        errorLine2="                               ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="734"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
+        errorLine1="                    wifiConfig.isPasspoint() &amp;&amp; wifiConfig.networkId == connectedNetId"
+        errorLine2="                               ~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="849"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="                                uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey())))"
+        errorLine2="                                                                           ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="851"
+            column="76"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
+        errorLine1="                            uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey()));"
+        errorLine2="                                                                       ~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="854"
+            column="72"/>
+    </issue>
+
+</issues>
