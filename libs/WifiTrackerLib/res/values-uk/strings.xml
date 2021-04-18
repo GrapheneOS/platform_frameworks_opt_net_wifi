@@ -44,7 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Підключено до пристрою. Інтернет-з\'єднання відсутнє."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Низька якість"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Немає"</string>
-    <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Діє до"</string>
+    <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Термін дії минув"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Торкніться, щоб увійти"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Натисніть, щоб поновити підписку та підключитися"</string>
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> відкривається"</string>
