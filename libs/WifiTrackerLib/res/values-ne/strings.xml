@@ -33,7 +33,7 @@
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत जडान गरिएको"</string>
     <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत उपलब्ध"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत स्वतः जोडियो"</string>
-    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"नेटवर्कको दर्जा प्रदायक मार्फत स्वत: जडान गरिएको"</string>
+    <string name="connected_via_network_scorer_default" msgid="3084818437004202462">"नेटवर्क मूल्याङ्कनकर्ता मार्फत स्वत: जडान गरिएको"</string>
     <string name="wifi_limited_connection" msgid="3646701342701276239">"सीमित जडान"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"निजी DNS सर्भरमाथि पहुँच प्राप्त गर्न सकिँदैन"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"इन्टरनेट छैन"</string>
@@ -47,7 +47,7 @@
     <string name="osu_completing_sign_up" msgid="7188493241442946231">"साइन अप गर्ने कार्य सम्पन्न गर्दै…"</string>
     <string name="osu_sign_up_failed" msgid="2725057866968590279">"साइन अप गर्ने कार्य सम्पन्न गर्न सकिएन। फेरि प्रयास गर्न ट्याप गर्नुहोस्।"</string>
     <string name="osu_sign_up_complete" msgid="7013805426618985953">"साइन अप गर्ने कार्य सम्पन्न भयो। जोड्दै…"</string>
-    <string name="imsi_protection_warning" msgid="5231726821588271569">"यो नेटवर्कलाई यन्त्रको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
+    <string name="imsi_protection_warning" msgid="5231726821588271569">"यो नेटवर्कलाई डिभाइसको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"धेरै ढिलो"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"बिस्तारै"</string>
     <string name="speed_label_okay" msgid="3741857805086997968">"ठिक छ"</string>
