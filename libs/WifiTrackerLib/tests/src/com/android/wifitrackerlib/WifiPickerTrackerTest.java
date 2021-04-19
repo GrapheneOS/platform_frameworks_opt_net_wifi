@@ -134,6 +134,7 @@ public class WifiPickerTrackerTest {
 
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getConnectionInfo()).thenReturn(mMockWifiInfo);
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
         when(mMockConnectivityManager.getNetworkInfo(any())).thenReturn(mMockNetworkInfo);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
         when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
@@ -432,6 +433,7 @@ public class WifiPickerTrackerTest {
                 .thenReturn(Collections.singletonList(config));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
                 new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
+        mTestLooper.dispatchAll();
 
         assertThat(entry.isSaved()).isTrue();
     }
@@ -445,6 +447,7 @@ public class WifiPickerTrackerTest {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
+        config.networkId = 1;
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         wifiPickerTracker.onStart();
@@ -686,7 +689,69 @@ public class WifiPickerTrackerTest {
 
         // getWifiEntries() should be empty now
         assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
+    }
 
+    /**
+     * Tests that multiple wifi entries are returned for multiple suggestions for the same network.
+     */
+    @Test
+    public void testGetWifiEntries_multipleSuggestions_returnsMultipleEntries() {
+        WifiConfiguration savedConfig = new WifiConfiguration();
+        savedConfig.fromWifiNetworkSuggestion = false;
+        savedConfig.SSID = "\"ssid\"";
+        savedConfig.networkId = 1;
+        WifiConfiguration suggestionConfig1 = new WifiConfiguration(savedConfig);
+        suggestionConfig1.networkId = 2;
+        suggestionConfig1.creatorName = "creator1";
+        suggestionConfig1.carrierId = 1;
+        suggestionConfig1.subscriptionId = 1;
+        suggestionConfig1.fromWifiNetworkSuggestion = true;
+        WifiConfiguration suggestionConfig2 = new WifiConfiguration(savedConfig);
+        suggestionConfig2.networkId = 3;
+        suggestionConfig1.creatorName = "creator2";
+        suggestionConfig1.carrierId = 2;
+        suggestionConfig1.subscriptionId = 2;
+        suggestionConfig2.fromWifiNetworkSuggestion = true;
+        // Initial entries
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks()).thenReturn(
+                Arrays.asList(suggestionConfig1, suggestionConfig2));
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(any()))
+                .thenReturn(Arrays.asList(suggestionConfig1, suggestionConfig2));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+        // 2 suggestion entries, no unsaved entry
+        assertThat(wifiPickerTracker.getWifiEntries().size()).isEqualTo(2);
+        for (WifiEntry entry : wifiPickerTracker.getWifiEntries()) {
+            assertThat(entry.getTitle()).isEqualTo("ssid");
+        }
+        assertThat(wifiPickerTracker.getWifiEntries().stream()
+                .filter(WifiEntry::isSuggestion)
+                .count()).isEqualTo(2);
+
+        // Add a saved entry
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks()).thenReturn(
+                Arrays.asList(savedConfig, suggestionConfig1, suggestionConfig2));
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
+
+        // Saved entry should appear alongside suggestions
+        assertThat(wifiPickerTracker.getWifiEntries().size()).isEqualTo(3);
+        for (WifiEntry entry : wifiPickerTracker.getWifiEntries()) {
+            assertThat(entry.getTitle()).isEqualTo("ssid");
+        }
+        assertThat(wifiPickerTracker.getWifiEntries().stream()
+                .filter(WifiEntry::isSuggestion)
+                .count())
+                .isEqualTo(2);
+        assertThat(wifiPickerTracker.getWifiEntries().stream()
+                .filter(WifiEntry::isSaved)
+                .count()).isEqualTo(1);
     }
 
     @Test
