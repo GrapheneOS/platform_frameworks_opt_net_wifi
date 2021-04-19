@@ -29,7 +29,7 @@
     <string name="notification_channel_network_available" msgid="7791052175212297403">"شبکه دردسترس است"</string>
     <string name="wifi_suggestion_title" msgid="8724552631151189767">"‏شبکه‌های Wi‑Fi پیشنهادی مجاز شود؟"</string>
     <string name="wifi_suggestion_content" msgid="7796523101671166285">"شبکه‌های پیشنهادی <xliff:g id="NAME">%s</xliff:g>. ممکن است دستگاه به‌طور خودکار متصل شود."</string>
-    <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"مجاز"</string>
+    <string name="wifi_suggestion_action_allow_app" msgid="1269853856167682235">"مجاز بودن"</string>
     <string name="wifi_suggestion_action_disallow_app" msgid="4844316521687534924">"نه متشکرم"</string>
     <string name="wifi_suggestion_imsi_privacy_title" msgid="442867569519352918">"‏به Wi-Fi <xliff:g id="CARRIERNAME">%s</xliff:g> متصل می‌شوید؟"</string>
     <string name="wifi_suggestion_imsi_privacy_content" msgid="6631744859477949328">"این شبکه‌ها شناسه سیم‌کارتی دریافت می‌کنند که می‌توان از آن برای ردیابی مکان دستگاه استفاده کرد"</string>
