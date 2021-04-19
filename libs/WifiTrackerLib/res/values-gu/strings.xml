@@ -28,7 +28,7 @@
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"ઍક્સેસ પૉઇન્ટ અસ્થાયીરૂપે ભરાયેલ છે"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"ડિસ્કનેક્ટ કર્યું"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"સાચવેલા"</string>
-    <string name="wifi_metered_label" msgid="1362621600006544014">"મીટર કરેલ"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"મીટર કરેલું"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"મીટર ન કરેલ"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> દ્વારા કનેક્ટ થયેલ"</string>
     <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> મારફતે ઉપલબ્ધ"</string>
