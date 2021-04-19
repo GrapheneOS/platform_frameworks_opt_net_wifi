@@ -119,6 +119,7 @@ public class MergedCarrierEntry extends WifiEntry {
     public void disconnect(@Nullable DisconnectCallback callback) {
         mDisconnectCallback = callback;
         mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
+        mWifiManager.startScan();
         if (mDisconnectCallback != null) {
             mCallbackHandler.post(() ->
                     mDisconnectCallback.onDisconnectResult(
@@ -137,6 +138,7 @@ public class MergedCarrierEntry extends WifiEntry {
         mWifiManager.setCarrierNetworkOffloadEnabled(mSubscriptionId, true, enabled);
         if (!enabled) {
             mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
+            mWifiManager.startScan();
         }
     }
 
