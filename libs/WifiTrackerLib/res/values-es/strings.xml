@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"La conexión automática está desactivada"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Conexión automática desactivada"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Guardada por <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"No se conectará automáticamente"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Sin acceso a Internet"</string>
@@ -44,7 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Conectado al dispositivo. Sin acceso a Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Calidad baja"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Ninguna"</string>
-    <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Caducado"</string>
+    <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Caducada"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Toca para registrarte"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Toca para renovar la suscripción y conectarte"</string>
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"Abriendo <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
