@@ -32,7 +32,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"कनेक्ट गर्न सकिएन। पछि फेरि प्रयास गर्नुहोस्।"</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"यो डिभाइससँग नेटवर्क कम्प्याटिबल छैन"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"डिस्कनेक्ट गरियो"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"सुरक्षित गरियो"</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"सेभ गरियो"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"सीमा तोकिएको इन्टरनेट"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"सीमा हटाइएको छ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत कनेक्ट गरियो"</string>
