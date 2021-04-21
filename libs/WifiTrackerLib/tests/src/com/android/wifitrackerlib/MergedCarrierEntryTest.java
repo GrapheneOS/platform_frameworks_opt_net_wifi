@@ -96,4 +96,16 @@ public class MergedCarrierEntryTest {
                 .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
         verify(mMockWifiManager).startRestrictingAutoJoinToSubscriptionId(subId);
     }
+
+    @Test
+    public void testDisconnect_enablesNonCarrierMergedWifiAndTriggersScan() {
+        final int subId = 1;
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
+                mMockScoreCache, false, mMockContext, subId);
+
+        entry.disconnect(null);
+        mTestLooper.dispatchAll();
+        verify(mMockWifiManager).stopRestrictingAutoJoinToSubscriptionId();
+        verify(mMockWifiManager).startScan();
+    }
 }
