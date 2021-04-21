@@ -65,7 +65,7 @@
     <string name="wifi_cannot_connect_with_randomized_mac_title" msgid="3161171832972320854">"Ezin da konektatu <xliff:g id="SSID">%1$s</xliff:g> sarera"</string>
     <string name="wifi_cannot_connect_with_randomized_mac_message" msgid="3084495849409387375">"Sakatu hau pribatutasun-ezarpenak aldatzeko, eta saiatu berriro"</string>
     <string name="wifi_disable_mac_randomization_dialog_title" msgid="7200723795776228456">"Pribatutasun-ezarpena aldatu nahi duzu?"</string>
-    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Konektatzeko, <xliff:g id="SSID">%1$s</xliff:g> sareak gailuaren MAC helbidea (identifikatzaile esklusiboa) behar du. Sarearen uneko pribatutasun-ezarpenen arabera, ausazko identifikatzaile bat erabiltzen da. \n\nAldaketa honekin, baliteke inguruko gailuek zure gailuaren kokapenaren jarraipena egin ahal izatea."</string>
+    <string name="wifi_disable_mac_randomization_dialog_message" msgid="6780528750693169829">"Konektatzeko, <xliff:g id="SSID">%1$s</xliff:g> sareak gailuaren MAC helbidea (identifikatzaile esklusiboa) behar du. Sarearen oraingo pribatutasun-ezarpenen arabera, ausazko identifikatzaile bat erabiltzen da. \n\nAldaketa honekin, baliteke inguruko gailuek zure gailuaren kokapenaren jarraipena egin ahal izatea."</string>
     <string name="wifi_disable_mac_randomization_dialog_confirm_text" msgid="6592972299988727403">"Aldatu ezarpena"</string>
     <string name="wifi_disable_mac_randomization_dialog_success" msgid="7288972191769783828">"Eguneratu da ezarpena. Saiatu berriro konektatzen."</string>
     <string name="wifi_disable_mac_randomization_dialog_failure" msgid="1823128152758990275">"Ezin da aldatu pribatutasun-ezarpena"</string>
