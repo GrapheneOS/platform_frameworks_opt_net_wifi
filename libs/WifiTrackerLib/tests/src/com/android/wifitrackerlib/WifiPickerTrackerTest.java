@@ -67,7 +67,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 public class WifiPickerTrackerTest {
 
@@ -111,9 +110,6 @@ public class WifiPickerTrackerTest {
     private final ArgumentCaptor<ConnectivityManager.NetworkCallback>
             mDefaultNetworkCallbackCaptor =
                 ArgumentCaptor.forClass(ConnectivityManager.NetworkCallback.class);
-    private final ArgumentCaptor<WifiPickerTracker.ActiveDataSubIdListener>
-            mActiveDataSubIdListenerCaptor =
-                ArgumentCaptor.forClass(WifiPickerTracker.ActiveDataSubIdListener.class);
 
     private WifiPickerTracker createTestWifiPickerTracker() {
         final Handler testHandler = new Handler(mTestLooper.getLooper());
@@ -811,11 +807,12 @@ public class WifiPickerTrackerTest {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
-        verify(mMockTelephonyManager).registerTelephonyCallback(any(Executor.class),
-                mActiveDataSubIdListenerCaptor.capture());
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
 
-        mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId);
-        mTestLooper.dispatchAll();
+        final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent.putExtra("subscription", subId);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
 
         assertThat(wifiPickerTracker.getMergedCarrierEntry().getConnectedState())
                 .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
@@ -823,20 +820,26 @@ public class WifiPickerTrackerTest {
 
     /**
      * Tests that getMergedCarrierEntry returns a new MergedCarrierEntry with the correct
-     * subscription ID if the active data subscription ID changes.
+     * subscription ID if the default subscription ID changes.
      */
     @Test
     public void testGetMergedCarrierEntry_subscriptionIdChanges_entryChanges() {
         final int subId1 = 1;
-        final int subId2 = 1;
+        final int subId2 = 2;
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
-        verify(mMockTelephonyManager).registerTelephonyCallback(any(Executor.class),
-                mActiveDataSubIdListenerCaptor.capture());
-        mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId1);
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        final Intent intent1 =
+                new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent1.putExtra("subscription", subId1);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent1);
 
-        mActiveDataSubIdListenerCaptor.getValue().onActiveDataSubscriptionIdChanged(subId2);
+        final Intent intent2 =
+                new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent2.putExtra("subscription", subId2);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent2);
 
         assertThat(wifiPickerTracker.getMergedCarrierEntry().getSubscriptionId())
                 .isEqualTo(subId2);

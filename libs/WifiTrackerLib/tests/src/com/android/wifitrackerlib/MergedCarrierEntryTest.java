@@ -33,6 +33,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.test.TestLooper;
 
 import org.junit.Before;
@@ -56,17 +57,19 @@ public class MergedCarrierEntryTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-
         when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
         when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
         when(mMockNetworkInfo.getDetailedState()).thenReturn(
                 NetworkInfo.DetailedState.DISCONNECTED);
-        when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockResources.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
-        mTestLooper = new TestLooper();
-        mTestHandler = new Handler(mTestLooper.getLooper());
         when(mMockScoreCache.getScoredNetwork((ScanResult) any())).thenReturn(mMockScoredNetwork);
         when(mMockScoreCache.getScoredNetwork((NetworkKey) any())).thenReturn(mMockScoredNetwork);
+        mTestLooper = new TestLooper();
+        mTestHandler = new Handler(mTestLooper.getLooper());
+        when(mMockContext.getMainLooper()).thenReturn(Looper.getMainLooper());
+        when(mMockContext.getResources()).thenReturn(mMockResources);
+        when(mMockResources.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
+        when(mMockResources.getText(R.string.wifitrackerlib_wifi_wont_autoconnect_for_now))
+                .thenReturn("Wi-Fi won't auto-connect for now");
     }
 
     @Test
@@ -85,6 +88,7 @@ public class MergedCarrierEntryTest {
 
     @Test
     public void testConnect_disablesNonCarrierMergedWifi() {
+        Looper.prepare();
         final int subId = 1;
         final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
                 mMockScoreCache, false, mMockContext, subId);
@@ -107,5 +111,19 @@ public class MergedCarrierEntryTest {
         mTestLooper.dispatchAll();
         verify(mMockWifiManager).stopRestrictingAutoJoinToSubscriptionId();
         verify(mMockWifiManager).startScan();
+    }
+
+    @Test
+    public void testCanConnect_cellIsDefaultRoute_returnsFalse() {
+        final int subId = 1;
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
+                mMockScoreCache, false, mMockContext, subId);
+        entry.updateIsCellDefaultRoute(false);
+
+        assertThat(entry.canConnect()).isTrue();
+
+        entry.updateIsCellDefaultRoute(true);
+
+        assertThat(entry.canConnect()).isFalse();
     }
 }
