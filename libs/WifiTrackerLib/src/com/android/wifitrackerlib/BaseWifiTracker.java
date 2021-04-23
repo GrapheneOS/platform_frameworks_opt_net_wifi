@@ -40,6 +40,8 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.Looper;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.annotation.AnyThread;
@@ -121,6 +123,9 @@ public class BaseWifiTracker implements LifecycleObserver {
                 handleNetworkStateChangedAction(intent);
             } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
                 handleRssiChangedAction();
+            } else if (TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED.equals(action)) {
+                handleDefaultSubscriptionChanged(intent.getIntExtra(
+                        "subscription", SubscriptionManager.INVALID_SUBSCRIPTION_ID));
             }
         }
     };
@@ -286,6 +291,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+        filter.addAction(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
         mContext.registerReceiver(mBroadcastReceiver, filter,
                 /* broadcastPermission */ null, mWorkerHandler);
         mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
@@ -421,6 +427,14 @@ public class BaseWifiTracker implements LifecycleObserver {
      */
     @WorkerThread
     protected void handleNetworkScoreCacheUpdated() {
+        // Do nothing.
+    }
+
+    /**
+     * Handle updates to the default data subscription id from SubscriptionManager.
+     */
+    @WorkerThread
+    protected void handleDefaultSubscriptionChanged(int defaultSubId) {
         // Do nothing.
     }
 
