@@ -24,7 +24,7 @@
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"Todennusvirhe"</string>
     <string name="wifi_check_password_try_again" msgid="2643230209986217827">"Tarkista salasana ja yritä uudelleen."</string>
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"IP-kokoonpanovirhe"</string>
-    <string name="wifi_disabled_generic" msgid="8307050327779256414">"Pois käytöstä"</string>
+    <string name="wifi_disabled_generic" msgid="8307050327779256414">"Pois päältä"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"Yhteyspiste tilapäisesti täynnä"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"Yhteys katkaistu"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"Tallennettu"</string>

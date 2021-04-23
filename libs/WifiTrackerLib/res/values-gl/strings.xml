@@ -50,7 +50,7 @@
     <string name="imsi_protection_warning" msgid="5231726821588271569">"Esta rede recibe un código SIM que se pode utilizar para realizar un seguimento da localización do dispositivo. "<annotation id="url">"Máis información"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Moi lenta"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Lenta"</string>
-    <string name="speed_label_okay" msgid="3741857805086997968">"Aceptar"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Correcta"</string>
     <string name="speed_label_medium" msgid="3175703848952862009">"Media"</string>
     <string name="speed_label_fast" msgid="8344116097613544322">"Rápida"</string>
     <string name="speed_label_very_fast" msgid="1595806641512447877">"Moi rápida"</string>
