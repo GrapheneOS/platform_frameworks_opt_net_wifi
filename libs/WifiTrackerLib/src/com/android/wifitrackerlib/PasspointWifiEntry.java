@@ -112,6 +112,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         mPasspointConfig = passpointConfig;
         mKey = uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId());
         mFqdn = passpointConfig.getHomeSp().getFqdn();
+        checkNotNull(mFqdn, "Cannot construct with null PasspointConfiguration FQDN!");
         mFriendlyName = passpointConfig.getHomeSp().getFriendlyName();
         mSubscriptionExpirationTimeInMillis =
                 passpointConfig.getSubscriptionExpirationTimeMillis();
@@ -130,7 +131,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             boolean forSavedNetworksPage) throws IllegalArgumentException {
         super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
 
-        checkNotNull(wifiConfig, "Cannot construct with null PasspointConfiguration!");
+        checkNotNull(wifiConfig, "Cannot construct with null WifiConfiguration!");
         if (!wifiConfig.isPasspoint()) {
             throw new IllegalArgumentException("Given WifiConfiguration is not for Passpoint!");
         }
@@ -139,6 +140,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         mWifiConfig = wifiConfig;
         mKey = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
         mFqdn = wifiConfig.FQDN;
+        checkNotNull(mFqdn, "Cannot construct with null WifiConfiguration FQDN!");
         mFriendlyName = mWifiConfig.providerFriendlyName;
     }
 
@@ -365,7 +367,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                             DisconnectCallback.DISCONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             }, 10_000 /* delayMillis */);
-            mWifiManager.disableEphemeralNetwork(mWifiConfig.FQDN);
+            mWifiManager.disableEphemeralNetwork(mFqdn);
             mWifiManager.disconnect();
         }
     }
