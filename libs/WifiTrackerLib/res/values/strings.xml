@@ -222,4 +222,7 @@
 
     <!-- Speed label for very fast network speed -->
     <string name="wifitrackerlib_speed_label_very_fast">Very Fast</string>
+
+    <!-- Toast message for when the user selects cellular as the internet provider and Wi-Fi auto-connect is temporarily disabled -->
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now">Wi-Fi won\u2019t auto-connect for now</string>
 </resources>

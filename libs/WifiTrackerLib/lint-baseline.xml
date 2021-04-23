@@ -1123,4 +1123,15 @@
             column="13"/>
     </issue>
 
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): android.telephony.SubscriptionManager#getDefaultDataSubscriptionId [NewApi]"
+        errorLine1="    handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="212"
+            column="62"/>
+    </issue>
+
 </issues>

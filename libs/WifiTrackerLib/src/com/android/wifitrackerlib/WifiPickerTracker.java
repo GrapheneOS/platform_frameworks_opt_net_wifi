@@ -47,10 +47,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
-import android.os.HandlerExecutor;
 import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyCallback;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
@@ -63,8 +60,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
-
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -91,7 +86,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     private static final String TAG = "WifiPickerTracker";
 
-    private final TelephonyManager mTelephonyManager;
     private final WifiPickerTrackerCallback mListener;
 
     // Lock object for data returned by the public API
@@ -123,7 +117,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
     // Cache containing visible OsuWifiEntries. Must be accessed only by the worker thread.
     private final Map<String, OsuWifiEntry> mOsuWifiEntryCache = new HashMap<>();
 
-    private ActiveDataSubIdListener mActiveDataSubIdListener;
     private MergedCarrierEntry mMergedCarrierEntry;
 
     private int mNumSavedNetworks;
@@ -156,8 +149,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, listener,
                 TAG);
         mListener = listener;
-        mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        mActiveDataSubIdListener = new ActiveDataSubIdListener();
     }
 
     /**
@@ -218,25 +209,14 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
+        handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
         updateWifiEntries();
-        mTelephonyManager.registerTelephonyCallback(
-                new HandlerExecutor(mWorkerHandler), mActiveDataSubIdListener);
-        updateMergedCarrierEntry(SubscriptionManager.getActiveDataSubscriptionId());
 
         // Populate mConnectedWifiEntry with information from missed callbacks.
         handleNetworkCapabilitiesChanged(
                 mConnectivityManager.getNetworkCapabilities(currentNetwork));
         handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
         handleDefaultRouteChanged();
-    }
-
-    @MainThread
-    @Override
-    public void onStop() {
-        super.onStop();
-        mWorkerHandler.post(() -> {
-            mTelephonyManager.unregisterTelephonyCallback(mActiveDataSubIdListener);
-        });
     }
 
     @WorkerThread
@@ -331,6 +311,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
             mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
+        if (mMergedCarrierEntry != null) {
+            mMergedCarrierEntry.updateIsCellDefaultRoute(mIsCellDefaultRoute);
+        }
     }
 
     @WorkerThread
@@ -345,6 +328,12 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (PasspointWifiEntry entry : mPasspointWifiEntryCache.values()) {
             entry.onScoreCacheUpdated();
         }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleDefaultSubscriptionChanged(int defaultSubId) {
+        updateMergedCarrierEntry(defaultSubId);
     }
 
     /**
@@ -416,7 +405,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     /**
      * Updates the MergedCarrierEntry returned by {@link #getMergedCarrierEntry()) with the current
-     * active subscription ID, or sets it to null if not available.
+     * default data subscription ID, or sets it to null if not available.
      */
     @WorkerThread
     private void updateMergedCarrierEntry(int subId) {
@@ -960,22 +949,5 @@ public class WifiPickerTracker extends BaseWifiTracker {
          */
         @MainThread
         void onNumSavedSubscriptionsChanged();
-    }
-
-    /**
-     * Callback for changes to the active data subscription id for the MergedCarrierEntry.
-     */
-    @VisibleForTesting
-            /* package */ class ActiveDataSubIdListener extends TelephonyCallback implements
-            TelephonyCallback.ActiveDataSubscriptionIdListener {
-        private ActiveDataSubIdListener() {
-            super();
-        }
-
-        @Override
-        @WorkerThread
-        public void onActiveDataSubscriptionIdChanged(int subId) {
-            updateMergedCarrierEntry(subId);
-        }
     }
 }
