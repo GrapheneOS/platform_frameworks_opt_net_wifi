@@ -55,7 +55,7 @@
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Esta rede recibe un código SIM que se pode utilizar para realizar un seguimento da localización do dispositivo. "<annotation id="url">"Máis información"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Moi lenta"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Lenta"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Aceptable"</string>
+    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Correcta"</string>
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Media"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Rápida"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Moi rápida"</string>
