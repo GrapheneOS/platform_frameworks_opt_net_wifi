@@ -59,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Normaal"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Snel"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Zeer snel"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wifi maakt momenteel niet automatisch verbinding"</string>
 </resources>
