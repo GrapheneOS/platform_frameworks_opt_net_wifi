@@ -59,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ປານກາງ"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"ໄວ"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ໄວຫຼາຍ"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi ຈະບໍ່ເຊື່ອມຕໍ່ອັດຕະໂນມັດສຳລັບຕອນນີ້"</string>
 </resources>
