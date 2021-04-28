@@ -59,4 +59,6 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"กลาง"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"เร็ว"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"เร็วมาก"</string>
+    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
+    <skip />
 </resources>
