@@ -16,11 +16,11 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="wifi_eap_error_message_code_32760" msgid="4555573944292156870">"<xliff:g id="SSID">%1$s</xliff:g> : Det går inte att ansluta till Verizon Wi-Fi Access om du befinner dig utanför Verizons täckningsområde."</string>
-    <string name="wifi_eap_error_message_code_32761" msgid="6990683739673245807">"<xliff:g id="SSID">%1$s</xliff:g> : Du prenumererar inte på Verizon Wi-Fi Access. Ring oss på 800 922 0204."</string>
-    <string name="wifi_eap_error_message_code_32762" msgid="6557033506833966794">"<xliff:g id="SSID">%1$s</xliff:g> : Ett fel har uppstått i Verizon Wi-Fi Access-kontot. Ring oss på 800 922 0204."</string>
-    <string name="wifi_eap_error_message_code_32763" msgid="3400795159444109915">"<xliff:g id="SSID">%1$s</xliff:g> : Du är redan ansluten till Verizon Wi-Fi Access."</string>
-    <string name="wifi_eap_error_message_code_32764" msgid="1312072776680938826">"<xliff:g id="SSID">%1$s</xliff:g> : Det gick inte att ansluta till Verizon Wi-Fi Access. Ring oss på 800 922 0204."</string>
-    <string name="wifi_eap_error_message_code_32765" msgid="8150337243297471644">"<xliff:g id="SSID">%1$s</xliff:g> : Ett fel har uppstått i Verizon Wi-Fi Access-kontot. Ring oss på 800 922 0204."</string>
-    <string name="wifi_eap_error_message_code_32766" msgid="962325801073733226">"<xliff:g id="SSID">%1$s</xliff:g> : Verizon Wi-Fi Access är inte tillgängligt där du befinner dig. Försök igen senare eller anslut från en annan plats."</string>
+    <string name="wifi_eap_error_message_code_32760" msgid="4555573944292156870">"<xliff:g id="SSID">%1$s</xliff:g> : Det går inte att ansluta till Verizon wifi Access om du befinner dig utanför Verizons täckningsområde."</string>
+    <string name="wifi_eap_error_message_code_32761" msgid="6990683739673245807">"<xliff:g id="SSID">%1$s</xliff:g> : Du prenumererar inte på Verizon wifi Access. Ring oss på 800 922 0204."</string>
+    <string name="wifi_eap_error_message_code_32762" msgid="6557033506833966794">"<xliff:g id="SSID">%1$s</xliff:g> : Ett fel har uppstått i Verizon wifi Access-kontot. Ring oss på 800 922 0204."</string>
+    <string name="wifi_eap_error_message_code_32763" msgid="3400795159444109915">"<xliff:g id="SSID">%1$s</xliff:g> : Du är redan ansluten till Verizon wifi Access."</string>
+    <string name="wifi_eap_error_message_code_32764" msgid="1312072776680938826">"<xliff:g id="SSID">%1$s</xliff:g> : Det gick inte att ansluta till Verizon wifi Access. Ring oss på 800 922 0204."</string>
+    <string name="wifi_eap_error_message_code_32765" msgid="8150337243297471644">"<xliff:g id="SSID">%1$s</xliff:g> : Ett fel har uppstått i Verizon wifi Access-kontot. Ring oss på 800 922 0204."</string>
+    <string name="wifi_eap_error_message_code_32766" msgid="962325801073733226">"<xliff:g id="SSID">%1$s</xliff:g> : Verizon wifi Access är inte tillgängligt där du befinner dig. Försök igen senare eller anslut från en annan plats."</string>
 </resources>
