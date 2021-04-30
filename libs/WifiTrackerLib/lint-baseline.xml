@@ -1134,4 +1134,15 @@
             column="62"/>
     </issue>
 
+    <issue
+        id="NewApi"
+        message="Call requires API level 31 (current min is 21): android.net.wifi.WifiManager#isCarrierNetworkOffloadEnabled [NewApi]"
+        errorLine1="        return mWifiManager.isCarrierNetworkOffloadEnabled(mSubscriptionId, true);"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/MergedCarrierEntry.java"
+            line="142"
+            column="29"/>
+    </issue>
+
 </issues>
