@@ -137,6 +137,11 @@ public class MergedCarrierEntry extends WifiEntry {
         return wifiInfo.isCarrierMerged() && mSubscriptionId == wifiInfo.getSubscriptionId();
     }
 
+    /** Returns whether or not carrier network offload is enabled for this subscription **/
+    public boolean isEnabled() {
+        return mWifiManager.isCarrierNetworkOffloadEnabled(mSubscriptionId, true);
+    }
+
     /** Enables/disables the carrier network */
     public void setEnabled(boolean enabled) {
         mWifiManager.setCarrierNetworkOffloadEnabled(mSubscriptionId, true, enabled);
