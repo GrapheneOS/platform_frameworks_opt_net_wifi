@@ -635,7 +635,13 @@ public class WifiEntry implements Comparable<WifiEntry> {
     @AnyThread
     protected void notifyOnUpdated() {
         if (mListener != null) {
-            mCallbackHandler.post(() -> mListener.onUpdated());
+            mCallbackHandler.post(() -> {
+                final WifiEntryCallback listener = mListener;
+                // Check for null again since it may change before this runnable is run
+                if (listener != null) {
+                    listener.onUpdated();
+                }
+            });
         }
     }
 
