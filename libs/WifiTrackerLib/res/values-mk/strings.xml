@@ -26,7 +26,7 @@
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"Конфигурацијата на IP не успеа"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"Оневозможено"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"Пристапната точка привремено е преоптоварена"</string>
-    <string name="wifi_disconnected" msgid="3720926757662831062">"Исклучен"</string>
+    <string name="wifi_disconnected" msgid="3720926757662831062">"Не е поврзано"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"Зачувано"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"Со ограничен интернет"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"Без ограничен интернет"</string>
@@ -37,7 +37,7 @@
     <string name="wifi_limited_connection" msgid="3646701342701276239">"Ограничена врска"</string>
     <string name="private_dns_broken" msgid="2212227512243587416">"Не може да се пристапи до приватниот DNS-сервер"</string>
     <string name="wifi_connected_no_internet" msgid="7273909077465731259">"Нема интернет"</string>
-    <string name="wifi_security_none" msgid="6680263031386719053">"Ниедна"</string>
+    <string name="wifi_security_none" msgid="6680263031386719053">"Нема"</string>
     <string name="wifi_passpoint_expired" msgid="3257021415099577815">"Истечено"</string>
     <string name="tap_to_sign_up" msgid="2409214576606918295">"Допрете за да се регистрирате"</string>
     <string name="tap_to_renew_subscription_and_connect" msgid="375976298920840105">"Допрете за обновување на претплатата и поврзување"</string>

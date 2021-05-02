@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
     <string name="auto_connect_disable" msgid="1078319396240632542">"Tính năng tự động kết nối đang tắt"</string>
-    <string name="saved_network" msgid="6241977554502802914">"Do <xliff:g id="NAME">%1$s</xliff:g> lưu"</string>
+    <string name="saved_network" msgid="6241977554502802914">"Do ứng dụng <xliff:g id="NAME">%1$s</xliff:g> lưu"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"Sẽ không tự động kết nối"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"Không có kết nối Internet"</string>
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"Sự cố xác thực"</string>

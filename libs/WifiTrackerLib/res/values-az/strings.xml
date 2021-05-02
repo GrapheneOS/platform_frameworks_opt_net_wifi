@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="summary_separator" msgid="6533720408587140819">" / "</string>
     <string name="auto_connect_disable" msgid="1078319396240632542">"Avtomatik qoşulma sönülüdür"</string>
-    <string name="saved_network" msgid="6241977554502802914">"<xliff:g id="NAME">%1$s</xliff:g> tərəfindən saxlandı"</string>
+    <string name="saved_network" msgid="6241977554502802914">"Yadda saxlayan: <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifi_no_internet_no_reconnect" msgid="3089980800841926268">"Avtomatik qoşulmayacaq"</string>
     <string name="wifi_no_internet" msgid="4461212237521310895">"İnternetə giriş yoxdur"</string>
     <string name="wifi_disabled_password_failure" msgid="3015007143699702403">"Doğrulama problemi"</string>
@@ -28,7 +28,7 @@
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"Giriş nöqtəsi müvəqqəti olaraq doludur"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"Bağlantı kəsildi"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"Yadda saxlanılan"</string>
-    <string name="wifi_metered_label" msgid="1362621600006544014">"Ödənişli"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"Tarif sayğacılı"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"Limitsiz"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"<xliff:g id="NAME">%1$s</xliff:g> ilə qoşulub"</string>
     <string name="available_via_app" msgid="9110324040292242769">"<xliff:g id="NAME">%1$s</xliff:g> vasitəsilə əlçatandır"</string>

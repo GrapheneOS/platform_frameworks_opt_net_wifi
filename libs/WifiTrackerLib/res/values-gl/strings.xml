@@ -28,8 +28,8 @@
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"O punto de acceso está temporalmente cheo"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"Rede desconectada"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"Gardada"</string>
-    <string name="wifi_metered_label" msgid="1362621600006544014">"Sen tarifa plana"</string>
-    <string name="wifi_unmetered_label" msgid="499466875639448350">"Con tarifa plana"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"Rede sen tarifa plana"</string>
+    <string name="wifi_unmetered_label" msgid="499466875639448350">"Rede con tarifa plana"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"Wifi conectada a través de <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"Dispoñible a través de <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="connected_via_network_scorer" msgid="209764314005159012">"Wifi conectada automaticamente a través de: <xliff:g id="NAME">%1$s</xliff:g>"</string>
@@ -49,7 +49,7 @@
     <string name="imsi_protection_warning" msgid="5231726821588271569">"Esta rede recibe un código SIM que se pode utilizar para realizar un seguimento da localización do dispositivo. "<annotation id="url">"Máis información"</annotation></string>
     <string name="speed_label_very_slow" msgid="2401582671941367179">"Moi lenta"</string>
     <string name="speed_label_slow" msgid="8410385703344502127">"Lenta"</string>
-    <string name="speed_label_okay" msgid="3741857805086997968">"Aceptar"</string>
+    <string name="speed_label_okay" msgid="3741857805086997968">"Correcta"</string>
     <string name="speed_label_medium" msgid="3175703848952862009">"Media"</string>
     <string name="speed_label_fast" msgid="8344116097613544322">"Rápida"</string>
     <string name="speed_label_very_fast" msgid="1595806641512447877">"Moi rápida"</string>
