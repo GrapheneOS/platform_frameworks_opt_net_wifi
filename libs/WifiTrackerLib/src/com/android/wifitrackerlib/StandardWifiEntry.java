@@ -23,22 +23,19 @@ import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_
 import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
-import static com.android.wifitrackerlib.Utils.getAppLabel;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
-import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
-import static com.android.wifitrackerlib.Utils.getCurrentNetworkCapabilitiesInformation;
-import static com.android.wifitrackerlib.Utils.getDisconnectedStateDescription;
+import static com.android.wifitrackerlib.Utils.getConnectedDescription;
+import static com.android.wifitrackerlib.Utils.getConnectingDescription;
+import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
 import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
-import static com.android.wifitrackerlib.Utils.getNetworkDetailedState;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiInfo;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
 import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
-import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
 import android.content.Context;
@@ -214,42 +211,32 @@ public class StandardWifiEntry extends WifiEntry {
         StringJoiner sj = new StringJoiner(mContext.getString(
                 R.string.wifitrackerlib_summary_separator));
 
-        if (!concise && mForSavedNetworksPage && mTargetWifiConfig != null) {
-            final CharSequence appLabel = getAppLabel(mContext, mTargetWifiConfig.creatorName);
-            if (!TextUtils.isEmpty(appLabel)) {
-                sj.add(mContext.getString(R.string.wifitrackerlib_saved_network, appLabel));
-            }
+        final String connectedStateDescription;
+        final @ConnectedState int connectedState = getConnectedState();
+        switch (connectedState) {
+            case CONNECTED_STATE_DISCONNECTED:
+                connectedStateDescription = getDisconnectedDescription(mContext,
+                        mTargetWifiConfig,
+                        mForSavedNetworksPage,
+                        concise);
+                break;
+            case CONNECTED_STATE_CONNECTING:
+                connectedStateDescription = getConnectingDescription(mContext, mNetworkInfo);
+                break;
+            case CONNECTED_STATE_CONNECTED:
+                connectedStateDescription = getConnectedDescription(mContext,
+                        mTargetWifiConfig,
+                        mNetworkCapabilities,
+                        mRecommendationServiceLabel,
+                        mIsDefaultNetwork,
+                        mIsLowQuality);
+                break;
+            default:
+                Log.e(TAG, "getConnectedState() returned unknown state: " + connectedState);
+                connectedStateDescription = null;
         }
-
-        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-            String disconnectDescription = getDisconnectedStateDescription(mContext, this);
-            if (TextUtils.isEmpty(disconnectDescription)) {
-                if (concise) {
-                    sj.add(mContext.getString(R.string.wifitrackerlib_wifi_disconnected));
-                } else if (!mForSavedNetworksPage) {
-                    // Summary for unconnected suggested network
-                    if (isSuggestion()) {
-                        String carrierName = getCarrierNameForSubId(mContext,
-                                getSubIdForConfig(mContext, mTargetWifiConfig));
-                        String suggestorName = getAppLabel(mContext, mTargetWifiConfig.creatorName);
-                        if (TextUtils.isEmpty(suggestorName)) {
-                            // Fall-back to the package name in case the app label is missing
-                            suggestorName = mTargetWifiConfig.creatorName;
-                        }
-                        sj.add(mContext.getString(R.string.wifitrackerlib_available_via_app,
-                                carrierName != null ? carrierName : suggestorName));
-                    } else if (isSaved()) {
-                        sj.add(mContext.getString(R.string.wifitrackerlib_wifi_remembered));
-                    }
-                }
-            } else {
-                sj.add(disconnectDescription);
-            }
-        } else {
-            final String connectDescription = getConnectStateDescription();
-            if (!TextUtils.isEmpty(connectDescription)) {
-                sj.add(connectDescription);
-            }
+        if (!TextUtils.isEmpty(connectedStateDescription)) {
+            sj.add(connectedStateDescription);
         }
 
         final String speedDescription = getSpeedDescription(mContext, this);
@@ -275,50 +262,6 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         return sj.toString();
-    }
-
-    private String getConnectStateDescription() {
-        if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            // For suggestion or specifier networks
-            final String suggestionOrSpecifierPackageName = mWifiInfo != null
-                    ? mWifiInfo.getRequestingPackageName() : null;
-            if (!TextUtils.isEmpty(suggestionOrSpecifierPackageName)) {
-                String carrierName = mTargetWifiConfig != null
-                        ? getCarrierNameForSubId(
-                                mContext, getSubIdForConfig(mContext, mTargetWifiConfig))
-                        : null;
-                String suggestorName = getAppLabel(mContext, suggestionOrSpecifierPackageName);
-                if (TextUtils.isEmpty(suggestorName)) {
-                    // Fall-back to the package name in case the app label is missing
-                    suggestorName = suggestionOrSpecifierPackageName;
-                }
-                return mContext.getString(R.string.wifitrackerlib_connected_via_app,
-                        carrierName != null ? carrierName : suggestorName);
-            }
-
-            if (!isSaved() && !isSuggestion()) {
-                // Special case for connected + ephemeral networks.
-                if (!TextUtils.isEmpty(mRecommendationServiceLabel)) {
-                    return String.format(mContext.getString(
-                            R.string.wifitrackerlib_connected_via_network_scorer),
-                            mRecommendationServiceLabel);
-                }
-                return mContext.getString(
-                        R.string.wifitrackerlib_connected_via_network_scorer_default);
-            }
-
-            if (mIsLowQuality) {
-                return mContext.getString(R.string.wifi_connected_low_quality);
-            }
-
-            String networkCapabilitiesinformation =
-                    getCurrentNetworkCapabilitiesInformation(mContext,  mNetworkCapabilities);
-            if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
-                return networkCapabilitiesinformation;
-            }
-        }
-
-        return getNetworkDetailedState(mContext, mNetworkInfo);
     }
 
     @Override

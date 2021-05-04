@@ -242,7 +242,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
     protected boolean mCalledDisconnect = false;
 
     private boolean mIsValidated;
-    private boolean mIsDefaultNetwork;
+    protected boolean mIsDefaultNetwork;
     protected boolean mIsLowQuality;
 
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
