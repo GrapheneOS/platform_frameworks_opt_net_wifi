@@ -332,6 +332,14 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 && (!mIsValidated || !mIsDefaultNetwork) && !canSignIn();
     }
 
+    /**
+     * Returns whether this network has validated internet access or not.
+     * Note: This does not necessarily mean the network is the default route.
+     */
+    public boolean hasInternetAccess() {
+        return mIsValidated;
+    }
+
     /** Returns the speed value of the network defined by the SPEED constants */
     @Speed
     public int getSpeed() {
@@ -635,7 +643,13 @@ public class WifiEntry implements Comparable<WifiEntry> {
     @AnyThread
     protected void notifyOnUpdated() {
         if (mListener != null) {
-            mCallbackHandler.post(() -> mListener.onUpdated());
+            mCallbackHandler.post(() -> {
+                final WifiEntryCallback listener = mListener;
+                // Check for null again since it may change before this runnable is run
+                if (listener != null) {
+                    listener.onUpdated();
+                }
+            });
         }
     }
 
