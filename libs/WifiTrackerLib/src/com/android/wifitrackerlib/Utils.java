@@ -19,9 +19,9 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
 
-import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP_SUITE_B;
+import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP_WPA3_ENTERPRISE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_NONE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_OWE;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
@@ -35,7 +35,6 @@ import static com.android.wifitrackerlib.WifiEntry.SPEED_VERY_FAST;
 import static com.android.wifitrackerlib.WifiEntry.Speed;
 
 import static java.util.Comparator.comparingInt;
-import static java.util.stream.Collectors.groupingBy;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -73,9 +72,7 @@ import com.android.settingslib.HelpUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 /**
@@ -153,173 +150,33 @@ public class Utils {
         return (config.wepKeys[0] != null) ? SECURITY_WEP : SECURITY_NONE;
     }
 
-    /**
-     * Maps ScanResults into any number of WifiEntry keys each ScanResult matches. If
-     * chooseSingleSecurity is true, then ScanResults with multiple security capabilities will be
-     * matched to a single security type for the purpose of user selection.
-     *
-     * @param scanResults ScanResults to be mapped.
-     * @param chooseSingleSecurity If this is true, map scan results with multiple security
-     *                             capabilities to a single security for coalescing into a single
-     *                             WifiEntry.
-     * @param wifiConfigsByKey Mapping of WifiConfiguration to WifiEntry key. Only used if
-     *                         chooseSingleSecurity is true.
-     * @param isWpa3SaeSupported If this is false, do not map to SECURITY_SAE
-     * @param isWpa3SuiteBSupported If this is false, do not map to SECURITY_EAP_SUITE_B
-     * @param isEnhancedOpenSupported If this is false, do not map to SECURITY_OWE
-     * @return Map of WifiEntry key to list of corresponding ScanResults.
-     */
-    static Map<String, List<ScanResult>> mapScanResultsToKey(
-            @NonNull List<ScanResult> scanResults,
-            boolean chooseSingleSecurity,
-            @Nullable Map<String, WifiConfiguration> wifiConfigsByKey,
-            boolean isWpa3SaeSupported,
-            boolean isWpa3SuiteBSupported,
-            boolean isEnhancedOpenSupported) {
-        if (wifiConfigsByKey == null) {
-            wifiConfigsByKey = new HashMap<>();
+    // Returns the SECURITY type of the current connection in WifiInfo
+    @WifiEntry.Security
+    static int getSecurityTypeFromWifiInfo(@NonNull WifiInfo wifiInfo) {
+        switch (wifiInfo.getCurrentSecurityType()) {
+            case WifiInfo.SECURITY_TYPE_WEP:
+                return SECURITY_WEP;
+            case WifiInfo.SECURITY_TYPE_PSK:
+                return SECURITY_PSK;
+            case WifiInfo.SECURITY_TYPE_EAP:
+                return SECURITY_EAP;
+            case WifiInfo.SECURITY_TYPE_SAE:
+                return SECURITY_SAE;
+            case WifiInfo.SECURITY_TYPE_OWE:
+                return SECURITY_OWE;
+            case WifiInfo.SECURITY_TYPE_WAPI_PSK:
+            case WifiInfo.SECURITY_TYPE_WAPI_CERT:
+            case WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE:
+                return SECURITY_EAP_WPA3_ENTERPRISE;
+            case WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT:
+                return SECURITY_EAP_SUITE_B;
+            case WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2:
+            case WifiInfo.SECURITY_TYPE_PASSPOINT_R3:
+                // TODO: Create new security types for Passpoint
+                return SECURITY_EAP;
+            default:
+                return SECURITY_NONE;
         }
-        final Map<String, List<ScanResult>> scanResultsBySsid = scanResults.stream()
-                .filter(scanResult -> !TextUtils.isEmpty(scanResult.SSID))
-                .collect(groupingBy(scanResult -> scanResult.SSID));
-        final Map<String, List<ScanResult>> scanResultsByKey = new HashMap<>();
-
-        for (String ssid : scanResultsBySsid.keySet()) {
-            final boolean pskConfigExists = wifiConfigsByKey.containsKey(
-                    ssidAndSecurityToStandardWifiEntryKey(ssid, SECURITY_PSK));
-            final boolean saeConfigExists = wifiConfigsByKey.containsKey(
-                    ssidAndSecurityToStandardWifiEntryKey(ssid, SECURITY_SAE));
-            final boolean openConfigExists = wifiConfigsByKey.containsKey(
-                    ssidAndSecurityToStandardWifiEntryKey(ssid, SECURITY_NONE));
-            final boolean oweConfigExists = wifiConfigsByKey.containsKey(
-                    ssidAndSecurityToStandardWifiEntryKey(ssid, SECURITY_OWE));
-
-            boolean pskInRange = false;
-            boolean saeInRange = false;
-            boolean oweInRange = false;
-            boolean openInRange = false;
-            for (ScanResult scan : scanResultsBySsid.get(ssid)) {
-                final List<Integer> securityTypes = getSecurityTypesFromScanResult(scan);
-                if (securityTypes.contains(SECURITY_PSK)) {
-                    pskInRange = true;
-                }
-                if (securityTypes.contains(SECURITY_SAE)) {
-                    saeInRange = true;
-                }
-                if (securityTypes.contains(SECURITY_OWE)) {
-                    oweInRange = true;
-                }
-                if (securityTypes.contains(SECURITY_NONE)) {
-                    openInRange = true;
-                }
-            }
-
-            for (ScanResult scan : scanResultsBySsid.get(ssid)) {
-                List<Integer> securityTypes = getSecurityTypesFromScanResult(scan);
-                List<Integer> chosenSecurityTypes = new ArrayList<>();
-                // Ignore security types that are unsupported
-                if (!isWpa3SaeSupported) {
-                    securityTypes.remove((Integer) SECURITY_SAE);
-                }
-                if (!isWpa3SuiteBSupported) {
-                    securityTypes.remove((Integer) SECURITY_EAP_SUITE_B);
-                }
-                if (!isEnhancedOpenSupported) {
-                    securityTypes.remove((Integer) SECURITY_OWE);
-                }
-
-                final boolean isSae = securityTypes.contains(SECURITY_SAE)
-                        && !securityTypes.contains(SECURITY_PSK);
-                final boolean isPsk = securityTypes.contains(SECURITY_PSK)
-                        && !securityTypes.contains(SECURITY_SAE);
-                final boolean isPskSaeTransition = securityTypes.contains(SECURITY_PSK)
-                        && securityTypes.contains(SECURITY_SAE);
-                final boolean isOwe = securityTypes.contains(SECURITY_OWE)
-                        && !securityTypes.contains(SECURITY_NONE);
-                final boolean isOweTransition = securityTypes.contains(SECURITY_NONE)
-                        && securityTypes.contains(SECURITY_OWE);
-                final boolean isOpen = securityTypes.contains(SECURITY_NONE)
-                        && !securityTypes.contains(SECURITY_OWE);
-
-                if (chooseSingleSecurity) {
-                    if (isPsk) {
-                        if (!pskConfigExists && saeConfigExists && saeInRange) {
-                            // If we don't have a PSK config, but there is an SAE AP in-range and
-                            // an SAE config we can use for connection, then ignore the PSK AP so
-                            // that the user only has the SAE AP to select.
-                            continue;
-                        } else {
-                            chosenSecurityTypes.add(SECURITY_PSK);
-                        }
-                    } else if (isPskSaeTransition) {
-                        // Map to SAE if we have an SAE config and no PSK config (use SAE config to
-                        // connect). Else, map to PSK for wider compatibility.
-                        if (!pskConfigExists && saeConfigExists) {
-                            chosenSecurityTypes.add(SECURITY_SAE);
-                        } else {
-                            chosenSecurityTypes.add(SECURITY_PSK);
-                        }
-                    } else if (isSae) {
-                        // Map to SAE if we either
-                        // 1) have an SAE config and no PSK config (use SAE config to connect).
-                        // 2) have no configs at all, and no PSK APs are in range. (save new
-                        //    network with SAE security).
-                        // Else, map to PSK for wider compatibility.
-                        if (!pskConfigExists && (saeConfigExists || !pskInRange)) {
-                            chosenSecurityTypes.add(SECURITY_SAE);
-                        } else {
-                            chosenSecurityTypes.add(SECURITY_PSK);
-                        }
-                    } else if (isOwe) {
-                        // If an open AP is in range, use it instead if we have a config for it and
-                        // no OWE config.
-                        if (openInRange && openConfigExists && !oweConfigExists) {
-                            continue;
-                        } else {
-                            chosenSecurityTypes.add(SECURITY_OWE);
-                        }
-                    } else if (isOweTransition) {
-                        // Map to OWE if we either
-                        // 1) have an OWE config (use OWE config to connect).
-                        // 2) have no configs at all (save new network with OWE security).
-                        // Otherwise, if we have an open config only, map to open security so that
-                        // config is used for connection.
-                        if (oweConfigExists || !openConfigExists) {
-                            chosenSecurityTypes.add(SECURITY_OWE);
-                        } else {
-                            chosenSecurityTypes.add(SECURITY_NONE);
-                        }
-                    } else if (isOpen) {
-                        // If an OWE AP is in-range, then use it instead if we have a config for it
-                        // or no configs at all.
-                        if (oweInRange && (oweConfigExists || !openConfigExists)) {
-                            continue;
-                        } else {
-                            chosenSecurityTypes.add(SECURITY_NONE);
-                        }
-                    } else {
-                        chosenSecurityTypes.addAll(securityTypes);
-                    }
-                } else {
-                    chosenSecurityTypes.addAll(securityTypes);
-                    if (isSae) {
-                        // If we don't need to choose a single security type for the user to select,
-                        // then SAE scans can also match to PSK configs, which will be dynamically
-                        // upgraded to SAE by the framework at connection time.
-                        chosenSecurityTypes.add(SECURITY_PSK);
-                    }
-                }
-
-                for (int security : chosenSecurityTypes) {
-                    final String key = ssidAndSecurityToStandardWifiEntryKey(ssid, security);
-                    if (!scanResultsByKey.containsKey(key)) {
-                        scanResultsByKey.put(key, new ArrayList<>());
-                    }
-                    scanResultsByKey.get(key).add(scan);
-                }
-            }
-        }
-        return scanResultsByKey;
     }
 
     @Speed
