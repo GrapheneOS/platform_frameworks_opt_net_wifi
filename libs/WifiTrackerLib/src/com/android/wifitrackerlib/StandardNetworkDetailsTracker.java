@@ -18,9 +18,8 @@ package com.android.wifitrackerlib;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
-import static com.android.wifitrackerlib.NetworkRequestEntry.wifiConfigToNetworkRequestEntryKey;
-import static com.android.wifitrackerlib.StandardWifiEntry.wifiConfigToStandardWifiEntryKey;
-import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
+import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
+import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
 
 import static java.util.stream.Collectors.toList;
 
@@ -34,7 +33,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
-import android.text.TextUtils;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
@@ -50,6 +48,7 @@ import java.util.Collections;
 public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "StandardNetworkDetailsTracker";
 
+    private final StandardWifiEntryKey mKey;
     private final StandardWifiEntry mChosenEntry;
     private final boolean mIsNetworkRequest;
     private NetworkInfo mCurrentNetworkInfo;
@@ -67,14 +66,14 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             String key) {
         super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
-
-        if (key.startsWith(NetworkRequestEntry.KEY_PREFIX)) {
+        mKey = new StandardWifiEntryKey(key);
+        if (mKey.isNetworkRequest()) {
             mIsNetworkRequest = true;
-            mChosenEntry = new NetworkRequestEntry(mContext, mMainHandler, key, mWifiManager,
+            mChosenEntry = new NetworkRequestEntry(mContext, mMainHandler, mKey, mWifiManager,
                     mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
         } else {
             mIsNetworkRequest = false;
-            mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, key, mWifiManager,
+            mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, mKey, mWifiManager,
                     mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
         }
     }
@@ -155,10 +154,10 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
      * it to null if it does not exist.
      */
     private void conditionallyUpdateConfig() {
-        WifiConfiguration updatedConfig = mWifiManager.getPrivilegedConfiguredNetworks().stream()
-                .filter(this::configMatches)
-                .findAny().orElse(null);
-        mChosenEntry.updateConfig(updatedConfig);
+        mChosenEntry.updateConfig(
+                mWifiManager.getPrivilegedConfiguredNetworks().stream()
+                        .filter(this::configMatches)
+                        .collect(toList()));
     }
 
     /**
@@ -166,9 +165,7 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
      */
     private void cacheNewScanResults() {
         mScanResultUpdater.update(mWifiManager.getScanResults().stream()
-                .filter(scan -> TextUtils.equals(scan.SSID, mChosenEntry.getSsid())
-                        && getSecurityTypesFromScanResult(scan).contains(
-                                mChosenEntry.getSecurity()))
+                .filter(scan -> new ScanResultKey(scan).equals(mKey.getScanResultKey()))
                 .collect(toList()));
     }
 
@@ -176,9 +173,6 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         if (config.isPasspoint()) {
             return false;
         }
-        String configKey = config.fromWifiNetworkSpecifier
-                ? wifiConfigToNetworkRequestEntryKey(config)
-                : wifiConfigToStandardWifiEntryKey(config);
-        return TextUtils.equals(configKey, mChosenEntry.getKey());
+        return mKey.equals(new StandardWifiEntryKey(config));
     }
 }
