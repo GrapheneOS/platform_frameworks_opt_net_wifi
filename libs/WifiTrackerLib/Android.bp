@@ -10,5 +10,11 @@ android_library {
         "SettingsLibHelpUtils",
     ],
 
+    // TODO(b/187099809): Re-enable lint check once the min_sdk_version is updated
+    lint: {
+        enabled: false,
+    },
+
+    // TODO(b/187099809): Update this once we remove SettingsLib's dependency on WifiTrackerLib
     min_sdk_version: "21",
 }
