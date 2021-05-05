@@ -875,6 +875,11 @@ public class WifiPickerTracker extends BaseWifiTracker {
         if (cachedWifiConfig == null) {
             return;
         }
+        final String key = uniqueIdToPasspointWifiEntryKey(cachedWifiConfig.getKey());
+        if (mPasspointWifiEntryCache.containsKey(key)) {
+            // Entry already exists, skip creating a new one.
+            return;
+        }
         PasspointConfiguration passpointConfig = mPasspointConfigCache.get(
                 uniqueIdToPasspointWifiEntryKey(cachedWifiConfig.getKey()));
         PasspointWifiEntry connectedEntry;
