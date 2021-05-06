@@ -146,6 +146,7 @@ public class WifiPickerTrackerTest {
                 .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.TELEPHONY_SERVICE))
                 .thenReturn(mMockTelephonyManager);
+        when(mMockResources.getString(anyInt())).thenReturn("");
     }
 
     /**
@@ -380,7 +381,6 @@ public class WifiPickerTrackerTest {
 
     @Test
     public void testGetWifiEntries_differentSsidSameBssid_returnsDifferentEntries() {
-        when(mMockResources.getString(anyInt())).thenReturn("");
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
@@ -563,7 +563,6 @@ public class WifiPickerTrackerTest {
     @Test
     public void testGetConnectedEntry_wifiValidatedCellDefault_isLowQuality() {
         final String lowQuality = "Low quality";
-        when(mMockResources.getString(anyInt())).thenReturn("");
         when(mMockResources.getString(R.string.wifi_connected_low_quality)).thenReturn(lowQuality);
         when(mMockResources.getStringArray(anyInt())).thenReturn(new String[0]);
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
@@ -651,6 +650,54 @@ public class WifiPickerTrackerTest {
 
         assertThat(wifiPickerTracker.getWifiEntries()).isNotEmpty();
         assertThat(wifiPickerTracker.getWifiEntries().get(0).getTitle()).isEqualTo("friendlyName");
+    }
+
+    /**
+     * Tests that the same PasspointWifiEntry from getWifiEntries() is returned when it becomes the
+     * connected entry
+     */
+    @Test
+    public void testGetWifiEntries_connectToPasspoint_returnsSamePasspointWifiEntry() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final PasspointConfiguration passpointConfig = new PasspointConfiguration();
+        final HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("fqdn");
+        homeSp.setFriendlyName("friendlyName");
+        passpointConfig.setHomeSp(homeSp);
+        passpointConfig.setCredential(new Credential());
+        when(mMockWifiManager.getPasspointConfigurations())
+                .thenReturn(Collections.singletonList(passpointConfig));
+        final WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
+        when(wifiConfig.isPasspoint()).thenReturn(true);
+        wifiConfig.networkId = 1;
+        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
+                Collections.singletonList(new Pair<>(wifiConfig, mapping));
+        when(mMockWifiManager.getAllMatchingWifiConfigs(any())).thenReturn(allMatchingWifiConfigs);
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(wifiConfig));
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+        assertThat(wifiPickerTracker.getWifiEntries()).isNotEmpty();
+        final WifiEntry entry = wifiPickerTracker.getWifiEntries().get(0);
+
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn("fqdn");
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+
+        assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry() == entry).isTrue();
+
     }
 
     /**
