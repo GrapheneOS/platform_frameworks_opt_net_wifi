@@ -52,6 +52,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 public class PasspointWifiEntryTest {
@@ -219,6 +220,49 @@ public class PasspointWifiEntryTest {
         entry.setIsDefaultNetwork(false);
 
         assertThat(entry.getSummary()).isEqualTo("");
+    }
+
+    @Test
+    public void testGetSecurityTypes_connectedWifiNetwork_showsCurrentSecurityType() {
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.isPasspointAp()).thenReturn(true);
+        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(wifiInfo.getCurrentSecurityType()).thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
+        NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        assertThat(entry.getSecurityTypes()).containsExactlyElementsIn(Arrays.asList(
+                WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2,
+                WifiInfo.SECURITY_TYPE_PASSPOINT_R3));
+
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.getSecurityTypes())
+                .containsExactly(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
+
+        when(wifiInfo.getCurrentSecurityType()).thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+
+        assertThat(entry.getSecurityTypes()).containsExactly(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
+    }
+
+    @Test
+    public void testGetSecurityString_showsPasspoint() {
+        PasspointConfiguration passpointConfiguration = getPasspointConfiguration();
+        String passpointSecurity = "Passpoint";
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_security_passpoint))
+                .thenReturn(passpointSecurity);
+
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
+                passpointConfiguration, mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        assertThat(passpointWifiEntry.getSecurityString(false)).isEqualTo(passpointSecurity);
     }
 
     @Test

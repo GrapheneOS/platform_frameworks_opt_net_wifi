@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkScoreManager;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
@@ -51,6 +52,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class SavedNetworkTrackerTest {
@@ -102,6 +104,9 @@ public class SavedNetworkTrackerTest {
         mTestLooper = new TestLooper();
 
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
+        when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
+        when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
+        when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
         when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
                 .thenReturn(mMockNetworkScoreManager);
@@ -333,5 +338,56 @@ public class SavedNetworkTrackerTest {
         assertThat(savedNetworkTracker.getSubscriptionWifiEntries()).isNotEmpty();
         assertThat(savedNetworkTracker.getSubscriptionWifiEntries().get(0).getTitle())
                 .isEqualTo("friendlyName");
+    }
+
+    @Test
+    public void testGetSavedNetworks_splitConfigs_entriesMergedBySecurityFamily() {
+        final String ssid = "ssid";
+        WifiConfiguration openConfig = buildWifiConfiguration(ssid);
+        openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+        openConfig.networkId = 1;
+        WifiConfiguration oweConfig = buildWifiConfiguration(ssid);
+        oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+        oweConfig.networkId = 1;
+        WifiConfiguration wepConfig = buildWifiConfiguration(ssid);
+        wepConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_WEP);
+        wepConfig.wepKeys = new String[]{"key"};
+        wepConfig.networkId = 2;
+        WifiConfiguration pskConfig = buildWifiConfiguration(ssid);
+        pskConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        pskConfig.networkId = 3;
+        WifiConfiguration saeConfig = buildWifiConfiguration(ssid);
+        saeConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+        saeConfig.networkId = 3;
+        WifiConfiguration eapConfig = buildWifiConfiguration(ssid);
+        eapConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
+        eapConfig.networkId = 4;
+        WifiConfiguration eapWpa3Config = buildWifiConfiguration(ssid);
+        eapWpa3Config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
+        eapWpa3Config.networkId = 4;
+        WifiConfiguration eapWpa3SuiteBConfig = buildWifiConfiguration(ssid);
+        eapWpa3SuiteBConfig.setSecurityParams(
+                WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
+        eapWpa3SuiteBConfig.networkId = 5;
+        when(mMockWifiManager.getConfiguredNetworks()).thenReturn(Arrays.asList(
+                openConfig, oweConfig, wepConfig, pskConfig, saeConfig, eapConfig, eapWpa3Config,
+                eapWpa3SuiteBConfig
+        ));
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        final List<WifiEntry> savedWifiEntries = savedNetworkTracker.getSavedWifiEntries();
+        assertThat(savedWifiEntries.size()).isEqualTo(5);
+        assertThat(savedWifiEntries.stream()
+                .map(entry -> entry.getSecurityTypes())
+                .collect(Collectors.toList()))
+                .containsExactly(
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_OPEN, WifiInfo.SECURITY_TYPE_OWE),
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_WEP),
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_PSK, WifiInfo.SECURITY_TYPE_SAE),
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_EAP,
+                                WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE),
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT));
     }
 }
