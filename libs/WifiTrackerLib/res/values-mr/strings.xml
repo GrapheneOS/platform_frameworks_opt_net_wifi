@@ -59,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"मध्यम"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"जलद"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"खूप जलद"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"वाय-फाय सध्या ऑटो-कनेक्ट होणार नाही"</string>
 </resources>
