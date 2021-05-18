@@ -33,7 +33,7 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Желі бұл құрылғымен үйлесімді емес."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Ажыратылды"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Сақталған"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Өлшеулі"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Трафик саналатын желі"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Трафик саналмайды"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> арқылы жалғанған"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> арқылы қолжетімді"</string>
@@ -59,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Орташа"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Жылдам"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Өте жылдам"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Қазір Wi-Fi автоматты түрде қосылмайды."</string>
 </resources>

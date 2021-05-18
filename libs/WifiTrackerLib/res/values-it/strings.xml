@@ -59,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Media"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Veloce"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Molto veloce"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Per il momento la connessione automatica della rete Wi-Fi non funziona"</string>
 </resources>
