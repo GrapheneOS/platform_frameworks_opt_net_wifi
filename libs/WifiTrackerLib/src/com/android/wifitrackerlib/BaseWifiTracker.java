@@ -150,7 +150,10 @@ public class BaseWifiTracker implements LifecycleObserver {
     // Network request for listening on changes to Wifi link properties and network capabilities
     // such as captive portal availability.
     private final NetworkRequest mNetworkRequest = new NetworkRequest.Builder()
-            .clearCapabilities().addTransportType(TRANSPORT_WIFI).build();
+            .clearCapabilities()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            .addTransportType(TRANSPORT_WIFI)
+            .build();
 
     private final ConnectivityManager.NetworkCallback mNetworkCallback =
             new ConnectivityManager.NetworkCallback() {
@@ -195,7 +198,8 @@ public class BaseWifiTracker implements LifecycleObserver {
                         @NonNull NetworkCapabilities networkCapabilities) {
                     final boolean oldWifiDefault = mIsWifiDefaultRoute;
                     final boolean oldCellDefault = mIsCellDefaultRoute;
-                    mIsWifiDefaultRoute = isPrimaryWifiNetwork(networkCapabilities);
+                    // raw Wifi or VPN-over-Wifi is default => Wifi is default.
+                    mIsWifiDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_WIFI);
                     mIsCellDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_CELLULAR);
                     if (mIsWifiDefaultRoute != oldWifiDefault
                             || mIsCellDefaultRoute != oldCellDefault) {
