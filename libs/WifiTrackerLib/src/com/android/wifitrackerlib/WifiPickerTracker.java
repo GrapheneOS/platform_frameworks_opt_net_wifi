@@ -700,8 +700,12 @@ public class WifiPickerTracker extends BaseWifiTracker {
             }
         }
         updateNetworkRequestConfig(networkRequestConfigs);
-        mNumSavedNetworks = (int) mStandardWifiConfigCache.values().stream().flatMap(List::stream)
-                .filter(cachedConfig -> !cachedConfig.isEphemeral()).count();
+        mNumSavedNetworks = (int) mStandardWifiConfigCache.values().stream()
+                .flatMap(List::stream)
+                .filter(config -> !config.isEphemeral())
+                .map(config -> config.networkId)
+                .distinct()
+                .count();
 
         // Iterate through current entries and update each entry's config
         mStandardWifiEntryCache.forEach(entry ->
