@@ -182,6 +182,6 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         if (config.isPasspoint()) {
             return false;
         }
-        return mKey.equals(new StandardWifiEntryKey(config));
+        return mKey.equals(new StandardWifiEntryKey(config, mKey.isTargetingNewNetworks()));
     }
 }
