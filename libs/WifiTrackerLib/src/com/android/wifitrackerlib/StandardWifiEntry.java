@@ -350,21 +350,25 @@ public class StandardWifiEntry extends WifiEntry {
             // Saved/suggested network
             mWifiManager.connect(mTargetWifiConfig.networkId, new ConnectActionListener());
         } else {
-            // Unsaved network
-            if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)
-                    || mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
-                // Open network
-                final WifiConfiguration connectConfig = new WifiConfiguration();
-                connectConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
-
-                if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
-                    // Use OWE if possible
-                    connectConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.OWE);
-                    connectConfig.requirePmf = true;
-                } else {
-                    connectConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+            if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
+                // OWE network
+                final WifiConfiguration oweConfig = new WifiConfiguration();
+                oweConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
+                oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+                mWifiManager.connect(oweConfig, new ConnectActionListener());
+                if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)) {
+                    // Add an extra Open config for OWE transition networks
+                    final WifiConfiguration openConfig = new WifiConfiguration();
+                    openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
+                    openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+                    mWifiManager.save(openConfig, null);
                 }
-                mWifiManager.connect(connectConfig, new ConnectActionListener());
+            } else if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)) {
+                // Open network
+                final WifiConfiguration openConfig = new WifiConfiguration();
+                openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
+                openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+                mWifiManager.connect(openConfig, new ConnectActionListener());
             } else {
                 // Secure network
                 if (callback != null) {
@@ -664,9 +668,10 @@ public class StandardWifiEntry extends WifiEntry {
         }
         // Populate the cached scan result map
         mMatchingScanResults.clear();
+        final Set<Integer> keySecurityTypes = mKey.getScanResultKey().getSecurityTypes();
         for (ScanResult scan : scanResults) {
             for (int security : getSecurityTypesFromScanResult(scan)) {
-                if (!isSecurityTypeSupported(security)) {
+                if (!keySecurityTypes.contains(security) || !isSecurityTypeSupported(security)) {
                     continue;
                 }
                 if (!mMatchingScanResults.containsKey(security)) {
