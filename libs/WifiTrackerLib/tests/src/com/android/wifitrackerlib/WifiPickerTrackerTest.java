@@ -976,7 +976,6 @@ public class WifiPickerTrackerTest {
                 .isEqualTo(subId2);
     }
 
-
     /**
      * Tests that getWifiEntries returns separate WifiEntries for each security family for scans
      * with the same SSID
@@ -1108,5 +1107,31 @@ public class WifiPickerTrackerTest {
                         Arrays.asList(WifiInfo.SECURITY_TYPE_EAP,
                                 WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE),
                         Arrays.asList(WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT));
+    }
+
+    /**
+     * Tests that getNumSavedNetworks() returns the correct number of networks based on number of
+     * unique network IDs even for split configs which may have the same network ID but different
+     * security types.
+     */
+    @Test
+    public void testGetNumSavedNetworks_splitConfigs_returnsNetworkIdCount() {
+        WifiConfiguration openConfig = buildWifiConfiguration("ssid");
+        openConfig.networkId = 1;
+        // PSK + SAE split config with the same network ID
+        WifiConfiguration pskConfig = buildWifiConfiguration("ssid");
+        pskConfig.setSecurityParams(WifiInfo.SECURITY_TYPE_PSK);
+        pskConfig.networkId = 2;
+        WifiConfiguration saeConfig = buildWifiConfiguration("ssid");
+        saeConfig.setSecurityParams(WifiInfo.SECURITY_TYPE_SAE);
+        saeConfig.networkId = 2;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Arrays.asList(openConfig, pskConfig, saeConfig));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        // 1 open config + 2 split configs with same network ID should be treated as 2 networks.
+        assertThat(wifiPickerTracker.getNumSavedNetworks()).isEqualTo(2);
     }
 }
