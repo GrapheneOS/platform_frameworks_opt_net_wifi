@@ -22,7 +22,6 @@ import static com.android.wifitrackerlib.OsuWifiEntry.osuProviderToOsuWifiEntryK
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
-import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTING;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
@@ -624,12 +623,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
             return;
         }
 
-        String ssid = mNetworkRequestEntry.getSsid();
-        @WifiEntry.Security int security = mNetworkRequestEntry.getSecurity();
-
-        List<ScanResult> matchedScans = scanResults.stream().filter(scan ->
-                TextUtils.equals(scan.SSID, ssid)
-                        && getSecurityTypesFromScanResult(scan).contains(security))
+        final ScanResultKey scanKey =
+                mNetworkRequestEntry.getStandardWifiEntryKey().getScanResultKey();
+        List<ScanResult> matchedScans = scanResults.stream()
+                .filter(scan -> scanKey.equals(new ScanResultKey(scan)))
                 .collect(toList());
         mNetworkRequestEntry.updateScanResultInfo(matchedScans);
     }

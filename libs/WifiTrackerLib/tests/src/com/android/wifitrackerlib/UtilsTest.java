@@ -24,6 +24,8 @@ import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getNetworkSelectionDescription;
+import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
+import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
 import static com.android.wifitrackerlib.Utils.isSimPresent;
@@ -409,6 +411,85 @@ public class UtilsTest {
 
         assertThat(getNetworkSelectionDescription(wifiConfig)).isEqualTo(expected);
     }
+
+    @Test
+    public void testGetSecurityTypeFromWifiConfiguration_returnsCorrectSecurityTypes() {
+        for (int securityType = WifiInfo.SECURITY_TYPE_OPEN;
+                securityType <= WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE; securityType++) {
+            WifiConfiguration config = new WifiConfiguration();
+            config.setSecurityParams(securityType);
+            if (securityType == WifiInfo.SECURITY_TYPE_WEP) {
+                config.wepKeys = new String[]{"key"};
+            }
+            if (securityType == WifiInfo.SECURITY_TYPE_EAP) {
+                assertThat(getSecurityTypesFromWifiConfiguration(config))
+                        .containsExactly(
+                                WifiInfo.SECURITY_TYPE_EAP,
+                                WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
+            } else {
+                assertThat(getSecurityTypesFromWifiConfiguration(config))
+                        .containsExactly(securityType);
+            }
+        }
+    }
+
+    @Test
+    public void testGetSecurityTypesFromScanResult_returnsCorrectSecurityTypes() {
+        ScanResult scanResult = new ScanResult();
+
+        scanResult.capabilities = "";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_OPEN);
+
+        scanResult.capabilities = "OWE";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_OWE);
+
+        scanResult.capabilities = "OWE_TRANSITION";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_OPEN, WifiInfo.SECURITY_TYPE_OWE);
+
+        scanResult.capabilities = "WEP";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_WEP);
+
+        scanResult.capabilities = "PSK";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_PSK);
+
+        scanResult.capabilities = "SAE";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_SAE);
+
+        scanResult.capabilities = "[PSK][SAE]";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_PSK, WifiInfo.SECURITY_TYPE_SAE);
+
+        scanResult.capabilities = "[EAP/SHA1]";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_EAP);
+
+        scanResult.capabilities = "[RSN-EAP/SHA1+EAP/SHA256][MFPC]";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_EAP, WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
+
+        scanResult.capabilities = "[RSN-EAP/SHA256][MFPC][MFPR]";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
+
+        scanResult.capabilities = "[RSN-SUITE_B_192][MFPR]";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT);
+
+        scanResult.capabilities = "WAPI-PSK";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_WAPI_PSK);
+
+        scanResult.capabilities = "WAPI-CERT";
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_WAPI_CERT);
+    }
+
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
         final WifiManager mockWifiManager = mock(WifiManager.class);
