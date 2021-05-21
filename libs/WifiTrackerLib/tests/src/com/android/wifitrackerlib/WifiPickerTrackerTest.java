@@ -128,6 +128,13 @@ public class WifiPickerTrackerTest {
 
     @Before
     public void setUp() {
+        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
+            @Override
+            boolean isProviderModelEnabled(Context context) {
+                return false;
+            }
+        };
+
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
@@ -562,9 +569,16 @@ public class WifiPickerTrackerTest {
      */
     @Test
     public void testGetConnectedEntry_wifiValidatedCellDefault_isLowQuality() {
+        final String summarySeparator = " / ";
         final String lowQuality = "Low quality";
+        final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
+                "Authenticating", "Obtaining IP address", "Connected"};
+        when(mMockResources.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(summarySeparator);
         when(mMockResources.getString(R.string.wifi_connected_low_quality)).thenReturn(lowQuality);
-        when(mMockResources.getStringArray(anyInt())).thenReturn(new String[0]);
+        when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(wifiStatusArray);
+
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
