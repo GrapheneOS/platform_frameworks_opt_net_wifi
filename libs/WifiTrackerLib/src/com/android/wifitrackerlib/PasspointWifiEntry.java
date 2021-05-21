@@ -17,6 +17,9 @@
 package com.android.wifitrackerlib;
 
 import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_PASSPOINT_R3;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_UNKNOWN;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
@@ -29,7 +32,6 @@ import static com.android.wifitrackerlib.Utils.getConnectingDescription;
 import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
 import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
-import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
 import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
@@ -56,6 +58,7 @@ import androidx.annotation.WorkerThread;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -81,7 +84,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Nullable
     private PasspointConfiguration mPasspointConfig;
     @Nullable private WifiConfiguration mWifiConfig;
-    private @Security int mSecurity = SECURITY_EAP;
+    private List<Integer> mTargetSecurityTypes =
+            List.of(SECURITY_TYPE_PASSPOINT_R1_R2, SECURITY_TYPE_PASSPOINT_R3);
+
     private boolean mIsRoaming = false;
     private OsuWifiEntry mOsuWifiEntry;
     private boolean mShouldAutoOpenCaptivePortal = false;
@@ -247,9 +252,8 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     }
 
     @Override
-    @Security
-    public int getSecurity() {
-        return mSecurity;
+    public List<Integer> getSecurityTypes() {
+        return mTargetSecurityTypes;
     }
 
     @Override
@@ -450,8 +454,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
 
     @Override
     public String getSecurityString(boolean concise) {
-        return concise ? mContext.getString(R.string.wifitrackerlib_wifi_security_short_eap) :
-                mContext.getString(R.string.wifitrackerlib_wifi_security_eap);
+        return mContext.getString(R.string.wifitrackerlib_wifi_security_passpoint);
     }
 
     @Override
@@ -494,7 +497,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             }
         }
         if (mWifiConfig != null) {
-            mSecurity = getSecurityTypeFromWifiConfiguration(wifiConfig);
             List<ScanResult> currentScanResults = new ArrayList<>();
             ScanResult bestScanResult = null;
             if (homeScanResults != null && !homeScanResults.isEmpty()) {
@@ -518,6 +520,17 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             mLevel = WIFI_LEVEL_UNREACHABLE;
         }
         notifyOnUpdated();
+    }
+
+    @Override
+    protected void updateSecurityTypes() {
+        if (mWifiInfo != null) {
+            final int wifiInfoSecurity = mWifiInfo.getCurrentSecurityType();
+            if (wifiInfoSecurity != SECURITY_TYPE_UNKNOWN) {
+                mTargetSecurityTypes = Collections.singletonList(wifiInfoSecurity);
+                return;
+            }
+        }
     }
 
     @WorkerThread
