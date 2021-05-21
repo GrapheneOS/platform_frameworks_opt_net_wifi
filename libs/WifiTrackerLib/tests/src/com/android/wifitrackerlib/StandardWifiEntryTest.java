@@ -107,6 +107,13 @@ public class StandardWifiEntryTest {
 
     @Before
     public void setUp() {
+        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
+            @Override
+            boolean isProviderModelEnabled(Context context) {
+                return false;
+            }
+        };
+
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
@@ -670,6 +677,51 @@ public class StandardWifiEntryTest {
         entry.setIsDefaultNetwork(true);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
+    }
+
+    @Test
+    public void testGetSummary_providerModelConnectedButNotDefault_doesNotShowConnected() {
+        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
+            @Override
+            boolean isProviderModelEnabled(Context context) {
+                return true;
+            }
+        };
+        final int networkId = 1;
+        final String summarySeparator = " / ";
+        final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
+                "Authenticating", "Obtaining IP address", "Connected"};
+
+        final Resources mockResources = mock(Resources.class);
+        when(mMockContext.getResources()).thenReturn(mockResources);
+        when(mockResources.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(summarySeparator);
+        when(mockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(wifiStatusArray);
+        final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
+        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
+        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(mockConnectivityManager);
+
+        final WifiInfo wifiInfo = new WifiInfo.Builder().setNetworkId(networkId).build();
+        final NetworkInfo networkInfo =
+                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
+        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = networkId;
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE),
+                Collections.singletonList(config), null, mMockWifiManager, mMockScoreCache,
+                false /* forSavedNetworksPage */);
+
+        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.setIsDefaultNetwork(false);
+
+        assertThat(entry.getSummary()).isEqualTo("");
     }
 
     @Test
