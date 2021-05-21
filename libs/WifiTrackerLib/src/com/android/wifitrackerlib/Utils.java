@@ -63,11 +63,13 @@ import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.text.style.ClickableSpan;
+import android.util.FeatureFlagUtils;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.settingslib.HelpUtils;
 
 import java.util.ArrayList;
@@ -81,6 +83,15 @@ import java.util.StringJoiner;
 public class Utils {
     /** Copy of the @hide Settings.Global.USE_OPEN_WIFI_PACKAGE constant. */
     static final String SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE = "use_open_wifi_package";
+
+    @VisibleForTesting
+    static FeatureFlagUtilsWrapper sFeatureFlagUtilsWrapper = new FeatureFlagUtilsWrapper();
+
+    static class FeatureFlagUtilsWrapper {
+        boolean isProviderModelEnabled(Context context) {
+            return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
+        }
+    }
 
     private static NetworkScoreManager sNetworkScoreManager;
 
@@ -255,21 +266,157 @@ public class Utils {
         }
     }
 
-    static String getDisconnectedStateDescription(Context context, WifiEntry wifiEntry) {
-        if (context == null || wifiEntry == null) {
-            return "";
-        }
-        WifiConfiguration wifiConfiguration = wifiEntry.getWifiConfiguration();
-        if (wifiConfiguration == null) {
-            return null;
+    static String getConnectedDescription(Context context,
+            WifiConfiguration wifiConfiguration,
+            NetworkCapabilities networkCapabilities,
+            String recommendationServiceLabel,
+            boolean isDefaultNetwork,
+            boolean isLowQuality) {
+        final StringJoiner sj = new StringJoiner(context.getString(
+                R.string.wifitrackerlib_summary_separator));
+        final boolean hideConnected =
+                !isDefaultNetwork && sFeatureFlagUtilsWrapper.isProviderModelEnabled(context);
+
+        if (wifiConfiguration != null) {
+            if (wifiConfiguration.fromWifiNetworkSuggestion
+                    || wifiConfiguration.fromWifiNetworkSpecifier) {
+                // For suggestion or specifier networks to show "Connected via ..."
+                final String suggestionOrSpecifierLabel =
+                        getSuggestionOrSpecifierLabel(context, wifiConfiguration);
+                if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
+                    if (hideConnected) {
+                        sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
+                                suggestionOrSpecifierLabel));
+                    } else {
+                        sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
+                                suggestionOrSpecifierLabel));
+                    }
+                }
+            } else if (wifiConfiguration.isEphemeral() && !hideConnected) {
+                // For ephemeral networks to show "Automatically connected via ..."
+                if (!TextUtils.isEmpty(recommendationServiceLabel)) {
+                    sj.add(String.format(context.getString(
+                            R.string.wifitrackerlib_connected_via_network_scorer),
+                            recommendationServiceLabel));
+                } else {
+                    sj.add(context.getString(
+                            R.string.wifitrackerlib_connected_via_network_scorer_default));
+                }
+            }
         }
 
+        if (isLowQuality) {
+            sj.add(context.getString(R.string.wifi_connected_low_quality));
+        }
+
+        // For displaying network capability info, such as captive portal or no internet
+        String networkCapabilitiesInformation =
+                getCurrentNetworkCapabilitiesInformation(context,  networkCapabilities);
+        if (!TextUtils.isEmpty(networkCapabilitiesInformation)) {
+            sj.add(networkCapabilitiesInformation);
+        }
+
+        // Default to "Connected" if nothing else to display
+        if (sj.length() == 0 && !hideConnected) {
+            return context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
+                    [DetailedState.CONNECTED.ordinal()];
+        }
+
+        return sj.toString();
+    }
+
+    static String getConnectingDescription(Context context, NetworkInfo networkInfo) {
+        if (context == null || networkInfo == null) {
+            return "";
+        }
+        DetailedState detailedState = networkInfo.getDetailedState();
+        if (detailedState == null) {
+            return "";
+        }
+
+        final String[] wifiStatusArray = context.getResources()
+                .getStringArray(R.array.wifitrackerlib_wifi_status);
+        final int index = detailedState.ordinal();
+        return index >= wifiStatusArray.length ? "" : wifiStatusArray[index];
+    }
+
+
+    static String getDisconnectedDescription(Context context,
+            WifiConfiguration wifiConfiguration,
+            boolean forSavedNetworksPage,
+            boolean concise) {
+        if (context == null) {
+            return "";
+        }
+        final StringJoiner sj = new StringJoiner(context.getString(
+                R.string.wifitrackerlib_summary_separator));
+
+        // For "Saved", "Saved by ...", and "Available via..."
+        if (concise) {
+            sj.add(context.getString(R.string.wifitrackerlib_wifi_disconnected));
+        } else if (wifiConfiguration != null) {
+            if (forSavedNetworksPage && !wifiConfiguration.isPasspoint()) {
+                final CharSequence appLabel = getAppLabel(context, wifiConfiguration.creatorName);
+                if (!TextUtils.isEmpty(appLabel)) {
+                    sj.add(context.getString(R.string.wifitrackerlib_saved_network, appLabel));
+                }
+            } else {
+                if (wifiConfiguration.fromWifiNetworkSuggestion) {
+                    final String suggestionOrSpecifierLabel =
+                            getSuggestionOrSpecifierLabel(context, wifiConfiguration);
+                    if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
+                        sj.add(context.getString(
+                                R.string.wifitrackerlib_available_via_app,
+                                suggestionOrSpecifierLabel));
+                    }
+                } else {
+                    sj.add(context.getString(R.string.wifitrackerlib_wifi_remembered));
+                }
+            }
+        }
+
+        // For failure messages and disabled reasons
+        final String wifiConfigFailureMessage =
+                getWifiConfigurationFailureMessage(context, wifiConfiguration);
+        if (!TextUtils.isEmpty(wifiConfigFailureMessage)) {
+            sj.add(wifiConfigFailureMessage);
+        }
+
+        return sj.toString();
+    }
+
+    private static String getSuggestionOrSpecifierLabel(
+            Context context, WifiConfiguration wifiConfiguration) {
+        if (context == null || wifiConfiguration == null) {
+            return "";
+        }
+
+        final String carrierName = getCarrierNameForSubId(context,
+                getSubIdForConfig(context, wifiConfiguration));
+        if (!TextUtils.isEmpty(carrierName)) {
+            return carrierName;
+        }
+        final String suggestorLabel = getAppLabel(context, wifiConfiguration.creatorName);
+        if (!TextUtils.isEmpty(suggestorLabel)) {
+            return suggestorLabel;
+        }
+        // Fall-back to the package name in case the app label is missing
+        return wifiConfiguration.creatorName;
+    }
+
+    private static String getWifiConfigurationFailureMessage(
+            Context context, WifiConfiguration wifiConfiguration) {
+        if (context == null || wifiConfiguration == null) {
+            return "";
+        }
+
+        // Check for any failure messages to display
         if (wifiConfiguration.hasNoInternetAccess()) {
             int messageID =
                     wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
                             == NETWORK_SELECTION_PERMANENTLY_DISABLED
-                    ? R.string.wifitrackerlib_wifi_no_internet_no_reconnect
-                    : R.string.wifitrackerlib_wifi_no_internet;
+                            ? R.string.wifitrackerlib_wifi_no_internet_no_reconnect
+                            : R.string.wifitrackerlib_wifi_no_internet;
             return context.getString(messageID);
         } else if (wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
                 != NETWORK_SELECTION_ENABLED) {
@@ -293,8 +440,6 @@ public class Utils {
                 default:
                     break;
             }
-        } else if (wifiEntry.getLevel() == WifiEntry.WIFI_LEVEL_UNREACHABLE) {
-            // Do nothing because users know it by signal icon.
         } else { // In range, not disabled.
             switch (wifiConfiguration.getRecentFailureReason()) {
                 case WifiConfiguration.RECENT_FAILURE_AP_UNABLE_TO_HANDLE_NEW_STA:
@@ -465,18 +610,21 @@ public class Utils {
         return "";
     }
 
+    /**
+     * Returns the display string corresponding to the detailed state of the given NetworkInfo
+     */
     static String getNetworkDetailedState(Context context, NetworkInfo networkInfo) {
         if (context == null || networkInfo == null) {
             return "";
         }
-        DetailedState detailState = networkInfo.getDetailedState();
-        if (detailState == null) {
+        DetailedState detailedState = networkInfo.getDetailedState();
+        if (detailedState == null) {
             return "";
         }
 
         String[] wifiStatusArray = context.getResources()
                 .getStringArray(R.array.wifitrackerlib_wifi_status);
-        int index = detailState.ordinal();
+        int index = detailedState.ordinal();
         return index >= wifiStatusArray.length ? "" : wifiStatusArray[index];
     }
 

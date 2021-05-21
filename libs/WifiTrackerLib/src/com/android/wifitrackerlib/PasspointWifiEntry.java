@@ -21,20 +21,17 @@ import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
-import static com.android.wifitrackerlib.Utils.getAppLabel;
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
-import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
-import static com.android.wifitrackerlib.Utils.getCurrentNetworkCapabilitiesInformation;
-import static com.android.wifitrackerlib.Utils.getDisconnectedStateDescription;
+import static com.android.wifitrackerlib.Utils.getConnectedDescription;
+import static com.android.wifitrackerlib.Utils.getConnectingDescription;
+import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
 import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
-import static com.android.wifitrackerlib.Utils.getNetworkDetailedState;
 import static com.android.wifitrackerlib.Utils.getSecurityTypeFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
 import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
-import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
 import android.content.Context;
@@ -49,6 +46,7 @@ import android.net.wifi.WifiNetworkScoreCache;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -66,6 +64,7 @@ import java.util.StringJoiner;
  */
 @VisibleForTesting
 public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntryCallback {
+    static final String TAG = "PasspointWifiEntry";
     public static final String KEY_PREFIX = "PasspointWifiEntry:";
 
     private final Object mLock = new Object();
@@ -177,33 +176,33 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             } else {
                 sj.add(mContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired));
             }
-        } else if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-            String disconnectDescription = getDisconnectedStateDescription(mContext, this);
-            if (TextUtils.isEmpty(disconnectDescription)) {
-                if (concise) {
-                    sj.add(mContext.getString(R.string.wifitrackerlib_wifi_disconnected));
-                } else if (!mForSavedNetworksPage) {
-                    if (mWifiConfig != null && mWifiConfig.fromWifiNetworkSuggestion) {
-                        String carrierName = getCarrierNameForSubId(mContext,
-                                getSubIdForConfig(mContext, mWifiConfig));
-                        String suggestorLabel = getAppLabel(mContext, mWifiConfig.creatorName);
-                        if (TextUtils.isEmpty(suggestorLabel)) {
-                            // Fall-back to the package name in case the app label is missing
-                            suggestorLabel = mWifiConfig.creatorName;
-                        }
-                        sj.add(mContext.getString(R.string.wifitrackerlib_available_via_app,
-                                carrierName != null ? carrierName : suggestorLabel));
-                    } else {
-                        sj.add(mContext.getString(R.string.wifitrackerlib_wifi_remembered));
-                    }
-                }
-            } else {
-                sj.add(disconnectDescription);
-            }
         } else {
-            String connectDescription = getConnectStateDescription();
-            if (!TextUtils.isEmpty(connectDescription)) {
-                sj.add(connectDescription);
+            final String connectedStateDescription;
+            final @ConnectedState int connectedState = getConnectedState();
+            switch (connectedState) {
+                case CONNECTED_STATE_DISCONNECTED:
+                    connectedStateDescription = getDisconnectedDescription(mContext,
+                            mWifiConfig,
+                            mForSavedNetworksPage,
+                            concise);
+                    break;
+                case CONNECTED_STATE_CONNECTING:
+                    connectedStateDescription = getConnectingDescription(mContext, mNetworkInfo);
+                    break;
+                case CONNECTED_STATE_CONNECTED:
+                    connectedStateDescription = getConnectedDescription(mContext,
+                            mWifiConfig,
+                            mNetworkCapabilities,
+                            null /* recommendationServiceLabel */,
+                            mIsDefaultNetwork,
+                            mIsLowQuality);
+                    break;
+                default:
+                    Log.e(TAG, "getConnectedState() returned unknown state: " + connectedState);
+                    connectedStateDescription = null;
+            }
+            if (!TextUtils.isEmpty(connectedStateDescription)) {
+                sj.add(connectedStateDescription);
             }
         }
 
@@ -230,38 +229,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         }
 
         return sj.toString();
-    }
-
-    private String getConnectStateDescription() {
-        if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            // For network suggestions
-            final String suggestionOrSpecifierPackageName = mWifiInfo != null
-                    ? mWifiInfo.getRequestingPackageName() : null;
-            if (!TextUtils.isEmpty(suggestionOrSpecifierPackageName)) {
-                String carrierName = mWifiConfig != null
-                        ? getCarrierNameForSubId(mContext, getSubIdForConfig(mContext, mWifiConfig))
-                        : null;
-                String suggestorLabel = getAppLabel(mContext, suggestionOrSpecifierPackageName);
-                if (TextUtils.isEmpty(suggestorLabel)) {
-                    // Fall-back to the package name in case the app label is missing
-                    suggestorLabel = suggestionOrSpecifierPackageName;
-                }
-                return mContext.getString(R.string.wifitrackerlib_connected_via_app,
-                        carrierName != null ? carrierName : suggestorLabel);
-            }
-
-            if (mIsLowQuality) {
-                return mContext.getString(R.string.wifi_connected_low_quality);
-            }
-
-            String networkCapabilitiesinformation =
-                    getCurrentNetworkCapabilitiesInformation(mContext, mNetworkCapabilities);
-            if (!TextUtils.isEmpty(networkCapabilitiesinformation)) {
-                return networkCapabilitiesinformation;
-            }
-        }
-
-        return getNetworkDetailedState(mContext, mNetworkInfo);
     }
 
     @Override
