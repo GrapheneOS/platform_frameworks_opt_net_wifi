@@ -16,9 +16,12 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
+
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
-import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityToStandardWifiEntryKey;
+import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityTypeToStandardWifiEntryKey;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
+import static com.android.wifitrackerlib.TestUtils.buildWifiConfiguration;
 import static com.android.wifitrackerlib.WifiEntry.SECURITY_NONE;
 import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 
@@ -35,6 +38,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.test.TestLooper;
@@ -98,6 +102,9 @@ public class StandardNetworkDetailsTrackerTest {
 
         mTestLooper = new TestLooper();
 
+        when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
+        when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
+        when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
@@ -111,7 +118,7 @@ public class StandardNetworkDetailsTrackerTest {
     @Test
     public void testGetWifiEntry_HasCorrectKey() throws Exception {
         final StandardWifiEntryKey key =
-                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE);
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
 
         final StandardNetworkDetailsTracker tracker =
                 createTestStandardNetworkDetailsTracker(key.toString());
@@ -126,7 +133,7 @@ public class StandardNetworkDetailsTrackerTest {
     public void testHandleOnStart_scanResultUpdaterUpdateCorrectly() throws Exception {
         final ScanResult chosen = buildScanResult("ssid", "bssid", START_MILLIS);
         final StandardWifiEntryKey key =
-                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE);
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
         final StandardNetworkDetailsTracker tracker =
                 createTestStandardNetworkDetailsTracker(key.toString());
         final ScanResult other = buildScanResult("ssid2", "bssid", START_MILLIS, -50 /* rssi */);
@@ -148,7 +155,7 @@ public class StandardNetworkDetailsTrackerTest {
         // Starting without any scans available should make level WIFI_LEVEL_UNREACHABLE
         final ScanResult scan = buildScanResult("ssid", "bssid", START_MILLIS, -50 /* rssi */);
         final StandardWifiEntryKey key =
-                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE);
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
         final StandardNetworkDetailsTracker tracker =
                 createTestStandardNetworkDetailsTracker(key.toString());
 
@@ -187,7 +194,7 @@ public class StandardNetworkDetailsTrackerTest {
     public void testConfiguredNetworksChangedAction_updates_isSaved() throws Exception {
         // Initialize with no config. isSaved() should return false.
         final StandardWifiEntryKey key =
-                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE);
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
         final StandardNetworkDetailsTracker tracker =
                 createTestStandardNetworkDetailsTracker(key.toString());
 
@@ -227,7 +234,7 @@ public class StandardNetworkDetailsTrackerTest {
         // Start with scan result and wifi state enabled. Level should not be unreachable.
         final ScanResult scan = buildScanResult("ssid", "bssid", START_MILLIS, -50 /* rssi */);
         final StandardWifiEntryKey key =
-                ssidAndSecurityToStandardWifiEntryKey("ssid", SECURITY_NONE);
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
         when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(scan));
 
         final StandardNetworkDetailsTracker tracker =
@@ -247,5 +254,43 @@ public class StandardNetworkDetailsTrackerTest {
                 new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION));
 
         assertThat(wifiEntry.getLevel()).isEqualTo(WIFI_LEVEL_UNREACHABLE);
+    }
+
+    @Test
+    public void testSecurityTargeting_pskScansWithSaeConfig_correspondsToNewNetworkTargeting() {
+        final String ssid = "ssid";
+        final WifiConfiguration config = buildWifiConfiguration(ssid);
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        final ScanResult scan = buildScanResult(ssid, "bssid", START_MILLIS, -50 /* rssi */);
+        scan.capabilities = "[PSK]";
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(scan));
+
+        // Start without targeting new networks
+        StandardNetworkDetailsTracker tracker = createTestStandardNetworkDetailsTracker(
+                ssidAndSecurityTypeToStandardWifiEntryKey(ssid, SECURITY_TYPE_PSK).toString());
+        tracker.onStart();
+        mTestLooper.dispatchAll();
+
+        // WifiEntry should correspond to the saved config
+        WifiEntry wifiEntry = tracker.getWifiEntry();
+//        assertThat(wifiEntry.getSecurityTypes().size()).isEqualTo(1);
+        assertThat(wifiEntry.getSecurityTypes().get(0)).isEqualTo(WifiInfo.SECURITY_TYPE_SAE);
+        assertThat(wifiEntry.getLevel()).isEqualTo(WIFI_LEVEL_UNREACHABLE);
+
+        // Now target new networks as if we got the key from WifiPickerTracker
+        tracker = createTestStandardNetworkDetailsTracker(
+                ssidAndSecurityTypeToStandardWifiEntryKey(ssid, SECURITY_TYPE_PSK,
+                        true /* isTargetingNewNetworks */).toString());
+        tracker.onStart();
+        mTestLooper.dispatchAll();
+
+        // WifiEntry should correspond to the unsaved scan
+        wifiEntry = tracker.getWifiEntry();
+//        assertThat(wifiEntry.getSecurityTypes().size()).isEqualTo(1);
+        assertThat(wifiEntry.getSecurityTypes().get(0)).isEqualTo(SECURITY_TYPE_PSK);
+        assertThat(wifiEntry.getLevel()).isNotEqualTo(WIFI_LEVEL_UNREACHABLE);
+
     }
 }
