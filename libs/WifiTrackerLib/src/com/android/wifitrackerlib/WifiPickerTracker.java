@@ -465,7 +465,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
         });
         // Create new StandardWifiEntry objects for each leftover group of scan results.
         for (ScanResultKey scanKey: newScanKeys) {
-            final StandardWifiEntryKey entryKey = new StandardWifiEntryKey(scanKey);
+            final StandardWifiEntryKey entryKey =
+                    new StandardWifiEntryKey(scanKey, true /* isTargetingNewNetworks */);
             final StandardWifiEntry newEntry = new StandardWifiEntry(mContext, mMainHandler,
                     entryKey, mStandardWifiConfigCache.get(entryKey),
                     scanResultsByKey.get(scanKey), mWifiManager, mWifiNetworkScoreCache,
@@ -682,7 +683,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             if (config.carrierMerged) {
                 continue;
             }
-            StandardWifiEntryKey standardWifiEntryKey = new StandardWifiEntryKey(config);
+            StandardWifiEntryKey standardWifiEntryKey =
+                    new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */);
             if (config.isPasspoint()) {
                 mPasspointWifiConfigCache.put(config.networkId, config);
             } else if (config.fromWifiNetworkSuggestion) {
@@ -726,7 +728,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             return;
         }
 
-        StandardWifiEntryKey configKey = new StandardWifiEntryKey(configs.get(0));
+        StandardWifiEntryKey configKey =
+                new StandardWifiEntryKey(configs.get(0), true /* isTargetingNewNetworks */);
         if (mNetworkRequestEntry == null
                 || !mNetworkRequestEntry.getStandardWifiEntryKey().equals(configKey)) {
             mNetworkRequestEntry = new NetworkRequestEntry(mContext, mMainHandler, configKey,
@@ -808,7 +811,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 continue;
             }
             final StandardWifiEntryKey entryKey =
-                    new StandardWifiEntryKey(configs.get(0));
+                    new StandardWifiEntryKey(configs.get(0), true /* isTargetingNewNetworks */);
             for (StandardWifiEntry existingEntry : mStandardWifiEntryCache) {
                 if (entryKey.equals(existingEntry.getStandardWifiEntryKey())) {
                     return;
@@ -843,7 +846,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 continue;
             }
             final StandardWifiEntryKey entryKey =
-                    new StandardWifiEntryKey(configs.get(0));
+                    new StandardWifiEntryKey(configs.get(0), true /* isTargetingNewNetworks */);
             for (StandardWifiEntry existingEntry : mSuggestedWifiEntryCache) {
                 if (entryKey.equals(existingEntry.getStandardWifiEntryKey())) {
                     return;
