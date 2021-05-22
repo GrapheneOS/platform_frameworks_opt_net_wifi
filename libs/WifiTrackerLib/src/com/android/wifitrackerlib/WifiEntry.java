@@ -21,6 +21,7 @@ import static android.net.wifi.WifiInfo.INVALID_RSSI;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
+import static com.android.wifitrackerlib.Utils.getWifiEntrySecurityFromWifiInfoSecurityTypes;
 
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -51,6 +52,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -242,7 +244,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
     protected boolean mCalledDisconnect = false;
 
     private boolean mIsValidated;
-    private boolean mIsDefaultNetwork;
+    protected boolean mIsDefaultNetwork;
     protected boolean mIsLowQuality;
 
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
@@ -354,10 +356,23 @@ public class WifiEntry implements Comparable<WifiEntry> {
         return null;
     }
 
-    /** Returns the security type defined by the SECURITY constants */
+    /**
+     * Returns the security type defined by the SECURITY constants
+     * DEPRECATED: Use getSecurityTypes() which can return multiple security types.
+     */
+    // TODO(b/187554920): Remove this and move all clients to getSecurityTypes()
     @Security
     public int getSecurity() {
-        return SECURITY_NONE;
+        return getWifiEntrySecurityFromWifiInfoSecurityTypes(getSecurityTypes());
+    }
+
+    /**
+     * Returns security type of the current connection, or the available types for connection
+     * in the form of the SECURITY_TYPE_* values in {@link WifiInfo}
+     */
+    @NonNull
+    public List<Integer> getSecurityTypes() {
+        return Collections.emptyList();
     }
 
     /** Returns the MAC address of the connection */
@@ -809,7 +824,14 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 });
             }
         }
+        updateSecurityTypes();
         notifyOnUpdated();
+    }
+
+    // Called to indicate the security types should be updated to match new information about the
+    // network.
+    protected void updateSecurityTypes() {
+        // Do nothing;
     }
 
     // Method for WifiTracker to update the link properties, which is valid for all WifiEntry types.
@@ -995,7 +1017,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 .append(getLevel())
                 .append(shouldShowXLevelIcon() ? "X" : "")
                 .append(",security:")
-                .append(getSecurity())
+                .append(getSecurityTypes())
                 .append(",connected:")
                 .append(getConnectedState() == CONNECTED_STATE_CONNECTED ? "true" : "false")
                 .append(",connectedInfo:")
