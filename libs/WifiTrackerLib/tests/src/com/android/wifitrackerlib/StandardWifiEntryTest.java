@@ -75,6 +75,7 @@ import android.telephony.TelephonyManager;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -1245,5 +1246,64 @@ public class StandardWifiEntryTest {
         // SAE config and PSK scan do not match, so entry is unsaved with PSK scan level
         assertThat(entry.getLevel()).isEqualTo(GOOD_LEVEL);
         assertThat(entry.isSaved()).isFalse();
+    }
+
+    @Test
+    public void testConnect_unsavedOpen_configuresOpenNetwork() {
+        ScanResult openScan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        openScan.capabilities = "";
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
+                null, Collections.singletonList(openScan),
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+        ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+
+        entry.connect(null);
+        verify(mMockWifiManager).connect(connectConfigCaptor.capture(), any());
+
+        assertThat(Utils.getSecurityTypesFromWifiConfiguration(connectConfigCaptor.getValue()))
+                .isEqualTo(Collections.singletonList(SECURITY_TYPE_OPEN));
+    }
+
+    @Test
+    public void testConnect_unsavedOwe_configuresOweNetwork() {
+        ScanResult oweScan = buildScanResult("ssid", "bssid0", 0, BAD_RSSI);
+        oweScan.capabilities = "OWE";
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OWE),
+                null, Collections.singletonList(oweScan),
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+        ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+
+        entry.connect(null);
+        verify(mMockWifiManager).connect(connectConfigCaptor.capture(), any());
+
+        assertThat(Utils.getSecurityTypesFromWifiConfiguration(connectConfigCaptor.getValue()))
+                .isEqualTo(Collections.singletonList(SECURITY_TYPE_OWE));
+    }
+
+    @Test
+    public void testConnect_unsavedOpenOwe_configuresOweAndOpenNetwork() {
+        ScanResult oweTransitionScan = buildScanResult("ssid", "bssid0", 0, BAD_RSSI);
+        oweTransitionScan.capabilities = "OWE_TRANSITION";
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
+                null, Collections.singletonList(oweTransitionScan),
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+        ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        ArgumentCaptor<WifiConfiguration> savedConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+
+        entry.connect(null);
+        verify(mMockWifiManager).connect(connectConfigCaptor.capture(), any());
+        verify(mMockWifiManager).save(savedConfigCaptor.capture(), any());
+
+        assertThat(Utils.getSecurityTypesFromWifiConfiguration(connectConfigCaptor.getValue()))
+                .isEqualTo(Collections.singletonList(SECURITY_TYPE_OWE));
+        assertThat(Utils.getSecurityTypesFromWifiConfiguration(savedConfigCaptor.getValue()))
+                .isEqualTo(Collections.singletonList(SECURITY_TYPE_OPEN));
     }
 }
