@@ -753,7 +753,9 @@ public class StandardWifiEntry extends WifiEntry {
                                     + ", Actual: " + securityType
                                     + ", Config: " + config);
                 }
-                mMatchingWifiConfigs.put(securityType, config);
+                if (isSecurityTypeSupported(securityType)) {
+                    mMatchingWifiConfigs.put(securityType, config);
+                }
             }
         }
         updateSecurityTypes();
@@ -783,38 +785,34 @@ public class StandardWifiEntry extends WifiEntry {
                 mTargetSecurityTypes.add(mWifiInfo.getCurrentSecurityType());
             }
         }
-        Set<Integer> keySecurityTypes = mKey.getScanResultKey().getSecurityTypes();
-        // First try to find security types that matches both scans and configs
-        if (mTargetSecurityTypes.isEmpty()
-                && !mMatchingScanResults.isEmpty() && !mMatchingWifiConfigs.isEmpty()) {
-            for (int security : keySecurityTypes) {
-                if (mMatchingScanResults.containsKey(security)
-                        && mMatchingWifiConfigs.containsKey(security)
-                        && isSecurityTypeSupported(security)) {
-                    mTargetSecurityTypes.add(security);
+
+        Set<Integer> configSecurityTypes = mMatchingWifiConfigs.keySet();
+        if (mTargetSecurityTypes.isEmpty() && mKey.isTargetingNewNetworks()) {
+            // If we are targeting new networks for configuration, then we should select the
+            // security type of all visible scan results if we don't have any configs that
+            // can connect to them. This will let us configure this entry as a new network.
+            boolean configMatchesScans = false;
+            Set<Integer> scanSecurityTypes = mMatchingScanResults.keySet();
+            for (int configSecurity : configSecurityTypes) {
+                if (scanSecurityTypes.contains(configSecurity)) {
+                    configMatchesScans = true;
+                    break;
                 }
             }
-        }
-        // If no scan + config match, prioritize the security types of available scans, then
-        // available configs, and finally just use the security types from the ScanResultKey
-        if (mTargetSecurityTypes.isEmpty() && !mMatchingScanResults.isEmpty()) {
-            for (int security : keySecurityTypes) {
-                if (mMatchingScanResults.containsKey(security)
-                        && isSecurityTypeSupported(security)) {
-                    mTargetSecurityTypes.add(security);
-                }
+            if (!configMatchesScans) {
+                mTargetSecurityTypes.addAll(scanSecurityTypes);
             }
         }
-        if (mTargetSecurityTypes.isEmpty() && !mMatchingWifiConfigs.isEmpty()) {
-            for (int security : keySecurityTypes) {
-                if (mMatchingWifiConfigs.containsKey(security)
-                        && isSecurityTypeSupported(security)) {
-                    mTargetSecurityTypes.add(security);
-                }
-            }
-        }
+
+        // Use security types of any configs we have
         if (mTargetSecurityTypes.isEmpty()) {
-            mTargetSecurityTypes.addAll(keySecurityTypes);
+            mTargetSecurityTypes.addAll(configSecurityTypes);
+        }
+
+        // Default to the key security types. This shouldn't happen since we should always have
+        // scans or configs.
+        if (mTargetSecurityTypes.isEmpty()) {
+            mTargetSecurityTypes.addAll(mKey.getScanResultKey().getSecurityTypes());
         }
 
         mTargetWifiConfig = null;
@@ -881,8 +879,16 @@ public class StandardWifiEntry extends WifiEntry {
     @NonNull
     static StandardWifiEntryKey ssidAndSecurityTypeToStandardWifiEntryKey(
             @NonNull String ssid, int security) {
+        return ssidAndSecurityTypeToStandardWifiEntryKey(
+                ssid, security, false /* isTargetingNewNetworks */);
+    }
+
+    @NonNull
+    static StandardWifiEntryKey ssidAndSecurityTypeToStandardWifiEntryKey(
+            @NonNull String ssid, int security, boolean isTargetingNewNetworks) {
         return new StandardWifiEntryKey(
-                new ScanResultKey(ssid, Collections.singletonList(security)));
+                new ScanResultKey(ssid, Collections.singletonList(security)),
+                isTargetingNewNetworks);
     }
 
     @Override
@@ -956,27 +962,48 @@ public class StandardWifiEntry extends WifiEntry {
      *     1) ScanResult key (SSID + grouped security types)
      *     2) Suggestion profile key
      *     3) Is network request or not
+     *     4) Should prioritize configuring a new network (i.e. target the security type of an
+     *     in-range unsaved network, rather than a config that has no scans)
      */
     static class StandardWifiEntryKey {
         private static final String KEY_SCAN_RESULT_KEY = "SCAN_RESULT_KEY";
         private static final String KEY_SUGGESTION_PROFILE_KEY = "SUGGESTION_PROFILE_KEY";
         private static final String KEY_IS_NETWORK_REQUEST = "IS_NETWORK_REQUEST";
+        private static final String KEY_IS_TARGETING_NEW_NETWORKS = "IS_TARGETING_NEW_NETWORKS";
 
         @NonNull private ScanResultKey mScanResultKey;
         @Nullable private String mSuggestionProfileKey;
         private boolean mIsNetworkRequest;
+        private boolean mIsTargetingNewNetworks = false;
 
         /**
          * Creates a StandardWifiEntryKey matching a ScanResultKey
          */
         StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey) {
+            this(scanResultKey, false /* isTargetingNewNetworks */);
+        }
+
+        /**
+         * Creates a StandardWifiEntryKey matching a ScanResultKey and sets whether the entry
+         * should target new networks or not.
+         */
+        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean isTargetingNewNetworks) {
             mScanResultKey = scanResultKey;
+            mIsTargetingNewNetworks = isTargetingNewNetworks;
         }
 
         /**
          * Creates a StandardWifiEntryKey matching a WifiConfiguration
          */
         StandardWifiEntryKey(@NonNull WifiConfiguration config) {
+            this(config, false /* isTargetingNewNetworks */);
+        }
+
+        /**
+         * Creates a StandardWifiEntryKey matching a WifiConfiguration and sets whether the entry
+         * should target new networks or not.
+         */
+        StandardWifiEntryKey(@NonNull WifiConfiguration config, boolean isTargetingNewNetworks) {
             mScanResultKey = new ScanResultKey(config);
             if (config.fromWifiNetworkSuggestion) {
                 mSuggestionProfileKey = new StringJoiner(",")
@@ -987,6 +1014,7 @@ public class StandardWifiEntry extends WifiEntry {
             } else if (config.fromWifiNetworkSpecifier) {
                 mIsNetworkRequest = true;
             }
+            mIsTargetingNewNetworks = isTargetingNewNetworks;
         }
 
         /**
@@ -1009,6 +1037,10 @@ public class StandardWifiEntry extends WifiEntry {
                 if (keyJson.has(KEY_IS_NETWORK_REQUEST)) {
                     mIsNetworkRequest = keyJson.getBoolean(KEY_IS_NETWORK_REQUEST);
                 }
+                if (keyJson.has(KEY_IS_TARGETING_NEW_NETWORKS)) {
+                    mIsTargetingNewNetworks = keyJson.getBoolean(
+                            KEY_IS_TARGETING_NEW_NETWORKS);
+                }
             } catch (JSONException e) {
                 Log.e(TAG, "JSONException while converting StandardWifiEntryKey to string: " + e);
             }
@@ -1030,6 +1062,9 @@ public class StandardWifiEntry extends WifiEntry {
                 if (mIsNetworkRequest) {
                     keyJson.put(KEY_IS_NETWORK_REQUEST, mIsNetworkRequest);
                 }
+                if (mIsTargetingNewNetworks) {
+                    keyJson.put(KEY_IS_TARGETING_NEW_NETWORKS, mIsTargetingNewNetworks);
+                }
             } catch (JSONException e) {
                 Log.wtf(TAG, "JSONException while converting StandardWifiEntryKey to string: " + e);
             }
@@ -1049,6 +1084,10 @@ public class StandardWifiEntry extends WifiEntry {
 
         boolean isNetworkRequest() {
             return mIsNetworkRequest;
+        }
+
+        boolean isTargetingNewNetworks() {
+            return mIsTargetingNewNetworks;
         }
 
         @Override

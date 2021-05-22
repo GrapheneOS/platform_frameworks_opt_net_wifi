@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkScoreManager;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -389,5 +390,56 @@ public class SavedNetworkTrackerTest {
                         Arrays.asList(WifiInfo.SECURITY_TYPE_EAP,
                                 WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE),
                         Arrays.asList(WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT));
+    }
+
+    /**
+     * Tests that entries with configs that have scans matching the security family but NOT the
+     * actual configs on hand will ignore the scans and be returned as saved with the configs.
+     */
+    @Test
+    public void testGetSavedNetworks_mismatchedScans_returnsCorrectEntries() {
+        // Set up scans for Open, PSK, WPA2-Enterprise
+        final ArrayList scanList = new ArrayList();
+        final String ssid = "ssid";
+        final String bssid = "bssid";
+        int bssidNum = 0;
+        for (String capabilities : Arrays.asList(
+                "",
+                "[PSK]",
+                "[EAP/SHA1]"
+        )) {
+            final ScanResult scan = buildScanResult(ssid, bssid + bssidNum++, START_MILLIS);
+            scan.capabilities = capabilities;
+            scanList.add(scan);
+        }
+        when(mMockWifiManager.getScanResults()).thenReturn(scanList);
+        // Set up configs for OWE, SAE, WPA3-Enterprise
+        WifiConfiguration oweConfig = buildWifiConfiguration(ssid);
+        oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+        oweConfig.networkId = 1;
+        WifiConfiguration saeConfig = buildWifiConfiguration(ssid);
+        saeConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+        saeConfig.networkId = 2;
+        WifiConfiguration eapWpa3Config = buildWifiConfiguration(ssid);
+        eapWpa3Config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
+        eapWpa3Config.networkId = 3;
+        when(mMockWifiManager.getConfiguredNetworks())
+                .thenReturn(Arrays.asList(oweConfig, saeConfig, eapWpa3Config));
+
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        // Entries should appear correctly in the saved entry list with the security type of their
+        // configs, ignoring the scans present.
+        final List<WifiEntry> savedWifiEntries = savedNetworkTracker.getSavedWifiEntries();
+        assertThat(savedWifiEntries.size()).isEqualTo(3);
+        assertThat(savedWifiEntries.stream()
+                .map(entry -> entry.getSecurityTypes())
+                .collect(Collectors.toList()))
+                .containsExactly(
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_OWE),
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_SAE),
+                        Arrays.asList(WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE));
     }
 }
