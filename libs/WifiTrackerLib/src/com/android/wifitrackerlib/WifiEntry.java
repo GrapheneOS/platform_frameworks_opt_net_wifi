@@ -808,6 +808,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 mConnectedInfo.wifiStandard = wifiInfo.getWifiStandard();
             }
         } else { // Connection info doesn't matched, so this network is disconnected
+            mWifiInfo = null;
             mNetworkInfo = null;
             mNetworkCapabilities = null;
             mConnectedInfo = null;
