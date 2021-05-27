@@ -19,14 +19,6 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
 
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP_SUITE_B;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_EAP_WPA3_ENTERPRISE;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_NONE;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_OWE;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_PSK;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_SAE;
-import static com.android.wifitrackerlib.WifiEntry.SECURITY_WEP;
 import static com.android.wifitrackerlib.WifiEntry.SPEED_FAST;
 import static com.android.wifitrackerlib.WifiEntry.SPEED_MODERATE;
 import static com.android.wifitrackerlib.WifiEntry.SPEED_NONE;
@@ -218,43 +210,31 @@ public class Utils {
     }
 
     /**
-     * Returns a single legacy WifiEntry security type from the list of multiple WifiInfo security
+     * Returns a single WifiInfo security type from the list of multiple WifiInfo security
      * types supported by an entry.
      *
      * Single security types will have a 1-to-1 mapping.
-     * Multiple security type networks will collapse to the following single types:
-     *     - Open/OWE -> OWE
+     * Multiple security type networks will collapse to the lowest security type in the group:
+     *     - Open/OWE -> Open
      *     - PSK/SAE -> PSK
      *     - EAP/EAP-WPA3 -> EAP
      */
-    static @WifiEntry.Security int getWifiEntrySecurityFromWifiInfoSecurityTypes(
+    static int getSingleSecurityTypeFromMultipleSecurityTypes(
             @NonNull List<Integer> securityTypes) {
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_OWE)) {
-            return SECURITY_OWE;
+        if (securityTypes.size() == 1) {
+            return securityTypes.get(0);
+        } else if (securityTypes.size() == 2) {
+            if (securityTypes.contains(WifiInfo.SECURITY_TYPE_OPEN)) {
+                return WifiInfo.SECURITY_TYPE_OPEN;
+            }
+            if (securityTypes.contains(WifiInfo.SECURITY_TYPE_PSK)) {
+                return WifiInfo.SECURITY_TYPE_PSK;
+            }
+            if (securityTypes.contains(WifiInfo.SECURITY_TYPE_EAP)) {
+                return WifiInfo.SECURITY_TYPE_EAP;
+            }
         }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_WEP)) {
-            return SECURITY_WEP;
-        }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_PSK)) {
-            return SECURITY_PSK;
-        }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_SAE)) {
-            return SECURITY_SAE;
-        }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_EAP)) {
-            return SECURITY_EAP;
-        }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE)) {
-            return SECURITY_EAP_WPA3_ENTERPRISE;
-        }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT)) {
-            return SECURITY_EAP_SUITE_B;
-        }
-        if (securityTypes.contains(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2)
-                || securityTypes.contains(WifiInfo.SECURITY_TYPE_PASSPOINT_R3)) {
-            return SECURITY_EAP;
-        }
-        return SECURITY_NONE;
+        return WifiInfo.SECURITY_TYPE_UNKNOWN;
     }
 
     @Speed

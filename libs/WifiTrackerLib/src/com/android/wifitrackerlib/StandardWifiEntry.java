@@ -42,6 +42,7 @@ import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfiguration;
+import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
 import static com.android.wifitrackerlib.Utils.getSpeedDescription;
 import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
@@ -815,15 +816,10 @@ public class StandardWifiEntry extends WifiEntry {
             mTargetSecurityTypes.addAll(mKey.getScanResultKey().getSecurityTypes());
         }
 
-        mTargetWifiConfig = null;
-        for (int security : mTargetSecurityTypes) {
-            if (mMatchingWifiConfigs.containsKey(security)) {
-                // Pick the first config with a match, since all matching configs should be split
-                // configs from the same internal config.
-                mTargetWifiConfig = mMatchingWifiConfigs.get(security);
-                break;
-            }
-        }
+        // The target wifi config should match the security type we return in getSecurity(), since
+        // clients (QR code/DPP, modify network page) may expect them to match.
+        mTargetWifiConfig = mMatchingWifiConfigs.get(
+                getSingleSecurityTypeFromMultipleSecurityTypes(mTargetSecurityTypes));
         // Collect target scan results in a set to remove duplicates when one scan matches multiple
         // security types.
         Set<ScanResult> targetScanResultSet = new ArraySet<>();
