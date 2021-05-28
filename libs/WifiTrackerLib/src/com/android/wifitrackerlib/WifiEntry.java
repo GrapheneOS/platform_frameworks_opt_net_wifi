@@ -20,8 +20,8 @@ import static android.net.wifi.WifiInfo.INVALID_RSSI;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
+import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
 import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
-import static com.android.wifitrackerlib.Utils.getWifiEntrySecurityFromWifiInfoSecurityTypes;
 
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -363,7 +363,29 @@ public class WifiEntry implements Comparable<WifiEntry> {
     // TODO(b/187554920): Remove this and move all clients to getSecurityTypes()
     @Security
     public int getSecurity() {
-        return getWifiEntrySecurityFromWifiInfoSecurityTypes(getSecurityTypes());
+        switch (getSingleSecurityTypeFromMultipleSecurityTypes(getSecurityTypes())) {
+            case WifiInfo.SECURITY_TYPE_OPEN:
+                return SECURITY_NONE;
+            case WifiInfo.SECURITY_TYPE_OWE:
+                return SECURITY_OWE;
+            case WifiInfo.SECURITY_TYPE_WEP:
+                return SECURITY_WEP;
+            case WifiInfo.SECURITY_TYPE_PSK:
+                return SECURITY_PSK;
+            case WifiInfo.SECURITY_TYPE_SAE:
+                return SECURITY_SAE;
+            case WifiInfo.SECURITY_TYPE_EAP:
+                return SECURITY_EAP;
+            case WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE:
+                return SECURITY_EAP_WPA3_ENTERPRISE;
+            case WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT:
+                return SECURITY_EAP_SUITE_B;
+            case WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2:
+            case WifiInfo.SECURITY_TYPE_PASSPOINT_R3:
+                return SECURITY_EAP;
+            default:
+                return SECURITY_NONE;
+        }
     }
 
     /**
