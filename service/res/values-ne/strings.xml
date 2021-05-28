@@ -17,12 +17,12 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifiResourcesAppLabel" product="default" msgid="4965162975090543792">"प्रणालीको Wi-Fi का स्रोतहरू"</string>
-    <string name="wifi_available_title" msgid="2844963247498642107">"खुला Wi‑Fi नेटवर्कमा जडान गर्नुहोस्"</string>
+    <string name="wifi_available_title" msgid="2844963247498642107">"खुला Wi‑Fi नेटवर्कमा कनेक्ट गर्नुहोस्"</string>
     <string name="wifi_available_title_connecting" msgid="4308431577637294026">"Wi‑Fi नेटवर्कमा जडान गर्दै"</string>
     <string name="wifi_available_title_connected" msgid="922603556292157664">"Wi‑Fi नेटवर्कमा जडान गरियो"</string>
     <string name="wifi_available_title_failed_to_connect" msgid="2304443371893419545">"Wi‑Fi नेटवर्कमा जडान गर्न सकिएन"</string>
     <string name="wifi_available_content_failed_to_connect" msgid="3171283790496729136">"सबै नेटवर्कहरू हेर्न ट्याप गर्नुहोस्"</string>
-    <string name="wifi_available_action_connect" msgid="7989951293406720158">"जडान गर्नुहोस्"</string>
+    <string name="wifi_available_action_connect" msgid="7989951293406720158">"कनेक्ट गर्नुहोस्"</string>
     <string name="wifi_available_action_all_networks" msgid="2616926772813472478">"सबै नेटवर्कहरू"</string>
     <string name="notification_channel_network_status" msgid="7808526906954286713">"नेटवर्कको स्थिति"</string>
     <string name="notification_channel_network_alerts" msgid="3638265846217667221">"नेटवर्कका अलर्टहरू"</string>
