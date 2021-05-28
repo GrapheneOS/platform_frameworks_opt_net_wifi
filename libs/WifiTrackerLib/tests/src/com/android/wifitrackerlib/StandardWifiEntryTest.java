@@ -1315,4 +1315,61 @@ public class StandardWifiEntryTest {
         assertThat(Utils.getSecurityTypesFromWifiConfiguration(savedConfigCaptor.getValue()))
                 .isEqualTo(Collections.singletonList(SECURITY_TYPE_OPEN));
     }
+
+    @Test
+    public void testGetSecurity_openAndOwe_returnsOpen() {
+        WifiConfiguration openConfig = new WifiConfiguration();
+        openConfig.SSID = "\"ssid\"";
+        openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+        WifiConfiguration oweConfig = new WifiConfiguration();
+        oweConfig.SSID = "\"ssid\"";
+        oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
+                        true /* isTargetingNewNetwork */),
+                Arrays.asList(openConfig, oweConfig), null,
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+
+        assertThat(entry.getSecurity()).isEqualTo(WifiEntry.SECURITY_NONE);
+        assertThat(entry.getWifiConfiguration()).isEqualTo(openConfig);
+    }
+
+    @Test
+    public void testGetSecurity_pskAndSae_returnsPsk() {
+        WifiConfiguration pskConfig = new WifiConfiguration();
+        pskConfig.SSID = "\"ssid\"";
+        pskConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        WifiConfiguration saeConfig = new WifiConfiguration();
+        saeConfig.SSID = "\"ssid\"";
+        saeConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK,
+                        true /* isTargetingNewNetwork */),
+                Arrays.asList(pskConfig, saeConfig), null,
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+
+        assertThat(entry.getSecurity()).isEqualTo(WifiEntry.SECURITY_PSK);
+        assertThat(entry.getWifiConfiguration()).isEqualTo(pskConfig);
+    }
+
+    @Test
+    public void testGetSecurity_eapAndEapWpa3_returnsEap() {
+        WifiConfiguration eapConfig = new WifiConfiguration();
+        eapConfig.SSID = "\"ssid\"";
+        eapConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
+        WifiConfiguration eapWpa3Config = new WifiConfiguration();
+        eapWpa3Config.SSID = "\"ssid\"";
+        eapWpa3Config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
+
+        StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP,
+                        true /* isTargetingNewNetwork */),
+                Arrays.asList(eapConfig, eapWpa3Config), null,
+                mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+
+        assertThat(entry.getSecurity()).isEqualTo(WifiEntry.SECURITY_EAP);
+        assertThat(entry.getWifiConfiguration()).isEqualTo(eapConfig);
+    }
 }
