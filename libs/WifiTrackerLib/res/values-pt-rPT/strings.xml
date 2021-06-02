@@ -32,7 +32,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Não é possível ligar. Tente novamente mais tarde."</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"A rede não é compatível com este dispositivo"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Desligada"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Guardada."</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Guardada"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Com acesso limitado"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Com acesso ilimitado"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Ligado através de <xliff:g id="NAME">%1$s</xliff:g>"</string>
@@ -44,7 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Ligado ao dispositivo. Não é possível disponibilizar Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Baixa qualidade"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Nenhuma"</string>
-    <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expirado."</string>
+    <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expirado"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Toque para se inscrever."</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Toque para renovar a subscrição e estabelecer ligação."</string>
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"A abrir <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>…"</string>
