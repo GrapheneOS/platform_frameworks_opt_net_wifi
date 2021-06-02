@@ -55,7 +55,7 @@
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ova mreža prima ID SIM-a koji se može koristiti za praćenje lokacije uređaja. "<annotation id="url">"Saznajte više"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Veoma sporo"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Sporo"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"UREDU"</string>
+    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Uredu"</string>
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Srednje"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Brzo"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Veoma brzo"</string>
