@@ -68,7 +68,6 @@ import android.text.TextUtils;
 import android.util.ArraySet;
 import android.util.Log;
 
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
@@ -104,7 +103,6 @@ public class StandardWifiEntry extends WifiEntry {
 
     @NonNull private final Context mContext;
 
-    private final Object mLock = new Object();
     // Map of security type to matching scan results
     @NonNull private final Map<Integer, List<ScanResult>> mMatchingScanResults = new HashMap<>();
     // Map of security type to matching WifiConfiguration
@@ -115,8 +113,6 @@ public class StandardWifiEntry extends WifiEntry {
     // security from all of the matched WifiConfigurations.
     // If no WifiConfigurations are available, then these should match the most appropriate security
     // type (e.g. PSK for an PSK/SAE entry, OWE for an Open/OWE entry).
-    // Note: Must be thread safe for generating the verbose scan summary
-    @GuardedBy("mLock")
     @NonNull private final List<ScanResult> mTargetScanResults = new ArrayList<>();
     // Target WifiConfiguration for connection and displaying WifiConfiguration info
     private WifiConfiguration mTargetWifiConfig;
@@ -176,7 +172,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getSummary(boolean concise) {
+    public synchronized String getSummary(boolean concise) {
         StringJoiner sj = new StringJoiner(mContext.getString(
                 R.string.wifitrackerlib_summary_separator));
 
@@ -245,12 +241,12 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public List<Integer> getSecurityTypes() {
-        return mTargetSecurityTypes;
+    public synchronized List<Integer> getSecurityTypes() {
+        return new ArrayList<>(mTargetSecurityTypes);
     }
 
     @Override
-    public String getMacAddress() {
+    public synchronized String getMacAddress() {
         if (mWifiInfo != null) {
             final String wifiInfoMac = mWifiInfo.getMacAddress();
             if (!TextUtils.isEmpty(wifiInfoMac)
@@ -269,24 +265,24 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public boolean isMetered() {
+    public synchronized boolean isMetered() {
         return getMeteredChoice() == METERED_CHOICE_METERED
                 || (mTargetWifiConfig != null && mTargetWifiConfig.meteredHint);
     }
 
     @Override
-    public boolean isSaved() {
+    public synchronized boolean isSaved() {
         return mTargetWifiConfig != null && !mTargetWifiConfig.fromWifiNetworkSuggestion
                 && !mTargetWifiConfig.isEphemeral();
     }
 
     @Override
-    public boolean isSuggestion() {
+    public synchronized boolean isSuggestion() {
         return mTargetWifiConfig != null && mTargetWifiConfig.fromWifiNetworkSuggestion;
     }
 
     @Override
-    public WifiConfiguration getWifiConfiguration() {
+    public synchronized WifiConfiguration getWifiConfiguration() {
         if (!isSaved()) {
             return null;
         }
@@ -294,12 +290,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public ConnectedInfo getConnectedInfo() {
-        return mConnectedInfo;
-    }
-
-    @Override
-    public boolean canConnect() {
+    public synchronized boolean canConnect() {
         if (mLevel == WIFI_LEVEL_UNREACHABLE
                 || getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
             return false;
@@ -332,7 +323,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public void connect(@Nullable ConnectCallback callback) {
+    public synchronized void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
         // We should flag this network to auto-open captive portal since this method represents
         // the user manually connecting to a network (i.e. not auto-join).
@@ -387,7 +378,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public void disconnect(@Nullable DisconnectCallback callback) {
+    public synchronized void disconnect(@Nullable DisconnectCallback callback) {
         if (canDisconnect()) {
             mCalledDisconnect = true;
             mDisconnectCallback = callback;
@@ -408,7 +399,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public void forget(@Nullable ForgetCallback callback) {
+    public synchronized void forget(@Nullable ForgetCallback callback) {
         if (canForget()) {
             mForgetCallback = callback;
             mWifiManager.forget(mTargetWifiConfig.networkId, new ForgetActionListener());
@@ -416,7 +407,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public boolean canSignIn() {
+    public synchronized boolean canSignIn() {
         return mNetworkCapabilities != null
                 && mNetworkCapabilities.hasCapability(
                         NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
@@ -437,7 +428,7 @@ public class StandardWifiEntry extends WifiEntry {
      * See https://github.com/zxing/zxing/wiki/Barcode-Contents#wi-fi-network-config-android-ios-11
      */
     @Override
-    public boolean canShare() {
+    public synchronized boolean canShare() {
         if (getWifiConfiguration() == null) {
             return false;
         }
@@ -460,7 +451,7 @@ public class StandardWifiEntry extends WifiEntry {
      * See https://www.wi-fi.org/discover-wi-fi/wi-fi-easy-connect
      */
     @Override
-    public boolean canEasyConnect() {
+    public synchronized boolean canEasyConnect() {
         if (getWifiConfiguration() == null) {
             return false;
         }
@@ -476,9 +467,9 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     @MeteredChoice
-    public int getMeteredChoice() {
-        if (getWifiConfiguration() != null) {
-            final int meteredOverride = getWifiConfiguration().meteredOverride;
+    public synchronized int getMeteredChoice() {
+        if (!isSuggestion() && mTargetWifiConfig != null) {
+            final int meteredOverride = mTargetWifiConfig.meteredOverride;
             if (meteredOverride == WifiConfiguration.METERED_OVERRIDE_METERED) {
                 return METERED_CHOICE_METERED;
             } else if (meteredOverride == WifiConfiguration.METERED_OVERRIDE_NOT_METERED) {
@@ -494,7 +485,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public void setMeteredChoice(int meteredChoice) {
+    public synchronized void setMeteredChoice(int meteredChoice) {
         if (!canSetMeteredChoice()) {
             return;
         }
@@ -516,7 +507,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     @Privacy
-    public int getPrivacy() {
+    public synchronized int getPrivacy() {
         if (mTargetWifiConfig != null
                 && mTargetWifiConfig.macRandomizationSetting
                 == WifiConfiguration.RANDOMIZATION_NONE) {
@@ -527,7 +518,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public void setPrivacy(int privacy) {
+    public synchronized void setPrivacy(int privacy) {
         if (!canSetPrivacy()) {
             return;
         }
@@ -538,7 +529,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public boolean isAutoJoinEnabled() {
+    public synchronized boolean isAutoJoinEnabled() {
         if (mTargetWifiConfig == null) {
             return false;
         }
@@ -552,8 +543,8 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public void setAutoJoinEnabled(boolean enabled) {
-        if (!canSetAutoJoinEnabled()) {
+    public synchronized void setAutoJoinEnabled(boolean enabled) {
+        if (mTargetWifiConfig == null || !canSetAutoJoinEnabled()) {
             return;
         }
 
@@ -561,7 +552,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getSecurityString(boolean concise) {
+    public synchronized String getSecurityString(boolean concise) {
         if (mTargetSecurityTypes.size() == 0) {
             return concise ? "" : mContext.getString(R.string.wifitrackerlib_wifi_security_none);
         }
@@ -633,7 +624,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    public boolean shouldEditBeforeConnect() {
+    public synchronized boolean shouldEditBeforeConnect() {
         WifiConfiguration wifiConfig = getWifiConfiguration();
         if (wifiConfig == null) {
             return false;
@@ -655,7 +646,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @WorkerThread
-    void updateScanResultInfo(@Nullable List<ScanResult> scanResults)
+    synchronized void updateScanResultInfo(@Nullable List<ScanResult> scanResults)
             throws IllegalArgumentException {
         if (scanResults == null) scanResults = new ArrayList<>();
 
@@ -687,7 +678,7 @@ public class StandardWifiEntry extends WifiEntry {
         notifyOnUpdated();
     }
 
-    private void updateTargetScanResultInfo() {
+    private synchronized void updateTargetScanResultInfo() {
         // Update the level using the scans matching the target security type
         final ScanResult bestScanResult = getBestScanResultByLevel(mTargetScanResults);
 
@@ -695,16 +686,14 @@ public class StandardWifiEntry extends WifiEntry {
             mLevel = bestScanResult != null
                     ? mWifiManager.calculateSignalLevel(bestScanResult.level)
                     : WIFI_LEVEL_UNREACHABLE;
-            synchronized (mLock) {
-                // Average speed is used to prevent speed label flickering from multiple APs.
-                mSpeed = getAverageSpeedFromScanResults(mScoreCache, mTargetScanResults);
-            }
+            // Average speed is used to prevent speed label flickering from multiple APs.
+            mSpeed = getAverageSpeedFromScanResults(mScoreCache, mTargetScanResults);
         }
     }
 
     @WorkerThread
     @Override
-    void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
+    synchronized void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
         super.updateNetworkCapabilities(capabilities);
 
         // Auto-open an available captive portal if the user manually connected to this network.
@@ -715,20 +704,18 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @WorkerThread
-    void onScoreCacheUpdated() {
+    synchronized void onScoreCacheUpdated() {
         if (mWifiInfo != null) {
             mSpeed = getSpeedFromWifiInfo(mScoreCache, mWifiInfo);
         } else {
-            synchronized (mLock) {
-                // Average speed is used to prevent speed label flickering from multiple APs.
-                mSpeed = getAverageSpeedFromScanResults(mScoreCache, mTargetScanResults);
-            }
+            // Average speed is used to prevent speed label flickering from multiple APs.
+            mSpeed = getAverageSpeedFromScanResults(mScoreCache, mTargetScanResults);
         }
         notifyOnUpdated();
     }
 
     @WorkerThread
-    void updateConfig(@Nullable List<WifiConfiguration> wifiConfigs)
+    synchronized void updateConfig(@Nullable List<WifiConfiguration> wifiConfigs)
             throws IllegalArgumentException {
         if (wifiConfigs == null) {
             wifiConfigs = Collections.emptyList();
@@ -778,7 +765,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    protected void updateSecurityTypes() {
+    protected synchronized void updateSecurityTypes() {
         mTargetSecurityTypes.clear();
         if (mWifiInfo != null) {
             final int wifiInfoSecurity = mWifiInfo.getCurrentSecurityType();
@@ -828,17 +815,15 @@ public class StandardWifiEntry extends WifiEntry {
                 targetScanResultSet.addAll(mMatchingScanResults.get(security));
             }
         }
-        synchronized (mLock) {
-            mTargetScanResults.clear();
-            mTargetScanResults.addAll(targetScanResultSet);
-        }
+        mTargetScanResults.clear();
+        mTargetScanResults.addAll(targetScanResultSet);
     }
 
     /**
      * Sets whether the suggested config for this entry is shareable to the user or not.
      */
     @WorkerThread
-    void setUserShareable(boolean isUserShareable) {
+    synchronized void setUserShareable(boolean isUserShareable) {
         mIsUserShareable = isUserShareable;
     }
 
@@ -846,12 +831,12 @@ public class StandardWifiEntry extends WifiEntry {
      * Returns whether the suggested config for this entry is shareable to the user or not.
      */
     @WorkerThread
-    boolean isUserShareable() {
+    synchronized boolean isUserShareable() {
         return mIsUserShareable;
     }
 
     @WorkerThread
-    protected boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
+    protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
             @NonNull NetworkInfo networkInfo) {
         if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return false;
@@ -864,7 +849,7 @@ public class StandardWifiEntry extends WifiEntry {
         return false;
     }
 
-    private void updateRecommendationServiceLabel() {
+    private synchronized void updateRecommendationServiceLabel() {
         final NetworkScorerAppData scorer = ((NetworkScoreManager) mContext
                 .getSystemService(Context.NETWORK_SCORE_SERVICE)).getActiveScorer();
         if (scorer != null) {
@@ -888,11 +873,9 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
-    protected String getScanResultDescription() {
-        synchronized (mLock) {
-            if (mTargetScanResults.size() == 0) {
-                return "";
-            }
+    protected synchronized String getScanResultDescription() {
+        if (mTargetScanResults.size() == 0) {
+            return "";
         }
 
         final StringBuilder description = new StringBuilder();
@@ -905,15 +888,12 @@ public class StandardWifiEntry extends WifiEntry {
         return description.toString();
     }
 
-    private String getScanResultDescription(int minFrequency, int maxFrequency) {
-        final List<ScanResult> scanResults;
-        synchronized (mLock) {
-            scanResults = mTargetScanResults.stream()
-                    .filter(scanResult -> scanResult.frequency >= minFrequency
-                            && scanResult.frequency <= maxFrequency)
-                    .sorted(Comparator.comparingInt(scanResult -> -1 * scanResult.level))
-                    .collect(Collectors.toList());
-        }
+    private synchronized String getScanResultDescription(int minFrequency, int maxFrequency) {
+        final List<ScanResult> scanResults = mTargetScanResults.stream()
+                .filter(scanResult -> scanResult.frequency >= minFrequency
+                        && scanResult.frequency <= maxFrequency)
+                .sorted(Comparator.comparingInt(scanResult -> -1 * scanResult.level))
+                .collect(Collectors.toList());
 
         final int scanResultCount = scanResults.size();
         if (scanResultCount == 0) {
@@ -933,7 +913,7 @@ public class StandardWifiEntry extends WifiEntry {
         return description.toString();
     }
 
-    private String getScanResultDescription(ScanResult scanResult, long nowMs) {
+    private synchronized String getScanResultDescription(ScanResult scanResult, long nowMs) {
         final StringBuilder description = new StringBuilder();
         description.append(" \n{");
         description.append(scanResult.BSSID);
