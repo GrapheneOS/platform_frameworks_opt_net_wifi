@@ -37,7 +37,6 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Pair;
 
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
@@ -53,14 +52,12 @@ import java.util.Map;
 class OsuWifiEntry extends WifiEntry {
     static final String KEY_PREFIX = "OsuWifiEntry:";
 
-    private final Object mLock = new Object();
     // Scan result list must be thread safe for generating the verbose scan summary
-    @GuardedBy("mLock")
     @NonNull private final List<ScanResult> mCurrentScanResults = new ArrayList<>();
 
     @NonNull private final String mKey;
     @NonNull private final Context mContext;
-    @NonNull private OsuProvider mOsuProvider;
+    @NonNull private final OsuProvider mOsuProvider;
     private String mSsid;
     private String mOsuStatusString;
     private boolean mIsAlreadyProvisioned = false;
@@ -88,7 +85,7 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getTitle() {
+    public synchronized String getTitle() {
         final String friendlyName = mOsuProvider.getFriendlyName();
         if (!TextUtils.isEmpty(friendlyName)) {
             return friendlyName;
@@ -104,7 +101,7 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getSummary(boolean concise) {
+    public synchronized String getSummary(boolean concise) {
         // TODO(b/70983952): Add verbose summary
         if (mOsuStatusString != null) {
             return mOsuStatusString;
@@ -118,7 +115,7 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    public String getSsid() {
+    public synchronized String getSsid() {
         return mSsid;
     }
 
@@ -129,13 +126,13 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @Override
-    public boolean canConnect() {
+    public synchronized boolean canConnect() {
         return mLevel != WIFI_LEVEL_UNREACHABLE
                 && getConnectedState() == CONNECTED_STATE_DISCONNECTED;
     }
 
     @Override
-    public void connect(@Nullable ConnectCallback callback) {
+    public synchronized void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
         mWifiManager.stopRestrictingAutoJoinToSubscriptionId();
         mWifiManager.startSubscriptionProvisioning(mOsuProvider, mContext.getMainExecutor(),
@@ -143,14 +140,12 @@ class OsuWifiEntry extends WifiEntry {
     }
 
     @WorkerThread
-    void updateScanResultInfo(@Nullable List<ScanResult> scanResults)
+    synchronized void updateScanResultInfo(@Nullable List<ScanResult> scanResults)
             throws IllegalArgumentException {
         if (scanResults == null) scanResults = new ArrayList<>();
 
-        synchronized (mLock) {
-            mCurrentScanResults.clear();
-            mCurrentScanResults.addAll(scanResults);
-        }
+        mCurrentScanResults.clear();
+        mCurrentScanResults.addAll(scanResults);
 
         final ScanResult bestScanResult = getBestScanResultByLevel(scanResults);
         if (bestScanResult != null) {
@@ -189,26 +184,30 @@ class OsuWifiEntry extends WifiEntry {
         return mOsuProvider;
     }
 
-    boolean isAlreadyProvisioned() {
+    synchronized boolean isAlreadyProvisioned() {
         return mIsAlreadyProvisioned;
     }
 
-    void setAlreadyProvisioned(boolean isAlreadyProvisioned) {
+    synchronized void setAlreadyProvisioned(boolean isAlreadyProvisioned) {
         mIsAlreadyProvisioned = isAlreadyProvisioned;
     }
 
     class OsuWifiEntryProvisioningCallback extends ProvisioningCallback {
         @Override
         @MainThread public void onProvisioningFailure(int status) {
-            if (TextUtils.equals(
-                    mOsuStatusString, mContext.getString(
-                    R.string.wifitrackerlib_osu_completing_sign_up))) {
-                mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_sign_up_failed);
-            } else {
-                mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_connect_failed);
-            }
-            if (mConnectCallback != null) {
-                mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+            synchronized (OsuWifiEntry.this) {
+                if (TextUtils.equals(
+                        mOsuStatusString, mContext.getString(
+                                R.string.wifitrackerlib_osu_completing_sign_up))) {
+                    mOsuStatusString =
+                            mContext.getString(R.string.wifitrackerlib_osu_sign_up_failed);
+                } else {
+                    mOsuStatusString =
+                            mContext.getString(R.string.wifitrackerlib_osu_connect_failed);
+                }
+                if (mConnectCallback != null) {
+                    mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+                }
             }
             notifyOnUpdated();
         }
@@ -236,16 +235,20 @@ class OsuWifiEntry extends WifiEntry {
                     R.string.wifitrackerlib_osu_completing_sign_up);
                     break;
             }
-            boolean updated = !TextUtils.equals(mOsuStatusString, newStatusString);
-            mOsuStatusString = newStatusString;
-            if (updated) {
-                notifyOnUpdated();
+            synchronized (OsuWifiEntry.this) {
+                boolean updated = !TextUtils.equals(mOsuStatusString, newStatusString);
+                mOsuStatusString = newStatusString;
+                if (updated) {
+                    notifyOnUpdated();
+                }
             }
         }
 
         @Override
         @MainThread public void onProvisioningComplete() {
-            mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_sign_up_complete);
+            synchronized (OsuWifiEntry.this) {
+                mOsuStatusString = mContext.getString(R.string.wifitrackerlib_osu_sign_up_complete);
+            }
             notifyOnUpdated();
 
             PasspointConfiguration passpointConfig = mWifiManager
@@ -253,8 +256,10 @@ class OsuWifiEntry extends WifiEntry {
                     .get(mOsuProvider);
             if (passpointConfig == null) {
                 // Failed to find the config we just provisioned
-                if (mConnectCallback != null) {
-                    mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+                synchronized (OsuWifiEntry.this) {
+                    if (mConnectCallback != null) {
+                        mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+                    }
                 }
                 return;
             }
@@ -282,8 +287,10 @@ class OsuWifiEntry extends WifiEntry {
             }
 
             // Failed to find the network we provisioned for
-            if (mConnectCallback != null) {
-                mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+            synchronized (OsuWifiEntry.this) {
+                if (mConnectCallback != null) {
+                    mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
+                }
             }
         }
     }
