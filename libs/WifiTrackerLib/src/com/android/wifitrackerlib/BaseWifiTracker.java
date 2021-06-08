@@ -92,11 +92,18 @@ public class BaseWifiTracker implements LifecycleObserver {
         return BaseWifiTracker.sVerboseLogging;
     }
 
+    private boolean mIsStarted;
+
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         @WorkerThread
         public void onReceive(Context context, Intent intent) {
+            if (!mIsStarted) {
+                mIsStarted = true;
+                handleOnStart();
+            }
+
             String action = intent.getAction();
 
             if (isVerboseLoggingEnabled()) {
@@ -158,8 +165,13 @@ public class BaseWifiTracker implements LifecycleObserver {
     private final ConnectivityManager.NetworkCallback mNetworkCallback =
             new ConnectivityManager.NetworkCallback() {
                 @Override
+                @WorkerThread
                 public void onLinkPropertiesChanged(@NonNull Network network,
                         @NonNull LinkProperties lp) {
+                    if (!mIsStarted) {
+                        mIsStarted = true;
+                        handleOnStart();
+                    }
                     if (!isPrimaryWifiNetwork(
                             mConnectivityManager.getNetworkCapabilities(network))) {
                         return;
@@ -168,8 +180,13 @@ public class BaseWifiTracker implements LifecycleObserver {
                 }
 
                 @Override
+                @WorkerThread
                 public void onCapabilitiesChanged(@NonNull Network network,
                         @NonNull NetworkCapabilities networkCapabilities) {
+                    if (!mIsStarted) {
+                        mIsStarted = true;
+                        handleOnStart();
+                    }
                     if (!isPrimaryWifiNetwork(networkCapabilities)) {
                         return;
                     }
@@ -182,7 +199,12 @@ public class BaseWifiTracker implements LifecycleObserver {
                 }
 
                 @Override
+                @WorkerThread
                 public void onLost(@NonNull Network network) {
+                    if (!mIsStarted) {
+                        mIsStarted = true;
+                        handleOnStart();
+                    }
                     if (!isPrimaryWifiNetwork(
                             mConnectivityManager.getNetworkCapabilities(network))) {
                         return;
@@ -194,8 +216,13 @@ public class BaseWifiTracker implements LifecycleObserver {
     private final ConnectivityManager.NetworkCallback mDefaultNetworkCallback =
             new ConnectivityManager.NetworkCallback() {
                 @Override
+                @WorkerThread
                 public void onCapabilitiesChanged(@NonNull Network network,
                         @NonNull NetworkCapabilities networkCapabilities) {
+                    if (!mIsStarted) {
+                        mIsStarted = true;
+                        handleOnStart();
+                    }
                     final boolean oldWifiDefault = mIsWifiDefaultRoute;
                     final boolean oldCellDefault = mIsCellDefaultRoute;
                     // raw Wifi or VPN-over-Wifi is default => Wifi is default.
@@ -211,7 +238,12 @@ public class BaseWifiTracker implements LifecycleObserver {
                     }
                 }
 
+                @WorkerThread
                 public void onLost(@NonNull Network network) {
+                    if (!mIsStarted) {
+                        mIsStarted = true;
+                        handleOnStart();
+                    }
                     mIsWifiDefaultRoute = false;
                     mIsCellDefaultRoute = false;
                     if (isVerboseLoggingEnabled()) {
@@ -320,7 +352,12 @@ public class BaseWifiTracker implements LifecycleObserver {
                 NetworkKey.TYPE_WIFI,
                 mWifiNetworkScoreCache,
                 NetworkScoreManager.SCORE_FILTER_SCAN_RESULTS);
-        mWorkerHandler.post(this::handleOnStart);
+        mWorkerHandler.post(() -> {
+            if (!mIsStarted) {
+                mIsStarted = true;
+                handleOnStart();
+            }
+        });
     }
 
     /**
@@ -336,6 +373,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         mNetworkScoreManager.unregisterNetworkScoreCache(NetworkKey.TYPE_WIFI,
                 mWifiNetworkScoreCache);
         mWorkerHandler.post(mRequestedScoreKeys::clear);
+        mIsStarted = false;
     }
 
     /**
