@@ -328,11 +328,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             mCalledDisconnect = true;
             mDisconnectCallback = callback;
             mCallbackHandler.postDelayed(() -> {
-                synchronized (this) {
-                    if (callback != null && mCalledDisconnect) {
-                        callback.onDisconnectResult(
-                                DisconnectCallback.DISCONNECT_STATUS_FAILURE_UNKNOWN);
-                    }
+                if (callback != null && mCalledDisconnect) {
+                    callback.onDisconnectResult(
+                            DisconnectCallback.DISCONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             }, 10_000 /* delayMillis */);
             mWifiManager.disableEphemeralNetwork(mFqdn);
