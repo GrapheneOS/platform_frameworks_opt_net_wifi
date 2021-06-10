@@ -109,10 +109,9 @@ public class MergedCarrierEntry extends WifiEntry {
                 R.string.wifitrackerlib_wifi_wont_autoconnect_for_now, Toast.LENGTH_SHORT).show();
         if (mConnectCallback != null) {
             mCallbackHandler.post(() -> {
-                synchronized (this) {
-                    if (mConnectCallback != null) {
-                        mConnectCallback.onConnectResult(ConnectCallback.CONNECT_STATUS_SUCCESS);
-                    }
+                final ConnectCallback connectCallback = mConnectCallback;
+                if (connectCallback != null) {
+                    connectCallback.onConnectResult(ConnectCallback.CONNECT_STATUS_SUCCESS);
                 }
             });
         }
@@ -130,11 +129,10 @@ public class MergedCarrierEntry extends WifiEntry {
         mWifiManager.startScan();
         if (mDisconnectCallback != null) {
             mCallbackHandler.post(() -> {
-                synchronized (this) {
-                    if (mDisconnectCallback != null) {
-                        mDisconnectCallback.onDisconnectResult(
-                                DisconnectCallback.DISCONNECT_STATUS_SUCCESS);
-                    }
+                final DisconnectCallback disconnectCallback = mDisconnectCallback;
+                if (disconnectCallback != null) {
+                    disconnectCallback.onDisconnectResult(
+                            DisconnectCallback.DISCONNECT_STATUS_SUCCESS);
                 }
             });
         }
