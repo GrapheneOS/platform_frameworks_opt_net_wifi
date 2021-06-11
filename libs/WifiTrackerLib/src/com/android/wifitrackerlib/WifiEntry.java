@@ -701,10 +701,9 @@ public class WifiEntry implements Comparable<WifiEntry> {
     protected void notifyOnUpdated() {
         if (mListener != null) {
             mCallbackHandler.post(() -> {
-                synchronized (this) {
-                    if (mListener != null) {
-                        mListener.onUpdated();
-                    }
+                final WifiEntryCallback listener = mListener;
+                if (listener != null) {
+                    listener.onUpdated();
                 }
             });
         }
@@ -836,8 +835,9 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 if (mCalledConnect) {
                     mCalledConnect = false;
                     mCallbackHandler.post(() -> {
-                        if (mConnectCallback != null) {
-                            mConnectCallback.onConnectResult(
+                        final ConnectCallback connectCallback = mConnectCallback;
+                        if (connectCallback != null) {
+                            connectCallback.onConnectResult(
                                     ConnectCallback.CONNECT_STATUS_SUCCESS);
                         }
                     });
@@ -861,8 +861,9 @@ public class WifiEntry implements Comparable<WifiEntry> {
             if (mCalledDisconnect) {
                 mCalledDisconnect = false;
                 mCallbackHandler.post(() -> {
-                    if (mDisconnectCallback != null) {
-                        mDisconnectCallback.onDisconnectResult(
+                    final DisconnectCallback disconnectCallback = mDisconnectCallback;
+                    if (disconnectCallback != null) {
+                        disconnectCallback.onDisconnectResult(
                                 DisconnectCallback.DISCONNECT_STATUS_SUCCESS);
                     }
                 });
@@ -975,13 +976,12 @@ public class WifiEntry implements Comparable<WifiEntry> {
             }
             // If we aren't connected to the network after 10 seconds, trigger the failure callback
             mCallbackHandler.postDelayed(() -> {
-                synchronized (WifiEntry.this) {
-                    if (mConnectCallback != null && mCalledConnect
-                            && getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-                        mConnectCallback.onConnectResult(
-                                ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
-                        mCalledConnect = false;
-                    }
+                final ConnectCallback connectCallback = mConnectCallback;
+                if (connectCallback != null && mCalledConnect
+                        && getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+                    connectCallback.onConnectResult(
+                            ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
+                    mCalledConnect = false;
                 }
             }, 10_000 /* delayMillis */);
         }
@@ -989,11 +989,10 @@ public class WifiEntry implements Comparable<WifiEntry> {
         @Override
         public void onFailure(int i) {
             mCallbackHandler.post(() -> {
-                synchronized (WifiEntry.this) {
-                    if (mConnectCallback != null) {
-                        mConnectCallback.onConnectResult(
-                                mConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
-                    }
+                final ConnectCallback connectCallback = mConnectCallback;
+                if (connectCallback != null) {
+                    connectCallback.onConnectResult(
+                            ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             });
         }
@@ -1003,10 +1002,9 @@ public class WifiEntry implements Comparable<WifiEntry> {
         @Override
         public void onSuccess() {
             mCallbackHandler.post(() -> {
-                synchronized (WifiEntry.this) {
-                    if (mForgetCallback != null) {
-                        mForgetCallback.onForgetResult(ForgetCallback.FORGET_STATUS_SUCCESS);
-                    }
+                final ForgetCallback forgetCallback = mForgetCallback;
+                if (forgetCallback != null) {
+                    forgetCallback.onForgetResult(ForgetCallback.FORGET_STATUS_SUCCESS);
                 }
             });
         }
@@ -1014,11 +1012,9 @@ public class WifiEntry implements Comparable<WifiEntry> {
         @Override
         public void onFailure(int i) {
             mCallbackHandler.post(() -> {
-                synchronized (WifiEntry.this) {
-                    if (mForgetCallback != null) {
-                        mForgetCallback.onForgetResult(
-                                ForgetCallback.FORGET_STATUS_FAILURE_UNKNOWN);
-                    }
+                final ForgetCallback forgetCallback = mForgetCallback;
+                if (forgetCallback != null) {
+                    forgetCallback.onForgetResult(ForgetCallback.FORGET_STATUS_FAILURE_UNKNOWN);
                 }
             });
         }
