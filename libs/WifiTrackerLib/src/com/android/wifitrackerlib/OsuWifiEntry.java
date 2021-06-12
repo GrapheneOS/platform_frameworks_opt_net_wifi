@@ -205,9 +205,10 @@ class OsuWifiEntry extends WifiEntry {
                     mOsuStatusString =
                             mContext.getString(R.string.wifitrackerlib_osu_connect_failed);
                 }
-                if (mConnectCallback != null) {
-                    mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
-                }
+            }
+            final ConnectCallback connectCallback = mConnectCallback;
+            if (connectCallback != null) {
+                connectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
             }
             notifyOnUpdated();
         }
@@ -254,12 +255,11 @@ class OsuWifiEntry extends WifiEntry {
             PasspointConfiguration passpointConfig = mWifiManager
                     .getMatchingPasspointConfigsForOsuProviders(Collections.singleton(mOsuProvider))
                     .get(mOsuProvider);
+            final ConnectCallback connectCallback = mConnectCallback;
             if (passpointConfig == null) {
                 // Failed to find the config we just provisioned
-                synchronized (OsuWifiEntry.this) {
-                    if (mConnectCallback != null) {
-                        mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
-                    }
+                if (connectCallback != null) {
+                    connectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
                 }
                 return;
             }
@@ -287,10 +287,8 @@ class OsuWifiEntry extends WifiEntry {
             }
 
             // Failed to find the network we provisioned for
-            synchronized (OsuWifiEntry.this) {
-                if (mConnectCallback != null) {
-                    mConnectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
-                }
+            if (connectCallback != null) {
+                connectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
             }
         }
     }
