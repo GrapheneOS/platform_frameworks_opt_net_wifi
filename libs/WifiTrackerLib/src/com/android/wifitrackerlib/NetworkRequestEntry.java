@@ -24,8 +24,8 @@ import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
-import com.android.internal.annotations.VisibleForTesting;
 
 /**
  * WifiEntry representation of network requested through the NetworkRequest API,

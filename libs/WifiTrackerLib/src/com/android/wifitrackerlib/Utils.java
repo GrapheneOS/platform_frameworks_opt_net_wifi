@@ -49,21 +49,15 @@ import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
-import android.text.Annotation;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
-import android.text.style.ClickableSpan;
-import android.util.FeatureFlagUtils;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
-import com.android.internal.annotations.VisibleForTesting;
-import com.android.settingslib.HelpUtils;
-
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,7 +76,7 @@ public class Utils {
 
     static class FeatureFlagUtilsWrapper {
         boolean isProviderModelEnabled(Context context) {
-            return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
+            return HiddenApiWrapper.isProviderModelEnabled(context);
         }
     }
 
@@ -784,39 +778,9 @@ public class Utils {
         }
 
         // IMSI protection is not provided, return warning message.
-        return linkifyAnnotation(context, context.getText(
+        return HiddenApiWrapper.linkifyAnnotation(context, context.getText(
                 R.string.wifitrackerlib_imsi_protection_warning), "url",
                 context.getString(R.string.wifitrackerlib_help_url_imsi_protection));
-    }
-
-    /** Find the annotation of specified id in rawText and linkify it with helpUriString. */
-    static CharSequence linkifyAnnotation(Context context, CharSequence rawText, String id,
-            String helpUriString) {
-        // Return original string when helpUriString is empty.
-        if (TextUtils.isEmpty(helpUriString)) {
-            return rawText;
-        }
-
-        SpannableString spannableText = new SpannableString(rawText);
-        Annotation[] annotations = spannableText.getSpans(0, spannableText.length(),
-                Annotation.class);
-
-        for (Annotation annotation : annotations) {
-            if (TextUtils.equals(annotation.getValue(), id)) {
-                SpannableStringBuilder builder = new SpannableStringBuilder(spannableText);
-                ClickableSpan link = new ClickableSpan() {
-                    @Override
-                    public void onClick(View view) {
-                        view.startActivityForResult(HelpUtils.getHelpIntent(context, helpUriString,
-                                view.getClass().getName()), 0);
-                    }
-                };
-                builder.setSpan(link, spannableText.getSpanStart(annotation),
-                        spannableText.getSpanEnd(annotation), spannableText.getSpanFlags(link));
-                return builder;
-            }
-        }
-        return rawText;
     }
 
     // Various utility methods copied from com.android.server.wifi.util.ScanResultUtils for
@@ -1008,5 +972,45 @@ public class Utils {
                 || isScanResultForWapiCertNetwork(scanResult)
                 || isScanResultForEapSuiteBNetwork(scanResult)
                 || isScanResultForUnknownAkmNetwork(scanResult)));
+    }
+
+    /**
+     * Get InetAddress masked with prefixLength.  Will never return null.
+     * @param address the IP address to mask with
+     * @param prefixLength the prefixLength used to mask the IP
+     */
+    public static InetAddress getNetworkPart(InetAddress address, int prefixLength) {
+        byte[] array = address.getAddress();
+        maskRawAddress(array, prefixLength);
+
+        InetAddress netPart = null;
+        try {
+            netPart = InetAddress.getByAddress(array);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("getNetworkPart error - " + e.toString());
+        }
+        return netPart;
+    }
+
+    /**
+     *  Masks a raw IP address byte array with the specified prefix length.
+     */
+    public static void maskRawAddress(byte[] array, int prefixLength) {
+        if (prefixLength < 0 || prefixLength > array.length * 8) {
+            throw new RuntimeException("IP address with " + array.length
+                    + " bytes has invalid prefix length " + prefixLength);
+        }
+
+        int offset = prefixLength / 8;
+        int remainder = prefixLength % 8;
+        byte mask = (byte) (0xFF << (8 - remainder));
+
+        if (offset < array.length) array[offset] = (byte) (array[offset] & mask);
+
+        offset++;
+
+        for (; offset < array.length; offset++) {
+            array[offset] = 0;
+        }
     }
 }

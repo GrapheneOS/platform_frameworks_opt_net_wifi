@@ -29,7 +29,6 @@ import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfigura
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
 import static com.android.wifitrackerlib.Utils.isSimPresent;
-import static com.android.wifitrackerlib.Utils.linkifyAnnotation;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -112,7 +111,7 @@ public class UtilsTest {
         TestLooper testLooper = new TestLooper();
         mTestHandler = new Handler(testLooper.getLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
+        when(mMockContext.getSystemService(NetworkScoreManager.class))
                 .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
@@ -348,7 +347,8 @@ public class UtilsTest {
     public void testLinkifyAnnotation_noAnnotation_returnOriginalText() {
         final CharSequence testText = "test text";
 
-        final CharSequence output = linkifyAnnotation(mMockContext, testText, "id", "url");
+        final CharSequence output =
+                HiddenApiWrapper.linkifyAnnotation(mMockContext, testText, "id", "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), testText);
@@ -366,7 +366,8 @@ public class UtilsTest {
         builder.append(testLink, new Annotation("key", annotationId),
                 Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-        final CharSequence output = linkifyAnnotation(mMockContext, builder, annotationId, "url");
+        final CharSequence output =
+                HiddenApiWrapper.linkifyAnnotation(mMockContext, builder, annotationId, "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), expectedText.toString());
@@ -384,7 +385,8 @@ public class UtilsTest {
         builder.append(testLink, new Annotation("key", annotationId),
                 Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-        final CharSequence output = linkifyAnnotation(mMockContext, builder, annotationId, "");
+        final CharSequence output =
+                HiddenApiWrapper.linkifyAnnotation(mMockContext, builder, annotationId, "");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), expectedText.toString());

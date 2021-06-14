@@ -160,7 +160,7 @@ public class PasspointWifiEntryTest {
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mockConnectivityManager);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
@@ -199,7 +199,7 @@ public class PasspointWifiEntryTest {
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mockConnectivityManager);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
@@ -266,7 +266,7 @@ public class PasspointWifiEntryTest {
     @Test
     public void testShouldShowXLevelIcon_unvalidatedOrNotDefault_returnsTrue() {
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mockConnectivityManager);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
@@ -417,7 +417,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mMockConnectivityManager);
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager, mMockScoreCache,
@@ -450,7 +450,7 @@ public class PasspointWifiEntryTest {
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
         ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mockConnectivityManager);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();

@@ -21,7 +21,6 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.WifiEntry.ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN;
 
-import android.annotation.MainThread;
 import android.content.Context;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -37,6 +36,7 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Pair;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;

@@ -52,7 +52,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
-import android.net.NetworkScorerAppData;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -70,9 +69,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-
-import com.android.internal.annotations.VisibleForTesting;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -418,8 +416,9 @@ public class StandardWifiEntry extends WifiEntry {
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            ((ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
-                    .startCaptivePortalApp(mWifiManager.getCurrentNetwork());
+            HiddenApiWrapper.startCaptivePortalApp(
+                    mContext.getSystemService(ConnectivityManager.class),
+                    mWifiManager.getCurrentNetwork());
         }
     }
 
@@ -850,11 +849,8 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     private synchronized void updateRecommendationServiceLabel() {
-        final NetworkScorerAppData scorer = ((NetworkScoreManager) mContext
-                .getSystemService(Context.NETWORK_SCORE_SERVICE)).getActiveScorer();
-        if (scorer != null) {
-            mRecommendationServiceLabel = scorer.getRecommendationServiceLabel();
-        }
+        mRecommendationServiceLabel = HiddenApiWrapper.getRecommendationServiceLabel(
+                mContext.getSystemService(NetworkScoreManager.class));
     }
 
     @NonNull

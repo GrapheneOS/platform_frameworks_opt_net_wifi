@@ -52,9 +52,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -608,8 +607,9 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            ((ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
-                    .startCaptivePortalApp(mWifiManager.getCurrentNetwork());
+            HiddenApiWrapper.startCaptivePortalApp(
+                    mContext.getSystemService(ConnectivityManager.class),
+                    mWifiManager.getCurrentNetwork());
         }
     }
 

@@ -134,7 +134,7 @@ public class StandardWifiEntryTest {
                 .thenReturn(OKAY_LEVEL);
         when(mMockWifiManager.calculateSignalLevel(BAD_RSSI))
                 .thenReturn(BAD_LEVEL);
-        when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
+        when(mMockContext.getSystemService(NetworkScoreManager.class))
                 .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockScoreCache.getScoredNetwork((ScanResult) any())).thenReturn(mMockScoredNetwork);
@@ -661,7 +661,7 @@ public class StandardWifiEntryTest {
         final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mockConnectivityManager);
 
         final WifiInfo wifiInfo = new WifiInfo.Builder().setNetworkId(networkId).build();
@@ -704,7 +704,7 @@ public class StandardWifiEntryTest {
         final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mockConnectivityManager);
 
         final WifiInfo wifiInfo = new WifiInfo.Builder().setNetworkId(networkId).build();
@@ -730,7 +730,7 @@ public class StandardWifiEntryTest {
     @Test
     public void testShouldShowXLevelIcon_unvalidatedOrNotDefault_returnsTrue() {
         final int networkId = 1;
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mMockConnectivityManager);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
@@ -898,7 +898,7 @@ public class StandardWifiEntryTest {
 
     @Test
     public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
-        when(mMockContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+        when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mMockConnectivityManager);
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
