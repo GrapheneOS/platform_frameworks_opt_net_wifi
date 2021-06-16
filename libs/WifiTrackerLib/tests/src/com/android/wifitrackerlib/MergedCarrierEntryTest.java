@@ -126,4 +126,20 @@ public class MergedCarrierEntryTest {
 
         assertThat(entry.canConnect()).isFalse();
     }
+
+    @Test
+    public void testGetSsid_connected_returnsSanitizedWifiInfoSsid() {
+        final int subId = 1;
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
+                mMockScoreCache, false, mMockContext, subId);
+        when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+        when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+        final String ssid = "ssid";
+        when(mMockWifiInfo.getSSID()).thenReturn("\"" + ssid + "\"");
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+
+        entry.updateConnectionInfo(mMockWifiInfo, mMockNetworkInfo);
+
+        assertThat(entry.getSsid()).isEqualTo(ssid);
+    }
 }
