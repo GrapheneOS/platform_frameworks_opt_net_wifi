@@ -17,6 +17,7 @@
 package com.android.wifitrackerlib;
 
 import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
+import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
@@ -79,7 +80,7 @@ public class MergedCarrierEntry extends WifiEntry {
     @Override
     public synchronized String getSsid() {
         if (mWifiInfo != null) {
-            return mWifiInfo.getSSID();
+            return sanitizeSsid(mWifiInfo.getSSID());
         }
         return null;
     }
