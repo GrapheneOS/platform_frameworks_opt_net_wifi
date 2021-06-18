@@ -908,6 +908,52 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that getConnectedEntry will return the correct network request if there are multiple
+     * active requests
+     */
+    @Test
+    public void testGetConnectedEntry_multipleNetworkRequests_returnsConnectedRequest() {
+        final WifiConfiguration requestConfig1 = new WifiConfiguration();
+        requestConfig1.SSID = "\"ssid1\"";
+        requestConfig1.networkId = 1;
+        requestConfig1.fromWifiNetworkSpecifier = true;
+        final WifiConfiguration requestConfig2 = new WifiConfiguration();
+        requestConfig2.SSID = "\"ssid2\"";
+        requestConfig2.networkId = 2;
+        requestConfig2.fromWifiNetworkSpecifier = true;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks()).thenReturn(
+                Arrays.asList(requestConfig1, requestConfig2));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+        // WifiInfo has network id 1, so the connected entry should correspond to request 1
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSsid()).isEqualTo("ssid1");
+
+        when(mMockWifiInfo.getNetworkId()).thenReturn(2);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+
+        // WifiInfo has network id 2, so the connected entry should correspond to request 2
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSsid()).isEqualTo("ssid2");
+
+        when(mMockWifiInfo.getNetworkId()).thenReturn(-1);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+
+        // WifiInfo matches no request configs, so the connected entry should be null
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
+    }
+
+    /**
      * Tests that SCAN_RESULTS_AVAILABLE_ACTION calls WifiManager#getMatchingOsuProviders()
      */
     @Test
