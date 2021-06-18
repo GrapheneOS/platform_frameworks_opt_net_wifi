@@ -28,7 +28,7 @@
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"נקודת הגישה מלאה באופן זמני"</string>
     <string name="wifi_disconnected" msgid="3720926757662831062">"מנותקת"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"נשמרה"</string>
-    <string name="wifi_metered_label" msgid="1362621600006544014">"חיוב לפי שימוש בנתונים"</string>
+    <string name="wifi_metered_label" msgid="1362621600006544014">"נמדדת"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"לא נמדדת"</string>
     <string name="connected_via_app" msgid="1818040967936972127">"מחובר באמצעות <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="available_via_app" msgid="9110324040292242769">"זמינה דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
