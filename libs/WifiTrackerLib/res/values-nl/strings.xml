@@ -17,16 +17,20 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"\'Automatisch verbinding maken\' staat uit"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Automatisch verbinding maken staat uit"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Opgeslagen door <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Er wordt niet automatisch verbinding gemaakt"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Geen internettoegang"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"Verificatieprobleem"</string>
     <string name="wifitrackerlib_wifi_check_password_try_again" msgid="2327777719175574699">"Check het wachtwoord en probeer het opnieuw"</string>
     <string name="wifitrackerlib_wifi_disabled_network_failure" msgid="3046956554224277166">"IP-configuratie mislukt"</string>
-    <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Uitgeschakeld"</string>
+    <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Uitgezet"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Toegangspunt tijdelijk vol"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Tijdelijk slechte netwerkomstandigheden"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Zwak signaal. Ga dichter naar de router toe."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Netwerk is overbelast. Probeer het later opnieuw."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Kan geen verbinding maken. Probeer het later opnieuw."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Netwerk niet geschikt voor dit apparaat"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Verbinding verbroken"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Opgeslagen"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Met datalimiet"</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Automatisch verbonden via provider van netwerkbeoordelingen"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Beperkte verbinding"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Geen toegang tot privé-DNS-server"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Verbonden met apparaat. Kan geen internet bieden."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Lage kwaliteit"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Geen"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Verlopen"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Normaal"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Snel"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Zeer snel"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wifi maakt momenteel niet automatisch verbinding"</string>
 </resources>

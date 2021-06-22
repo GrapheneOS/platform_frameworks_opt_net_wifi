@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"اتصال خودکار خاموش است"</string>
-    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"<xliff:g id="NAME">%1$s</xliff:g> ذخیره کرده است"</string>
+    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"ذخیره شده توسط <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"به‌طور خودکار متصل نخواهد شد"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"دسترسی به اینترنت وجود ندارد"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"مشکل راستی‌آزمایی"</string>
@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"غیرفعال"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"ظرفیت نقطه دسترسی موقتاً تکمیل شده است"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"وضعیت‌های موقتی شبکه ضعیف"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"سیگنال ضعیف است. به رهیاب نزدیک‌تر شوید."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"تعداد ایستگاه‌ها بیش‌از ظرفیت شبکه است. بعداً دوباره امتحان کنید."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"اتصال برقرار نشد. بعداً دوباره امتحان کنید."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"شبکه با این دستگاه سازگار نیست"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"اتصال قطع شد"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ذخیره‌شده"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"محدود"</string>
@@ -34,11 +38,10 @@
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"ازطریق <xliff:g id="NAME">%1$s</xliff:g> متصل شد"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"دردسترس ازطریق <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"به‌طور خودکار ازطریق <xliff:g id="NAME">%1$s</xliff:g> متصل شد"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"به‌طور خودکار ازطریق ارائه‌دهنده رتبه‌بندی شبکه متصل شد"</string>
+    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"به‌طور خودکار ازطریق ارائه‌دهنده رده‌بندی شبکه متصل شد"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"اتصال محدود"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"دسترسی به سرور ساناد خصوصی ممکن نیست"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"به دستگاه متصل است. نمی‌تواند اینترنت ارائه دهد."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"کیفیت پایین"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"هیچ‌کدام"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"منقضی‌شده"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"متوسط"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"سریع"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"بسیار سریع"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"‏فعلاً Wi-Fi به‌طور خودکار متصل نمی‌شود"</string>
 </resources>

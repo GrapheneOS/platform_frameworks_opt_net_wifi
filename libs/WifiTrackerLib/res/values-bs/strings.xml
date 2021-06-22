@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Onemogućeno"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Pristupna tačka je privremeno puna"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Privremeno stanje slabe mreže"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Slab signal. Približite se ruteru."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Mreža je premašila kapacitet. Pokušajte ponovo kasnije."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Nije se moguće povezati. Pokušajte ponovo kasnije."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Mreža nije kompatibilna s ovim uređajem"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Veza je prekinuta"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Sačuvano"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"S naplatom"</string>
@@ -37,10 +41,9 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Automatski povezano putem ocjenjivača mreže"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Ograničena veza"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Nije moguće pristupiti privatnom DNS serveru"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Povezano s uređajem. Nije moguće pružiti internetsku vezu."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Nizak kvalitet"</string>
-    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Nema"</string>
+    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Ništa"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Isteklo"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Dodirnite za registraciju"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Dodirnite da obnovite pretplatu i povežete se"</string>
@@ -52,8 +55,9 @@
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ova mreža prima ID SIM-a koji se može koristiti za praćenje lokacije uređaja. "<annotation id="url">"Saznajte više"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Veoma sporo"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Sporo"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"UREDU"</string>
+    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Uredu"</string>
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Srednje"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Brzo"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Veoma brzo"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"WiFi mreža se trenutno ne može automatski povezati"</string>
 </resources>

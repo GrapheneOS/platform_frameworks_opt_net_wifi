@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Функцията за автоматично свързване е изключена"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Автом. свързване е изкл."</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Запазено от <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Няма да се свърже автоматично"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Няма достъп до интернет"</string>
@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Деактивирано"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Точката за достъп временно е пълна"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Временно лоши мрежови условия"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Сигналът е слаб. Приближете се до рутера."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Капацитетът на мрежата е надхвърлен. Опитайте отново по-късно."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Не може да се установи връзка. Опитайте отново по-късно."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Мрежата не е съвместима с това устройство"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Няма връзка"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Запазено"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"С отчитане"</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Автоматично е установена връзка чрез доставчик на услуги за оценяване на мрежите"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Ограничена връзка"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Не може да се осъществи достъп до частния DNS сървър"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Установена е връзка с устройство. Няма интернет."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Ниско качество"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Няма"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Изтекло"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Средна"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Бърза"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Много бърза"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Засега Wi-Fi няма да се свързва автоматично"</string>
 </resources>

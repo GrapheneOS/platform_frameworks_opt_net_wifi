@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Avtomatik qoşulma deaktivdir"</string>
-    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"<xliff:g id="NAME">%1$s</xliff:g> tərəfindən yadda saxlandı"</string>
+    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Yadda saxlayan: <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Avtomatik qoşulmayacaq"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"İnternetə giriş yoxdur"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"Doğrulama problemi"</string>
@@ -27,9 +27,13 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Deaktiv"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Giriş nöqtəsi müvəqqəti olaraq doludur"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Şəbəkə bağlantısı müvəqqəti zəifdir"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Zəif siqnal. Ruterə yaxınlaşdırın."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Şəbəkə limiti aşılıb. Sonra cəhd edin."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Qoşulmaq mümkün deyil. Sonra cəhd edin."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Şəbəkə bu cihaz ilə uyğun deyil"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Bağlantı kəsildi"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Yadda saxlandı"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Limitli"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Tarif sayğacılı"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Limitsiz"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> vasitəsilə qoşulub"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> vasitəsilə əlçatandır"</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Avtomatik olaraq şəbəkə reytinq provayderi vasitəsilə qoşulub"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Məhdud bağlantı"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Özəl DNS serverinə giriş mümkün deyil"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Cihaza qoşulub. İnternet təmin etmək olmur."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Aşağı keyfiyyət"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Heç"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Bitib"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Orta"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Sürətli"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Çox Sürətli"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi hələlik avtomatik qoşulmayacaq"</string>
 </resources>

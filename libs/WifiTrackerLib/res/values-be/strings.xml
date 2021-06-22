@@ -27,9 +27,13 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Выключана"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Пункт доступу часова заняты"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Часова неспрыяльныя ўмовы падключэння да сеткі"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Слабы сігнал. Перамясціцеся бліжэй да маршрутызатара."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Сетка перагружана. Паўтарыце спробу пазней."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Не ўдалося падключыцца. Паўтарыце спробу пазней."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Сетка не сумяшчальная з гэтай прыладай."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Адключана"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Захавана"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"З улікам трафіка"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"З падлікам трафіка"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Без уліку трафіка"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Падключана праз праграму \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Даступна праз праграму \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Аўтаматычна падключана праз пастаўшчыка паслугі ацэнкі сеткі"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Абмежаваныя магчымасці падключэння"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Не ўдалося атрымаць доступ да прыватнага DNS-сервера"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Падключана да прылады. Не ўдалося падключыцца да інтэрнэту."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Нізкая якасць"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Няма"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Тэрмін скончыўся"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Сярэдняя"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Хуткая"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Вельмі хуткая"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Аўтаматычнае падключэнне да Wi-Fi адсутнічае"</string>
 </resources>
