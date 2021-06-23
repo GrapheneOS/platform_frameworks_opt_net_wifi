@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‎‏‏‎‏‏‎‎‎‎‏‎‏‎‏‏‏‏‏‎‏‏‏‎‎‎‏‎‎‎‏‏‎‎‏‎‎‏‎‏‏‎‏‎‎‎‎‏‏‎‎‏‏‎‎‎‏‏‎‎Disabled‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‎‎‏‏‎‎‏‏‏‎‏‏‏‎‏‏‎‏‏‎‏‎‎‏‏‏‎‏‎‏‏‎‏‏‎‏‎‏‏‏‏‎‏‏‏‏‎‎‎‎‎‎‎‏‎‏‏‎‎‏‎‎‎Access point temporarily full‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‎‏‏‏‏‎‏‏‏‏‎‎‎‎‏‎‏‏‏‏‎‏‎‏‏‎‏‎‏‎‎‏‏‎‏‎‎‎‎‏‏‏‎‎‏‏‏‎‏‏‎‏‎‏‎‏‏‎‎‎Temporary poor network conditions‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‎‎‎‏‏‎‎‏‏‏‏‎‏‎‏‏‎‏‏‎‏‎‏‎‎‎‏‎‏‎‎‏‎‏‎‎‎‏‏‎‎‏‏‏‎‎‎‎‎‏‎‏‏‏‏‏‎‎‏‏‎‏‎Weak signal. Try moving closer to the router.‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‏‎‏‎‏‎‏‎‎‏‎‏‏‏‎‎‏‏‏‏‎‏‎‏‏‏‎‎‎‏‏‏‎‏‏‏‎‏‎‎‎‎‏‎‎‎‏‏‏‏‏‏‎‏‏‎‏‏‏‎Network is over capacity. Try again later.‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‎‏‎‏‎‏‎‏‏‏‎‎‏‏‏‎‏‏‎‎‎‎‏‏‏‏‎‏‎‏‎‏‎‏‏‎‎‏‏‏‏‏‎‎‏‏‎‏‏‎‏‎‎‎‏‏‏‎‏‏‎Can\'t connect. Try again later.‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‎‏‏‏‏‏‎‏‎‏‎‎‏‏‏‎‎‏‏‎‏‎‏‏‏‎‏‎‎‏‏‎‏‎‎‎‎‎‏‎‏‏‎‏‎‎‎‏‎‏‎‏‎‎‏‎‎‎‏‏‏‎‏‎Network not compatible with this device‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‏‏‏‎‎‎‎‏‎‏‎‎‎‏‏‏‏‎‏‏‎‏‎‎‎‏‎‎‏‏‎‏‏‏‎‏‎‏‏‏‏‏‏‎‎‏‏‏‎‎‏‏‏‏‎‏‎‏‏‏‎Disconnected‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‎‎‎‏‎‏‏‎‎‏‎‎‎‎‏‎‎‏‏‏‎‏‏‎‏‎‏‏‎‎‏‎‎‎‏‎‎‎‎‎‎‎‏‏‏‏‎‎‎‎‏‎‎‎‎‎‎‎‎‏‎Saved‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‏‏‏‎‏‎‎‏‏‎‎‎‎‏‏‎‏‎‎‎‏‏‎‎‏‎‏‎‏‏‎‏‎‎‏‏‏‏‎‏‎‏‏‏‎‏‏‏‏‏‎‎‏‏‏‏‏‎‎‎‎‏‎Metered‎‏‎‎‏‎"</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‏‏‏‏‏‎‏‏‎‎‎‏‏‏‏‏‎‎‎‎‎‎‏‏‏‎‏‏‎‏‏‎‏‏‎‏‎‏‎‏‏‎‏‏‎‏‎‏‏‏‎‎‎‎‎‎‏‏‎‎‎Automatically connected via network rating provider‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‎‏‎‏‏‎‎‎‎‏‏‎‏‎‏‏‎‎‏‎‏‏‎‏‏‏‏‎‏‏‏‏‎‎‏‏‏‏‏‏‎‎‎‏‏‎‏‏‎‎‎‏‏‏‏‏‏‎‎‎Limited connection‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‎‏‎‎‏‏‏‏‏‏‎‎‏‏‏‏‎‎‏‎‏‎‎‏‎‎‏‎‏‏‎‎‎‏‎‎‏‎‎‎‎‎‏‎‏‎‎‎‎‏‏‏‎‎‏‏‏‏‎‎‏‏‎Private DNS server cannot be accessed‎‏‎‎‏‎"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‎‏‎‎‏‏‎‎‏‎‎‎‏‎‏‎‎‏‎‏‎‎‏‏‎‎‏‎‏‎‏‎‎‎‏‎‏‏‏‏‏‎‎‏‏‏‎‏‎‎‎‏‎‏‎‎‏‎‎‏‎Connected to device. Can\'t provide internet.‎‏‎‎‏‎"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‏‏‎‎‎‏‎‎‏‏‎‎‎‏‏‏‎‏‎‏‏‏‎‎‏‏‏‏‎‎‎‎‎‎‏‏‏‏‎‏‎‏‏‎‎‎‎‏‏‎‎‏‏‎‎‏‏‎‏‎Low quality‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‎‏‎‏‎‏‎‎‎‏‏‎‏‏‎‎‏‏‏‏‏‎‎‏‏‎‎‏‎‎‏‏‎‎‎‏‏‎‏‎‎‎‏‏‏‏‎‏‏‎‏‎‎‎‏‏‎‎‎‎‎None‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‏‎‏‏‏‎‏‎‏‎‏‏‎‎‏‏‎‎‎‎‎‎‎‏‏‎‎‎‏‏‏‎‎‎‏‎‎‎‎‏‎‎‏‏‏‎‏‎‎‏‎‏‎‏‏‎‎‏‎‏‏‎‎Expired‎‏‎‎‏‎"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‎‏‏‏‏‏‏‎‎‏‏‎‏‏‏‎‎‎‎‏‏‎‎‏‎‎‎‎‏‎‏‏‎‎‏‏‎‏‎‎‏‏‎‎‏‎‎‎‎‏‎‎‏‎‎‏‏‏‎‏‏‏‎‎Medium‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‎‎‏‏‏‏‏‏‏‏‏‏‎‏‏‏‎‏‎‏‎‏‏‎‏‎‎‏‏‏‏‏‎‏‏‏‏‎‏‎‏‏‎‏‎‏‎‏‏‏‎‎‎‏‏‎‏‎‏‎‎Fast‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‎‎‏‏‏‎‎‎‏‎‏‎‎‎‏‎‏‏‏‏‎‏‎‎‎‏‎‎‏‎‎‎‏‎‏‎‏‏‏‎‏‎‏‎‏‏‎‏‎‏‎‎‎‏‎‎‏‎‏‎Very Fast‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‎‎‎‏‎‎‎‏‎‏‎‎‏‎‏‎‎‏‎‏‎‏‏‎‎‎‎‎‎‏‎‎‏‏‏‏‎‎‎‏‎‎‏‏‎‎‏‎‏‎‎‏‏‏‏‎‎‏‏‎‏‏‎Wi-Fi won’t auto-connect for now‎‏‎‎‏‎"</string>
 </resources>

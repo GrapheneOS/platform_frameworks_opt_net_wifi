@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"ଅକ୍ଷମ କରାଯାଇଛି"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"ଆକ୍ସେସ୍ ପଏଣ୍ଟ ସାମୟିକ ଭାବେ ପୂର୍ଣ୍ଣ ହୋଇଛି"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"ଅସ୍ଥାୟୀ ଭାବରେ ଖରାପ ନେଟୱାର୍କ ସ୍ଥିତି"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"ସିଗନାଲ୍ ଦୁର୍ବଳ ଅଟେ। ରାଉଟର୍ ପାଖକୁ ଯାଇ ଦେଖନ୍ତୁ।"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"ନେଟୱାର୍କ କ୍ଷମତାର ସର୍ବାଧିକ ସୀମାରେ ପହଞ୍ଚିଯାଇଛି। ପରେ ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"ସଂଯୋଗ କରାଯାଇପାରିବ ନାହିଁ। ପରେ ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"ନେଟୱାର୍କ ଏହି ଡିଭାଇସ୍ ସହିତ ସୁସଙ୍ଗତ ନୁହେଁ"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ବିଚ୍ଛିନ୍ନ କରାଯାଇଛି"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ସେଭ୍ କରାଯାଇଛି"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ମିଟର ହୋଇଥିବା"</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"ନେଟୱାର୍କ ମୂଲ୍ୟାଙ୍କନ ପ୍ରଦାନକାରୀଙ୍କ ମାଧ୍ୟମରେ ସ୍ୱଚାଳିତ ଭାବେ ସଂଯୋଗ କରାଯାଇଛି"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ସୀମିତ ସଂଯୋଗ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ବ୍ୟକ୍ତିଗତ DNS ସର୍ଭରକୁ ଆକ୍ସେସ୍ କରାଯାଇପାରିବ ନାହିଁ"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ଡିଭାଇସ୍ ସହ ସଂଯୋଗ କରାଯାଇଛି। ଇଣ୍ଟରନେଟ୍ ପ୍ରଦାନ କରାଯାଇପାରିବ ନାହିଁ।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ନିମ୍ନ ଗୁଣବତ୍ତା"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"କିଛି ନାହିଁ"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"ମିଆଦ ଶେଷ ହୋଇଯାଇଛି"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ମଧ୍ୟମ"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"ଦ୍ରୁତ"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ଅତି ଦ୍ରୁତ"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"ବର୍ତ୍ତମାନ ପାଇଁ ୱାଇ-ଫାଇ ସ୍ୱତଃ-ସଂଯୋଗ ହେବ ନାହିଁ"</string>
 </resources>

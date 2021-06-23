@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"സ്വയമേവ കണക്റ്റ് ചെയ്യൽ ഓഫാണ്"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"ഓട്ടോ-കണക്റ്റ് ഓഫാണ്"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"<xliff:g id="NAME">%1$s</xliff:g> സംരക്ഷിച്ചത്"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"സ്വയമേവ കണക്‌റ്റ് ചെയ്യില്ല"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"ഇന്റർനെറ്റ് ആക്‌സസ് ഇല്ല"</string>
@@ -27,6 +27,10 @@
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"പ്രവർത്തനരഹിതമാക്കി"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"ആക്‌സസ് പോയിന്റ് താൽക്കാലികമായി നിറഞ്ഞു"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"നിലവിലെ നെറ്റ്‌വർക്ക് നില മോശം"</string>
+    <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"സിഗ്‌നൽ ദുർബലമാണ്. റൂട്ടറിന് കൂടുതൽ അടുത്തേക്ക് നീക്കി ശ്രമിക്കുക."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"നിങ്ങളുടെ നെറ്റ്‌വർക്ക് ശേഷി കവിഞ്ഞു. പിന്നീട് വീണ്ടും ശ്രമിക്കുക."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"കണക്‌റ്റ് ചെയ്യാനാകുന്നില്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"നെറ്റ്‌വർക്ക് ഈ ഉപകരണവുമായി പൊരുത്തപ്പെടുന്നില്ല"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"വിച്ഛേദിച്ചു"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"സംരക്ഷിച്ചു"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"മീറ്റർ ചെയ്‌തത്"</string>
@@ -37,8 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"നെറ്റ്‌വർക്ക് റേറ്റിംഗ് ദാതാവുമായി സ്വയമേവ കണക്‌റ്റ് ചെയ്‌തു"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"പരിമിത കണക്‌ഷൻ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"സ്വകാര്യ DNS സെർവർ ആക്‌സസ് ചെയ്യാനാവുന്നില്ല"</string>
-    <!-- no translation found for wifitrackerlib_wifi_connected_cannot_provide_internet (3803471522215612745) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ഉപകരണത്തിലേക്ക് കണക്റ്റ് ചെയ്‌തു. ഇന്റർനെറ്റ് നൽകാനാകില്ല."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"കുറഞ്ഞ നിലവാരം"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"ഒന്നുമില്ല"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"കാലഹരണപ്പെട്ടു"</string>
@@ -56,4 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ഇടത്തരം"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"വേഗത്തിൽ"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"അതിവേഗം"</string>
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"വൈഫൈ ഇപ്പോൾ സ്വയമേവ കണക്റ്റ് ചെയ്യില്ല"</string>
 </resources>
