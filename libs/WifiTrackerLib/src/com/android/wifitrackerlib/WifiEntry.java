@@ -342,6 +342,14 @@ public class WifiEntry implements Comparable<WifiEntry> {
         return mIsValidated;
     }
 
+    /**
+     * Returns whether this network is the default network or not (i.e. this network is the one
+     * currently being used to provide internet connection).
+     */
+    public boolean isDefaultNetwork() {
+        return mIsDefaultNetwork;
+    }
+
     /** Returns the speed value of the network defined by the SPEED constants */
     @Speed
     public int getSpeed() {
