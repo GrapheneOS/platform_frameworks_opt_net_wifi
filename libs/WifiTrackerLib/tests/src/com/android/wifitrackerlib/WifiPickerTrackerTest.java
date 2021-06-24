@@ -1210,4 +1210,38 @@ public class WifiPickerTrackerTest {
         // 1 open config + 2 split configs with same network ID should be treated as 2 networks.
         assertThat(wifiPickerTracker.getNumSavedNetworks()).isEqualTo(2);
     }
+
+    /**
+     * Tests that the MergedCarrierEntry is the default network when it is connected and Wifi is
+     * the default network.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_wifiIsDefault_entryIsDefaultNetwork() {
+        final int subId = 1;
+        when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+        when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent.putExtra("subscription", subId);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
+        verify(mMockConnectivityManager)
+                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
+        assertThat(mergedCarrierEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        // Wifi isn't default yet, so isDefaultNetwork returns false
+        assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
+
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build());
+
+        // Now Wifi is default, so isDefaultNetwork returns true
+        assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
+    }
 }

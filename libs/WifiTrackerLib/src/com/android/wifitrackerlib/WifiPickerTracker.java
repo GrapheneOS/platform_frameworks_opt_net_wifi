@@ -319,6 +319,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
         if (mMergedCarrierEntry != null) {
+            if (mMergedCarrierEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+                mMergedCarrierEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            }
             mMergedCarrierEntry.updateIsCellDefaultRoute(mIsCellDefaultRoute);
         }
     }
