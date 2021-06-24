@@ -76,7 +76,7 @@
 
     <!-- Summary for networks failing to connect due to failed to find a network in supplicant scan result
          which matches the network requested by framework for connection (including network capabilities) [CHAR LIMIT=NONE] -->
-    <string name="wifitrackerlib_wifi_network_not_found">Network not compatible with this device</string>
+    <string name="wifitrackerlib_wifi_network_not_found">Can\'t connect. Try again later.</string>
 
     <!-- Summary for the disconnected network. [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_disconnected">Disconnected</string>
