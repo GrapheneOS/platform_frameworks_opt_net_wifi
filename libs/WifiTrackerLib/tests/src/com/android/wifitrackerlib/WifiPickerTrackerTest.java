@@ -569,6 +569,36 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that the wifi state changing to something other than WIFI_STATE_ENABLED will update
+     * getConnectedEntry() to return null.
+     */
+    @Test
+    public void testGetConnectedEntry_wifiStateDisabled_returnsNull() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_DISABLED);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION));
+
+        verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
+    }
+
+    /**
      * Tests that a connected WifiEntry will return "Low quality" as the summary if Wifi is
      * validated but cell is the default route.
      */
@@ -1179,5 +1209,39 @@ public class WifiPickerTrackerTest {
 
         // 1 open config + 2 split configs with same network ID should be treated as 2 networks.
         assertThat(wifiPickerTracker.getNumSavedNetworks()).isEqualTo(2);
+    }
+
+    /**
+     * Tests that the MergedCarrierEntry is the default network when it is connected and Wifi is
+     * the default network.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_wifiIsDefault_entryIsDefaultNetwork() {
+        final int subId = 1;
+        when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+        when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent.putExtra("subscription", subId);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
+        verify(mMockConnectivityManager)
+                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
+        assertThat(mergedCarrierEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        // Wifi isn't default yet, so isDefaultNetwork returns false
+        assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
+
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build());
+
+        // Now Wifi is default, so isDefaultNetwork returns true
+        assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
     }
 }
