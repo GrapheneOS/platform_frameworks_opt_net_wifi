@@ -227,6 +227,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @Override
     protected void handleWifiStateChangedAction() {
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        if (mWifiManager.getWifiState() != WifiManager.WIFI_STATE_ENABLED) {
+            updateConnectionInfo(null, null);
+        }
         updateWifiEntries();
     }
 
@@ -316,6 +319,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
         if (mMergedCarrierEntry != null) {
+            if (mMergedCarrierEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+                mMergedCarrierEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            }
             mMergedCarrierEntry.updateIsCellDefaultRoute(mIsCellDefaultRoute);
         }
     }
@@ -792,11 +798,13 @@ public class WifiPickerTracker extends BaseWifiTracker {
             @Nullable WifiInfo wifiInfo, @Nullable NetworkInfo networkInfo) {
         final List<WifiConfiguration> matchingConfigs = new ArrayList<>();
 
-        for (int i = 0; i < mNetworkRequestConfigCache.size(); i++) {
-            final List<WifiConfiguration> configs = mNetworkRequestConfigCache.valueAt(i);
-            if (!configs.isEmpty() && configs.get(0).networkId == wifiInfo.getNetworkId()) {
-                matchingConfigs.addAll(configs);
-                break;
+        if (wifiInfo != null) {
+            for (int i = 0; i < mNetworkRequestConfigCache.size(); i++) {
+                final List<WifiConfiguration> configs = mNetworkRequestConfigCache.valueAt(i);
+                if (!configs.isEmpty() && configs.get(0).networkId == wifiInfo.getNetworkId()) {
+                    matchingConfigs.addAll(configs);
+                    break;
+                }
             }
         }
 
@@ -826,7 +834,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void conditionallyCreateConnectedStandardWifiEntry(@Nullable WifiInfo wifiInfo,
             @Nullable NetworkInfo networkInfo) {
-        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
+        if (wifiInfo == null || wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return;
         }
 
@@ -865,7 +873,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void conditionallyCreateConnectedSuggestedWifiEntry(@Nullable WifiInfo wifiInfo,
             @Nullable NetworkInfo networkInfo) {
-        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
+        if (wifiInfo == null || wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return;
         }
 
@@ -900,7 +908,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void conditionallyCreateConnectedPasspointWifiEntry(@Nullable WifiInfo wifiInfo,
             @Nullable NetworkInfo networkInfo) {
-        if (!wifiInfo.isPasspointAp()) {
+        if (wifiInfo == null || !wifiInfo.isPasspointAp()) {
             return;
         }
 
