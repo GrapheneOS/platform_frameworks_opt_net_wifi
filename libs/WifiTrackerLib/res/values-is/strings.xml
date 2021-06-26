@@ -30,7 +30,8 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Léleg tenging. Prófaðu að færa þig nær beininum."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Hámarki netkerfis er náð. Reyndu aftur síðar."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Ekki er hægt að tengjast. Reyndu aftur síðar."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Netið er ekki samhæft þessu tæki"</string>
+    <!-- no translation found for wifitrackerlib_wifi_network_not_found (1308764769892463388) -->
+    <skip />
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Aftengt"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Vistað"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Mæld notkun"</string>
