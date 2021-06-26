@@ -30,7 +30,8 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"வலுவற்ற சிக்னல். ரூட்டருக்கு அருகில் சென்று சிக்னல் வலுவாகக் கிடைக்கிறதா எனப் பாருங்கள்."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"நெட்வொர்க் பிசியாக உள்ளது. பிறகு முயலவும்."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"இணைக்க முடியவில்லை. பிறகு முயலவும்."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"இந்தச் சாதனத்துடன் நெட்வொர்க் இணங்கவில்லை"</string>
+    <!-- no translation found for wifitrackerlib_wifi_network_not_found (1308764769892463388) -->
+    <skip />
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"தொடர்பு துண்டிக்கப்பட்டது"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"சேமித்தது"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"கட்டண நெட்வொர்க்"</string>
