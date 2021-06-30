@@ -30,8 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"រលកសញ្ញាខ្សោយ។ សូមសាកល្បងខិតឱ្យកាន់តែជិតរ៉ោទ័រ។"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"បណ្ដាលកំពុងដំណើរការហួសសមត្ថភាព។ សូមព្យាយាម​ម្តងទៀត​នៅពេលក្រោយ។"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"មិនអាច​ភ្ជាប់​បានទេ។ សូមព្យាយាម​ម្តងទៀត​នៅពេលក្រោយ។"</string>
-    <!-- no translation found for wifitrackerlib_wifi_network_not_found (1308764769892463388) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"មិនអាច​ភ្ជាប់​បានទេ។ សូមព្យាយាម​ម្តងទៀត​នៅពេលក្រោយ។"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"បាន​ផ្ដាច់"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"បាន​រក្សាទុក"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ផ្អែកតាម​ទិន្នន័យ​ដែលប្រើ"</string>
