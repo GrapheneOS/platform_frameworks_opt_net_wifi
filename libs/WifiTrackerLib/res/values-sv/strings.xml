@@ -30,8 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Svag signal. Gå närmare routern."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Nätverket är överbelastat. Försök igen senare."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Det gick inte att ansluta. Försök igen senare."</string>
-    <!-- no translation found for wifitrackerlib_wifi_network_not_found (1308764769892463388) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Det gick inte att ansluta. Försök igen senare."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Frånkopplad"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Sparat"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Med datapriser"</string>
