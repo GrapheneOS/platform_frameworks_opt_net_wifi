@@ -26,7 +26,7 @@
     <string name="wifi_disabled_network_failure" msgid="6506742207778007439">"IP ਸੰਰੂਪਣ ਅਸਫਲਤਾ"</string>
     <string name="wifi_disabled_generic" msgid="8307050327779256414">"ਅਯੋਗ ਬਣਾਇਆ"</string>
     <string name="wifi_ap_unable_to_handle_new_sta" msgid="6552198761671428871">"ਐਕਸੈੱਸ ਪੁਆਇੰਟ ਅਸਥਾਈ ਤੌਰ \'ਤੇ ਸੰਪੂਰਨ ਰੁਝੇਂਵੇਂ ਵਿੱਚ ਹੈ"</string>
-    <string name="wifi_disconnected" msgid="3720926757662831062">"ਡਿਸਕਨੈਕਟ ਹੋਇਆ"</string>
+    <string name="wifi_disconnected" msgid="3720926757662831062">"ਡਿਸਕਨੈਕਟ ਕੀਤਾ"</string>
     <string name="wifi_remembered" msgid="5126903736498678708">"ਰੱਖਿਅਤ ਕੀਤਾ"</string>
     <string name="wifi_metered_label" msgid="1362621600006544014">"ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifi_unmetered_label" msgid="499466875639448350">"ਗੈਰ-ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
