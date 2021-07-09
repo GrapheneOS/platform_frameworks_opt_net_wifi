@@ -99,6 +99,7 @@ public class StandardWifiEntryTest {
     @Mock private WifiInfo mMockWifiInfo;
     @Mock private NetworkInfo mMockNetworkInfo;
     @Mock private Context mMockContext;
+    @Mock private Resources mMockResources;
     @Mock private NetworkScoreManager mMockNetworkScoreManager;
     @Mock private WifiNetworkScoreCache mMockScoreCache;
     @Mock private ScoredNetwork mMockScoredNetwork;
@@ -135,6 +136,7 @@ public class StandardWifiEntryTest {
                 .thenReturn(BAD_LEVEL);
         when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
                 .thenReturn(mMockNetworkScoreManager);
+        when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockScoreCache.getScoredNetwork((ScanResult) any())).thenReturn(mMockScoredNetwork);
         when(mMockScoreCache.getScoredNetwork((NetworkKey) any())).thenReturn(mMockScoredNetwork);
 
@@ -651,11 +653,10 @@ public class StandardWifiEntryTest {
         final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
 
-        final Resources mockResources = mock(Resources.class);
-        when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifitrackerlib_summary_separator))
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(summarySeparator);
-        when(mockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+        when(mMockContext.getResources()).thenReturn(mMockResources);
+        when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
         final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
@@ -696,11 +697,9 @@ public class StandardWifiEntryTest {
         final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
 
-        final Resources mockResources = mock(Resources.class);
-        when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifitrackerlib_summary_separator))
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(summarySeparator);
-        when(mockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+        when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
         final ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
         final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
@@ -775,9 +774,7 @@ public class StandardWifiEntryTest {
     @Test
     public void testGetSecurityString_pskAndSae_getWpaWpa2Wpa3Personal() {
         final String wifiSecurityShortWpaWpa2Wpa3 = "WPA/WPA2/WPA3";
-        final Resources mockResources = mock(Resources.class);
-        when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3))
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3))
                 .thenReturn(wifiSecurityShortWpaWpa2Wpa3);
 
         WifiConfiguration pskConfig = new WifiConfiguration();
@@ -805,11 +802,9 @@ public class StandardWifiEntryTest {
     public void testGetSecurityString_connected_getConnectionSecurityType() {
         final String wifiSecurityShortWpaWpa2 = "WPA/WPA2";
         final String wifiSecurityShortWpa3 = "WPA3";
-        final Resources mockResources = mock(Resources.class);
-        when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifitrackerlib_wifi_security_short_wpa_wpa2))
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_short_wpa_wpa2))
                 .thenReturn(wifiSecurityShortWpaWpa2);
-        when(mockResources.getString(R.string.wifitrackerlib_wifi_security_short_sae))
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_short_sae))
                 .thenReturn(wifiSecurityShortWpa3);
 
         WifiConfiguration pskConfig = new WifiConfiguration();
@@ -853,9 +848,7 @@ public class StandardWifiEntryTest {
     @Test
     public void testGetSecurityString_eapAndEapWpa3_getWpaWpa2Wpa3Enterprise() {
         final String wifiSecurityEapWpaWpa2Wpa3 = "WPA/WPA2/WPA3-Enterprise";
-        final Resources mockResources = mock(Resources.class);
-        when(mMockContext.getResources()).thenReturn(mockResources);
-        when(mockResources.getString(R.string.wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3))
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3))
                 .thenReturn(wifiSecurityEapWpaWpa2Wpa3);
 
         WifiConfiguration eapConfig = new WifiConfiguration();

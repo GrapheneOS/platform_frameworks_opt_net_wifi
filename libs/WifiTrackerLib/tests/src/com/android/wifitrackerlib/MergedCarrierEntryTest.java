@@ -67,7 +67,7 @@ public class MergedCarrierEntryTest {
         mTestHandler = new Handler(mTestLooper.getLooper());
         when(mMockContext.getMainLooper()).thenReturn(Looper.getMainLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockResources.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
         when(mMockResources.getText(R.string.wifitrackerlib_wifi_wont_autoconnect_for_now))
                 .thenReturn("Wi-Fi won't auto-connect for now");
     }
