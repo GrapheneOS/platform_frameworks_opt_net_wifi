@@ -853,7 +853,7 @@ public class Utils {
     /**
      * Helper method to check if the provided |scanResult| corresponds to a EAP network or not.
      * This checks these conditions:
-     * - Enable EAP/SHA1 or EAP/SHA256 AKM.
+     * - Enable EAP/SHA1, EAP/SHA256 AKM, FT/EAP, or EAP-FILS.
      * - Not a WPA3 Enterprise only network.
      * - Not a WPA3 Enterprise transition network.
      * TODO(b/187755981): Move to shared static utils class
@@ -861,6 +861,7 @@ public class Utils {
     public static boolean isScanResultForEapNetwork(ScanResult scanResult) {
         return (scanResult.capabilities.contains("EAP/SHA1")
                 || scanResult.capabilities.contains("EAP/SHA256")
+                || scanResult.capabilities.contains("FT/EAP")
                 || scanResult.capabilities.contains("EAP-FILS"))
                 && !isScanResultForWpa3EnterpriseOnlyNetwork(scanResult)
                 && !isScanResultForWpa3EnterpriseTransitionNetwork(scanResult);
