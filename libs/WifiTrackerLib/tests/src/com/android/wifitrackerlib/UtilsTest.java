@@ -58,10 +58,7 @@ import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
-import android.text.Annotation;
 import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.style.ClickableSpan;
 
 import com.android.wifitrackerlib.shadow.ShadowSystem;
@@ -348,44 +345,6 @@ public class UtilsTest {
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), testText);
-        assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
-                ClickableSpan.class).length, 0);
-    }
-
-    @Test
-    public void testLinkifyAnnotation_annotation_returnTextWithClickableSpan() {
-        final String annotationId = "id";
-        final CharSequence testText = "test text ";
-        final CharSequence testLink = "link";
-        final CharSequence expectedText = "test text link";
-        final SpannableStringBuilder builder = new SpannableStringBuilder(testText);
-        builder.append(testLink, new Annotation("key", annotationId),
-                Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-
-        final CharSequence output =
-                HiddenApiWrapper.linkifyAnnotation(mMockContext, builder, annotationId, "url");
-
-        final SpannableString outputSpannableString = new SpannableString(output);
-        assertEquals(output.toString(), expectedText.toString());
-        assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
-                ClickableSpan.class).length, 1);
-    }
-
-    @Test
-    public void testLinkifyAnnotation_annotationWithEmptyUriString_returnOriginalText() {
-        final String annotationId = "url";
-        final CharSequence testText = "test text ";
-        final CharSequence testLink = "Learn More";
-        final CharSequence expectedText = "test text Learn More";
-        final SpannableStringBuilder builder = new SpannableStringBuilder(testText);
-        builder.append(testLink, new Annotation("key", annotationId),
-                Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-
-        final CharSequence output =
-                HiddenApiWrapper.linkifyAnnotation(mMockContext, builder, annotationId, "");
-
-        final SpannableString outputSpannableString = new SpannableString(output);
-        assertEquals(output.toString(), expectedText.toString());
         assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
                 ClickableSpan.class).length, 0);
     }

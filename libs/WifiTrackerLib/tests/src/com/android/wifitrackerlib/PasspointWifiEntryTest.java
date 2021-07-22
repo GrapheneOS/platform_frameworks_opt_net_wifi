@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -44,6 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
 
 import java.util.Arrays;
 
@@ -348,17 +350,23 @@ public class PasspointWifiEntryTest {
         NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
 
-        // Simulate user tapping on the network and receiving captive portal capabilities.
-        // This should trigger the captive portal app.
-        entry.connect(null /* callback */);
-        entry.updateNetworkCapabilities(captivePortalCapabilities);
+        MockitoSession session = mockitoSession().spyStatic(HiddenApiWrapper.class).startMocking();
+        try {
+            // Simulate user tapping on the network and receiving captive portal capabilities.
+            // This should trigger the captive portal app.
+            entry.connect(null /* callback */);
+            entry.updateNetworkCapabilities(captivePortalCapabilities);
 
-        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+            verify(() -> HiddenApiWrapper.startCaptivePortalApp(any(), any()), times(1));
 
-        // Update network capabilities again. This should not trigger the captive portal app.
-        entry.updateNetworkCapabilities(captivePortalCapabilities);
+            // Update network capabilities again. This should not trigger the captive portal app.
+            entry.updateNetworkCapabilities(captivePortalCapabilities);
 
-        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+            verify(() -> HiddenApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+        } finally {
+            session.finishMocking();
+        }
+
     }
 
     @Test
