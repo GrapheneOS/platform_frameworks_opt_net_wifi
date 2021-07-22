@@ -158,7 +158,7 @@ public class WifiPickerTrackerTest {
                 .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.TELEPHONY_SERVICE))
                 .thenReturn(mMockTelephonyManager);
-        when(mMockResources.getString(anyInt())).thenReturn("");
+        when(mMockContext.getString(anyInt())).thenReturn("");
     }
 
     /**
@@ -608,9 +608,9 @@ public class WifiPickerTrackerTest {
         final String lowQuality = "Low quality";
         final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
-        when(mMockResources.getString(R.string.wifitrackerlib_summary_separator))
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(summarySeparator);
-        when(mMockResources.getString(R.string.wifi_connected_low_quality)).thenReturn(lowQuality);
+        when(mMockContext.getString(R.string.wifi_connected_low_quality)).thenReturn(lowQuality);
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
 
