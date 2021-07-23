@@ -30,7 +30,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -72,8 +71,6 @@ public class SavedNetworkTrackerTest {
     @Mock
     private ConnectivityManager mMockConnectivityManager;
     @Mock
-    private NetworkScoreManager mMockNetworkScoreManager;
-    @Mock
     private Clock mMockClock;
     @Mock
     private SavedNetworkTracker.SavedNetworkTrackerCallback mMockCallback;
@@ -108,8 +105,6 @@ public class SavedNetworkTrackerTest {
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
-        when(mMockContext.getSystemService(NetworkScoreManager.class))
-                .thenReturn(mMockNetworkScoreManager);
     }
 
     /**

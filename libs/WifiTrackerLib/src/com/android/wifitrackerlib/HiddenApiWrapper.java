@@ -19,8 +19,6 @@ package com.android.wifitrackerlib;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
-import android.net.NetworkScoreManager;
-import android.net.NetworkScorerAppData;
 import android.text.Annotation;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -30,7 +28,6 @@ import android.util.FeatureFlagUtils;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.android.settingslib.HelpUtils;
 
@@ -55,18 +52,6 @@ class HiddenApiWrapper {
      */
     static boolean isProviderModelEnabled(@NonNull Context context) {
         return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
-    }
-
-    /**
-     *  Gets the label of the active network recommendation service.
-     */
-    @Nullable
-    static String getRecommendationServiceLabel(@NonNull NetworkScoreManager networkScoreManager) {
-        final NetworkScorerAppData networkScorerAppData = networkScoreManager.getActiveScorer();
-        if (networkScorerAppData == null) {
-            return null;
-        }
-        return networkScorerAppData.getRecommendationServiceLabel();
     }
 
     /**

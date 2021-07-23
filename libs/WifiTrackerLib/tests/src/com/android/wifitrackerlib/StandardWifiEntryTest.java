@@ -55,7 +55,6 @@ import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -95,7 +94,6 @@ public class StandardWifiEntryTest {
     @Mock private NetworkInfo mMockNetworkInfo;
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
-    @Mock private NetworkScoreManager mMockNetworkScoreManager;
 
     private TestLooper mTestLooper;
     private Handler mTestHandler;
@@ -127,8 +125,6 @@ public class StandardWifiEntryTest {
                 .thenReturn(OKAY_LEVEL);
         when(mMockWifiManager.calculateSignalLevel(BAD_RSSI))
                 .thenReturn(BAD_LEVEL);
-        when(mMockContext.getSystemService(NetworkScoreManager.class))
-                .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getResources()).thenReturn(mMockResources);
 
         when(mMockContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
