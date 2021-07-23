@@ -28,7 +28,6 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -57,24 +56,23 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
-            @NonNull NetworkScoreManager networkScoreManager,
             @NonNull Handler mainHandler,
             @NonNull Handler workerHandler,
             @NonNull Clock clock,
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
-        super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
+        super(lifecycle, context, wifiManager, connectivityManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
         mKey = new StandardWifiEntryKey(key);
         if (mKey.isNetworkRequest()) {
             mIsNetworkRequest = true;
             mChosenEntry = new NetworkRequestEntry(mContext, mMainHandler, mKey, mWifiManager,
-                    mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+                    false /* forSavedNetworksPage */);
         } else {
             mIsNetworkRequest = false;
             mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, mKey, mWifiManager,
-                    mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+                    false /* forSavedNetworksPage */);
         }
         // It is safe to call updateStartInfo() in the main thread here since onStart() won't have
         // a chance to post handleOnStart() on the worker thread until the main thread finishes
@@ -114,12 +112,6 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
         conditionallyUpdateConfig();
-    }
-
-    @WorkerThread
-    @Override
-    protected void handleNetworkScoreCacheUpdated() {
-        mChosenEntry.onScoreCacheUpdated();
     }
 
     @WorkerThread

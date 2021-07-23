@@ -497,7 +497,7 @@ public class UtilsTest {
         final WifiManager mockWifiManager = mock(WifiManager.class);
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 new StandardWifiEntryKey(config), Collections.singletonList(config),
-                null, mockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+                null, mockWifiManager, false /* forSavedNetworksPage */);
         final WifiInfo mockWifiInfo = mock(WifiInfo.class);
         final NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
 

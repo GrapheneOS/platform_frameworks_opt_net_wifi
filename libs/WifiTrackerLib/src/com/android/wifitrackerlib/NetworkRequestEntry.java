@@ -19,7 +19,6 @@ package com.android.wifitrackerlib;
 import android.content.Context;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
@@ -39,9 +38,8 @@ public class NetworkRequestEntry extends StandardWifiEntry {
 
     NetworkRequestEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull StandardWifiEntryKey key, @NonNull WifiManager wifiManager,
-            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(context, callbackHandler, key, wifiManager, scoreCache, forSavedNetworksPage);
+        super(context, callbackHandler, key, wifiManager, forSavedNetworksPage);
     }
 
     @Override

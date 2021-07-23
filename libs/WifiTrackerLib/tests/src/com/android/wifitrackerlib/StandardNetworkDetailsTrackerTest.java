@@ -87,7 +87,6 @@ public class StandardNetworkDetailsTrackerTest {
         return new StandardNetworkDetailsTracker(mMockLifecycle, mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
-                mMockNetworkScoreManager,
                 testHandler,
                 testHandler,
                 mMockClock,

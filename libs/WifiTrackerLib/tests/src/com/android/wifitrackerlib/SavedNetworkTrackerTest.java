@@ -89,7 +89,6 @@ public class SavedNetworkTrackerTest {
         return new SavedNetworkTracker(mMockLifecycle, mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
-                mMockNetworkScoreManager,
                 testHandler,
                 testHandler,
                 mMockClock,

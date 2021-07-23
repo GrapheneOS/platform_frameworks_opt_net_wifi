@@ -119,7 +119,6 @@ public class WifiPickerTrackerTest {
         return new WifiPickerTracker(mMockLifecycle, mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
-                mMockNetworkScoreManager,
                 testHandler,
                 testHandler,
                 mMockClock,

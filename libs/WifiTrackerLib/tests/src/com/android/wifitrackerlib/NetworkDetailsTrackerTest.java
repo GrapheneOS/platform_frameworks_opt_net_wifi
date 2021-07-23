@@ -71,7 +71,6 @@ public class NetworkDetailsTrackerTest {
         return createNetworkDetailsTracker(mMockLifecycle, mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
-                mMockNetworkScoreManager,
                 testHandler,
                 testHandler,
                 mMockClock,

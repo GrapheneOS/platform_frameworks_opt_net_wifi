@@ -28,7 +28,6 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.ProvisioningCallback;
@@ -68,9 +67,8 @@ class OsuWifiEntry extends WifiEntry {
     OsuWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull OsuProvider osuProvider,
             @NonNull WifiManager wifiManager,
-            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
+        super(callbackHandler, wifiManager, forSavedNetworksPage);
 
         checkNotNull(osuProvider, "Cannot construct with null osuProvider!");
 
