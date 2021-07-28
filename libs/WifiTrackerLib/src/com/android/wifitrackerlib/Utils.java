@@ -19,13 +19,6 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
 
-import static com.android.wifitrackerlib.WifiEntry.SPEED_FAST;
-import static com.android.wifitrackerlib.WifiEntry.SPEED_MODERATE;
-import static com.android.wifitrackerlib.WifiEntry.SPEED_NONE;
-import static com.android.wifitrackerlib.WifiEntry.SPEED_SLOW;
-import static com.android.wifitrackerlib.WifiEntry.SPEED_VERY_FAST;
-import static com.android.wifitrackerlib.WifiEntry.Speed;
-
 import static java.util.Comparator.comparingInt;
 
 import android.content.Context;
@@ -34,36 +27,26 @@ import android.content.pm.PackageManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
-import android.net.NetworkKey;
 import android.net.NetworkScoreManager;
-import android.net.ScoredNetwork;
-import android.net.WifiKey;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
-import android.text.Annotation;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
-import android.text.style.ClickableSpan;
-import android.util.FeatureFlagUtils;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
-import com.android.internal.annotations.VisibleForTesting;
-import com.android.settingslib.HelpUtils;
-
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,7 +65,7 @@ public class Utils {
 
     static class FeatureFlagUtilsWrapper {
         boolean isProviderModelEnabled(Context context) {
-            return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
+            return HiddenApiWrapper.isProviderModelEnabled(context);
         }
     }
 
@@ -235,61 +218,6 @@ public class Utils {
             }
         }
         return WifiInfo.SECURITY_TYPE_UNKNOWN;
-    }
-
-    @Speed
-    public static int getAverageSpeedFromScanResults(@NonNull WifiNetworkScoreCache scoreCache,
-            @NonNull List<ScanResult> scanResults) {
-        int count = 0;
-        int totalSpeed = 0;
-        for (ScanResult scanResult : scanResults) {
-            ScoredNetwork scoredNetwork = scoreCache.getScoredNetwork(scanResult);
-            if (scoredNetwork == null) {
-                continue;
-            }
-            @Speed int speed = scoredNetwork.calculateBadge(scanResult.level);
-            if (speed != SPEED_NONE) {
-                count++;
-                totalSpeed += speed;
-            }
-        }
-        if (count == 0) {
-            return SPEED_NONE;
-        } else {
-            return roundToClosestSpeedEnum(totalSpeed / count);
-        }
-    }
-
-    @Speed
-    public static int getSpeedFromWifiInfo(@NonNull WifiNetworkScoreCache scoreCache,
-            @NonNull WifiInfo wifiInfo) {
-        final WifiKey wifiKey;
-        try {
-            wifiKey = new WifiKey(wifiInfo.getSSID(), wifiInfo.getBSSID());
-        } catch (IllegalArgumentException e) {
-            return SPEED_NONE;
-        }
-        ScoredNetwork scoredNetwork = scoreCache.getScoredNetwork(
-                new NetworkKey(wifiKey));
-        if (scoredNetwork == null) {
-            return SPEED_NONE;
-        }
-        return roundToClosestSpeedEnum(scoredNetwork.calculateBadge(wifiInfo.getRssi()));
-    }
-
-    @Speed
-    private static int roundToClosestSpeedEnum(int speed) {
-        if (speed == SPEED_NONE) {
-            return SPEED_NONE;
-        } else if (speed < (SPEED_SLOW + SPEED_MODERATE) / 2) {
-            return SPEED_SLOW;
-        } else if (speed < (SPEED_MODERATE + SPEED_FAST) / 2) {
-            return SPEED_MODERATE;
-        } else if (speed < (SPEED_FAST + SPEED_VERY_FAST) / 2) {
-            return SPEED_FAST;
-        } else {
-            return SPEED_VERY_FAST;
-        }
     }
 
     /**
@@ -547,27 +475,6 @@ public class Utils {
         }
     }
 
-    static String getSpeedDescription(@NonNull Context context, @NonNull WifiEntry wifiEntry) {
-        if (context == null || wifiEntry == null) {
-            return "";
-        }
-
-        @Speed int speed = wifiEntry.getSpeed();
-        switch (speed) {
-            case SPEED_VERY_FAST:
-                return context.getString(R.string.wifitrackerlib_speed_label_very_fast);
-            case SPEED_FAST:
-                return context.getString(R.string.wifitrackerlib_speed_label_fast);
-            case SPEED_MODERATE:
-                return context.getString(R.string.wifitrackerlib_speed_label_okay);
-            case SPEED_SLOW:
-                return context.getString(R.string.wifitrackerlib_speed_label_slow);
-            case SPEED_NONE:
-            default:
-                return "";
-        }
-    }
-
     static String getVerboseLoggingDescription(@NonNull WifiEntry wifiEntry) {
         if (!BaseWifiTracker.isVerboseLoggingEnabled() || wifiEntry == null) {
             return "";
@@ -784,39 +691,9 @@ public class Utils {
         }
 
         // IMSI protection is not provided, return warning message.
-        return linkifyAnnotation(context, context.getText(
+        return HiddenApiWrapper.linkifyAnnotation(context, context.getText(
                 R.string.wifitrackerlib_imsi_protection_warning), "url",
                 context.getString(R.string.wifitrackerlib_help_url_imsi_protection));
-    }
-
-    /** Find the annotation of specified id in rawText and linkify it with helpUriString. */
-    static CharSequence linkifyAnnotation(Context context, CharSequence rawText, String id,
-            String helpUriString) {
-        // Return original string when helpUriString is empty.
-        if (TextUtils.isEmpty(helpUriString)) {
-            return rawText;
-        }
-
-        SpannableString spannableText = new SpannableString(rawText);
-        Annotation[] annotations = spannableText.getSpans(0, spannableText.length(),
-                Annotation.class);
-
-        for (Annotation annotation : annotations) {
-            if (TextUtils.equals(annotation.getValue(), id)) {
-                SpannableStringBuilder builder = new SpannableStringBuilder(spannableText);
-                ClickableSpan link = new ClickableSpan() {
-                    @Override
-                    public void onClick(View view) {
-                        view.startActivityForResult(HelpUtils.getHelpIntent(context, helpUriString,
-                                view.getClass().getName()), 0);
-                    }
-                };
-                builder.setSpan(link, spannableText.getSpanStart(annotation),
-                        spannableText.getSpanEnd(annotation), spannableText.getSpanFlags(link));
-                return builder;
-            }
-        }
-        return rawText;
     }
 
     // Various utility methods copied from com.android.server.wifi.util.ScanResultUtils for
@@ -1008,5 +885,45 @@ public class Utils {
                 || isScanResultForWapiCertNetwork(scanResult)
                 || isScanResultForEapSuiteBNetwork(scanResult)
                 || isScanResultForUnknownAkmNetwork(scanResult)));
+    }
+
+    /**
+     * Get InetAddress masked with prefixLength.  Will never return null.
+     * @param address the IP address to mask with
+     * @param prefixLength the prefixLength used to mask the IP
+     */
+    public static InetAddress getNetworkPart(InetAddress address, int prefixLength) {
+        byte[] array = address.getAddress();
+        maskRawAddress(array, prefixLength);
+
+        InetAddress netPart = null;
+        try {
+            netPart = InetAddress.getByAddress(array);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("getNetworkPart error - " + e.toString());
+        }
+        return netPart;
+    }
+
+    /**
+     *  Masks a raw IP address byte array with the specified prefix length.
+     */
+    public static void maskRawAddress(byte[] array, int prefixLength) {
+        if (prefixLength < 0 || prefixLength > array.length * 8) {
+            throw new RuntimeException("IP address with " + array.length
+                    + " bytes has invalid prefix length " + prefixLength);
+        }
+
+        int offset = prefixLength / 8;
+        int remainder = prefixLength % 8;
+        byte mask = (byte) (0xFF << (8 - remainder));
+
+        if (offset < array.length) array[offset] = (byte) (array[offset] & mask);
+
+        offset++;
+
+        for (; offset < array.length; offset++) {
+            array[offset] = 0;
+        }
     }
 }

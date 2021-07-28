@@ -20,8 +20,8 @@ import static android.net.wifi.WifiInfo.INVALID_RSSI;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
+import static com.android.wifitrackerlib.Utils.getNetworkPart;
 import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
-import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
 
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -32,7 +32,6 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 
 import androidx.annotation.AnyThread;
@@ -42,8 +41,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-
-import com.android.net.module.util.NetUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -112,23 +109,6 @@ public class WifiEntry implements Comparable<WifiEntry> {
     public static final int WIFI_LEVEL_MIN = 0;
     public static final int WIFI_LEVEL_MAX = 4;
     public static final int WIFI_LEVEL_UNREACHABLE = -1;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(value = {
-            SPEED_NONE,
-            SPEED_SLOW,
-            SPEED_MODERATE,
-            SPEED_FAST,
-            SPEED_VERY_FAST
-    })
-
-    public @interface Speed {}
-
-    public static final int SPEED_NONE = 0;
-    public static final int SPEED_SLOW = 5;
-    public static final int SPEED_MODERATE = 10;
-    public static final int SPEED_FAST = 20;
-    public static final int SPEED_VERY_FAST = 30;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {
@@ -229,12 +209,10 @@ public class WifiEntry implements Comparable<WifiEntry> {
     protected final Handler mCallbackHandler;
 
     protected int mLevel = WIFI_LEVEL_UNREACHABLE;
-    protected int mSpeed = SPEED_NONE;
     protected WifiInfo mWifiInfo;
     protected NetworkInfo mNetworkInfo;
     protected NetworkCapabilities mNetworkCapabilities;
     protected ConnectedInfo mConnectedInfo;
-    protected WifiNetworkScoreCache mScoreCache;
 
     protected ConnectCallback mConnectCallback;
     protected DisconnectCallback mDisconnectCallback;
@@ -250,14 +228,12 @@ public class WifiEntry implements Comparable<WifiEntry> {
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
 
     public WifiEntry(@NonNull Handler callbackHandler, @NonNull WifiManager wifiManager,
-            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
         checkNotNull(callbackHandler, "Cannot construct with null handler!");
         checkNotNull(wifiManager, "Cannot construct with null WifiManager!");
         mCallbackHandler = callbackHandler;
         mForSavedNetworksPage = forSavedNetworksPage;
         mWifiManager = wifiManager;
-        mScoreCache = scoreCache;
     }
 
     // Info available for all WifiEntries //
@@ -349,12 +325,6 @@ public class WifiEntry implements Comparable<WifiEntry> {
     public boolean isDefaultNetwork() {
         return mIsDefaultNetwork;
     }
-
-    /** Returns the speed value of the network defined by the SPEED constants */
-    @Speed
-    public int getSpeed() {
-        return mSpeed;
-    };
 
     /**
      * Returns the SSID of the entry, if applicable. Null otherwise.
@@ -837,7 +807,6 @@ public class WifiEntry implements Comparable<WifiEntry> {
             final int wifiInfoRssi = wifiInfo.getRssi();
             if (wifiInfoRssi != INVALID_RSSI) {
                 mLevel = mWifiManager.calculateSignalLevel(wifiInfoRssi);
-                mSpeed = getSpeedFromWifiInfo(mScoreCache, wifiInfo);
             }
             if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
                 if (mCalledConnect) {
@@ -907,7 +876,7 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 try {
                     InetAddress all = InetAddress.getByAddress(
                             new byte[]{(byte) 255, (byte) 255, (byte) 255, (byte) 255});
-                    mConnectedInfo.subnetMask = NetUtils.getNetworkPart(
+                    mConnectedInfo.subnetMask = getNetworkPart(
                             all, addr.getPrefixLength()).getHostAddress();
                 } catch (UnknownHostException e) {
                     // Leave subnet null;

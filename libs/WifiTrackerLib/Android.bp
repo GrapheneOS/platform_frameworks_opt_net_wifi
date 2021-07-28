@@ -2,8 +2,8 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-android_library {
-    name: "WifiTrackerLib",
+java_defaults {
+    name: "WifiTrackerLibDefaults",
     srcs: ["src/**/*.java"],
     resource_dirs: [],
     static_libs: [
@@ -21,6 +21,21 @@ android_library {
 
     // TODO(b/187099809): Update this once we remove SettingsLib's dependency on WifiTrackerLib
     min_sdk_version: "21",
+}
+
+android_library {
+    name: "WifiTrackerLib",
+    defaults: ["WifiTrackerLibDefaults"],
+    srcs: ["src/**/*.java"],
+}
+
+android_library {
+    name: "SdkWifiTrackerLib",
+    defaults: ["WifiTrackerLibDefaults"],
+    srcs: ["sdk_src/**/HiddenApiWrapper.java"],
+    exclude_srcs: ["src/**/HiddenApiWrapper.java"],
+
+    sdk_version: "system_current",
 }
 
 // Define the resources as a separate library so that external apps may use them without needing to

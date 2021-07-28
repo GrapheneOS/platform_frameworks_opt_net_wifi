@@ -89,7 +89,6 @@ public class SavedNetworkTrackerTest {
         return new SavedNetworkTracker(mMockLifecycle, mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
-                mMockNetworkScoreManager,
                 testHandler,
                 testHandler,
                 mMockClock,
@@ -109,7 +108,7 @@ public class SavedNetworkTrackerTest {
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
-        when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
+        when(mMockContext.getSystemService(NetworkScoreManager.class))
                 .thenReturn(mMockNetworkScoreManager);
     }
 
