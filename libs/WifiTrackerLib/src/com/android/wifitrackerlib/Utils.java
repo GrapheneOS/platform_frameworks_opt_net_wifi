@@ -244,7 +244,6 @@ public class Utils {
     static String getConnectedDescription(Context context,
             WifiConfiguration wifiConfiguration,
             NetworkCapabilities networkCapabilities,
-            String recommendationServiceLabel,
             boolean isDefaultNetwork,
             boolean isLowQuality) {
         final StringJoiner sj = new StringJoiner(context.getString(
@@ -252,30 +251,19 @@ public class Utils {
         final boolean hideConnected =
                 !isDefaultNetwork && sFeatureFlagUtilsWrapper.isProviderModelEnabled(context);
 
-        if (wifiConfiguration != null) {
-            if (wifiConfiguration.fromWifiNetworkSuggestion
-                    || wifiConfiguration.fromWifiNetworkSpecifier) {
-                // For suggestion or specifier networks to show "Connected via ..."
-                final String suggestionOrSpecifierLabel =
-                        getSuggestionOrSpecifierLabel(context, wifiConfiguration);
-                if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-                    if (hideConnected) {
-                        sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
-                                suggestionOrSpecifierLabel));
-                    } else {
-                        sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
-                                suggestionOrSpecifierLabel));
-                    }
-                }
-            } else if (wifiConfiguration.isEphemeral() && !hideConnected) {
-                // For ephemeral networks to show "Automatically connected via ..."
-                if (!TextUtils.isEmpty(recommendationServiceLabel)) {
-                    sj.add(String.format(context.getString(
-                            R.string.wifitrackerlib_connected_via_network_scorer),
-                            recommendationServiceLabel));
+        if (wifiConfiguration != null
+                && (wifiConfiguration.fromWifiNetworkSuggestion
+                || wifiConfiguration.fromWifiNetworkSpecifier)) {
+            // For suggestion or specifier networks to show "Connected via ..."
+            final String suggestionOrSpecifierLabel =
+                    getSuggestionOrSpecifierLabel(context, wifiConfiguration);
+            if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
+                if (hideConnected) {
+                    sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
+                            suggestionOrSpecifierLabel));
                 } else {
-                    sj.add(context.getString(
-                            R.string.wifitrackerlib_connected_via_network_scorer_default));
+                    sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
+                            suggestionOrSpecifierLabel));
                 }
             }
         }

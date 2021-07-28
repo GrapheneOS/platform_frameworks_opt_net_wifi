@@ -48,7 +48,6 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -113,7 +112,6 @@ public class StandardWifiEntry extends WifiEntry {
     private List<Integer> mTargetSecurityTypes = new ArrayList<>();
 
     private boolean mIsUserShareable = false;
-    @Nullable private String mRecommendationServiceLabel;
 
     private boolean mShouldAutoOpenCaptivePortal = false;
 
@@ -130,7 +128,6 @@ public class StandardWifiEntry extends WifiEntry {
         mIsWpa3SaeSupported = wifiManager.isWpa3SaeSupported();
         mIsWpa3SuiteBSupported = wifiManager.isWpa3SuiteBSupported();
         mIsEnhancedOpenSupported = wifiManager.isEnhancedOpenSupported();
-        updateRecommendationServiceLabel();
     }
 
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
@@ -184,7 +181,6 @@ public class StandardWifiEntry extends WifiEntry {
                 connectedStateDescription = getConnectedDescription(mContext,
                         mTargetWifiConfig,
                         mNetworkCapabilities,
-                        mRecommendationServiceLabel,
                         mIsDefaultNetwork,
                         mIsLowQuality);
                 break;
@@ -822,11 +818,6 @@ public class StandardWifiEntry extends WifiEntry {
             }
         }
         return false;
-    }
-
-    private synchronized void updateRecommendationServiceLabel() {
-        mRecommendationServiceLabel = HiddenApiWrapper.getRecommendationServiceLabel(
-                mContext.getSystemService(NetworkScoreManager.class));
     }
 
     @NonNull

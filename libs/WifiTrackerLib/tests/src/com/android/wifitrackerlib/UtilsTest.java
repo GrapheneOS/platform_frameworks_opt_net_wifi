@@ -44,7 +44,6 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -95,7 +94,6 @@ public class UtilsTest {
 
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
-    @Mock private NetworkScoreManager mMockNetworkScoreManager;
     @Mock private WifiNetworkScoreCache mMockScoreCache;
     @Mock private SubscriptionManager mSubscriptionManager;
     @Mock private TelephonyManager mTelephonyManager;
@@ -111,8 +109,6 @@ public class UtilsTest {
         TestLooper testLooper = new TestLooper();
         mTestHandler = new Handler(testLooper.getLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getSystemService(NetworkScoreManager.class))
-                .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
         when(mMockContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))

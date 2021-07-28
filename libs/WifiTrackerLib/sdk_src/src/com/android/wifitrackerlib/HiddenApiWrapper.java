@@ -19,10 +19,8 @@ package com.android.wifitrackerlib;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
-import android.net.NetworkScoreManager;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 /**
  * Wrapper class to decouple WifiTrackerLibDefaults from @hide API usage at build time.
@@ -45,14 +43,6 @@ class HiddenApiWrapper {
      */
     static boolean isProviderModelEnabled(@NonNull Context context) {
         return false;
-    }
-
-    /**
-     *  Gets the label of the active network recommendation service.
-     */
-    @Nullable
-    static String getRecommendationServiceLabel(@NonNull NetworkScoreManager networkScoreManager) {
-        return null;
     }
 
     /**

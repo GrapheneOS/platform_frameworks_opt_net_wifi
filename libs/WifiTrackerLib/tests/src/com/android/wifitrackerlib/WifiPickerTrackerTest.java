@@ -37,7 +37,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -87,8 +86,6 @@ public class WifiPickerTrackerTest {
     private WifiManager mMockWifiManager;
     @Mock
     private ConnectivityManager mMockConnectivityManager;
-    @Mock
-    private NetworkScoreManager mMockNetworkScoreManager;
     @Mock
     private TelephonyManager mMockTelephonyManager;
     @Mock
@@ -153,8 +150,6 @@ public class WifiPickerTrackerTest {
         when(mMockNetworkInfo.getDetailedState()).thenReturn(
                 NetworkInfo.DetailedState.DISCONNECTED);
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getSystemService(NetworkScoreManager.class))
-                .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(TelephonyManager.class))
                 .thenReturn(mMockTelephonyManager);
         when(mMockContext.getString(anyInt())).thenReturn("");

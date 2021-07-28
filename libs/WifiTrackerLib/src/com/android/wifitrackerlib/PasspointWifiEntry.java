@@ -186,7 +186,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                     connectedStateDescription = getConnectedDescription(mContext,
                             mWifiConfig,
                             mNetworkCapabilities,
-                            null /* recommendationServiceLabel */,
                             mIsDefaultNetwork,
                             mIsLowQuality);
                     break;
