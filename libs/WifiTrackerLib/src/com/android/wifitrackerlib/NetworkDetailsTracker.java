@@ -26,7 +26,6 @@ import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 
@@ -51,7 +50,6 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
      *                            strings.
      * @param wifiManager         Provides all Wi-Fi info.
      * @param connectivityManager Provides network info.
-     * @param networkScoreManager Provides network scores for network badging.
      * @param mainHandler         Handler for processing listener callbacks.
      * @param workerHandler       Handler for processing all broadcasts and running the Scanner.
      * @param clock               Clock used for evaluating the age of scans
@@ -64,7 +62,6 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
-            @NonNull NetworkScoreManager networkScoreManager,
             @NonNull Handler mainHandler,
             @NonNull Handler workerHandler,
             @NonNull Clock clock,
@@ -73,11 +70,11 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             String key) {
         if (key.startsWith(StandardWifiEntry.KEY_PREFIX)) {
             return new StandardNetworkDetailsTracker(lifecycle, context, wifiManager,
-                    connectivityManager, networkScoreManager, mainHandler, workerHandler, clock,
+                    connectivityManager, mainHandler, workerHandler, clock,
                     maxScanAgeMillis, scanIntervalMillis, key);
         } else if (key.startsWith(PasspointWifiEntry.KEY_PREFIX)) {
             return new PasspointNetworkDetailsTracker(lifecycle, context, wifiManager,
-                    connectivityManager, networkScoreManager, mainHandler, workerHandler, clock,
+                    connectivityManager, mainHandler, workerHandler, clock,
                     maxScanAgeMillis, scanIntervalMillis, key);
         } else {
             throw new IllegalArgumentException("Key does not contain valid key prefix!");
@@ -94,14 +91,13 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
     NetworkDetailsTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
-            @NonNull NetworkScoreManager networkScoreManager,
             @NonNull Handler mainHandler,
             @NonNull Handler workerHandler,
             @NonNull Clock clock,
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String tag) {
-        super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
+        super(lifecycle, context, wifiManager, connectivityManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis,
                 null /* listener */, tag);
     }

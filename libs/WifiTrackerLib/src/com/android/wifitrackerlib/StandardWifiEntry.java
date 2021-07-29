@@ -33,7 +33,6 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
-import static com.android.wifitrackerlib.Utils.getAverageSpeedFromScanResults;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getConnectedDescription;
 import static com.android.wifitrackerlib.Utils.getConnectingDescription;
@@ -43,22 +42,17 @@ import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfiguration;
 import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
-import static com.android.wifitrackerlib.Utils.getSpeedDescription;
-import static com.android.wifitrackerlib.Utils.getSpeedFromWifiInfo;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
-import android.net.NetworkScorerAppData;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.telephony.SubscriptionInfo;
@@ -70,9 +64,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-
-import com.android.internal.annotations.VisibleForTesting;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -119,7 +112,6 @@ public class StandardWifiEntry extends WifiEntry {
     private List<Integer> mTargetSecurityTypes = new ArrayList<>();
 
     private boolean mIsUserShareable = false;
-    @Nullable private String mRecommendationServiceLabel;
 
     private boolean mShouldAutoOpenCaptivePortal = false;
 
@@ -129,15 +121,13 @@ public class StandardWifiEntry extends WifiEntry {
 
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull StandardWifiEntryKey key, @NonNull WifiManager wifiManager,
-            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) {
-        super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
+        super(callbackHandler, wifiManager, forSavedNetworksPage);
         mContext = context;
         mKey = key;
         mIsWpa3SaeSupported = wifiManager.isWpa3SaeSupported();
         mIsWpa3SuiteBSupported = wifiManager.isWpa3SuiteBSupported();
         mIsEnhancedOpenSupported = wifiManager.isEnhancedOpenSupported();
-        updateRecommendationServiceLabel();
     }
 
     StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
@@ -145,9 +135,8 @@ public class StandardWifiEntry extends WifiEntry {
             @Nullable List<WifiConfiguration> configs,
             @Nullable List<ScanResult> scanResults,
             @NonNull WifiManager wifiManager,
-            @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        this(context, callbackHandler, key, wifiManager, scoreCache,
+        this(context, callbackHandler, key, wifiManager,
                 forSavedNetworksPage);
         if (configs != null && !configs.isEmpty()) {
             updateConfig(configs);
@@ -192,7 +181,6 @@ public class StandardWifiEntry extends WifiEntry {
                 connectedStateDescription = getConnectedDescription(mContext,
                         mTargetWifiConfig,
                         mNetworkCapabilities,
-                        mRecommendationServiceLabel,
                         mIsDefaultNetwork,
                         mIsLowQuality);
                 break;
@@ -202,11 +190,6 @@ public class StandardWifiEntry extends WifiEntry {
         }
         if (!TextUtils.isEmpty(connectedStateDescription)) {
             sj.add(connectedStateDescription);
-        }
-
-        final String speedDescription = getSpeedDescription(mContext, this);
-        if (!TextUtils.isEmpty(speedDescription)) {
-            sj.add(speedDescription);
         }
 
         final String autoConnectDescription = getAutoConnectDescription(mContext, this);
@@ -418,8 +401,9 @@ public class StandardWifiEntry extends WifiEntry {
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            ((ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
-                    .startCaptivePortalApp(mWifiManager.getCurrentNetwork());
+            HiddenApiWrapper.startCaptivePortalApp(
+                    mContext.getSystemService(ConnectivityManager.class),
+                    mWifiManager.getCurrentNetwork());
         }
     }
 
@@ -686,8 +670,6 @@ public class StandardWifiEntry extends WifiEntry {
             mLevel = bestScanResult != null
                     ? mWifiManager.calculateSignalLevel(bestScanResult.level)
                     : WIFI_LEVEL_UNREACHABLE;
-            // Average speed is used to prevent speed label flickering from multiple APs.
-            mSpeed = getAverageSpeedFromScanResults(mScoreCache, mTargetScanResults);
         }
     }
 
@@ -701,17 +683,6 @@ public class StandardWifiEntry extends WifiEntry {
             mShouldAutoOpenCaptivePortal = false;
             signIn(null /* callback */);
         }
-    }
-
-    @WorkerThread
-    synchronized void onScoreCacheUpdated() {
-        if (mWifiInfo != null) {
-            mSpeed = getSpeedFromWifiInfo(mScoreCache, mWifiInfo);
-        } else {
-            // Average speed is used to prevent speed label flickering from multiple APs.
-            mSpeed = getAverageSpeedFromScanResults(mScoreCache, mTargetScanResults);
-        }
-        notifyOnUpdated();
     }
 
     @WorkerThread
@@ -847,14 +818,6 @@ public class StandardWifiEntry extends WifiEntry {
             }
         }
         return false;
-    }
-
-    private synchronized void updateRecommendationServiceLabel() {
-        final NetworkScorerAppData scorer = ((NetworkScoreManager) mContext
-                .getSystemService(Context.NETWORK_SCORE_SERVICE)).getActiveScorer();
-        if (scorer != null) {
-            mRecommendationServiceLabel = scorer.getRecommendationServiceLabel();
-        }
     }
 
     @NonNull

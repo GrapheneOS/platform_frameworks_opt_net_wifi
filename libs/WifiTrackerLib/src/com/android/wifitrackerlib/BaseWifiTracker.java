@@ -20,8 +20,6 @@ import static android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED;
 import static android.net.NetworkCapabilities.TRANSPORT_CELLULAR;
 import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
 
-import static java.util.stream.Collectors.toList;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,14 +28,10 @@ import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkKey;
 import android.net.NetworkRequest;
-import android.net.NetworkScoreManager;
-import android.net.ScoredNetwork;
 import android.net.TransportInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SubscriptionManager;
@@ -54,9 +48,6 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import java.time.Clock;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Base class for WifiTracker functionality.
@@ -119,10 +110,6 @@ public class BaseWifiTracker implements LifecycleObserver {
                 notifyOnWifiStateChanged();
                 handleWifiStateChangedAction();
             } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
-                mNetworkScoreManager.requestScores(mWifiManager.getScanResults().stream()
-                        .map(NetworkKey::createFromScanResult)
-                        .filter(mRequestedScoreKeys::add)
-                        .collect(toList()));
                 handleScanResultsAvailableAction(intent);
             } else if (WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION.equals(action)) {
                 handleConfiguredNetworksChangedAction(intent);
@@ -142,17 +129,14 @@ public class BaseWifiTracker implements LifecycleObserver {
     protected final Context mContext;
     protected final WifiManager mWifiManager;
     protected final ConnectivityManager mConnectivityManager;
-    protected final NetworkScoreManager mNetworkScoreManager;
     protected final Handler mMainHandler;
     protected final Handler mWorkerHandler;
     protected final long mMaxScanAgeMillis;
     protected final long mScanIntervalMillis;
     protected final ScanResultUpdater mScanResultUpdater;
-    protected final WifiNetworkScoreCache mWifiNetworkScoreCache;
     protected boolean mIsWifiValidated;
     protected boolean mIsWifiDefaultRoute;
     protected boolean mIsCellDefaultRoute;
-    private final Set<NetworkKey> mRequestedScoreKeys = new HashSet<>();
 
     // Network request for listening on changes to Wifi link properties and network capabilities
     // such as captive portal availability.
@@ -267,12 +251,10 @@ public class BaseWifiTracker implements LifecycleObserver {
 
     /**
      * Constructor for BaseWifiTracker.
-     *
-     * @param lifecycle Lifecycle this is tied to for lifecycle callbacks.
+     *  @param lifecycle Lifecycle this is tied to for lifecycle callbacks.
      * @param context Context for registering broadcast receiver and for resource strings.
      * @param wifiManager Provides all Wi-Fi info.
      * @param connectivityManager Provides network info.
-     * @param networkScoreManager Provides network scores for network badging.
      * @param mainHandler Handler for processing listener callbacks.
      * @param workerHandler Handler for processing all broadcasts and running the Scanner.
      * @param clock Clock used for evaluating the age of scans
@@ -282,7 +264,6 @@ public class BaseWifiTracker implements LifecycleObserver {
     BaseWifiTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
-            @NonNull NetworkScoreManager networkScoreManager,
             @NonNull Handler mainHandler,
             @NonNull Handler workerHandler,
             @NonNull Clock clock,
@@ -294,7 +275,6 @@ public class BaseWifiTracker implements LifecycleObserver {
         mContext = context;
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
-        mNetworkScoreManager = networkScoreManager;
         mMainHandler = mainHandler;
         mWorkerHandler = workerHandler;
         mMaxScanAgeMillis = maxScanAgeMillis;
@@ -304,13 +284,6 @@ public class BaseWifiTracker implements LifecycleObserver {
 
         mScanResultUpdater = new ScanResultUpdater(clock,
                 maxScanAgeMillis + scanIntervalMillis);
-        mWifiNetworkScoreCache = new WifiNetworkScoreCache(mContext,
-                new WifiNetworkScoreCache.CacheListener(mWorkerHandler) {
-                    @Override
-                    public void networkCacheUpdated(List<ScoredNetwork> networks) {
-                        handleNetworkScoreCacheUpdated();
-                    }
-                });
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
         sVerboseLogging = mWifiManager.isVerboseLoggingEnabled();
     }
@@ -348,10 +321,6 @@ public class BaseWifiTracker implements LifecycleObserver {
             Log.v(mTag, "Cell is the default route: " + mIsCellDefaultRoute);
         }
 
-        mNetworkScoreManager.registerNetworkScoreCache(
-                NetworkKey.TYPE_WIFI,
-                mWifiNetworkScoreCache,
-                NetworkScoreManager.SCORE_FILTER_SCAN_RESULTS);
         mWorkerHandler.post(() -> {
             if (!mIsStarted) {
                 mIsStarted = true;
@@ -370,9 +339,6 @@ public class BaseWifiTracker implements LifecycleObserver {
         mContext.unregisterReceiver(mBroadcastReceiver);
         mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
         mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
-        mNetworkScoreManager.unregisterNetworkScoreCache(NetworkKey.TYPE_WIFI,
-                mWifiNetworkScoreCache);
-        mWorkerHandler.post(mRequestedScoreKeys::clear);
         mIsStarted = false;
     }
 
@@ -461,14 +427,6 @@ public class BaseWifiTracker implements LifecycleObserver {
      */
     @WorkerThread
     protected void handleDefaultRouteChanged() {
-        // Do nothing.
-    }
-
-    /**
-     * Handle updates to the Wifi network score cache, which is stored in mWifiNetworkScoreCache
-     */
-    @WorkerThread
-    protected void handleNetworkScoreCacheUpdated() {
         // Do nothing.
     }
 

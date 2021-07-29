@@ -29,7 +29,6 @@ import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfigura
 import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
 import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
 import static com.android.wifitrackerlib.Utils.isSimPresent;
-import static com.android.wifitrackerlib.Utils.linkifyAnnotation;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -45,7 +44,6 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.NetworkInfo;
-import android.net.NetworkScoreManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -96,7 +94,6 @@ public class UtilsTest {
 
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
-    @Mock private NetworkScoreManager mMockNetworkScoreManager;
     @Mock private WifiNetworkScoreCache mMockScoreCache;
     @Mock private SubscriptionManager mSubscriptionManager;
     @Mock private TelephonyManager mTelephonyManager;
@@ -112,8 +109,6 @@ public class UtilsTest {
         TestLooper testLooper = new TestLooper();
         mTestHandler = new Handler(testLooper.getLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getSystemService(Context.NETWORK_SCORE_SERVICE))
-                .thenReturn(mMockNetworkScoreManager);
         when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
         when(mMockContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
@@ -348,7 +343,8 @@ public class UtilsTest {
     public void testLinkifyAnnotation_noAnnotation_returnOriginalText() {
         final CharSequence testText = "test text";
 
-        final CharSequence output = linkifyAnnotation(mMockContext, testText, "id", "url");
+        final CharSequence output =
+                HiddenApiWrapper.linkifyAnnotation(mMockContext, testText, "id", "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), testText);
@@ -366,7 +362,8 @@ public class UtilsTest {
         builder.append(testLink, new Annotation("key", annotationId),
                 Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-        final CharSequence output = linkifyAnnotation(mMockContext, builder, annotationId, "url");
+        final CharSequence output =
+                HiddenApiWrapper.linkifyAnnotation(mMockContext, builder, annotationId, "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), expectedText.toString());
@@ -384,7 +381,8 @@ public class UtilsTest {
         builder.append(testLink, new Annotation("key", annotationId),
                 Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-        final CharSequence output = linkifyAnnotation(mMockContext, builder, annotationId, "");
+        final CharSequence output =
+                HiddenApiWrapper.linkifyAnnotation(mMockContext, builder, annotationId, "");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), expectedText.toString());
@@ -495,7 +493,7 @@ public class UtilsTest {
         final WifiManager mockWifiManager = mock(WifiManager.class);
         final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
                 new StandardWifiEntryKey(config), Collections.singletonList(config),
-                null, mockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+                null, mockWifiManager, false /* forSavedNetworksPage */);
         final WifiInfo mockWifiInfo = mock(WifiInfo.class);
         final NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
 
