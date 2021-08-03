@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ଡିଭାଇସ୍ ସହ ସଂଯୋଗ କରାଯାଇଛି। ଇଣ୍ଟରନେଟ୍ ପ୍ରଦାନ କରାଯାଇପାରିବ ନାହିଁ।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ନିମ୍ନ ଗୁଣବତ୍ତା"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"କିଛି ନାହିଁ"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"ପାସପଏଣ୍ଟ"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"ମିଆଦ ଶେଷ ହୋଇଯାଇଛି"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"ସାଇନ୍ ଅପ୍ କରିବାକୁ ଟାପ୍ କରନ୍ତୁ"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"ସଦସ୍ୟତାକୁ ନବୀକରଣ କରି ସଂଯୋଗ କରିବାକୁ ଟାପ୍ କରନ୍ତୁ"</string>
