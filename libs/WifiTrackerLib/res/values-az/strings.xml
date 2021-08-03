@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Cihaza qoşulub. İnternet təmin etmək olmur."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Aşağı keyfiyyət"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Heç"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Keçid nöqtəsi"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Bitib"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Qeydiyyatdan keçmək üçün toxunun"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Abunəliyi yeniləmək və qoşulmaq üçün toxunun"</string>

@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Povezava z napravo je vzpostavljena. Dostop do interneta ni na voljo."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Nizka kakovost"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Brez"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Poteklo"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Dotaknite se, če se želite registrirati"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Dotaknite se za podaljšanje naročnine in vzpostavitev povezave"</string>

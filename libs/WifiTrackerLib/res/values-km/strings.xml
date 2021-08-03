@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"បានភ្ជាប់​ជាមួយ​ឧបករណ៍។ មិនអាចផ្ដល់​អ៊ីនធឺណិតបានទេ។"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"គុណភាព​ទាប"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"គ្មាន"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"បាន​ផុត​កំណត់"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"ចុច​ដើម្បី​ចុះឈ្មោះ"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"ចុច ដើម្បី​បន្តការ​ជាវជាថ្មី និង​ភ្ជាប់"</string>
