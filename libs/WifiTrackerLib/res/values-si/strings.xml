@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"උපාංගයට සම්බන්ධයි. අන්තර්ජාලය සැපයීමට නොහැකිය."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"අඩු ගුණත්වය"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"කිසිවක් නැත"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"පාස්පොයින්ට්"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"කල් ඉකුත් විය"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"ලියාපදිංචි වීමට තට්ටු කරන්න"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"දායකත්වය අලුත් කිරීමට තට්ටු කර සම්බන්ධ වන්න"</string>

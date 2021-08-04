@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"기기에 연결되었습니다. 인터넷을 이용할 수 없습니다."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"품질 낮음"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"없음"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"만료됨"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"탭하여 가입"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"탭하여 가입 갱신 및 연결"</string>
