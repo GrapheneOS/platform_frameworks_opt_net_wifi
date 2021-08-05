@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Установена е връзка с устройство. Няма интернет."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Ниско качество"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Няма"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Изтекло"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Докоснете, за да се регистрирате"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Докоснете, за да подновите абонамента и да установите връзка"</string>

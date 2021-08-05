@@ -44,6 +44,7 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"పరికరానికి కనెక్ట్ అయింది. ఇంటర్నెట్‌ను అందిచడం సాధ్యం కాదు."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"తక్కువ క్వాలిటీ"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"ఏవీ లేవు"</string>
+    <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"పాస్‌పాయింట్"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"గడువు ముగిసింది"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"సైన్ అప్ చేయడానికి ట్యాప్ చేయండి"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"సభ్యత్వాన్ని రెన్యూ చేసి, కనెక్ట్ చేయడానికి ట్యాప్ చేయండి"</string>
